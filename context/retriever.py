@@ -1,6 +1,7 @@
 from qdrant_client import QdrantClient
 from supabase import create_client
-from sentence_transformers import SentenceTransformer
+from google import genai
+from google.genai import types
 import os
 
 
@@ -14,11 +15,20 @@ class ContextRetriever:
             os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY")
         )
 
-        self.encoder = SentenceTransformer("all-MiniLM-L6-v2")
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
     def get_context(self, intent: str, org_id: str, entity_name: str = None):
         """Retrieve structured context with metadata"""
-        vector = self.encoder.encode(intent).tolist()
+        # Generate embedding using Gemini API (384 dimensions to match Qdrant)
+        result = self.client.models.embed_content(
+            model="models/gemini-embedding-001",
+            contents=intent,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_QUERY",
+                output_dimensionality=384,
+            ),
+        )
+        vector = result.embeddings[0].values
 
         from qdrant_client.models import Filter, FieldCondition, MatchValue
 

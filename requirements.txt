@@ -2,7 +2,7 @@ fastapi
 uvicorn
 supabase
 qdrant-client
-sentence-transformers
 python-dotenv
+google-genai
 google-generativeai
 httpx

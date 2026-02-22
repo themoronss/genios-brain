@@ -1,7 +1,8 @@
 from supabase import create_client
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
-from sentence_transformers import SentenceTransformer
+from google import genai
+from google.genai import types
 import uuid, os
 from dotenv import load_dotenv
 
@@ -9,7 +10,7 @@ load_dotenv()
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 qdrant = QdrantClient(url=os.getenv("QDRANT_URL"), api_key=os.getenv("QDRANT_API_KEY"))
-encoder = SentenceTransformer("all-MiniLM-L6-v2")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 ORG_ID = os.getenv("ORG_ID")
 
@@ -24,7 +25,15 @@ def store_context(context_type, content, entity_name=None):
         }
     ).execute()
 
-    vector = encoder.encode(content).tolist()
+    # Generate embedding using Gemini
+    result = client.models.embed_content(
+        model="models/gemini-embedding-001",
+        contents=content,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_DOCUMENT", output_dimensionality=384
+        ),
+    )
+    vector = result.embeddings[0].values
 
     qdrant.upsert(
         collection_name="genios_context",
