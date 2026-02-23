@@ -1,0 +1,114 @@
+{
+  "name": "Email Agent with GeniOS Brain",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When email draft is requested",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "email-trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_RENDER_URL/v1/enrich",
+        "method": "POST",
+        "bodyParametersJson": "={{ JSON.stringify({\n  \"raw_message\": $json.message,\n  \"org_id\": \"genios_internal\",\n  \"entity_name\": $json.entity_name || null\n}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Call GeniOS Brain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.verdict}}",
+              "operation": "equals",
+              "value2": "BLOCK"
+            }
+          ]
+        }
+      },
+      "name": "Check if BLOCKED",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.verdict}}",
+              "operation": "equals",
+              "value2": "ESCALATE"
+            }
+          ]
+        }
+      },
+      "name": "Check if ESCALATE",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "message": "❌ Cannot send email\n\nReason: {{$json.enriched_brief}}\n\nFlags: {{$json.flags}}"
+      },
+      "name": "Return BLOCK Message",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 450]
+    },
+    {
+      "parameters": {
+        "message": "⚠️ Needs Approval\n\n{{$json.enriched_brief}}\n\nRecommended: {{$json.recommended_action}}"
+      },
+      "name": "Send to Founder for Approval",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 450]
+    },
+    {
+      "parameters": {
+        "operation": "sendEmail",
+        "to": "={{$json.recipient_email}}",
+        "subject": "={{$json.subject}}",
+        "message": "={{$json.enriched_brief}}"
+      },
+      "name": "Send Email with Context",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "credentials": {
+        "gmailOAuth2": "your_gmail_credentials"
+      }
+    }
+  ],
+  "connections": {
+    "When email draft is requested": {
+      "main": [[{"node": "Call GeniOS Brain", "type": "main", "index": 0}]]
+    },
+    "Call GeniOS Brain": {
+      "main": [[{"node": "Check if BLOCKED", "type": "main", "index": 0}]]
+    },
+    "Check if BLOCKED": {
+      "main": [
+        [{"node": "Return BLOCK Message", "type": "main", "index": 0}],
+        [{"node": "Check if ESCALATE", "type": "main", "index": 0}]
+      ]
+    },
+    "Check if ESCALATE": {
+      "main": [
+        [{"node": "Send to Founder for Approval", "type": "main", "index": 0}],
+        [{"node": "Send Email with Context", "type": "main", "index": 0}]
+      ]
+    }
+  }
+}
