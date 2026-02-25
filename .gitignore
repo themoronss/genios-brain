@@ -1,63 +1,75 @@
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Python
+# ------------------------------
+# Python cache files
+# ------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-venv/
-env/
-ENV/
 
-# IDE
+# ------------------------------
+# Virtual Environment
+# ------------------------------
+venv/
+.env/
+.venv/
+env/
+
+# ------------------------------
+# Environment variables
+# ------------------------------
+.env
+.env.*
+*.env
+
+# ------------------------------
+# Distribution / packaging
+# ------------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ------------------------------
+# Logs
+# ------------------------------
+*.log
+logs/
+
+# ------------------------------
+# Database files
+# ------------------------------
+*.sqlite3
+*.db
+
+# ------------------------------
+# Test / coverage
+# ------------------------------
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ------------------------------
+# IDE files
+# ------------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# ------------------------------
+# OS files
+# ------------------------------
 .DS_Store
+Thumbs.db
 
-# Logs
-*.log
-logs/
-*.sqlite
-*.db
+# ------------------------------
+# Migrations (Optional - if using Alembic)
+# ------------------------------
+# Uncomment if you DON'T want migrations in repo
+# migrations/
 
-# Test outputs
-baseline_outputs_*.json
-enhanced_outputs_*.json
-comparison_results_*.json
-
-# Deployment
-.railway/
-.render/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# Local test files
-test_local.py
-scratch.py
-temp/
+# ------------------------------
+# Node (if using frontend inside project)
+# ------------------------------
+node_modules/
+package-lock.json
+yarn.lock

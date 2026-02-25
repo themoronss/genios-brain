@@ -1,8 +1,4 @@
 fastapi
 uvicorn
-supabase
-qdrant-client
-python-dotenv
-google-genai
-google-generativeai
-httpx
+pydantic
+pytest
