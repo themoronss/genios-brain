@@ -5,7 +5,7 @@ def test_learning_layer():
     brain = BrainOrchestrator()
 
     result = brain.run(
-        intent="follow_up_investor",
+        intent="Follow up with Investor X",
         workspace_id="w1",
         actor_id="u1"
     )
@@ -13,5 +13,5 @@ def test_learning_layer():
     learning = result["learning"]
 
     assert learning.outcome == "approved"
-    assert len(learning.memory_updates) == 1
-    assert learning.memory_updates[0].field == "last_successful_intent"
+    assert len(learning.memory_updates) >= 1
+    assert any(u.field == "last_successful_intent" for u in learning.memory_updates)

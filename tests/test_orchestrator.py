@@ -5,7 +5,7 @@ def test_orchestrator_pipeline():
     brain = BrainOrchestrator()
 
     result = brain.run(
-        intent="follow_up_investor",
+        intent="Follow up with Investor X",
         workspace_id="w1",
         actor_id="u1"
     )

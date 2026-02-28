@@ -74,6 +74,42 @@ BEGIN
 END;
 $$;
 
+-- 5. Policies table (for Layer 1 R4)
+CREATE TABLE IF NOT EXISTS policies (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    policy_type TEXT NOT NULL,
+    condition JSONB NOT NULL DEFAULT '{}',
+    effect JSONB NOT NULL DEFAULT '{}',
+    priority INT DEFAULT 0,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all access on policies" ON policies
+    FOR ALL USING (true) WITH CHECK (true);
+
+-- 6. Decision logs table (for Layer 1 R5)
+CREATE TABLE IF NOT EXISTS decision_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    actor_id TEXT NOT NULL,
+    intent_type TEXT NOT NULL,
+    context_hash TEXT,
+    decision_summary TEXT,
+    outcome TEXT,
+    outcome_score FLOAT DEFAULT 0.0,
+    embedding VECTOR(3072),
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE decision_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all access on decision_logs" ON decision_logs
+    FOR ALL USING (true) WITH CHECK (true);
+
 =================================================================
 """
 
@@ -133,6 +169,69 @@ KNOWLEDGE_SEEDS = [
 ]
 
 
+# ---------- Policy Seeds ----------
+
+POLICY_SEEDS = [
+    {
+        "workspace_id": "w1",
+        "policy_type": "org",
+        "condition": {"recipient_tier": "VIP"},
+        "effect": {"requires_approval": True},
+        "priority": 10,
+        "active": True,
+    },
+    {
+        "workspace_id": "w1",
+        "policy_type": "risk",
+        "condition": {"intent_type": "cold_outreach"},
+        "effect": {"requires_approval": True, "risk_flag": "external_first_contact"},
+        "priority": 8,
+        "active": True,
+    },
+    {
+        "workspace_id": "w1",
+        "policy_type": "org",
+        "condition": {"day_of_week": ["saturday", "sunday"]},
+        "effect": {"delay_until": "next_monday"},
+        "priority": 5,
+        "active": True,
+    },
+]
+
+
+# ---------- Decision Log Seeds ----------
+
+DECISION_LOG_SEEDS = [
+    {
+        "workspace_id": "w1",
+        "actor_id": "u1",
+        "intent_type": "follow_up",
+        "decision_summary": "Drafted follow-up email using warm template, scheduled for 9am.",
+        "outcome": "success",
+        "outcome_score": 0.9,
+        "context_hash": "abc123",
+    },
+    {
+        "workspace_id": "w1",
+        "actor_id": "u1",
+        "intent_type": "follow_up",
+        "decision_summary": "Sent aggressive follow-up. Investor responded negatively.",
+        "outcome": "failure",
+        "outcome_score": 0.2,
+        "context_hash": "def456",
+    },
+    {
+        "workspace_id": "w1",
+        "actor_id": "u1",
+        "intent_type": "schedule_meeting",
+        "decision_summary": "Scheduled meeting at investor's preferred time slot.",
+        "outcome": "success",
+        "outcome_score": 0.95,
+        "context_hash": "ghi789",
+    },
+]
+
+
 def seed_memory(client):
     """Insert memory seed data."""
     print("Inserting memory seeds...")
@@ -172,15 +271,38 @@ def seed_knowledge(client):
         print("    Set GEMINI_API_KEY in .env to enable embedding generation.")
 
 
+def seed_policies(client):
+    """Insert policy seed data."""
+    print("Inserting policy seeds...")
+    result = client.table("policies").insert(POLICY_SEEDS).execute()
+    if result.data:
+        print(f"  ✓ {len(result.data)} policy rows inserted.")
+    else:
+        print("  ✗ Policy insert returned no data. Check table/RLS.")
+
+
+def seed_decision_logs(client):
+    """Insert decision log seed data (without embeddings for MVP)."""
+    print("Inserting decision log seeds...")
+    result = client.table("decision_logs").insert(DECISION_LOG_SEEDS).execute()
+    if result.data:
+        print(f"  ✓ {len(result.data)} decision log rows inserted.")
+    else:
+        print("  ✗ Decision log insert returned no data. Check table/RLS.")
+
+
 def main():
     print("Connecting to Supabase...")
     client = get_supabase_client()
 
     seed_memory(client)
     seed_knowledge(client)
+    seed_policies(client)
+    seed_decision_logs(client)
 
     print("\nDone.")
 
 
 if __name__ == "__main__":
     main()
+

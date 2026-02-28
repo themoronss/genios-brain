@@ -7,7 +7,7 @@ def test_layer2_judgement_engine():
     judgement = JudgementEngine()
 
     bundle = retrieval.run(
-        intent="follow_up_investor",
+        intent="Follow up with Investor X",
         workspace_id="w1",
         actor_id="u1"
     )

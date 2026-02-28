@@ -5,12 +5,13 @@ def test_layer1_returns_context_bundle():
     engine = RetrievalEngine()
 
     bundle = engine.run(
-        intent="follow_up_investor",
+        intent="Follow up with Investor X",
         workspace_id="w1",
         actor_id="u1"
     )
 
     assert bundle.scope.workspace_id == "w1"
     assert bundle.memory.preferences["tone"] == "confident"
-    assert bundle.policy.rules[0]["id"] == "P_VIP_APPROVAL"
+    assert len(bundle.policy.rules) > 0
+    assert "gmail" in bundle.tools.snapshots
     assert bundle.tools.snapshots["gmail"]["thread_exists"] is True

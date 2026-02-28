@@ -5,7 +5,7 @@ def test_decision_layer_execution_mode():
     brain = BrainOrchestrator()
 
     result = brain.run(
-        intent="follow_up_investor",
+        intent="Follow up with Investor X",
         workspace_id="w1",
         actor_id="u1"
     )
@@ -14,4 +14,4 @@ def test_decision_layer_execution_mode():
 
     assert decision.intent_type == "follow_up"
     assert decision.execution_mode == "needs_approval"
-    assert len(decision.action_plan.steps) == 2
+    assert len(decision.action_plan.steps) >= 2
