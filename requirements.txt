@@ -2,3 +2,6 @@ fastapi
 uvicorn
 pydantic
 pytest
+supabase
+python-dotenv
+google-generativeai

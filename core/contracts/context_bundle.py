@@ -21,8 +21,15 @@ class ToolContext(BaseModel):
     snapshots: Dict[str, Any] = {}
 
 
+class RelevantChunk(BaseModel):
+    content: str
+    similarity: float
+    metadata: Dict[str, Any] = {}
+
+
 class ContextBundle(BaseModel):
     scope: ScopeContext
     memory: MemoryContext
     policy: PolicyContext
     tools: ToolContext
+    relevant_chunks: List[RelevantChunk] = []
