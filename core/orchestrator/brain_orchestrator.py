@@ -8,8 +8,30 @@ from layers.layer4_learning.learning_engine import LearningEngine
 
 class BrainOrchestrator:
 
-    def __init__(self):
-        self.retrieval_engine = RetrievalEngine()
+    def __init__(self, use_db: bool = False):
+        """
+        Args:
+            use_db: If True, connect to Supabase for real data.
+                    If False, use mock data (default for testing).
+        """
+        memory_store = None
+        vector_store = None
+
+        if use_db:
+            try:
+                from core.stores.memory_store import MemoryStore
+                from core.stores.vector_store import VectorStore
+                from core.stores.embedding_service import EmbeddingService
+                memory_store = MemoryStore()
+                embedding_service = EmbeddingService()
+                vector_store = VectorStore(embedding_service=embedding_service)
+            except Exception as e:
+                print(f"⚠ Could not connect to Supabase: {e}. Using mock data.")
+
+        self.retrieval_engine = RetrievalEngine(
+            memory_store=memory_store,
+            vector_store=vector_store,
+        )
         self.judgement_engine = JudgementEngine()
         self.decision_engine = DecisionEngine()
         self.learning_engine = LearningEngine()
