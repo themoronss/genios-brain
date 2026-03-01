@@ -48,7 +48,7 @@ from layers.layer1_retrieval.bundle_assembler.assembler import assemble_bundle
 
 class RetrievalEngine:
 
-    def __init__(self, memory_store=None, vector_store=None):
+    def __init__(self, memory_store=None, vector_store=None, use_real_tools=False):
         """
         Args:
             memory_store: Optional MemoryStore instance.
@@ -57,9 +57,23 @@ class RetrievalEngine:
             vector_store: Optional VectorStore instance.
                           If provided, semantic search is performed.
                           If None, no relevant chunks are returned.
+            use_real_tools: If True, use real Gmail/Calendar providers.
+                            If False, use mock providers (default).
         """
         self.memory_retriever = MemoryRetriever(memory_store=memory_store)
-        self.tool_orchestrator = ToolOrchestrator()
+
+        if use_real_tools:
+            try:
+                from core.tools.gmail_provider import GmailProvider
+                from core.tools.calendar_provider import CalendarProvider
+                providers = [GmailProvider(), CalendarProvider()]
+            except Exception as e:
+                print(f"⚠ Could not load real tool providers: {e}. Using mocks.")
+                providers = None
+            self.tool_orchestrator = ToolOrchestrator(providers=providers)
+        else:
+            self.tool_orchestrator = ToolOrchestrator()
+
         self.policy_loader = PolicyLoader()
         self.policy_matcher = PolicyMatcher()
         self.precedent_retriever = DecisionLogRetriever()

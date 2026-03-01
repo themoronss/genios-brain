@@ -31,6 +31,7 @@ class BrainOrchestrator:
         self.retrieval_engine = RetrievalEngine(
             memory_store=memory_store,
             vector_store=vector_store,
+            use_real_tools=use_db,
         )
         self.judgement_engine = JudgementEngine()
         self.decision_engine = DecisionEngine()
