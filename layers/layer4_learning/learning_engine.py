@@ -41,6 +41,14 @@ from layers.layer4_learning.learning_assembler.assembler import assemble_learnin
 
 class LearningEngine:
 
+    def __init__(self, memory_store=None):
+        """
+        Args:
+            memory_store: Optional MemoryStore instance for persisting updates.
+                         If None, updates are logged but not persisted.
+        """
+        self.memory_store = memory_store
+
     def run(
         self,
         decision: DecisionPacket,
@@ -49,6 +57,8 @@ class LearningEngine:
         user_comment: str = "",
         tool_errors: list = None,
         latency_ms: float = 0.0,
+        workspace_id: str = "default",
+        actor_id: str = "default",
     ) -> LearningReport:
         """
         Layer 4 — Full Learning Pipeline.
@@ -56,7 +66,7 @@ class LearningEngine:
         Steps:
             L0: Build learning plan (which modules to run)
             L1: Normalize outcome (execution result + feedback + errors)
-            L2: Generate + gate memory update candidates
+            L2: Generate + gate memory update candidates + persist auto-approved
             L3: Generate policy suggestions
             L4: Compute eval metrics
             Assemble: Combine into LearningReport
@@ -68,6 +78,8 @@ class LearningEngine:
             user_comment: Optional user comment.
             tool_errors: List of error dicts.
             latency_ms: End-to-end latency.
+            workspace_id: Workspace identifier (for memory writes).
+            actor_id: Actor identifier (for memory writes).
 
         Returns:
             Complete LearningReport.
@@ -100,6 +112,21 @@ class LearningEngine:
                 elif "medium" in reason.lower() and "risk" in reason.lower():
                     risk_level = "medium"
             memory_updates = gate_updates(candidates, execution_result, risk_level)
+
+            # Persist auto-approved updates to MemoryStore if available
+            if self.memory_store:
+                for update in memory_updates:
+                    if update.auto_approved:
+                        try:
+                            self.memory_store.write_update(
+                                actor_id=actor_id,
+                                workspace_id=workspace_id,
+                                update=update,
+                            )
+                        except Exception as e:
+                            print(
+                                f"⚠ Failed to persist memory update {update.field}: {e}"
+                            )
 
         # --- L3: Policy Suggestions ---
         suggestions = []

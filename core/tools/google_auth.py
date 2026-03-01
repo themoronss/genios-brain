@@ -5,6 +5,7 @@ Manages OAuth2 credentials for Gmail and Calendar API access.
 Stores tokens in credentials/token.json after first-time authorization.
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -67,8 +68,17 @@ def get_google_credentials() -> Credentials:
             )
             creds = flow.run_local_server(port=0)
 
-        # Save for next run
+        # Save for next run (in standard OAuth2 format)
         CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
-        TOKEN_PATH.write_text(creds.to_json())
+        token_dict = {
+            "access_token": creds.token,
+            "refresh_token": creds.refresh_token,
+            "token_type": "Bearer",
+            "expiry_date": creds.expiry.isoformat() if creds.expiry else None,
+            "client_id": creds.client_id,
+            "client_secret": creds.client_secret,
+            "scopes": creds.scopes,
+        }
+        TOKEN_PATH.write_text(json.dumps(token_dict))
 
     return creds

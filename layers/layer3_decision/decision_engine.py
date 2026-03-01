@@ -83,13 +83,11 @@ class DecisionEngine:
         intent_type, slots = finalize_intent(bundle, judgement, route)
 
         # --- D2: Plan Generation ---
-        plan = build_plan(intent_type, slots)
+        plan = build_plan(intent_type, slots, context_bundle=bundle)
         plan, constraints_applied = enforce_constraints(plan, judgement)
 
         # --- D3: Execution Mode ---
-        execution = determine_execution_mode(
-            judgement, route.get("overrides")
-        )
+        execution = determine_execution_mode(judgement, route.get("overrides"))
         execution = resolve_approval_chain(execution, judgement)
 
         # --- D4: Trace ---
