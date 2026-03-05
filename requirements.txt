@@ -1,10 +1,10 @@
 fastapi
 uvicorn
-pydantic
-pytest
-supabase
+sqlalchemy
+psycopg2-binary
+pgvector
+redis
 python-dotenv
+pydantic
+requests
 google-generativeai
-google-api-python-client
-google-auth-oauthlib
-google-auth-httplib2

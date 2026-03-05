@@ -1,80 +1,105 @@
-# ------------------------------
-# Python cache files
-# ------------------------------
+# Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
-# ------------------------------
 # Virtual Environment
-# ------------------------------
 venv/
+env/
 .env/
 .venv/
-env/
+ENV/
+env.bak/
+venv.bak/
 
-# ------------------------------
-# Environment variables
-# ------------------------------
+# Environment Variables
 .env
-.env.*
-*.env
+.env.local
+.env.*.local
 
-# ------------------------------
-# Distribution / packaging
-# ------------------------------
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# ------------------------------
 # Logs
-# ------------------------------
 *.log
 logs/
 
-# ------------------------------
-# Database files
-# ------------------------------
-*.sqlite3
+# Databases
 *.db
+*.sqlite3
+*.sqlite
 
-# ------------------------------
-# Test / coverage
-# ------------------------------
-.coverage
-htmlcov/
-.pytest_cache/
+# Python build files
+build/
+dist/
+*.egg-info/
+*.egg
 
-# ------------------------------
 # IDE files
-# ------------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# ------------------------------
-# OS files
-# ------------------------------
+*~
 .DS_Store
+
+# Mac & Windows OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# ------------------------------
-# Migrations (Optional - if using Alembic)
-# ------------------------------
-# Uncomment if you DON'T want migrations in repo
-# migrations/
+# Coverage & Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
 
-# ------------------------------
-# Node (if using frontend inside project)
-# ------------------------------
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# FastAPI specific
+*.pid
+
+# Node (if using Node/Next.js)
 node_modules/
-package-lock.json
-yarn.lock
+.next/
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
 
-# ------------------------------
-# Credentials / Secrets
-# ------------------------------
-credentials/
+# Uploads & Generated files
+uploads/
+storage/
+dist/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Poetry/Pipenv
+poetry.lock
+Pipfile.lock
+
+# Redis
+dump.rdb
+
+# Docker
+.dockerignore
+
+# OS specific
+.vscode/settings.json
+.vs/
+
+# Local development
+local_config.py
+config.local.py
+*.local
+
+# Editor backup files
+*.bak
