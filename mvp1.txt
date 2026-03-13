@@ -1,0 +1,632 @@
+You need to impress 5 customers enough to pay $500 first, then $2500.
+
+That means one thing only.
+
+**The "how did it know that?" moment. Reliably. Every time.**
+
+---
+
+## First — What NOT To Build For V1
+
+```
+DO NOT BUILD:
+─────────────
+✗ All four graphs
+✗ Authority engine
+✗ State graph
+✗ Precedent graph
+✗ Cross-agent conflict detection
+✗ Agent registry
+✗ Multi-tenant architecture
+✗ Full SDK
+✗ Webhook infrastructure
+✗ Polishing jobs
+✗ Dashboard with all panels
+✗ Mobile app
+✗ Slack integration
+✗ HubSpot integration
+
+Why not?
+
+Because none of that produces
+the "how did it know that?" moment
+in 15 minutes for a first customer.
+
+You need one thing working perfectly.
+Not ten things working partially.
+```
+
+---
+
+## What V1 Actually Is
+
+```
+V1 IS THIS AND ONLY THIS:
+
+Connect Gmail
+→ Build relationship graph automatically
+→ Show it visually
+→ When agent drafts anything about any person
+  it uses that person's full relationship context
+
+That is it.
+That is the entire V1.
+
+The moment a founder sees their agent write
+an email to an investor that references
+exactly what was discussed 3 weeks ago
+in exactly the right tone —
+
+That is the $500 moment.
+That is the $2500 moment.
+```
+
+---
+
+## The Exact V1 Build — Component by Component
+
+### Component 1: Gmail OAuth + Ingestion
+
+```
+WHAT TO BUILD:
+──────────────
+
+Simple OAuth 2.0 Gmail connection
+Read-only scope only:
+gmail.readonly
+
+Backfill job:
+→ Read last 6 months of emails
+→ Process in batches of 100 threads
+→ Show progress bar to user
+
+What to extract per email:
+→ Sender name + email
+→ Recipients
+→ Date + time
+→ Subject line
+→ Body text (plain text only, strip HTML)
+→ Thread ID (to group conversations)
+
+That is it for ingestion.
+No sentiment yet.
+No complex NLP.
+Just clean structured data.
+
+TECH STACK:
+───────────
+Google Gmail API
+Simple Python backend (FastAPI)
+PostgreSQL for raw email storage
+Celery for background processing
+Redis for job queue
+
+TIME TO BUILD: 1 week
+```
+
+### Component 2: Entity Extraction (Simplified)
+
+```
+WHAT TO BUILD:
+──────────────
+
+For each email extract:
+
+PEOPLE:
+→ Name (from email header)
+→ Email address
+→ Company (from email domain)
+→ Role (from email signature if present)
+
+BASIC CLASSIFICATION:
+→ Is this internal? (same domain as org)
+→ Is this a known VC? (check against list of 500 known VC domains)
+→ Otherwise: external contact
+
+INTERACTION SUMMARY:
+→ Call GPT-4o mini with this prompt:
+
+"Given this email, extract:
+1. One sentence summary of what was discussed
+2. Sentiment: positive / neutral / negative
+3. Intent: follow_up / request / commitment /
+           introduction / negotiation / other
+4. Any commitments made (things promised)
+5. Key topics discussed
+
+Email: {email_body}
+
+Return as JSON only."
+
+ENTITY RESOLUTION (simple version):
+→ Same email address = same person (exact match only)
+→ Do not build fuzzy matching yet
+→ Unknown = create new node
+→ Duplicates handled manually in v1
+
+TIME TO BUILD: 1 week
+```
+
+### Component 3: Relationship Graph (Simplified)
+
+```
+WHAT TO BUILD:
+──────────────
+
+NOT Neo4j for V1.
+Too complex to set up and tune quickly.
+
+Use PostgreSQL with graph-like queries.
+You can migrate to Neo4j at V2.
+
+TABLES:
+
+entities (people and companies)
+──────────────────────────────
+id                UUID
+org_id            UUID
+name              String
+email             String
+company_name      String
+company_domain    String
+entity_type       Enum: INVESTOR/CUSTOMER/VENDOR/TEAM/UNKNOWN
+relationship_stage Enum: COLD/WARM/ACTIVE/DORMANT
+first_interaction Timestamp
+last_interaction  Timestamp
+interaction_count Integer
+sentiment_avg     Float
+summary           Text (LLM generated relationship summary)
+topics            Text[] (recurring topics)
+communication_style String
+open_commitments  Integer
+
+interactions
+────────────
+id                UUID
+org_id            UUID
+from_entity_id    UUID
+to_entity_id      UUID
+timestamp         Timestamp
+medium            String (email)
+direction         Enum: INBOUND/OUTBOUND
+sentiment         Float
+intent            String
+content_summary   Text
+topics            Text[]
+commitments_made  Text[]
+thread_id         String
+
+RELATIONSHIP STAGE LOGIC (simple rules):
+→ Last interaction < 7 days + positive sentiment = ACTIVE
+→ Last interaction 7-30 days = WARM
+→ Last interaction 30-60 days = DORMANT
+→ Last interaction > 60 days = COLD
+→ Sentiment avg < -0.3 = AT_RISK (override above)
+
+Recalculate nightly. Simple cron job.
+
+TIME TO BUILD: 1 week
+```
+
+### Component 4: The Context API
+
+```
+WHAT TO BUILD:
+──────────────
+
+ONE endpoint only:
+
+POST /api/v1/context
+{
+  "org_id": "uuid",
+  "entity_name": "Sarah Chen",
+  "situation": "investor follow-up"
+}
+
+Returns:
+{
+  "entity": {
+    "name": "Sarah Chen",
+    "company": "Sequoia Capital",
+    "role": "Partner",
+    "relationship_stage": "WARM",
+    "last_interaction": "12 days ago",
+    "interaction_count": 14,
+    "sentiment_trend": "positive",
+    "communication_style": "concise, data-forward",
+    "topics_of_interest": ["retention", "GTM", "India market"],
+    "open_commitments": ["Send retention data by March 15"],
+    "what_works": "Short emails with specific metrics",
+    "what_to_avoid": "Long narrative emails",
+    "recommended_action": "Send brief update with retention numbers"
+  },
+  "recent_interactions": [
+    {
+      "date": "March 1",
+      "summary": "Sent Q4 traction update, she replied positively",
+      "sentiment": "positive"
+    },
+    {
+      "date": "February 18",
+      "summary": "30 min call about GTM strategy",
+      "outcome": "positive, requested retention data"
+    }
+  ],
+  "context_for_agent": "Sarah Chen is a Partner at Sequoia
+    Capital. Your last interaction was 12 days ago when you
+    sent a traction update and she responded positively.
+    She specifically asked for retention data in your Feb 18
+    call. She prefers short, data-forward emails. You have
+    an open commitment to send retention data by March 15.
+    Do not mention exact ARR — revenue range is safe.",
+  "confidence": 0.82
+}
+
+The context_for_agent field is the magic.
+It is a ready-to-use paragraph that any
+agent can prepend to their prompt.
+
+Zero integration complexity.
+Massive context improvement.
+
+TIME TO BUILD: 3 days
+```
+
+### Component 5: The Dashboard (Minimal)
+
+```
+WHAT TO BUILD:
+──────────────
+
+Three screens only:
+
+SCREEN 1: CONNECT
+─────────────────
+"Connect your Gmail"
+→ OAuth button
+→ Progress bar while building
+→ "Your graph is ready" when done
+
+SCREEN 2: RELATIONSHIP MAP
+───────────────────────────
+Visual graph using D3.js or
+a simple library like react-force-graph
+
+Show:
+→ Your org in center
+→ All contacts as nodes
+→ Color by stage (green/yellow/red/grey)
+→ Size by interaction count
+→ Click any node → see full detail panel
+
+Node detail panel on click:
+→ Name, company, role
+→ Relationship stage
+→ Last interaction + summary
+→ Open commitments
+→ What works / what to avoid
+→ Timeline of last 5 interactions
+
+Keep it simple.
+It needs to look clean, not impressive.
+The data is what impresses.
+
+SCREEN 3: CONTEXT TESTER
+──────────────────────────
+Simple input:
+"Ask about anyone in your network"
+
+Type: "Sarah Chen"
+→ Shows full context bundle
+→ Shows what agent would receive
+→ One click: "Copy context for agent"
+
+This screen is for demos.
+Customer types a name they know.
+Sees accurate context returned.
+That is the demo moment.
+
+TIME TO BUILD: 1 week
+```
+
+### Component 6: One Agent Integration
+
+```
+WHAT TO BUILD:
+──────────────
+
+Pick ONE agent integration only.
+The simplest possible one.
+
+RECOMMENDATION: Direct Claude/GPT integration
+via simple prompt injection.
+
+Customer pastes their API key.
+Customer types a task.
+GeniOS fetches context.
+Injects into prompt.
+Agent responds with full org awareness.
+
+Simple flow:
+
+User: "Draft a follow-up to Sarah Chen about our Series A"
+
+GeniOS:
+1. Detects "Sarah Chen" in request
+2. Calls /api/v1/context for Sarah Chen
+3. Prepends context to agent prompt:
+
+   "ORGANISATIONAL CONTEXT:
+   Sarah Chen, Partner at Sequoia Capital.
+   Relationship: WARM. Last contact 12 days ago.
+   She asked for retention data. You committed to
+   send by March 15. She prefers short data-forward
+   emails. Safe to share revenue range, not exact ARR.
+
+   USER REQUEST:
+   Draft a follow-up to Sarah Chen about our Series A"
+
+4. Agent drafts with full context
+5. Result shown to user
+
+That is the complete V1 agent integration.
+No SDK. No orchestrator. No complex integration.
+Just context injection via prompt.
+
+TIME TO BUILD: 3 days
+```
+
+---
+
+## The Complete V1 Build Plan
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    V1 BUILD TIMELINE                            │
+│                    Total: 6 weeks                               │
+├──────────┬──────────────────────────────────────────────────────┤
+│  WEEK 1  │  Gmail OAuth + basic ingestion pipeline              │
+│          │  Extract people, companies, interactions             │
+│          │  Store in PostgreSQL                                 │
+│          │  Basic entity resolution (email match only)         │
+├──────────┼──────────────────────────────────────────────────────┤
+│  WEEK 2  │  LLM extraction layer                               │
+│          │  Sentiment, intent, summaries, commitments          │
+│          │  Relationship stage calculation                     │
+│          │  Nightly refresh job                                │
+├──────────┼──────────────────────────────────────────────────────┤
+│  WEEK 3  │  Context API endpoint                               │
+│          │  Context bundle assembly                            │
+│          │  context_for_agent paragraph generation             │
+│          │  Basic caching (Redis, 60s TTL)                    │
+├──────────┼──────────────────────────────────────────────────────┤
+│  WEEK 4  │  Dashboard — connect screen                         │
+│          │  Dashboard — relationship graph visual              │
+│          │  Node detail panel                                  │
+│          │  Basic auth (email + password, no SSO yet)         │
+├──────────┼──────────────────────────────────────────────────────┤
+│  WEEK 5  │  Context tester screen                              │
+│          │  Agent integration (prompt injection)               │
+│          │  End to end flow working                           │
+│          │  Bug fixing                                         │
+├──────────┼──────────────────────────────────────────────────────┤
+│  WEEK 6  │  Polish and harden                                  │
+│          │  Handle edge cases in ingestion                    │
+│          │  Improve context bundle quality                     │
+│          │  Onboard first pilot customer manually             │
+│          │  Watch them use it. Fix what breaks.               │
+└──────────┴──────────────────────────────────────────────────────┘
+```
+
+---
+
+## The Tech Stack For V1
+
+```
+BACKEND:
+────────
+Language:     Python (FastAPI)
+Database:     PostgreSQL (single DB, simple)
+Cache:        Redis
+Queue:        Celery + Redis
+LLM calls:   Anthropic Claude API (haiku for extraction,
+              sonnet for context bundle generation)
+Gmail:        Google API Python client
+
+FRONTEND:
+─────────
+Framework:    Next.js
+Graph visual: react-force-graph (simple, good enough)
+Styling:      Tailwind CSS
+Auth:         NextAuth.js
+
+INFRASTRUCTURE:
+───────────────
+Hosting:      Railway or Render (simple, fast to deploy)
+Database:     Supabase (PostgreSQL, managed)
+Redis:        Upstash (managed Redis)
+
+DO NOT USE YET:
+───────────────
+✗ Neo4j (overkill for V1 data volume)
+✗ Pinecone (no semantic search needed in V1)
+✗ Kubernetes (too complex)
+✗ Microservices (monolith for V1)
+✗ Kafka (no event streaming needed yet)
+
+V1 is a monolith.
+Fast to build. Easy to debug.
+Microservices at V2 when you know what to separate.
+```
+
+---
+
+## How To Get The 5 Customers To Pay $500
+
+```
+WHO TO TARGET:
+──────────────
+Solo founders who:
+→ Are actively fundraising OR managing investors
+→ Use Gmail (not Outlook)
+→ Have at least 20+ investor contacts
+→ Are technically comfortable enough to try new tools
+→ Are frustrated with relationship management
+
+WHERE TO FIND THEM:
+───────────────────
+→ Antler, YC, Techstars alumni networks
+→ Founder Slack communities
+→ Twitter/X — founders posting about fundraising pain
+→ Your own network first (always)
+
+THE PITCH TO GET $500:
+──────────────────────
+Do not pitch features.
+Do not show architecture.
+Do not explain graphs.
+
+Say exactly this:
+
+"You know how you have to re-explain your
+investor relationships to your AI every time?
+We fixed that permanently.
+
+Connect your Gmail in 2 minutes.
+We build a map of all your relationships automatically.
+Your AI agent then knows your full history
+with every investor before it drafts anything.
+
+I want to show you a demo using your actual email data.
+Takes 15 minutes.
+If it does not impress you, you pay nothing.
+If it does — ₹40,000 for 30 days of testing."
+
+THE DEMO SCRIPT:
+────────────────
+Step 1: They connect Gmail (2 minutes)
+Step 2: Graph builds (15 minutes — show progress)
+Step 3: You say "type any investor name you know well"
+Step 4: They type a name
+Step 5: Context bundle appears with accurate history
+Step 6: They say "how did it know that?"
+Step 7: You say "that is what every agent now gets
+         before it does anything with this person"
+Step 8: They pay.
+
+THE MOMENT THAT CLOSES:
+────────────────────────
+When they type a name and see:
+→ Accurate relationship summary
+→ What they last discussed
+→ What was promised
+→ What tone works
+→ What to do next
+
+And it is RIGHT.
+
+Not 80% right. RIGHT.
+
+That accuracy is everything.
+Spend 80% of your engineering time
+making the context bundle accurate.
+Not on features. Not on UI.
+On accuracy.
+```
+
+---
+
+## What Success Looks Like At Each Stage
+
+```
+WEEK 6 (V1 complete):
+──────────────────────
+5 founders connected Gmail
+Graph built for each
+Context API returning accurate bundles
+Demo working end to end
+
+SUCCESS METRIC:
+4 out of 5 founders say "how did it know that?"
+when they see their own relationship data returned
+
+$500 × 5 = $2,500 validation money
+More importantly: proof the core thesis works
+
+────────────────────────────────────────────────
+
+30 DAYS TESTING ($2,500 each):
+────────────────────────────────
+Founders using context API with their agents daily
+Giving you feedback on accuracy
+Telling you what is missing
+Showing you use cases you did not anticipate
+
+SUCCESS METRIC:
+3 out of 5 want to continue after 30 days
+At least 2 refer another founder
+At least 1 gives you a testimonial you can use
+
+This is your Series A story beginning.
+"5 paying customers. 80% retention.
+ Product built in 6 weeks."
+
+────────────────────────────────────────────────
+
+WHAT NOT TO DO DURING 30 DAYS:
+────────────────────────────────
+→ Do not build new features without customer asking
+→ Do not add HubSpot, Slack, Calendar yet
+→ Do not rebuild the UI
+→ Do not add the authority graph
+→ Do not add the state graph
+
+DO THIS INSTEAD:
+→ Talk to each customer every week
+→ Watch them use it (screen share)
+→ Fix accuracy issues immediately
+→ Write down every complaint word for word
+→ Find the pattern in what they all want next
+
+That pattern is your V2 roadmap.
+Built from real customer pain.
+Not from your assumptions.
+```
+
+---
+
+## The One Thing That Will Make Or Break V1
+
+```
+CONTEXT BUNDLE ACCURACY.
+
+If you return context that is wrong —
+wrong relationship stage,
+wrong summary of last conversation,
+wrong tone recommendation —
+
+The customer loses trust immediately.
+And they never come back.
+
+You have one shot at the "how did it know that?" moment.
+It has to be right.
+
+So before you build anything else:
+Spend two weeks manually reading email threads
+and writing context bundles by hand.
+
+Not with code.
+By hand.
+
+Do this for 20 different people across different orgs.
+
+Then build the code to do what you did manually.
+
+That is the only way to know
+what accurate actually looks like
+before you automate it.
+
+Build the judgment first.
+Then automate the judgment.
+Never the other way around.
+```

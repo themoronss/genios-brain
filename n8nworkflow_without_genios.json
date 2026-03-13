@@ -1,0 +1,156 @@
+{
+    "name": "Before GeniOS - Blind Email Agent",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "432fbc48-9727-4418-a24e-850f522efff9",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "{\n  \"contact_name\": \"Harsh Tripathi\",\n  \"contact_company\": \"Hestabit\",\n  \"objective\": \"Follow up after our Tuesday pitch\"\n}",
+                "options": {}
+            },
+            "id": "96ea5ba8-0a6b-49ed-80d9-7fc0fa8cf7e7",
+            "name": "Mock Input Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                256,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const name = $json.contact_name;\nconst company = $json.contact_company;\nconst objective = $json.objective;\n\nreturn [{\n  email: 'harsh@example.com',\n  prompt: `You are a professional email assistant. Draft a follow-up email.\n\nRECIPIENT: ${name} from ${company}\nOBJECTIVE: ${objective}\n\nWrite a concise, professional follow-up email. Address the recipient by their first name. Do NOT use placeholder brackets like [Name] - use the actual names provided. Sign as \"Harsh\" from Hestabit.`\n}];"
+            },
+            "id": "68a28469-d8fe-44c3-a9a5-a1b6e086564c",
+            "name": "Build Prompt",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                512,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": {
+                    "__rl": true,
+                    "value": "models/gemini-2.5-flash",
+                    "mode": "list",
+                    "cachedResultName": "models/gemini-2.5-flash"
+                },
+                "messages": {
+                    "values": [
+                        {
+                            "content": "={{$json.prompt}}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "e1fdd540-c605-4d76-a48b-7977729f3f25",
+            "name": "Generate Email (Gemini)",
+            "type": "@n8n/n8n-nodes-langchain.googleGemini",
+            "typeVersion": 1,
+            "position": [
+                768,
+                0
+            ],
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "c860FZO4Ido3t2ob",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "draft",
+                "subject": "Follow up on Tuesday Pitch",
+                "message": "={{$json.content.parts[0].text}}",
+                "options": {}
+            },
+            "id": "bd1a8157-9442-415a-b29d-2647a9fe8219",
+            "name": "Create Gmail Draft",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2,
+            "position": [
+                1024,
+                0
+            ],
+            "webhookId": "2d588336-2043-49fd-b4f8-1282838bc05d",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "8yn7rOKTPhmZFMgc",
+                    "name": "Gmail OAuth2 API"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Mock Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mock Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Build Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Email (Gemini)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Email (Gemini)": {
+            "main": [
+                [
+                    {
+                        "node": "Create Gmail Draft",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": false
+    },
+    "meta": {
+        "instanceId": "3a4d6c837d602395a90d07cb603a2dbbba2a3d81c3a8f17160d18cccb299269a"
+    },
+    "tags": []
+}

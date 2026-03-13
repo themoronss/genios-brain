@@ -1,0 +1,195 @@
+{
+    "name": "GeniOS Brain - Smart Email Agent",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "b7e9aa3b-08bd-4204-8fcc-e69f838f2dee",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "{\n  \"contact_name\": \"Harsh Tripathi\",\n  \"contact_company\": \"Hestabit\",\n  \"objective\": \"Pitch desk reviw\"\n}",
+                "options": {}
+            },
+            "id": "b1ea889f-68de-4bcf-8d46-4e2ff7c0e26d",
+            "name": "Mock Input Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                256,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://de8f-203-122-42-46.ngrok-free.app/v1/context",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"entity\": \"{{ $json.contact_name }}\",\n  \"situation\": \"follow-up email\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.4,
+            "position": [
+                512,
+                0
+            ],
+            "id": "af7e1f8e-27e3-4874-9aee-499b9dd39bf3",
+            "name": "GeniOS Context",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "HWzO7XIrtUShVtpa",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Get original input from Mock Input Data node\nconst mockData = $('Mock Input Data').first().json;\nconst name = mockData.contact_name;\nconst company = mockData.contact_company;\nconst objective = mockData.objective;\n\n// Get GeniOS context from HTTP Request response\nconst context = $json.context_for_agent || 'No additional context available';\n\nreturn [{\n  email: 'harsh@example.com',\n  prompt: `You are a professional email assistant. Draft a follow-up email.\n\nRECIPIENT: ${name} from ${company}\nOBJECTIVE: ${objective}\n\nORGANIZATIONAL CONTEXT (from GeniOS Brain - use this to personalize):\n${context}\n\nWrite a concise, professional follow-up email using the context above to personalize it. Address the recipient by their first name. Do NOT use placeholder brackets like [Name] - use the actual names provided.`\n}];"
+            },
+            "id": "18aa5810-f7fb-4b59-b8ee-b609ec52c461",
+            "name": "Build Prompt",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                768,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": {
+                    "__rl": true,
+                    "value": "models/gemini-2.5-flash",
+                    "mode": "list",
+                    "cachedResultName": "models/gemini-2.5-flash"
+                },
+                "messages": {
+                    "values": [
+                        {
+                            "content": "={{$json.prompt}}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "ee77128c-2afc-47e3-83c4-33c965dec373",
+            "name": "Generate Email (Gemini)",
+            "type": "@n8n/n8n-nodes-langchain.googleGemini",
+            "typeVersion": 1,
+            "position": [
+                1024,
+                0
+            ],
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "c860FZO4Ido3t2ob",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "draft",
+                "subject": "Follow up on Tuesday Pitch",
+                "message": "={{$json.content.parts[0].text}}",
+                "options": {}
+            },
+            "id": "f4f47e69-fd8f-4e59-8880-220b7facd45b",
+            "name": "Create Gmail Draft",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2,
+            "position": [
+                1280,
+                0
+            ],
+            "webhookId": "2d588336-2043-49fd-b4f8-1282838bc05d",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "8yn7rOKTPhmZFMgc",
+                    "name": "Gmail OAuth2 API"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Mock Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mock Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "GeniOS Context",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "GeniOS Context": {
+            "main": [
+                [
+                    {
+                        "node": "Build Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Email (Gemini)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Email (Gemini)": {
+            "main": [
+                [
+                    {
+                        "node": "Create Gmail Draft",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": false
+    },
+    "versionId": "01e8a398-70fe-40a1-9ce6-4cccaa99f910",
+    "meta": {
+        "instanceId": "3a4d6c837d602395a90d07cb603a2dbbba2a3d81c3a8f17160d18cccb299269a"
+    },
+    "id": "WKmlyjaRiG8JVPVg",
+    "tags": []
+}

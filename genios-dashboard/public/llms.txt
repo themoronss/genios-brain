@@ -1,0 +1,49 @@
+# GenIOS Context API
+
+GenIOS is the organizational brain for AI agents. The API provides deep, relationship-aware context for any person or company that your organization has interacted with, generated directly from your Gmail / corporate communications graph.
+
+## Endpoint
+
+POST https://api.genios.io/v1/context
+
+## Authentication
+
+All requests must include an `Authorization` header with a Bearer API Token. The API token will always start with the prefix `gn_live_` (e.g., `gn_live_xyz123abc`).
+
+## Payload
+
+The request body must be JSON, containing:
+- `entity` (string, required): The name of the person or company the agent is engaging with.
+- `situation` (string, optional): Context about the engagement (e.g. "investor follow-up", "sales demo").
+
+```json
+{
+  "entity": "Rajan Mehta",
+  "situation": "investor follow-up"
+}
+```
+
+## Response
+
+The response is a JSON object. The most important field is `context_for_agent`, which should be directly injected into the LLM's system prompt.
+
+```json
+{
+  "matched_from": "Rajan",
+  "match_confidence": 0.94,
+  "context_for_agent": "Rajan Mehta from Sequoia Capital. Relationship: WARM. You've exchanged 12 messages. Last contact 3 days ago. Recent conversations have been positive and engaged. Primary topics: Series A, Retention data. ⚠️ Open commitment: Share updated LTV/CAC numbers. Prefers: concise emails. You last said: I'll get those numbers over to you on Monday.",
+  "confidence": 0.85
+}
+```
+
+## How to use in an LLM Agent Tool
+
+1. Call the API *before* the agent executes its action.
+2. Read `context_for_agent` from the response.
+3. Prepend the string `ORGANIZATIONAL CONTEXT — read this before acting:` and inject the literal value of `context_for_agent` into the system prompt.
+4. Pass the system prompt back to the underlying language model to formulate the draft email or subsequent action.
+
+## Error Handling
+
+- 404: If GenIOS cannot find the contact in its knowledge graph, it responds with 404. Your agent should fall back to generic behavior.
+- 401: Invalid API key format. Ensure the token begins with `gn_live_`.

@@ -1,0 +1,14 @@
+Email 1:
+From: Investor Name <investor@example.com>
+Subject: Re: Startup Pitch - Tuesday
+Body:
+Hi,
+
+Thanks for taking the time to pitch on Tuesday. I liked the vision and the team seems strong.
+
+However, I'm a bit concerned about user churn. Can you send over the raw Q3 retention cohort data? I need to see if month-3 retention is stabilizing.
+
+Also, for future updates, please keep emails very concise and use bullet points. I get too many long emails.
+
+Thanks,
+Investor Name
