@@ -19,8 +19,9 @@ export default function ConnectPage() {
   const { data: status, isLoading } = useQuery<ConnectionStatus>({
     queryKey: ['connection-status', orgId],
     queryFn: () => api.org.getStatus(orgId, token),
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Refetch every 2 seconds if ingestion is in progress
+      const data = query.state.data;
       if (data && !data.ingestion_complete) {
         return 2000;
       }
