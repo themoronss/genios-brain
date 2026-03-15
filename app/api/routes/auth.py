@@ -159,8 +159,11 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     # Trigger automatic sync in background
     background_tasks.add_task(run_gmail_sync, org_id, 100)  # 50 inbox + 50 sent
 
+    import os
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
     # Redirect back to dashboard after successful connection
-    return RedirectResponse(url="http://localhost:3000/dashboard/connect")
+    return RedirectResponse(url=f"{frontend_url}/dashboard/connect")
 
 
 @router.post("/auth/login", response_model=AuthResponse)
