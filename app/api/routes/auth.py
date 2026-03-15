@@ -157,7 +157,7 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     db.close()
 
     # Trigger automatic sync in background
-    background_tasks.add_task(run_gmail_sync, org_id, 50)
+    background_tasks.add_task(run_gmail_sync, org_id, 100)  # 50 inbox + 50 sent
 
     # Redirect back to dashboard after successful connection
     return RedirectResponse(url="http://localhost:3000/dashboard/connect")

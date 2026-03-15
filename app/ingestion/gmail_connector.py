@@ -57,16 +57,17 @@ def build_gmail_service(access_token, refresh_token=None):
     return service
 
 
-def fetch_emails(service, max_results=500):
+def fetch_emails(service, max_results=500, label_id="INBOX"):
     """
     Fetch emails from Gmail, supporting pagination for large mailboxes.
 
     Args:
         service: Gmail API service
         max_results: Maximum number of emails to fetch (default: 500)
+        label_id: Gmail label to fetch from (default: INBOX, use SENT for sent emails)
 
     Returns:
-        List of message IDs
+        List of message dicts with 'id' and 'threadId'
     """
     messages = []
     page_token = None
@@ -77,7 +78,12 @@ def fetch_emails(service, max_results=500):
         request = (
             service.users()
             .messages()
-            .list(userId="me", maxResults=batch_size, pageToken=page_token)
+            .list(
+                userId="me",
+                maxResults=batch_size,
+                pageToken=page_token,
+                labelIds=label_id,
+            )
         )
 
         response = request.execute()
@@ -92,6 +98,36 @@ def fetch_emails(service, max_results=500):
             break
 
     return messages
+
+
+def fetch_message_metadata(service, message_id):
+    """
+    Fetch lightweight metadata for a single message (no body).
+    Used to get internalDate for date-based sorting before fetching full content.
+
+    Args:
+        service: Gmail API service
+        message_id: Gmail message ID
+
+    Returns:
+        dict with 'id' and 'internalDate' (ms since epoch as string)
+    """
+    msg = (
+        service.users()
+        .messages()
+        .get(
+            userId="me",
+            id=message_id,
+            format="metadata",
+            metadataHeaders=["Date"],
+        )
+        .execute()
+    )
+    return {
+        "id": msg["id"],
+        "threadId": msg.get("threadId", msg["id"]),
+        "internalDate": int(msg.get("internalDate", 0)),  # ms since epoch
+    }
 
 
 def fetch_full_message(service, message_id):

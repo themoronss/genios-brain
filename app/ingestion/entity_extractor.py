@@ -22,41 +22,129 @@ except:
     HAS_GEMINI_FALLBACK = False
 
 # Rate limiting settings for Groq
-# Groq: 30 requests/minute, so we can go much faster!
-RATE_LIMIT_DELAY = 2  # 2 seconds = 30 requests/minute with buffer
+RATE_LIMIT_DELAY = 2
+
+
+# ── Fix D: Prompt injection sanitization ────────────────────────────────
+
+# Patterns that attackers embed in email bodies to hijack LLM behaviour
+_INJECTION_PATTERNS = [
+    r"(?i)system\s*:",                      # SYSTEM:
+    r"(?i)ignore\s+(previous|above|all)",   # Ignore previous instructions
+    r"(?i)disregard\s+(previous|above|all)",
+    r"(?i)forget\s+(previous|above|all)",
+    r"(?i)you\s+are\s+now",                 # You are now a different AI
+    r"(?i)act\s+as\s+(if|a|an)",            # Act as if / Act as a
+    r"<\|system\|>",                        # LLaMA system tag
+    r"<\|im_start\|>",                      # ChatML start tag
+    r"<\|im_end\|>",
+    r"\[INST\]",                            # Mistral instruction tags
+    r"\[/INST\]",
+    r"(?i)prompt\s*injection",
+    r"(?i)jailbreak",
+    r"(?i)new\s+instructions?",
+]
+
+import re as _re
+
+_COMPILED_PATTERNS = [_re.compile(p) for p in _INJECTION_PATTERNS]
+
+
+def sanitize_email_body(text: str) -> str:
+    """
+    Strip prompt injection patterns from email body before passing to LLM.
+    Replaces matched patterns with [REDACTED] so the extraction still works
+    but the injection attempt is neutralised.
+
+    Args:
+        text: Raw email body or thread context string
+
+    Returns:
+        Sanitized string safe to pass to Groq/Gemini
+    """
+    if not text:
+        return text
+
+    sanitized = text
+    for pattern in _COMPILED_PATTERNS:
+        sanitized = pattern.sub("[REDACTED]", sanitized)
+
+    return sanitized
+
 
 
 def extract_email_intelligence(
-    subject: str, body: str = "", sender_name: str = None
+    subject: str,
+    body: str = "",
+    sender_name: str = None,
+    is_reply: bool = False,
+    thread_context: str = "",
 ) -> Dict:
     """
     Extract comprehensive intelligence from an email using LLM.
+    Thread-aware: accepts prior conversation context so commitments buried
+    in earlier messages in the chain are visible to the extraction.
+
+    Args:
+        subject: Email subject line
+        body: Email body text (current message only)
+        sender_name: Name of sender (for context)
+        is_reply: Whether this email is a reply (affects interaction_type)
+        thread_context: Prior messages in same thread (from build_thread_context)
 
     Returns:
-        Dict with keys: sentiment, intent, summary, commitments, topics
+        Dict with: sentiment, intent, summary, commitments (hard + soft), topics,
+                   interaction_type, engagement_level
     """
 
-    prompt = f"""Given this email, extract the following information and return ONLY valid JSON:
+    # ── Fix D: Sanitize before passing to LLM ──
+    safe_body = sanitize_email_body(body[:3000])
+    safe_thread_context = sanitize_email_body(thread_context)
 
-EMAIL:
+    # Build thread context section for prompt
+    thread_section = ""
+    if safe_thread_context and safe_thread_context.strip():
+        thread_section = f"""
+PREVIOUS MESSAGES IN THIS THREAD (read carefully — commitments may be buried here):
+{safe_thread_context}
+
+---
+CURRENT MESSAGE TO ANALYSE:"""
+    else:
+        thread_section = "\nEMAIL TO ANALYSE:"
+
+    prompt = f"""You are extracting relationship intelligence from a business email.
+{thread_section}
 Subject: {subject}
 From: {sender_name or "Unknown"}
-Body: {body[:2000]}  
+Body: {safe_body}
 
-Extract:
-1. "summary": One sentence summary of what was discussed (max 150 chars)
-2. "sentiment": A number from -1.0 (very negative) to 1.0 (very positive). 0 is neutral.
-3. "intent": Choose ONE from: follow_up, request, commitment, introduction, negotiation, update, question, other
-4. "commitments": Array of specific promises or action items mentioned (empty array if none)
-5. "topics": Array of 2-5 key topics or themes discussed (e.g., ["fundraising", "product demo", "pricing"])
+Extract the following and return ONLY valid JSON:
 
-Return ONLY this JSON structure:
+1. "summary": One sentence of what was discussed or decided (max 150 chars)
+2. "sentiment": Float -1.0 (very negative) to 1.0 (very positive). 0 = neutral.
+3. "intent": ONE of: follow_up, request, commitment, introduction, negotiation, update, question, other
+4. "interaction_type": ONE of: email_reply, email_one_way, commitment, other
+5. "commitments": Array of ALL promises made — include BOTH firm AND soft commitments.
+   Each item: {{"text": "what was promised", "owner": "them or us", "due_signal": "date mention or null", "confidence": 0.0-1.0}}
+   - Firm commitments (clear explicit promise): confidence 0.8-1.0
+   - Soft commitments ("maybe", "I'll try", "we should", "sometime next week"): confidence 0.3-0.6
+   - Include ALL commitments regardless of confidence — do not filter any out
+6. "topics": Array of 2-5 key business topics (e.g. ["Series A", "product demo", "retention data"])
+7. "engagement_level": "high" (detailed/thoughtful response), "medium" (standard reply), "low" (one-liner)
+
+IMPORTANT: If the thread context above contains a commitment (e.g. "send retention data", "intro to VP"),
+include it in the commitments array even if the current message doesn't repeat it.
+
+Return ONLY this JSON — no markdown, no explanation:
 {{
   "summary": "...",
   "sentiment": 0.0,
   "intent": "...",
-  "commitments": [],
-  "topics": []
+  "interaction_type": "email_reply",
+  "commitments": [{{"text": "...", "owner": "them", "due_signal": null, "confidence": 0.9}}],
+  "topics": [],
+  "engagement_level": "medium"
 }}
 """
 
@@ -66,18 +154,17 @@ Return ONLY this JSON structure:
 
         while retry_count < max_retries:
             try:
-                # Use Groq API (OpenAI-compatible)
                 response = groq_client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are a precise data extraction assistant. Always return valid JSON only.",
+                            "content": "You are a precise data extraction assistant. Always return valid JSON only. No markdown.",
                         },
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.1,
-                    max_tokens=500,
+                    max_tokens=600,
                 )
 
                 result_text = response.choices[0].message.content.strip()
@@ -90,29 +177,40 @@ Return ONLY this JSON structure:
 
                 result = json.loads(result_text)
 
-                # Validate and clean up the result
+                # Separate hard and soft commitments
+                all_commitments = result.get("commitments", [])
+                cleaned_commitments = []
+                for c in all_commitments[:15]:
+                    conf = float(c.get("confidence", 0.5))
+                    cleaned_commitments.append({
+                        "text": str(c.get("text", ""))[:200],
+                        "owner": str(c.get("owner", "them")),
+                        "due_signal": c.get("due_signal"),
+                        "confidence": round(max(0.0, min(1.0, conf)), 2),
+                        # Tag soft commitments so downstream can distinguish
+                        "is_soft": conf < 0.7,
+                    })
+
                 return {
                     "summary": str(result.get("summary", ""))[:200],
                     "sentiment": float(
                         max(-1.0, min(1.0, result.get("sentiment", 0.0)))
                     ),
                     "intent": str(result.get("intent", "other")),
-                    "commitments": [
-                        str(c)[:200] for c in result.get("commitments", [])[:10]
-                    ],
+                    "interaction_type": str(
+                        result.get("interaction_type", "email_one_way")
+                    ),
+                    "engagement_level": str(result.get("engagement_level", "medium")),
+                    "commitments": cleaned_commitments,
                     "topics": [str(t)[:50] for t in result.get("topics", [])[:5]],
                 }
 
             except Exception as api_error:
                 error_str = str(api_error)
 
-                # Check if it's a rate limit error
                 if "429" in error_str or "rate_limit" in error_str.lower():
                     retry_count += 1
-
-                    wait_time = RATE_LIMIT_DELAY * (
-                        retry_count + 1
-                    )  # Exponential backoff
+                    wait_time = RATE_LIMIT_DELAY * (retry_count + 1)
 
                     if retry_count < max_retries:
                         print(
@@ -121,13 +219,11 @@ Return ONLY this JSON structure:
                         time.sleep(wait_time)
                     else:
                         print(f"❌ Max retries reached for rate limit")
-                        # Try Gemini fallback if available
                         if HAS_GEMINI_FALLBACK:
                             print("🔄 Falling back to Gemini...")
                             return _extract_with_gemini(prompt)
                         raise
                 else:
-                    # Not a rate limit error, try Gemini fallback
                     if HAS_GEMINI_FALLBACK and retry_count == 0:
                         print(f"⚠️ Groq error: {error_str[:100]}, trying Gemini...")
                         return _extract_with_gemini(prompt)
@@ -135,7 +231,6 @@ Return ONLY this JSON structure:
 
     except Exception as e:
         print(f"⚠️ LLM extraction failed, using body fallback: {e}")
-        # Use email body (first 200 chars) as summary instead of just subject
         fallback_summary = ""
         if body and body.strip():
             fallback_summary = body.strip()[:200]
@@ -148,6 +243,8 @@ Return ONLY this JSON structure:
             "summary": fallback_summary,
             "sentiment": 0.0,
             "intent": "other",
+            "interaction_type": "email_one_way" if not is_reply else "email_reply",
+            "engagement_level": "low",
             "commitments": [],
             "topics": [],
         }
@@ -162,7 +259,6 @@ def _extract_with_gemini(prompt: str) -> Dict:
         response = gemini_model.generate_content(prompt)
         result_text = response.text.strip()
 
-        # Remove markdown code blocks if present
         if result_text.startswith("```"):
             result_text = result_text.split("```")[1]
             if result_text.startswith("json"):
@@ -170,11 +266,25 @@ def _extract_with_gemini(prompt: str) -> Dict:
 
         result = json.loads(result_text)
 
+        all_commitments = result.get("commitments", [])
+        cleaned_commitments = []
+        for c in all_commitments[:15]:
+            conf = float(c.get("confidence", 0.5))
+            cleaned_commitments.append({
+                "text": str(c.get("text", ""))[:200],
+                "owner": str(c.get("owner", "them")),
+                "due_signal": c.get("due_signal"),
+                "confidence": round(max(0.0, min(1.0, conf)), 2),
+                "is_soft": conf < 0.7,
+            })
+
         return {
             "summary": str(result.get("summary", ""))[:200],
             "sentiment": float(max(-1.0, min(1.0, result.get("sentiment", 0.0)))),
             "intent": str(result.get("intent", "other")),
-            "commitments": [str(c)[:200] for c in result.get("commitments", [])[:10]],
+            "interaction_type": str(result.get("interaction_type", "email_one_way")),
+            "engagement_level": str(result.get("engagement_level", "medium")),
+            "commitments": cleaned_commitments,
             "topics": [str(t)[:50] for t in result.get("topics", [])[:5]],
         }
     except Exception as e:
@@ -203,7 +313,6 @@ Return only the number.
         )
         return float(response.choices[0].message.content.strip())
     except:
-        # Fallback to Gemini
         if HAS_GEMINI_FALLBACK:
             try:
                 response = gemini_model.generate_content(prompt)

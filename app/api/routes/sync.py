@@ -20,7 +20,7 @@ def sync_task(org_id: str):
     """Background task to sync Gmail."""
     try:
         print(f"Starting Gmail sync for org_id: {org_id}")
-        run_gmail_sync(org_id, max_emails=50)
+        run_gmail_sync(org_id, max_emails=100)  # 100 emails max as requested
         print(f"Gmail sync completed for org_id: {org_id}")
     except Exception as e:
         print(f"Error during sync: {e}")

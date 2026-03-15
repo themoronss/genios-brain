@@ -9,6 +9,7 @@ from app.redis_client import redis_client
 import json
 import hashlib
 import logging
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,43 @@ def get_cache_key(org_id: str, entity_name: str) -> str:
     return f"context:{hashlib.md5(key_data.encode()).hexdigest()}"
 
 
+def log_context_call(
+    db: Session,
+    org_id: str,
+    entity_name: str,
+    context_bundle: dict,
+    cache_hit: bool = False,
+):
+    """
+    Fix C: Log every context API call to context_calls table.
+    Non-blocking — failures are silently swallowed so they never affect the response.
+    """
+    try:
+        entity = context_bundle.get("entity") or {}
+        db.execute(
+            text(
+                """
+                INSERT INTO context_calls
+                    (org_id, entity_name, relationship_stage, action_recommendation,
+                     confidence, cache_hit, called_at)
+                VALUES
+                    (:org_id, :entity_name, :stage, :action, :confidence, :cache_hit, NOW())
+                """
+            ),
+            {
+                "org_id": org_id,
+                "entity_name": entity_name[:200],
+                "stage": entity.get("relationship_stage"),
+                "action": context_bundle.get("action_recommendation"),
+                "confidence": context_bundle.get("confidence"),
+                "cache_hit": cache_hit,
+            },
+        )
+        db.commit()
+    except Exception as e:
+        logger.warning(f"Context call logging failed (non-critical): {e}")
+
+
 security = HTTPBearer()
 
 def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -118,6 +156,12 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
             cached = redis_client.get(cache_key)
             if cached:
                 logger.info(f"Cache hit for {request.entity}")
+                # Log cache hit (Fix C)
+                log_context_call(
+                    db, org_id, request.entity,
+                    json.loads(cached) if isinstance(cached, (str, bytes)) else {},
+                    cache_hit=True,
+                )
                 return json.loads(cached)
         except Exception as redis_error:
             # Continue if Redis fails (don't block on cache errors)
@@ -142,16 +186,18 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
                 detail=f"Contact '{request.entity}' not found in your network.",
             )
 
+        # Log the call (Fix C)
+        log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False)
+
         # Cache for 60 seconds
         try:
             redis_client.setex(
                 cache_key,
-                60,  # 60 second TTL as per MVP spec
+                60,
                 json.dumps(context_bundle, default=str),
             )
             logger.info(f"Cached context for {request.entity}")
         except Exception as redis_error:
-            # Continue if Redis fails
             logger.warning(f"Redis cache write failed: {redis_error}")
 
         return context_bundle
