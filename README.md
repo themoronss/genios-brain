@@ -321,7 +321,7 @@ For issues or questions:
 
 ---
 
-## Roadmap
+## Roadmap  v1
 
 **Prototype (Now):** Intelligence proof
 **MVP:** Hard enforcement, multi-agent support
