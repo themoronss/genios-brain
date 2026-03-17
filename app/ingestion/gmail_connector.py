@@ -57,47 +57,90 @@ def build_gmail_service(access_token, refresh_token=None):
     return service
 
 
-def fetch_emails(service, max_results=500, label_id="INBOX"):
+def fetch_emails(
+    service,
+    max_results=500,
+    label_id=None,
+    query: str = "(in:inbox OR in:sent) -label:promotions -label:social -from:noreply -from:no-reply",
+    page_token: str = None,
+):
     """
-    Fetch emails from Gmail, supporting pagination for large mailboxes.
+    Fetch emails from Gmail using a query string (q parameter) for server-side filtering.
+    Returns a tuple of (messages, next_page_token) to support incremental pagination.
 
     Args:
         service: Gmail API service
-        max_results: Maximum number of emails to fetch (default: 500)
-        label_id: Gmail label to fetch from (default: INBOX, use SENT for sent emails)
+        max_results: Maximum number of emails to return in this call (default: 500)
+        label_id: DEPRECATED — kept for backwards compatibility; use `query` instead.
+                  If provided, it's appended to the query string as an 'in:' clause.
+        query: Gmail search query string (server-side filter — much more efficient
+               than fetching then filtering in Python).
+        page_token: Pagination token from a previous call, to fetch the next page.
 
     Returns:
-        List of message dicts with 'id' and 'threadId'
+        Tuple: (list of message dicts with 'id' and 'threadId', next_page_token or None)
     """
-    messages = []
-    page_token = None
+    # Backwards compat: if old-style label_id is passed and no custom query was given,
+    # fold the label into the query rather than using the deprecated labelIds param.
+    effective_query = query
+    if label_id and label_id not in ("INBOX", "SENT"):
+        # For non-standard labels just append
+        effective_query = f"label:{label_id} {query}"
 
-    while len(messages) < max_results:
-        batch_size = min(100, max_results - len(messages))
+    request_kwargs = {
+        "userId": "me",
+        "maxResults": min(max_results, 500),
+        "q": effective_query,
+    }
+    if page_token:
+        request_kwargs["pageToken"] = page_token
 
-        request = (
-            service.users()
-            .messages()
-            .list(
-                userId="me",
-                maxResults=batch_size,
-                pageToken=page_token,
-                labelIds=label_id,
-            )
+    response = service.users().messages().list(**request_kwargs).execute()
+
+    messages = response.get("messages", [])
+    next_page_token = response.get("nextPageToken")
+
+    return messages, next_page_token
+
+
+def fetch_message_headers(service, message_id):
+    """
+    Fetch lightweight header-only metadata for a single message (no body download).
+    Returns From, To, Cc, Date, Subject — used for cheap pre-filtering before
+    deciding to fetch the full message body.
+
+    Args:
+        service: Gmail API service
+        message_id: Gmail message ID
+
+    Returns:
+        dict with keys: id, threadId, internalDate, from_raw, to_raw, cc_raw,
+                        subject, date_raw
+    """
+    msg = (
+        service.users()
+        .messages()
+        .get(
+            userId="me",
+            id=message_id,
+            format="metadata",
+            metadataHeaders=["From", "To", "Cc", "Date", "Subject"],
         )
+        .execute()
+    )
 
-        response = request.execute()
+    headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
 
-        batch_messages = response.get("messages", [])
-        messages.extend(batch_messages)
-
-        page_token = response.get("nextPageToken")
-
-        # Stop if no more pages
-        if not page_token:
-            break
-
-    return messages
+    return {
+        "id": msg["id"],
+        "threadId": msg.get("threadId", msg["id"]),
+        "internalDate": int(msg.get("internalDate", 0)),  # ms since epoch
+        "from_raw": headers.get("From", ""),
+        "to_raw": headers.get("To", ""),
+        "cc_raw": headers.get("Cc", ""),
+        "subject": headers.get("Subject", ""),
+        "date_raw": headers.get("Date", ""),
+    }
 
 
 def fetch_message_metadata(service, message_id):

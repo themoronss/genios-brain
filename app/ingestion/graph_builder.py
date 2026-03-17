@@ -256,17 +256,37 @@ def find_existing_contact_by_domain_and_name(db, org_id: str, email: str, name: 
     return None
 
 
-def upsert_contact(db, org_id, email, name):
+def upsert_contact(db, org_id, email, name, entity_type: str = None):
     """
     Create or update a contact record.
     Includes same-person fuzzy dedup: checks if a contact with the same
     first name exists at the same company domain before creating a new node.
+
+    Args:
+        db: Database session
+        org_id: Organization ID
+        email: Contact email address
+        name: Contact display name
+        entity_type: Optional role tag from LLM (investor, customer, vendor, etc.).
+                     Uses COALESCE — first non-null value wins; subsequent syncs
+                     won't overwrite it with null.
     """
     # ── FIX 9: Same-person dedup check ──
     existing_id = find_existing_contact_by_domain_and_name(db, org_id, email, name)
     if existing_id:
-        # Update the existing contact's email history (keep original email)
-        # but return existing ID to consolidate interactions
+        # If we now have a role, update it (COALESCE ensures we don't blank out
+        # an existing tag if this call has entity_type=None)
+        if entity_type:
+            db.execute(
+                text(
+                    """
+                    UPDATE contacts
+                    SET entity_type = COALESCE(:entity_type, entity_type)
+                    WHERE id = :contact_id
+                    """
+                ),
+                {"entity_type": entity_type, "contact_id": existing_id},
+            )
         return existing_id
 
     contact_id = str(uuid4())
@@ -282,7 +302,8 @@ def upsert_contact(db, org_id, email, name):
             email,
             name,
             company,
-            company_domain
+            company_domain,
+            entity_type
         )
         VALUES (
             :id,
@@ -290,13 +311,15 @@ def upsert_contact(db, org_id, email, name):
             :email,
             :name,
             :company,
-            :domain
+            :domain,
+            :entity_type
         )
         ON CONFLICT (org_id, email)
         DO UPDATE SET
             name = EXCLUDED.name,
             company = COALESCE(EXCLUDED.company, contacts.company),
-            company_domain = COALESCE(EXCLUDED.company_domain, contacts.company_domain)
+            company_domain = COALESCE(EXCLUDED.company_domain, contacts.company_domain),
+            entity_type = COALESCE(EXCLUDED.entity_type, contacts.entity_type)
         """
         ),
         {
@@ -306,6 +329,7 @@ def upsert_contact(db, org_id, email, name):
             "name": name,
             "company": company,
             "domain": domain,
+            "entity_type": entity_type,
         },
     )
 
@@ -338,6 +362,7 @@ def create_interaction(
     interaction_type="email_one_way",
     engagement_level="medium",
     reply_time_hours=None,
+    account_email=None,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
@@ -371,7 +396,8 @@ def create_interaction(
             interaction_type,
             reply_time_hours,
             weight_score,
-            topics
+            topics,
+            account_email
         )
         VALUES (
             :id,
@@ -387,15 +413,17 @@ def create_interaction(
             :interaction_type,
             :reply_time_hours,
             :weight_score,
-            :topics
+            :topics,
+            :account_email
         )
-        ON CONFLICT (gmail_message_id)
+        ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
             sentiment = EXCLUDED.sentiment,
             intent = EXCLUDED.intent,
             interaction_type = EXCLUDED.interaction_type,
             weight_score = EXCLUDED.weight_score,
-            topics = EXCLUDED.topics
+            topics = EXCLUDED.topics,
+            account_email = EXCLUDED.account_email
         """
         ),
         {
@@ -413,6 +441,7 @@ def create_interaction(
             "reply_time_hours": reply_time_hours,
             "weight_score": weight_score,
             "topics": topics,
+            "account_email": account_email,
         },
     )
 

@@ -15,6 +15,7 @@ export interface Contact {
   last_interaction_at: string;
   interaction_count: number;
   sentiment_avg: number;
+  entity_type: string;  // investor, customer, vendor, lead, etc.
 }
 
 export interface GraphNode {
@@ -26,17 +27,20 @@ export interface GraphNode {
   sentiment_avg: number;
   interaction_count: number;
   email: string;
+  entity_type: string;  // investor, customer, vendor, lead, other, self
 }
 
 export interface GraphLink {
   source: string;
   target: string;
   strength: number;
+  link_type?: 'primary' | 'cc_shared';  // primary = you↔contact, cc_shared = contact↔contact
 }
 
 export interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
+  entity_type_counts: Record<string, number>;  // {investor: 3, customer: 12, ...}
 }
 
 export interface EntityDetails {

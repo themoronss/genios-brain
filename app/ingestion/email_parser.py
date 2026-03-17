@@ -1,10 +1,16 @@
-from email.utils import parseaddr, parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime, getaddresses
 import base64
 import re
 
 
 def parse_headers(payload):
+    """
+    Parse Gmail message headers into a structured dict.
 
+    Returns:
+        dict with keys: from_email, from_name, to_email, to_name, subject,
+                        date, cc_list (list of {name, email} dicts)
+    """
     headers = payload.get("headers", [])
 
     data = {
@@ -14,6 +20,8 @@ def parse_headers(payload):
         "to_name": None,
         "subject": None,
         "date": None,
+        "cc_list": [],  # Update 3: many-to-many CC support
+        "has_unsubscribe": False,  # List-Unsubscribe header detection
     }
 
     for h in headers:
@@ -34,8 +42,26 @@ def parse_headers(payload):
         if h["name"] == "Date":
             try:
                 data["date"] = parsedate_to_datetime(h["value"])
-            except:
+            except Exception:
                 data["date"] = None
+
+        # Detect List-Unsubscribe header (marketing/automated signal)
+        if h["name"].lower() == "list-unsubscribe":
+            data["has_unsubscribe"] = True
+
+        # Update 3: Parse CC into a list of {name, email} dicts
+        # getaddresses() handles comma-separated multi-address strings correctly
+        if h["name"] == "Cc" and h["value"].strip():
+            raw_pairs = getaddresses([h["value"]])
+            cc_list = []
+            for name, email_addr in raw_pairs:
+                email_addr = email_addr.strip().lower()
+                if email_addr and "@" in email_addr:
+                    cc_list.append({
+                        "name": name.strip() or email_addr,
+                        "email": email_addr,
+                    })
+            data["cc_list"] = cc_list
 
     return data
 

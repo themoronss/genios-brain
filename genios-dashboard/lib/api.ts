@@ -47,8 +47,8 @@ export const api = {
       apiCall<ConnectionStatus>(`/api/org/${orgId}/status`, {
         headers: { Authorization: `Bearer ${token}` },
       }),
-    getGraph: (orgId: string, token: string) =>
-      apiCall<GraphData>(`/api/org/${orgId}/graph`, {
+    getGraph: (orgId: string, token: string, queryString: string = '') =>
+      apiCall<GraphData>(`/api/org/${orgId}/graph${queryString}`, {
         headers: { Authorization: `Bearer ${token}` },
       }),
     getContacts: (orgId: string, token: string, limit = 100, offset = 0) =>
@@ -61,6 +61,11 @@ export const api = {
       }),
     regenerateApiKey: (orgId: string, token: string) =>
       apiCall<{api_key: string}>(`/api/org/${orgId}/apikey/regenerate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    resetData: (orgId: string, token: string) =>
+      apiCall(`/api/org/${orgId}/reset`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       }),
@@ -97,6 +102,21 @@ export const api = {
       }),
     getSyncStatus: (orgId: string, token: string) =>
       apiCall(`/api/org/${orgId}/sync/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    // Update 4: Multi-account endpoints
+    listAccounts: (orgId: string, token: string) =>
+      apiCall<{ accounts: any[]; count: number }>(`/api/org/${orgId}/gmail/accounts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    disconnectAccount: (orgId: string, accountEmail: string, token: string) =>
+      apiCall(`/api/org/${orgId}/gmail/accounts/${encodeURIComponent(accountEmail)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    syncAccount: (orgId: string, accountEmail: string, token: string) =>
+      apiCall(`/api/org/${orgId}/gmail/accounts/${encodeURIComponent(accountEmail)}/sync`, {
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       }),
   },

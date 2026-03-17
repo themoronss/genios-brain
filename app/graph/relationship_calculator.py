@@ -312,6 +312,39 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         ]
     )
 
+    # ── Human score calculation ─────────────────────────────────────────────
+    # Score 0.0 to 1.0 based on signals — used for graph node sizing, NOT filtering
+    human_signals = db.execute(
+        text(
+            """
+            SELECT
+                BOOL_OR(direction = 'outbound') AS has_outbound,
+                BOOL_OR(has_unsubscribe = TRUE) AS any_unsubscribe,
+                COUNT(*) AS total_interactions
+            FROM interactions
+            WHERE contact_id = :contact_id
+            """
+        ),
+        {"contact_id": contact_id},
+    ).fetchone()
+
+    human_score = 0.0
+    if human_signals:
+        # +0.3 if no unsubscribe headers found (not marketing)
+        if not human_signals[1]:  # any_unsubscribe is False
+            human_score += 0.3
+        # +0.2 if you replied to them (two-way conversation)
+        if human_signals[0]:  # has_outbound
+            human_score += 0.2
+        # +0.2 if multiple interactions (sustained relationship)
+        if human_signals[2] and human_signals[2] >= 2:
+            human_score += 0.2
+        # +0.3 base — will be overridden by LLM is_human_email in future recalcs
+        # For now, give benefit of doubt
+        human_score += 0.3
+
+    human_score = round(min(1.0, human_score), 2)
+
     # Update contact with all new fields
     db.execute(
         text(
@@ -327,6 +360,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 interaction_count = :interaction_count,
                 topics_aggregate = :topics,
                 sentiment_history = :sentiment_history,
+                human_score = :human_score,
                 metadata = jsonb_set(
                     COALESCE(metadata, '{}'::jsonb),
                     '{last_recalc_at}',
@@ -347,6 +381,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
             "interaction_count": interaction_count,
             "topics": all_topics,
             "sentiment_history": sentiment_history,
+            "human_score": human_score,
         },
     )
     db.commit()
@@ -359,6 +394,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         "confidence": confidence,
         "interaction_count": interaction_count,
         "last_interaction": last_interaction,
+        "human_score": human_score,
     }
 
 

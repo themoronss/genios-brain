@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import secrets
 
 from app.database import SessionLocal
-from app.ingestion.gmail_connector import create_oauth_flow
+from app.ingestion.gmail_connector import create_oauth_flow, build_gmail_service, get_user_email
 from app.config import GOOGLE_REDIRECT_URI
 from app.tasks.gmail_sync import run_gmail_sync
 from app.redis_client import redis_client
@@ -117,6 +117,11 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     refresh_token = credentials.refresh_token
     expiry = credentials.expiry
 
+    # -- Update 4: Identify which Gmail account this token belongs to --
+    # Build a temporary service with the fresh credentials to call the profile API.
+    gmail_service = build_gmail_service(access_token, refresh_token)
+    connected_email = get_user_email(gmail_service)
+
     db = SessionLocal()
 
     db.execute(
@@ -124,6 +129,7 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
             """
         INSERT INTO oauth_tokens (
             org_id,
+            account_email,
             access_token,
             refresh_token,
             token_expiry,
@@ -131,12 +137,13 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
         )
         VALUES (
             :org_id,
+            :account_email,
             :access_token,
             :refresh_token,
             :expiry,
             :now
         )
-        ON CONFLICT (org_id)
+        ON CONFLICT (org_id, account_email)
         DO UPDATE SET
             access_token = EXCLUDED.access_token,
             refresh_token = EXCLUDED.refresh_token,
@@ -146,6 +153,7 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
         ),
         {
             "org_id": org_id,
+            "account_email": connected_email,
             "access_token": access_token,
             "refresh_token": refresh_token,
             "expiry": expiry,
@@ -156,8 +164,9 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     db.commit()
     db.close()
 
-    # Trigger automatic sync in background
-    background_tasks.add_task(run_gmail_sync, org_id, 100)  # 50 inbox + 50 sent
+    # Trigger automatic sync in background for this specific account
+    from app.config import SYNC_MAX_EMAILS
+    background_tasks.add_task(run_gmail_sync, org_id, SYNC_MAX_EMAILS, connected_email)
 
     import os
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")

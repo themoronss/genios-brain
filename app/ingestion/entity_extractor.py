@@ -18,7 +18,7 @@ try:
     genai.configure(api_key=os.getenv("GEMINI_API_KEY", "YOUR_KEY"))
     gemini_model = genai.GenerativeModel("gemini-2.5-flash")
     HAS_GEMINI_FALLBACK = True
-except:
+except Exception:
     HAS_GEMINI_FALLBACK = False
 
 # Rate limiting settings for Groq
@@ -72,6 +72,12 @@ def sanitize_email_body(text: str) -> str:
     return sanitized
 
 
+# ── Update 2: Valid contact role values ─────────────────────────────────
+VALID_CONTACT_ROLES = {
+    "investor", "customer", "vendor", "partner", "candidate",
+    "team", "lead", "advisor", "media", "other",
+}
+
 
 def extract_email_intelligence(
     subject: str,
@@ -94,7 +100,7 @@ def extract_email_intelligence(
 
     Returns:
         Dict with: sentiment, intent, summary, commitments (hard + soft), topics,
-                   interaction_type, engagement_level
+                   interaction_type, engagement_level, contact_role
     """
 
     # ── Fix D: Sanitize before passing to LLM ──
@@ -132,6 +138,11 @@ Extract the following and return ONLY valid JSON:
    - Include ALL commitments regardless of confidence — do not filter any out
 6. "topics": Array of 2-5 key business topics (e.g. ["Series A", "product demo", "retention data"])
 7. "engagement_level": "high" (detailed/thoughtful response), "medium" (standard reply), "low" (one-liner)
+8. "contact_role": ONE of: investor, customer, vendor, partner, candidate, team, lead, advisor, media, other
+   — Based on the conversation context, classify the sender's business relationship to us.
+9. "is_human_email": true if sent by a real person, false if automated/marketing/transactional/notification.
+   — A real person writes with personal tone, context, and expects a reply.
+   — Automated = newsletters, alerts, receipts, job notifications, bank alerts, promotional offers.
 
 IMPORTANT: If the thread context above contains a commitment (e.g. "send retention data", "intro to VP"),
 include it in the commitments array even if the current message doesn't repeat it.
@@ -144,7 +155,9 @@ Return ONLY this JSON — no markdown, no explanation:
   "interaction_type": "email_reply",
   "commitments": [{{"text": "...", "owner": "them", "due_signal": null, "confidence": 0.9}}],
   "topics": [],
-  "engagement_level": "medium"
+  "engagement_level": "medium",
+  "contact_role": "other",
+  "is_human_email": true
 }}
 """
 
@@ -164,7 +177,7 @@ Return ONLY this JSON — no markdown, no explanation:
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.1,
-                    max_tokens=600,
+                    max_tokens=700,
                 )
 
                 result_text = response.choices[0].message.content.strip()
@@ -191,6 +204,10 @@ Return ONLY this JSON — no markdown, no explanation:
                         "is_soft": conf < 0.7,
                     })
 
+                # Update 2: Validate and normalize contact_role
+                raw_role = str(result.get("contact_role", "other")).lower().strip()
+                contact_role = raw_role if raw_role in VALID_CONTACT_ROLES else "other"
+
                 return {
                     "summary": str(result.get("summary", ""))[:200],
                     "sentiment": float(
@@ -203,6 +220,8 @@ Return ONLY this JSON — no markdown, no explanation:
                     "engagement_level": str(result.get("engagement_level", "medium")),
                     "commitments": cleaned_commitments,
                     "topics": [str(t)[:50] for t in result.get("topics", [])[:5]],
+                    "contact_role": contact_role,
+                    "is_human_email": bool(result.get("is_human_email", True)),
                 }
 
             except Exception as api_error:
@@ -247,6 +266,8 @@ Return ONLY this JSON — no markdown, no explanation:
             "engagement_level": "low",
             "commitments": [],
             "topics": [],
+            "contact_role": "other",
+            "is_human_email": True,  # assume human on fallback
         }
 
 
@@ -278,6 +299,10 @@ def _extract_with_gemini(prompt: str) -> Dict:
                 "is_soft": conf < 0.7,
             })
 
+        # Update 2: Validate contact_role from Gemini response too
+        raw_role = str(result.get("contact_role", "other")).lower().strip()
+        contact_role = raw_role if raw_role in VALID_CONTACT_ROLES else "other"
+
         return {
             "summary": str(result.get("summary", ""))[:200],
             "sentiment": float(max(-1.0, min(1.0, result.get("sentiment", 0.0)))),
@@ -286,6 +311,8 @@ def _extract_with_gemini(prompt: str) -> Dict:
             "engagement_level": str(result.get("engagement_level", "medium")),
             "commitments": cleaned_commitments,
             "topics": [str(t)[:50] for t in result.get("topics", [])[:5]],
+            "contact_role": contact_role,
+            "is_human_email": bool(result.get("is_human_email", True)),
         }
     except Exception as e:
         print(f"❌ Gemini fallback also failed: {e}")
@@ -312,11 +339,11 @@ Return only the number.
             max_tokens=10,
         )
         return float(response.choices[0].message.content.strip())
-    except:
+    except Exception:
         if HAS_GEMINI_FALLBACK:
             try:
                 response = gemini_model.generate_content(prompt)
                 return float(response.text.strip())
-            except:
+            except Exception:
                 return 0.0
         return 0.0

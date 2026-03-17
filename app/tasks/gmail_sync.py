@@ -1,11 +1,12 @@
 from sqlalchemy import text
 import time
+from email.utils import parseaddr
 
 from app.database import SessionLocal
 from app.ingestion.gmail_connector import (
     build_gmail_service,
     fetch_emails,
-    fetch_message_metadata,
+    fetch_message_headers,
     fetch_full_message,
     get_user_email,
 )
@@ -96,8 +97,12 @@ def is_internal_email(contact_email: str, user_email: str) -> bool:
     return contact_domain == user_domain
 
 
-def update_sync_progress(db, org_id: str, **kwargs):
-    """Update sync progress in oauth_tokens table."""
+def update_sync_progress(db, org_id: str, account_email: str = None, **kwargs):
+    """
+    Update sync progress in oauth_tokens table.
+    If account_email is provided, scopes the update to that specific account.
+    Otherwise updates the first/only token for the org (legacy behaviour).
+    """
     set_clauses = []
     params = {"org_id": org_id}
     for key, value in kwargs.items():
@@ -105,9 +110,16 @@ def update_sync_progress(db, org_id: str, **kwargs):
         params[key] = value
 
     if set_clauses:
-        query = (
-            f"UPDATE oauth_tokens SET {', '.join(set_clauses)} WHERE org_id = :org_id"
-        )
+        if account_email:
+            params["account_email"] = account_email
+            query = (
+                f"UPDATE oauth_tokens SET {', '.join(set_clauses)} "
+                f"WHERE org_id = :org_id AND account_email = :account_email"
+            )
+        else:
+            query = (
+                f"UPDATE oauth_tokens SET {', '.join(set_clauses)} WHERE org_id = :org_id"
+            )
         db.execute(text(query), params)
         db.commit()
 
@@ -145,22 +157,192 @@ def build_thread_context(thread_messages: list) -> str:
     return "\n\n".join(context_parts)
 
 
-def run_gmail_sync(org_id, max_emails=100):
+# ── Update 1: Collect exactly N valid emails ──────────────────────────────────
+
+def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list:
+    """
+    Incrementally fetch email IDs using Gmail-side q-filter and lightweight header
+    checks until exactly `target` valid human-to-human emails are collected.
+
+    Strategy:
+    1. Fetch a page of up to 50 IDs using the q-param (Gmail-side filter removes
+       promotions, social, and obvious no-reply senders before any data is downloaded).
+    2. For each ID, call fetch_message_headers() — cheap (no body download) — to get
+       From/To headers.
+    3. Run is_automated_email() and is_internal_email() on the headers.
+    4. If the email passes both checks, it is added to the valid list.
+    5. Repeat with the next page token until the list reaches `target` or Gmail runs dry.
+
+    Returns:
+        list of dicts, each with at minimum: id, threadId, internalDate
+    """
+    valid_messages = []
+    page_token = None
+    page_count = 0
+    max_pages = 40  # safety valve — stops after 2000 candidates at 50/page
+
+    print(f"🔍 Collecting {target} valid emails via incremental header-check loop...")
+
+    while len(valid_messages) < target and page_count < max_pages:
+        # Fetch a page of up to 50 IDs
+        batch_ids, page_token = fetch_emails(
+            service,
+            max_results=50,
+            query=(
+                "(in:inbox OR in:sent) "
+                "-label:promotions -label:social"
+            ),
+            page_token=page_token,
+        )
+        page_count += 1
+
+        if not batch_ids:
+            print(f"  Gmail returned no more messages after page {page_count}.")
+            break
+
+        # Lightweight header check for each ID in the batch
+        for msg_stub in batch_ids:
+            if len(valid_messages) >= target:
+                break
+
+            try:
+                headers = fetch_message_headers(service, msg_stub["id"])
+            except Exception as e:
+                print(f"  ⚠️ Could not fetch headers for {msg_stub['id']}: {e}")
+                continue
+
+            from_raw = headers.get("from_raw", "")
+            to_raw = headers.get("to_raw", "")
+
+            # Determine which side is the contact
+            from_name, from_email = parseaddr(from_raw)
+            _, to_email = parseaddr(to_raw)
+
+            if from_email and from_email.lower() == user_email.lower():
+                contact_email = to_email
+                contact_name = ""
+            else:
+                contact_email = from_email
+                contact_name = from_name
+
+            contact_email = (contact_email or "").strip().lower()
+
+            if not contact_email:
+                continue
+
+            valid_messages.append({
+                "id": headers["id"],
+                "threadId": headers["threadId"],
+                "internalDate": headers["internalDate"],
+            })
+
+        print(
+            f"  Page {page_count}: batch={len(batch_ids)}, "
+            f"valid so far={len(valid_messages)}/{target}"
+        )
+
+        if not page_token:
+            print("  No more pages available in Gmail.")
+            break
+
+    print(f"✅ Collected {len(valid_messages)} valid email IDs "
+          f"(scanned {page_count} pages)")
+    return valid_messages
+
+
+# ── Main sync function ────────────────────────────────────────────────────────
+
+def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
     """
     Sync Gmail emails for an organization.
     Thread-aware: groups messages by threadId and builds conversation context
     so the LLM can extract commitments buried in earlier messages.
 
+    Update 1: Now collects exactly max_emails valid (non-automated, non-internal)
+              emails using an incremental Gmail-side filter loop before any full
+              message downloads happen.
+    Update 2: Passes contact_role extracted by LLM into upsert_contact() so
+              the contacts table gets populated with Investor/Customer/etc. tags.
+    Update 3: After processing the primary contact, also creates interaction rows
+              for CC participants, making the graph truly many-to-many.
+    Update 4: Accepts optional account_email to sync one specific connected Gmail
+              account. If omitted, syncs all connected accounts for the org.
+
     Args:
         org_id: Organization ID
-        max_emails: Total emails to fetch
+        max_emails: Target number of valid emails to sync (default: 100)
+        account_email: Specific Gmail account to sync. If None, syncs all accounts.
     """
     db = SessionLocal()
 
+    try:
+        # ── Update 4: Resolve which token(s) to sync ──────────────────────────
+        if account_email:
+            tokens = db.execute(
+                text(
+                    """
+                    SELECT access_token, refresh_token, account_email
+                    FROM oauth_tokens
+                    WHERE org_id = :org_id AND account_email = :account_email
+                    """
+                ),
+                {"org_id": org_id, "account_email": account_email},
+            ).fetchall()
+        else:
+            # Try new multi-account schema first
+            tokens = db.execute(
+                text(
+                    """
+                    SELECT access_token, refresh_token,
+                           COALESCE(account_email, 'default') AS account_email
+                    FROM oauth_tokens
+                    WHERE org_id = :org_id
+                    """
+                ),
+                {"org_id": org_id},
+            ).fetchall()
+
+        if not tokens:
+            print("No Gmail token found")
+            update_sync_progress(
+                db, org_id, sync_status="error", sync_error="No Gmail token found"
+            )
+            db.close()
+            return
+
+        # ── Sync each connected account ───────────────────────────────────────
+        for token_row in tokens:
+            _sync_single_account(
+                db=db,
+                org_id=org_id,
+                access_token=token_row[0],
+                refresh_token=token_row[1],
+                account_identifier=token_row[2],
+                max_emails=max_emails,
+            )
+
+    except Exception as e:
+        print(f"❌ Sync failed with error: {e}")
+        update_sync_progress(
+            db,
+            org_id,
+            sync_status="error",
+            sync_error=str(e)[:500],
+        )
+
+    finally:
+        db.close()
+
+
+def _sync_single_account(db, org_id, access_token, refresh_token, account_identifier, max_emails):
+    """
+    Internal: run the full sync pipeline for one Gmail account token.
+    """
     # Mark sync as running
     update_sync_progress(
         db,
         org_id,
+        account_email=account_identifier,
         sync_status="running",
         sync_processed=0,
         sync_total=0,
@@ -169,122 +351,58 @@ def run_gmail_sync(org_id, max_emails=100):
     )
 
     try:
-        token = db.execute(
-            text(
-                """
-            SELECT access_token, refresh_token
-            FROM oauth_tokens
-            WHERE org_id = :org_id
-            """
-            ),
-            {"org_id": org_id},
-        ).fetchone()
-
-        if not token:
-            print("No Gmail token found")
-            update_sync_progress(
-                db, org_id, sync_status="error", sync_error="No Gmail token found"
-            )
-            db.close()
-            return
-
-        access_token = token[0]
-        refresh_token = token[1]
-
         service = build_gmail_service(access_token, refresh_token)
 
         # Get the user's own email address
         user_email = get_user_email(service)
-        print(f"Syncing emails for: {user_email}")
+        print(f"📧 Syncing emails for: {user_email} (account: {account_identifier})")
 
-        # ── Fetch from both labels — Gmail returns newest first, so fetching
-        # max_emails from each gives enough to find the top max_emails by date.
-        # e.g. max_emails=100 → fetch 100 INBOX + 100 SENT = 200 candidates
-        #      then sort all 200 by date → keep top 100 for LLM.
-        pool_size = max_emails  # 100 from each label
+        # ── Update 1: Collect exactly max_emails valid email IDs ──────────────
+        valid_ids = collect_valid_email_ids(service, user_email, target=max_emails)
 
-        print(f"📧 Fetching INBOX message IDs (newest {pool_size})...")
-        inbox_ids = fetch_emails(service, max_results=pool_size, label_id="INBOX")
-
-        print(f"📤 Fetching SENT message IDs (newest {pool_size})...")
-        sent_ids = fetch_emails(service, max_results=pool_size, label_id="SENT")
-
-        # Deduplicate by message ID (a message can appear in both INBOX and SENT)
-        seen_ids = set()
-        all_candidates = []
-        for m in inbox_ids + sent_ids:
-            if m["id"] not in seen_ids:
-                seen_ids.add(m["id"])
-                all_candidates.append(m)
-
-        print(
-            f"📬 {len(inbox_ids)} inbox + {len(sent_ids)} sent → "
-            f"{len(all_candidates)} unique. Fetching dates to pick top {max_emails}..."
-        )
-
-        # Get internalDate for each candidate via lightweight metadata call
-        dated_candidates = []
-        for i, m in enumerate(all_candidates, 1):
-            if i % 50 == 0:
-                print(f"  Fetching metadata {i}/{len(all_candidates)}...")
-            try:
-                meta = fetch_message_metadata(service, m["id"])
-                dated_candidates.append(meta)
-            except Exception as e:
-                print(f"⚠️ Could not fetch metadata for {m['id']}: {e}")
-                continue
-
-        # Sort by date descending (newest first) and cap at max_emails
-        dated_candidates.sort(key=lambda x: x["internalDate"], reverse=True)
-        messages = dated_candidates[:max_emails]
-
-        print(
-            f"📅 Selected {len(messages)} most recent emails by date "
-            f"(from a pool of {len(dated_candidates)})"
-        )
-
-        # Pre-filter: find which emails are actually new
-        new_messages = []
-        for m in messages:
+        # Pre-filter: skip emails already in the DB
+        new_ids = []
+        for m in valid_ids:
             existing = db.execute(
                 text(
                     """
                     SELECT id FROM interactions
                     WHERE gmail_message_id = :gmail_id
+                    LIMIT 1
                 """
                 ),
                 {"gmail_id": m["id"]},
             ).fetchone()
 
             if not existing:
-                new_messages.append(m)
+                new_ids.append(m)
 
-        skipped_existing = len(messages) - len(new_messages)
+        skipped_existing = len(valid_ids) - len(new_ids)
         print(
-            f"Skipping {skipped_existing} already synced emails. Processing {len(new_messages)} new emails."
+            f"Skipping {skipped_existing} already synced emails. "
+            f"Processing {len(new_ids)} new emails."
         )
 
-        update_sync_progress(db, org_id, sync_total=len(new_messages))
+        update_sync_progress(db, org_id, account_email=account_identifier, sync_total=len(new_ids))
 
-        # ── Step 1: Fetch full message data for all new messages ──────────────
-        # Group by threadId so we can pass thread context to LLM
+        # ── Step 1: Fetch full message data + group by thread ─────────────────
         print("🔍 Fetching full message details and grouping by thread...")
-        thread_groups: dict = defaultdict(list)  # threadId → list of parsed msgs
+        thread_groups: dict = defaultdict(list)
 
         processed_count = 0
         skipped_automated = 0
         skipped_internal = 0
 
-        all_parsed = []  # [(m_id, thread_id, parsed_msg)]
+        all_parsed = []  # list of parsed message dicts
 
-        for i, m in enumerate(new_messages, 1):
+        for i, m in enumerate(new_ids, 1):
             if i % 20 == 0:
-                print(f"Fetching message {i}/{len(new_messages)}...")
+                print(f"Fetching message {i}/{len(new_ids)}...")
             try:
                 msg = fetch_full_message(service, m["id"])
             except Exception as e:
                 print(f"⚠️ Could not fetch message {m['id']}: {e}")
-                update_sync_progress(db, org_id, sync_processed=i)
+                update_sync_progress(db, org_id, account_email=account_identifier, sync_processed=i)
                 continue
 
             payload = msg["payload"]
@@ -307,19 +425,9 @@ def run_gmail_sync(org_id, max_emails=100):
 
             if not contact_email:
                 skipped_automated += 1
-                update_sync_progress(db, org_id, sync_processed=i)
+                update_sync_progress(db, org_id, account_email=account_identifier, sync_processed=i)
                 continue
 
-            if is_automated_email(contact_email, contact_name):
-                skipped_automated += 1
-                update_sync_progress(db, org_id, sync_processed=i)
-                continue
-
-            # ── FIX 6: Skip internal team emails (same domain as user) ────────
-            if is_internal_email(contact_email, user_email):
-                skipped_internal += 1
-                update_sync_progress(db, org_id, sync_processed=i)
-                continue
 
             parsed_msg = {
                 "gmail_id": m["id"],
@@ -332,6 +440,8 @@ def run_gmail_sync(org_id, max_emails=100):
                 "date": parsed["date"],
                 "body": body_text,
                 "direction": direction,
+                # Update 3: carry CC list for many-to-many linking
+                "cc_list": parsed.get("cc_list", []),
             }
 
             thread_groups[thread_id].append(parsed_msg)
@@ -342,16 +452,15 @@ def run_gmail_sync(org_id, max_emails=100):
             f" ({skipped_automated} automated filtered, {skipped_internal} internal filtered)"
         )
 
-        # ── Step 2: Sort each thread by date ascending (oldest first) ─────────
+        # ── Step 2: Sort each thread by date ascending ────────────────────────
         for tid in thread_groups:
             thread_groups[tid].sort(
                 key=lambda x: x["date"] if x["date"] else datetime.min.replace(tzinfo=timezone.utc)
             )
 
-        # ── Step 3: Process messages — pass thread context to LLM ─────────────
+        # ── Step 3: LLM extraction with thread context ────────────────────────
         print("🧠 Running LLM extraction with thread context...")
 
-        # Build a lookup of thread_id → messages processed so far (for context)
         thread_processed: dict = defaultdict(list)
 
         for i, parsed_msg in enumerate(all_parsed, 1):
@@ -364,17 +473,14 @@ def run_gmail_sync(org_id, max_emails=100):
             subject = parsed_msg["subject"]
             body_text = parsed_msg["body"]
             direction = parsed_msg["direction"]
+            cc_list = parsed_msg.get("cc_list", [])
 
             # Build thread context from messages already processed in this thread
             thread_context = build_thread_context(thread_processed[thread_id])
 
             # Detect if this is a reply
             is_reply = bool(subject and ("re:" in subject.lower() or "fwd:" in subject.lower()))
-            # Also treat as reply if thread already has messages
             is_reply = is_reply or len(thread_processed[thread_id]) > 0
-
-            # Upsert contact
-            contact_id = upsert_contact(db, org_id, contact_email, contact_name)
 
             # Extract intelligence using LLM with thread context
             intelligence = extract_email_intelligence(
@@ -388,7 +494,13 @@ def run_gmail_sync(org_id, max_emails=100):
             # Rate limiting: Groq allows 30 requests/minute
             time.sleep(2)
 
-            # Create interaction with enhanced data
+            # ── Update 2: Pass contact_role into upsert_contact ──
+            contact_role = intelligence.get("contact_role")
+            contact_id = upsert_contact(
+                db, org_id, contact_email, contact_name, entity_type=contact_role
+            )
+
+            # Create the primary interaction row
             create_interaction(
                 db,
                 org_id,
@@ -405,7 +517,52 @@ def run_gmail_sync(org_id, max_emails=100):
                 interaction_type=intelligence.get("interaction_type", "email_one_way"),
                 engagement_level=intelligence.get("engagement_level", "medium"),
                 reply_time_hours=None,
+                account_email=user_email,
             )
+
+            # ── Update 3: Create interaction rows for CC participants ──────────
+            for cc_person in cc_list:
+                cc_email = cc_person.get("email", "").strip().lower()
+                cc_name = cc_person.get("name", cc_email)
+
+                if not cc_email:
+                    continue
+                # Skip user's own address in CC
+                if cc_email == user_email.lower():
+                    continue
+                if is_automated_email(cc_email, cc_name):
+                    continue
+                if is_internal_email(cc_email, user_email):
+                    continue
+
+                # Upsert CC contact (no LLM role for CC — use None to preserve existing tag)
+                cc_contact_id = upsert_contact(db, org_id, cc_email, cc_name, entity_type=None)
+
+                # Link the same email to this CC participant without re-running LLM
+                # direction is always "inbound" from the CC participants' perspective
+                try:
+                    create_interaction(
+                        db,
+                        org_id,
+                        cc_contact_id,
+                        parsed_msg["gmail_id"],  # same gmail_message_id
+                        subject,
+                        intelligence["summary"],  # reuse primary summary
+                        parsed_msg["date"],
+                        "cc",  # distinct direction for CC participants
+                        sentiment=intelligence["sentiment"],
+                        intent=intelligence["intent"],
+                        commitments=[],  # commitments tracked against primary contact only
+                        topics=intelligence.get("topics", []),
+                        interaction_type=intelligence.get("interaction_type", "email_one_way"),
+                        engagement_level=intelligence.get("engagement_level", "medium"),
+                        reply_time_hours=None,
+                        account_email=user_email,
+                    )
+                    print(f"  🔗 CC edge: {cc_email} ↔ gmail:{parsed_msg['gmail_id'][:8]}...")
+                except Exception as e:
+                    print(f"  ⚠️ Could not create CC interaction for {cc_email}: {e}")
+                    continue
 
             # Add to thread context for subsequent messages
             thread_processed[thread_id].append({
@@ -416,12 +573,12 @@ def run_gmail_sync(org_id, max_emails=100):
             })
 
             processed_count += 1
-            update_sync_progress(db, org_id, sync_processed=i)
+            update_sync_progress(db, org_id, account_email=account_identifier, sync_processed=i)
 
         db.commit()
 
         print(
-            f"Sync completed: {processed_count} new emails processed, "
+            f"✅ Sync completed: {processed_count} new emails processed, "
             f"{skipped_existing} already synced (skipped), "
             f"{skipped_automated} automated emails filtered, "
             f"{skipped_internal} internal emails filtered"
@@ -439,18 +596,17 @@ def run_gmail_sync(org_id, max_emails=100):
         update_sync_progress(
             db,
             org_id,
+            account_email=account_identifier,
             sync_status="completed",
             last_synced_at=datetime.now(timezone.utc),
         )
 
     except Exception as e:
-        print(f"❌ Sync failed with error: {e}")
+        print(f"❌ Sync failed for account {account_identifier}: {e}")
         update_sync_progress(
             db,
             org_id,
+            account_email=account_identifier,
             sync_status="error",
             sync_error=str(e)[:500],
         )
-
-    finally:
-        db.close()

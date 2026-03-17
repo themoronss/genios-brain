@@ -15,6 +15,21 @@ import { Button } from '@/components/ui/button';
 import { X, Copy, Check, Network, Search, Sparkles, RefreshCw } from 'lucide-react';
 import { formatDate, getStageColor } from '@/lib/utils';
 
+// Entity tag display config
+const ENTITY_TAG_CONFIG: Record<string, { label: string; color: string }> = {
+  all:       { label: 'All',       color: '#475569' },
+  investor:  { label: 'Investors', color: '#8b5cf6' },
+  customer:  { label: 'Customers', color: '#10b981' },
+  lead:      { label: 'Leads',     color: '#f97316' },
+  vendor:    { label: 'Vendors',   color: '#f59e0b' },
+  partner:   { label: 'Partners',  color: '#3b82f6' },
+  advisor:   { label: 'Advisors',  color: '#06b6d4' },
+  candidate: { label: 'Candidates',color: '#6366f1' },
+  media:     { label: 'Media',     color: '#ec4899' },
+  team:      { label: 'Team',      color: '#64748b' },
+  other:     { label: 'Other',     color: '#94a3b8' },
+};
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -22,7 +37,8 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [draftModalOpen, setDraftModalOpen] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [syncStarting, setSyncStarting] = useState(false); // bridge gap between click and first poll
+  const [syncStarting, setSyncStarting] = useState(false);
+  const [activeEntityFilter, setActiveEntityFilter] = useState<string>('all');
   const prevSyncStatus = useRef<string | undefined>(undefined);
 
   const orgId = (session?.user as any)?.org_id;
@@ -33,11 +49,8 @@ export default function DashboardPage() {
     queryFn: () => api.org.getStatus(orgId, token),
     enabled: !!orgId && !!token,
     refetchInterval: (query) => {
-      // Poll every 3 seconds while syncing — use query.state.data to avoid circular ref
       const data = query.state.data as ConnectionStatus | undefined;
-      if (data?.sync_status === 'running') {
-        return 3000;
-      }
+      if (data?.sync_status === 'running') return 3000;
       return false;
     },
   });
@@ -50,19 +63,21 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
+  // Fetch graph data — re-fetches when entity filter changes
   const { data: graphData, isLoading: graphLoading, refetch: refetchGraph } = useQuery<GraphData>({
-    queryKey: ['graph-data', orgId],
-    queryFn: () => api.org.getGraph(orgId, token),
+    queryKey: ['graph-data', orgId, activeEntityFilter],
+    queryFn: () => {
+      const filterParam = activeEntityFilter !== 'all' ? `?entity_type=${activeEntityFilter}` : '';
+      return api.org.getGraph(orgId, token, filterParam);
+    },
     enabled: !!orgId && !!token && !!status?.gmail_connected,
   });
 
-  // Manual sync mutation
   const syncMutation = useMutation({
     mutationFn: () => api.gmail.triggerSync(orgId, token),
     onSuccess: () => {
       setSyncStarting(true);
       setSyncMessage('🔄 Sync started...');
-      // Refetch immediately to pick up running status
       refetchStatus();
     },
     onError: (error: any) => {
@@ -72,21 +87,18 @@ export default function DashboardPage() {
     },
   });
 
-  // Monitor sync status changes using previous value ref
   useEffect(() => {
     if (!status) return;
     const prev = prevSyncStatus.current;
     const curr = status.sync_status;
 
     if (curr === 'running') {
-      // Clear the "starting" bridge state — we're confirmed running
       setSyncStarting(false);
       const prog = status.sync_total > 0
         ? `Processing ${status.sync_processed}/${status.sync_total} emails...`
         : 'Preparing sync...';
       setSyncMessage(`🔄 ${prog}`);
     } else if (prev === 'running' && curr === 'completed') {
-      // Transition: running → completed (works even if page loaded mid-sync)
       setSyncMessage('✅ Sync completed! Your graph has been updated.');
       refetchGraph();
       setTimeout(() => setSyncMessage(null), 5000);
@@ -98,9 +110,7 @@ export default function DashboardPage() {
     prevSyncStatus.current = curr;
   }, [status, refetchGraph]);
 
-  const handleManualSync = () => {
-    syncMutation.mutate();
-  };
+  const handleManualSync = () => syncMutation.mutate();
 
   const { data: contextBundle, isLoading: contextLoading } = useQuery<ContextBundle>({
     queryKey: ['context', orgId, selectedNode?.name],
@@ -109,13 +119,13 @@ export default function DashboardPage() {
   });
 
   const handleNodeClick = (node: GraphNode) => {
+    // Don't open detail panel for the YOU center node
+    if (!node.email) return;
     setSelectedNode(node);
     setCopied(false);
   };
 
-  const handleClosePanel = () => {
-    setSelectedNode(null);
-  };
+  const handleClosePanel = () => setSelectedNode(null);
 
   const handleCopyContext = () => {
     if (contextBundle?.context_for_agent) {
@@ -124,6 +134,10 @@ export default function DashboardPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // Build the filter buttons from entity_type_counts returned by the API
+  const entityTypeCounts = graphData?.entity_type_counts ?? {};
+  const availableFilters = ['all', ...Object.keys(entityTypeCounts).filter(k => k !== 'self').sort()];
 
   if (graphLoading) {
     return (
@@ -222,33 +236,84 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Entity Type Filter Bar ───────────────────────────────────────── */}
+      {availableFilters.length > 1 && (
+        <div className="bg-white border-b border-slate-100 px-6 py-2 flex items-center gap-2 overflow-x-auto">
+          <span className="text-xs text-slate-500 mr-1 shrink-0">Filter by role:</span>
+          {availableFilters.map((filterKey) => {
+            const cfg = ENTITY_TAG_CONFIG[filterKey] ?? { label: filterKey, color: '#94a3b8' };
+            const count = filterKey === 'all'
+              ? graphData.nodes.filter(n => n.entity_type !== 'self').length
+              : (entityTypeCounts[filterKey] ?? 0);
+            const isActive = activeEntityFilter === filterKey;
+
+            return (
+              <button
+                key={filterKey}
+                onClick={() => {
+                  setActiveEntityFilter(filterKey);
+                  setSelectedNode(null); // clear detail panel on filter change
+                }}
+                className={`
+                  flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                  border transition-all duration-150 shrink-0
+                  ${isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-slate-600 bg-white border-slate-200 hover:border-slate-400'}
+                `}
+                style={isActive ? { backgroundColor: cfg.color, borderColor: cfg.color } : {}}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.7)' : cfg.color }}
+                />
+                {cfg.label}
+                <span
+                  className={`
+                    ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold
+                    ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}
+                  `}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Graph Container */}
       <div className="flex-1 relative">
-        {/* Header with stats */}
+        {/* Legend */}
         <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-4">
-          <h2 className="text-lg font-semibold mb-3">Relationship Graph</h2>
-          <div className="space-y-2">
+          <h2 className="text-sm font-semibold mb-3 text-slate-700">Relationship Stage</h2>
+          <div className="space-y-1.5">
+            {(['ACTIVE', 'WARM', 'DORMANT', 'COLD'] as const).map((stage) => (
+              <div key={stage} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStageColor(stage) }} />
+                <span className="text-xs text-slate-600">{stage} ({stageCounts[stage] || 0})</span>
+              </div>
+            ))}
+          </div>
+          {/* CC edge legend */}
+          <div className="mt-3 pt-3 border-t border-slate-100">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStageColor('ACTIVE') }}></div>
-              <span className="text-sm">Active ({stageCounts['ACTIVE'] || 0})</span>
+              <div className="w-8 h-0 border-t-2 border-dashed border-indigo-300" />
+              <span className="text-xs text-slate-500">Shared email (CC)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStageColor('WARM') }}></div>
-              <span className="text-sm">Warm ({stageCounts['WARM'] || 0})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStageColor('DORMANT') }}></div>
-              <span className="text-sm">Dormant ({stageCounts['DORMANT'] || 0})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStageColor('COLD') }}></div>
-              <span className="text-sm">Cold ({stageCounts['COLD'] || 0})</span>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-8 h-0 border-t border-slate-300" />
+              <span className="text-xs text-slate-500">Direct contact</span>
             </div>
           </div>
         </div>
 
         {/* Graph */}
-        <RelationshipGraph data={graphData} onNodeClick={handleNodeClick} />
+        <RelationshipGraph
+          data={graphData}
+          onNodeClick={handleNodeClick}
+          activeEntityFilter={activeEntityFilter}
+        />
 
         {/* Detail Panel */}
         {selectedNode && (
@@ -265,7 +330,7 @@ export default function DashboardPage() {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <Badge
                   style={{
                     backgroundColor: getStageColor(selectedNode.relationship_stage),
@@ -275,6 +340,18 @@ export default function DashboardPage() {
                 >
                   {selectedNode.relationship_stage}
                 </Badge>
+                {/* Entity type tag */}
+                {selectedNode.entity_type && selectedNode.entity_type !== 'other' && selectedNode.entity_type !== 'self' && (
+                  <Badge
+                    style={{
+                      backgroundColor: ENTITY_TAG_CONFIG[selectedNode.entity_type]?.color ?? '#94a3b8',
+                      color: 'white',
+                      border: 'none',
+                    }}
+                  >
+                    {ENTITY_TAG_CONFIG[selectedNode.entity_type]?.label ?? selectedNode.entity_type}
+                  </Badge>
+                )}
                 <span className="text-sm text-slate-600">
                   {selectedNode.interaction_count} interactions
                 </span>
@@ -392,15 +469,6 @@ export default function DashboardPage() {
                             <div className="flex justify-between">
                               <span className="text-slate-600">Communication style:</span>
                               <span className="font-medium">{contextBundle.entity.communication_style}</span>
-
-                              {/* Draft Modal */}
-                              {selectedNode && (
-                                <DraftModal
-                                  open={draftModalOpen}
-                                  onOpenChange={setDraftModalOpen}
-                                  entityName={selectedNode.name}
-                                />
-                              )}
                             </div>
                           )}
                         </div>
@@ -417,6 +485,15 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Draft Modal */}
+      {selectedNode && (
+        <DraftModal
+          open={draftModalOpen}
+          onOpenChange={setDraftModalOpen}
+          entityName={selectedNode.name}
+        />
+      )}
     </div>
   );
 }

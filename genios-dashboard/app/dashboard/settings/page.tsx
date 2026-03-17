@@ -6,7 +6,8 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Eye, EyeOff, Check, RefreshCw } from 'lucide-react';
+import { Copy, Eye, EyeOff, Check, RefreshCw, Mail, Trash2, Plus, RefreshCcw } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -27,6 +28,49 @@ export default function SettingsPage() {
     onSuccess: () => {
       refetch();
     },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => api.org.resetData(orgId, token),
+    onSuccess: () => {
+      alert("Graph data wiped successfully! Your connected accounts were kept intact.");
+      refetchAccounts();
+    },
+  });
+
+  // Fetch connected accounts
+  const { data: accountsData, refetch: refetchAccounts } = useQuery<{ accounts: any[]; count: number }>({
+    queryKey: ['gmail-accounts', orgId],
+    queryFn: () => api.gmail.listAccounts(orgId, token),
+    enabled: !!orgId && !!token,
+    refetchInterval: (query) => {
+      // Poll if any account is syncing
+      const data = query.state.data;
+      if (data?.accounts?.some(acc => acc.sync_status === 'syncing' || acc.sync_status === 'idle')) {
+        return 3000;
+      }
+      return false;
+    },
+  });
+
+  // Disconnect account mutation
+  const disconnectMutation = useMutation({
+    mutationFn: (accountEmail: string) => api.gmail.disconnectAccount(orgId, accountEmail, token),
+    onSuccess: () => {
+      refetchAccounts();
+    },
+  });
+
+  // Sync specific account mutation
+  const syncAccountMutation = useMutation({
+    mutationFn: (accountEmail: string) => api.gmail.syncAccount(orgId, accountEmail, token),
+    onSuccess: () => {
+      alert("Sync triggered for this account. It will run in the background.");
+      refetchAccounts();
+    },
+    onError: () => {
+      alert("Failed to trigger sync. Please try again.");
+    }
   });
 
   const handleCopy = () => {
@@ -79,22 +123,112 @@ export default function SettingsPage() {
 
           <div className="pt-4 border-t border-slate-100">
             <h3 className="text-sm font-medium text-slate-900 mb-2">Danger Zone</h3>
-            <Button 
-              variant="destructive" 
-              onClick={() => {
-                if(confirm("Are you sure you want to regenerate your API key? Any existing integrations will immediately stop working.")) {
-                  regenerateMutation.mutate();
-                }
-              }}
-              disabled={regenerateMutation.isPending}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
-              Regenerate API Key
-            </Button>
+            <div className="flex flex-col gap-3 items-start">
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  if(confirm("Are you sure you want to regenerate your API key? Any existing integrations will immediately stop working.")) {
+                    regenerateMutation.mutate();
+                  }
+                }}
+                disabled={regenerateMutation.isPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
+                Regenerate API Key
+              </Button>
+
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  if(confirm("Are you sure you want to wipe all graph data? This will delete all generated contacts and relationships, but will KEEP your Gmail accounts connected. You can sync again afterwards.")) {
+                    resetMutation.mutate();
+                  }
+                }}
+                disabled={resetMutation.isPending}
+                className="gap-2 bg-red-100 text-red-700 hover:bg-red-200 border-none"
+              >
+                <Trash2 className={`h-4 w-4 ${resetMutation.isPending ? 'animate-spin' : ''}`} />
+                Wipe All Graph Data
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Connected Accounts Card */}
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Connected Gmail Accounts</CardTitle>
+              <CardDescription>
+                Manage the email accounts that feed your relationship graph.
+              </CardDescription>
+            </div>
+            <Button onClick={() => api.gmail.connect(orgId)} className="gap-2" variant="outline">
+              <Plus className="h-4 w-4" />
+              Connect Account
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {accountsData?.accounts && accountsData.accounts.length > 0 ? (
+            <div className="space-y-4">
+              {accountsData.accounts.map((acc, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-slate-900">{acc.account_email}</h4>
+                      <p className="text-sm text-slate-500">
+                        Status: <span className="capitalize">{acc.sync_status || 'idle'}</span>
+                      </p>
+                      {acc.last_synced_at && (
+                        <p className="text-xs text-slate-400">
+                          Last sync: {new Date(acc.last_synced_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => syncAccountMutation.mutate(acc.account_email)}
+                      disabled={syncAccountMutation.isPending || acc.sync_status === 'syncing'}
+                      className="gap-2"
+                    >
+                      <RefreshCcw className={`h-4 w-4 ${acc.sync_status === 'syncing' ? 'animate-spin' : ''}`} />
+                      Sync
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to disconnect ${acc.account_email}? Your graph data will be kept.`)) {
+                          disconnectMutation.mutate(acc.account_email);
+                        }
+                      }}
+                      disabled={disconnectMutation.isPending}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-slate-500">
+              No Gmail accounts connected.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
