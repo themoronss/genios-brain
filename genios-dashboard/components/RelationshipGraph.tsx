@@ -62,12 +62,8 @@ export default function RelationshipGraph({ data, onNodeClick, activeEntityFilte
       let fillColor: string;
       if (isSelf) {
         fillColor = '#6366f1';
-      } else if (activeEntityFilter && activeEntityFilter !== 'all') {
-        fillColor = ENTITY_TYPE_COLORS[node.entity_type] || ENTITY_TYPE_COLORS.other;
       } else {
-        fillColor = (ENTITY_TYPE_COLORS[node.entity_type] && node.entity_type !== 'other' && node.entity_type !== 'self')
-          ? ENTITY_TYPE_COLORS[node.entity_type]
-          : getStageColor(node.relationship_stage);
+        fillColor = ENTITY_TYPE_COLORS[node.entity_type] || ENTITY_TYPE_COLORS.other;
       }
 
       // Glow

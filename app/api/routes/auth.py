@@ -133,7 +133,8 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
             access_token,
             refresh_token,
             token_expiry,
-            last_synced_at
+            last_synced_at,
+            sync_status
         )
         VALUES (
             :org_id,
@@ -141,14 +142,16 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
             :access_token,
             :refresh_token,
             :expiry,
-            :now
+            :now,
+            'running'
         )
         ON CONFLICT (org_id, account_email)
         DO UPDATE SET
             access_token = EXCLUDED.access_token,
             refresh_token = EXCLUDED.refresh_token,
             token_expiry = EXCLUDED.token_expiry,
-            last_synced_at = EXCLUDED.last_synced_at
+            last_synced_at = EXCLUDED.last_synced_at,
+            sync_status = 'running'
         """
         ),
         {
@@ -171,8 +174,9 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     import os
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     
-    # Redirect back to dashboard after successful connection
-    return RedirectResponse(url=f"{frontend_url}/dashboard/connect")
+    # Redirect straight to dashboard — the dashboard sync-in-progress screen
+    # handles the UX from here (shows email tally, auto-refreshes graph).
+    return RedirectResponse(url=f"{frontend_url}/dashboard")
 
 
 @router.post("/auth/login", response_model=AuthResponse)

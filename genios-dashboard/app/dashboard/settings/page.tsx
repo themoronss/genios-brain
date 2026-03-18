@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
+  const queryClient = useQueryClient();
 
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -70,7 +71,14 @@ export default function SettingsPage() {
 
   const resetMutation = useMutation({
     mutationFn: () => api.org.resetData(orgId, token),
-    onSuccess: () => { refetchAccounts(); showToast('Graph data wiped. Accounts remain connected.'); },
+    onSuccess: () => {
+      refetchAccounts();
+      // Invalidate all dashboard caches so stale graph data is discarded
+      queryClient.invalidateQueries({ queryKey: ['graph-data'] });
+      queryClient.invalidateQueries({ queryKey: ['connection-status'] });
+      queryClient.invalidateQueries({ queryKey: ['gmail-accounts'] });
+      showToast('Graph data wiped. Accounts remain connected — click Sync to rebuild.');
+    },
     onError: () => showToast('Failed to wipe graph data.', 'error'),
   });
 
@@ -79,8 +87,8 @@ export default function SettingsPage() {
     queryFn: () => api.gmail.listAccounts(orgId, token),
     enabled: !!orgId && !!token,
     refetchInterval: (query) => {
-      const data = query.state.data;
-      if (data?.accounts?.some((a: any) => a.sync_status === 'syncing')) return 3000;
+      const data = query.state.data as any;
+      if (data?.accounts?.some((a: any) => a.sync_status === 'syncing' || a.sync_status === 'running')) return 3000;
       return false;
     },
   });

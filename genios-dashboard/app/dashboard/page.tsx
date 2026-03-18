@@ -11,7 +11,7 @@ import { DraftModal } from '@/components/DraftModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  X, Copy, Check, Sparkles, RefreshCcw, Mail, Plus, AlertCircle,
+  X, Copy, Check, Sparkles, RefreshCcw, Mail, Plus, AlertCircle, Inbox,
 } from 'lucide-react';
 import { formatDate, getStageColor } from '@/lib/utils';
 
@@ -65,12 +65,17 @@ export default function DashboardPage() {
     enabled: !!orgId && !!token,
     refetchInterval: (q) => {
       const d = q.state.data as any;
-      const hasSyncing = d?.accounts?.some((a: any) => a.sync_status === 'syncing');
+      const hasSyncing = d?.accounts?.some((a: any) => a.sync_status === 'syncing' || a.sync_status === 'running');
       return hasSyncing ? 3000 : false;
     },
   });
 
   // ── Graph data ──────────────────────────────────────────────────────────
+  // We check if either the global org is syncing, or any individual account is syncing
+  const isAnySyncing =
+    status?.sync_status === 'running' ||
+    accountsData?.accounts?.some((a: any) => a.sync_status === 'syncing' || a.sync_status === 'running');
+
   const { data: graphData, isLoading: graphLoading, refetch: refetchGraph } = useQuery<GraphData>({
     queryKey: ['graph-data', orgId, activeEntityFilter],
     queryFn: () => {
@@ -78,6 +83,8 @@ export default function DashboardPage() {
       return api.org.getGraph(orgId, token, fp);
     },
     enabled: !!orgId && !!token && !!status?.gmail_connected,
+    // Poll graph every 10s while any account is syncing so data appears progressively
+    refetchInterval: isAnySyncing ? 10000 : false,
   });
 
   // ── Sync a specific account ─────────────────────────────────────────────
@@ -90,19 +97,15 @@ export default function DashboardPage() {
   });
 
   // ── Auto-refresh graph when sync completes ──────────────────────────────
-  // We check if either the global org is syncing, or any individual account is syncing
-  const isAnySyncing = 
-    status?.sync_status === 'running' || 
-    accountsData?.accounts?.some((a: any) => a.sync_status === 'syncing' || a.sync_status === 'running');
-
-  const prevIsSyncing = useRef<boolean | undefined>(undefined);
+  // Initialize to false (not undefined) so the true → false transition is always caught
+  const prevIsSyncing = useRef<boolean>(false);
 
   useEffect(() => {
     if (prevIsSyncing.current === true && isAnySyncing === false) {
-      // Something was syncing, and now it has finished. Refresh the graph!
+      // Sync just finished — do a final graph refresh
       refetchGraph();
     }
-    prevIsSyncing.current = isAnySyncing;
+    prevIsSyncing.current = !!isAnySyncing;
   }, [isAnySyncing, refetchGraph]);
 
   // ── Context for selected node ───────────────────────────────────────────
@@ -134,7 +137,49 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  // ── Loading state ───────────────────────────────────────────────────────
+  // ── Sync-in-progress state ─────────────────────────────────────────────
+  // Aggregate sync_processed / sync_total across all accounts
+  const totalSynced = accountsData?.accounts?.reduce((s: number, a: any) => s + (a.sync_processed || 0), 0)
+    ?? (status?.sync_processed ?? 0);
+  const totalEmails = accountsData?.accounts?.reduce((s: number, a: any) => s + (a.sync_total || 0), 0)
+    ?? (status?.sync_total ?? 0);
+  const syncPct = totalEmails > 0 ? Math.min(Math.round((totalSynced / totalEmails) * 100), 99) : null;
+
+  // While syncing AND no graph data yet — show sync progress screen
+  if (isAnySyncing && (!graphData || graphData.nodes.length === 0)) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center max-w-sm space-y-5 px-4">
+          <div className="relative mx-auto w-16 h-16">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary" />
+            <Mail className="absolute inset-0 m-auto h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <p className="text-foreground font-semibold text-base">Syncing your emails…</p>
+            {totalEmails > 0 ? (
+              <p className="text-sm text-muted-foreground mt-1">
+                {totalSynced} of {totalEmails} emails processed
+                {syncPct !== null ? ` (${syncPct}%)` : ''}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-1">Fetching emails from Gmail…</p>
+            )}
+          </div>
+          {totalEmails > 0 && (
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${syncPct ?? 5}%` }}
+              />
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">The graph will appear automatically once sync completes. This page refreshes every 10 seconds.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading state (graph query in-flight, not syncing) ──────────────────
   if (graphLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -147,18 +192,44 @@ export default function DashboardPage() {
   }
 
   // ── Empty state ─────────────────────────────────────────────────────────
+  // Distinguish between "wiped but connected" vs "no connection at all"
+  const hasConnectedAccounts = (accountsData?.accounts?.length ?? 0) > 0;
+
   if (!graphData || graphData.nodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center max-w-sm space-y-4">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-          <p className="text-foreground font-semibold">No contacts yet</p>
-          <p className="text-sm text-muted-foreground">
-            Your relationship graph is empty. Sync a Gmail account to get started.
-          </p>
-          <Button onClick={() => router.push('/dashboard/connect')} variant="outline">
-            Check Connection
-          </Button>
+        <div className="text-center max-w-sm space-y-4 px-4">
+          {hasConnectedAccounts ? (
+            <>
+              <Inbox className="h-12 w-12 text-muted-foreground mx-auto" />
+              <p className="text-foreground font-semibold">Graph is empty</p>
+              <p className="text-sm text-muted-foreground">
+                Your accounts are still connected. Sync an account to rebuild your relationship graph.
+              </p>
+              <Button
+                onClick={() => {
+                  const firstAccount = accountsData?.accounts?.[0]?.account_email;
+                  if (firstAccount) syncAccountMutation.mutate(firstAccount);
+                }}
+                disabled={syncAccountMutation.isPending}
+                className="gap-2"
+              >
+                <RefreshCcw className={`h-4 w-4 ${syncAccountMutation.isPending ? 'animate-spin' : ''}`} />
+                {syncAccountMutation.isPending ? 'Starting Sync…' : 'Sync Now'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+              <p className="text-foreground font-semibold">No contacts yet</p>
+              <p className="text-sm text-muted-foreground">
+                Your relationship graph is empty. Connect a Gmail account to get started.
+              </p>
+              <Button onClick={() => router.push('/dashboard/connect')} variant="outline">
+                Connect Gmail
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -200,19 +271,19 @@ export default function DashboardPage() {
         {/* Graph + Legend layer */}
         <div className="flex-1 relative overflow-hidden">
 
-          {/* Bottom-left Legend bar */}
-          <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+          {/* Bottom-left Legend bar - COMMENTED OUT: Node colors now represent entity types, not relationship stages */}
+          {/* <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
             {/* Stage dots */}
-            <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5">
+            {/* <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5">
               {(['ACTIVE', 'WARM', 'DORMANT', 'COLD'] as const).map((stage) => (
                 <div key={stage} className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStageColor(stage) }} />
                   <span className="text-[11px] text-muted-foreground font-medium">{stage} <span className="text-foreground">({stageCounts[stage] || 0})</span></span>
                 </div>
               ))}
-            </div>
+            </div> */}
             {/* Edge type legend */}
-            <div className="flex items-center gap-4 bg-card/80 backdrop-blur-sm border border-border rounded-xl px-4 py-2">
+            {/* <div className="flex items-center gap-4 bg-card/80 backdrop-blur-sm border border-border rounded-xl px-4 py-2">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-0 border-t border-dashed border-indigo-400" />
                 <span className="text-[11px] text-muted-foreground">CC shared</span>
@@ -221,8 +292,8 @@ export default function DashboardPage() {
                 <div className="w-6 h-0 border-t border-muted-foreground/50" />
                 <span className="text-[11px] text-muted-foreground">Direct</span>
               </div>
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
 
 
           {/* Graph Canvas */}
@@ -370,10 +441,24 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Progress bar (visible while syncing) */}
+                  {/* Progress bar + tally (visible while syncing) */}
                   {isSyncing && (
-                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full w-1/2 bg-primary rounded-full animate-pulse" />
+                    <div className="space-y-1">
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                        {acc.sync_total > 0 ? (
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(Math.round((acc.sync_processed / acc.sync_total) * 100), 99)}%` }}
+                          />
+                        ) : (
+                          <div className="h-full w-1/3 bg-primary rounded-full animate-pulse" />
+                        )}
+                      </div>
+                      {acc.sync_total > 0 && (
+                        <p className="text-[10px] text-muted-foreground text-right">
+                          {acc.sync_processed ?? 0} / {acc.sync_total} emails
+                        </p>
+                      )}
                     </div>
                   )}
 

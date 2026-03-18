@@ -66,6 +66,13 @@ def trigger_sync(
             detail="A sync is already in progress. Please wait for it to complete.",
         )
 
+    # Set status to running synchronously so frontend correctly sees it on immediate refetch
+    db.execute(
+        text("UPDATE oauth_tokens SET sync_status = 'running' WHERE org_id = :org_id"),
+        {"org_id": org_id},
+    )
+    db.commit()
+
     # Trigger background sync for all accounts
     background_tasks.add_task(sync_task, org_id, None)
 
@@ -176,7 +183,8 @@ def list_connected_accounts(org_id: str, db: Session = Depends(get_db)):
     tokens = db.execute(
         text(
             """SELECT COALESCE(account_email, 'unknown') AS account_email,
-                      last_synced_at, sync_status, created_at
+                      last_synced_at, sync_status, sync_total, sync_processed,
+                      sync_error, created_at
                FROM oauth_tokens
                WHERE org_id = :org_id
                ORDER BY created_at ASC"""
@@ -193,6 +201,9 @@ def list_connected_accounts(org_id: str, db: Session = Depends(get_db)):
                 "account_email": t.account_email,
                 "last_synced_at": t.last_synced_at.isoformat() if t.last_synced_at else None,
                 "sync_status": t.sync_status or "idle",
+                "sync_total": t.sync_total or 0,
+                "sync_processed": t.sync_processed or 0,
+                "sync_error": t.sync_error,
                 "connected_at": t.created_at.isoformat() if t.created_at else None,
             }
             for t in tokens
@@ -265,6 +276,16 @@ def trigger_account_sync(
             status_code=429,
             detail=f"Sync already running for {account_email}. Please wait.",
         )
+
+    # Set status to running synchronously so frontend picks it up immediately
+    db.execute(
+        text(
+            "UPDATE oauth_tokens SET sync_status = 'running' "
+            "WHERE org_id = :org_id AND account_email = :account_email"
+        ),
+        {"org_id": org_id, "account_email": account_email},
+    )
+    db.commit()
 
     background_tasks.add_task(sync_task, org_id, account_email)
 
