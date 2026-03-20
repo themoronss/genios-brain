@@ -29,16 +29,16 @@ RATE_LIMIT_DELAY = 2
 
 # Patterns that attackers embed in email bodies to hijack LLM behaviour
 _INJECTION_PATTERNS = [
-    r"(?i)system\s*:",                      # SYSTEM:
-    r"(?i)ignore\s+(previous|above|all)",   # Ignore previous instructions
+    r"(?i)system\s*:",  # SYSTEM:
+    r"(?i)ignore\s+(previous|above|all)",  # Ignore previous instructions
     r"(?i)disregard\s+(previous|above|all)",
     r"(?i)forget\s+(previous|above|all)",
-    r"(?i)you\s+are\s+now",                 # You are now a different AI
-    r"(?i)act\s+as\s+(if|a|an)",            # Act as if / Act as a
-    r"<\|system\|>",                        # LLaMA system tag
-    r"<\|im_start\|>",                      # ChatML start tag
+    r"(?i)you\s+are\s+now",  # You are now a different AI
+    r"(?i)act\s+as\s+(if|a|an)",  # Act as if / Act as a
+    r"<\|system\|>",  # LLaMA system tag
+    r"<\|im_start\|>",  # ChatML start tag
     r"<\|im_end\|>",
-    r"\[INST\]",                            # Mistral instruction tags
+    r"\[INST\]",  # Mistral instruction tags
     r"\[/INST\]",
     r"(?i)prompt\s*injection",
     r"(?i)jailbreak",
@@ -74,8 +74,16 @@ def sanitize_email_body(text: str) -> str:
 
 # ── Update 2: Valid contact role values ─────────────────────────────────
 VALID_CONTACT_ROLES = {
-    "investor", "customer", "vendor", "partner", "candidate",
-    "team", "lead", "advisor", "media", "other",
+    "investor",
+    "customer",
+    "vendor",
+    "partner",
+    "candidate",
+    "team",
+    "lead",
+    "advisor",
+    "media",
+    "other",
 }
 
 
@@ -195,14 +203,16 @@ Return ONLY this JSON — no markdown, no explanation:
                 cleaned_commitments = []
                 for c in all_commitments[:15]:
                     conf = float(c.get("confidence", 0.5))
-                    cleaned_commitments.append({
-                        "text": str(c.get("text", ""))[:200],
-                        "owner": str(c.get("owner", "them")),
-                        "due_signal": c.get("due_signal"),
-                        "confidence": round(max(0.0, min(1.0, conf)), 2),
-                        # Tag soft commitments so downstream can distinguish
-                        "is_soft": conf < 0.7,
-                    })
+                    cleaned_commitments.append(
+                        {
+                            "text": str(c.get("text", ""))[:200],
+                            "owner": str(c.get("owner", "them")),
+                            "due_signal": c.get("due_signal"),
+                            "confidence": round(max(0.0, min(1.0, conf)), 2),
+                            # Tag soft commitments so downstream can distinguish
+                            "is_soft": conf < 0.7,
+                        }
+                    )
 
                 # Update 2: Validate and normalize contact_role
                 raw_role = str(result.get("contact_role", "other")).lower().strip()
@@ -291,13 +301,15 @@ def _extract_with_gemini(prompt: str) -> Dict:
         cleaned_commitments = []
         for c in all_commitments[:15]:
             conf = float(c.get("confidence", 0.5))
-            cleaned_commitments.append({
-                "text": str(c.get("text", ""))[:200],
-                "owner": str(c.get("owner", "them")),
-                "due_signal": c.get("due_signal"),
-                "confidence": round(max(0.0, min(1.0, conf)), 2),
-                "is_soft": conf < 0.7,
-            })
+            cleaned_commitments.append(
+                {
+                    "text": str(c.get("text", ""))[:200],
+                    "owner": str(c.get("owner", "them")),
+                    "due_signal": c.get("due_signal"),
+                    "confidence": round(max(0.0, min(1.0, conf)), 2),
+                    "is_soft": conf < 0.7,
+                }
+            )
 
         # Update 2: Validate contact_role from Gemini response too
         raw_role = str(result.get("contact_role", "other")).lower().strip()
@@ -347,3 +359,56 @@ Return only the number.
             except Exception:
                 return 0.0
         return 0.0
+
+
+# ── Update 1.1: Signal Score Computation ────────────────────────────────
+
+
+def compute_signal_score(intelligence: Dict, body: str = "") -> float:
+    """
+    Compute signal strength score (0.0-1.0) based on email intelligence.
+
+    Higher scores = more important interactions that should surface in context.
+
+    Scoring breakdown:
+        +0.4 if intent is commitment or request (high-value signal)
+        +0.2 if engagement_level is high (thoughtful/detailed response)
+        +0.2 if body > 80 words (substantial content)
+        +0.3 if has commitments (concrete promises made)
+
+    Args:
+        intelligence: Dict from extract_email_intelligence()
+        body: Email body text (for word count)
+
+    Returns:
+        float: Signal score 0.0-1.0
+
+    Example:
+        >>> intel = {"intent": "commitment", "engagement_level": "high", "commitments": [...]}
+        >>> compute_signal_score(intel, "Long detailed email..." * 20)
+        0.9  # High signal: commitment + high engagement + long + has commitments
+    """
+    score = 0.0
+
+    # Intent signal (commitment/request = high value)
+    intent = intelligence.get("intent", "other")
+    if intent in ["commitment", "request"]:
+        score += 0.4
+
+    # Engagement signal (high engagement = thoughtful response)
+    engagement_level = intelligence.get("engagement_level", "medium")
+    if engagement_level == "high":
+        score += 0.2
+
+    # Length signal (substantial content)
+    word_count = len((body or "").split())
+    if word_count > 80:
+        score += 0.2
+
+    # Commitment signal (concrete promises)
+    commitments = intelligence.get("commitments", [])
+    if commitments and len(commitments) > 0:
+        score += 0.3
+
+    # Clamp to [0.0, 1.0]
+    return round(min(score, 1.0), 3)

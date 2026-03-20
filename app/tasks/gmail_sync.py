@@ -12,8 +12,18 @@ from app.ingestion.gmail_connector import (
 )
 
 from app.ingestion.email_parser import parse_headers, extract_email_body
-from app.ingestion.graph_builder import upsert_contact, create_interaction
-from app.ingestion.entity_extractor import extract_email_intelligence
+from app.ingestion.graph_builder import (
+    upsert_contact,
+    create_interaction,
+    store_state_event,
+    upsert_state_entity,
+    update_relationship_stats_only,
+)
+from app.ingestion.entity_extractor import (
+    extract_email_intelligence,
+    compute_signal_score,
+)
+from app.ingestion.email_classifier import classify_email, parse_system_email
 from app.graph.relationship_calculator import recalculate_all_relationships
 from datetime import datetime, timezone
 from collections import defaultdict
@@ -88,8 +98,14 @@ def is_internal_email(contact_email: str, user_email: str) -> bool:
 
     # Skip personal email domains — everyone uses gmail, can't deduce "internal"
     personal_domains = {
-        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-        "icloud.com", "protonmail.com", "aol.com", "mail.com",
+        "gmail.com",
+        "yahoo.com",
+        "hotmail.com",
+        "outlook.com",
+        "icloud.com",
+        "protonmail.com",
+        "aol.com",
+        "mail.com",
     }
     if user_domain in personal_domains:
         return False
@@ -117,9 +133,7 @@ def update_sync_progress(db, org_id: str, account_email: str = None, **kwargs):
                 f"WHERE org_id = :org_id AND account_email = :account_email"
             )
         else:
-            query = (
-                f"UPDATE oauth_tokens SET {', '.join(set_clauses)} WHERE org_id = :org_id"
-            )
+            query = f"UPDATE oauth_tokens SET {', '.join(set_clauses)} WHERE org_id = :org_id"
         db.execute(text(query), params)
         db.commit()
 
@@ -159,6 +173,7 @@ def build_thread_context(thread_messages: list) -> str:
 
 # ── Update 1: Collect exactly N valid emails ──────────────────────────────────
 
+
 def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list:
     """
     Incrementally fetch email IDs using Gmail-side q-filter and lightweight header
@@ -188,10 +203,7 @@ def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list
         batch_ids, page_token = fetch_emails(
             service,
             max_results=50,
-            query=(
-                "(in:inbox OR in:sent) "
-                "-label:promotions -label:social"
-            ),
+            query=("(in:inbox OR in:sent) " "-label:promotions -label:social"),
             page_token=page_token,
         )
         page_count += 1
@@ -230,11 +242,13 @@ def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list
             if not contact_email:
                 continue
 
-            valid_messages.append({
-                "id": headers["id"],
-                "threadId": headers["threadId"],
-                "internalDate": headers["internalDate"],
-            })
+            valid_messages.append(
+                {
+                    "id": headers["id"],
+                    "threadId": headers["threadId"],
+                    "internalDate": headers["internalDate"],
+                }
+            )
 
         print(
             f"  Page {page_count}: batch={len(batch_ids)}, "
@@ -245,12 +259,15 @@ def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list
             print("  No more pages available in Gmail.")
             break
 
-    print(f"✅ Collected {len(valid_messages)} valid email IDs "
-          f"(scanned {page_count} pages)")
+    print(
+        f"✅ Collected {len(valid_messages)} valid email IDs "
+        f"(scanned {page_count} pages)"
+    )
     return valid_messages
 
 
 # ── Main sync function ────────────────────────────────────────────────────────
+
 
 def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
     """
@@ -334,7 +351,9 @@ def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
         db.close()
 
 
-def _sync_single_account(db, org_id, access_token, refresh_token, account_identifier, max_emails):
+def _sync_single_account(
+    db, org_id, access_token, refresh_token, account_identifier, max_emails
+):
     """
     Internal: run the full sync pipeline for one Gmail account token.
     """
@@ -383,7 +402,9 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
             f"Processing {len(new_ids)} new emails."
         )
 
-        update_sync_progress(db, org_id, account_email=account_identifier, sync_total=len(new_ids))
+        update_sync_progress(
+            db, org_id, account_email=account_identifier, sync_total=len(new_ids)
+        )
 
         # ── Step 1: Fetch full message data + group by thread ─────────────────
         print("🔍 Fetching full message details and grouping by thread...")
@@ -402,7 +423,9 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
                 msg = fetch_full_message(service, m["id"])
             except Exception as e:
                 print(f"⚠️ Could not fetch message {m['id']}: {e}")
-                update_sync_progress(db, org_id, account_email=account_identifier, sync_processed=i)
+                update_sync_progress(
+                    db, org_id, account_email=account_identifier, sync_processed=i
+                )
                 continue
 
             payload = msg["payload"]
@@ -425,9 +448,10 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
 
             if not contact_email:
                 skipped_automated += 1
-                update_sync_progress(db, org_id, account_email=account_identifier, sync_processed=i)
+                update_sync_progress(
+                    db, org_id, account_email=account_identifier, sync_processed=i
+                )
                 continue
-
 
             parsed_msg = {
                 "gmail_id": m["id"],
@@ -455,13 +479,21 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
         # ── Step 2: Sort each thread by date ascending ────────────────────────
         for tid in thread_groups:
             thread_groups[tid].sort(
-                key=lambda x: x["date"] if x["date"] else datetime.min.replace(tzinfo=timezone.utc)
+                key=lambda x: (
+                    x["date"]
+                    if x["date"]
+                    else datetime.min.replace(tzinfo=timezone.utc)
+                )
             )
 
-        # ── Step 3: LLM extraction with thread context ────────────────────────
-        print("🧠 Running LLM extraction with thread context...")
+        # ── Step 3: Email classification & processing ────────────────────────
+        print("🔍 Classifying and processing emails...")
 
         thread_processed: dict = defaultdict(list)
+        llm_processed = 0
+        system_emails = 0
+        discarded_emails = 0
+        weak_emails = 0
 
         for i, parsed_msg in enumerate(all_parsed, 1):
             if i % 10 == 0:
@@ -475,11 +507,69 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
             direction = parsed_msg["direction"]
             cc_list = parsed_msg.get("cc_list", [])
 
+            # ── Update 1.1: Classify email ────────────────────────────────────
+            from_email = parsed_msg["from_email"]
+
+            # Get headers for unsubscribe detection
+            headers = (
+                {}
+            )  # Would need to pass this from fetch, but for now use empty dict
+
+            category = classify_email(
+                subject=subject or "",
+                sender_email=from_email or "",
+                body=body_text or "",
+                headers=headers,
+            )
+
+            # ── Branch processing by category ─────────────────────────────────
+            if category == "SYSTEM":
+                # Parse structured state data (GST, payments, invoices) → State Graph (v2.2)
+                parsed_state = parse_system_email(
+                    subject=subject or "",
+                    body=body_text or "",
+                    sender_email=from_email or "",
+                )
+                # Use UPSERT logic: updates existing entity if found, inserts if new
+                parsed_state["source_email_id"] = msg_id  # Track source email
+                upsert_state_entity(db, org_id, parsed_state)
+                system_emails += 1
+                update_sync_progress(
+                    db, org_id, account_email=account_identifier, sync_processed=i
+                )
+                continue
+
+            elif category == "DISCARD":
+                # Skip marketing/newsletter emails
+                discarded_emails += 1
+                update_sync_progress(
+                    db, org_id, account_email=account_identifier, sync_processed=i
+                )
+                continue
+
+            elif category == "WEAK":
+                # Update stats only (no LLM extraction)
+                contact_id = upsert_contact(
+                    db, org_id, contact_email, contact_name, entity_type=None
+                )
+                update_relationship_stats_only(
+                    db, org_id, contact_id, parsed_msg["date"]
+                )
+                weak_emails += 1
+                update_sync_progress(
+                    db, org_id, account_email=account_identifier, sync_processed=i
+                )
+                continue
+
+            # ── STRONG category: Full LLM extraction ──────────────────────────
+
             # Build thread context from messages already processed in this thread
             thread_context = build_thread_context(thread_processed[thread_id])
 
             # Detect if this is a reply
-            is_reply = bool(subject and ("re:" in subject.lower() or "fwd:" in subject.lower()))
+            is_reply = bool(
+                subject and ("re:" in subject.lower() or "fwd:" in subject.lower())
+            )
             is_reply = is_reply or len(thread_processed[thread_id]) > 0
 
             # Extract intelligence using LLM with thread context
@@ -491,6 +581,10 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
                 thread_context=thread_context,
             )
 
+            # Compute signal score
+            signal = compute_signal_score(intelligence, body_text or "")
+            llm_processed += 1
+
             # Rate limiting: Groq allows 30 requests/minute
             time.sleep(2)
 
@@ -500,7 +594,7 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
                 db, org_id, contact_email, contact_name, entity_type=contact_role
             )
 
-            # Create the primary interaction row
+            # Create the primary interaction row with signal_score
             create_interaction(
                 db,
                 org_id,
@@ -518,6 +612,7 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
                 engagement_level=intelligence.get("engagement_level", "medium"),
                 reply_time_hours=None,
                 account_email=user_email,
+                signal_score=signal,
             )
 
             # ── Update 3: Create interaction rows for CC participants ──────────
@@ -536,7 +631,9 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
                     continue
 
                 # Upsert CC contact (no LLM role for CC — use None to preserve existing tag)
-                cc_contact_id = upsert_contact(db, org_id, cc_email, cc_name, entity_type=None)
+                cc_contact_id = upsert_contact(
+                    db, org_id, cc_email, cc_name, entity_type=None
+                )
 
                 # Link the same email to this CC participant without re-running LLM
                 # direction is always "inbound" from the CC participants' perspective
@@ -554,26 +651,34 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
                         intent=intelligence["intent"],
                         commitments=[],  # commitments tracked against primary contact only
                         topics=intelligence.get("topics", []),
-                        interaction_type=intelligence.get("interaction_type", "email_one_way"),
+                        interaction_type=intelligence.get(
+                            "interaction_type", "email_one_way"
+                        ),
                         engagement_level=intelligence.get("engagement_level", "medium"),
                         reply_time_hours=None,
                         account_email=user_email,
                     )
-                    print(f"  🔗 CC edge: {cc_email} ↔ gmail:{parsed_msg['gmail_id'][:8]}...")
+                    print(
+                        f"  🔗 CC edge: {cc_email} ↔ gmail:{parsed_msg['gmail_id'][:8]}..."
+                    )
                 except Exception as e:
                     print(f"  ⚠️ Could not create CC interaction for {cc_email}: {e}")
                     continue
 
             # Add to thread context for subsequent messages
-            thread_processed[thread_id].append({
-                "direction": direction,
-                "date": parsed_msg["date"],
-                "body": body_text,
-                "subject": subject,
-            })
+            thread_processed[thread_id].append(
+                {
+                    "direction": direction,
+                    "date": parsed_msg["date"],
+                    "body": body_text,
+                    "subject": subject,
+                }
+            )
 
             processed_count += 1
-            update_sync_progress(db, org_id, account_email=account_identifier, sync_processed=i)
+            update_sync_progress(
+                db, org_id, account_email=account_identifier, sync_processed=i
+            )
 
         db.commit()
 
@@ -581,7 +686,9 @@ def _sync_single_account(db, org_id, access_token, refresh_token, account_identi
             f"✅ Sync completed: {processed_count} new emails processed, "
             f"{skipped_existing} already synced (skipped), "
             f"{skipped_automated} automated emails filtered, "
-            f"{skipped_internal} internal emails filtered"
+            f"{skipped_internal} internal emails filtered\n"
+            f"📊 Classification: {llm_processed} STRONG (LLM), {weak_emails} WEAK (stats only), "
+            f"{system_emails} SYSTEM (state), {discarded_emails} DISCARD (skipped)"
         )
 
         # Recalculate relationship stages after sync

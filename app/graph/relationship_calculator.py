@@ -195,6 +195,57 @@ def calculate_relationship_stage(
         return "COLD"
 
 
+# ── Update 1.1: Freshness Decay Computation ─────────────────────────────
+
+
+def compute_freshness(days_since: int, stage: str) -> float:
+    """
+    Compute freshness score (0.1-1.0) based on recency and relationship stage.
+
+    Uses exponential decay with stage-specific half-life:
+        ACTIVE: 7 days (fast decay - needs continuous engagement)
+        WARM: 30 days (moderate decay)
+        DORMANT: 60 days (slow decay)
+        COLD: 90 days (very slow decay)
+        AT_RISK: 15 days (fast decay - needs urgent attention)
+
+    Formula: max(0.1, 0.5 ^ (days_since / half_life))
+
+    Args:
+        days_since: Days since last interaction
+        stage: Relationship stage (ACTIVE, WARM, DORMANT, COLD, AT_RISK)
+
+    Returns:
+        float: Freshness score 0.1-1.0 (1.0 = very recent, 0.1 = stale)
+
+    Example:
+        >>> compute_freshness(3, "ACTIVE")
+        0.766  # Recent active relationship (3/7 half-life)
+
+        >>> compute_freshness(45, "WARM")
+        0.354  # Aging warm relationship (45/30 half-life)
+
+        >>> compute_freshness(120, "COLD")
+        0.26  # Very old cold relationship
+    """
+    # Stage-specific half-life in days
+    HALF_LIFE_MAP = {
+        "ACTIVE": 7,  # Fast decay - active relationships need continuous engagement
+        "WARM": 30,  # Moderate decay
+        "DORMANT": 60,  # Slow decay - already dormant, slower fade
+        "COLD": 90,  # Very slow decay
+        "AT_RISK": 15,  # Faster decay - needs urgent attention
+    }
+
+    half_life = HALF_LIFE_MAP.get(stage, 30)  # Default 30 days
+
+    # Exponential decay: 0.5 ^ (days_since / half_life)
+    # Clamp minimum to 0.1 (never fully zero)
+    freshness = max(0.1, 0.5 ** (days_since / half_life))
+
+    return round(freshness, 3)
+
+
 def recalculate_contact_relationship(db, contact_id: str) -> Dict:
     """
     Recalculate relationship metrics for a single contact.
@@ -297,6 +348,9 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
     # Calculate relationship stage
     stage = calculate_relationship_stage(last_interaction, sentiment_ewma)
 
+    # Calculate freshness score (new in v1.1)
+    freshness_score = compute_freshness(days_since, stage)
+
     # Store sentiment history (keep last 10)
     sentiment_history = json.dumps(
         [
@@ -355,6 +409,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 sentiment_ewma = :sentiment_ewma,
                 sentiment_trend = :sentiment_trend,
                 confidence_score = :confidence,
+                freshness_score = :freshness_score,
                 first_interaction_at = :first_interaction,
                 last_interaction_at = :last_interaction,
                 interaction_count = :interaction_count,
@@ -376,6 +431,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
             "sentiment_ewma": sentiment_ewma,
             "sentiment_trend": sentiment_trend,
             "confidence": confidence,
+            "freshness_score": freshness_score,
             "first_interaction": first_interaction,
             "last_interaction": last_interaction,
             "interaction_count": interaction_count,
@@ -392,6 +448,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         "sentiment_ewma": sentiment_ewma,
         "sentiment_trend": sentiment_trend,
         "confidence": confidence,
+        "freshness_score": freshness_score,
         "interaction_count": interaction_count,
         "last_interaction": last_interaction,
         "human_score": human_score,

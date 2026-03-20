@@ -118,17 +118,26 @@ def get_recent_interactions(db, contact_id: str, limit: int = 10) -> List[Dict]:
     Get recent interactions for a contact with enhanced engagement signals.
     Returns up to 10 interactions sorted by weight_score DESC so the most
     important interactions (replies, commitments) surface first.
+
+    Update 1.1: Now prioritizes signal_score (classification-based) over weight_score.
+    Also incorporates contact freshness_score for recency-weighted ranking.
     """
     results = db.execute(
         text(
             """
             SELECT 
-                subject, summary, sentiment, intent,
-                topics, interaction_at, direction, interaction_type,
-                weight_score, reply_time_hours
-            FROM interactions
-            WHERE contact_id = :contact_id
-            ORDER BY weight_score DESC NULLS LAST, interaction_at DESC
+                i.subject, i.summary, i.sentiment, i.intent,
+                i.topics, i.interaction_at, i.direction, i.interaction_type,
+                i.weight_score, i.signal_score, i.reply_time_hours,
+                c.freshness_score
+            FROM interactions i
+            JOIN contacts c ON i.contact_id = c.id
+            WHERE i.contact_id = :contact_id
+            ORDER BY 
+                i.signal_score DESC NULLS LAST,
+                c.freshness_score DESC NULLS LAST,
+                i.weight_score DESC NULLS LAST, 
+                i.interaction_at DESC
             LIMIT :limit
         """
         ),
@@ -148,7 +157,9 @@ def get_recent_interactions(db, contact_id: str, limit: int = 10) -> List[Dict]:
                 "direction": row[6],
                 "interaction_type": row[7],
                 "weight_score": row[8],
-                "reply_time_hours": row[9],
+                "signal_score": row[9],
+                "reply_time_hours": row[10],
+                "freshness_score": row[11] if row[11] else 1.0,  # From contact JOIN
             }
         )
 
@@ -282,9 +293,19 @@ def get_interaction_type_summary(interactions: List[Dict]) -> Dict:
 # ── Fix A+B: Escalation + Action Recommendation ─────────────────────────────
 
 ESCALATION_TOPICS = {
-    "investor", "board", "performance", "legal", "compliance",
-    "acquisition", "term sheet", "due diligence", "equity",
-    "fundraising", "series a", "series b", "investment",
+    "investor",
+    "board",
+    "performance",
+    "legal",
+    "compliance",
+    "acquisition",
+    "term sheet",
+    "due diligence",
+    "equity",
+    "fundraising",
+    "series a",
+    "series b",
+    "investment",
 }
 
 
@@ -318,9 +339,7 @@ def determine_action_recommendation(contact: Dict, entity: Dict) -> Dict:
         }
 
     # Rule 2: Investor/board topics + ACTIVE relationship → must escalate
-    has_sensitive_topic = any(
-        any(et in t for et in ESCALATION_TOPICS) for t in topics
-    )
+    has_sensitive_topic = any(any(et in t for et in ESCALATION_TOPICS) for t in topics)
     is_investor = entity_type in ("INVESTOR", "BOARD")
 
     if (has_sensitive_topic or is_investor) and stage in ("ACTIVE", "WARM"):
@@ -548,16 +567,26 @@ def generate_context_paragraph(
         if overdue:
             parts.append(f"⚠️ OVERDUE: {len(overdue)} commitment(s) not fulfilled.")
             for commit in overdue[:2]:
-                due_str = f" (due {commit.get('due_date', '')[:10]}" if commit.get('due_date') else ""
+                due_str = (
+                    f" (due {commit.get('due_date', '')[:10]}"
+                    if commit.get("due_date")
+                    else ""
+                )
                 parts.append(f"  - {commit.get('text', 'Unknown')[:100]}{due_str}")
         else:
             parts.append(f"⏳ {len(firm_commitments)} open commitment(s).")
             for commit in firm_commitments[:2]:
-                due_str = f" (due {commit.get('due_date', '')[:10]})" if commit.get('due_date') else ""
+                due_str = (
+                    f" (due {commit.get('due_date', '')[:10]})"
+                    if commit.get("due_date")
+                    else ""
+                )
                 parts.append(f"  - {commit.get('text', 'Unknown')[:100]}{due_str}")
 
     if soft_commitments:
-        parts.append(f"~ {len(soft_commitments)} tentative promise(s) (follow up to confirm):")
+        parts.append(
+            f"~ {len(soft_commitments)} tentative promise(s) (follow up to confirm):"
+        )
         for commit in soft_commitments[:2]:
             parts.append(f"  - {commit.get('text', 'Unknown')[:100]}")
 

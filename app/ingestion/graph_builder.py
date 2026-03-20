@@ -15,8 +15,14 @@ def extract_company_from_email(email):
     domain = email.split("@")[1].lower()
 
     personal_domains = [
-        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-        "icloud.com", "protonmail.com", "aol.com", "mail.com",
+        "gmail.com",
+        "yahoo.com",
+        "hotmail.com",
+        "outlook.com",
+        "icloud.com",
+        "protonmail.com",
+        "aol.com",
+        "mail.com",
     ]
 
     if domain in personal_domains:
@@ -39,7 +45,10 @@ def get_email_domain(email: str) -> str:
 
 # ── Due date parsing ──────────────────────────────────────────────────────────
 
-def parse_due_signal(due_signal: str, reference_date: datetime = None) -> Optional[datetime]:
+
+def parse_due_signal(
+    due_signal: str, reference_date: datetime = None
+) -> Optional[datetime]:
     """
     Convert a natural language due signal into an actual datetime.
     Handles common patterns like "by Friday", "next week", "end of month",
@@ -61,11 +70,29 @@ def parse_due_signal(due_signal: str, reference_date: datetime = None) -> Option
     # --- Absolute patterns first ---
     # "by March 20", "March 20", "20 March"
     month_names = {
-        "january": 1, "february": 2, "march": 3, "april": 4,
-        "may": 5, "june": 6, "july": 7, "august": 8,
-        "september": 9, "october": 10, "november": 11, "december": 12,
-        "jan": 1, "feb": 2, "mar": 3, "apr": 4, "jun": 6,
-        "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        "january": 1,
+        "february": 2,
+        "march": 3,
+        "april": 4,
+        "may": 5,
+        "june": 6,
+        "july": 7,
+        "august": 8,
+        "september": 9,
+        "october": 10,
+        "november": 11,
+        "december": 12,
+        "jan": 1,
+        "feb": 2,
+        "mar": 3,
+        "apr": 4,
+        "jun": 6,
+        "jul": 7,
+        "aug": 8,
+        "sep": 9,
+        "oct": 10,
+        "nov": 11,
+        "dec": 12,
     }
 
     for month_name, month_num in month_names.items():
@@ -98,9 +125,20 @@ def parse_due_signal(due_signal: str, reference_date: datetime = None) -> Option
 
     # --- Relative day patterns ---
     day_names = {
-        "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-        "friday": 4, "saturday": 5, "sunday": 6,
-        "mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6,
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6,
+        "mon": 0,
+        "tue": 1,
+        "wed": 2,
+        "thu": 3,
+        "fri": 4,
+        "sat": 5,
+        "sun": 6,
     }
 
     for day_name, day_num in day_names.items():
@@ -118,26 +156,34 @@ def parse_due_signal(due_signal: str, reference_date: datetime = None) -> Option
     # --- Common relative phrases ---
     if re.search(r"\btoday\b", signal):
         return ref.replace(hour=23, minute=59, second=0, microsecond=0)
-    
+
     if re.search(r"\btomorrow\b", signal):
-        return (ref + timedelta(days=1)).replace(hour=23, minute=59, second=0, microsecond=0)
-        
+        return (ref + timedelta(days=1)).replace(
+            hour=23, minute=59, second=0, microsecond=0
+        )
+
     if re.search(r"\beod\b|\bend of day\b", signal):
         return ref.replace(hour=23, minute=59, second=0, microsecond=0)
-        
+
     if re.search(r"\beow\b|\bend of week\b|\bthis week\b", signal):
         days_ahead = (4 - ref.weekday()) % 7 or 5
-        return (ref + timedelta(days=days_ahead)).replace(hour=23, minute=59, second=0, microsecond=0)
-        
+        return (ref + timedelta(days=days_ahead)).replace(
+            hour=23, minute=59, second=0, microsecond=0
+        )
+
     if re.search(r"\bnext week\b", signal):
         days_ahead = 7 + (4 - ref.weekday()) % 7
-        return (ref + timedelta(days=days_ahead)).replace(hour=23, minute=59, second=0, microsecond=0)
+        return (ref + timedelta(days=days_ahead)).replace(
+            hour=23, minute=59, second=0, microsecond=0
+        )
     # "end of month"
     if re.search(r"\bend of month\b|\beom\b|\bthis month\b", signal):
         # Last day of current month
         next_month = ref.replace(day=28) + timedelta(days=4)
         last_day = next_month - timedelta(days=next_month.day)
-        return last_day.replace(hour=23, minute=59, second=0, microsecond=0, tzinfo=timezone.utc)
+        return last_day.replace(
+            hour=23, minute=59, second=0, microsecond=0, tzinfo=timezone.utc
+        )
 
     # "next month"
     if "next month" in signal:
@@ -195,6 +241,7 @@ def parse_due_signal(due_signal: str, reference_date: datetime = None) -> Option
 
 # ── Contact upsert with same-person fuzzy dedup ───────────────────────────────
 
+
 def find_existing_contact_by_domain_and_name(db, org_id: str, email: str, name: str):
     """
     Before creating a new contact, check if someone with very similar name
@@ -212,8 +259,13 @@ def find_existing_contact_by_domain_and_name(db, org_id: str, email: str, name: 
 
     # Skip personal domains — can't infer same-company from gmail.com etc.
     personal_domains = {
-        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-        "icloud.com", "protonmail.com", "aol.com",
+        "gmail.com",
+        "yahoo.com",
+        "hotmail.com",
+        "outlook.com",
+        "icloud.com",
+        "protonmail.com",
+        "aol.com",
     }
     if domain in personal_domains:
         return None
@@ -363,10 +415,13 @@ def create_interaction(
     engagement_level="medium",
     reply_time_hours=None,
     account_email=None,
+    signal_score=None,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
     Stores engagement signals, interaction type, and commitments with lifecycle.
+
+    Update 1.1: Added signal_score parameter for classification-based prioritization.
     """
     if commitments is None:
         commitments = []
@@ -376,6 +431,9 @@ def create_interaction(
     weight_score = _calculate_interaction_weight(
         interaction_type, engagement_level, sentiment, direction
     )
+
+    # Use signal_score if provided, otherwise fall back to weight_score
+    final_signal_score = signal_score if signal_score is not None else weight_score
 
     interaction_id = str(uuid4())
 
@@ -396,8 +454,10 @@ def create_interaction(
             interaction_type,
             reply_time_hours,
             weight_score,
+            signal_score,
             topics,
-            account_email
+            account_email,
+            source
         )
         VALUES (
             :id,
@@ -413,8 +473,10 @@ def create_interaction(
             :interaction_type,
             :reply_time_hours,
             :weight_score,
+            :signal_score,
             :topics,
-            :account_email
+            :account_email,
+            :source
         )
         ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
@@ -422,6 +484,7 @@ def create_interaction(
             intent = EXCLUDED.intent,
             interaction_type = EXCLUDED.interaction_type,
             weight_score = EXCLUDED.weight_score,
+            signal_score = EXCLUDED.signal_score,
             topics = EXCLUDED.topics,
             account_email = EXCLUDED.account_email
         """
@@ -440,8 +503,10 @@ def create_interaction(
             "interaction_type": interaction_type,
             "reply_time_hours": reply_time_hours,
             "weight_score": weight_score,
+            "signal_score": final_signal_score,
             "topics": topics,
             "account_email": account_email,
+            "source": "gmail",
         },
     )
 
@@ -512,7 +577,9 @@ def _store_commitments(
             if due_signal:
                 due_date = parse_due_signal(due_signal)
                 if due_date:
-                    print(f"  📅 Parsed due date: '{due_signal}' → {due_date.strftime('%Y-%m-%d')}")
+                    print(
+                        f"  📅 Parsed due date: '{due_signal}' → {due_date.strftime('%Y-%m-%d')}"
+                    )
                 else:
                     print(f"  ⚠️ Could not parse due signal: '{due_signal}'")
 
@@ -548,3 +615,194 @@ def _store_commitments(
         except Exception as e:
             print(f"⚠️ Error storing commitment: {e}")
             continue
+
+
+# ── Update 1.1: Helper Functions for Classification Flow ────────────────
+
+
+def store_state_event(db, org_id: str, parsed_state: dict):
+    """
+    Store SYSTEM category emails as structured state data.
+
+    Used for GST, payment, invoice, order, shipping emails that contain
+    structured information but aren't relationship interactions.
+
+    Args:
+        db: Database session
+        org_id: Organization UUID
+        parsed_state: Dict with keys {type, status, metadata}
+
+    Example:
+        >>> parsed_state = {
+        ...     "type": "GST",
+        ...     "status": "FILED",
+        ...     "metadata": {"subject": "GST Return Filed", "sender": "gst@gov.in"}
+        ... }
+        >>> store_state_event(db, org_id, parsed_state)
+    """
+    from sqlalchemy import text
+    from uuid import uuid4
+
+    try:
+        db.execute(
+            text(
+                """
+                INSERT INTO state_events (
+                    id, org_id, type, status, metadata, created_at
+                )
+                VALUES (
+                    :id, :org_id, :type, :status, :metadata, NOW()
+                )
+                """
+            ),
+            {
+                "id": str(uuid4()),
+                "org_id": org_id,
+                "type": parsed_state.get("type", "OTHER"),
+                "status": parsed_state.get("status", "UNKNOWN"),
+                "metadata": parsed_state.get("metadata", {}),
+            },
+        )
+        db.commit()
+    except Exception as e:
+        print(f"⚠️ Error storing state event: {e}")
+        db.rollback()
+
+
+def upsert_state_entity(db, org_id: str, parsed_state: dict):
+    """
+    UPSERT state entity into structured state_entities table (v2.2 State Graph).
+
+    Updates existing entity if it exists, otherwise inserts new record.
+    This ensures same real-world event (e.g., GST Q2 2025) is tracked as one record,
+    not duplicated across multiple emails.
+
+    Args:
+        db: Database session
+        org_id: Organization UUID
+        parsed_state: Dict with keys:
+            - entity_type: GST | PAYMENT | INVOICE | ORDER | COMPLIANCE
+            - entity_id: Unique ID like GST_Q2_2025, PAYMENT_UTR_123
+            - status: PENDING | FILED | CONFIRMED | OVERDUE
+            - reference_id: ARN, UTR, invoice_number, etc
+            - amount: Numeric if applicable
+            - vendor: Name if applicable
+            - due_date: When is it due
+            - metadata: Additional context
+            - source_email_id: Email that triggered this update (optional)
+
+    Example:
+        >>> parsed_state = {
+        ...     "entity_type": "GST",
+        ...     "entity_id": "GST_Q2_2025",
+        ...     "status": "FILED",
+        ...     "reference_id": "AA1234567890",
+        ...     "amount": None,
+        ...     "vendor": None,
+        ...     "due_date": None,
+        ...     "metadata": {"period": "Q2", "subject": "..."}
+        ... }
+        >>> upsert_state_entity(db, org_id, parsed_state)
+    """
+    from sqlalchemy import text
+    from uuid import uuid4
+    import json
+
+    try:
+        entity_type = parsed_state.get("entity_type", "OTHER")
+        entity_id = parsed_state.get("entity_id")
+        status = parsed_state.get("status", "PENDING")
+        reference_id = parsed_state.get("reference_id")
+        amount = parsed_state.get("amount")
+        vendor = parsed_state.get("vendor")
+        due_date = parsed_state.get("due_date")
+        metadata = json.dumps(parsed_state.get("metadata", {}))
+        source_email_id = parsed_state.get("source_email_id")
+
+        # Use PostgreSQL UPSERT (INSERT ... ON CONFLICT)
+        db.execute(
+            text(
+                """
+                INSERT INTO state_entities (
+                    id, org_id, entity_type, entity_id, status,
+                    amount, vendor, reference_id, due_date,
+                    source_email_id, metadata, created_at, updated_at
+                )
+                VALUES (
+                    :id, :org_id, :entity_type, :entity_id, :status,
+                    :amount, :vendor, :reference_id, :due_date,
+                    :source_email_id, :metadata::jsonb, NOW(), NOW()
+                )
+                ON CONFLICT(org_id, entity_id) DO UPDATE
+                SET 
+                    status = :status,
+                    amount = COALESCE(EXCLUDED.amount, state_entities.amount),
+                    vendor = COALESCE(EXCLUDED.vendor, state_entities.vendor),
+                    reference_id = COALESCE(EXCLUDED.reference_id, state_entities.reference_id),
+                    due_date = COALESCE(EXCLUDED.due_date, state_entities.due_date),
+                    source_email_id = COALESCE(EXCLUDED.source_email_id, state_entities.source_email_id),
+                    metadata = jsonb_set(state_entities.metadata, '{}', EXCLUDED.metadata),
+                    updated_at = NOW()
+            """
+            ),
+            {
+                "id": str(uuid4()),
+                "org_id": org_id,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "status": status,
+                "amount": amount,
+                "vendor": vendor,
+                "reference_id": reference_id,
+                "due_date": due_date,
+                "source_email_id": source_email_id,
+                "metadata": metadata,
+            },
+        )
+        db.commit()
+        return True
+    except Exception as e:
+        print(f"⚠️ Error upserting state entity: {e}")
+        db.rollback()
+        return False
+
+
+def update_relationship_stats_only(db, org_id: str, contact_id: str, interaction_date):
+    """
+    Update interaction count and last interaction date without LLM extraction.
+
+    Used for WEAK category emails (< 25 words) where full LLM extraction
+    would be wasteful but we still want to track basic engagement stats.
+
+    Args:
+        db: Database session
+        org_id: Organization UUID
+        contact_id: Contact UUID
+        interaction_date: Timestamp of the interaction
+
+    Example:
+        >>> # For a short "Thanks!" email
+        >>> update_relationship_stats_only(db, org_id, contact_id, datetime.now())
+    """
+    from sqlalchemy import text
+
+    try:
+        db.execute(
+            text(
+                """
+                UPDATE contacts
+                SET interaction_count = interaction_count + 1,
+                    last_interaction_at = GREATEST(last_interaction_at, :interaction_date)
+                WHERE id = :contact_id AND org_id = :org_id
+                """
+            ),
+            {
+                "contact_id": contact_id,
+                "org_id": org_id,
+                "interaction_date": interaction_date,
+            },
+        )
+        db.commit()
+    except Exception as e:
+        print(f"⚠️ Error updating relationship stats: {e}")
+        db.rollback()
