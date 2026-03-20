@@ -242,6 +242,9 @@ def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list
             if not contact_email:
                 continue
 
+            if is_automated_email(contact_email, contact_name):
+                continue
+
             valid_messages.append(
                 {
                     "id": headers["id"],
@@ -531,7 +534,7 @@ def _sync_single_account(
                     sender_email=from_email or "",
                 )
                 # Use UPSERT logic: updates existing entity if found, inserts if new
-                parsed_state["source_email_id"] = msg_id  # Track source email
+                parsed_state["source_email_id"] = parsed_msg["gmail_id"]  # Track source email
                 upsert_state_entity(db, org_id, parsed_state)
                 system_emails += 1
                 update_sync_progress(

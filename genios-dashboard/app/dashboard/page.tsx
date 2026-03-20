@@ -305,104 +305,198 @@ export default function DashboardPage() {
 
           {/* Node Detail Slide-in Panel */}
           {selectedNode && (
-            <div className="absolute top-0 right-0 h-full w-full md:w-96 bg-card border-l border-border shadow-2xl overflow-y-auto z-20 animate-in slide-in-from-right">
-              <div className="sticky top-0 bg-card border-b border-border z-10 p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">{selectedNode.name}</h2>
-                    {selectedNode.company && <p className="text-sm text-muted-foreground">{selectedNode.company}</p>}
+            <div className="absolute top-0 right-0 h-full w-full md:w-96 bg-card border-l border-border shadow-2xl flex flex-col z-20 animate-in slide-in-from-right">
+
+              {/* Top strip: stage counts + close */}
+              <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border text-xs shrink-0">
+                {(['ACTIVE', 'WARM', 'COLD'] as const).map(stage => {
+                  const count = stageCounts[stage];
+                  if (!count) return null;
+                  const stageColors: Record<string, string> = { ACTIVE: '#10b981', WARM: '#f59e0b', COLD: '#ef4444' };
+                  return (
+                    <span key={stage} className="flex items-center gap-1 text-muted-foreground">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stageColors[stage] }} />
+                      <span className="font-semibold text-foreground">{count}</span> {stage.toLowerCase()}
+                    </span>
+                  );
+                })}
+                {(contextBundle?.entity?.open_commitments?.length ?? 0) > 0 && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span className="font-semibold text-foreground">{contextBundle?.entity?.open_commitments?.length}</span> open commits
+                  </span>
+                )}
+                <button
+                  onClick={() => setSelectedNode(null)}
+                  className="ml-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Avatar + Name + Role */}
+              <div className="px-4 pt-4 pb-3 border-b border-border shrink-0">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
+                    style={{ backgroundColor: ENTITY_TAG_CONFIG[selectedNode.entity_type]?.color ?? '#6366f1' }}
+                  >
+                    {selectedNode.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setSelectedNode(null)}>
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <Badge style={{ backgroundColor: getStageColor(selectedNode.relationship_stage), color: 'white', border: 'none' }}>
-                    {selectedNode.relationship_stage}
-                  </Badge>
-                  {selectedNode.entity_type && selectedNode.entity_type !== 'other' && selectedNode.entity_type !== 'self' && (
-                    <Badge style={{ backgroundColor: ENTITY_TAG_CONFIG[selectedNode.entity_type]?.color ?? '#94a3b8', color: 'white', border: 'none' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-sm font-semibold text-foreground">{selectedNode.name}</h2>
+                      <span
+                        className="text-[9px] font-semibold px-2 py-0.5 rounded-full text-white"
+                        style={{ backgroundColor: getStageColor(selectedNode.relationship_stage) }}
+                      >
+                        {selectedNode.relationship_stage.toLowerCase()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {ENTITY_TAG_CONFIG[selectedNode.entity_type]?.label ?? selectedNode.entity_type}
-                    </Badge>
-                  )}
-                  <span className="text-sm text-muted-foreground">{selectedNode.interaction_count} interactions</span>
+                      {selectedNode.company && ` · ${selectedNode.company}`}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-4 space-y-6">
+              {/* Scrollable body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {contextLoading ? (
                   <div className="flex justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                   </div>
                 ) : contextBundle ? (
                   <>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Context for Agent</h3>
-                        <Button variant="outline" size="sm" onClick={handleCopyContext} className="h-7 gap-1">
-                          {copied ? <><Check className="h-3 w-3" />Copied</> : <><Copy className="h-3 w-3" />Copy</>}
-                        </Button>
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-background rounded-xl p-3 border border-border text-center">
+                        <p className="text-xl font-bold text-foreground leading-none">
+                          {contextBundle.entity?.interaction_count ?? selectedNode.interaction_count}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Interactions</p>
                       </div>
-                      <div className="bg-muted rounded-lg p-4 text-sm leading-relaxed text-foreground">
-                        {contextBundle.context_for_agent}
+                      <div className="bg-background rounded-xl p-3 border border-border text-center">
+                        <p className="text-xs font-bold text-foreground leading-tight">
+                          {contextBundle.entity?.last_interaction ?? '—'}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Last Contact</p>
                       </div>
-                      {contextBundle.confidence && (
-                        <p className="text-xs text-muted-foreground mt-1">Confidence: {(contextBundle.confidence * 100).toFixed(0)}%</p>
-                      )}
-                      <Button onClick={() => setDraftModalOpen(true)} className="w-full mt-4 gap-2">
-                        <Sparkles className="h-4 w-4" /> Draft with AI
-                      </Button>
+                      <div className="bg-background rounded-xl p-3 border border-border text-center">
+                        <p className={`text-xl font-bold leading-none ${(contextBundle.entity?.open_commitments?.length ?? 0) > 0 ? 'text-amber-400' : 'text-foreground'}`}>
+                          {contextBundle.entity?.open_commitments?.length ?? 0}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Open Commits</p>
+                      </div>
                     </div>
 
-                    {contextBundle.entity && (
-                      <>
-                        {contextBundle.entity.topics_of_interest?.length > 0 && (
-                          <div>
-                            <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide mb-2">Topics</h3>
-                            <div className="flex flex-wrap gap-2">
-                              {contextBundle.entity.topics_of_interest.map((t, i) => <Badge key={i} variant="secondary">{t}</Badge>)}
+                    {/* Context confidence bar */}
+                    {contextBundle.confidence != null && (
+                      <div className="bg-background rounded-xl p-3 border border-border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-muted-foreground">Context confidence</span>
+                          <span className="text-xs font-semibold text-foreground">{(contextBundle.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-700"
+                            style={{ width: `${(contextBundle.confidence * 100).toFixed(0)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Interaction timeline */}
+                    {(contextBundle.context_for_agent || (contextBundle.entity?.topics_of_interest?.length ?? 0) > 0) && (
+                      <div className="bg-background rounded-xl p-3 border border-border space-y-3">
+                        {contextBundle.context_for_agent && (
+                          <div className="flex gap-3">
+                            <div className="flex flex-col items-center shrink-0">
+                              <span className="w-2 h-2 rounded-full bg-green-500 mt-0.5" />
+                              <span className="w-px flex-1 bg-border mt-1" />
                             </div>
-                          </div>
-                        )}
-                        {contextBundle.entity.open_commitments?.length > 0 && (
-                          <div>
-                            <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide mb-2">Open Commitments</h3>
-                            <div className="space-y-2">
-                              {contextBundle.entity.open_commitments.map((c, i) => (
-                                <div key={i} className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-foreground">⚠️ {c}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide mb-2">Stats</h3>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Last interaction</span>
-                              <span className="font-medium text-foreground">{contextBundle.entity.last_interaction}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Sentiment</span>
-                              <span className="font-medium text-foreground">{contextBundle.entity.sentiment_trend}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Total interactions</span>
-                              <span className="font-medium text-foreground">{contextBundle.entity.interaction_count}</span>
-                            </div>
-                            {contextBundle.entity.communication_style && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Comm. style</span>
-                                <span className="font-medium text-foreground">{contextBundle.entity.communication_style}</span>
+                            <div className="pb-3 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs font-medium text-foreground">Last interaction</p>
+                                <span className="text-[10px] text-muted-foreground shrink-0">{contextBundle.entity?.last_interaction ?? ''}</span>
                               </div>
-                            )}
+                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-3">
+                                {contextBundle.context_for_agent.slice(0, 140).trim()}…
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {contextBundle.entity?.topics_of_interest?.slice(0, 2).map((topic: string, i: number) => (
+                          <div key={i} className="flex gap-3">
+                            <div className="flex flex-col items-center shrink-0">
+                              <span className={`w-2 h-2 rounded-full mt-0.5 ${i === 0 ? 'bg-green-500' : 'bg-amber-400'}`} />
+                              {i === 0 && <span className="w-px flex-1 bg-border mt-1" />}
+                            </div>
+                            <div className={i === 0 ? 'pb-3' : ''}>
+                              <p className="text-xs font-medium text-foreground capitalize">{topic}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {i === 0 ? 'Recent topic' : 'Earlier exchange'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Open Commitments */}
+                    {(contextBundle.entity?.open_commitments?.length ?? 0) > 0 && (
+                      <div className="space-y-1.5">
+                        <h3 className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Open Commitments</h3>
+                        {contextBundle.entity?.open_commitments?.map((c: string, i: number) => (
+                          <div key={i} className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 text-xs text-foreground flex gap-2">
+                            <span className="shrink-0">⚠️</span> {c}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Communication style */}
+                    {contextBundle.entity?.communication_style && (
+                      <div>
+                        <h3 className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider mb-2">Communication Style</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+                            <p className="text-[10px] font-semibold text-green-400 mb-2">✓ DO THIS</p>
+                            <p className="text-xs text-foreground leading-relaxed">
+                              {contextBundle.entity.communication_style}
+                            </p>
+                          </div>
+                          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                            <p className="text-[10px] font-semibold text-red-400 mb-2">✗ AVOID</p>
+                            <div className="space-y-1.5">
+                              <p className="text-xs text-muted-foreground">→ Vague follow-ups</p>
+                              <p className="text-xs text-muted-foreground">→ Long narrative emails</p>
+                            </div>
                           </div>
                         </div>
-                      </>
+                      </div>
                     )}
                   </>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground text-sm">No context available for this contact.</div>
                 )}
+              </div>
+
+              {/* Sticky action buttons */}
+              <div className="shrink-0 border-t border-border p-3 flex gap-2">
+                <Button onClick={() => setDraftModalOpen(true)} className="flex-1 gap-2 text-sm">
+                  <Sparkles className="h-4 w-4" /> Draft with AI
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCopyContext}
+                  disabled={!contextBundle?.context_for_agent}
+                  className="gap-2 text-sm"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copied' : 'Copy context'}
+                </Button>
               </div>
             </div>
           )}
