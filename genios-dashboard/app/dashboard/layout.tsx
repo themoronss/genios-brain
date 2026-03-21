@@ -15,12 +15,15 @@ import {
   Moon,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
 } from 'lucide-react';
+import MrEliteChatbot from '@/components/MrEliteChatbot';
 
 const NAV_ITEMS = [
   { label: 'Dashboard',       href: '/dashboard',              icon: LayoutDashboard },
   { label: 'Context Tester',  href: '/dashboard/tester',       icon: FlaskConical },
   { label: 'Integrations',    href: '/dashboard/integrations', icon: Plug },
+  { label: 'Resources',       href: '/dashboard/resources',    icon: BookOpen },
   { label: 'Settings',        href: '/dashboard/settings',     icon: Settings },
 ];
 
@@ -161,6 +164,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Mr. Elite Chatbot — available on all dashboard pages */}
+      <MrEliteChatbot />
     </div>
   );
 }

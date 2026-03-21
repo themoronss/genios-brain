@@ -12,6 +12,7 @@ from app.api.routes import draft
 from app.api.routes import sync
 from app.api.routes import agents
 from app.api.routes import events
+from app.api.routes import chat
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ app.include_router(draft.router)
 app.include_router(sync.router)
 app.include_router(agents.router)
 app.include_router(events.router)
+app.include_router(chat.router)
 
 
 @app.get("/")

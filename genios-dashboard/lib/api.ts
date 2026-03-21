@@ -109,6 +109,16 @@ export const api = {
         headers: { Authorization: `Bearer ${token}` },
       }),
   },
+  chat: {
+    send: (orgId: string, message: string, queryType: string, history: { role: string; content: string }[]) =>
+      apiCall<{ reply: string; query_type: string; context_used: boolean; entity_resolved: string | null }>(
+        `/api/org/${orgId}/chat`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ message, query_type: queryType, history }),
+        }
+      ),
+  },
   gmail: {
     connect: (orgId: string) => {
       window.location.href = `${API_BASE}/auth/gmail/connect?org_id=${orgId}`;
