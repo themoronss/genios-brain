@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   X, Copy, Check, Sparkles, RefreshCcw, Mail, Plus, AlertCircle, Inbox,
-  Network, GitBranch, User, LayoutGrid, Table2, Search, Download,
+  Network, GitBranch, User, LayoutGrid, Table2, Search, Download, AlertTriangle,
 } from 'lucide-react';
 import { formatDate, getStageColor } from '@/lib/utils';
 
@@ -57,6 +57,9 @@ export default function DashboardPage() {
   const [topicHighlightIds, setTopicHighlightIds] = useState<Set<string> | null>(null);
   // Edge detail panel
   const [edgePanel, setEdgePanel] = useState<{ contactId: string; contactName: string } | null>(null);
+  // Overdue commitments filter — highlights contacts with overdue items
+  const [overdueFilter, setOverdueFilter] = useState(false);
+  const [overdueContactIds, setOverdueContactIds] = useState<Set<string> | null>(null);
 
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
@@ -174,6 +177,27 @@ export default function DashboardPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // Fetch overdue contact IDs from insights when overdue filter toggled
+  useEffect(() => {
+    if (!overdueFilter || !orgId) {
+      setOverdueContactIds(null);
+      return;
+    }
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/org/${orgId}/insights?category=overdue_commitment`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(r => r.json())
+      .then((data: any) => {
+        const ids = new Set<string>(
+          (data.insights ?? [])
+            .filter((ins: any) => ins.contact_id)
+            .map((ins: any) => ins.contact_id as string)
+        );
+        setOverdueContactIds(ids.size > 0 ? ids : null);
+      })
+      .catch(() => setOverdueContactIds(null));
+  }, [overdueFilter, orgId, token]);
 
   const entityTypeCounts = graphData?.entity_type_counts ?? {};
   const availableFilters = ['all', ...Object.keys(entityTypeCounts).filter(k => k !== 'self').sort()];
@@ -318,6 +342,25 @@ export default function DashboardPage() {
             );
           })}
 
+          {/* Overdue commitments quick-filter — PDF spec */}
+          <button
+            onClick={() => setOverdueFilter(v => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all shrink-0
+              ${overdueFilter
+                ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                : 'text-muted-foreground bg-card border-border hover:border-amber-400 hover:text-amber-500'
+              }`}
+            title="Show contacts with overdue commitments"
+          >
+            <AlertTriangle className="w-3 h-3" />
+            Overdue
+            {overdueContactIds && overdueFilter && (
+              <span className="ml-0.5 px-1.5 rounded-full text-[10px] font-semibold bg-white/20 text-white">
+                {overdueContactIds.size}
+              </span>
+            )}
+          </button>
+
           {/* View mode toggle */}
           <div className="ml-auto flex items-center gap-1 bg-muted rounded-lg p-0.5 shrink-0">
             <button
@@ -367,6 +410,7 @@ export default function DashboardPage() {
                 {graphData.nodes
                   .filter(n => n.entity_type !== 'self')
                   .filter(n => !tableSearch || n.name?.toLowerCase().includes(tableSearch.toLowerCase()) || n.company?.toLowerCase().includes(tableSearch.toLowerCase()) || n.email?.toLowerCase().includes(tableSearch.toLowerCase()))
+                  .filter(n => !overdueFilter || !overdueContactIds || overdueContactIds.has(n.id))
                   .sort((a, b) => b.interaction_count - a.interaction_count)
                   .map((node, i) => {
                     const cfg = ENTITY_TAG_CONFIG[node.entity_type] ?? { label: node.entity_type, color: '#94a3b8' };
@@ -523,7 +567,7 @@ export default function DashboardPage() {
               setEdgePanel({ contactId: contactNode.id, contactName: contactNode.name });
             }}
             activeEntityFilter={activeEntityFilter}
-            highlightNodeIds={topicHighlightIds}
+            highlightNodeIds={overdueContactIds ?? topicHighlightIds}
             graphMode={graphMode}
             egoNodeId={egoNodeId}
           />

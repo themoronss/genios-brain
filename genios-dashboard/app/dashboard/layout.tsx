@@ -16,11 +16,13 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  GitMerge,
 } from 'lucide-react';
 import MrEliteChatbot from '@/components/MrEliteChatbot';
 
 const NAV_ITEMS = [
   { label: 'Dashboard',       href: '/dashboard',              icon: LayoutDashboard },
+  { label: 'Review Queue',    href: '/dashboard/review',       icon: GitMerge },
   { label: 'Context Tester',  href: '/dashboard/tester',       icon: FlaskConical },
   { label: 'Integrations',    href: '/dashboard/integrations', icon: Plug },
   { label: 'Resources',       href: '/dashboard/resources',    icon: BookOpen },

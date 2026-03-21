@@ -87,6 +87,78 @@ VALID_CONTACT_ROLES = {
 }
 
 
+# ── PDF spec: Aggressive role/title extraction from email signatures ────
+
+# Title-to-role mapping for fast deterministic classification
+_TITLE_TO_ROLE: list = [
+    # Investor roles → entity_type=investor
+    (r"\b(general\s+partner|managing\s+partner|gp|venture\s+partner|investment\s+partner"
+     r"|principal|associate\s+partner|partner\s+at|vc\s+partner)\b", "investor"),
+    (r"\b(fund\s+manager|portfolio\s+manager|asset\s+manager)\b", "investor"),
+    (r"\b(angel\s+investor|angel|seed\s+investor|early.stage\s+investor)\b", "investor"),
+    # Executive/founder roles → lead or partner
+    (r"\b(chief\s+executive|ceo|co-?founder|founder|co-?ceo)\b", "lead"),
+    (r"\b(chief\s+technology|cto|chief\s+product|cpo|chief\s+operating|coo)\b", "lead"),
+    (r"\b(chief\s+financial|cfo|chief\s+revenue|cro|chief\s+marketing|cmo)\b", "lead"),
+    # Advisor
+    (r"\b(advisor|board\s+member|board\s+advisor|strategic\s+advisor|mentor)\b", "advisor"),
+    # Customer / business
+    (r"\b(director\s+of|vp\s+of|vice\s+president|head\s+of|product\s+manager"
+     r"|account\s+manager|account\s+executive|sales\s+rep|business\s+development)\b", "customer"),
+    # Media
+    (r"\b(journalist|reporter|editor|writer|columnist|correspondent|media)\b", "media"),
+    # Vendor / supplier
+    (r"\b(vendor|supplier|contractor|freelancer|consultant)\b", "vendor"),
+    # Candidate
+    (r"\b(software\s+engineer|engineer|developer|designer|data\s+scientist"
+     r"|product\s+designer|applicant|candidate)\b", "candidate"),
+    # Team
+    (r"\b(employee|staff|team\s+member|operations|support)\b", "team"),
+]
+
+_COMPILED_TITLE_PATTERNS = [
+    (_re.compile(pattern, _re.IGNORECASE), role)
+    for pattern, role in _TITLE_TO_ROLE
+]
+
+# Signature line markers — typically last 5-8 lines of an email
+_SIG_MARKERS = _re.compile(
+    r"(--\s*\n|regards,|best,|cheers,|sincerely,|thanks,|warm\s+regards,|best\s+regards,)",
+    _re.IGNORECASE,
+)
+
+
+def extract_role_from_signature(body: str) -> Optional[str]:
+    """
+    Deterministically extract contact role from email signature block.
+    Returns a VALID_CONTACT_ROLES value or None if no match found.
+
+    Checks last 10 lines of email for title keywords.
+    More reliable than LLM for standard business titles.
+    """
+    if not body:
+        return None
+
+    # Get the last portion of the email (signature zone)
+    lines = body.strip().splitlines()
+    # Look in last 10 lines or after a signature marker
+    sig_start = 0
+    for i, line in enumerate(lines):
+        if _SIG_MARKERS.search(line):
+            sig_start = i
+            break
+
+    sig_lines = lines[max(sig_start, len(lines) - 10):]
+    sig_text = " ".join(sig_lines)
+
+    # Try each pattern in priority order
+    for pattern, role in _COMPILED_TITLE_PATTERNS:
+        if pattern.search(sig_text):
+            return role
+
+    return None
+
+
 def extract_email_intelligence(
     subject: str,
     body: str = "",
@@ -232,6 +304,13 @@ Return ONLY this JSON — no markdown, no explanation:
                 # Update 2: Validate and normalize contact_role
                 raw_role = str(result.get("contact_role", "other")).lower().strip()
                 contact_role = raw_role if raw_role in VALID_CONTACT_ROLES else "other"
+
+                # PDF spec: supplement LLM classification with deterministic
+                # signature extraction — if LLM returned 'other', try signature
+                if contact_role == "other":
+                    sig_role = extract_role_from_signature(body)
+                    if sig_role:
+                        contact_role = sig_role
 
                 return {
                     "summary": str(result.get("summary", ""))[:200],
