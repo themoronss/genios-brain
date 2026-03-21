@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { GraphData, GraphNode, ContextBundle, ConnectionStatus } from '@/types';
 import RelationshipGraph from '@/components/RelationshipGraph';
+import EdgeDetailPanel from '@/components/EdgeDetailPanel';
+import MrEliteChatbot from '@/components/MrEliteChatbot';
 import { DraftModal } from '@/components/DraftModal';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatsBar from '@/components/StatsBar';
@@ -50,6 +52,11 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('graph');
   const [tableSearch, setTableSearch] = useState('');
   const tableSearchRef = useRef<HTMLInputElement>(null);
+  // Topic filter — dims non-matching graph nodes
+  const [topicFilter, setTopicFilter] = useState('');
+  const [topicHighlightIds, setTopicHighlightIds] = useState<Set<string> | null>(null);
+  // Edge detail panel
+  const [edgePanel, setEdgePanel] = useState<{ contactId: string; contactName: string } | null>(null);
 
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
@@ -468,17 +475,68 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Topic Filter — PDF spec: "Type a topic → filter graph to show only matching nodes" */}
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={topicFilter}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setTopicFilter(val);
+                  if (!val.trim()) {
+                    setTopicHighlightIds(null);
+                    return;
+                  }
+                  try {
+                    const res = await fetch(`/api/org/${orgId}/graph/filter/topic?topic=${encodeURIComponent(val)}`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      setTopicHighlightIds(new Set((data.contact_ids || []) as string[]));
+                    }
+                  } catch {}
+                }}
+                placeholder="Filter by topic…"
+                className="text-xs h-8 pl-3 pr-7 rounded-lg border border-border bg-card/90 backdrop-blur-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-40"
+              />
+              {topicFilter && (
+                <button
+                  onClick={() => { setTopicFilter(''); setTopicHighlightIds(null); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
+                >✕</button>
+              )}
+            </div>
+          </div>
+
           {/* Graph Canvas */}
           <RelationshipGraph
             data={graphData}
             onNodeClick={(node) => {
+              setEdgePanel(null); // close edge panel when node clicked
               handleNodeClick(node);
               if (graphMode === 'ego') setEgoNodeId(node.id);
             }}
+            onLinkClick={(source, target) => {
+              // Show edge detail for the non-self node
+              const contactNode = source.entity_type === 'self' ? target : source;
+              setSelectedNode(null);
+              setEdgePanel({ contactId: contactNode.id, contactName: contactNode.name });
+            }}
             activeEntityFilter={activeEntityFilter}
+            highlightNodeIds={topicHighlightIds}
             graphMode={graphMode}
             egoNodeId={egoNodeId}
           />
+
+          {/* Edge Detail Panel */}
+          {edgePanel && orgId && (
+            <EdgeDetailPanel
+              contactId={edgePanel.contactId}
+              contactName={edgePanel.contactName}
+              orgId={orgId}
+              onClose={() => setEdgePanel(null)}
+            />
+          )}
 
           {/* Node Detail Slide-in Panel */}
           {selectedNode && (
@@ -823,6 +881,9 @@ export default function DashboardPage() {
           entityName={selectedNode.name}
         />
       )}
+
+      {/* Mr. Elite Chatbot — PDF spec: "NL query interface over graph data" */}
+      <MrEliteChatbot />
       </div>{/* close flex wrapper */}
     </div>
   );

@@ -44,7 +44,9 @@ const COMMUNITY_COLORS = [
 interface RelationshipGraphProps {
   data: GraphData;
   onNodeClick: (node: GraphNode) => void;
+  onLinkClick?: (source: GraphNode, target: GraphNode) => void;
   activeEntityFilter?: string | null;
+  highlightNodeIds?: Set<string> | null;
   graphMode?: GraphMode;
   egoNodeId?: string | null;
 }
@@ -52,7 +54,9 @@ interface RelationshipGraphProps {
 export default function RelationshipGraph({
   data,
   onNodeClick,
+  onLinkClick,
   activeEntityFilter,
+  highlightNodeIds,
   graphMode = 'community',
   egoNodeId = null,
 }: RelationshipGraphProps) {
@@ -74,6 +78,11 @@ export default function RelationshipGraph({
 
   const handleNodeClick = useCallback((node: any) => { onNodeClick(node as GraphNode); }, [onNodeClick]);
   const handleNodeHover = useCallback((node: any) => { setHoveredNode(node as GraphNode); }, []);
+  const handleLinkClick = useCallback((link: any) => {
+    if (onLinkClick && link.source && link.target) {
+      onLinkClick(link.source as GraphNode, link.target as GraphNode);
+    }
+  }, [onLinkClick]);
 
   // Filter data for ego mode
   const filteredData = React.useMemo(() => {
@@ -277,9 +286,15 @@ export default function RelationshipGraph({
         }}
         onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
+        onLinkClick={handleLinkClick}
         linkColor={linkColor}
         linkWidth={linkWidth}
         linkLineDash={linkLineDash}
+        nodeOpacity={(node: any) =>
+          highlightNodeIds && highlightNodeIds.size > 0
+            ? highlightNodeIds.has(node.id) ? 1 : 0.12
+            : 1
+        }
         backgroundColor={bgColor}
         cooldownTicks={120}
         onEngineStop={() => {

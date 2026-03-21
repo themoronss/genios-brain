@@ -6,6 +6,8 @@ import re
 import json
 import logging
 
+from app.ingestion.category_detector import detect_entity_category
+
 logger = logging.getLogger(__name__)
 
 
@@ -330,11 +332,18 @@ def find_existing_contact_by_domain_and_name(db, org_id: str, email: str, name: 
     return None
 
 
-def upsert_contact(db, org_id, email, name, entity_type: str = None):
+def upsert_contact(
+    db, org_id, email, name, entity_type: str = None,
+    thread_topics: list = None, email_body: str = ""
+):
     """
     Create or update a contact record.
     Includes same-person fuzzy dedup: checks if a contact with the same
     first name exists at the same company domain before creating a new node.
+
+    PDF spec: "Domain match against curated VC/investor domain list" +
+              "Every entity gets a category_confidence score."
+    category_detector runs on every upsert — VC domain match overrides LLM role.
 
     Args:
         db: Database session
@@ -342,24 +351,49 @@ def upsert_contact(db, org_id, email, name, entity_type: str = None):
         email: Contact email address
         name: Contact display name
         entity_type: Optional role tag from LLM (investor, customer, vendor, etc.).
-                     Uses COALESCE — first non-null value wins; subsequent syncs
-                     won't overwrite it with null.
+        thread_topics: Topics from email for keyword-based category boosting.
+        email_body: Email body snippet for keyword detection.
     """
+    # Run category detection: VC domain match can override LLM-assigned entity_type
+    detected_type, category_confidence = detect_entity_category(
+        email=email,
+        name=name,
+        contact_role=entity_type,
+        thread_topics=thread_topics,
+        email_body=email_body,
+    )
+    # VC domain match (0.95) always wins over LLM assignment
+    # For lower confidence, prefer LLM if it gave a non-'other' answer
+    final_entity_type = entity_type  # default: keep LLM value
+    if category_confidence >= 0.80:
+        # High confidence detection overrides LLM
+        final_entity_type = detected_type
+    elif detected_type != "other" and (entity_type is None or entity_type == "other"):
+        # Lower confidence but still better than nothing
+        final_entity_type = detected_type
+
     # ── FIX 9: Same-person dedup check ──
     existing_id = find_existing_contact_by_domain_and_name(db, org_id, email, name)
     if existing_id:
-        # If we now have a role, update it (COALESCE ensures we don't blank out
-        # an existing tag if this call has entity_type=None)
-        if entity_type:
+        # Update entity_type and category_confidence if we have better info
+        if final_entity_type:
             db.execute(
                 text(
                     """
                     UPDATE contacts
-                    SET entity_type = COALESCE(:entity_type, entity_type)
+                    SET entity_type = COALESCE(:entity_type, entity_type),
+                        category_confidence = GREATEST(
+                            COALESCE(category_confidence, 0),
+                            :category_confidence
+                        )
                     WHERE id = :contact_id
                     """
                 ),
-                {"entity_type": entity_type, "contact_id": existing_id},
+                {
+                    "entity_type": final_entity_type,
+                    "category_confidence": category_confidence,
+                    "contact_id": existing_id,
+                },
             )
         return existing_id
 
@@ -377,7 +411,8 @@ def upsert_contact(db, org_id, email, name, entity_type: str = None):
             name,
             company,
             company_domain,
-            entity_type
+            entity_type,
+            category_confidence
         )
         VALUES (
             :id,
@@ -386,14 +421,19 @@ def upsert_contact(db, org_id, email, name, entity_type: str = None):
             :name,
             :company,
             :domain,
-            :entity_type
+            :entity_type,
+            :category_confidence
         )
         ON CONFLICT (org_id, email)
         DO UPDATE SET
             name = EXCLUDED.name,
             company = COALESCE(EXCLUDED.company, contacts.company),
             company_domain = COALESCE(EXCLUDED.company_domain, contacts.company_domain),
-            entity_type = COALESCE(EXCLUDED.entity_type, contacts.entity_type)
+            entity_type = COALESCE(EXCLUDED.entity_type, contacts.entity_type),
+            category_confidence = GREATEST(
+                COALESCE(contacts.category_confidence, 0),
+                EXCLUDED.category_confidence
+            )
         """
         ),
         {
@@ -403,7 +443,8 @@ def upsert_contact(db, org_id, email, name, entity_type: str = None):
             "name": name,
             "company": company,
             "domain": domain,
-            "entity_type": entity_type,
+            "entity_type": final_entity_type,
+            "category_confidence": category_confidence,
         },
     )
 

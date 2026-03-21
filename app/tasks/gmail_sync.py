@@ -54,7 +54,79 @@ AUTOMATED_DOMAINS = [
     "@facebookmail.com",
     "@notifications.",
     "@alert.",
+    "@beehiiv.com",
+    "@mailchimp.com",
+    "@sendgrid.net",
+    "@klaviyo.com",
+    "@constantcontact.com",
+    "@campaign-archive.",
 ]
+
+# PDF spec: "Any email thread where the contact sent to a BCC list of 50+ people →
+# exclude (mass outreach, not a relationship)". We use a lower threshold of 10
+# for external senders to avoid capturing batch newsletters / mass campaigns.
+MASS_OUTREACH_RECIPIENT_THRESHOLD = 10
+
+
+def is_mass_outreach(cc_list: list, to_email: str, from_email: str, user_email: str) -> bool:
+    """
+    Returns True if this email looks like mass outreach (not a real relationship).
+    PDF spec: sender to BCC list of 50+ → exclude. We use 10+ as a safer threshold.
+    Only applies when the sender is external (not us).
+    """
+    if not from_email or from_email.lower() == (user_email or "").lower():
+        return False  # Our own outbound emails are never mass outreach
+
+    # Count unique recipients: to + cc participants
+    unique_recipients = set()
+    if to_email:
+        for addr in to_email.split(","):
+            addr = addr.strip()
+            if addr:
+                unique_recipients.add(addr.lower())
+    for cc_person in (cc_list or []):
+        cc_email = cc_person.get("email", "").strip().lower()
+        if cc_email:
+            unique_recipients.add(cc_email)
+
+    return len(unique_recipients) >= MASS_OUTREACH_RECIPIENT_THRESHOLD
+
+
+def quick_sentiment_heuristic(body: str) -> float:
+    """
+    Lightweight keyword-based sentiment for short emails (WEAK category, <25 words).
+    PDF spec: "weight short replies differently — add email length as calibration signal"
+
+    Returns a float in [-0.5, 0.5] with 0.3x weight applied by caller in EWMA.
+    """
+    if not body:
+        return 0.0
+
+    body_lower = body.lower()
+
+    positive_signals = [
+        "great", "perfect", "sounds good", "yes", "confirmed", "agreed", "sure",
+        "absolutely", "wonderful", "excellent", "love it", "awesome", "thanks",
+        "thank you", "appreciated", "looking forward", "excited", "happy to",
+        "works for me", "let's do it", "deal", "done",
+    ]
+    negative_signals = [
+        "no", "not interested", "cancel", "declined", "disappoint", "issue",
+        "problem", "concerned", "unfortunately", "not possible", "can't",
+        "won't", "never", "stop", "unsubscribe", "remove me", "pass",
+        "not right now", "not a fit", "not moving forward",
+    ]
+
+    pos_count = sum(1 for sig in positive_signals if sig in body_lower)
+    neg_count = sum(1 for sig in negative_signals if sig in body_lower)
+
+    if pos_count == 0 and neg_count == 0:
+        return 0.0
+    if pos_count > neg_count:
+        return min(0.5, 0.25 * pos_count)
+    if neg_count > pos_count:
+        return max(-0.5, -0.25 * neg_count)
+    return 0.0  # tie → neutral
 
 
 def is_automated_email(email, name):
@@ -456,6 +528,16 @@ def _sync_single_account(
                 )
                 continue
 
+            # PDF spec: skip mass outreach (sender to 10+ recipients = not a real relationship)
+            to_raw_header = parsed.get("to_email", "")
+            cc_list_raw = parsed.get("cc_list", [])
+            if is_mass_outreach(cc_list_raw, to_raw_header, from_email, user_email):
+                skipped_automated += 1
+                update_sync_progress(
+                    db, org_id, account_email=account_identifier, sync_processed=i
+                )
+                continue
+
             parsed_msg = {
                 "gmail_id": m["id"],
                 "thread_id": thread_id,
@@ -551,13 +633,37 @@ def _sync_single_account(
                 continue
 
             elif category == "WEAK":
-                # Update stats only (no LLM extraction)
+                # PDF spec: "weight short replies differently — add email length as
+                # calibration signal". Apply heuristic sentiment instead of skipping.
                 contact_id = upsert_contact(
                     db, org_id, contact_email, contact_name, entity_type=None
                 )
-                update_relationship_stats_only(
-                    db, org_id, contact_id, parsed_msg["date"]
-                )
+                heuristic_sentiment = quick_sentiment_heuristic(body_text or "")
+                if heuristic_sentiment != 0.0:
+                    # Store interaction with heuristic sentiment (low-weight signal)
+                    create_interaction(
+                        db,
+                        org_id,
+                        contact_id,
+                        parsed_msg["gmail_id"],
+                        subject,
+                        f"Short reply ({len((body_text or '').split())} words)",
+                        parsed_msg["date"],
+                        direction,
+                        sentiment=heuristic_sentiment * 0.3,  # 0.3x weight for short emails
+                        intent="other",
+                        commitments=[],
+                        topics=[],
+                        interaction_type="email_reply" if direction == "inbound" else "email_one_way",
+                        engagement_level="low",
+                        reply_time_hours=None,
+                        account_email=user_email,
+                        signal_score=0.1,  # low signal — short email
+                    )
+                else:
+                    update_relationship_stats_only(
+                        db, org_id, contact_id, parsed_msg["date"]
+                    )
                 weak_emails += 1
                 update_sync_progress(
                     db, org_id, account_email=account_identifier, sync_processed=i
@@ -591,10 +697,13 @@ def _sync_single_account(
             # Rate limiting: Groq allows 30 requests/minute
             time.sleep(2)
 
-            # ── Update 2: Pass contact_role into upsert_contact ──
+            # ── Update 2: Pass contact_role + topics/body for category detection ──
             contact_role = intelligence.get("contact_role")
             contact_id = upsert_contact(
-                db, org_id, contact_email, contact_name, entity_type=contact_role
+                db, org_id, contact_email, contact_name,
+                entity_type=contact_role,
+                thread_topics=intelligence.get("topics", []),
+                email_body=body_text or "",
             )
 
             # Create the primary interaction row with signal_score

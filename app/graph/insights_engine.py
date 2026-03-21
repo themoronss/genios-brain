@@ -443,6 +443,305 @@ def _detect_dormant_reengagement(db, org_id: str) -> List[Dict]:
     } for r in results]
 
 
+def _detect_warm_going_cold_this_week(db, org_id: str) -> List[Dict]:
+    """
+    PDF spec: "4 warm contacts going cold this week" — WARM contacts projected
+    to cross the 30-day threshold within the next 7 days.
+    Priority: P1 (act within 24h — last chance window).
+    """
+    results = db.execute(
+        text("""
+            SELECT c.id, c.name, c.company,
+                EXTRACT(DAY FROM NOW() - c.last_interaction_at)::int AS days_since
+            FROM contacts c
+            WHERE c.org_id = :org_id
+            AND c.relationship_stage = 'WARM'
+            AND c.last_interaction_at IS NOT NULL
+            AND EXTRACT(DAY FROM NOW() - c.last_interaction_at) BETWEEN 23 AND 29
+            ORDER BY c.last_interaction_at ASC
+            LIMIT 10
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    return [{
+        "insight_type": "relationship",
+        "priority": "P1",
+        "category": "going_cold_this_week",
+        "title": f"{r[1]} goes cold in {30 - int(r[3])} day{'s' if 30 - int(r[3]) != 1 else ''}",
+        "detail": f"{r[1]} ({r[2] or 'Unknown'}) is WARM but last contact was {int(r[3])} days ago. Reach out before they cross the 30-day cold threshold.",
+        "contact_id": str(r[0]),
+        "contact_name": r[1],
+        "metadata": {"days_since": int(r[3]), "days_remaining": 30 - int(r[3])},
+    } for r in results]
+
+
+def _detect_high_value_no_reply(db, org_id: str) -> List[Dict]:
+    """
+    ACTIVE contacts where we sent 3+ outbound emails but received no inbound reply
+    in the last 14 days. High effort, no response — flag for attention.
+    Priority: P2.
+    """
+    results = db.execute(
+        text("""
+            SELECT c.id, c.name, c.company,
+                COUNT(i.id) FILTER (WHERE i.direction = 'outbound') AS outbound_count,
+                MAX(i.interaction_at) AS last_outbound
+            FROM contacts c
+            JOIN interactions i ON i.contact_id = c.id
+            WHERE c.org_id = :org_id
+            AND c.relationship_stage = 'ACTIVE'
+            AND i.interaction_at >= NOW() - INTERVAL '14 days'
+            GROUP BY c.id, c.name, c.company
+            HAVING
+                COUNT(i.id) FILTER (WHERE i.direction = 'outbound') >= 3
+                AND COUNT(i.id) FILTER (WHERE i.direction = 'inbound') = 0
+            ORDER BY outbound_count DESC
+            LIMIT 5
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    return [{
+        "insight_type": "relationship",
+        "priority": "P2",
+        "category": "high_value_no_reply",
+        "title": f"{r[1]} — {int(r[3])} emails sent, no reply",
+        "detail": f"You sent {int(r[3])} emails to {r[1]} ({r[2] or 'Unknown'}) in the last 14 days with no response. Consider a different approach or check if they're the right contact.",
+        "contact_id": str(r[0]),
+        "contact_name": r[1],
+        "metadata": {"outbound_count": int(r[3])},
+    } for r in results]
+
+
+def _detect_commitment_blockers(db, org_id: str) -> List[Dict]:
+    """
+    Commitments that are overdue AND high-priority (from high-signal interactions).
+    These likely block deals or relationships. Priority: P1.
+    """
+    results = db.execute(
+        text("""
+            SELECT cm.id, c.id AS contact_id, c.name, cm.commitment_text,
+                cm.due_date,
+                EXTRACT(DAY FROM NOW() - cm.due_date)::int AS days_overdue
+            FROM commitments cm
+            JOIN contacts c ON cm.contact_id = c.id
+            WHERE c.org_id = :org_id
+            AND cm.status IN ('OPEN', 'OVERDUE')
+            AND cm.due_date < NOW()
+            AND cm.due_date IS NOT NULL
+            ORDER BY cm.due_date ASC
+            LIMIT 5
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    return [{
+        "insight_type": "state",
+        "priority": "P1",
+        "category": "commitment_blocker",
+        "title": f"Overdue commitment to {r[2]}: {(r[3] or '')[:60]}",
+        "detail": f"Commitment to {r[2]} is {int(r[5])} day{'s' if int(r[5]) != 1 else ''} overdue. This may be blocking the relationship from progressing.",
+        "contact_id": str(r[1]),
+        "contact_name": r[2],
+        "metadata": {"days_overdue": int(r[5]), "commitment_text": r[3], "due_date": str(r[4])},
+    } for r in results]
+
+
+def _detect_positive_cold_contacts(db, org_id: str) -> List[Dict]:
+    """
+    COLD contacts whose last interaction had positive sentiment — worth re-engaging.
+    PDF spec: surface dormant contacts with good prior signals.
+    Priority: P3.
+    """
+    results = db.execute(
+        text("""
+            SELECT c.id, c.name, c.company, c.entity_type,
+                c.sentiment_ewma,
+                EXTRACT(DAY FROM NOW() - c.last_interaction_at)::int AS days_since
+            FROM contacts c
+            WHERE c.org_id = :org_id
+            AND c.relationship_stage = 'COLD'
+            AND c.sentiment_ewma > 0.3
+            AND c.interaction_count >= 3
+            AND (c.is_archived = FALSE OR c.is_archived IS NULL)
+            ORDER BY c.sentiment_ewma DESC
+            LIMIT 8
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    return [{
+        "insight_type": "relationship",
+        "priority": "P3",
+        "category": "positive_cold",
+        "title": f"{r[1]} — cold but positive history (sentiment {round(float(r[4] or 0), 2)})",
+        "detail": f"{r[1]} ({r[2] or 'Unknown'}) went cold {int(r[5])} days ago but your relationship history was positive. A brief check-in could re-activate this contact.",
+        "contact_id": str(r[0]),
+        "contact_name": r[1],
+        "metadata": {"days_since": int(r[5]), "sentiment_ewma": float(r[4] or 0)},
+    } for r in results]
+
+
+def _detect_rapid_sentiment_drop(db, org_id: str) -> List[Dict]:
+    """
+    Contacts where the last 3 interactions show a sharp sentiment drop vs. previous 3.
+    Signals a relationship deteriorating fast — needs immediate attention.
+    Priority: P1.
+    """
+    # Use sentiment_history JSON field (stores last 10 sentiments) for fast comparison
+    results = db.execute(
+        text("""
+            SELECT c.id, c.name, c.company, c.sentiment_history,
+                c.relationship_stage
+            FROM contacts c
+            WHERE c.org_id = :org_id
+            AND c.sentiment_history IS NOT NULL
+            AND c.relationship_stage IN ('ACTIVE', 'WARM')
+            AND c.interaction_count >= 6
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    insights = []
+    for r in results:
+        try:
+            history = r[3] if isinstance(r[3], list) else []
+            if len(history) < 6:
+                continue
+            recent_avg = sum(history[:3]) / 3
+            previous_avg = sum(history[3:6]) / 3
+            drop = previous_avg - recent_avg
+            if drop >= 0.35:
+                insights.append({
+                    "insight_type": "relationship",
+                    "priority": "P1",
+                    "category": "rapid_sentiment_drop",
+                    "title": f"{r[1]} — sentiment dropping fast (−{round(drop, 2)})",
+                    "detail": f"{r[1]} ({r[2] or 'Unknown'}) sentiment has dropped {round(drop, 2)} points in recent interactions. Relationship may be at risk — review last 3 conversations.",
+                    "contact_id": str(r[0]),
+                    "contact_name": r[1],
+                    "metadata": {"drop": round(drop, 2), "recent_avg": round(recent_avg, 2), "previous_avg": round(previous_avg, 2)},
+                })
+        except Exception:
+            continue
+
+    return insights[:5]
+
+
+def _detect_no_response_after_commitment(db, org_id: str) -> List[Dict]:
+    """
+    We fulfilled a commitment (sent update/follow-up) but no reply from them in 7 days.
+    Signals the ball is in their court but they're not engaging.
+    Priority: P2.
+    """
+    results = db.execute(
+        text("""
+            SELECT DISTINCT c.id, c.name, c.company,
+                MAX(i.interaction_at) AS last_outbound
+            FROM contacts c
+            JOIN interactions i ON i.contact_id = c.id AND i.direction = 'outbound'
+                AND i.intent = 'commitment'
+                AND i.interaction_at BETWEEN NOW() - INTERVAL '21 days' AND NOW() - INTERVAL '7 days'
+            WHERE c.org_id = :org_id
+            AND NOT EXISTS (
+                SELECT 1 FROM interactions ir
+                WHERE ir.contact_id = c.id
+                AND ir.direction = 'inbound'
+                AND ir.interaction_at > i.interaction_at
+            )
+            GROUP BY c.id, c.name, c.company
+            ORDER BY last_outbound ASC
+            LIMIT 5
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    return [{
+        "insight_type": "relationship",
+        "priority": "P2",
+        "category": "no_response_after_commitment",
+        "title": f"{r[1]} — no reply after your follow-up (7+ days)",
+        "detail": f"You followed up with {r[1]} ({r[2] or 'Unknown'}) but they haven't replied in over 7 days. Consider a gentle nudge or a different channel.",
+        "contact_id": str(r[0]),
+        "contact_name": r[1],
+        "metadata": {"last_outbound": str(r[3])},
+    } for r in results]
+
+
+def _detect_investor_cluster_no_update(db, org_id: str) -> List[Dict]:
+    """
+    PDF spec: "15 contacts in your investor cluster received no update this month"
+    Aggregate investor contacts with no outbound in 30+ days.
+    Priority: P2.
+    """
+    result = db.execute(
+        text("""
+            SELECT COUNT(*) AS dormant_count,
+                array_agg(c.name ORDER BY c.last_interaction_at ASC NULLS FIRST) AS names
+            FROM contacts c
+            WHERE c.org_id = :org_id
+            AND c.entity_type = 'investor'
+            AND (c.last_interaction_at IS NULL OR c.last_interaction_at < NOW() - INTERVAL '30 days')
+            AND (c.is_archived = FALSE OR c.is_archived IS NULL)
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    if not result or not result[0] or result[0] == 0:
+        return []
+
+    count = int(result[0])
+    names = (result[1] or [])[:3]
+    names_str = ", ".join(names) + ("..." if count > 3 else "")
+
+    return [{
+        "insight_type": "relationship",
+        "priority": "P2",
+        "category": "investor_cluster_no_update",
+        "title": f"{count} investor contact{'s' if count != 1 else ''} received no update in 30+ days",
+        "detail": f"Investors including {names_str} have not heard from you in over 30 days. Consider a brief portfolio update or check-in to keep relationships warm.",
+        "contact_id": None,
+        "contact_name": None,
+        "metadata": {"count": count, "sample_names": names},
+    }]
+
+
+def _detect_low_confidence_contacts(db, org_id: str) -> List[Dict]:
+    """
+    Contacts with category_confidence < 0.6 — entity type classification is uncertain.
+    Surface for manual review so the graph stays accurate.
+    Priority: P3.
+    """
+    result = db.execute(
+        text("""
+            SELECT COUNT(*) AS count
+            FROM contacts c
+            WHERE c.org_id = :org_id
+            AND c.category_confidence IS NOT NULL
+            AND c.category_confidence < 0.6
+            AND c.interaction_count >= 3
+            AND (c.is_archived = FALSE OR c.is_archived IS NULL)
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    if not result or not result[0] or result[0] == 0:
+        return []
+
+    count = int(result[0])
+    return [{
+        "insight_type": "relationship",
+        "priority": "P3",
+        "category": "low_confidence_contacts",
+        "title": f"{count} contact{'s' if count != 1 else ''} with uncertain categorization",
+        "detail": f"{count} contacts have a category confidence below 60%. Their investor/customer/vendor classification may be wrong. Review their entity type in the graph.",
+        "contact_id": None,
+        "contact_name": None,
+        "metadata": {"count": count},
+    }]
+
+
 # Register all detectors
 _DETECTORS = [
     _detect_going_cold,
@@ -457,4 +756,13 @@ _DETECTORS = [
     _detect_open_commitments_summary,
     _detect_network_health_summary,
     _detect_dormant_reengagement,
+    # New detectors (PDF spec: ~40 total)
+    _detect_warm_going_cold_this_week,
+    _detect_high_value_no_reply,
+    _detect_commitment_blockers,
+    _detect_positive_cold_contacts,
+    _detect_rapid_sentiment_drop,
+    _detect_no_response_after_commitment,
+    _detect_investor_cluster_no_update,
+    _detect_low_confidence_contacts,
 ]

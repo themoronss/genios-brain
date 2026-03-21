@@ -142,19 +142,33 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
         return None
 
 
+def _recency_weight(interaction_at) -> float:
+    """
+    PDF spec: recency_weight = 0.5 ^ (days_ago / 30)
+    Half-life of 30 days. Email from yesterday ≈ 0.977, from 30 days ≈ 0.5, from 90 days ≈ 0.125.
+    Commitments bypass decay and always return 1.0 (handled by caller).
+    """
+    if interaction_at is None:
+        return 0.1
+    now = datetime.now(timezone.utc)
+    if interaction_at.tzinfo is None:
+        interaction_at = interaction_at.replace(tzinfo=timezone.utc)
+    days_ago = max(0, (now - interaction_at).days)
+    return 0.5 ** (days_ago / 30.0)
+
+
 def get_recent_interactions(db, contact_id: str, limit: int = 10) -> List[Dict]:
     """
-    Get recent interactions for a contact with enhanced engagement signals.
-    Returns up to 10 interactions sorted by weight_score DESC so the most
-    important interactions (replies, commitments) surface first.
+    Get recent interactions for a contact with recency-weighted ranking.
 
-    Update 1.1: Now prioritizes signal_score (classification-based) over weight_score.
-    Also incorporates contact freshness_score for recency-weighted ranking.
+    PDF spec: recency_weight = 0.5 ^ (days_ago / 30). Commitments never decay (weight=1.0).
+    Returns up to `limit` interactions, sorted by composite score:
+      composite = recency_weight * signal_score (commitments always weight=1.0)
     """
     results = db.execute(
         text(
             """
-            SELECT 
+            SELECT
                 i.subject, i.summary, i.sentiment, i.intent,
                 i.topics, i.interaction_at, i.direction, i.interaction_type,
                 i.weight_score, i.signal_score, i.reply_time_hours,
@@ -162,37 +176,51 @@ def get_recent_interactions(db, contact_id: str, limit: int = 10) -> List[Dict]:
             FROM interactions i
             JOIN contacts c ON i.contact_id = c.id
             WHERE i.contact_id = :contact_id
-            ORDER BY 
-                i.signal_score DESC NULLS LAST,
-                c.freshness_score DESC NULLS LAST,
-                i.weight_score DESC NULLS LAST, 
-                i.interaction_at DESC
-            LIMIT :limit
+            ORDER BY i.interaction_at DESC
+            LIMIT :fetch_limit
         """
         ),
-        {"contact_id": contact_id, "limit": limit},
+        # Fetch more than needed so we can re-rank by recency weight
+        {"contact_id": contact_id, "fetch_limit": limit * 3},
     ).fetchall()
 
     interactions = []
     for row in results:
+        interaction_at = row[5]
+        intent = row[3] or ""
+        is_commitment = intent == "commitment"
+
+        # Commitments never decay per PDF spec
+        rw = 1.0 if is_commitment else _recency_weight(interaction_at)
+        signal = float(row[9] or row[8] or 0.5)
+        composite = rw * signal
+
         interactions.append(
             {
                 "subject": row[0],
                 "summary": row[1],
                 "sentiment": row[2],
-                "intent": row[3],
+                "intent": intent,
                 "topics": row[4] or [],
-                "interaction_at": row[5],
+                "interaction_at": interaction_at,
                 "direction": row[6],
                 "interaction_type": row[7],
                 "weight_score": row[8],
                 "signal_score": row[9],
                 "reply_time_hours": row[10],
-                "freshness_score": row[11] if row[11] else 1.0,  # From contact JOIN
+                "freshness_score": row[11] if row[11] else 1.0,
+                "recency_weight": round(rw, 3),
+                "_composite": composite,  # internal sort key
             }
         )
 
-    return interactions
+    # Sort by composite score descending, surface commitments and recent emails first
+    interactions.sort(key=lambda x: x["_composite"], reverse=True)
+    # Remove internal sort key before returning
+    for i in interactions:
+        i.pop("_composite", None)
+
+    return interactions[:limit]
 
 
 def format_time_ago(dt: datetime) -> str:
