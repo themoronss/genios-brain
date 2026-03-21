@@ -114,17 +114,14 @@ export default function RelationshipGraph({
       const fontSize = 12 / globalScale;
       const isSelf = node.entity_type === 'self';
 
-      // ── Node Size: 3 tiers from size_score ──
-      const sizeScore = node.size_score ?? 0.5;
+      // ── Node Size: PDF spec formula: 12 + sqrt(interaction_count) * 3 ──
+      // Clamped to min 4px, max 16px for visual balance; self always 14px
       let baseSize: number;
       if (isSelf) {
-        baseSize = 12;
-      } else if (sizeScore > 0.70) {
-        baseSize = 9; // Large
-      } else if (sizeScore >= 0.40) {
-        baseSize = 6; // Medium
+        baseSize = 14;
       } else {
-        baseSize = 4; // Small
+        const count = node.interaction_count ?? 1;
+        baseSize = Math.min(16, Math.max(4, 3 + Math.sqrt(count) * 2.5));
       }
 
       // ── Node Color by mode ──
@@ -212,8 +209,8 @@ export default function RelationshipGraph({
 
       ctx.shadowBlur = 0;
 
-      // ── Label: "First Name · Company" for medium/large only ──
-      const showLabel = isSelf || sizeScore >= 0.40 || (hoveredNode && hoveredNode.id === node.id);
+      // ── Label: show for self, 4+ interactions, or hover ──
+      const showLabel = isSelf || (node.interaction_count ?? 0) >= 4 || (hoveredNode && hoveredNode.id === node.id);
 
       if (showLabel && globalScale >= 0.4) {
         const firstName = (node.name || '').split(' ')[0];
@@ -241,33 +238,42 @@ export default function RelationshipGraph({
     [hoveredNode, activeEntityFilter, isDark, labelBg, labelText, hoverStroke, graphMode]
   );
 
-  // ── Edge encoding ──
+  // ── Edge encoding: PDF spec — sentiment → color, strength → thickness ──
   const linkColor = useCallback((link: any) => {
     if (link.link_type === 'cc_shared') return linkCC;
 
-    // Color by sentiment trend
     const trend = link.sentiment_trend;
-    if (trend === 'IMPROVING') return '#10b981'; // Green
-    if (trend === 'DECLINING') return '#ef4444'; // Red
+    // Sentiment determines color: green (positive), red (negative), grey (neutral)
+    if (trend === 'IMPROVING') return isDark ? '#34d399' : '#059669';
+    if (trend === 'DECLINING') return isDark ? '#f87171' : '#dc2626';
 
-    return linkPrimary; // Grey/neutral
-  }, [linkPrimary, linkCC]);
+    // Neutral — use strength to modulate opacity (stronger = more visible)
+    const strength = link.strength || 0.3;
+    if (strength > 0.7) return isDark ? '#64748b' : '#94a3b8';
+    return linkPrimary;
+  }, [linkPrimary, linkCC, isDark]);
 
   const linkWidth = useCallback((link: any) => {
-    if (link.link_type === 'cc_shared') return 0.6;
+    if (link.link_type === 'cc_shared') return 0.5;
 
-    // Thickness by interaction strength
+    // PDF spec: positive sentiment → thicker, negative → thin
     const strength = link.strength || 0.3;
-    if (strength > 0.7) return 2.0;  // Thick (11+ interactions)
-    if (strength > 0.3) return 1.2;  // Medium (4-10)
-    return 0.6;                       // Thin (1-3)
+    const trend = link.sentiment_trend;
+    const base = 0.4 + strength * 2.0; // 0.4 to 2.4
+
+    // Boost positive, shrink negative
+    if (trend === 'IMPROVING') return Math.min(3.0, base * 1.3);
+    if (trend === 'DECLINING') return Math.max(0.4, base * 0.6);
+    return base;
   }, []);
 
   const linkLineDash = useCallback((link: any) => {
     if (link.link_type === 'cc_shared') return [4, 4];
     // Dashed for one-sided relationships
     if (link.is_bidirectional === false) return [6, 3];
-    return []; // Solid for bidirectional
+    // Declining sentiment → thin dashed per PDF spec
+    if (link.sentiment_trend === 'DECLINING') return [3, 3];
+    return []; // Solid for bidirectional positive/neutral
   }, []);
 
   if (!mounted) return null;

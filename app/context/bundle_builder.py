@@ -608,9 +608,14 @@ def build_context_bundle(
     }
 
 
-def calculate_confidence_score(contact: Dict, interactions: List[Dict]) -> float:
+def calculate_confidence_score(
+    contact: Dict,
+    interactions: List[Dict],
+    source_last_synced_at=None,
+) -> float:
     """
     Calculate confidence score based on data completeness.
+    PDF spec: 48h no sync → confidence decay (0.85x penalty).
 
     Returns: 0.0 to 1.0
     """
@@ -634,7 +639,24 @@ def calculate_confidence_score(contact: Dict, interactions: List[Dict]) -> float
     if contact.get("topics_aggregate") and len(contact["topics_aggregate"]) > 0:
         score += 0.15
 
-    return round(min(score, 1.0), 2)
+    # Boost for 20+ interactions (1.1x)
+    if len(interactions) >= 20:
+        score *= 1.1
+    # Penalty for <3 interactions (0.6x)
+    elif len(interactions) < 3:
+        score *= 0.6
+
+    # PDF spec: source stale detection — 48h no sync → 0.85x penalty
+    if source_last_synced_at:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        if hasattr(source_last_synced_at, 'replace'):
+            source_last_synced_at = source_last_synced_at.replace(tzinfo=timezone.utc)
+        hours_since_sync = (now - source_last_synced_at).total_seconds() / 3600
+        if hours_since_sync > 48:
+            score *= 0.85  # Stale source penalty
+
+    return round(min(max(score, 0.0), 1.0), 2)
 
 
 def generate_context_paragraph(

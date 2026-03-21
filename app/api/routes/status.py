@@ -670,26 +670,57 @@ def get_edge_detail(org_id: str, contact_id: str, db: Session = Depends(get_db))
         } for r in interactions[:3]
     ]
 
+    # PDF spec §6: company-level aggregation — who else at that company
+    contact_row = db.execute(
+        text("SELECT company, company_domain FROM contacts WHERE id = :id AND org_id = :org_id"),
+        {"id": contact_id, "org_id": org_id}
+    ).fetchone()
+
+    company_name = contact_row[0] if contact_row else None
+    company_domain = contact_row[1] if contact_row else None
+
+    company_contacts = []
+    if company_domain:
+        cc_rows = db.execute(
+            text("""
+                SELECT name, email, entity_type, sentiment_avg, interaction_count
+                FROM contacts
+                WHERE org_id = :org_id AND company_domain = :domain
+                AND id != :contact_id
+                AND entity_type != 'self'
+                AND (is_archived = FALSE OR is_archived IS NULL)
+                ORDER BY interaction_count DESC
+                LIMIT 5
+            """),
+            {"org_id": org_id, "domain": company_domain, "contact_id": contact_id}
+        ).fetchall()
+        company_contacts = [
+            {
+                "name": r[0], "email": r[1], "entity_type": r[2],
+                "sentiment_avg": float(r[3] or 0), "interaction_count": r[4] or 0,
+            } for r in cc_rows
+        ]
+
+    # Response time breakdown
+    fast_count = sum(1 for t in reply_times if t < 4)
+    moderate_count = sum(1 for t in reply_times if 4 <= t < 24)
+    slow_count = sum(1 for t in reply_times if t >= 24)
+
     return {
         "contact_id": contact_id,
+        "contact_name": contact_row[0] if contact_row else None,
+        "company": company_name,
         "total_interactions": len(interactions),
         "sentiment_trajectory": sentiment_trajectory,
-        "topic_clustering": [{"topic": t[0], "count": t[1]} for t in top_topics],
-        "response_time_analysis": {
-            "avg_reply_hours": avg_reply_time,
-            "reply_speed": reply_speed,
-            "total_replies_measured": len(reply_times),
+        "topic_clusters": [{"topic": t[0], "count": t[1]} for t in top_topics],
+        "response_time": {
+            "avg_hours": avg_reply_time,
+            "fast": fast_count,
+            "moderate": moderate_count,
+            "slow": slow_count,
         },
-        "last_threads": last_threads,
-        "interactions": [
-            {
-                "subject": r[0], "summary": r[1], "sentiment": float(r[2] or 0),
-                "intent": r[3], "topics": r[4] or [],
-                "date": r[5].isoformat() if r[5] else None,
-                "direction": r[6], "interaction_type": r[7],
-                "mentioned_people": r[11] or [],
-            } for r in interactions
-        ],
+        "last_3_threads": last_threads,
+        "company_contacts": company_contacts,
     }
 
 
