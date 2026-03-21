@@ -807,6 +807,7 @@ def recalculate_all_relationships(db, org_id: str = None):
             recalculate_contact_relationship(db, contact_id)
             updated_count += 1
         except Exception as e:
+            db.rollback()
             print(f"Error updating contact {contact_id}: {e}")
 
     print(f"✓ Recalculated {updated_count} contacts")

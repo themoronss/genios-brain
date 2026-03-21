@@ -54,6 +54,7 @@ def run_nightly_refresh(org_id: str = None):
                     partition = run_louvain_detection(db, str(org_row[0]))
                     print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {org_row[0]}")
         except Exception as e:
+            db.rollback()
             print(f"⚠️ Louvain detection skipped: {e}")
 
         # ── Step 3: Run insights engine ──────────────────────────────────
@@ -69,6 +70,7 @@ def run_nightly_refresh(org_id: str = None):
                     insights = run_insights_engine(db, str(org_row[0]))
                     print(f"  ✓ Insights: {len(insights)} signals for org {org_row[0]}")
         except Exception as e:
+            db.rollback()
             print(f"⚠️ Insights engine skipped: {e}")
 
         # ── Step 4: Mark overdue commitments ─────────────────────────────
@@ -87,12 +89,14 @@ def run_nightly_refresh(org_id: str = None):
             if overdue_count:
                 print(f"✓ Marked {overdue_count} commitments as OVERDUE")
         except Exception as e:
+            db.rollback()
             print(f"⚠️ Overdue marking failed: {e}")
 
         # ── Step 5: Pre-compute context bundles for active contacts ──────
         try:
             _precompute_bundles(db, org_id)
         except Exception as e:
+            db.rollback()
             print(f"⚠️ Bundle pre-computation skipped: {e}")
 
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Completed nightly refresh for {scope}")
@@ -196,6 +200,7 @@ def _precompute_bundles(db, org_id: str = None):
                 )
                 precomputed += 1
         except Exception as e:
+            db.rollback()
             print(f"  ⚠️ Bundle failed for {contact_name}: {e}")
 
     db.commit()
