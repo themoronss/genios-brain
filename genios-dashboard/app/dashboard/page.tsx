@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [egoNodeId, setEgoNodeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('graph');
   const [tableSearch, setTableSearch] = useState('');
+  const tableSearchRef = useRef<HTMLInputElement>(null);
 
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
@@ -125,6 +126,33 @@ export default function DashboardPage() {
     queryFn: () => api.context.getBundle(orgId, selectedNode!.name, token),
     enabled: !!orgId && !!token && !!selectedNode,
   });
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Esc: close drawer
+      if (e.key === 'Escape' && selectedNode) {
+        setSelectedNode(null);
+        return;
+      }
+      // Cmd/Ctrl+K: switch to table view + focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setViewMode('table');
+        setTimeout(() => tableSearchRef.current?.focus(), 50);
+        return;
+      }
+      // Cmd/Ctrl+C: copy context (only when drawer is open)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && selectedNode && contextBundle?.context_for_agent) {
+        // Don't intercept if user has text selected
+        if (!window.getSelection()?.toString()) {
+          handleCopyContext();
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedNode, contextBundle]);
 
   const handleNodeClick = (node: GraphNode) => {
     if (!node.email) return;
@@ -310,8 +338,9 @@ export default function DashboardPage() {
               <div className="relative max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <input
+                  ref={tableSearchRef}
                   type="text"
-                  placeholder="Search contacts…"
+                  placeholder="Search contacts… (⌘K)"
                   value={tableSearch}
                   onChange={e => setTableSearch(e.target.value)}
                   className="w-full h-8 pl-8 pr-3 rounded-lg border border-border bg-background text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
@@ -477,6 +506,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => setSelectedNode(null)}
                   className="ml-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  title="Close (Esc)"
                 >
                   <X className="h-4 w-4" />
                 </button>
