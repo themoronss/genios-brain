@@ -15,11 +15,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   X, Copy, Check, Sparkles, RefreshCcw, Mail, Plus, AlertCircle, Inbox,
-  Network, GitBranch, User,
+  Network, GitBranch, User, LayoutGrid, Table2, Search, Download,
 } from 'lucide-react';
 import { formatDate, getStageColor } from '@/lib/utils';
 
 type GraphMode = 'community' | 'stage' | 'ego';
+type ViewMode = 'graph' | 'table';
 
 const ENTITY_TAG_CONFIG: Record<string, { label: string; color: string }> = {
   all:       { label: 'All',        color: '#475569' },
@@ -46,6 +47,8 @@ export default function DashboardPage() {
   const [activeEntityFilter, setActiveEntityFilter] = useState('all');
   const [graphMode, setGraphMode] = useState<GraphMode>('community');
   const [egoNodeId, setEgoNodeId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('graph');
+  const [tableSearch, setTableSearch] = useState('');
 
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
@@ -254,7 +257,7 @@ export default function DashboardPage() {
       {/* ── LEFT: Graph area (70%) ──────────────────────────────────── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
 
-        {/* Filter bar */}
+        {/* Filter + View toggle bar */}
         <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card overflow-x-auto shrink-0 flex-wrap">
           <span className="text-xs text-muted-foreground shrink-0">Filter:</span>
           {availableFilters.map((fk) => {
@@ -279,9 +282,114 @@ export default function DashboardPage() {
               </button>
             );
           })}
+
+          {/* View mode toggle */}
+          <div className="ml-auto flex items-center gap-1 bg-muted rounded-lg p-0.5 shrink-0">
+            <button
+              onClick={() => setViewMode('graph')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors
+                ${viewMode === 'graph' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <LayoutGrid className="w-3 h-3" /> Graph
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors
+                ${viewMode === 'table' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Table2 className="w-3 h-3" /> Table
+            </button>
+          </div>
         </div>
 
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <div className="flex-1 overflow-auto">
+            {/* Search bar */}
+            <div className="px-4 py-2 border-b border-border bg-card/50 shrink-0">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search contacts…"
+                  value={tableSearch}
+                  onChange={e => setTableSearch(e.target.value)}
+                  className="w-full h-8 pl-8 pr-3 rounded-lg border border-border bg-background text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-card border-b border-border">
+                <tr>
+                  {['Name', 'Company', 'Type', 'Stage', 'Last Contact', 'Interactions', 'Confidence'].map(h => (
+                    <th key={h} className="px-4 py-2.5 text-left font-semibold text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {graphData.nodes
+                  .filter(n => n.entity_type !== 'self')
+                  .filter(n => !tableSearch || n.name?.toLowerCase().includes(tableSearch.toLowerCase()) || n.company?.toLowerCase().includes(tableSearch.toLowerCase()) || n.email?.toLowerCase().includes(tableSearch.toLowerCase()))
+                  .sort((a, b) => b.interaction_count - a.interaction_count)
+                  .map((node, i) => {
+                    const cfg = ENTITY_TAG_CONFIG[node.entity_type] ?? { label: node.entity_type, color: '#94a3b8' };
+                    const stageColor = getStageColor(node.relationship_stage);
+                    const confidence = node.confidence_score ?? node.composite_score ?? 0;
+                    return (
+                      <tr
+                        key={node.id}
+                        className={`border-b border-border/50 hover:bg-accent/30 cursor-pointer transition-colors ${i % 2 === 0 ? '' : 'bg-muted/10'}`}
+                        onClick={() => { handleNodeClick(node); }}
+                      >
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                              style={{ backgroundColor: cfg.color }}>
+                              {(node.name || '?')[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{node.name}</p>
+                              {node.email && <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{node.email}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{node.company || '—'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium text-white" style={{ backgroundColor: cfg.color }}>
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white" style={{ backgroundColor: stageColor }}>
+                            {node.relationship_stage}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">
+                          {node.last_interaction_days < 999 ? `${node.last_interaction_days}d ago` : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{node.interaction_count}</td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${confidence > 0.7 ? 'bg-emerald-500' : confidence > 0.45 ? 'bg-amber-400' : 'bg-red-400'}`}
+                                style={{ width: `${(confidence * 100).toFixed(0)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{(confidence * 100).toFixed(0)}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Graph + Legend layer */}
+        {viewMode === 'graph' && (
         <div className="flex-1 relative overflow-hidden">
 
           {/* Bottom-left Legend bar - COMMENTED OUT: Node colors now represent entity types, not relationship stages */}
@@ -584,6 +692,7 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+        )} {/* end viewMode === 'graph' */}
       </div>
 
       {/* ── RIGHT: Data Sources panel (30%) ────────────────────────── */}
