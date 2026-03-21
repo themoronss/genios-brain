@@ -33,6 +33,13 @@ def _row_to_dict(result) -> Dict:
         "response_rate": result[19] if len(result) > 19 else None,
         "avg_response_time_hours": result[20] if len(result) > 20 else None,
         "is_bidirectional": result[21] if len(result) > 21 else False,
+        "what_works": result[22] if len(result) > 22 else None,
+        "what_to_avoid": result[23] if len(result) > 23 else None,
+        "introduced_by": result[24] if len(result) > 24 else None,
+        "is_archived": result[25] if len(result) > 25 else False,
+        "relationship_summary": result[26] if len(result) > 26 else None,
+        "stage_changed_at": result[27] if len(result) > 27 else None,
+        "previous_stage": result[28] if len(result) > 28 else None,
     }
 
 
@@ -52,7 +59,10 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
                     entity_type, freshness_score, confidence_score,
                     consistency_score, authority_score, composite_score,
                     sentiment_ewma, sentiment_trend, response_rate,
-                    avg_response_time_hours, is_bidirectional
+                    avg_response_time_hours, is_bidirectional,
+                    what_works, what_to_avoid, introduced_by,
+                    is_archived, relationship_summary, stage_changed_at,
+                    previous_stage
                 FROM contacts
                 WHERE org_id = :org_id
                 AND (TRIM(LOWER(name)) = TRIM(LOWER(:name)) OR LOWER(email) LIKE LOWER(:email_pattern))
@@ -109,7 +119,10 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
                             entity_type, freshness_score, confidence_score,
                             consistency_score, authority_score, composite_score,
                             sentiment_ewma, sentiment_trend, response_rate,
-                            avg_response_time_hours, is_bidirectional
+                            avg_response_time_hours, is_bidirectional,
+                            what_works, what_to_avoid, introduced_by,
+                            is_archived, relationship_summary, stage_changed_at,
+                            previous_stage
                         FROM contacts
                         WHERE id = :id AND org_id = :org_id
                         """
@@ -306,7 +319,51 @@ def get_interaction_type_summary(interactions: List[Dict]) -> Dict:
     return type_counts
 
 
-# ── Fix A+B: Escalation + Action Recommendation ─────────────────────────────
+# ── Disclosure Rules — what's safe to share vs avoid ─────────────────────────
+
+def _determine_disclosure_rules(entity_type: str, topics: list) -> Dict:
+    """
+    Determine what information is safe to share vs avoid with this contact.
+    Per PDF spec §5: disclosure_rules with safe/avoid lists.
+    Rules based on entity_type and topic sensitivity.
+    """
+    # Default safe/avoid based on entity type
+    rules = {
+        "INVESTOR": {
+            "safe": ["revenue range", "user count", "retention rate", "growth metrics", "team size"],
+            "avoid": ["exact ARR", "cap table details", "other investor terms", "board meeting specifics"],
+        },
+        "CUSTOMER": {
+            "safe": ["product roadmap (high-level)", "feature timeline", "pricing tiers", "support process"],
+            "avoid": ["internal metrics", "other customer data", "infrastructure details", "financial internals"],
+        },
+        "VENDOR": {
+            "safe": ["project scope", "timeline", "budget range", "requirements"],
+            "avoid": ["internal strategy", "competitor evaluations", "financial details", "team conflicts"],
+        },
+        "PARTNER": {
+            "safe": ["integration plans", "mutual benefits", "market data", "growth trajectory"],
+            "avoid": ["exact financials", "other partnership terms", "internal deliberations"],
+        },
+        "MEDIA": {
+            "safe": ["press-approved metrics", "founder story", "product vision", "market opportunity"],
+            "avoid": ["unannounced features", "exact revenue", "fundraising details (unless announced)", "internal challenges"],
+        },
+        "ADVISOR": {
+            "safe": ["detailed metrics", "strategic challenges", "team dynamics", "financial overview"],
+            "avoid": ["other advisor compensation", "board-only information"],
+        },
+    }
+
+    default_rules = {
+        "safe": ["general business information", "public metrics", "product overview"],
+        "avoid": ["financial internals", "confidential strategy", "other contact details"],
+    }
+
+    return rules.get(entity_type, default_rules)
+
+
+# ── Escalation + Action Recommendation ─────────────────────────────
 
 ESCALATION_TOPICS = {
     "investor",
@@ -422,18 +479,34 @@ def build_context_bundle(
     # 3. Get open commitments with lifecycle info
     open_commitments = get_open_commitments_detailed(db, contact["id"])
 
+    # Calculate stage_since_days
+    stage_since_days = None
+    if contact.get("stage_changed_at"):
+        stage_changed = contact["stage_changed_at"]
+        if stage_changed:
+            if hasattr(stage_changed, 'tzinfo') and stage_changed.tzinfo is None:
+                stage_changed = stage_changed.replace(tzinfo=timezone.utc)
+            stage_since_days = (datetime.now(timezone.utc) - stage_changed).days
+
+    # Determine disclosure rules based on entity_type and topics
+    entity_type_upper = (contact.get("entity_type") or "").upper()
+    disclosure_rules = _determine_disclosure_rules(entity_type_upper, contact["topics_aggregate"])
+
     # 4. Build entity details with enhanced metrics
     entity = {
         "name": contact["name"],
         "email": contact.get("email"),
         "company": contact["company"],
         "relationship_stage": contact["relationship_stage"] or "UNKNOWN",
+        "stage_since_days": stage_since_days,
         "confidence": contact.get("confidence_score", 0.5),
         "sentiment_avg": round(contact.get("sentiment_avg", 0.0), 2),
         "sentiment_ewma": round(contact.get("sentiment_ewma", 0.0), 2),
         "sentiment_trend": contact.get("sentiment_trend", "STABLE"),
         "last_interaction": format_time_ago(contact["last_interaction_at"]),
         "communication_style": contact["communication_style"] or "Unknown",
+        "what_works": contact.get("what_works"),
+        "what_to_avoid": contact.get("what_to_avoid"),
         "topics_of_interest": contact["topics_aggregate"][:5],
         "open_commitments": len(open_commitments),
         "open_commitments_detail": open_commitments,
@@ -443,6 +516,9 @@ def build_context_bundle(
         "response_rate": contact.get("response_rate"),
         "avg_response_time_hours": contact.get("avg_response_time_hours"),
         "is_bidirectional": contact.get("is_bidirectional", False),
+        "disclosure_rules": disclosure_rules,
+        "relationship_summary": contact.get("relationship_summary"),
+        "introduced_by": str(contact.get("introduced_by")) if contact.get("introduced_by") else None,
     }
 
     # 5. Generate rich context_for_agent paragraph
@@ -464,6 +540,9 @@ def build_context_bundle(
     if open_commitments: coverage_parts += 1
     coverage_score = round(coverage_parts / 7.0, 2)
 
+    # Calculate cache_age_seconds (time since bundle generated)
+    generated_at = datetime.now(timezone.utc)
+
     return {
         "entity": entity,
         "match_confidence": contact.get("match_confidence", 1.0),
@@ -472,7 +551,7 @@ def build_context_bundle(
         "context_for_agent": context_for_agent,
         "confidence": contact.get("confidence_score", 0.5),
         "coverage_score": coverage_score,
-        # ── Fix A+B: Action signals — agents check these first ──
+        # ── Action signals — agents check these first ──
         "action_recommendation": action["action_recommendation"],
         "escalation_recommended": action["escalation_recommended"],
         "action_reason": action["action_reason"],
@@ -485,10 +564,17 @@ def build_context_bundle(
             "authority": float(contact.get("authority_score") or 0.5),
             "composite": float(contact.get("composite_score") or 0.5),
         },
+        # ── PDF spec: sources_used, confidence_breakdown ──
+        "sources_used": ["gmail"],
+        "confidence_breakdown": {
+            "gmail": float(contact.get("confidence_score") or 0.5),
+        },
+        "generated_at": generated_at.isoformat(),
+        "cache_age_seconds": 0,
         "data_quality": {
             "confidence_score": contact.get("confidence_score", 0.5),
             "coverage_score": coverage_score,
-            "last_recalc": contact.get("metadata", {}).get("last_recalc_at", "unknown"),
+            "last_recalc": contact.get("metadata", {}).get("last_recalc_at", "unknown") if isinstance(contact.get("metadata"), dict) else "unknown",
             "sources": ["gmail"],
         },
     }
@@ -631,10 +717,40 @@ def generate_context_paragraph(
         for commit in soft_commitments[:2]:
             parts.append(f"  - {commit.get('text', 'Unknown')[:100]}")
 
-    # Line 6: Communication preferences
+    # Line 6: Communication preferences — what_works / what_to_avoid (from PDF spec)
+    what_works = contact.get("what_works")
+    what_to_avoid = contact.get("what_to_avoid")
     comm_style = contact.get("communication_style")
-    if comm_style and comm_style != "Unknown":
+
+    if what_works:
+        parts.append(f"What works: {what_works}.")
+    if what_to_avoid:
+        parts.append(f"What to avoid: {what_to_avoid}.")
+    if not what_works and not what_to_avoid and comm_style and comm_style != "Unknown":
         parts.append(f"Prefers: {comm_style}.")
+
+    # Line 6b: Response time analysis (from PDF spec §6)
+    avg_response = entity.get("avg_response_time_hours")
+    if avg_response and avg_response > 0:
+        if avg_response < 4:
+            parts.append(f"Responds within {round(avg_response, 1)}h (high interest).")
+        elif avg_response < 24:
+            parts.append(f"Typical reply time: {round(avg_response, 1)}h.")
+        else:
+            parts.append(f"Slow responder: ~{round(avg_response / 24, 1)} days average reply time.")
+
+    # Line 6c: Disclosure rules
+    disclosure = entity.get("disclosure_rules", {})
+    if disclosure.get("safe"):
+        safe_str = ", ".join(disclosure["safe"][:3])
+        parts.append(f"Safe to share: {safe_str}.")
+    if disclosure.get("avoid"):
+        avoid_str = ", ".join(disclosure["avoid"][:3])
+        parts.append(f"Do not share: {avoid_str}.")
+
+    # Line 6d: Relationship summary (for deep relationships with 50+ interactions)
+    if contact.get("relationship_summary"):
+        parts.append(f"Summary: {contact['relationship_summary'][:300]}")
 
     # Line 7: Last interaction with direction
     if interactions and len(interactions) > 0:

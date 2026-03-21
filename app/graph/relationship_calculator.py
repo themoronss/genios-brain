@@ -338,6 +338,136 @@ def calculate_composite_score(
     return round(min(1.0, composite), 3)
 
 
+def aggregate_communication_style(db, contact_id: str) -> Dict:
+    """
+    Aggregate communication preferences from per-interaction comm_style_signals.
+    Returns the most common what_works and what_to_avoid across all interactions.
+    """
+    results = db.execute(
+        text("""
+            SELECT comm_style_signals
+            FROM interactions
+            WHERE contact_id = :contact_id
+            AND comm_style_signals IS NOT NULL
+            ORDER BY interaction_at DESC
+            LIMIT 20
+        """),
+        {"contact_id": contact_id}
+    ).fetchall()
+
+    if not results:
+        return {"what_works": None, "what_to_avoid": None}
+
+    # Collect all signals, most recent first (most recent wins for ties)
+    works_signals = []
+    avoid_signals = []
+
+    for row in results:
+        signals = row[0] if isinstance(row[0], dict) else {}
+        if signals.get("what_works"):
+            works_signals.append(signals["what_works"])
+        if signals.get("what_to_avoid"):
+            avoid_signals.append(signals["what_to_avoid"])
+
+    # Return the most recent non-null value (LLM gets better with more context)
+    return {
+        "what_works": works_signals[0] if works_signals else None,
+        "what_to_avoid": avoid_signals[0] if avoid_signals else None,
+    }
+
+
+def generate_relationship_summary(db, contact_id: str, contact_name: str) -> str:
+    """
+    Generate a structured summary for contacts with 50+ interactions.
+    Compresses interaction history into a 3-sentence relationship arc.
+    Per PDF spec: trajectory, recurring topics, key commitments, communication style.
+    """
+    # Get interaction stats
+    stats = db.execute(
+        text("""
+            SELECT
+                COUNT(*) as total,
+                MIN(interaction_at) as first_at,
+                MAX(interaction_at) as last_at,
+                AVG(sentiment) as avg_sentiment,
+                ARRAY_AGG(DISTINCT topic ORDER BY topic) as all_topics
+            FROM interactions i, unnest(COALESCE(i.topics, ARRAY[]::text[])) as topic
+            WHERE contact_id = :contact_id
+        """),
+        {"contact_id": contact_id}
+    ).fetchone()
+
+    if not stats or not stats[0]:
+        return None
+
+    total = stats[0]
+    first_at = stats[1]
+    last_at = stats[2]
+    avg_sentiment = float(stats[3] or 0)
+    top_topics = (stats[4] or [])[:5]
+
+    # Get commitment summary
+    commitments = db.execute(
+        text("""
+            SELECT status, COUNT(*) FROM commitments
+            WHERE contact_id = :contact_id
+            GROUP BY status
+        """),
+        {"contact_id": contact_id}
+    ).fetchall()
+
+    commit_summary = {r[0]: r[1] for r in commitments} if commitments else {}
+
+    # Build the summary
+    # Trajectory
+    if avg_sentiment > 0.3:
+        trajectory = "positive and engaged"
+    elif avg_sentiment < -0.2:
+        trajectory = "strained with declining sentiment"
+    else:
+        trajectory = "stable and professional"
+
+    duration_days = (last_at - first_at).days if first_at and last_at else 0
+    duration_str = f"{duration_days // 30} months" if duration_days > 60 else f"{duration_days} days"
+
+    topics_str = ", ".join(str(t) for t in top_topics[:3]) if top_topics else "general"
+
+    fulfilled = commit_summary.get("FULFILLED", 0)
+    open_count = commit_summary.get("OPEN", 0) + commit_summary.get("OVERDUE", 0)
+
+    summary = (
+        f"Relationship with {contact_name} spans {duration_str} across {total} interactions. "
+        f"Overall trajectory is {trajectory}. "
+        f"Key topics: {topics_str}. "
+    )
+
+    if fulfilled or open_count:
+        summary += f"Commitments: {fulfilled} fulfilled, {open_count} open/overdue."
+
+    return summary
+
+
+def check_archive_eligibility(db, contact_id: str) -> bool:
+    """
+    Check if a contact should be archived (no interaction for 6+ months).
+    Per PDF spec: archived contacts still exist and are searchable but
+    skip nightly stage calculations and context bundle pre-generation.
+    """
+    result = db.execute(
+        text("""
+            SELECT last_interaction_at FROM contacts
+            WHERE id = :contact_id
+        """),
+        {"contact_id": contact_id}
+    ).fetchone()
+
+    if not result or not result[0]:
+        return True  # No interactions = archive
+
+    days_since = (datetime.now(timezone.utc) - result[0]).days
+    return days_since > 180  # 6 months
+
+
 def recalculate_contact_relationship(db, contact_id: str) -> Dict:
     """
     Recalculate relationship metrics for a single contact.
@@ -530,6 +660,33 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
 
     human_score = round(min(1.0, human_score), 2)
 
+    # Aggregate communication style from per-interaction signals
+    comm_style = aggregate_communication_style(db, contact_id)
+
+    # Check archive eligibility (6+ months no interaction)
+    is_archived = check_archive_eligibility(db, contact_id)
+
+    # Generate structured summary for deep relationships (50+ interactions)
+    relationship_summary = None
+    summary_generated_at = None
+    if interaction_count >= 50:
+        # Get contact name for summary
+        contact_row = db.execute(
+            text("SELECT name FROM contacts WHERE id = :id"),
+            {"id": contact_id}
+        ).fetchone()
+        contact_name = contact_row[0] if contact_row else "Unknown"
+        relationship_summary = generate_relationship_summary(db, contact_id, contact_name)
+        summary_generated_at = datetime.now(timezone.utc)
+
+    # Detect stage change for tracking
+    current_stage_row = db.execute(
+        text("SELECT relationship_stage FROM contacts WHERE id = :id"),
+        {"id": contact_id}
+    ).fetchone()
+    previous_stage = current_stage_row[0] if current_stage_row else None
+    stage_changed = previous_stage and previous_stage != stage
+
     # Update contact with all fields including new V1 Detailing scores
     db.execute(
         text(
@@ -554,6 +711,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 composite_score = :composite_score,
                 response_rate = :response_rate,
                 avg_response_time_hours = :avg_response_time_hours,
+                what_works = COALESCE(:what_works, what_works),
+                what_to_avoid = COALESCE(:what_to_avoid, what_to_avoid),
+                is_archived = :is_archived,
+                relationship_summary = COALESCE(:relationship_summary, relationship_summary),
+                summary_generated_at = COALESCE(:summary_generated_at, summary_generated_at),
+                stage_changed_at = CASE WHEN :stage_changed THEN NOW() ELSE stage_changed_at END,
+                previous_stage = CASE WHEN :stage_changed THEN :previous_stage ELSE previous_stage END,
                 metadata = jsonb_set(
                     COALESCE(metadata, '{}'::jsonb),
                     '{last_recalc_at}',
@@ -583,6 +747,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
             "composite_score": composite_score,
             "response_rate": response_metrics["response_rate"],
             "avg_response_time_hours": response_metrics["avg_response_time_hours"],
+            "what_works": comm_style.get("what_works"),
+            "what_to_avoid": comm_style.get("what_to_avoid"),
+            "is_archived": is_archived,
+            "relationship_summary": relationship_summary,
+            "summary_generated_at": summary_generated_at,
+            "stage_changed": stage_changed,
+            "previous_stage": previous_stage,
         },
     )
     db.commit()
@@ -604,6 +775,10 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         "composite_score": composite_score,
         "response_rate": response_metrics["response_rate"],
         "avg_response_time_hours": response_metrics["avg_response_time_hours"],
+        "what_works": comm_style.get("what_works"),
+        "what_to_avoid": comm_style.get("what_to_avoid"),
+        "is_archived": is_archived,
+        "stage_changed": stage_changed,
     }
 
 

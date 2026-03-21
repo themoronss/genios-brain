@@ -616,6 +616,9 @@ def _sync_single_account(
                 reply_time_hours=None,
                 account_email=user_email,
                 signal_score=signal,
+                mentioned_people=intelligence.get("mentioned_people", []),
+                what_works=intelligence.get("what_works"),
+                what_to_avoid=intelligence.get("what_to_avoid"),
             )
 
             # ── Update 3: Create interaction rows for CC participants ──────────

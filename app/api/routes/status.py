@@ -476,6 +476,378 @@ def export_graph_csv(org_id: str, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/api/org/{org_id}/network-health")
+def get_network_health(org_id: str, db: Session = Depends(get_db)):
+    """
+    Network Health Summary — the "daily briefing" view per PDF spec §7.
+    Returns org-level intelligence: total contacts, active now, need follow-up,
+    at risk, open commitments, and attention-required items.
+    """
+    # Core stats
+    stats = db.execute(
+        text("""
+            SELECT
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE relationship_stage = 'ACTIVE') as active,
+                COUNT(*) FILTER (WHERE relationship_stage = 'WARM') as warm,
+                COUNT(*) FILTER (WHERE relationship_stage IN ('NEEDS_ATTENTION', 'DORMANT')) as needs_attention,
+                COUNT(*) FILTER (WHERE relationship_stage = 'COLD') as cold,
+                COUNT(*) FILTER (WHERE relationship_stage = 'AT_RISK') as at_risk
+            FROM contacts
+            WHERE org_id = :org_id
+            AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown'
+            AND (is_archived = FALSE OR is_archived IS NULL)
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    # Overdue commitments
+    overdue = db.execute(
+        text("""
+            SELECT cm.commit_text, c.name, cm.due_date,
+                EXTRACT(DAY FROM (NOW() - cm.due_date)) as days_overdue
+            FROM commitments cm
+            JOIN contacts c ON cm.contact_id = c.id
+            WHERE cm.org_id = :org_id
+            AND cm.status IN ('OPEN', 'OVERDUE')
+            AND cm.due_date < NOW()
+            ORDER BY cm.due_date ASC
+            LIMIT 10
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    # Contacts needing follow-up (WARM going cold — 20+ days since contact)
+    need_follow_up = db.execute(
+        text("""
+            SELECT id, name, company, entity_type,
+                EXTRACT(DAY FROM (NOW() - last_interaction_at)) as days_since
+            FROM contacts
+            WHERE org_id = :org_id
+            AND relationship_stage = 'WARM'
+            AND last_interaction_at < NOW() - INTERVAL '20 days'
+            AND (is_archived = FALSE OR is_archived IS NULL)
+            ORDER BY last_interaction_at ASC
+            LIMIT 10
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    # At-risk contacts
+    at_risk_contacts = db.execute(
+        text("""
+            SELECT id, name, company, entity_type, sentiment_ewma,
+                EXTRACT(DAY FROM (NOW() - last_interaction_at)) as days_since
+            FROM contacts
+            WHERE org_id = :org_id
+            AND relationship_stage = 'AT_RISK'
+            AND (is_archived = FALSE OR is_archived IS NULL)
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    # Open commitments summary
+    commit_stats = db.execute(
+        text("""
+            SELECT
+                COUNT(*) FILTER (WHERE status = 'OPEN') as open_count,
+                COUNT(*) FILTER (WHERE status = 'OVERDUE') as overdue_count
+            FROM commitments
+            WHERE org_id = :org_id AND status IN ('OPEN', 'OVERDUE')
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    # Recent insights
+    insights = db.execute(
+        text("""
+            SELECT priority, category, title, detail, contact_name, generated_at
+            FROM insights
+            WHERE org_id = :org_id AND is_dismissed = FALSE
+            ORDER BY
+                CASE priority WHEN 'P1' THEN 0 WHEN 'P2' THEN 1 ELSE 2 END,
+                generated_at DESC
+            LIMIT 15
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    return {
+        "network_health": {
+            "total_contacts": stats[0] or 0,
+            "active_now": stats[1] or 0,
+            "warm": stats[2] or 0,
+            "needs_attention": stats[3] or 0,
+            "cold": stats[4] or 0,
+            "at_risk": stats[5] or 0,
+        },
+        "open_commitments": {
+            "total": (commit_stats[0] or 0) + (commit_stats[1] or 0),
+            "overdue": commit_stats[1] or 0,
+        },
+        "need_follow_up": [
+            {
+                "id": str(r[0]), "name": r[1], "company": r[2],
+                "entity_type": r[3], "days_since": int(r[4]),
+            } for r in need_follow_up
+        ],
+        "at_risk_contacts": [
+            {
+                "id": str(r[0]), "name": r[1], "company": r[2],
+                "entity_type": r[3], "sentiment_ewma": round(float(r[4] or 0), 2),
+                "days_since": int(r[5]),
+            } for r in at_risk_contacts
+        ],
+        "overdue_commitments": [
+            {
+                "text": r[0], "contact_name": r[1],
+                "due_date": r[2].strftime("%Y-%m-%d") if r[2] else None,
+                "days_overdue": int(r[3]),
+            } for r in overdue
+        ],
+        "attention_required": [
+            {
+                "priority": r[0], "category": r[1], "title": r[2],
+                "detail": r[3], "contact_name": r[4],
+                "generated_at": r[5].isoformat() if r[5] else None,
+            } for r in insights
+        ],
+    }
+
+
+@router.get("/api/org/{org_id}/edge/{contact_id}")
+def get_edge_detail(org_id: str, contact_id: str, db: Session = Depends(get_db)):
+    """
+    Edge click detail — per PDF spec §6.
+    When you click an edge between your org and a person, shows:
+    - All email threads in that relationship, sorted by date
+    - Sentiment trajectory
+    - Topic clustering
+    - Response time analysis
+    - Last 3 thread summaries
+    """
+    # All interactions for this contact
+    interactions = db.execute(
+        text("""
+            SELECT subject, summary, sentiment, intent, topics,
+                interaction_at, direction, interaction_type, weight_score,
+                signal_score, reply_time_hours, mentioned_people
+            FROM interactions
+            WHERE contact_id = :contact_id AND org_id = :org_id
+            ORDER BY interaction_at DESC
+            LIMIT 50
+        """),
+        {"contact_id": contact_id, "org_id": org_id}
+    ).fetchall()
+
+    # Sentiment trajectory
+    sentiment_trajectory = [
+        {
+            "date": r[5].isoformat() if r[5] else None,
+            "sentiment": float(r[2] or 0),
+            "direction": r[6],
+        } for r in interactions
+    ]
+
+    # Topic clustering
+    topic_counts = {}
+    for r in interactions:
+        for t in (r[4] or []):
+            topic_counts[t] = topic_counts.get(t, 0) + 1
+    top_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    # Response time analysis
+    reply_times = [float(r[10]) for r in interactions if r[10] and r[10] > 0]
+    avg_reply_time = round(sum(reply_times) / len(reply_times), 1) if reply_times else None
+    reply_speed = "fast" if avg_reply_time and avg_reply_time < 4 else "moderate" if avg_reply_time and avg_reply_time < 24 else "slow" if avg_reply_time else "unknown"
+
+    # Last 3 thread summaries
+    last_threads = [
+        {
+            "subject": r[0], "summary": r[1],
+            "sentiment": float(r[2] or 0), "direction": r[6],
+            "date": r[5].isoformat() if r[5] else None,
+        } for r in interactions[:3]
+    ]
+
+    return {
+        "contact_id": contact_id,
+        "total_interactions": len(interactions),
+        "sentiment_trajectory": sentiment_trajectory,
+        "topic_clustering": [{"topic": t[0], "count": t[1]} for t in top_topics],
+        "response_time_analysis": {
+            "avg_reply_hours": avg_reply_time,
+            "reply_speed": reply_speed,
+            "total_replies_measured": len(reply_times),
+        },
+        "last_threads": last_threads,
+        "interactions": [
+            {
+                "subject": r[0], "summary": r[1], "sentiment": float(r[2] or 0),
+                "intent": r[3], "topics": r[4] or [],
+                "date": r[5].isoformat() if r[5] else None,
+                "direction": r[6], "interaction_type": r[7],
+                "mentioned_people": r[11] or [],
+            } for r in interactions
+        ],
+    }
+
+
+@router.get("/api/org/{org_id}/company/{domain}")
+def get_company_aggregate(org_id: str, domain: str, db: Session = Depends(get_db)):
+    """
+    Company node view — per PDF spec §6.
+    When you click a company node edge, shows:
+    - Who else at that company is in your graph
+    - Aggregate sentiment across all contacts at that company
+    - Whether you have multiple open commitments with same org
+    """
+    contacts = db.execute(
+        text("""
+            SELECT id, name, email, entity_type, relationship_stage,
+                sentiment_avg, interaction_count, last_interaction_at,
+                is_bidirectional, confidence_score
+            FROM contacts
+            WHERE org_id = :org_id AND company_domain = :domain
+            AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown'
+            ORDER BY interaction_count DESC
+        """),
+        {"org_id": org_id, "domain": domain.lower()}
+    ).fetchall()
+
+    if not contacts:
+        raise HTTPException(status_code=404, detail=f"No contacts found at domain {domain}")
+
+    # Aggregate sentiment
+    sentiments = [float(c[5] or 0) for c in contacts]
+    avg_sentiment = round(sum(sentiments) / len(sentiments), 2) if sentiments else 0
+
+    # Open commitments across all contacts at this company
+    contact_ids = [str(c[0]) for c in contacts]
+    commitments = db.execute(
+        text("""
+            SELECT cm.commit_text, cm.owner, cm.due_date, cm.status, c.name
+            FROM commitments cm
+            JOIN contacts c ON cm.contact_id = c.id
+            WHERE cm.contact_id = ANY(:contact_ids)
+            AND cm.status IN ('OPEN', 'OVERDUE', 'SOFT')
+            ORDER BY cm.due_date ASC NULLS LAST
+        """),
+        {"contact_ids": contact_ids}
+    ).fetchall()
+
+    return {
+        "domain": domain,
+        "company_name": contacts[0][2].split("@")[1].split(".")[0].title() if contacts else domain,
+        "total_contacts": len(contacts),
+        "aggregate_sentiment": avg_sentiment,
+        "contacts": [
+            {
+                "id": str(c[0]), "name": c[1], "email": c[2],
+                "entity_type": c[3], "relationship_stage": c[4],
+                "sentiment_avg": float(c[5] or 0),
+                "interaction_count": c[6],
+                "last_interaction_at": c[7].isoformat() if c[7] else None,
+                "is_bidirectional": bool(c[8]),
+            } for c in contacts
+        ],
+        "open_commitments": [
+            {
+                "text": r[0], "owner": r[1],
+                "due_date": r[2].strftime("%Y-%m-%d") if r[2] else None,
+                "status": r[3], "contact_name": r[4],
+            } for r in commitments
+        ],
+    }
+
+
+@router.get("/api/org/{org_id}/graph/filter/topic")
+def filter_graph_by_topic(org_id: str, topic: str, db: Session = Depends(get_db)):
+    """
+    Topic-based graph filtering — per PDF spec §10.
+    Type a topic → filter graph to show only nodes where that topic appeared.
+    """
+    contacts = db.execute(
+        text("""
+            SELECT DISTINCT c.id, c.name, c.email, c.company,
+                c.relationship_stage, c.entity_type, c.interaction_count,
+                c.sentiment_avg, c.last_interaction_at
+            FROM contacts c
+            JOIN interactions i ON i.contact_id = c.id AND i.org_id = c.org_id
+            WHERE c.org_id = :org_id
+            AND :topic = ANY(i.topics)
+            AND c.relationship_stage IS NOT NULL AND c.relationship_stage != 'unknown'
+            ORDER BY c.interaction_count DESC
+        """),
+        {"org_id": org_id, "topic": topic}
+    ).fetchall()
+
+    return {
+        "topic": topic,
+        "total_contacts": len(contacts),
+        "contacts": [
+            {
+                "id": str(c[0]), "name": c[1], "email": c[2], "company": c[3],
+                "relationship_stage": c[4], "entity_type": c[5] or "other",
+                "interaction_count": c[6], "sentiment_avg": float(c[7] or 0),
+                "last_interaction_at": c[8].isoformat() if c[8] else None,
+            } for c in contacts
+        ],
+    }
+
+
+@router.get("/api/org/{org_id}/insights")
+def get_insights(org_id: str, priority: str = None, limit: int = 20, db: Session = Depends(get_db)):
+    """Get active insights for an org, optionally filtered by priority."""
+    conditions = ["org_id = :org_id", "is_dismissed = FALSE"]
+    params = {"org_id": org_id, "limit": min(limit, 50)}
+
+    if priority:
+        conditions.append("priority = :priority")
+        params["priority"] = priority
+
+    where_clause = " AND ".join(conditions)
+
+    results = db.execute(
+        text(f"""
+            SELECT id, insight_type, priority, category, title, detail,
+                contact_id, contact_name, metadata, generated_at
+            FROM insights
+            WHERE {where_clause}
+            ORDER BY
+                CASE priority WHEN 'P1' THEN 0 WHEN 'P2' THEN 1 ELSE 2 END,
+                generated_at DESC
+            LIMIT :limit
+        """),
+        params
+    ).fetchall()
+
+    return {
+        "insights": [
+            {
+                "id": str(r[0]), "insight_type": r[1], "priority": r[2],
+                "category": r[3], "title": r[4], "detail": r[5],
+                "contact_id": str(r[6]) if r[6] else None,
+                "contact_name": r[7],
+                "metadata": r[8] if isinstance(r[8], dict) else {},
+                "generated_at": r[9].isoformat() if r[9] else None,
+            } for r in results
+        ],
+        "total": len(results),
+    }
+
+
+@router.post("/api/org/{org_id}/insights/{insight_id}/dismiss")
+def dismiss_insight(org_id: str, insight_id: str, db: Session = Depends(get_db)):
+    """Dismiss an insight so it doesn't show again."""
+    db.execute(
+        text("UPDATE insights SET is_dismissed = TRUE WHERE id = :id AND org_id = :org_id"),
+        {"id": insight_id, "org_id": org_id}
+    )
+    db.commit()
+    return {"dismissed": True}
+
+
 @router.get("/activity")
 def get_activity_feed(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
     """Recent activity events for the activity feed."""

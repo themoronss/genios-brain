@@ -443,6 +443,9 @@ def create_interaction(
     reply_time_hours=None,
     account_email=None,
     signal_score=None,
+    mentioned_people=None,
+    what_works=None,
+    what_to_avoid=None,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
@@ -454,6 +457,8 @@ def create_interaction(
         commitments = []
     if topics is None:
         topics = []
+    if mentioned_people is None:
+        mentioned_people = []
 
     weight_score = _calculate_interaction_weight(
         interaction_type, engagement_level, sentiment, direction
@@ -461,6 +466,14 @@ def create_interaction(
 
     # Use signal_score if provided, otherwise fall back to weight_score
     final_signal_score = signal_score if signal_score is not None else weight_score
+
+    # Build comm_style_signals JSONB from extraction
+    comm_style_signals = None
+    if what_works or what_to_avoid:
+        comm_style_signals = json.dumps({
+            "what_works": what_works,
+            "what_to_avoid": what_to_avoid,
+        })
 
     interaction_id = str(uuid4())
 
@@ -484,7 +497,9 @@ def create_interaction(
             signal_score,
             topics,
             account_email,
-            source
+            source,
+            mentioned_people,
+            comm_style_signals
         )
         VALUES (
             :id,
@@ -503,7 +518,9 @@ def create_interaction(
             :signal_score,
             :topics,
             :account_email,
-            :source
+            :source,
+            :mentioned_people,
+            :comm_style_signals
         )
         ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
@@ -513,7 +530,9 @@ def create_interaction(
             weight_score = EXCLUDED.weight_score,
             signal_score = EXCLUDED.signal_score,
             topics = EXCLUDED.topics,
-            account_email = EXCLUDED.account_email
+            account_email = EXCLUDED.account_email,
+            mentioned_people = EXCLUDED.mentioned_people,
+            comm_style_signals = EXCLUDED.comm_style_signals
         """
         ),
         {
@@ -534,13 +553,62 @@ def create_interaction(
             "topics": topics,
             "account_email": account_email,
             "source": "gmail",
+            "mentioned_people": mentioned_people if mentioned_people else None,
+            "comm_style_signals": comm_style_signals,
         },
     )
+
+    # Detect introduction intent and set introduced_by on mentioned contacts
+    if intent == "introduction" and mentioned_people:
+        _detect_introductions(db, org_id, contact_id, mentioned_people)
 
     # Store commitments in separate table for lifecycle tracking
     _store_commitments(db, org_id, contact_id, interaction_id, commitments, direction)
 
     return interaction_id
+
+
+def _detect_introductions(db, org_id: str, introducer_contact_id: str, mentioned_people: list):
+    """
+    When an email has intent='introduction' and mentions other people,
+    try to link those people to this contact as their introducer.
+    This builds the referral chain described in the PDF spec.
+    """
+    if not mentioned_people:
+        return
+
+    for person_name in mentioned_people[:5]:
+        try:
+            # Check if this mentioned person exists as a contact
+            result = db.execute(
+                text("""
+                    SELECT id FROM contacts
+                    WHERE org_id = :org_id
+                    AND LOWER(name) LIKE :name_pattern
+                    AND introduced_by IS NULL
+                    LIMIT 1
+                """),
+                {
+                    "org_id": org_id,
+                    "name_pattern": f"%{person_name.lower().split()[0]}%",
+                },
+            ).fetchone()
+
+            if result:
+                db.execute(
+                    text("""
+                        UPDATE contacts
+                        SET introduced_by = :introducer_id
+                        WHERE id = :contact_id AND introduced_by IS NULL
+                    """),
+                    {
+                        "introducer_id": introducer_contact_id,
+                        "contact_id": str(result[0]),
+                    },
+                )
+                print(f"  🤝 Referral chain: {person_name} introduced by contact {introducer_contact_id[:8]}")
+        except Exception as e:
+            logger.debug(f"Introduction detection failed for {person_name}: {e}")
 
 
 def _calculate_interaction_weight(

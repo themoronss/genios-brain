@@ -151,6 +151,18 @@ Extract the following and return ONLY valid JSON:
 9. "is_human_email": true if sent by a real person, false if automated/marketing/transactional/notification.
    — A real person writes with personal tone, context, and expects a reply.
    — Automated = newsletters, alerts, receipts, job notifications, bank alerts, promotional offers.
+10. "mentioned_people": Array of other people's names mentioned in this email body.
+    — Extract names of third parties referenced (e.g. "I spoke with Sarah Chen", "Priya from Sequoia mentioned").
+    — Only include clearly named individuals, not pronouns or generic references.
+    — Return empty array if none mentioned.
+11. "what_works": Short phrase describing what communication style works with this person based on their writing.
+    — Examples: "Short emails with specific metrics", "Direct, data-forward", "Prefers bullet points"
+    — Infer from their email style — are they concise or verbose? Do they use data? Formal or casual?
+    — Return null if insufficient signal from this single email.
+12. "what_to_avoid": Short phrase describing what to avoid in communication with this person.
+    — Examples: "Long narrative emails", "Generic updates without specifics", "Overly formal language"
+    — Infer from what would clash with their style.
+    — Return null if insufficient signal.
 
 IMPORTANT: If the thread context above contains a commitment (e.g. "send retention data", "intro to VP"),
 include it in the commitments array even if the current message doesn't repeat it.
@@ -165,7 +177,10 @@ Return ONLY this JSON — no markdown, no explanation:
   "topics": [],
   "engagement_level": "medium",
   "contact_role": "other",
-  "is_human_email": true
+  "is_human_email": true,
+  "mentioned_people": [],
+  "what_works": null,
+  "what_to_avoid": null
 }}
 """
 
@@ -232,6 +247,9 @@ Return ONLY this JSON — no markdown, no explanation:
                     "topics": [str(t)[:50] for t in result.get("topics", [])[:5]],
                     "contact_role": contact_role,
                     "is_human_email": bool(result.get("is_human_email", True)),
+                    "mentioned_people": [str(p)[:100] for p in result.get("mentioned_people", [])[:10]],
+                    "what_works": str(result.get("what_works", ""))[:200] if result.get("what_works") else None,
+                    "what_to_avoid": str(result.get("what_to_avoid", ""))[:200] if result.get("what_to_avoid") else None,
                 }
 
             except Exception as api_error:
@@ -278,6 +296,9 @@ Return ONLY this JSON — no markdown, no explanation:
             "topics": [],
             "contact_role": "other",
             "is_human_email": True,  # assume human on fallback
+            "mentioned_people": [],
+            "what_works": None,
+            "what_to_avoid": None,
         }
 
 
@@ -325,6 +346,9 @@ def _extract_with_gemini(prompt: str) -> Dict:
             "topics": [str(t)[:50] for t in result.get("topics", [])[:5]],
             "contact_role": contact_role,
             "is_human_email": bool(result.get("is_human_email", True)),
+            "mentioned_people": [str(p)[:100] for p in result.get("mentioned_people", [])[:10]],
+            "what_works": str(result.get("what_works", ""))[:200] if result.get("what_works") else None,
+            "what_to_avoid": str(result.get("what_to_avoid", ""))[:200] if result.get("what_to_avoid") else None,
         }
     except Exception as e:
         print(f"❌ Gemini fallback also failed: {e}")

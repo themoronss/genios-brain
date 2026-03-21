@@ -169,16 +169,43 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
             # Continue if Redis fails (don't block on cache errors)
             logger.warning(f"Redis cache read failed: {redis_error}")
 
-        # Build context bundle
+        # Try pre-computed bundle first (24h cache from nightly refresh)
+        context_bundle = None
         try:
-            context_bundle = build_context_bundle(
-                db, org_id, request.entity, request.situation
-            )
+            precomputed = db.execute(
+                text("""
+                    SELECT pb.bundle, pb.generated_at, c.id
+                    FROM precomputed_bundles pb
+                    JOIN contacts c ON pb.contact_id = c.id AND pb.org_id = c.org_id
+                    WHERE pb.org_id = :org_id
+                    AND LOWER(c.name) = LOWER(:entity_name)
+                    AND pb.expires_at > NOW()
+                    LIMIT 1
+                """),
+                {"org_id": org_id, "entity_name": request.entity.strip()}
+            ).fetchone()
+
+            if precomputed and precomputed[0]:
+                context_bundle = precomputed[0] if isinstance(precomputed[0], dict) else json.loads(precomputed[0])
+                # Set cache_age_seconds
+                if precomputed[1]:
+                    age = (datetime.now(timezone.utc) - precomputed[1]).total_seconds()
+                    context_bundle["cache_age_seconds"] = int(age)
+                logger.info(f"Serving pre-computed bundle for {request.entity}")
         except Exception as e:
-            logger.error(f"Context bundle build error: {str(e)}")
-            raise HTTPException(
-                status_code=500, detail="Failed to build context. Please try again."
-            )
+            logger.debug(f"Pre-computed bundle lookup failed: {e}")
+
+        # Fall back to on-demand build
+        if not context_bundle:
+            try:
+                context_bundle = build_context_bundle(
+                    db, org_id, request.entity, request.situation
+                )
+            except Exception as e:
+                logger.error(f"Context bundle build error: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail="Failed to build context. Please try again."
+                )
 
         # Handle case where entity not found
         if context_bundle.get("error"):
