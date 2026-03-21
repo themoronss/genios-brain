@@ -269,6 +269,32 @@ export default function SettingsPage() {
           </div>
         </SectionCard>
 
+        {/* ─── Sync Settings ──────────────────────────────────────────── */}
+        <SectionCard>
+          <SectionHeader
+            icon={RefreshCw}
+            title="Sync Settings"
+            description="Configure how often GeniOS syncs your email data."
+          />
+          <div className="px-6 py-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Sync Interval</p>
+                <p className="text-xs text-muted-foreground mt-0.5">How often to check for new emails (cron schedule).</p>
+              </div>
+              <select
+                className="h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                defaultValue="24"
+              >
+                <option value="6">Every 6 hours</option>
+                <option value="12">Every 12 hours</option>
+                <option value="18">Every 18 hours</option>
+                <option value="24">Every 24 hours</option>
+              </select>
+            </div>
+          </div>
+        </SectionCard>
+
         {/* ─── Danger Zone ─────────────────────────────────────────────── */}
         <SectionCard>
           <SectionHeader

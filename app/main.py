@@ -10,6 +10,8 @@ from app.api.routes import context
 from app.api.routes import status
 from app.api.routes import draft
 from app.api.routes import sync
+from app.api.routes import agents
+from app.api.routes import events
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +75,8 @@ app.include_router(context.router)
 app.include_router(status.router)
 app.include_router(draft.router)
 app.include_router(sync.router)
+app.include_router(agents.router)
+app.include_router(events.router)
 
 
 @app.get("/")

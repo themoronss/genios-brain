@@ -8,12 +8,18 @@ import { api } from '@/lib/api';
 import { GraphData, GraphNode, ContextBundle, ConnectionStatus } from '@/types';
 import RelationshipGraph from '@/components/RelationshipGraph';
 import { DraftModal } from '@/components/DraftModal';
+import DashboardLayout from '@/components/DashboardLayout';
+import StatsBar from '@/components/StatsBar';
+import ActivityFeed from '@/components/ActivityFeed';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   X, Copy, Check, Sparkles, RefreshCcw, Mail, Plus, AlertCircle, Inbox,
+  Network, GitBranch, User,
 } from 'lucide-react';
 import { formatDate, getStageColor } from '@/lib/utils';
+
+type GraphMode = 'community' | 'stage' | 'ego';
 
 const ENTITY_TAG_CONFIG: Record<string, { label: string; color: string }> = {
   all:       { label: 'All',        color: '#475569' },
@@ -38,6 +44,8 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [draftModalOpen, setDraftModalOpen] = useState(false);
   const [activeEntityFilter, setActiveEntityFilter] = useState('all');
+  const [graphMode, setGraphMode] = useState<GraphMode>('community');
+  const [egoNodeId, setEgoNodeId] = useState<string | null>(null);
 
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
@@ -236,7 +244,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
+
+      {/* Stats Bar */}
+      <StatsBar />
+
+      <div className="flex flex-1 overflow-hidden">
 
       {/* ── LEFT: Graph area (70%) ──────────────────────────────────── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
@@ -296,11 +309,38 @@ export default function DashboardPage() {
           {/* </div> */}
 
 
+          {/* Graph Mode Switcher */}
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1">
+            {([
+              { mode: 'community' as const, icon: Network, label: 'Community' },
+              { mode: 'stage' as const, icon: GitBranch, label: 'Stage' },
+              { mode: 'ego' as const, icon: User, label: 'Ego' },
+            ]).map(({ mode, icon: Icon, label }) => (
+              <button
+                key={mode}
+                onClick={() => {
+                  setGraphMode(mode);
+                  if (mode === 'ego' && selectedNode) setEgoNodeId(selectedNode.id);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors
+                  ${graphMode === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Graph Canvas */}
           <RelationshipGraph
             data={graphData}
-            onNodeClick={handleNodeClick}
+            onNodeClick={(node) => {
+              handleNodeClick(node);
+              if (graphMode === 'ego') setEgoNodeId(node.id);
+            }}
             activeEntityFilter={activeEntityFilter}
+            graphMode={graphMode}
+            egoNodeId={egoNodeId}
           />
 
           {/* Node Detail Slide-in Panel */}
@@ -369,41 +409,56 @@ export default function DashboardPage() {
                   </div>
                 ) : contextBundle ? (
                   <>
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-background rounded-xl p-3 border border-border text-center">
-                        <p className="text-xl font-bold text-foreground leading-none">
+                    {/* Stats grid — 4 metrics per spec */}
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="bg-background rounded-xl p-2.5 border border-border text-center">
+                        <p className="text-lg font-bold text-foreground leading-none">
                           {contextBundle.entity?.interaction_count ?? selectedNode.interaction_count}
                         </p>
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Interactions</p>
                       </div>
-                      <div className="bg-background rounded-xl p-3 border border-border text-center">
+                      <div className="bg-background rounded-xl p-2.5 border border-border text-center">
                         <p className="text-xs font-bold text-foreground leading-tight">
                           {contextBundle.entity?.last_interaction ?? '—'}
                         </p>
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Last Contact</p>
                       </div>
-                      <div className="bg-background rounded-xl p-3 border border-border text-center">
-                        <p className={`text-xl font-bold leading-none ${(contextBundle.entity?.open_commitments?.length ?? 0) > 0 ? 'text-amber-400' : 'text-foreground'}`}>
-                          {contextBundle.entity?.open_commitments?.length ?? 0}
+                      <div className="bg-background rounded-xl p-2.5 border border-border text-center">
+                        <p className="text-lg font-bold text-foreground leading-none">
+                          {contextBundle.entity?.response_rate != null ? `${(contextBundle.entity.response_rate * 100).toFixed(0)}%` : '—'}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Reply Rate</p>
+                      </div>
+                      <div className="bg-background rounded-xl p-2.5 border border-border text-center">
+                        <p className={`text-lg font-bold leading-none ${(typeof contextBundle.entity?.open_commitments === 'number' ? contextBundle.entity.open_commitments : 0) > 0 ? 'text-amber-400' : 'text-foreground'}`}>
+                          {typeof contextBundle.entity?.open_commitments === 'number' ? contextBundle.entity.open_commitments : 0}
                         </p>
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1">Open Commits</p>
                       </div>
                     </div>
 
-                    {/* Context confidence bar */}
-                    {contextBundle.confidence != null && (
-                      <div className="bg-background rounded-xl p-3 border border-border">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-muted-foreground">Context confidence</span>
-                          <span className="text-xs font-semibold text-foreground">{(contextBundle.confidence * 100).toFixed(0)}%</span>
+                    {/* 5-Score Confidence Panel */}
+                    {contextBundle.scores && (
+                      <div className="bg-background rounded-xl p-3 border border-border space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Context Scores</span>
+                          <span className="text-xs font-semibold text-foreground">
+                            {((contextBundle.scores.composite ?? contextBundle.confidence) * 100).toFixed(0)}%
+                          </span>
                         </div>
-                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary transition-all duration-700"
-                            style={{ width: `${(contextBundle.confidence * 100).toFixed(0)}%` }}
-                          />
-                        </div>
+                        {(['freshness', 'confidence', 'consistency', 'authority', 'signal'] as const).map((key) => {
+                          const val = contextBundle.scores?.[key] ?? 0;
+                          const barColor = val > 0.7 ? 'bg-emerald-500' : val > 0.45 ? 'bg-amber-400' : 'bg-red-400';
+                          return (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="text-[10px] text-muted-foreground w-20 capitalize">{key}</span>
+                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${barColor} transition-all duration-700`} style={{ width: `${(val * 100).toFixed(0)}%` }} />
+                              </div>
+                              <span className="text-[10px] text-muted-foreground w-8 text-right">{(val * 100).toFixed(0)}%</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -586,6 +641,10 @@ export default function DashboardPage() {
               </Button>
             </div>
           )}
+          {/* Activity Feed */}
+          <div className="px-4 pb-4">
+            <ActivityFeed />
+          </div>
         </div>
       </aside>
 
@@ -597,6 +656,7 @@ export default function DashboardPage() {
           entityName={selectedNode.name}
         />
       )}
+      </div>{/* close flex wrapper */}
     </div>
   );
 }

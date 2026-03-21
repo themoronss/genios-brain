@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import SessionLocal
 from datetime import datetime, timezone
 
 router = APIRouter()
+security = HTTPBearer()
 
 
 def get_db():
@@ -13,6 +15,24 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify API key and return org_id."""
+    token = credentials.credentials
+    if not token.startswith("gn_live_"):
+        raise HTTPException(status_code=401, detail="Invalid API Key format")
+    db = SessionLocal()
+    try:
+        result = db.execute(
+            text("SELECT id FROM orgs WHERE api_key = :api_key"),
+            {"api_key": token}
+        ).fetchone()
+    finally:
+        db.close()
+    if not result:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return str(result[0])
 
 
 @router.get("/api/org/{org_id}/status")
@@ -118,7 +138,10 @@ def get_graph_data(
             SELECT
                 id, name, email, company, relationship_stage,
                 sentiment_avg, interaction_count, last_interaction_at, entity_type,
-                COALESCE(human_score, 0.5) AS human_score
+                COALESCE(human_score, 0.5) AS human_score,
+                confidence_score, community_id, size_score, is_bidirectional,
+                freshness_score, composite_score, sentiment_trend,
+                response_rate, avg_response_time_hours
             FROM contacts
             WHERE org_id = :org_id
             AND relationship_stage IS NOT NULL
@@ -162,6 +185,15 @@ def get_graph_data(
                 "email": c.email,
                 "entity_type": c.entity_type or "other",
                 "human_score": float(c.human_score),
+                "confidence_score": float(c.confidence_score or 0),
+                "community_id": c.community_id,
+                "size_score": float(c.size_score or 0),
+                "is_bidirectional": bool(c.is_bidirectional) if c.is_bidirectional is not None else False,
+                "freshness_score": float(c.freshness_score or 0),
+                "composite_score": float(c.composite_score or 0),
+                "sentiment_trend": c.sentiment_trend,
+                "response_rate": float(c.response_rate or 0),
+                "avg_response_time_hours": float(c.avg_response_time_hours or 0),
             })
             contact_id_set.add(str(c.id))
     for acct_lower, acct_original in account_emails.items():
@@ -250,10 +282,17 @@ def get_graph_data(
     ).fetchall()
     entity_type_counts = {row[0]: row[1] for row in type_counts_rows}
 
+    # Communities for graph visualization
+    communities = db.execute(
+        text("SELECT community_id, color, node_count FROM communities WHERE org_id = :org_id ORDER BY node_count DESC"),
+        {"org_id": org_id}
+    ).fetchall()
+
     return {
         "nodes": nodes,
         "links": links,
         "entity_type_counts": entity_type_counts,
+        "communities": [{"community_id": c[0], "color": c[1], "node_count": c[2]} for c in communities],
     }
 
 
@@ -321,4 +360,89 @@ def get_contacts(
         "total": total,
         "limit": limit,
         "offset": offset,
+    }
+
+
+@router.get("/v1/graph/stats")
+def get_graph_stats(db: Session = Depends(get_db), org_id: str = Depends(verify_api_key)):
+    """Graph health check — confirms graph is ready for context calls."""
+    stats = db.execute(
+        text("""
+            SELECT
+                COUNT(DISTINCT c.id) as total_nodes,
+                COUNT(DISTINCT i.id) as total_edges,
+                o.graph_quality_score,
+                o.brain_status,
+                MAX(ot.last_synced_at) as last_sync
+            FROM orgs o
+            LEFT JOIN contacts c ON c.org_id = o.id
+                AND c.relationship_stage IS NOT NULL AND c.relationship_stage != 'unknown'
+            LEFT JOIN interactions i ON i.org_id = o.id
+            LEFT JOIN oauth_tokens ot ON ot.org_id = o.id
+            WHERE o.id = :org_id
+            GROUP BY o.id, o.graph_quality_score, o.brain_status
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    if not stats:
+        return {"ready": False, "total_nodes": 0, "total_edges": 0, "quality_score": 0, "brain_status": "building", "last_sync": None}
+
+    total_nodes = stats[0] or 0
+    return {
+        "ready": total_nodes > 0,
+        "total_nodes": total_nodes,
+        "total_edges": stats[1] or 0,
+        "quality_score": float(stats[2] or 0),
+        "brain_status": stats[3] or "building",
+        "last_sync": stats[4].isoformat() if stats[4] else None,
+    }
+
+
+@router.get("/dashboard/metrics")
+def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
+    """Stats bar data for dashboard."""
+    stats = db.execute(
+        text("""
+            SELECT
+                (SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown') as contacts_count,
+                (SELECT COUNT(*) FROM interactions WHERE org_id = :org_id) as interactions_count,
+                (SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND relationship_stage IN ('ACTIVE', 'WARM') AND last_interaction_at >= NOW() - INTERVAL '30 days') as active_relationships,
+                (SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id) as context_calls
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    return {
+        "contacts_count": stats[0] or 0,
+        "interactions_count": stats[1] or 0,
+        "active_relationships_count": stats[2] or 0,
+        "context_calls_count": stats[3] or 0,
+    }
+
+
+@router.get("/activity")
+def get_activity_feed(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
+    """Recent activity events for the activity feed."""
+    events = db.execute(
+        text("""
+            SELECT event_type, event_data, created_at
+            FROM activity_log
+            WHERE org_id = :org_id
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """),
+        {"org_id": org_id, "limit": min(limit, 50)}
+    ).fetchall()
+
+    return {
+        "events": [
+            {
+                "event_type": e[0],
+                "event_data": e[1] if isinstance(e[1], dict) else {},
+                "created_at": e[2].isoformat() if e[2] else None,
+            }
+            for e in events
+        ],
+        "total": len(events),
     }

@@ -32,6 +32,22 @@ def run_nightly_refresh(org_id: str = None):
     try:
         updated_count = recalculate_all_relationships(db, org_id)
         print(f"✓ Successfully updated {updated_count} contacts for {scope}")
+
+        # Run Louvain community detection
+        try:
+            from app.graph.community_detection import run_louvain_detection
+            if org_id:
+                partition = run_louvain_detection(db, org_id)
+                print(f"✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {org_id}")
+            else:
+                from sqlalchemy import text
+                orgs = db.execute(text("SELECT id FROM orgs")).fetchall()
+                for org_row in orgs:
+                    partition = run_louvain_detection(db, str(org_row[0]))
+                    print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {org_row[0]}")
+        except Exception as e:
+            print(f"⚠️ Louvain detection skipped: {e}")
+
         return updated_count
     except Exception as e:
         print(f"✗ Error during nightly refresh: {e}")

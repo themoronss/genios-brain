@@ -1,4 +1,4 @@
-import { ContextBundle, GraphData, ConnectionStatus, DraftResponse } from '@/types';
+import { ContextBundle, GraphData, ConnectionStatus, DraftResponse, DashboardMetrics, ActivityEvent } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -89,6 +89,24 @@ export const api = {
           user_request: userRequest,
           draft_type: 'email'
         }),
+      }),
+  },
+  dashboard: {
+    getMetrics: (orgId: string, token: string) =>
+      apiCall<DashboardMetrics>(`/dashboard/metrics?org_id=${orgId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+  },
+  activity: {
+    getFeed: (orgId: string, token: string, limit = 20) =>
+      apiCall<{ events: ActivityEvent[] }>(`/activity?org_id=${orgId}&limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+  },
+  graph: {
+    getStats: (orgId: string, token: string) =>
+      apiCall<any>(`/v1/graph/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
       }),
   },
   gmail: {

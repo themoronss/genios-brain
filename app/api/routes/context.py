@@ -9,6 +9,8 @@ from app.redis_client import redis_client
 import json
 import hashlib
 import logging
+import time
+import uuid
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -231,3 +233,204 @@ def get_dashboard_context(org_id: str, request: DashboardContextRequest, db: Ses
     except Exception as e:
         logger.error(f"Unexpected error in dashboard context: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# ── New V1 Detailing Endpoints ──────────────────────────────────────────────
+
+
+class ContextOutcomeRequest(BaseModel):
+    org_id: str
+    session_id: str = None
+    agent_id: str = None
+    action_type: str  # email_sent, meeting_scheduled, crm_updated
+    target_entity: str = None
+    outcome: dict  # {type: EXECUTED|EDITED|REJECTED|ESCALATED}
+    interaction_record: dict = None  # {subject, direction, topics[], commitment_made}
+
+
+@router.post("/v1/context/outcome")
+def report_context_outcome(
+    request: ContextOutcomeRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Record agent execution outcomes for the feedback loop."""
+    try:
+        outcome_type = request.outcome.get("type", "EXECUTED")
+        if outcome_type not in ("EXECUTED", "EDITED", "REJECTED", "ESCALATED"):
+            raise HTTPException(status_code=400, detail="Invalid outcome type")
+
+        db.execute(
+            text("""
+                INSERT INTO outcome_events
+                    (org_id, session_id, agent_id, action_type, target_entity, outcome_type, interaction_record)
+                VALUES
+                    (:org_id, :session_id, :agent_id, :action_type, :target_entity, :outcome_type, :interaction_record)
+            """),
+            {
+                "org_id": org_id,
+                "session_id": request.session_id,
+                "agent_id": request.agent_id,
+                "action_type": request.action_type,
+                "target_entity": request.target_entity,
+                "outcome_type": outcome_type,
+                "interaction_record": json.dumps(request.interaction_record) if request.interaction_record else None,
+            },
+        )
+
+        # Update AER (Autonomous Execution Rate)
+        aer_delta = 0.0
+        if outcome_type == "EXECUTED":
+            aer_delta = 0.02
+        elif outcome_type == "EDITED":
+            aer_delta = 0.01
+
+        if aer_delta > 0:
+            db.execute(
+                text("""
+                    UPDATE orgs SET aer = LEAST(1.0, COALESCE(aer, 0) + :delta)
+                    WHERE id = :org_id
+                """),
+                {"org_id": org_id, "delta": aer_delta},
+            )
+
+        db.commit()
+
+        return {
+            "learned": True,
+            "graph_updated": request.interaction_record is not None,
+            "aer_delta": aer_delta,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to record outcome: {e}")
+        raise HTTPException(status_code=500, detail="Failed to record outcome")
+
+
+class ContextSearchRequest(BaseModel):
+    query_type: str = "temporal"  # temporal, topic, entity
+    filter: dict = {}  # {stages: [], last_contact_days: {min, max}, entity_types: []}
+    limit: int = 10
+
+
+@router.post("/v1/context/search")
+def search_context(
+    request: ContextSearchRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Temporal and topic-anchored search, returns ranked contacts."""
+    try:
+        start_time = time.time()
+        filters = request.filter
+        conditions = ["c.org_id = :org_id", "c.relationship_stage IS NOT NULL", "c.relationship_stage != 'unknown'"]
+        params: dict = {"org_id": org_id, "limit": min(request.limit, 25)}
+
+        # Stage filter
+        stages = filters.get("stages", [])
+        if stages:
+            conditions.append("c.relationship_stage = ANY(:stages)")
+            params["stages"] = stages
+
+        # Recency filter
+        last_contact = filters.get("last_contact_days", {})
+        if last_contact.get("max"):
+            conditions.append("c.last_interaction_at >= NOW() - INTERVAL '1 day' * :max_days")
+            params["max_days"] = last_contact["max"]
+        if last_contact.get("min"):
+            conditions.append("c.last_interaction_at <= NOW() - INTERVAL '1 day' * :min_days")
+            params["min_days"] = last_contact["min"]
+
+        # Entity type filter
+        entity_types = filters.get("entity_types", [])
+        if entity_types:
+            conditions.append("c.entity_type = ANY(:entity_types)")
+            params["entity_types"] = entity_types
+
+        where_clause = " AND ".join(conditions)
+
+        # Order by based on query type
+        if request.query_type == "temporal":
+            order = "c.last_interaction_at DESC NULLS LAST"
+        else:
+            order = "c.composite_score DESC NULLS LAST, c.interaction_count DESC"
+
+        results = db.execute(
+            text(f"""
+                SELECT
+                    c.id, c.name, c.email, c.company, c.relationship_stage,
+                    c.sentiment_avg, c.interaction_count, c.last_interaction_at,
+                    c.entity_type, c.confidence_score, c.freshness_score,
+                    c.composite_score
+                FROM contacts c
+                WHERE {where_clause}
+                ORDER BY {order}
+                LIMIT :limit
+            """),
+            params,
+        ).fetchall()
+
+        latency_ms = int((time.time() - start_time) * 1000)
+
+        contacts = []
+        for r in results:
+            days_ago = (datetime.now(timezone.utc) - r[7]).days if r[7] else 999
+            contacts.append({
+                "id": str(r[0]),
+                "name": r[1],
+                "email": r[2],
+                "company": r[3],
+                "relationship_stage": r[4],
+                "sentiment_avg": float(r[5] or 0),
+                "interaction_count": r[6],
+                "last_interaction_days": days_ago,
+                "entity_type": r[8] or "other",
+                "confidence_score": float(r[9] or 0.5),
+                "freshness_score": float(r[10] or 0.5),
+                "composite_score": float(r[11] or 0.5),
+            })
+
+        return {
+            "contacts": contacts,
+            "total": len(contacts),
+            "query_type": request.query_type,
+            "latency_ms": latency_ms,
+        }
+    except Exception as e:
+        logger.error(f"Context search failed: {e}")
+        raise HTTPException(status_code=500, detail="Search failed")
+
+
+@router.get("/v1/context/entity/{entity_id}")
+def get_entity_context(
+    entity_id: str,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Pull full context for a specific entity by ID."""
+    try:
+        contact = db.execute(
+            text("""
+                SELECT name FROM contacts WHERE id = :id AND org_id = :org_id
+            """),
+            {"id": entity_id, "org_id": org_id},
+        ).fetchone()
+
+        if not contact:
+            raise HTTPException(
+                status_code=404,
+                detail={"error_code": "entity_not_found", "message": f"Entity {entity_id} not found"},
+            )
+
+        context_bundle = build_context_bundle(db, org_id, contact[0])
+
+        if context_bundle.get("error"):
+            raise HTTPException(status_code=404, detail={"error_code": "entity_not_found"})
+
+        return context_bundle
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Entity context failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get entity context")

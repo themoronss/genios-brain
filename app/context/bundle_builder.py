@@ -23,6 +23,16 @@ def _row_to_dict(result) -> Dict:
         "topics_aggregate": result[9] or [],
         "communication_style": result[10],
         "entity_type": result[11],
+        "freshness_score": result[12] if len(result) > 12 else None,
+        "confidence_score": result[13] if len(result) > 13 else 0.5,
+        "consistency_score": result[14] if len(result) > 14 else 0.5,
+        "authority_score": result[15] if len(result) > 15 else 0.5,
+        "composite_score": result[16] if len(result) > 16 else 0.5,
+        "sentiment_ewma": result[17] if len(result) > 17 else 0.0,
+        "sentiment_trend": result[18] if len(result) > 18 else "STABLE",
+        "response_rate": result[19] if len(result) > 19 else None,
+        "avg_response_time_hours": result[20] if len(result) > 20 else None,
+        "is_bidirectional": result[21] if len(result) > 21 else False,
     }
 
 
@@ -35,13 +45,16 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
         result = db.execute(
             text(
                 """
-                SELECT 
+                SELECT
                     id, name, email, company, relationship_stage,
                     sentiment_avg, last_interaction_at, first_interaction_at,
                     interaction_count, topics_aggregate, communication_style,
-                    entity_type
+                    entity_type, freshness_score, confidence_score,
+                    consistency_score, authority_score, composite_score,
+                    sentiment_ewma, sentiment_trend, response_rate,
+                    avg_response_time_hours, is_bidirectional
                 FROM contacts
-                WHERE org_id = :org_id 
+                WHERE org_id = :org_id
                 AND (TRIM(LOWER(name)) = TRIM(LOWER(:name)) OR LOWER(email) LIKE LOWER(:email_pattern))
                 LIMIT 1
             """
@@ -89,11 +102,14 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
                 full_result = db.execute(
                     text(
                         """
-                        SELECT 
+                        SELECT
                             id, name, email, company, relationship_stage,
                             sentiment_avg, last_interaction_at, first_interaction_at,
                             interaction_count, topics_aggregate, communication_style,
-                            entity_type
+                            entity_type, freshness_score, confidence_score,
+                            consistency_score, authority_score, composite_score,
+                            sentiment_ewma, sentiment_trend, response_rate,
+                            avg_response_time_hours, is_bidirectional
                         FROM contacts
                         WHERE id = :id AND org_id = :org_id
                         """
@@ -424,6 +440,9 @@ def build_context_bundle(
         "overdue_commitments": sum(1 for c in open_commitments if c.get("is_overdue")),
         "interaction_count": contact["interaction_count"] or 0,
         "interaction_types": get_interaction_type_summary(interactions),
+        "response_rate": contact.get("response_rate"),
+        "avg_response_time_hours": contact.get("avg_response_time_hours"),
+        "is_bidirectional": contact.get("is_bidirectional", False),
     }
 
     # 5. Generate rich context_for_agent paragraph
@@ -434,6 +453,17 @@ def build_context_bundle(
     # Determine action recommendation and escalation signal
     action = determine_action_recommendation(contact, entity)
 
+    # Calculate coverage score (data completeness)
+    coverage_parts = 0
+    if contact.get("email"): coverage_parts += 1
+    if contact.get("company"): coverage_parts += 1
+    if interactions: coverage_parts += 1
+    if len(interactions) >= 3: coverage_parts += 1
+    if contact.get("relationship_stage") and contact["relationship_stage"] not in ("unknown", "COLD"): coverage_parts += 1
+    if contact.get("topics_aggregate"): coverage_parts += 1
+    if open_commitments: coverage_parts += 1
+    coverage_score = round(coverage_parts / 7.0, 2)
+
     return {
         "entity": entity,
         "match_confidence": contact.get("match_confidence", 1.0),
@@ -441,12 +471,23 @@ def build_context_bundle(
         "recent_interactions": interactions,
         "context_for_agent": context_for_agent,
         "confidence": contact.get("confidence_score", 0.5),
+        "coverage_score": coverage_score,
         # ── Fix A+B: Action signals — agents check these first ──
         "action_recommendation": action["action_recommendation"],
         "escalation_recommended": action["escalation_recommended"],
         "action_reason": action["action_reason"],
+        # ── V1 Detailing: 5-score system ──
+        "scores": {
+            "freshness": float(contact.get("freshness_score") or 0.5),
+            "confidence": float(contact.get("confidence_score") or 0.5),
+            "consistency": float(contact.get("consistency_score") or 0.5),
+            "signal": float(contact.get("composite_score") or 0.5),
+            "authority": float(contact.get("authority_score") or 0.5),
+            "composite": float(contact.get("composite_score") or 0.5),
+        },
         "data_quality": {
             "confidence_score": contact.get("confidence_score", 0.5),
+            "coverage_score": coverage_score,
             "last_recalc": contact.get("metadata", {}).get("last_recalc_at", "unknown"),
             "sources": ["gmail"],
         },

@@ -9,13 +9,14 @@ from typing import Dict, List
 import json
 
 
-# Relationship stages as per MVP
+# Relationship stages as per MVP V1 Detailing spec
 RELATIONSHIP_STAGES = {
-    "ACTIVE": "Last interaction < 7 days + positive sentiment",
-    "WARM": "Last interaction 7-30 days",
-    "DORMANT": "Last interaction 30-60 days",
+    "ACTIVE": "Last interaction < 14 days + positive sentiment + bidirectional",
+    "WARM": "Last interaction < 30 days",
+    "NEEDS_ATTENTION": "Last interaction 31-60 days OR no reply",
+    "DORMANT": "Last interaction 31-60 days",
     "COLD": "Last interaction > 60 days",
-    "AT_RISK": "Sentiment avg < -0.3 (overrides all above)",
+    "AT_RISK": "Recent but negative sentiment (overrides all above)",
 }
 
 # Source weights (Gmail only for V1)
@@ -143,26 +144,28 @@ def calculate_confidence_score(
 
 
 def calculate_relationship_stage(
-    last_interaction_at: datetime, sentiment: float, now: datetime = None
+    last_interaction_at: datetime, sentiment: float, now: datetime = None,
+    is_bidirectional: bool = True
 ) -> str:
     """
-    Calculate relationship stage based on simple rules.
+    Calculate relationship stage based on MVP V1 Detailing spec rules.
     Uses EWMA sentiment (passed as `sentiment`) — not simple average.
 
-    Rules:
-    - Last interaction < 7 days + positive EWMA sentiment = ACTIVE
-    - Last interaction 7-30 days = WARM
-    - Last interaction 30-60 days = DORMANT
-    - Last interaction > 60 days = COLD
-    - EWMA sentiment < -0.3 = AT_RISK (overrides all above)
+    Rules (updated per V1 Detailing):
+    - AT_RISK: Recent but negative sentiment (overrides all)
+    - ACTIVE: Last interaction < 14 days + positive sentiment + bidirectional
+    - WARM: Last interaction < 30 days
+    - NEEDS_ATTENTION: 31-60 days OR one-sided (no reply)
+    - COLD: > 60 days
 
     Args:
         last_interaction_at: DateTime of last interaction
-        sentiment: EWMA sentiment score (-1.0 to 1.0) — use sentiment_ewma, not sentiment_avg
+        sentiment: EWMA sentiment score (-1.0 to 1.0)
         now: Current datetime (defaults to now)
+        is_bidirectional: Whether communication is two-way
 
     Returns:
-        str: Relationship stage (ACTIVE, WARM, DORMANT, COLD, AT_RISK)
+        str: Relationship stage
     """
     if now is None:
         now = datetime.now(timezone.utc)
@@ -184,13 +187,17 @@ def calculate_relationship_stage(
     # Calculate days since last interaction
     days_since = (now - last_interaction_at).days
 
-    # Apply stage rules
-    if days_since < 7 and sentiment > 0:
+    # Apply stage rules (updated thresholds per V1 Detailing)
+    if days_since < 14 and sentiment > 0 and is_bidirectional:
         return "ACTIVE"
+    elif days_since < 14 and sentiment > 0:
+        return "WARM"  # Recent + positive but one-sided
     elif days_since < 30:
         return "WARM"
-    elif days_since < 60:
-        return "DORMANT"
+    elif days_since <= 60:
+        if not is_bidirectional:
+            return "NEEDS_ATTENTION"
+        return "NEEDS_ATTENTION"
     else:
         return "COLD"
 
@@ -232,6 +239,7 @@ def compute_freshness(days_since: int, stage: str) -> float:
     HALF_LIFE_MAP = {
         "ACTIVE": 7,  # Fast decay - active relationships need continuous engagement
         "WARM": 30,  # Moderate decay
+        "NEEDS_ATTENTION": 45,  # Medium decay
         "DORMANT": 60,  # Slow decay - already dormant, slower fade
         "COLD": 90,  # Very slow decay
         "AT_RISK": 15,  # Faster decay - needs urgent attention
@@ -244,6 +252,90 @@ def compute_freshness(days_since: int, stage: str) -> float:
     freshness = max(0.1, 0.5 ** (days_since / half_life))
 
     return round(freshness, 3)
+
+
+def calculate_size_score(interaction_count_90d: int, recency_score: float) -> float:
+    """
+    Calculate node size score per MVP V1 Detailing spec.
+    Formula: (interaction_count_90d × 0.6) + (recency_score × 0.4)
+
+    Tiers: Large (>0.70), Medium (0.40-0.70), Small (<0.40)
+    """
+    # Normalize interaction count (cap at 20 for scoring)
+    normalized_count = min(interaction_count_90d / 20.0, 1.0)
+    size = (normalized_count * 0.6) + (recency_score * 0.4)
+    return round(min(1.0, size), 3)
+
+
+def calculate_bidirectionality(db, contact_id: str) -> bool:
+    """Check if both SENT (outbound) and RECEIVED (inbound) interactions exist."""
+    result = db.execute(
+        text("""
+            SELECT
+                BOOL_OR(direction = 'inbound') AS has_inbound,
+                BOOL_OR(direction = 'outbound') AS has_outbound
+            FROM interactions
+            WHERE contact_id = :contact_id
+        """),
+        {"contact_id": contact_id}
+    ).fetchone()
+
+    if not result:
+        return False
+    return bool(result[0] and result[1])
+
+
+def calculate_response_metrics(db, contact_id: str) -> Dict:
+    """
+    Calculate response rate and average response time.
+    Response rate = replies received / emails sent to them
+    Avg response time = average reply_time_hours where available
+    """
+    result = db.execute(
+        text("""
+            SELECT
+                COUNT(*) FILTER (WHERE direction = 'outbound') as sent,
+                COUNT(*) FILTER (WHERE direction = 'inbound' AND interaction_type = 'email_reply') as replies,
+                AVG(reply_time_hours) FILTER (WHERE reply_time_hours IS NOT NULL AND reply_time_hours > 0) as avg_reply_time
+            FROM interactions
+            WHERE contact_id = :contact_id
+        """),
+        {"contact_id": contact_id}
+    ).fetchone()
+
+    if not result or not result[0]:
+        return {"response_rate": None, "avg_response_time_hours": None}
+
+    sent = result[0] or 0
+    replies = result[1] or 0
+    avg_reply_time = float(result[2]) if result[2] else None
+
+    response_rate = round(replies / max(sent, 1), 3)
+
+    return {
+        "response_rate": response_rate,
+        "avg_response_time_hours": round(avg_reply_time, 1) if avg_reply_time else None
+    }
+
+
+def calculate_composite_score(
+    freshness: float, confidence: float, consistency: float,
+    signal: float, authority: float
+) -> float:
+    """
+    Calculate composite context score per MVP V1 Detailing spec.
+    Threshold: >= 0.45 to include in context bundles.
+
+    Weights: freshness 25%, confidence 25%, consistency 20%, signal 15%, authority 15%
+    """
+    composite = (
+        freshness * 0.25 +
+        confidence * 0.25 +
+        consistency * 0.20 +
+        signal * 0.15 +
+        authority * 0.15
+    )
+    return round(min(1.0, composite), 3)
 
 
 def recalculate_contact_relationship(db, contact_id: str) -> Dict:
@@ -345,11 +437,50 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         interaction_count, days_since, sources=["gmail"]
     )
 
-    # Calculate relationship stage
-    stage = calculate_relationship_stage(last_interaction, sentiment_ewma)
+    # Calculate bidirectionality
+    is_bidirectional = calculate_bidirectionality(db, contact_id)
 
-    # Calculate freshness score (new in v1.1)
+    # Calculate relationship stage (updated with bidirectionality)
+    stage = calculate_relationship_stage(last_interaction, sentiment_ewma, is_bidirectional=is_bidirectional)
+
+    # Calculate freshness score
     freshness_score = compute_freshness(days_since, stage)
+
+    # Calculate response metrics
+    response_metrics = calculate_response_metrics(db, contact_id)
+
+    # Calculate size score (interaction count last 90 days)
+    count_90d_result = db.execute(
+        text("""
+            SELECT COUNT(*) FROM interactions
+            WHERE contact_id = :contact_id AND interaction_at >= NOW() - INTERVAL '90 days'
+        """),
+        {"contact_id": contact_id}
+    ).fetchone()
+    interaction_count_90d = count_90d_result[0] if count_90d_result else 0
+    size_score = calculate_size_score(interaction_count_90d, freshness_score)
+
+    # Calculate consistency and authority scores
+    try:
+        from app.graph.consistency_engine import calculate_consistency_score as calc_consistency
+        from app.graph.consistency_engine import calculate_authority_score as calc_authority
+        consistency_score = calc_consistency(db, contact_id)
+        authority_score = calc_authority(db, contact_id)
+    except Exception:
+        consistency_score = 0.5
+        authority_score = 0.5
+
+    # Calculate average signal score
+    signal_result = db.execute(
+        text("SELECT AVG(signal_score) FROM interactions WHERE contact_id = :contact_id AND signal_score IS NOT NULL"),
+        {"contact_id": contact_id}
+    ).fetchone()
+    avg_signal_score = float(signal_result[0]) if signal_result and signal_result[0] else 0.5
+
+    # Calculate composite score
+    composite_score = calculate_composite_score(
+        freshness_score, confidence, consistency_score, avg_signal_score, authority_score
+    )
 
     # Store sentiment history (keep last 10)
     sentiment_history = json.dumps(
@@ -399,7 +530,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
 
     human_score = round(min(1.0, human_score), 2)
 
-    # Update contact with all new fields
+    # Update contact with all fields including new V1 Detailing scores
     db.execute(
         text(
             """
@@ -416,6 +547,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 topics_aggregate = :topics,
                 sentiment_history = :sentiment_history,
                 human_score = :human_score,
+                is_bidirectional = :is_bidirectional,
+                size_score = :size_score,
+                consistency_score = :consistency_score,
+                authority_score = :authority_score,
+                composite_score = :composite_score,
+                response_rate = :response_rate,
+                avg_response_time_hours = :avg_response_time_hours,
                 metadata = jsonb_set(
                     COALESCE(metadata, '{}'::jsonb),
                     '{last_recalc_at}',
@@ -438,6 +576,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
             "topics": all_topics,
             "sentiment_history": sentiment_history,
             "human_score": human_score,
+            "is_bidirectional": is_bidirectional,
+            "size_score": size_score,
+            "consistency_score": consistency_score,
+            "authority_score": authority_score,
+            "composite_score": composite_score,
+            "response_rate": response_metrics["response_rate"],
+            "avg_response_time_hours": response_metrics["avg_response_time_hours"],
         },
     )
     db.commit()
@@ -452,6 +597,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         "interaction_count": interaction_count,
         "last_interaction": last_interaction,
         "human_score": human_score,
+        "is_bidirectional": is_bidirectional,
+        "size_score": size_score,
+        "consistency_score": consistency_score,
+        "authority_score": authority_score,
+        "composite_score": composite_score,
+        "response_rate": response_metrics["response_rate"],
+        "avg_response_time_hours": response_metrics["avg_response_time_hours"],
     }
 
 

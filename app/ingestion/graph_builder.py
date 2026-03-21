@@ -3,6 +3,28 @@ from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 import re
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def log_activity(db, org_id: str, event_type: str, event_data: dict = None):
+    """Log an activity event for the activity feed. Non-blocking."""
+    try:
+        db.execute(
+            text("""
+                INSERT INTO activity_log (org_id, event_type, event_data)
+                VALUES (:org_id, :event_type, :event_data)
+            """),
+            {
+                "org_id": org_id,
+                "event_type": event_type,
+                "event_data": json.dumps(event_data or {}),
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Activity log failed (non-critical): {e}")
 
 
 def extract_company_from_email(email):
@@ -395,7 +417,12 @@ def upsert_contact(db, org_id, email, name, entity_type: str = None):
         {"org_id": org_id, "email": email},
     )
 
-    return result.fetchone()[0]
+    final_id = result.fetchone()[0]
+
+    # Log contact creation/update activity
+    log_activity(db, org_id, "contact_created", {"name": name, "email": email, "company": company})
+
+    return final_id
 
 
 def create_interaction(
