@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import SessionLocal
 from datetime import datetime, timezone
+import csv
+import io
 
 router = APIRouter()
 security = HTTPBearer()
@@ -419,6 +422,58 @@ def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
         "active_relationships_count": stats[2] or 0,
         "context_calls_count": stats[3] or 0,
     }
+
+
+@router.get("/api/org/{org_id}/graph/export")
+def export_graph_csv(org_id: str, db: Session = Depends(get_db)):
+    """Export all contacts and relationship data as CSV."""
+    contacts = db.execute(
+        text("""
+            SELECT
+                id, name, email, company, entity_type,
+                relationship_stage, last_interaction_at,
+                interaction_count, sentiment_avg,
+                freshness_score, confidence_score, consistency_score,
+                authority_score, composite_score, response_rate,
+                avg_response_time_hours, is_bidirectional, community_id
+            FROM contacts
+            WHERE org_id = :org_id
+              AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown'
+            ORDER BY interaction_count DESC
+        """),
+        {"org_id": org_id},
+    ).fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "name", "email", "company", "entity_type",
+        "relationship_stage", "last_interaction_at",
+        "interaction_count", "sentiment_avg",
+        "freshness_score", "confidence_score", "consistency_score",
+        "authority_score", "composite_score", "response_rate",
+        "avg_response_time_hours", "is_bidirectional", "community_id",
+    ])
+    for c in contacts:
+        writer.writerow([
+            str(c[0]), c[1] or "", c[2] or "", c[3] or "", c[4] or "",
+            c[5] or "", c[6].isoformat() if c[6] else "",
+            c[7] or 0, round(float(c[8] or 0), 3),
+            round(float(c[9] or 0), 3), round(float(c[10] or 0), 3),
+            round(float(c[11] or 0), 3), round(float(c[12] or 0), 3),
+            round(float(c[13] or 0), 3),
+            round(float(c[14] or 0), 3) if c[14] else "",
+            round(float(c[15] or 0), 1) if c[15] else "",
+            str(c[16]).lower() if c[16] is not None else "false",
+            c[17] or "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=genios_graph_{org_id[:8]}.csv"},
+    )
 
 
 @router.get("/activity")

@@ -108,6 +108,9 @@ export const api = {
       apiCall<any>(`/v1/graph/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       }),
+    exportCsv: (orgId: string) => {
+      window.open(`${API_BASE}/api/org/${orgId}/graph/export`, '_blank');
+    },
   },
   chat: {
     send: (orgId: string, message: string, queryType: string, history: { role: string; content: string }[]) =>

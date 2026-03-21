@@ -532,6 +532,34 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Recommended Actions */}
+                    {contextBundle.action_recommendation && (
+                      <div className="space-y-2">
+                        <h3 className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Recommended Action</h3>
+                        {(() => {
+                          const rec = contextBundle.action_recommendation!;
+                          const styles: Record<string, { bg: string; border: string; dot: string; label: string }> = {
+                            block:    { bg: 'bg-red-500/10',    border: 'border-red-500/30',    dot: 'bg-red-500',    label: 'BLOCK' },
+                            escalate: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', dot: 'bg-orange-500', label: 'ESCALATE' },
+                            warn:     { bg: 'bg-amber-500/10',  border: 'border-amber-500/30',  dot: 'bg-amber-400',  label: 'WARN' },
+                            proceed:  { bg: 'bg-green-500/10',  border: 'border-green-500/30',  dot: 'bg-green-500',  label: 'PROCEED' },
+                          };
+                          const s = styles[rec] ?? styles.proceed;
+                          return (
+                            <div className={`${s.bg} border ${s.border} rounded-xl p-3 flex gap-2.5`}>
+                              <span className={`w-2 h-2 rounded-full ${s.dot} mt-1 shrink-0`} />
+                              <div>
+                                <p className="text-[10px] font-bold text-foreground tracking-wider">{s.label}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                  {contextBundle.action_reason}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground text-sm">No context available for this contact.</div>

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Copy, Eye, EyeOff, Check, RefreshCw,
   Mail, Trash2, Plus, RefreshCcw, Settings, KeyRound,
-  ShieldAlert, AlertTriangle,
+  ShieldAlert, AlertTriangle, Download,
 } from 'lucide-react';
 
 function SectionCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -291,6 +291,34 @@ export default function SettingsPage() {
                 <option value="18">Every 18 hours</option>
                 <option value="24">Every 24 hours</option>
               </select>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* ─── Graph Export ───────────────────────────────────────────── */}
+        <SectionCard>
+          <SectionHeader
+            icon={Download}
+            title="Export Graph Data"
+            description="Download your relationship graph as a CSV file."
+          />
+          <div className="px-6 py-5">
+            <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+              <div>
+                <p className="text-sm font-medium text-foreground">Export all relationships</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Downloads a CSV with all contacts, scores, stages, and relationship metrics.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 shrink-0 ml-4"
+                onClick={() => api.graph.exportCsv(orgId)}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
             </div>
           </div>
         </SectionCard>
