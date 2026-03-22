@@ -17,3 +17,6 @@ rapidfuzz
 python-louvain
 networkx
 sse-starlette
+python-multipart
+PyMuPDF
+python-docx
