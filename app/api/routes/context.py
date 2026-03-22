@@ -62,9 +62,10 @@ def get_db():
         db.close()
 
 
-def get_cache_key(org_id: str, entity_name: str) -> str:
-    """Generate cache key for context bundle."""
-    key_data = f"{org_id}:{entity_name}".lower()
+def get_cache_key(org_id: str, entity_name: str, situation: str = None) -> str:
+    """Generate cache key for context bundle. Includes situation per spec."""
+    situation_part = situation.strip().lower()[:100] if situation else ""
+    key_data = f"{org_id}:{entity_name}:{situation_part}".lower()
     return f"context:{hashlib.md5(key_data.encode()).hexdigest()}"
 
 
@@ -103,6 +104,13 @@ def log_context_call(
         db.commit()
     except Exception as e:
         logger.warning(f"Context call logging failed (non-critical): {e}")
+
+
+def context_error(code: str, message: str, status_code: int = 400):
+    raise HTTPException(
+        status_code=status_code,
+        detail={"error": {"code": code, "message": message}}
+    )
 
 
 security = HTTPBearer()
@@ -147,24 +155,28 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
         - confidence: 0.0 to 1.0 score
     """
     try:
+        start_time = time.time()
         logger.info(
             f"Context request for: {request.entity}, org: {org_id}"
         )
 
         # Check cache first (60 second TTL as per MVP)
-        cache_key = get_cache_key(org_id, request.entity)
+        cache_key = get_cache_key(org_id, request.entity, request.situation)
 
         try:
             cached = redis_client.get(cache_key)
             if cached:
                 logger.info(f"Cache hit for {request.entity}")
+                cached_bundle = json.loads(cached) if isinstance(cached, (str, bytes)) else {}
                 # Log cache hit (Fix C)
                 log_context_call(
                     db, org_id, request.entity,
-                    json.loads(cached) if isinstance(cached, (str, bytes)) else {},
+                    cached_bundle,
                     cache_hit=True,
                 )
-                return json.loads(cached)
+                cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
+                cached_bundle["cache_hit"] = True
+                return cached_bundle
         except Exception as redis_error:
             # Continue if Redis fails (don't block on cache errors)
             logger.warning(f"Redis cache read failed: {redis_error}")
@@ -210,10 +222,18 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
         # Handle case where entity not found
         if context_bundle.get("error"):
             logger.warning(f"Entity not found: {request.entity}")
-            raise HTTPException(
-                status_code=404,
-                detail=f"Contact '{request.entity}' not found in your network.",
-            )
+            context_error("entity_not_found", f"Contact '{request.entity}' not found in your network.", 404)
+
+        # Handle confidence too low
+        if context_bundle.get("confidence", 1.0) < 0.40:
+            logger.warning(f"Confidence too low for {request.entity}: {context_bundle.get('confidence')}")
+            context_bundle["_warning"] = "confidence_too_low"
+
+        # Add context versioning fields
+        context_bundle["bundle_id"] = str(uuid.uuid4())
+        context_bundle["generated_at"] = datetime.now(timezone.utc).isoformat()
+        context_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
+        context_bundle["cache_hit"] = False
 
         # Log the call (Fix C)
         log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False)

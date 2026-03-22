@@ -37,20 +37,20 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
     status.last_sync ? `Synced ${new Date(status.last_sync).toLocaleTimeString()}` : 'Not synced';
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-background">
       <Sidebar />
 
       {/* Main content area */}
       <div className="ml-56">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 h-14 bg-slate-950/80 backdrop-blur border-b border-slate-800 flex items-center justify-between px-6">
+        <header className="sticky top-0 z-40 h-14 bg-background/80 backdrop-blur border-b border-border flex items-center justify-between px-6">
           {/* Left: Page Title */}
-          <h1 className="text-lg font-semibold text-white">{title}</h1>
+          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
 
           {/* Center: Sync Status */}
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${syncStatusColor}`} />
-            <span className="text-xs text-slate-400">{syncStatusText}</span>
+            <span className="text-xs text-muted-foreground">{syncStatusText}</span>
             {status?.sync_status === 'running' && (
               <RefreshCcw className="w-3 h-3 text-orange-400 animate-spin" />
             )}
@@ -58,10 +58,10 @@ export default function DashboardLayout({ children, title = 'Dashboard' }: Dashb
 
           {/* Right: Notification + Avatar */}
           <div className="flex items-center gap-3">
-            <button className="relative p-1.5 text-slate-400 hover:text-white transition-colors">
+            <button className="relative p-1.5 text-muted-foreground hover:text-foreground transition-colors">
               <Bell className="w-4 h-4" />
             </button>
-            <div className="w-7 h-7 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-400 text-xs font-medium">
+            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium">
               {(session?.user?.name || 'U')[0].toUpperCase()}
             </div>
           </div>

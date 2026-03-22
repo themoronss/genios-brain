@@ -218,10 +218,13 @@ def get_graph_data(
         text("""
             SELECT COALESCE(i.account_email, 'default') AS acct,
                    i.contact_id,
-                   COUNT(*) AS cnt
+                   COUNT(*) AS cnt,
+                   c.sentiment_trend,
+                   c.is_bidirectional
             FROM interactions i
+            JOIN contacts c ON i.contact_id = c.id
             WHERE i.org_id = :org_id
-            GROUP BY i.account_email, i.contact_id
+            GROUP BY i.account_email, i.contact_id, c.sentiment_trend, c.is_bidirectional
         """),
         {"org_id": org_id},
     ).fetchall()
@@ -229,17 +232,19 @@ def get_graph_data(
     for edge in acct_edges:
         source_acct = f"acct_{edge[0]}"
         raw_contact_id = str(edge[1])
-        
+        interaction_count = edge[2]
+
         if raw_contact_id in contact_id_set:
-            # Map contact_id to acct_ node if they were merged
             target = contact_id_to_acct.get(raw_contact_id, raw_contact_id)
-            
-            # Don't draw self-loops (e.g. acct_X talking to acct_X, which shouldn't happen but just in case)
+
             if source_acct != target:
                 links.append({
                     "source": source_acct,
                     "target": target,
-                    "strength": min(edge[2] / 10.0, 1.0),
+                    "strength": min(interaction_count / 10.0, 1.0),
+                    "interaction_count": interaction_count,
+                    "sentiment_trend": edge[3],
+                    "is_bidirectional": bool(edge[4]) if edge[4] is not None else False,
                     "link_type": "primary",
                 })
 
@@ -269,6 +274,9 @@ def get_graph_data(
                     "source": source,
                     "target": target,
                     "strength": min(pair[2] / 5.0, 1.0),
+                    "interaction_count": pair[2],
+                    "sentiment_trend": None,
+                    "is_bidirectional": True,
                     "link_type": "cc_shared",
                 })
 

@@ -85,7 +85,9 @@ export default function ReviewPage() {
   const orgId = (session?.user as any)?.org_id;
   const token = (session as any)?.accessToken;
 
-  const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+    : { 'Content-Type': 'application/json' };
 
   // Load pending merge queue
   const { data, isLoading, refetch } = useQuery<{ queue: MergeCandidate[] }>({

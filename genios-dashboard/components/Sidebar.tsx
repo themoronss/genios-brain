@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', type: 'action' },
   { href: '/dashboard/tester', icon: Brain, label: 'Context', type: 'understanding' },
   { href: '/dashboard/integrations', icon: Plug, label: 'Integrations', type: 'setup' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', type: 'learn', disabled: true },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', type: 'learn' },
   { href: '/docs', icon: FileText, label: 'Documentation', type: 'build' },
   { href: '#', icon: Bot, label: 'Agents', type: 'future', disabled: true, badge: 'Soon' },
   { href: '/dashboard/settings', icon: Settings, label: 'Settings', type: 'control' },
@@ -23,14 +23,14 @@ export default function Sidebar() {
   const userEmail = (session?.user as any)?.email || '';
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-56 bg-slate-950 border-r border-slate-800 flex flex-col z-50">
+    <aside className="fixed left-0 top-0 h-full w-56 bg-card border-r border-border flex flex-col z-50">
       {/* Logo */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">G</div>
-          <span className="text-white font-semibold text-lg">GeniOS</span>
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">G</div>
+          <span className="text-foreground font-semibold text-lg">GeniOS</span>
         </div>
-        <p className="text-xs text-slate-500 mt-1 truncate">{userEmail}</p>
+        <p className="text-xs text-muted-foreground mt-1 truncate">{userEmail}</p>
       </div>
 
       {/* Navigation */}
@@ -46,17 +46,17 @@ export default function Sidebar() {
               className={`
                 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
                 ${isActive
-                  ? 'bg-indigo-600/20 text-indigo-400'
+                  ? 'bg-primary/20 text-primary'
                   : item.disabled
-                    ? 'text-slate-600 cursor-not-allowed'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    ? 'text-muted-foreground/40 cursor-not-allowed'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }
               `}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               <span>{item.label}</span>
               {item.badge && (
-                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">
+                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-accent text-muted-foreground">
                   {item.badge}
                 </span>
               )}
@@ -66,14 +66,14 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className="p-3 border-t border-slate-800">
+      <div className="p-3 border-t border-border">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-400 text-xs font-medium">
+          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium">
             {(session?.user?.name || 'U')[0].toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-white truncate">{session?.user?.name || 'User'}</p>
-            <p className="text-[10px] text-indigo-400">Pilot</p>
+            <p className="text-xs text-foreground truncate">{session?.user?.name || 'User'}</p>
+            <p className="text-[10px] text-primary">Pilot</p>
           </div>
         </div>
       </div>

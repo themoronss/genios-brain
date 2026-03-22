@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
@@ -16,6 +16,8 @@ from app.api.routes import chat
 from app.api.routes import authority
 from app.api.routes import precedent
 from app.api.routes import merge
+from app.api.routes import facts
+from app.api.routes import manual_context
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +87,15 @@ app.include_router(chat.router)
 app.include_router(authority.router)
 app.include_router(precedent.router)
 app.include_router(merge.router)
+app.include_router(facts.router)
+app.include_router(manual_context.router)
 
 
 @app.get("/")
 def root():
     return {"message": "GeniOS Brain running"}
+
+
+@app.post("/v1/decide")
+def decide_stub():
+    raise HTTPException(status_code=501, detail="This endpoint is planned for V3. Use /v1/context for context delivery.")

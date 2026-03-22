@@ -73,7 +73,23 @@ def run_nightly_refresh(org_id: str = None):
             db.rollback()
             print(f"⚠️ Insights engine skipped: {e}")
 
-        # ── Step 4: Mark overdue commitments ─────────────────────────────
+        # ── Step 4: Compute inferred edges (indirect relationships) ───────
+        try:
+            from app.graph.indirect_edges import compute_inferred_edges
+            if org_id:
+                inferred_count = compute_inferred_edges(db, org_id)
+                print(f"✓ Inferred edges: {inferred_count} indirect connections for org {org_id}")
+            else:
+                from sqlalchemy import text
+                orgs = db.execute(text("SELECT id FROM orgs")).fetchall()
+                for org_row in orgs:
+                    inferred_count = compute_inferred_edges(db, str(org_row[0]))
+                    print(f"  ✓ Inferred edges: {inferred_count} indirect connections for org {org_row[0]}")
+        except Exception as e:
+            db.rollback()
+            print(f"⚠️ Inferred edge computation skipped: {e}")
+
+        # ── Step 5: Mark overdue commitments ─────────────────────────────
         try:
             from sqlalchemy import text
             overdue_count = db.execute(
@@ -92,7 +108,7 @@ def run_nightly_refresh(org_id: str = None):
             db.rollback()
             print(f"⚠️ Overdue marking failed: {e}")
 
-        # ── Step 5: Pre-compute context bundles for active contacts ──────
+        # ── Step 6: Pre-compute context bundles for active contacts ──────
         try:
             _precompute_bundles(db, org_id)
         except Exception as e:

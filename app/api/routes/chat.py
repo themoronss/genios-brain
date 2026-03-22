@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.context.bundle_builder import build_context_bundle, get_contact_by_name
+from app.graph.indirect_edges import find_warm_intro_path
 from app.config import GEMINI_API_KEY
 import google.generativeai as genai
 import logging
@@ -53,16 +54,87 @@ def get_db():
 
 def extract_entity_from_message(message: str, db, org_id: str) -> str | None:
     """Try to detect an entity name from the user's message by checking against contacts."""
-    # Simple heuristic: look for capitalized words that match contact names
-    words = message.split()
-    # Try 2-word combinations first (first + last name)
-    for i in range(len(words) - 1):
-        candidate = f"{words[i]} {words[i+1]}"
-        if re.match(r'^[A-Z][a-z]+ [A-Z][a-z]+', candidate):
-            contact = get_contact_by_name(db, org_id, candidate)
-            if contact and contact.get("match_confidence", 0) > 0.7:
-                return contact["name"]
+    try:
+        words = message.split()
+
+        # Strategy 1: Try 2-word combinations (first + last name) — any casing
+        for i in range(len(words) - 1):
+            candidate = f"{words[i]} {words[i+1]}"
+            # Strip punctuation from candidate
+            candidate_clean = re.sub(r'[^\w\s]', '', candidate).strip()
+            if len(candidate_clean) > 3:
+                contact = get_contact_by_name(db, org_id, candidate_clean)
+                if contact and contact.get("match_confidence", 0) > 0.7:
+                    return contact["name"]
+
+        # Strategy 2: Try single words (company names, single-word identifiers)
+        for word in words:
+            word_clean = re.sub(r'[^\w]', '', word).strip()
+            if len(word_clean) > 2 and word_clean.lower() not in {
+                "the", "and", "for", "with", "about", "from", "who", "what",
+                "how", "when", "should", "have", "has", "had", "was", "were",
+                "been", "being", "this", "that", "these", "those", "tell",
+                "know", "any", "can", "could", "would", "will", "shall",
+                "may", "might", "must", "need", "want", "like", "get",
+                "give", "take", "make", "come", "see", "look", "find",
+                "help", "let", "say", "ask", "try", "call", "send",
+                "meet", "follow", "reach", "check", "draft", "prep",
+                "status", "update", "email", "meeting", "week", "today",
+                "tomorrow", "yesterday", "now", "next", "last", "ago",
+                "out", "back", "off", "over", "down", "into", "most",
+                "some", "all", "not", "very", "just", "also", "too",
+                "much", "many", "more", "less", "good", "bad", "best",
+                "important", "risky", "warm", "cold", "active",
+            }:
+                contact = get_contact_by_name(db, org_id, word_clean)
+                if contact and contact.get("match_confidence", 0) > 0.75:
+                    return contact["name"]
+
+        return None
+    except Exception as e:
+        logger.warning(f"Entity extraction from message failed: {e}")
+        return None
+
+
+WARM_INTRO_PATTERNS = [
+    r"who\s+knows?\s+(.+)",
+    r"introduce\s+me\s+to\s+(.+)",
+    r"connection\s+to\s+(.+)",
+    r"intro\s+to\s+(.+)",
+    r"warm\s+intro\s+(?:to\s+)?(.+)",
+    r"how\s+(?:do\s+i|can\s+i)\s+reach\s+(.+)",
+    r"path\s+to\s+(.+)",
+]
+
+
+def detect_warm_intro_query(message: str) -> str | None:
+    """Detect if the message is asking for a warm intro and extract the target name."""
+    msg_lower = message.lower().strip().rstrip("?.,!")
+    for pattern in WARM_INTRO_PATTERNS:
+        match = re.search(pattern, msg_lower)
+        if match:
+            target = match.group(1).strip().rstrip("?.,!")
+            # Clean common trailing words
+            target = re.sub(r'\s+(please|pls|for me|asap)$', '', target).strip()
+            if len(target) > 1:
+                return target
     return None
+
+
+def format_warm_intro_response(target_name: str, intros: list) -> str:
+    """Format warm intro results into context for the LLM."""
+    if not intros:
+        return f"No warm intro path found to {target_name}. No active/warm contacts share email threads with them."
+
+    lines = [f"=== WARM INTRO PATHS TO {target_name.upper()} ==="]
+    for intro in intros:
+        conf_pct = f"{intro['confidence']:.0%}"
+        lines.append(
+            f"- {intro['name']} ({intro['relationship_stage']}) @ {intro.get('company') or 'unknown'} "
+            f"| {intro['shared_threads']} shared threads | confidence: {conf_pct}"
+        )
+    lines.append(f"\nBest introducer: {intros[0]['name']} ({intros[0]['shared_threads']} shared threads).")
+    return "\n".join(lines)
 
 
 def get_temporal_context(db, org_id: str, limit: int = 8) -> str:
@@ -120,6 +192,10 @@ def get_temporal_context(db, org_id: str, limit: int = 8) -> str:
         return "\n".join(lines) if lines else "No contacts found in your network."
     except Exception as e:
         logger.error(f"Error fetching temporal context: {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
         return "Unable to fetch contact data."
 
 
@@ -135,6 +211,62 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
         if not message:
             raise HTTPException(status_code=400, detail="Message cannot be empty")
 
+        # ── Check for warm intro / "who knows" queries ────────────────────
+        warm_intro_target = detect_warm_intro_query(message)
+        if warm_intro_target:
+            target_contact = get_contact_by_name(db, org_id, warm_intro_target)
+            if target_contact:
+                intros = find_warm_intro_path(db, org_id, str(target_contact["id"]))
+                intro_context = format_warm_intro_response(target_contact["name"], intros)
+                # Also get the target's bundle for full context
+                try:
+                    target_bundle = build_context_bundle(db, org_id, target_contact["name"])
+                    target_ctx = target_bundle.get("context_for_agent", "")
+                except Exception:
+                    target_ctx = ""
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+
+                context_block = f"{intro_context}\n\n=== TARGET CONTACT ===\n{target_ctx}" if target_ctx else intro_context
+                query_type = "entity"  # Override for proper instruction
+
+                # Skip normal context building, jump to Gemini
+                type_instruction = (
+                    "The user is asking for a warm introduction path. "
+                    "Explain who can introduce them, why that person is a good connector, "
+                    "and suggest how to ask for the intro. Be specific and actionable."
+                )
+
+                system_with_context = (
+                    f"{SYSTEM_PROMPT}\n\n"
+                    f"Query mode: WARM_INTRO\n"
+                    f"Instructions: {type_instruction}\n\n"
+                    f"{context_block}"
+                )
+
+                gemini_history = []
+                for msg in request.history[-6:]:
+                    role = "user" if msg.role == "user" else "model"
+                    gemini_history.append({"role": role, "parts": [msg.content]})
+
+                model = genai.GenerativeModel(
+                    model_name="gemini-2.5-flash",
+                    system_instruction=system_with_context,
+                )
+                chat_session = model.start_chat(history=gemini_history)
+                response = chat_session.send_message(message)
+                reply = response.text.strip()
+
+                return {
+                    "reply": reply,
+                    "query_type": "warm_intro",
+                    "context_used": True,
+                    "entity_resolved": target_contact["name"],
+                    "warm_intro_paths": intros,
+                }
+
         # ── Build context based on query type ──────────────────────────────
 
         context_block = ""
@@ -145,8 +277,49 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
             if not entity_name:
                 entity_name = extract_entity_from_message(message, db, org_id)
 
+            # If no specific entity found, check if message mentions a category
+            # e.g. "tell me about my top investor" → find best investor contact
+            if not entity_name:
+                msg_lower = message.lower()
+                category_keywords = {
+                    "investor": "investor", "investors": "investor",
+                    "customer": "customer", "customers": "customer",
+                    "vendor": "vendor", "vendors": "vendor",
+                    "partner": "partner", "partners": "partner",
+                    "advisor": "advisor", "advisors": "advisor",
+                    "lead": "lead", "leads": "lead",
+                }
+                for keyword, entity_type in category_keywords.items():
+                    if keyword in msg_lower:
+                        try:
+                            top_contact = db.execute(
+                                text("""
+                                    SELECT name FROM contacts
+                                    WHERE org_id = :org_id AND entity_type = :etype
+                                    ORDER BY interaction_count DESC, composite_score DESC NULLS LAST
+                                    LIMIT 1
+                                """),
+                                {"org_id": org_id, "etype": entity_type},
+                            ).fetchone()
+                            if top_contact:
+                                entity_name = top_contact[0]
+                        except Exception:
+                            try:
+                                db.rollback()
+                            except Exception:
+                                pass
+                        break
+
             if entity_name:
-                bundle = build_context_bundle(db, org_id, entity_name)
+                try:
+                    bundle = build_context_bundle(db, org_id, entity_name)
+                except Exception as e:
+                    logger.warning(f"Bundle build failed for '{entity_name}': {e}")
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+                    bundle = {"error": str(e)}
                 if not bundle.get("error"):
                     ctx = bundle.get("context_for_agent", "")
                     entity = bundle.get("entity", {})
@@ -165,7 +338,30 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
                 else:
                     context_block = f"No relationship data found for '{entity_name}' in your network."
             else:
-                context_block = "No specific contact identified. I'll answer from general graph knowledge."
+                # No entity found — provide general graph overview as context
+                try:
+                    top_contacts = db.execute(
+                        text("""
+                            SELECT name, company, entity_type, relationship_stage, interaction_count
+                            FROM contacts WHERE org_id = :org_id AND interaction_count > 0
+                            ORDER BY interaction_count DESC LIMIT 10
+                        """),
+                        {"org_id": org_id},
+                    ).fetchall()
+                    if top_contacts:
+                        lines = ["=== YOUR TOP CONTACTS ==="]
+                        for tc in top_contacts:
+                            company_str = f" @ {tc[1]}" if tc[1] else ""
+                            lines.append(f"- {tc[0]}{company_str} | {tc[2] or 'other'} | {tc[3]} | {tc[4]} interactions")
+                        context_block = "\n".join(lines)
+                    else:
+                        context_block = "No contacts found in your network yet. Connect Gmail and sync to build your graph."
+                except Exception:
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+                    context_block = "Unable to load graph data."
 
         elif query_type == "temporal":
             temporal_data = get_temporal_context(db, org_id)
@@ -189,7 +385,7 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
             gemini_history.append({"role": role, "parts": [msg.content]})
 
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=system_with_context,
         )
 
@@ -207,5 +403,9 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail="Chat failed. Please try again.")
+        logger.error(f"Chat error: {e}", exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"Chat failed: {type(e).__name__}. Please try again.")

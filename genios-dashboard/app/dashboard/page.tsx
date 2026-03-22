@@ -8,7 +8,6 @@ import { api } from '@/lib/api';
 import { GraphData, GraphNode, ContextBundle, ConnectionStatus } from '@/types';
 import RelationshipGraph from '@/components/RelationshipGraph';
 import EdgeDetailPanel from '@/components/EdgeDetailPanel';
-import MrEliteChatbot from '@/components/MrEliteChatbot';
 import { DraftModal } from '@/components/DraftModal';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatsBar from '@/components/StatsBar';
@@ -52,6 +51,7 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('graph');
   const [tableSearch, setTableSearch] = useState('');
   const tableSearchRef = useRef<HTMLInputElement>(null);
+  const graphRef = useRef<any>(null);
   // Topic filter — dims non-matching graph nodes
   const [topicFilter, setTopicFilter] = useState('');
   const [topicHighlightIds, setTopicHighlightIds] = useState<Set<string> | null>(null);
@@ -166,6 +166,8 @@ export default function DashboardPage() {
 
   const handleNodeClick = (node: GraphNode) => {
     if (!node.email) return;
+    // Don't open context drawer for self/account nodes
+    if (node.entity_type === 'self' || node.id?.startsWith('acct_')) return;
     setSelectedNode(node);
     setCopied(false);
   };
@@ -472,29 +474,82 @@ export default function DashboardPage() {
         {viewMode === 'graph' && (
         <div className="flex-1 relative overflow-hidden">
 
-          {/* Bottom-left Legend bar - COMMENTED OUT: Node colors now represent entity types, not relationship stages */}
-          {/* <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
-            {/* Stage dots */}
-            {/* <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5">
-              {(['ACTIVE', 'WARM', 'DORMANT', 'COLD'] as const).map((stage) => (
-                <div key={stage} className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStageColor(stage) }} />
-                  <span className="text-[11px] text-muted-foreground font-medium">{stage} <span className="text-foreground">({stageCounts[stage] || 0})</span></span>
-                </div>
-              ))}
-            </div> */}
-            {/* Edge type legend */}
-            {/* <div className="flex items-center gap-4 bg-card/80 backdrop-blur-sm border border-border rounded-xl px-4 py-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-0 border-t border-dashed border-indigo-400" />
-                <span className="text-[11px] text-muted-foreground">CC shared</span>
+          {/* Bottom-left Legend */}
+          <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+            {/* Node shapes */}
+            <div className="flex items-center gap-3 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-3 py-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-primary/60" />
+                <span className="text-[10px] text-muted-foreground">Person</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-0 border-t border-muted-foreground/50" />
-                <span className="text-[11px] text-muted-foreground">Direct</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-primary/60" />
+                <span className="text-[10px] text-muted-foreground">Company</span>
               </div>
-            </div> */}
-          {/* </div> */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-primary/60" style={{ transform: 'rotate(45deg)' }} />
+                <span className="text-[10px] text-muted-foreground">Unknown</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs">★</span>
+                <span className="text-[10px] text-muted-foreground">You</span>
+              </div>
+            </div>
+            {/* Edge meaning */}
+            <div className="flex items-center gap-3 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-3 py-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-0 border-t-2 border-emerald-500" />
+                <span className="text-[10px] text-muted-foreground">Positive</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-0 border-t-2 border-muted-foreground/50" />
+                <span className="text-[10px] text-muted-foreground">Neutral</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-0 border-t-2 border-red-500" />
+                <span className="text-[10px] text-muted-foreground">Negative</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-0 border-t border-dashed border-muted-foreground/30" />
+                <span className="text-[10px] text-muted-foreground">One-sided</span>
+              </div>
+            </div>
+            {/* Ring/border meaning */}
+            <div className="flex items-center gap-3 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-3 py-2">
+              <span className="text-[10px] text-muted-foreground font-medium">Ring:</span>
+              <span className="text-[10px] text-muted-foreground">Solid = High confidence</span>
+              <span className="text-[10px] text-muted-foreground">Dashed = Medium</span>
+              <span className="text-[10px] text-muted-foreground">Dotted = Low</span>
+            </div>
+          </div>
+
+          {/* Bottom-right Toolbar: Zoom/Reset controls */}
+          <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-1">
+            <button
+              onClick={() => {
+                const g = graphRef.current;
+                if (g && typeof g.zoom === 'function') g.zoom(g.zoom() * 1.4, 300);
+              }}
+              className="w-8 h-8 flex items-center justify-center bg-card/90 backdrop-blur-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-card transition-colors text-sm font-bold"
+              title="Zoom in"
+            >+</button>
+            <button
+              onClick={() => {
+                const g = graphRef.current;
+                if (g && typeof g.zoom === 'function') g.zoom(g.zoom() * 0.6, 300);
+              }}
+              className="w-8 h-8 flex items-center justify-center bg-card/90 backdrop-blur-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-card transition-colors text-sm font-bold"
+              title="Zoom out"
+            >−</button>
+            <button
+              onClick={() => {
+                const g = graphRef.current;
+                if (g && typeof g.zoomToFit === 'function') g.zoomToFit(400, 40);
+              }}
+              className="w-8 h-8 flex items-center justify-center bg-card/90 backdrop-blur-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-card transition-colors text-[10px] font-medium"
+              title="Reset view"
+            >⟲</button>
+          </div>
 
 
           {/* Graph Mode Switcher */}
@@ -570,6 +625,7 @@ export default function DashboardPage() {
             highlightNodeIds={overdueContactIds ?? topicHighlightIds}
             graphMode={graphMode}
             egoNodeId={egoNodeId}
+            externalRef={graphRef}
           />
 
           {/* Edge Detail Panel */}
@@ -599,12 +655,16 @@ export default function DashboardPage() {
                     </span>
                   );
                 })}
-                {(contextBundle?.entity?.open_commitments?.length ?? 0) > 0 && (
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span className="font-semibold text-foreground">{contextBundle?.entity?.open_commitments?.length}</span> open commits
-                  </span>
-                )}
+                {(() => {
+                  const oc = contextBundle?.entity?.open_commitments;
+                  const count = typeof oc === 'number' ? oc : Array.isArray(oc) ? oc.length : 0;
+                  return count > 0 ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      <span className="font-semibold text-foreground">{count}</span> open commits
+                    </span>
+                  ) : null;
+                })()}
                 <button
                   onClick={() => setSelectedNode(null)}
                   className="ml-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -740,16 +800,20 @@ export default function DashboardPage() {
                     )}
 
                     {/* Open Commitments */}
-                    {(contextBundle.entity?.open_commitments?.length ?? 0) > 0 && (
-                      <div className="space-y-1.5">
-                        <h3 className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Open Commitments</h3>
-                        {contextBundle.entity?.open_commitments?.map((c: string, i: number) => (
-                          <div key={i} className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 text-xs text-foreground flex gap-2">
-                            <span className="shrink-0">⚠️</span> {c}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {(() => {
+                      const oc = contextBundle.entity?.open_commitments;
+                      const items = Array.isArray(oc) ? oc : [];
+                      return items.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <h3 className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Open Commitments</h3>
+                          {items.map((c: string, i: number) => (
+                            <div key={i} className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 text-xs text-foreground flex gap-2">
+                              <span className="shrink-0">⚠️</span> {c}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* Communication style */}
                     {contextBundle.entity?.communication_style && (
@@ -765,8 +829,15 @@ export default function DashboardPage() {
                           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
                             <p className="text-[10px] font-semibold text-red-400 mb-2">✗ AVOID</p>
                             <div className="space-y-1.5">
-                              <p className="text-xs text-muted-foreground">→ Vague follow-ups</p>
-                              <p className="text-xs text-muted-foreground">→ Long narrative emails</p>
+                              {contextBundle?.entity?.what_to_avoid ? (
+                                typeof contextBundle.entity.what_to_avoid === 'string'
+                                  ? contextBundle.entity.what_to_avoid.split(',').map((item: string, i: number) => (
+                                      <p key={i} className="text-xs text-muted-foreground">→ {item.trim()}</p>
+                                    ))
+                                  : <p className="text-xs text-muted-foreground">→ {String(contextBundle.entity.what_to_avoid)}</p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground italic">No specific avoidance data yet</p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -914,6 +985,31 @@ export default function DashboardPage() {
           <div className="px-4 pb-4">
             <ActivityFeed />
           </div>
+
+          {/* Quick Actions — PDF spec: onboarding triggers */}
+          <div className="px-4 pb-4 flex gap-2">
+            <button
+              onClick={() => router.push('/dashboard/tester')}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Test Context
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const { api_key } = await api.org.getApiKey(orgId!, token!);
+                  navigator.clipboard.writeText(api_key);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {}
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-accent text-foreground border border-border rounded-lg hover:bg-accent/80 transition-colors"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy API Key'}
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -926,8 +1022,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Mr. Elite Chatbot — PDF spec: "NL query interface over graph data" */}
-      <MrEliteChatbot />
+      {/* Mr. Elite Chatbot rendered in layout.tsx — persistent across all pages */}
       </div>{/* close flex wrapper */}
     </div>
   );

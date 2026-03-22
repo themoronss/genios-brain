@@ -122,6 +122,67 @@ export const api = {
         }
       ),
   },
+  facts: {
+    getOverview: (orgId: string, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/context/overview`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    list: (orgId: string, token: string, params?: string) =>
+      apiCall<any>(`/api/org/${orgId}/facts${params ? `?${params}` : ''}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    getLifecycle: (orgId: string, token: string, limit = 50) =>
+      apiCall<any>(`/api/org/${orgId}/facts/lifecycle?limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+  },
+  commitments: {
+    list: (orgId: string, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/commitments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    update: (orgId: string, commitmentId: string, data: any, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/commitments/${commitmentId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      }),
+  },
+  manualContext: {
+    add: (orgId: string, data: any, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/manual-context`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      }),
+    list: (orgId: string, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/manual-context`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    delete: (orgId: string, entryId: string, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/manual-context/${entryId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+  },
+  uploads: {
+    list: (orgId: string, token: string) =>
+      apiCall<any>(`/api/org/${orgId}/uploads`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    upload: async (orgId: string, file: File, tag: string, token: string) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tag', tag);
+      const res = await fetch(`${API_BASE}/api/org/${orgId}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      return res.json();
+    },
+  },
   gmail: {
     connect: (orgId: string) => {
       window.location.href = `${API_BASE}/auth/gmail/connect?org_id=${orgId}`;

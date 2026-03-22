@@ -12,6 +12,7 @@ const TAB_META: Record<string, { label: string; icon: string; description: strin
   n8n:      { label: 'n8n',       icon: '🔁', description: 'Drop into any n8n HTTP Request node' },
   openclaw: { label: 'OpenClaw',  icon: '⚙️', description: 'For OpenClaw workflow automations' },
   langgraph:{ label: 'LangGraph', icon: '🦜', description: 'Use inside a LangGraph agent state node' },
+  crewai:   { label: 'CrewAI',    icon: '🤖', description: 'Shared tool for CrewAI multi-agent crews' },
 };
 
 export default function IntegrationsPage() {
@@ -89,6 +90,33 @@ def fetch_org_context(state: AgentState) -> AgentState:
     )
     state["org_context"] = response.json()
     return state`,
+
+    crewai: `from crewai_tools import tool
+import requests
+
+@tool("Get Organizational Context")
+def get_org_context(situation: str, target_entity: str = None) -> str:
+    """ALWAYS use this before taking any action involving
+    a person or organization."""
+    payload = {
+        "situation": situation,
+        "org_id": "YOUR_ORG_ID",
+        "depth": "standard"
+    }
+    if target_entity:
+        payload["target_entity"] = target_entity
+    response = requests.post(
+        "https://api.genios.io/v1/context",
+        headers={"Authorization": "Bearer ${apiKey}"},
+        json=payload
+    )
+    bundle = response.json()
+    if bundle.get("confidence", 0) < 0.40:
+        return f"LOW CONFIDENCE: Recommend human confirmation."
+    return str(bundle.get("context_for_agent", ""))
+
+# Add to your crew agents:
+# agent = Agent(tools=[get_org_context], ...)`,
   };
 
   const handleCopy = () => {

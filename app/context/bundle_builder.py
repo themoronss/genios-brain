@@ -142,11 +142,21 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
         return None
 
 
-def _recency_weight(interaction_at) -> float:
+HALF_LIFE_DAYS = {
+    "relationship_stage": 0.5,  # 12 hours
+    "role": 30,
+    "communication_style": 90,
+    "historical": 999999,  # no decay
+    "commitment": 999999,  # no decay
+    "default": 30,
+}
+
+
+def _recency_weight(interaction_at, fact_type="default") -> float:
     """
-    PDF spec: recency_weight = 0.5 ^ (days_ago / 30)
-    Half-life of 30 days. Email from yesterday ≈ 0.977, from 30 days ≈ 0.5, from 90 days ≈ 0.125.
-    Commitments bypass decay and always return 1.0 (handled by caller).
+    PDF spec: recency_weight = 0.5 ^ (days_ago / half_life)
+    Half-life varies by fact type. Commitments and historical facts never decay.
+    Relationship stage decays fastest (12h half-life).
     """
     if interaction_at is None:
         return 0.1
@@ -154,7 +164,8 @@ def _recency_weight(interaction_at) -> float:
     if interaction_at.tzinfo is None:
         interaction_at = interaction_at.replace(tzinfo=timezone.utc)
     days_ago = max(0, (now - interaction_at).days)
-    return 0.5 ** (days_ago / 30.0)
+    half_life = HALF_LIFE_DAYS.get(fact_type, 30)
+    return 0.5 ** (days_ago / half_life)
 
 
 def get_recent_interactions(db, contact_id: str, limit: int = 10) -> List[Dict]:
@@ -571,7 +582,7 @@ def build_context_bundle(
     # Calculate cache_age_seconds (time since bundle generated)
     generated_at = datetime.now(timezone.utc)
 
-    return {
+    bundle = {
         "entity": entity,
         "match_confidence": contact.get("match_confidence", 1.0),
         "matched_from": contact.get("matched_from", entity_name),
@@ -599,6 +610,13 @@ def build_context_bundle(
         },
         "generated_at": generated_at.isoformat(),
         "cache_age_seconds": 0,
+        # ── Agent behavior guidance based on confidence ──
+        "agent_behavior_guidance": (
+            "execute_autonomously" if contact.get("confidence_score", 0.5) > 0.80
+            else "execute_with_caution" if contact.get("confidence_score", 0.5) >= 0.60
+            else "needs_confirmation" if contact.get("confidence_score", 0.5) >= 0.40
+            else "block"
+        ),
         "data_quality": {
             "confidence_score": contact.get("confidence_score", 0.5),
             "coverage_score": coverage_score,
@@ -606,6 +624,48 @@ def build_context_bundle(
             "sources": ["gmail"],
         },
     }
+
+    # Add warm intro paths for COLD/DORMANT contacts
+    if contact.get("relationship_stage") in ("COLD", "DORMANT"):
+        try:
+            from app.graph.indirect_edges import find_warm_intro_path
+            warm_intros = find_warm_intro_path(db, org_id, str(contact["id"]))
+            if warm_intros:
+                bundle["warm_intro_paths"] = warm_intros
+                intro_names = ", ".join(w["name"] for w in warm_intros[:3])
+                bundle["context_for_agent"] += (
+                    f" Warm intro possible via: {intro_names}."
+                )
+        except Exception as e:
+            logger.warning(f"Warm intro lookup failed: {e}") if logger else None
+
+    # Add recent_interactions from raw interactions table (last 10)
+    try:
+        raw_interactions = db.execute(
+            text("""
+                SELECT direction, sentiment, summary, subject, interaction_at, intent
+                FROM interactions
+                WHERE contact_id = :contact_id AND org_id = :org_id
+                ORDER BY interaction_at DESC NULLS LAST
+                LIMIT 10
+            """),
+            {"contact_id": contact["id"], "org_id": org_id},
+        ).fetchall()
+
+        bundle["recent_interactions"] = [
+            {
+                "direction": r[0],
+                "sentiment": r[1],
+                "summary": r[2] or r[3],  # summary or subject
+                "date": str(r[4]) if r[4] else None,
+                "intent": r[5],
+            }
+            for r in raw_interactions
+        ]
+    except Exception as e:
+        bundle["recent_interactions"] = []
+
+    return bundle
 
 
 def calculate_confidence_score(
