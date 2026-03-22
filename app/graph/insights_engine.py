@@ -521,7 +521,7 @@ def _detect_commitment_blockers(db, org_id: str) -> List[Dict]:
     """
     results = db.execute(
         text("""
-            SELECT cm.id, c.id AS contact_id, c.name, cm.commitment_text,
+            SELECT cm.id, c.id AS contact_id, c.name, cm.commit_text,
                 cm.due_date,
                 EXTRACT(DAY FROM NOW() - cm.due_date)::int AS days_overdue
             FROM commitments cm

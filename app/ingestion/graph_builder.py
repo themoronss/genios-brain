@@ -867,7 +867,7 @@ def upsert_state_entity(db, org_id: str, parsed_state: dict):
                 VALUES (
                     :id, :org_id, :entity_type, :entity_id, :status,
                     :amount, :vendor, :reference_id, :due_date,
-                    :source_email_id, :metadata::jsonb, NOW(), NOW()
+                    :source_email_id, CAST(:metadata AS jsonb), NOW(), NOW()
                 )
                 ON CONFLICT(org_id, entity_id) DO UPDATE
                 SET 
