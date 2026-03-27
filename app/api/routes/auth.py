@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -273,6 +273,144 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     }
 
 
+# ── Profile ───────────────────────────────────────────────────────────────────
+
+@router.get("/api/org/{org_id}/profile")
+def get_profile(org_id: str, db: Session = Depends(get_db)):
+    row = db.execute(
+        text("SELECT name, email, first_name, last_name, company, role FROM orgs WHERE id = :oid"),
+        {"oid": org_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Org not found")
+    # Split name into first/last if first_name not set
+    first = row.first_name or (row.name.split()[0] if row.name else "")
+    last = row.last_name or (" ".join(row.name.split()[1:]) if row.name and " " in row.name else "")
+    return {
+        "first_name": first,
+        "last_name": last,
+        "email": row.email,
+        "company": row.company or "",
+        "role": row.role or "",
+    }
+
+
+class ProfileUpdate(BaseModel):
+    first_name: str = None
+    last_name: str = None
+    company: str = None
+    role: str = None
+
+@router.patch("/api/org/{org_id}/profile")
+def update_profile(org_id: str, body: ProfileUpdate, db: Session = Depends(get_db)):
+    sets = []
+    params: dict = {"oid": org_id}
+    if body.first_name is not None:
+        sets.append("first_name = :first_name")
+        params["first_name"] = body.first_name
+    if body.last_name is not None:
+        sets.append("last_name = :last_name")
+        params["last_name"] = body.last_name
+        # Also update the display name
+        full_name = f"{body.first_name or ''} {body.last_name}".strip()
+        if full_name:
+            sets.append("name = :name")
+            params["name"] = full_name
+    if body.company is not None:
+        sets.append("company = :company")
+        params["company"] = body.company
+    if body.role is not None:
+        sets.append("role = :role")
+        params["role"] = body.role
+    if not sets:
+        return {"updated": False}
+    db.execute(text(f"UPDATE orgs SET {', '.join(sets)} WHERE id = :oid"), params)
+    db.commit()
+    return {"updated": True}
+
+
+# ── Security (Password Change) ────────────────────────────────────────────────
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+@router.post("/api/org/{org_id}/password/change")
+def change_password(org_id: str, body: PasswordChange, db: Session = Depends(get_db)):
+    import bcrypt
+    row = db.execute(text("SELECT password_hash FROM orgs WHERE id = :oid"), {"oid": org_id}).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Org not found")
+    if not bcrypt.checkpw(body.current_password.encode(), row.password_hash.encode()):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    new_hash = bcrypt.hashpw(body.new_password.encode(), bcrypt.gensalt()).decode()
+    db.execute(text("UPDATE orgs SET password_hash = :h WHERE id = :oid"), {"h": new_hash, "oid": org_id})
+    db.commit()
+    return {"updated": True}
+
+
+# ── Notification Preferences ──────────────────────────────────────────────────
+
+@router.get("/api/org/{org_id}/notifications/preferences")
+def get_notification_prefs(org_id: str, db: Session = Depends(get_db)):
+    row = db.execute(text("SELECT notification_prefs FROM orgs WHERE id = :oid"), {"oid": org_id}).fetchone()
+    defaults = {
+        "syncComplete": True, "conflictDetected": True, "commitmentOverdue": True,
+        "stageChange": True, "lowConfidence": True, "weeklyDigest": False,
+        "emailNotifications": True, "browserNotifications": False,
+    }
+    prefs = row.notification_prefs if row and row.notification_prefs else {}
+    return {**defaults, **prefs}
+
+
+class NotificationPrefs(BaseModel):
+    syncComplete: bool = True
+    conflictDetected: bool = True
+    commitmentOverdue: bool = True
+    stageChange: bool = True
+    lowConfidence: bool = True
+    weeklyDigest: bool = False
+    emailNotifications: bool = True
+    browserNotifications: bool = False
+
+@router.put("/api/org/{org_id}/notifications/preferences")
+def save_notification_prefs(org_id: str, body: NotificationPrefs, db: Session = Depends(get_db)):
+    import json as _json
+    db.execute(
+        text("UPDATE orgs SET notification_prefs = CAST(:prefs AS jsonb) WHERE id = :oid"),
+        {"prefs": _json.dumps(body.model_dump()), "oid": org_id},
+    )
+    db.commit()
+    return {"saved": True}
+
+
+# ── API Usage Stats ───────────────────────────────────────────────────────────
+
+@router.get("/api/org/{org_id}/usage")
+def get_usage_stats(org_id: str, db: Session = Depends(get_db)):
+    today = db.execute(
+        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE"),
+        {"oid": org_id},
+    ).scalar() or 0
+    week = db.execute(
+        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '7 days'"),
+        {"oid": org_id},
+    ).scalar() or 0
+    month = db.execute(
+        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '30 days'"),
+        {"oid": org_id},
+    ).scalar() or 0
+    return {
+        "today": today, "today_limit": 3000,
+        "week": week, "week_limit": 21000,
+        "month": month, "month_limit": 90000,
+    }
+
+
+# ── API Keys ──────────────────────────────────────────────────────────────────
+
 @router.get("/api/org/{org_id}/apikey")
 def get_api_key(org_id: str, db: Session = Depends(get_db)):
     result = db.execute(
@@ -292,3 +430,25 @@ def regenerate_api_key(org_id: str, db: Session = Depends(get_db)):
     )
     db.commit()
     return {"api_key": new_key}
+
+
+@router.delete("/api/org/{org_id}/account")
+def delete_account(org_id: str, db: Session = Depends(get_db)):
+    """Delete organization and all associated data."""
+    try:
+        # Cascade delete in correct order (foreign keys)
+        for table in [
+            "precomputed_bundles", "outcome_events", "agent_sessions",
+            "context_calls", "insights", "commitments", "communities",
+            "authority_assignments", "authority_permissions", "authority_roles",
+            "precedent_graph", "merge_queue", "activity_log",
+            "interactions", "contacts", "oauth_tokens",
+        ]:
+            db.execute(text(f"DELETE FROM {table} WHERE org_id = :oid"), {"oid": org_id})
+        # orgs table uses `id` not `org_id`
+        db.execute(text("DELETE FROM orgs WHERE id = :oid"), {"oid": org_id})
+        db.commit()
+        return {"deleted": True}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

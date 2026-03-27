@@ -2,6 +2,7 @@
 Manual Context & File Upload API — Supports the Resources page.
 Endpoints: manual context CRUD, file upload with LLM extraction.
 """
+import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -243,7 +244,12 @@ async def upload_context_file(
             {
                 "id": file_id,
                 "org_id": org_id,
-                "data": f"File uploaded: {file.filename} ({tag}), size: {len(content)} bytes",
+                "data": json.dumps({
+                    "filename": file.filename,
+                    "tag": tag,
+                    "size_bytes": len(content),
+                    "file_ext": file_ext,
+                }),
             },
         )
         db.commit()
@@ -334,7 +340,7 @@ async def upload_context_file(
 
 @router.get("/api/org/{org_id}/uploads")
 def list_uploads(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
-    """List recently uploaded files."""
+    """List recently uploaded files with parsed metadata."""
     try:
         results = db.execute(
             text("""
@@ -347,20 +353,118 @@ def list_uploads(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
             {"org_id": org_id, "limit": limit},
         ).fetchall()
 
-        return {
-            "uploads": [
-                {
-                    "id": str(r[0]),
-                    "details": r[1],
-                    "uploaded_at": str(r[2]) if r[2] else None,
-                }
-                for r in results
-            ],
-        }
+        uploads = []
+        for r in results:
+            data = r[1] if isinstance(r[1], dict) else {}
+            size_bytes = data.get("size_bytes", 0)
+            size_str = (
+                f"{size_bytes / (1024*1024):.1f}MB" if size_bytes > 1024*1024
+                else f"{size_bytes // 1024}KB" if size_bytes > 0
+                else "—"
+            )
+            uploads.append({
+                "id": str(r[0]),
+                "file_name": data.get("filename", "unknown"),
+                "file_type": (data.get("file_ext", "").lstrip(".") or "txt").upper(),
+                "size": size_str,
+                "size_bytes": size_bytes,
+                "tag": data.get("tag", "Other"),
+                "status": "indexed",
+                "uploaded_at": str(r[2]) if r[2] else None,
+                "authority": 1.0,
+            })
+
+        return {"uploads": uploads}
     except Exception as e:
         logger.error(f"List uploads error: {e}")
         try:
             db.rollback()
         except Exception:
             pass
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Delete Upload ────────────────────────────────────────────────────────
+
+@router.delete("/api/org/{org_id}/uploads/{file_id}")
+def delete_upload(org_id: str, file_id: str, db: Session = Depends(get_db)):
+    """Delete an uploaded file and its activity log entry."""
+    try:
+        for fname in os.listdir(UPLOAD_DIR):
+            if fname.startswith(file_id):
+                os.remove(os.path.join(UPLOAD_DIR, fname))
+                break
+        db.execute(
+            text("DELETE FROM activity_log WHERE id = :id AND org_id = :org_id AND event_type = 'file_uploaded'"),
+            {"id": file_id, "org_id": org_id},
+        )
+        db.commit()
+        return {"deleted": True}
+    except Exception as e:
+        logger.error(f"Delete upload error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Re-tag Upload ────────────────────────────────────────────────────────
+
+class RetagRequest(BaseModel):
+    tag: str
+
+@router.patch("/api/org/{org_id}/uploads/{file_id}/tag")
+def retag_upload(org_id: str, file_id: str, body: RetagRequest, db: Session = Depends(get_db)):
+    """Re-tag an uploaded file."""
+    try:
+        row = db.execute(
+            text("SELECT event_data FROM activity_log WHERE id = :id AND org_id = :org_id AND event_type = 'file_uploaded'"),
+            {"id": file_id, "org_id": org_id},
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Upload not found")
+        data = row[0] if isinstance(row[0], dict) else {}
+        data["tag"] = body.tag
+        db.execute(
+            text("UPDATE activity_log SET event_data = CAST(:data AS jsonb) WHERE id = :id AND org_id = :org_id"),
+            {"data": json.dumps(data), "id": file_id, "org_id": org_id},
+        )
+        db.commit()
+        return {"retagged": True, "tag": body.tag}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Retag upload error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Edit Manual Context ──────────────────────────────────────────────────
+
+class ManualContextUpdate(BaseModel):
+    discussion: Optional[str] = None
+    commitments: Optional[str] = None
+    context_type: Optional[str] = None
+
+@router.patch("/api/org/{org_id}/manual-context/{entry_id}")
+def update_manual_context(org_id: str, entry_id: str, body: ManualContextUpdate, db: Session = Depends(get_db)):
+    """Update a manual context entry."""
+    try:
+        sets = []
+        params: dict = {"id": entry_id, "org_id": org_id}
+        if body.discussion is not None:
+            sets.append("summary = :summary")
+            params["summary"] = body.discussion[:500]
+        if body.context_type is not None:
+            sets.append("subject = :subject")
+            params["subject"] = f"Manual: {body.context_type}"
+        if not sets:
+            return {"updated": False}
+        db.execute(
+            text(f"UPDATE interactions SET {', '.join(sets)} WHERE id = :id AND org_id = :org_id"),
+            params,
+        )
+        db.commit()
+        return {"updated": True}
+    except Exception as e:
+        logger.error(f"Update manual context error: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

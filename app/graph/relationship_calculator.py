@@ -19,9 +19,14 @@ RELATIONSHIP_STAGES = {
     "AT_RISK": "Recent but negative sentiment (overrides all above)",
 }
 
-# Source weights (Gmail only for V1)
+# Source weights — per PDF spec signal calibration
 SOURCE_WEIGHTS = {
     "gmail": 0.35,
+    "calendar": 0.25,
+    "slack": 0.20,
+    "jira": 0.05,
+    "drive": 0.10,
+    "gdocs": 0.10,
 }
 
 # Decay halflife in days
@@ -272,8 +277,8 @@ def calculate_bidirectionality(db, contact_id: str) -> bool:
     result = db.execute(
         text("""
             SELECT
-                BOOL_OR(direction = 'inbound') AS has_inbound,
-                BOOL_OR(direction = 'outbound') AS has_outbound
+                BOOL_OR(direction = 'inbound' OR direction = 'bidirectional') AS has_inbound,
+                BOOL_OR(direction = 'outbound' OR direction = 'bidirectional') AS has_outbound
             FROM interactions
             WHERE contact_id = :contact_id
         """),
@@ -563,8 +568,15 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         if last_interaction
         else 999
     )
+    # Get actual sources for this contact (gmail, calendar, slack, etc.)
+    sources_result = db.execute(
+        text("SELECT DISTINCT source FROM interactions WHERE contact_id = :cid AND source IS NOT NULL"),
+        {"cid": contact_id},
+    ).fetchall()
+    actual_sources = [r[0] for r in sources_result] if sources_result else ["gmail"]
+
     confidence = calculate_confidence_score(
-        interaction_count, days_since, sources=["gmail"]
+        interaction_count, days_since, sources=actual_sources
     )
 
     # Calculate bidirectionality

@@ -187,6 +187,7 @@ def list_connected_accounts(org_id: str, db: Session = Depends(get_db)):
                       sync_error, created_at
                FROM oauth_tokens
                WHERE org_id = :org_id
+                 AND account_email NOT LIKE 'gcal:%%'
                ORDER BY created_at ASC"""
         ),
         {"org_id": org_id},
@@ -294,6 +295,32 @@ def trigger_account_sync(
         "account_email": account_email,
         "message": f"Sync started for {account_email}. This may take 2-5 minutes.",
     }
+
+
+@router.put("/api/org/{org_id}/sync/interval/{hours}")
+def set_sync_interval(org_id: str, hours: int, db: Session = Depends(get_db)):
+    """Set the sync interval in hours (6, 12, 18, or 24)."""
+    if hours not in (6, 12, 18, 24):
+        raise HTTPException(status_code=400, detail="Interval must be 6, 12, 18, or 24 hours")
+
+    db.execute(
+        text("UPDATE orgs SET sync_interval_hours = :hours WHERE id = :org_id"),
+        {"hours": hours, "org_id": org_id},
+    )
+    db.commit()
+    return {"status": "updated", "sync_interval_hours": hours}
+
+
+@router.get("/api/org/{org_id}/sync/interval")
+def get_sync_interval(org_id: str, db: Session = Depends(get_db)):
+    """Get current sync interval setting."""
+    result = db.execute(
+        text("SELECT sync_interval_hours FROM orgs WHERE id = :org_id"),
+        {"org_id": org_id},
+    ).fetchone()
+    if not result:
+        raise HTTPException(status_code=404, detail="Org not found")
+    return {"sync_interval_hours": result.sync_interval_hours or 24}
 
 
 @router.post("/api/org/{org_id}/reset")

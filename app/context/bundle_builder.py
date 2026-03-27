@@ -579,6 +579,25 @@ def build_context_bundle(
     if open_commitments: coverage_parts += 1
     coverage_score = round(coverage_parts / 7.0, 2)
 
+    # ── Cooldown check: prevent duplicate outreach ──
+    cooldown_active = False
+    hours_since_last_outbound = None
+    try:
+        last_outbound = db.execute(text("""
+            SELECT MAX(interaction_at) FROM interactions
+            WHERE contact_id = :cid AND direction = 'outbound'
+        """), {"cid": str(contact["id"])}).scalar()
+        if last_outbound:
+            from datetime import timezone as tz
+            if last_outbound.tzinfo is None:
+                last_outbound = last_outbound.replace(tzinfo=tz.utc)
+            hours_since_last_outbound = round(
+                (datetime.now(tz.utc) - last_outbound).total_seconds() / 3600, 1
+            )
+            cooldown_active = hours_since_last_outbound < 72  # 72h email cooldown
+    except Exception:
+        pass
+
     # Calculate cache_age_seconds (time since bundle generated)
     generated_at = datetime.now(timezone.utc)
 
@@ -623,6 +642,9 @@ def build_context_bundle(
             "last_recalc": contact.get("metadata", {}).get("last_recalc_at", "unknown") if isinstance(contact.get("metadata"), dict) else "unknown",
             "sources": ["gmail"],
         },
+        # ── Cooldown: prevent duplicate outreach ──
+        "cooldown_active": cooldown_active,
+        "hours_since_last_outbound": hours_since_last_outbound,
     }
 
     # Add warm intro paths for COLD/DORMANT contacts

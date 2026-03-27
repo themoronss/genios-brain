@@ -481,3 +481,58 @@ def get_entity_context(
     except Exception as e:
         logger.error(f"Entity context failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to get entity context")
+
+
+@router.get("/v1/llms.txt")
+def get_llms_txt(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
+    """Dynamic per-org llms.txt — plain text summary of top 10 relationships for LLM-native tools."""
+    org_id = verify_api_key(credentials, db)
+    from fastapi.responses import PlainTextResponse
+
+    rows = db.execute(text("""
+        SELECT name, company, entity_type, relationship_stage,
+               sentiment_avg, interaction_count, last_interaction_at,
+               composite_score
+        FROM contacts
+        WHERE org_id = :org_id AND (is_archived = FALSE OR is_archived IS NULL)
+        ORDER BY composite_score DESC NULLS LAST
+        LIMIT 10
+    """), {"org_id": org_id}).fetchall()
+
+    graph_stats = db.execute(text("""
+        SELECT COUNT(*) as total_contacts,
+               COUNT(CASE WHEN relationship_stage = 'ACTIVE' THEN 1 END) as active,
+               AVG(composite_score) as avg_score
+        FROM contacts WHERE org_id = :org_id AND (is_archived = FALSE OR is_archived IS NULL)
+    """), {"org_id": org_id}).fetchone()
+
+    lines = [
+        "# GeniOS Brain — Organizational Context Summary",
+        f"# Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+        f"# Total contacts: {graph_stats.total_contacts or 0}",
+        f"# Active relationships: {graph_stats.active or 0}",
+        f"# Avg graph quality: {round(float(graph_stats.avg_score or 0), 2)}",
+        "",
+        "## Top 10 Relationships",
+        "",
+    ]
+
+    for r in rows:
+        stage = r.relationship_stage or "unknown"
+        last = r.last_interaction_at.strftime("%Y-%m-%d") if r.last_interaction_at else "never"
+        lines.append(
+            f"- {r.name} ({r.company or 'unknown'}) | {r.entity_type or 'contact'} | "
+            f"Stage: {stage} | Interactions: {r.interaction_count or 0} | "
+            f"Last: {last} | Score: {round(float(r.composite_score or 0), 2)}"
+        )
+
+    lines.append("")
+    lines.append("## API")
+    lines.append("- POST /v1/context — Get context bundle before agent action")
+    lines.append("- POST /v1/context/outcome — Report action outcome")
+    lines.append("- POST /v1/context/search — Search contacts by stage/recency")
+
+    return PlainTextResponse("\n".join(lines))

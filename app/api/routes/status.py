@@ -158,7 +158,7 @@ def get_graph_data(
 
     # ── Email account nodes (one per connected Gmail) ─────────────────────
     account_rows = db.execute(
-        text("SELECT DISTINCT COALESCE(account_email, 'default') FROM oauth_tokens WHERE org_id = :org_id"),
+        text("SELECT DISTINCT COALESCE(account_email, 'default') FROM oauth_tokens WHERE org_id = :org_id AND account_email NOT LIKE 'gcal:%'"),
         {"org_id": org_id},
     ).fetchall()
     account_emails = {r[0].lower().strip(): r[0] for r in account_rows}
@@ -329,7 +329,8 @@ def get_contacts(
             SELECT
                 id, name, email, company,
                 relationship_stage, last_interaction_at,
-                interaction_count, sentiment_avg, entity_type
+                interaction_count, sentiment_avg, entity_type,
+                consistency_score
             FROM contacts
             WHERE org_id = :org_id
             {entity_filter}
@@ -365,6 +366,7 @@ def get_contacts(
                 "interaction_count": c.interaction_count,
                 "sentiment_avg": float(c.sentiment_avg or 0),
                 "entity_type": c.entity_type or "other",
+                "consistency_score": float(c.consistency_score) if c.consistency_score is not None else None,
             }
             for c in contacts
         ],
@@ -424,11 +426,26 @@ def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
         {"org_id": org_id}
     ).fetchone()
 
+    org_data = db.execute(
+        text("SELECT aer, graph_quality_score FROM orgs WHERE id = :org_id"),
+        {"org_id": org_id}
+    ).fetchone()
+
+    context_today = db.execute(
+        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id AND called_at >= CURRENT_DATE"),
+        {"org_id": org_id}
+    ).scalar() or 0
+
     return {
         "contacts_count": stats[0] or 0,
         "interactions_count": stats[1] or 0,
         "active_relationships_count": stats[2] or 0,
         "context_calls_count": stats[3] or 0,
+        "aer": float(org_data[0] or 0) if org_data else 0,
+        "graph_quality_score": float(org_data[1] or 0) if org_data else 0,
+        "context_calls_today": context_today,
+        "context_calls_limit": 3000,
+        "plan": "Hustler",
     }
 
 
