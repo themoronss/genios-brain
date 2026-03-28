@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.api.deps import get_db
 from app.context.bundle_builder import build_context_bundle, get_contact_by_name
 from app.graph.indirect_edges import find_warm_intro_path
 from app.config import GEMINI_API_KEY
@@ -42,14 +42,6 @@ class ChatRequest(BaseModel):
     query_type: str = "entity"  # entity, temporal, situation, action
     history: list[ChatMessage] = []
     entity_name: str = None  # Optional: pre-load context for a specific entity
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def extract_entity_from_message(message: str, db, org_id: str) -> str | None:

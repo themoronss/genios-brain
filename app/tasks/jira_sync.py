@@ -17,6 +17,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import text
 
 from app.database import SessionLocal
+from app.graph.relationship_calculator import recalculate_all_relationships
 from app.ingestion.jira_connector import (
     fetch_projects,
     fetch_project_statuses,
@@ -111,7 +112,6 @@ def run_jira_sync(org_id: str):
         # ── Phase 2: Bridge Jira data into relationship graph ──
         try:
             from app.ingestion.jira_bridge import resolve_jira_users_to_contacts, create_jira_interactions
-            from app.graph.relationship_calculator import recalculate_all_relationships
             resolve_jira_users_to_contacts(db, org_id)
             db.commit()
             created = create_jira_interactions(db, org_id)

@@ -5,6 +5,13 @@ Shared utilities for all tool bridges.
 from sqlalchemy import text
 
 
+def get_email_domain(email: str) -> str:
+    """Extract domain from email address."""
+    if not email or "@" not in email:
+        return ""
+    return email.split("@")[1].lower()
+
+
 def get_org_domain(db, org_id: str) -> str | None:
     """Get org email domain from the orgs table."""
     row = db.execute(

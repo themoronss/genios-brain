@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from app.database import SessionLocal
+from app.graph.relationship_calculator import recalculate_all_relationships
 from app.ingestion.slack_connector import (
     fetch_channels,
     fetch_channel_history,
@@ -80,7 +81,6 @@ def run_slack_backfill(org_id: str):
         # ── Phase 2: Bridge Slack data into relationship graph ──
         try:
             from app.ingestion.slack_bridge import resolve_slack_users_to_contacts, create_slack_interactions
-            from app.graph.relationship_calculator import recalculate_all_relationships
             resolve_slack_users_to_contacts(db, org_id)
             db.commit()
             created = create_slack_interactions(db, org_id)

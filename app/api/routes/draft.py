@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.api.deps import get_db
 from app.context.bundle_builder import build_context_bundle
 from app.config import GEMINI_API_KEY
 import google.generativeai as genai
@@ -46,15 +46,6 @@ class DraftResponse(BaseModel):
     context_used: str  # The context that was given to Gemini
     confidence: float
     entity_name: str
-
-
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/api/generate/draft")

@@ -17,20 +17,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.api.deps import get_db
 from datetime import datetime, timezone
 from typing import Optional, List
 import uuid
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # ── Pydantic Models ────────────────────────────────────────────────────────

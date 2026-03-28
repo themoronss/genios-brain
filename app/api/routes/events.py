@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from app.api.deps import get_db
 from app.database import SessionLocal
 import asyncio
 import json
@@ -11,14 +12,6 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 async def event_generator(org_id: str):

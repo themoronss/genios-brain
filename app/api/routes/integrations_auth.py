@@ -1,7 +1,7 @@
 """
 Integrations Auth Routes
-Handles OAuth connect/callback for all non-Gmail tools:
-  Google Calendar, Slack, Jira, Notion, Google Sheets, Google Drive, Google Docs
+Handles OAuth connect/callback for all tools:
+  Gmail, Google Calendar, Slack, Jira, Notion, Google Sheets, Google Drive, Google Docs
 
 Also exposes unified status endpoint and disconnect endpoint.
 """
@@ -17,11 +17,101 @@ from sqlalchemy import text
 
 from app.database import SessionLocal
 from app.redis_client import redis_client
+from app.ingestion.gmail_connector import create_oauth_flow, build_gmail_service, get_user_email
+from app.config import GOOGLE_REDIRECT_URI
+from app.tasks.gmail_sync import run_gmail_sync
 
 router = APIRouter()
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 INTEGRATIONS_REDIRECT = f"{FRONTEND_URL}/dashboard/integrations"
+
+
+# ─── Gmail OAuth ─────────────────────────────────────────────────────────────
+
+@router.get("/auth/gmail/connect")
+def gmail_connect(org_id: str):
+    flow = create_oauth_flow()
+    authorization_url, state = flow.authorization_url(
+        access_type="offline", include_granted_scopes="true", prompt="consent"
+    )
+    flow_data = {
+        "org_id": org_id,
+        "code_verifier": flow.code_verifier if hasattr(flow, "code_verifier") else None,
+    }
+    redis_client.setex(f"oauth_state:{state}", 180, json.dumps(flow_data))
+    return RedirectResponse(authorization_url)
+
+
+@router.get("/auth/gmail/callback")
+async def gmail_callback(state: str, code: str, background_tasks: BackgroundTasks):
+    flow_data_json = redis_client.get(f"oauth_state:{state}")
+    if not flow_data_json:
+        return {"error": "Invalid OAuth state or session expired. Please try connecting again."}
+
+    flow_data_json = (
+        flow_data_json.decode("utf-8")
+        if isinstance(flow_data_json, bytes)
+        else flow_data_json
+    )
+    flow_data = json.loads(flow_data_json)
+    org_id = flow_data["org_id"]
+    code_verifier = flow_data.get("code_verifier")
+
+    redis_client.delete(f"oauth_state:{state}")
+
+    flow = create_oauth_flow()
+    flow.redirect_uri = GOOGLE_REDIRECT_URI
+    if code_verifier:
+        flow.code_verifier = code_verifier
+
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        flow.fetch_token(code=code)
+
+    credentials = flow.credentials
+    access_token = credentials.token
+    refresh_token = credentials.refresh_token
+    expiry = credentials.expiry
+
+    gmail_service = build_gmail_service(access_token, refresh_token)
+    connected_email = get_user_email(gmail_service)
+
+    db = SessionLocal()
+    db.execute(
+        text("""
+            INSERT INTO oauth_tokens (
+                org_id, account_email, access_token, refresh_token,
+                token_expiry, last_synced_at, sync_status
+            ) VALUES (
+                :org_id, :account_email, :access_token, :refresh_token,
+                :expiry, :now, 'running'
+            )
+            ON CONFLICT (org_id, account_email)
+            DO UPDATE SET
+                access_token = EXCLUDED.access_token,
+                refresh_token = EXCLUDED.refresh_token,
+                token_expiry = EXCLUDED.token_expiry,
+                last_synced_at = EXCLUDED.last_synced_at,
+                sync_status = 'running'
+        """),
+        {
+            "org_id": org_id,
+            "account_email": connected_email,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expiry": expiry,
+            "now": datetime.utcnow(),
+        },
+    )
+    db.commit()
+    db.close()
+
+    from app.config import SYNC_MAX_EMAILS
+    background_tasks.add_task(run_gmail_sync, org_id, SYNC_MAX_EMAILS, connected_email)
+
+    return RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────

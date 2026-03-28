@@ -21,6 +21,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import text
 
 from app.database import SessionLocal
+from app.graph.relationship_calculator import recalculate_all_relationships
 from app.ingestion.drive_connector import (
     build_drive_service,
     get_start_page_token,
@@ -91,7 +92,6 @@ def run_drive_sync(org_id: str):
         # ── Phase 2: Bridge Drive data into relationship graph ──
         try:
             from app.ingestion.drive_bridge import resolve_drive_people_to_contacts, create_drive_interactions
-            from app.graph.relationship_calculator import recalculate_all_relationships
             resolve_drive_people_to_contacts(db, org_id)
             db.commit()
             created = create_drive_interactions(db, org_id)

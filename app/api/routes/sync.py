@@ -1,19 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from app.api.deps import get_db
 from app.database import SessionLocal
 from app.tasks.gmail_sync import run_gmail_sync
 from datetime import datetime, timezone
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def sync_task(org_id: str, account_email: str = None):

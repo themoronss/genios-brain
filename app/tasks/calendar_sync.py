@@ -26,6 +26,7 @@ from app.ingestion.calendar_bridge import (
     create_meeting_interactions,
     link_upcoming_meeting_contacts,
 )
+from app.ingestion.bridge_utils import get_org_domain
 from app.graph.relationship_calculator import recalculate_all_relationships
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ def run_calendar_sync(org_id: str):
         service = build_calendar_service(token_row.access_token, token_row.refresh_token)
 
         # Get org domain for internal/external detection
-        org_domain = _get_org_domain(db, org_id)
+        org_domain = get_org_domain(db, org_id)
 
         # List all calendars and filter to user-accessible ones
         calendars = list_calendars(service)
@@ -370,12 +371,3 @@ def _check_watch_channel_renewal(db, service, org_id, calendar_id, state_row):
             logger.error(f"Watch channel renewal failed: {e}")
 
 
-def _get_org_domain(db, org_id):
-    """Get org domain from owner email."""
-    row = db.execute(
-        text("SELECT email FROM orgs WHERE id = :oid"),
-        {"oid": org_id},
-    ).fetchone()
-    if row and "@" in row.email:
-        return row.email.split("@")[1]
-    return None

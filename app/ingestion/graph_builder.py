@@ -60,11 +60,7 @@ def extract_company_from_email(email):
     return company
 
 
-def get_email_domain(email: str) -> str:
-    """Extract domain from email address."""
-    if not email or "@" not in email:
-        return ""
-    return email.split("@")[1].lower()
+from app.ingestion.bridge_utils import get_email_domain
 
 
 # ── Due date parsing ──────────────────────────────────────────────────────────

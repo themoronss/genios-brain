@@ -12,7 +12,7 @@ def _calculate_recommended_action(contact, interactions):
     Rules:
     1. If last_interaction > 14 days and stage = warm → "Send follow-up this week"
     2. If last_interaction > 30 days → "Relationship cooling — re-engage"
-    3. If last_sentiment < 0 → "Approach carefully — last interaction negative"
+    3. If sentiment_ewma < 0 → "Approach carefully — last interaction negative"
     4. Default → "Maintain relationship"
     """
     # Get last interaction date
@@ -44,8 +44,8 @@ def _calculate_recommended_action(contact, interactions):
     # Apply rules in priority order
     # Rule 3: Check sentiment (if available)
     # Note: sentiment field may not exist yet in database
-    last_sentiment = contact.get("last_sentiment", 0)
-    if last_sentiment < 0:
+    sentiment_ewma = contact.get("sentiment_ewma", 0)
+    if sentiment_ewma < 0:
         return "Approach carefully — last interaction negative"
 
     # Rule 2: Over 30 days since last interaction
@@ -102,7 +102,7 @@ def _calculate_coverage_score(contact, interactions):
         populated_fields += 1
 
     # Check sentiment (if field exists and has meaningful value)
-    sentiment = contact.get("last_sentiment")
+    sentiment = contact.get("sentiment_ewma")
     if sentiment is not None and sentiment != 0:
         populated_fields += 1
 

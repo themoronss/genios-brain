@@ -24,6 +24,7 @@ from app.ingestion.entity_extractor import (
     compute_signal_score,
 )
 from app.ingestion.email_classifier import classify_email, parse_system_email
+from app.ingestion.bridge_utils import get_email_domain
 from app.graph.relationship_calculator import recalculate_all_relationships
 from datetime import datetime, timezone
 from collections import defaultdict
@@ -148,13 +149,6 @@ def is_automated_email(email, name):
             return True
 
     return False
-
-
-def get_email_domain(email: str) -> str:
-    """Extract domain from email address."""
-    if not email or "@" not in email:
-        return ""
-    return email.split("@")[1].lower()
 
 
 def is_internal_email(contact_email: str, user_email: str) -> bool:

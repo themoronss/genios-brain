@@ -22,6 +22,7 @@ from app.api.routes import merge
 from app.api.routes import facts
 from app.api.routes import manual_context
 from app.api.routes import integrations_auth
+from app.api.routes import insights
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,7 @@ app.include_router(merge.router)
 app.include_router(facts.router)
 app.include_router(manual_context.router)
 app.include_router(integrations_auth.router)
+app.include_router(insights.router)
 
 
 @app.get("/")

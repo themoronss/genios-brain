@@ -22,6 +22,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import text
 
 from app.database import SessionLocal
+from app.graph.relationship_calculator import recalculate_all_relationships
 from app.ingestion.docs_connector import (
     build_docs_service,
     build_drive_service,
@@ -116,7 +117,6 @@ def run_docs_sync(org_id: str):
         # ── Phase 2: Bridge Docs data into relationship graph ──
         try:
             from app.ingestion.docs_bridge import resolve_docs_people_to_contacts, create_docs_interactions
-            from app.graph.relationship_calculator import recalculate_all_relationships
             resolve_docs_people_to_contacts(db, org_id)
             db.commit()
             created = create_docs_interactions(db, org_id)

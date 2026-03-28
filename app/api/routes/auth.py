@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -8,11 +7,7 @@ import jwt
 from datetime import datetime, timedelta
 import secrets
 
-from app.database import SessionLocal
-from app.ingestion.gmail_connector import create_oauth_flow, build_gmail_service, get_user_email
-from app.config import GOOGLE_REDIRECT_URI
-from app.tasks.gmail_sync import run_gmail_sync
-from app.redis_client import redis_client
+from app.api.deps import get_db
 
 
 router = APIRouter()
@@ -38,145 +33,6 @@ class AuthResponse(BaseModel):
     token: str
     name: str
     email: str
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@router.get("/auth/gmail/connect")
-def gmail_connect(org_id: str):
-
-    flow = create_oauth_flow()
-
-    authorization_url, state = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true", prompt="consent"
-    )
-
-    # Store org_id AND code_verifier in Redis (for PKCE flow)
-    # Code verifier is needed to complete the OAuth flow
-    # Expires in 180 seconds (3 minutes) - enough time for OAuth flow
-    import json
-
-    flow_data = {
-        "org_id": org_id,
-        "code_verifier": flow.code_verifier if hasattr(flow, "code_verifier") else None,
-    }
-    redis_client.setex(f"oauth_state:{state}", 180, json.dumps(flow_data))
-
-    return RedirectResponse(authorization_url)
-
-
-@router.get("/auth/gmail/callback")
-async def gmail_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    import json
-
-    # Retrieve flow data from Redis using state
-    flow_data_json = redis_client.get(f"oauth_state:{state}")
-
-    if not flow_data_json:
-        return {
-            "error": "Invalid OAuth state or session expired. Please try connecting again."
-        }
-
-    # Decode and parse flow data
-    flow_data_json = (
-        flow_data_json.decode("utf-8")
-        if isinstance(flow_data_json, bytes)
-        else flow_data_json
-    )
-    flow_data = json.loads(flow_data_json)
-    org_id = flow_data["org_id"]
-    code_verifier = flow_data.get("code_verifier")
-
-    # Delete the state from Redis (one-time use)
-    redis_client.delete(f"oauth_state:{state}")
-
-    # Recreate flow and restore code_verifier for PKCE
-    flow = create_oauth_flow()
-    flow.redirect_uri = GOOGLE_REDIRECT_URI
-
-    # Restore code_verifier if it exists (for PKCE flow)
-    if code_verifier:
-        flow.code_verifier = code_verifier
-
-    # Fetch token and handle OAuth warnings
-    import warnings
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")  # Suppress OAuth scope warnings
-        flow.fetch_token(code=code)
-
-    credentials = flow.credentials
-
-    access_token = credentials.token
-    refresh_token = credentials.refresh_token
-    expiry = credentials.expiry
-
-    # -- Update 4: Identify which Gmail account this token belongs to --
-    # Build a temporary service with the fresh credentials to call the profile API.
-    gmail_service = build_gmail_service(access_token, refresh_token)
-    connected_email = get_user_email(gmail_service)
-
-    db = SessionLocal()
-
-    db.execute(
-        text(
-            """
-        INSERT INTO oauth_tokens (
-            org_id,
-            account_email,
-            access_token,
-            refresh_token,
-            token_expiry,
-            last_synced_at,
-            sync_status
-        )
-        VALUES (
-            :org_id,
-            :account_email,
-            :access_token,
-            :refresh_token,
-            :expiry,
-            :now,
-            'running'
-        )
-        ON CONFLICT (org_id, account_email)
-        DO UPDATE SET
-            access_token = EXCLUDED.access_token,
-            refresh_token = EXCLUDED.refresh_token,
-            token_expiry = EXCLUDED.token_expiry,
-            last_synced_at = EXCLUDED.last_synced_at,
-            sync_status = 'running'
-        """
-        ),
-        {
-            "org_id": org_id,
-            "account_email": connected_email,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "expiry": expiry,
-            "now": datetime.utcnow(),
-        },
-    )
-
-    db.commit()
-    db.close()
-
-    # Trigger automatic sync in background for this specific account
-    from app.config import SYNC_MAX_EMAILS
-    background_tasks.add_task(run_gmail_sync, org_id, SYNC_MAX_EMAILS, connected_email)
-
-    import os
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    
-    # Redirect straight to dashboard — the dashboard sync-in-progress screen
-    # handles the UX from here (shows email tally, auto-refreshes graph).
-    return RedirectResponse(url=f"{frontend_url}/dashboard")
 
 
 @router.post("/auth/login", response_model=AuthResponse)

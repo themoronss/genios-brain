@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.api.deps import get_db
 from datetime import datetime, timezone
 import logging
 import uuid
@@ -10,13 +10,6 @@ import uuid
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 class SessionStartRequest(BaseModel):

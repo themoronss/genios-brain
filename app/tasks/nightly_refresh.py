@@ -14,8 +14,17 @@ from datetime import datetime, timezone
 # Add parent directory to path for direct execution
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sqlalchemy import text
 from app.database import SessionLocal
 from app.graph.relationship_calculator import recalculate_all_relationships
+
+
+def _get_org_ids(db, org_id=None):
+    """Return list of org IDs to process."""
+    if org_id:
+        return [org_id]
+    rows = db.execute(text("SELECT id FROM orgs")).fetchall()
+    return [str(r[0]) for r in rows]
 
 
 def run_nightly_refresh(org_id: str = None):
@@ -35,6 +44,7 @@ def run_nightly_refresh(org_id: str = None):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Starting nightly relationship refresh for {scope}...")
 
     db = SessionLocal()
+    org_ids = _get_org_ids(db, org_id)
 
     try:
         # ── Step 1: Recalculate relationships ────────────────────────────
@@ -44,15 +54,9 @@ def run_nightly_refresh(org_id: str = None):
         # ── Step 2: Louvain community detection ──────────────────────────
         try:
             from app.graph.community_detection import run_louvain_detection
-            if org_id:
-                partition = run_louvain_detection(db, org_id)
-                print(f"✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {org_id}")
-            else:
-                from sqlalchemy import text
-                orgs = db.execute(text("SELECT id FROM orgs")).fetchall()
-                for org_row in orgs:
-                    partition = run_louvain_detection(db, str(org_row[0]))
-                    print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {org_row[0]}")
+            for oid in org_ids:
+                partition = run_louvain_detection(db, oid)
+                print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {oid}")
         except Exception as e:
             db.rollback()
             print(f"⚠️ Louvain detection skipped: {e}")
@@ -60,15 +64,9 @@ def run_nightly_refresh(org_id: str = None):
         # ── Step 3: Run insights engine ──────────────────────────────────
         try:
             from app.graph.insights_engine import run_insights_engine
-            if org_id:
-                insights = run_insights_engine(db, org_id)
-                print(f"✓ Insights: {len(insights)} signals detected for org {org_id}")
-            else:
-                from sqlalchemy import text
-                orgs = db.execute(text("SELECT id FROM orgs")).fetchall()
-                for org_row in orgs:
-                    insights = run_insights_engine(db, str(org_row[0]))
-                    print(f"  ✓ Insights: {len(insights)} signals for org {org_row[0]}")
+            for oid in org_ids:
+                insights = run_insights_engine(db, oid)
+                print(f"  ✓ Insights: {len(insights)} signals for org {oid}")
         except Exception as e:
             db.rollback()
             print(f"⚠️ Insights engine skipped: {e}")
@@ -76,22 +74,15 @@ def run_nightly_refresh(org_id: str = None):
         # ── Step 4: Compute inferred edges (indirect relationships) ───────
         try:
             from app.graph.indirect_edges import compute_inferred_edges
-            if org_id:
-                inferred_count = compute_inferred_edges(db, org_id)
-                print(f"✓ Inferred edges: {inferred_count} indirect connections for org {org_id}")
-            else:
-                from sqlalchemy import text
-                orgs = db.execute(text("SELECT id FROM orgs")).fetchall()
-                for org_row in orgs:
-                    inferred_count = compute_inferred_edges(db, str(org_row[0]))
-                    print(f"  ✓ Inferred edges: {inferred_count} indirect connections for org {org_row[0]}")
+            for oid in org_ids:
+                inferred_count = compute_inferred_edges(db, oid)
+                print(f"  ✓ Inferred edges: {inferred_count} indirect connections for org {oid}")
         except Exception as e:
             db.rollback()
             print(f"⚠️ Inferred edge computation skipped: {e}")
 
         # ── Step 5: Mark overdue commitments ─────────────────────────────
         try:
-            from sqlalchemy import text
             overdue_count = db.execute(
                 text("""
                     UPDATE commitments
@@ -130,7 +121,6 @@ def _precompute_bundles(db, org_id: str = None):
     Per PDF spec: bundles are pre-computed and cached, not generated on-demand.
     Only recomputes if material change detected (stage, sentiment, commitments).
     """
-    from sqlalchemy import text
     from app.context.bundle_builder import build_context_bundle
 
     # Get active/warm contacts that need bundle refresh

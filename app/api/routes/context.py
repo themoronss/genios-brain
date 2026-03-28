@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, root_validator, validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.api.deps import get_db, verify_api_key
 from app.context.bundle_builder import build_context_bundle
 from app.redis_client import redis_client
 import json
@@ -51,15 +50,6 @@ class ContextResponse(BaseModel):
     context_for_agent: str
     confidence: float
     error: str = None
-
-
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def get_cache_key(org_id: str, entity_name: str, situation: str = None) -> str:
@@ -113,29 +103,6 @@ def context_error(code: str, message: str, status_code: int = 400):
     )
 
 
-security = HTTPBearer()
-
-def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify API key and return org_id. Uses its own DB session to avoid holding
-    connections open for the entire request lifecycle."""
-    token = credentials.credentials
-    if not token.startswith("gn_live_"):
-        raise HTTPException(status_code=401, detail="Invalid API Key format")
-    
-    # Create and immediately close DB session for auth check only
-    db = SessionLocal()
-    try:
-        result = db.execute(
-            text("SELECT id FROM orgs WHERE api_key = :api_key"),
-            {"api_key": token}
-        ).fetchone()
-    finally:
-        db.close()
-    
-    if not result:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-        
-    return str(result[0])
 
 @router.post("/v1/context")
 def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: str = Depends(verify_api_key)):
@@ -485,11 +452,10 @@ def get_entity_context(
 
 @router.get("/v1/llms.txt")
 def get_llms_txt(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    org_id: str = Depends(verify_api_key),
     db: Session = Depends(get_db),
 ):
     """Dynamic per-org llms.txt — plain text summary of top 10 relationships for LLM-native tools."""
-    org_id = verify_api_key(credentials, db)
     from fastapi.responses import PlainTextResponse
 
     rows = db.execute(text("""
