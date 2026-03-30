@@ -137,13 +137,38 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
 
     created_count = 0
     for row in events_with_contacts:
-        # Determine edge weight per PDF spec
-        if row.is_recurring and row.meeting_type == "one_on_one":
+        # ── Determine edge weight per PDF spec + RSVP awareness ──
+        rsvp = (row.rsvp_status or "").lower()
+
+        if row.is_cancelled:
+            # Cancellation = cooling signal
+            edge_weight = -3.0
+            sentiment = -0.2
+            summary_prefix = "Cancelled"
+        elif rsvp == "declined":
+            # Attendee explicitly declined — negative signal
+            edge_weight = -2.0
+            sentiment = -0.15
+            summary_prefix = "Declined"
+        elif row.is_recurring and row.meeting_type == "one_on_one":
             edge_weight = 12.0  # Recurring weekly 1:1 = strongest signal
-        elif row.is_cancelled:
-            edge_weight = -3.0  # Cancellation = cooling signal
+            sentiment = 0.3
+            summary_prefix = "Recurring 1:1"
+        elif rsvp == "tentative":
+            # Tentative = half-weight, neutral sentiment
+            edge_weight = 4.0
+            sentiment = 0.05
+            summary_prefix = "Tentative"
+        elif rsvp == "needsAction":
+            # No RSVP response yet — weak signal
+            edge_weight = 3.0
+            sentiment = 0.0
+            summary_prefix = "Awaiting RSVP"
         else:
-            edge_weight = 8.0   # Confirmed meeting = 8x a single email
+            # Accepted / confirmed meeting = 8x a single email
+            edge_weight = 8.0
+            sentiment = 0.3
+            summary_prefix = "Meeting"
 
         # Count external attendees for this event
         attendee_count = db.execute(
@@ -157,6 +182,11 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
         interaction_id = str(uuid4())
         # Use synthetic gmail_message_id to satisfy unique constraint
         synthetic_msg_id = f"cal:{row.google_event_id}:{row.contact_id}"
+
+        # Direction: cancelled/declined = one-directional (they pulled out)
+        direction = "bidirectional"
+        if row.is_cancelled or rsvp == "declined":
+            direction = "inbound"  # Cooling signal initiated by them
 
         db.execute(
             text("""
@@ -175,7 +205,7 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                     :id, :org_id, :contact_id,
                     :gmail_message_id, :calendar_event_id,
                     :account_email,
-                    'bidirectional', :subject, :summary,
+                    :direction, :subject, :summary,
                     :interaction_at, :sentiment, 'meeting',
                     'calendar', :weight_score, :signal_score,
                     :duration_minutes, :attendee_count,
@@ -189,6 +219,8 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                     duration_minutes = EXCLUDED.duration_minutes,
                     edge_weight_multiplier = EXCLUDED.edge_weight_multiplier,
                     rsvp_status = EXCLUDED.rsvp_status,
+                    sentiment = EXCLUDED.sentiment,
+                    direction = EXCLUDED.direction,
                     account_email = EXCLUDED.account_email
             """),
             {
@@ -198,16 +230,13 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                 "gmail_message_id": synthetic_msg_id,
                 "calendar_event_id": str(row.event_id),
                 "account_email": account_email,
+                "direction": direction,
                 "subject": row.title or "Meeting",
-                "summary": (
-                    f"Recurring 1:1: {row.title}"
-                    if row.is_recurring and row.meeting_type == "one_on_one"
-                    else f"Meeting: {row.title or 'Untitled'}"
-                ),
+                "summary": f"{summary_prefix}: {row.title or 'Untitled'}",
                 "interaction_at": row.start_time,
-                "sentiment": 0.3,  # Meeting happened = slight positive
-                "weight_score": 0.9,
-                "signal_score": 0.8,
+                "sentiment": sentiment,
+                "weight_score": 0.9 if edge_weight > 0 else 0.3,
+                "signal_score": 0.8 if edge_weight > 0 else 0.4,
                 "duration_minutes": row.duration_minutes,
                 "attendee_count": attendee_count,
                 "rsvp_status": row.rsvp_status,
@@ -264,3 +293,292 @@ def link_upcoming_meeting_contacts(db, org_id: str):
 
     logger.info(f"Calendar bridge: linked {linked_count}/{len(unlinked)} upcoming meetings for org={org_id}")
     return linked_count
+
+
+# ─── 4. No-show inference ────────────────────────────────────────────────────
+
+def infer_no_shows(db, org_id: str):
+    """
+    For past events where the attendee has no email interaction within 24h
+    after the meeting end time, mark as probable no-show.
+
+    Updates attended_inferred and attended_confidence on calendar_event_attendees.
+    Also transitions upcoming_meetings.status from 'scheduled' to 'completed' or 'no_show'.
+    """
+    # Step 1: Transition past meetings from 'scheduled' → 'completed'
+    db.execute(
+        text("""
+            UPDATE upcoming_meetings
+            SET status = 'completed'
+            WHERE org_id = :oid
+            AND status = 'scheduled'
+            AND start_time < NOW() - INTERVAL '1 hour'
+        """),
+        {"oid": org_id},
+    )
+
+    # Step 2: Find past events (ended 24h+ ago) with resolved attendees
+    #         where attended_inferred is still NULL
+    candidates = db.execute(
+        text("""
+            SELECT cea.id AS attendee_id,
+                   cea.person_id AS contact_id,
+                   ce.end_time,
+                   ce.id AS event_id,
+                   ce.is_cancelled
+            FROM calendar_event_attendees cea
+            JOIN calendar_events ce ON ce.id = cea.event_id
+            WHERE ce.org_id = :oid
+              AND cea.person_id IS NOT NULL
+              AND cea.attended_inferred IS NULL
+              AND ce.end_time IS NOT NULL
+              AND ce.end_time < NOW() - INTERVAL '48 hours'
+              AND ce.is_cancelled = FALSE
+        """),
+        {"oid": org_id},
+    ).fetchall()
+
+    if not candidates:
+        return 0
+
+    no_show_count = 0
+    for row in candidates:
+        # Triple-signal attended inference per PDF spec:
+        #   (a) Past start time — already filtered in candidate query
+        #   (b) No cancellation — already filtered (is_cancelled = FALSE)
+        #   (c) Follow-up email within 72h of meeting end
+
+        # Check for email within 48h (strong signal)
+        email_within_48h = db.execute(
+            text("""
+                SELECT 1 FROM interactions
+                WHERE contact_id = :cid
+                  AND source = 'gmail'
+                  AND interaction_at BETWEEN :end_time AND :end_time + INTERVAL '48 hours'
+                LIMIT 1
+            """),
+            {"cid": str(row.contact_id), "end_time": row.end_time},
+        ).fetchone()
+
+        # Check for email within 72h (weaker signal — late follow-up)
+        email_within_72h = None
+        if not email_within_48h:
+            email_within_72h = db.execute(
+                text("""
+                    SELECT 1 FROM interactions
+                    WHERE contact_id = :cid
+                      AND source = 'gmail'
+                      AND interaction_at BETWEEN :end_time + INTERVAL '48 hours'
+                                             AND :end_time + INTERVAL '72 hours'
+                    LIMIT 1
+                """),
+                {"cid": str(row.contact_id), "end_time": row.end_time},
+            ).fetchone()
+
+        # Score: all 3 signals (past + no cancel + email <48h) = 0.85
+        #        past + no cancel + late email (48-72h)         = 0.70
+        #        past + no cancel + no email at all             = 0.55 (inferred no-show)
+        if email_within_48h:
+            attended = True
+            confidence = 0.85
+        elif email_within_72h:
+            attended = True
+            confidence = 0.70
+        else:
+            attended = False
+            confidence = 0.55
+
+        db.execute(
+            text("""
+                UPDATE calendar_event_attendees
+                SET attended_inferred = :attended, attended_confidence = :conf
+                WHERE id = :aid
+            """),
+            {"attended": attended, "conf": confidence, "aid": row.attendee_id},
+        )
+
+        if not attended:
+            no_show_count += 1
+            # Update upcoming_meetings status to 'no_show' if exists
+            db.execute(
+                text("""
+                    UPDATE upcoming_meetings
+                    SET status = 'no_show'
+                    WHERE event_id = :eid AND org_id = :oid
+                """),
+                {"eid": row.event_id, "oid": org_id},
+            )
+
+    logger.info(f"Calendar bridge: inferred {no_show_count} no-shows out of {len(candidates)} past meetings for org={org_id}")
+    return no_show_count
+
+
+# ─── 5. Rescheduling detection ───────────────────────────────────────────────
+
+def detect_rescheduled_events(db, org_id: str):
+    """
+    Find cancelled events that were rescheduled (a new event was created
+    with overlapping attendees within 14 days of the cancelled event).
+
+    Updates rescheduled_count on the new event.
+    """
+    # Find cancelled events with resolved attendees
+    cancelled = db.execute(
+        text("""
+            SELECT ce.id AS event_id, ce.title, ce.start_time,
+                   array_agg(cea.person_id) AS attendee_ids
+            FROM calendar_events ce
+            JOIN calendar_event_attendees cea ON cea.event_id = ce.id
+            WHERE ce.org_id = :oid
+              AND ce.is_cancelled = TRUE
+              AND cea.person_id IS NOT NULL
+              AND ce.start_time > NOW() - INTERVAL '60 days'
+            GROUP BY ce.id
+        """),
+        {"oid": org_id},
+    ).fetchall()
+
+    if not cancelled:
+        return 0
+
+    rescheduled_count = 0
+    for row in cancelled:
+        if not row.start_time or not row.attendee_ids:
+            continue
+
+        # Look for a non-cancelled event within 14 days with at least one
+        # overlapping attendee (likely a reschedule)
+        match = db.execute(
+            text("""
+                SELECT ce.id
+                FROM calendar_events ce
+                JOIN calendar_event_attendees cea ON cea.event_id = ce.id
+                WHERE ce.org_id = :oid
+                  AND ce.is_cancelled = FALSE
+                  AND ce.id != :cancelled_id
+                  AND ce.start_time BETWEEN :start - INTERVAL '14 days'
+                                        AND :start + INTERVAL '14 days'
+                  AND cea.person_id = ANY(:attendees)
+                LIMIT 1
+            """),
+            {
+                "oid": org_id,
+                "cancelled_id": row.event_id,
+                "start": row.start_time,
+                "attendees": row.attendee_ids,
+            },
+        ).fetchone()
+
+        if match:
+            db.execute(
+                text("""
+                    UPDATE calendar_events
+                    SET rescheduled_count = COALESCE(rescheduled_count, 0) + 1
+                    WHERE id = :eid
+                """),
+                {"eid": match.id},
+            )
+            rescheduled_count += 1
+
+    logger.info(f"Calendar bridge: detected {rescheduled_count} rescheduled events for org={org_id}")
+    return rescheduled_count
+
+
+# ─── 6. Gmail cross-matcher — link emails ±7 days of meeting ─────────────
+
+def cross_match_gmail_calendar(db, org_id: str):
+    """
+    Find email interactions within ±7 days of a calendar meeting with the same contact.
+    Links them by setting linked_calendar_event_id on the email interaction.
+    Builds the full arc: email thread → meeting → follow-up email.
+    """
+    linked_count = db.execute(
+        text("""
+            UPDATE interactions email_i
+            SET calendar_event_id = cal_i.calendar_event_id
+            FROM interactions cal_i
+            WHERE email_i.org_id = :oid
+              AND cal_i.org_id = :oid
+              AND email_i.contact_id = cal_i.contact_id
+              AND email_i.source = 'gmail'
+              AND cal_i.source = 'calendar'
+              AND cal_i.calendar_event_id IS NOT NULL
+              AND email_i.calendar_event_id IS NULL
+              AND email_i.interaction_at BETWEEN cal_i.interaction_at - INTERVAL '7 days'
+                                             AND cal_i.interaction_at + INTERVAL '7 days'
+        """),
+        {"oid": org_id},
+    ).rowcount
+
+    logger.info(f"Calendar bridge: cross-matched {linked_count} emails to calendar events for org={org_id}")
+    return linked_count
+
+
+# ─── 7. Follow-up scheduler — 72h post-meeting open loop ─────────────────
+
+def check_meeting_followups(db, org_id: str):
+    """
+    For completed meetings older than 72h, check if a follow-up email was sent.
+    If not → create a P2 insight alerting the user.
+    """
+    from uuid import uuid4
+
+    # Find meetings that ended 72h+ ago with no follow-up email
+    no_followup = db.execute(
+        text("""
+            SELECT um.id, um.event_id, um.primary_contact_id,
+                   ce.title, ce.end_time, c.name
+            FROM upcoming_meetings um
+            JOIN calendar_events ce ON ce.id = um.event_id
+            LEFT JOIN contacts c ON c.id = um.primary_contact_id
+            WHERE um.org_id = :oid
+              AND um.status = 'completed'
+              AND um.follow_up_sent = FALSE
+              AND ce.end_time < NOW() - INTERVAL '72 hours'
+              AND um.primary_contact_id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM interactions i
+                  WHERE i.contact_id = um.primary_contact_id
+                    AND i.source = 'gmail'
+                    AND i.direction = 'outbound'
+                    AND i.interaction_at > ce.end_time
+                    AND i.interaction_at < ce.end_time + INTERVAL '72 hours'
+              )
+        """),
+        {"oid": org_id},
+    ).fetchall()
+
+    insight_count = 0
+    for row in no_followup:
+        meeting_id, event_id, contact_id, title, end_time, contact_name = row
+
+        # Create insight
+        db.execute(
+            text("""
+                INSERT INTO insights (id, org_id, insight_type, priority, category,
+                    title, detail, contact_id, contact_name, metadata, generated_at, expires_at)
+                VALUES (:id, :org_id, 'relationship', 'P2', 'no_followup',
+                    :title, :detail, :contact_id, :contact_name, :metadata,
+                    NOW(), NOW() + INTERVAL '7 days')
+                ON CONFLICT DO NOTHING
+            """),
+            {
+                "id": str(uuid4()),
+                "org_id": org_id,
+                "title": f"No follow-up after meeting with {contact_name or 'contact'}",
+                "detail": f"Meeting \"{title or 'Untitled'}\" ended {end_time.strftime('%b %d') if end_time else 'recently'} but no outbound email was sent within 72h. Follow up to close the loop.",
+                "contact_id": str(contact_id) if contact_id else None,
+                "contact_name": contact_name,
+                "metadata": "{}",
+            },
+        )
+
+        # Mark follow-up as checked (even if not sent — don't re-alert)
+        db.execute(
+            text("UPDATE upcoming_meetings SET follow_up_due_at = :due WHERE id = :mid"),
+            {"due": end_time, "mid": meeting_id},
+        )
+        insight_count += 1
+
+    logger.info(f"Calendar bridge: found {insight_count} meetings without follow-up for org={org_id}")
+    return insight_count

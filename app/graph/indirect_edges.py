@@ -16,22 +16,34 @@ def compute_inferred_edges(db: Session, org_id: str):
     Store these as inferred relationships with lower confidence.
     """
     try:
-        # Find contact pairs that share CC threads but don't have direct interactions
-        # i1 and i2 are on the same email thread (same gmail_message_id)
+        # Find contact pairs connected through shared email CC threads OR calendar co-attendance
         inferred = db.execute(
             text("""
-                WITH cc_pairs AS (
-                    SELECT DISTINCT
-                        i1.contact_id as contact_a,
-                        i2.contact_id as contact_b,
-                        COUNT(*) as shared_threads
+                WITH co_occurrence AS (
+                    -- Email CC co-occurrence
+                    SELECT i1.contact_id as contact_a, i2.contact_id as contact_b, COUNT(*) as shared_threads
                     FROM interactions i1
                     JOIN interactions i2 ON i1.gmail_message_id = i2.gmail_message_id
                         AND i1.contact_id < i2.contact_id
                         AND i1.org_id = i2.org_id
-                    WHERE i1.org_id = :org_id
-                        AND i1.gmail_message_id IS NOT NULL
+                    WHERE i1.org_id = :org_id AND i1.gmail_message_id IS NOT NULL
                     GROUP BY i1.contact_id, i2.contact_id
+
+                    UNION ALL
+
+                    -- Calendar co-attendee
+                    SELECT i1.contact_id as contact_a, i2.contact_id as contact_b, COUNT(*) as shared_threads
+                    FROM interactions i1
+                    JOIN interactions i2 ON i1.calendar_event_id = i2.calendar_event_id
+                        AND i1.contact_id < i2.contact_id
+                        AND i1.org_id = i2.org_id
+                    WHERE i1.org_id = :org_id AND i1.calendar_event_id IS NOT NULL
+                    GROUP BY i1.contact_id, i2.contact_id
+                ),
+                cc_pairs AS (
+                    SELECT contact_a, contact_b, SUM(shared_threads) as shared_threads
+                    FROM co_occurrence
+                    GROUP BY contact_a, contact_b
                 )
                 SELECT
                     cp.contact_a, cp.contact_b, cp.shared_threads,

@@ -246,22 +246,34 @@ def save_notification_prefs(org_id: str, body: NotificationPrefs, db: Session = 
 
 @router.get("/api/org/{org_id}/usage")
 def get_usage_stats(org_id: str, db: Session = Depends(get_db)):
+    # Only count external API calls (source='api') toward quota — not dashboard UI clicks
+    api_filter = "AND (source = 'api' OR source IS NULL)"
     today = db.execute(
-        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE"),
+        text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE {api_filter}"),
         {"oid": org_id},
     ).scalar() or 0
     week = db.execute(
-        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '7 days'"),
+        text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '7 days' {api_filter}"),
         {"oid": org_id},
     ).scalar() or 0
     month = db.execute(
-        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '30 days'"),
+        text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '30 days' {api_filter}"),
         {"oid": org_id},
     ).scalar() or 0
+
+    tier = db.execute(
+        text("SELECT COALESCE(subscription_tier, 'hustler') FROM orgs WHERE id = :oid"),
+        {"oid": org_id},
+    ).scalar() or "hustler"
+
+    limits = {"hustler": (3000, 21000, 90000), "startup": (10000, 70000, 300000), "enterprise": (999999, 999999, 999999)}
+    dl, wl, ml = limits.get(tier, limits["hustler"])
+
     return {
-        "today": today, "today_limit": 3000,
-        "week": week, "week_limit": 21000,
-        "month": month, "month_limit": 90000,
+        "today": today, "today_limit": dl,
+        "week": week, "week_limit": wl,
+        "month": month, "month_limit": ml,
+        "plan": tier.capitalize(),
     }
 
 

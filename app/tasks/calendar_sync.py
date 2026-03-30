@@ -25,7 +25,12 @@ from app.ingestion.calendar_bridge import (
     resolve_attendees_to_contacts,
     create_meeting_interactions,
     link_upcoming_meeting_contacts,
+    infer_no_shows,
+    detect_rescheduled_events,
+    cross_match_gmail_calendar,
+    check_meeting_followups,
 )
+from app.ingestion.calendar_extractor import extract_agenda_from_events
 from app.ingestion.bridge_utils import get_org_domain
 from app.graph.relationship_calculator import recalculate_all_relationships
 
@@ -74,17 +79,26 @@ def run_calendar_sync(org_id: str):
         # Get org domain for internal/external detection
         org_domain = get_org_domain(db, org_id)
 
-        # List all calendars and filter to user-accessible ones
-        calendars = list_calendars(service)
-        primary_calendars = [
-            c for c in calendars
-            if c.get("selected", True) and c.get("accessRole") in ("owner", "writer", "reader")
-        ]
+        # Check if user has explicitly selected calendars
+        selected_rows = db.execute(
+            text("""
+                SELECT calendar_id FROM calendar_sync_state
+                WHERE org_id = :oid AND sync_enabled = TRUE
+                AND calendar_id != 'primary'
+            """),
+            {"oid": org_id},
+        ).fetchall()
 
-        logger.info(f"Calendar sync org={org_id}: found {len(primary_calendars)} calendars")
+        if selected_rows:
+            # User has selected specific calendars — sync only those
+            calendar_ids = [r.calendar_id for r in selected_rows]
+            logger.info(f"Calendar sync org={org_id}: syncing {len(calendar_ids)} user-selected calendars")
+        else:
+            # No explicit selection — default to primary calendar only
+            calendar_ids = ["primary"]
+            logger.info(f"Calendar sync org={org_id}: no calendars selected, defaulting to primary")
 
-        for calendar in primary_calendars:
-            calendar_id = calendar["id"]
+        for calendar_id in calendar_ids:
             _sync_calendar(db, service, org_id, calendar_id, org_domain)
 
         # ── Phase 2: Bridge calendar data into relationship graph ──
@@ -100,14 +114,86 @@ def run_calendar_sync(org_id: str):
         link_upcoming_meeting_contacts(db, org_id)
         db.commit()
 
+        # Phase 1C: Infer no-shows for past meetings
+        logger.info(f"Calendar bridge: inferring no-shows for org={org_id}")
+        no_shows = infer_no_shows(db, org_id)
+        db.commit()
+
+        # Phase 1D: Detect rescheduled events
+        logger.info(f"Calendar bridge: detecting rescheduled events for org={org_id}")
+        rescheduled = detect_rescheduled_events(db, org_id)
+        db.commit()
+
+        # Phase 2B: Cross-match emails ±7 days of meetings
+        logger.info(f"Calendar bridge: cross-matching Gmail for org={org_id}")
+        cross_match_gmail_calendar(db, org_id)
+        db.commit()
+
+        # Phase 3A: Check for missing follow-ups (72h post-meeting)
+        logger.info(f"Calendar bridge: checking meeting follow-ups for org={org_id}")
+        check_meeting_followups(db, org_id)
+        db.commit()
+
+        # Phase 4: LLM agenda extraction for events with descriptions >50 chars
+        try:
+            logger.info(f"Calendar bridge: extracting agendas for org={org_id}")
+            extracted = extract_agenda_from_events(db, org_id)
+            if extracted > 0:
+                logger.info(f"Calendar bridge: extracted agendas from {extracted} events")
+        except Exception as e:
+            logger.warning(f"Calendar bridge: agenda extraction failed (non-critical): {e}")
+
         # Recalculate relationship graph with new calendar signals
-        if interactions_created > 0:
-            logger.info(f"Calendar bridge: recalculating relationships for org={org_id}")
+        # Also recalculate any contacts stuck with NULL or 'unknown' stage (from previous syncs)
+        stageless_count = db.execute(
+            text("""
+                SELECT COUNT(*) FROM contacts
+                WHERE org_id = :oid
+                AND (relationship_stage IS NULL OR relationship_stage = 'unknown' OR relationship_stage = 'COLD')
+                AND EXISTS (SELECT 1 FROM interactions WHERE contact_id = contacts.id)
+            """),
+            {"oid": org_id},
+        ).scalar() or 0
+
+        if interactions_created > 0 or stageless_count > 0:
+            logger.info(f"Calendar bridge: recalculating relationships for org={org_id} (new={interactions_created}, stageless={stageless_count})")
             try:
                 updated = recalculate_all_relationships(db, org_id)
                 logger.info(f"Calendar bridge: updated {updated} contacts")
             except Exception as e:
                 logger.error(f"Calendar bridge: relationship recalc failed: {e}")
+
+        # Phase 3B: Pre-compute context bundles for upcoming meetings (48h window)
+        try:
+            upcoming = db.execute(
+                text("""
+                    SELECT um.id, um.primary_contact_id
+                    FROM upcoming_meetings um
+                    WHERE um.org_id = :oid
+                    AND um.status = 'scheduled'
+                    AND um.prep_context_generated = FALSE
+                    AND um.start_time BETWEEN NOW() AND NOW() + INTERVAL '48 hours'
+                    AND um.primary_contact_id IS NOT NULL
+                """),
+                {"oid": org_id},
+            ).fetchall()
+
+            for row in upcoming:
+                try:
+                    from app.context.bundle_builder import build_context_bundle
+                    bundle = build_context_bundle(db, org_id, "", None)
+                    if bundle and not bundle.get("error"):
+                        db.execute(
+                            text("UPDATE upcoming_meetings SET prep_context_generated = TRUE, prep_context_at = NOW() WHERE id = :mid"),
+                            {"mid": row.id},
+                        )
+                except Exception:
+                    pass  # Non-critical — skip silently
+            db.commit()
+            if upcoming:
+                logger.info(f"Calendar bridge: pre-computed context for {len(upcoming)} upcoming meetings")
+        except Exception as e:
+            logger.warning(f"Calendar bridge: meeting prep context failed (non-critical): {e}")
 
     except Exception as e:
         logger.error(f"Calendar sync failed for org {org_id}: {e}")

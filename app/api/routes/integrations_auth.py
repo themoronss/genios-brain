@@ -708,11 +708,35 @@ def get_integrations_status(org_id: str):
             {"oid": org_id},
         ).fetchall()
         if gmail_rows:
+            # Fetch Gmail-specific stats
+            gmail_stats = db.execute(
+                text("""
+                    SELECT
+                        COUNT(*) AS total_emails,
+                        COUNT(DISTINCT contact_id) AS contacts_linked,
+                        COUNT(*) FILTER (WHERE direction = 'inbound') AS received,
+                        COUNT(*) FILTER (WHERE direction = 'outbound') AS sent
+                    FROM interactions
+                    WHERE org_id = :oid AND (source IS NULL OR source = 'gmail')
+                """),
+                {"oid": org_id},
+            ).fetchone()
+            gmail_commitments = db.execute(
+                text("SELECT COUNT(*) FROM commitments WHERE org_id = :oid"),
+                {"oid": org_id},
+            ).scalar() or 0
             status["gmail"] = {
                 "connected": True,
                 "syncStatus": gmail_rows[0].sync_status or "idle",
                 "lastSyncAt": gmail_rows[0].last_synced_at.isoformat() if gmail_rows[0].last_synced_at else None,
-                "metadata": {"accounts": [r.account_email for r in gmail_rows]},
+                "metadata": {
+                    "accounts": [r.account_email for r in gmail_rows],
+                    "totalEmails": gmail_stats.total_emails or 0,
+                    "contactsLinked": gmail_stats.contacts_linked or 0,
+                    "received": gmail_stats.received or 0,
+                    "sent": gmail_stats.sent or 0,
+                    "commitments": gmail_commitments,
+                },
             }
         else:
             status["gmail"] = {"connected": False}
@@ -944,6 +968,102 @@ def disconnect_tool(
             db.execute(text(sql), {"oid": org_id})
         db.commit()
         return {"disconnected": True, "tool": tool, "data_wiped": wipe_data}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+# ─── Calendar Selector ────────────────────────────────────────────────────────
+
+
+@router.get("/api/org/{org_id}/calendars")
+def list_user_calendars(org_id: str):
+    """
+    List all Google Calendars available to the connected account.
+    Returns each calendar with its sync_enabled status.
+    """
+    from app.ingestion.calendar_connector import build_calendar_service, list_calendars
+
+    db = SessionLocal()
+    try:
+        token_row = db.execute(
+            text("""
+                SELECT access_token, refresh_token
+                FROM oauth_tokens
+                WHERE org_id = :oid AND account_email LIKE 'gcal:%'
+                LIMIT 1
+            """),
+            {"oid": org_id},
+        ).fetchone()
+
+        if not token_row:
+            raise HTTPException(status_code=404, detail="Google Calendar not connected")
+
+        service = build_calendar_service(token_row.access_token, token_row.refresh_token)
+        calendars = list_calendars(service)
+
+        # Get current sync selections from DB
+        enabled_rows = db.execute(
+            text("SELECT calendar_id, sync_enabled FROM calendar_sync_state WHERE org_id = :oid"),
+            {"oid": org_id},
+        ).fetchall()
+        enabled_map = {r.calendar_id: r.sync_enabled for r in enabled_rows}
+
+        result = []
+        for cal in calendars:
+            if cal.get("accessRole") not in ("owner", "writer", "reader"):
+                continue
+            cal_id = cal["id"]
+            result.append({
+                "id": cal_id,
+                "name": cal.get("summary", cal_id),
+                "primary": cal.get("primary", False),
+                "accessRole": cal.get("accessRole"),
+                "sync_enabled": enabled_map.get(cal_id, cal_id == "primary"),
+            })
+
+        return {"calendars": result}
+    finally:
+        db.close()
+
+
+@router.put("/api/org/{org_id}/calendars")
+async def update_calendar_selection(org_id: str, request: Request):
+    """
+    Save which calendars the user wants to sync.
+    Body: { "calendars": [{"id": "cal_id", "sync_enabled": true/false}] }
+    """
+    body = await request.json()
+    selections = body.get("calendars", [])
+
+    if not selections:
+        raise HTTPException(status_code=400, detail="No calendars provided")
+
+    db = SessionLocal()
+    try:
+        for sel in selections:
+            cal_id = sel.get("id")
+            enabled = sel.get("sync_enabled", False)
+            cal_name = sel.get("name", "")
+            if not cal_id:
+                continue
+
+            db.execute(
+                text("""
+                    INSERT INTO calendar_sync_state (org_id, calendar_id, sync_enabled, calendar_name)
+                    VALUES (:oid, :cal_id, :enabled, :name)
+                    ON CONFLICT (org_id, calendar_id) DO UPDATE SET
+                        sync_enabled = EXCLUDED.sync_enabled,
+                        calendar_name = COALESCE(EXCLUDED.calendar_name, calendar_sync_state.calendar_name),
+                        updated_at = NOW()
+                """),
+                {"oid": org_id, "cal_id": cal_id, "enabled": enabled, "name": cal_name},
+            )
+
+        db.commit()
+        return {"updated": True, "count": len(selections)}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

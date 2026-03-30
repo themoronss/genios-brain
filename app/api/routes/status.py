@@ -220,17 +220,34 @@ def get_graph_data(
                     "link_type": "primary",
                 })
 
-    # ── Link 2: Contact ↔ Contact cross-edges (CC many-to-many) ───────────
+    # ── Link 2: Contact ↔ Contact cross-edges (CC + calendar co-attendees) ──
     cc_pairs = db.execute(
         text("""
-            SELECT i1.contact_id, i2.contact_id, COUNT(*)
-            FROM interactions i1
-            JOIN interactions i2
-                ON i1.gmail_message_id = i2.gmail_message_id
-                AND i1.contact_id < i2.contact_id
-            WHERE i1.org_id = :org_id AND i2.org_id = :org_id
-            GROUP BY i1.contact_id, i2.contact_id
-            HAVING COUNT(*) >= 1
+            SELECT contact_a, contact_b, SUM(cnt) as cnt FROM (
+                -- Email CC co-occurrence
+                SELECT i1.contact_id as contact_a, i2.contact_id as contact_b, COUNT(*) as cnt
+                FROM interactions i1
+                JOIN interactions i2
+                    ON i1.gmail_message_id = i2.gmail_message_id
+                    AND i1.contact_id < i2.contact_id
+                WHERE i1.org_id = :org_id AND i2.org_id = :org_id
+                    AND i1.gmail_message_id IS NOT NULL
+                GROUP BY i1.contact_id, i2.contact_id
+
+                UNION ALL
+
+                -- Calendar co-attendee edges
+                SELECT i1.contact_id as contact_a, i2.contact_id as contact_b, COUNT(*) as cnt
+                FROM interactions i1
+                JOIN interactions i2
+                    ON i1.calendar_event_id = i2.calendar_event_id
+                    AND i1.contact_id < i2.contact_id
+                WHERE i1.org_id = :org_id AND i2.org_id = :org_id
+                    AND i1.calendar_event_id IS NOT NULL
+                GROUP BY i1.contact_id, i2.contact_id
+            ) combined
+            GROUP BY contact_a, contact_b
+            HAVING SUM(cnt) >= 1
         """),
         {"org_id": org_id},
     ).fetchall()
@@ -245,8 +262,8 @@ def get_graph_data(
                 links.append({
                     "source": source,
                     "target": target,
-                    "strength": min(pair[2] / 5.0, 1.0),
-                    "interaction_count": pair[2],
+                    "strength": min(float(pair[2]) / 5.0, 1.0),
+                    "interaction_count": int(pair[2]),
                     "sentiment_trend": None,
                     "is_bidirectional": True,
                     "link_type": "cc_shared",
@@ -384,6 +401,12 @@ def get_graph_stats(db: Session = Depends(get_db), org_id: str = Depends(verify_
     }
 
 
+PLAN_LIMITS = {
+    "hustler": 3000,
+    "startup": 10000,
+    "enterprise": 999999,
+}
+
 @router.get("/dashboard/metrics")
 def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
     """Stats bar data for dashboard."""
@@ -393,20 +416,46 @@ def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
                 (SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown') as contacts_count,
                 (SELECT COUNT(*) FROM interactions WHERE org_id = :org_id) as interactions_count,
                 (SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND relationship_stage IN ('ACTIVE', 'WARM') AND last_interaction_at >= NOW() - INTERVAL '30 days') as active_relationships,
-                (SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id) as context_calls
+                (SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id AND (source = 'api' OR source IS NULL)) as api_calls
         """),
         {"org_id": org_id}
     ).fetchone()
 
     org_data = db.execute(
-        text("SELECT aer, graph_quality_score FROM orgs WHERE id = :org_id"),
+        text("SELECT aer, graph_quality_score, COALESCE(subscription_tier, 'hustler'), COALESCE(time_saved_hours, 0) FROM orgs WHERE id = :org_id"),
         {"org_id": org_id}
     ).fetchone()
 
-    context_today = db.execute(
-        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id AND called_at >= CURRENT_DATE"),
+    tier = org_data[2] if org_data else "hustler"
+    daily_limit = PLAN_LIMITS.get(tier, 3000)
+
+    # Count only external API calls for quota (exclude dashboard clicks)
+    api_calls_today = db.execute(
+        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id AND called_at >= CURRENT_DATE AND (source = 'api' OR source IS NULL)"),
         {"org_id": org_id}
     ).scalar() or 0
+
+    internal_calls_today = db.execute(
+        text("SELECT COUNT(*) FROM context_calls WHERE org_id = :org_id AND called_at >= CURRENT_DATE AND source = 'dashboard'"),
+        {"org_id": org_id}
+    ).scalar() or 0
+
+    # Trend data from daily snapshots (last 14 days)
+    trends = db.execute(
+        text("""
+            SELECT snapshot_date, brain_health, aer, time_saved_hours, context_calls_count
+            FROM daily_snapshots
+            WHERE org_id = :org_id
+            ORDER BY snapshot_date DESC
+            LIMIT 14
+        """),
+        {"org_id": org_id}
+    ).fetchall()
+
+    trend_brain = [float(r[1] or 0) for r in reversed(trends)]
+    trend_aer = [float(r[2] or 0) for r in reversed(trends)]
+    trend_time = [float(r[3] or 0) for r in reversed(trends)]
+    trend_calls = [int(r[4] or 0) for r in reversed(trends)]
 
     return {
         "contacts_count": stats[0] or 0,
@@ -415,10 +464,16 @@ def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
         "context_calls_count": stats[3] or 0,
         "aer": float(org_data[0] or 0) if org_data else 0,
         "graph_quality_score": float(org_data[1] or 0) if org_data else 0,
-        "context_calls_today": context_today,
-        "context_calls_limit": 3000,
-        "has_agent_calls": context_today > 0,
-        "plan": "Hustler",
+        "time_saved_hours": float(org_data[3]) if org_data else 0,
+        "context_calls_today": api_calls_today,
+        "internal_calls_today": internal_calls_today,
+        "context_calls_limit": daily_limit,
+        "has_agent_calls": api_calls_today > 0,
+        "plan": tier.capitalize(),
+        "brain_trend": trend_brain,
+        "aer_trend": trend_aer,
+        "time_trend": trend_time,
+        "calls_trend": trend_calls,
     }
 
 

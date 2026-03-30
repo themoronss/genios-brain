@@ -115,17 +115,21 @@ def parse_due_signal(
         "dec": 12,
     }
 
+    # Check if an explicit year is mentioned (e.g. "March 2026", "11th March 2026")
+    explicit_year_match = re.search(r"\b(20\d{2})\b", signal)
+    explicit_year = int(explicit_year_match.group(1)) if explicit_year_match else None
+
     for month_name, month_num in month_names.items():
-        # "March 20", "March 20th"
-        m = re.search(rf"{month_name}\s+(\d{{1,2}})(?:st|nd|rd|th)?", signal)
+        # "March 20", "March 20th", "March 20, 2026"
+        m = re.search(rf"{month_name}\s+(\d{{1,2}})(?:st|nd|rd|th)?(?!\d)", signal)
         if m:
             day = int(m.group(1))
-            year = ref.year
+            year = explicit_year or ref.year
             try:
                 dt = datetime(year, month_num, day, 23, 59, tzinfo=timezone.utc)
-                # If date is in the past, move to next year
-                if dt < ref:
-                    dt = dt.replace(year=year + 1)
+                # Only roll forward if no explicit year was given
+                if not explicit_year and dt < ref:
+                    dt = dt.replace(year=ref.year + 1)
                 return dt
             except ValueError:
                 pass
@@ -134,11 +138,11 @@ def parse_due_signal(
         m = re.search(rf"(\d{{1,2}})(?:st|nd|rd|th)?(?:\s+of)?\s+{month_name}", signal)
         if m:
             day = int(m.group(1))
-            year = ref.year
+            year = explicit_year or ref.year
             try:
                 dt = datetime(year, month_num, day, 23, 59, tzinfo=timezone.utc)
-                if dt < ref:
-                    dt = dt.replace(year=year + 1)
+                if not explicit_year and dt < ref:
+                    dt = dt.replace(year=ref.year + 1)
                 return dt
             except ValueError:
                 pass
@@ -408,7 +412,8 @@ def upsert_contact(
             company,
             company_domain,
             entity_type,
-            category_confidence
+            category_confidence,
+            relationship_stage
         )
         VALUES (
             :id,
@@ -418,7 +423,8 @@ def upsert_contact(
             :company,
             :domain,
             :entity_type,
-            :category_confidence
+            :category_confidence,
+            'COLD'
         )
         ON CONFLICT (org_id, email)
         DO UPDATE SET
@@ -483,6 +489,8 @@ def create_interaction(
     mentioned_people=None,
     what_works=None,
     what_to_avoid=None,
+    has_attachment=False,
+    unanswered_followup_count=0,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
@@ -536,7 +544,9 @@ def create_interaction(
             account_email,
             source,
             mentioned_people,
-            comm_style_signals
+            comm_style_signals,
+            has_attachment,
+            unanswered_followup_count
         )
         VALUES (
             :id,
@@ -557,7 +567,9 @@ def create_interaction(
             :account_email,
             :source,
             :mentioned_people,
-            :comm_style_signals
+            :comm_style_signals,
+            :has_attachment,
+            :unanswered_followup_count
         )
         ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
@@ -569,7 +581,9 @@ def create_interaction(
             topics = EXCLUDED.topics,
             account_email = EXCLUDED.account_email,
             mentioned_people = EXCLUDED.mentioned_people,
-            comm_style_signals = EXCLUDED.comm_style_signals
+            comm_style_signals = EXCLUDED.comm_style_signals,
+            has_attachment = EXCLUDED.has_attachment,
+            unanswered_followup_count = EXCLUDED.unanswered_followup_count
         """
         ),
         {
@@ -592,6 +606,8 @@ def create_interaction(
             "source": "gmail",
             "mentioned_people": mentioned_people if mentioned_people else None,
             "comm_style_signals": comm_style_signals,
+            "has_attachment": has_attachment,
+            "unanswered_followup_count": unanswered_followup_count,
         },
     )
 

@@ -11,7 +11,7 @@ from app.ingestion.gmail_connector import (
     get_user_email,
 )
 
-from app.ingestion.email_parser import parse_headers, extract_email_body
+from app.ingestion.email_parser import parse_headers, extract_email_body, detect_attachments
 from app.ingestion.graph_builder import (
     upsert_contact,
     create_interaction,
@@ -501,6 +501,7 @@ def _sync_single_account(
             thread_id = msg.get("threadId", m["id"])
             parsed = parse_headers(payload)
             body_text = extract_email_body(payload)
+            attachment_info = detect_attachments(payload)
 
             from_email = parsed["from_email"]
             to_email = parsed["to_email"]
@@ -700,6 +701,16 @@ def _sync_single_account(
                 email_body=body_text or "",
             )
 
+            # Count consecutive outbound messages in this thread with no inbound reply
+            thread_msgs = thread_processed.get(thread_id, [])
+            followup_count = 0
+            if direction == "outbound":
+                for prev in reversed(thread_msgs):
+                    if prev.get("direction") == "outbound":
+                        followup_count += 1
+                    else:
+                        break  # Found an inbound reply — stop counting
+
             # Create the primary interaction row with signal_score
             create_interaction(
                 db,
@@ -722,6 +733,8 @@ def _sync_single_account(
                 mentioned_people=intelligence.get("mentioned_people", []),
                 what_works=intelligence.get("what_works"),
                 what_to_avoid=intelligence.get("what_to_avoid"),
+                has_attachment=attachment_info.get("has_attachment", False),
+                unanswered_followup_count=followup_count,
             )
 
             # ── Update 3: Create interaction rows for CC participants ──────────

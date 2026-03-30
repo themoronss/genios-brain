@@ -106,6 +106,15 @@ def run_nightly_refresh(org_id: str = None):
             db.rollback()
             print(f"⚠️ Bundle pre-computation skipped: {e}")
 
+        # ── Step 7: Record daily snapshot for trend sparklines ────────────
+        try:
+            for oid in org_ids:
+                _record_daily_snapshot(db, oid)
+            print(f"✓ Daily snapshots recorded for {len(org_ids)} org(s)")
+        except Exception as e:
+            db.rollback()
+            print(f"⚠️ Daily snapshot failed: {e}")
+
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Completed nightly refresh for {scope}")
         return updated_count
     except Exception as e:
@@ -113,6 +122,40 @@ def run_nightly_refresh(org_id: str = None):
         raise
     finally:
         db.close()
+
+
+def _record_daily_snapshot(db, org_id: str):
+    """Record daily metrics snapshot for trend sparkline charts."""
+    stats = db.execute(
+        text("""
+            SELECT
+                (SELECT COALESCE(graph_quality_score, 0) FROM orgs WHERE id = :oid),
+                (SELECT COALESCE(aer, 0) FROM orgs WHERE id = :oid),
+                (SELECT COALESCE(time_saved_hours, 0) FROM orgs WHERE id = :oid),
+                (SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE AND (source = 'api' OR source IS NULL))
+        """),
+        {"oid": org_id},
+    ).fetchone()
+
+    db.execute(
+        text("""
+            INSERT INTO daily_snapshots (org_id, snapshot_date, brain_health, aer, time_saved_hours, context_calls_count)
+            VALUES (:oid, CURRENT_DATE, :brain, :aer, :time, :calls)
+            ON CONFLICT (org_id, snapshot_date) DO UPDATE SET
+                brain_health = EXCLUDED.brain_health,
+                aer = EXCLUDED.aer,
+                time_saved_hours = EXCLUDED.time_saved_hours,
+                context_calls_count = EXCLUDED.context_calls_count
+        """),
+        {
+            "oid": org_id,
+            "brain": float(stats[0] or 0),
+            "aer": float(stats[1] or 0),
+            "time": float(stats[2] or 0),
+            "calls": stats[3] or 0,
+        },
+    )
+    db.commit()
 
 
 def _precompute_bundles(db, org_id: str = None):

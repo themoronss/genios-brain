@@ -127,6 +127,53 @@ def extract_from_parts(parts):
     return ""
 
 
+def detect_attachments(payload):
+    """
+    Detect if the email has meaningful file attachments.
+    Returns dict with has_attachment flag and attachment details.
+
+    Ignores inline images (signatures, logos) and focuses on
+    documents, decks, spreadsheets, and other shared files.
+    """
+    attachments = []
+    _collect_attachments(payload.get("parts", []), attachments)
+
+    # Filter out tiny inline images (likely signature/logo)
+    meaningful = [
+        a for a in attachments
+        if a["size"] > 5000  # >5KB = likely a real file, not an inline image
+        or not a["mime_type"].startswith("image/")
+    ]
+
+    return {
+        "has_attachment": len(meaningful) > 0,
+        "attachment_count": len(meaningful),
+        "attachment_types": list({a["mime_type"] for a in meaningful}),
+        "attachment_names": [a["filename"] for a in meaningful if a["filename"]],
+    }
+
+
+def _collect_attachments(parts, result):
+    """Recursively collect attachment metadata from message parts."""
+    for part in parts:
+        if "parts" in part:
+            _collect_attachments(part["parts"], result)
+            continue
+
+        filename = part.get("filename", "")
+        body = part.get("body", {})
+        size = body.get("size", 0)
+        mime_type = part.get("mimeType", "")
+
+        # A part is an attachment if it has a filename or an attachmentId
+        if filename or body.get("attachmentId"):
+            result.append({
+                "filename": filename,
+                "mime_type": mime_type,
+                "size": size,
+            })
+
+
 def decode_base64(data):
     """Decode base64 URL-safe encoded data."""
     try:

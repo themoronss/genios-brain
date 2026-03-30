@@ -42,16 +42,33 @@ def build_networkx_graph(db, org_id: str) -> nx.Graph:
     for c in contacts:
         G.add_node(str(c[0]), name=c[1], email=c[2])
 
-    # Get interaction-based edges (contacts that share email threads via CC)
+    # Get interaction-based edges (email CC co-occurrence + calendar co-attendees)
     edges = db.execute(
         text("""
-            SELECT i1.contact_id, i2.contact_id, COUNT(*) as weight
-            FROM interactions i1
-            JOIN interactions i2
-                ON i1.gmail_message_id = i2.gmail_message_id
-                AND i1.contact_id < i2.contact_id
-            WHERE i1.org_id = :org_id AND i2.org_id = :org_id
-            GROUP BY i1.contact_id, i2.contact_id
+            SELECT contact_a, contact_b, SUM(weight) as weight FROM (
+                -- Email CC co-occurrence
+                SELECT i1.contact_id as contact_a, i2.contact_id as contact_b, COUNT(*) as weight
+                FROM interactions i1
+                JOIN interactions i2
+                    ON i1.gmail_message_id = i2.gmail_message_id
+                    AND i1.contact_id < i2.contact_id
+                WHERE i1.org_id = :org_id AND i2.org_id = :org_id
+                    AND i1.gmail_message_id IS NOT NULL
+                GROUP BY i1.contact_id, i2.contact_id
+
+                UNION ALL
+
+                -- Calendar co-attendee edges
+                SELECT i1.contact_id as contact_a, i2.contact_id as contact_b, COUNT(*) as weight
+                FROM interactions i1
+                JOIN interactions i2
+                    ON i1.calendar_event_id = i2.calendar_event_id
+                    AND i1.contact_id < i2.contact_id
+                WHERE i1.org_id = :org_id AND i2.org_id = :org_id
+                    AND i1.calendar_event_id IS NOT NULL
+                GROUP BY i1.contact_id, i2.contact_id
+            ) combined
+            GROUP BY contact_a, contact_b
         """),
         {"org_id": org_id}
     ).fetchall()

@@ -168,9 +168,9 @@ def classify_event(event, org_domain=None):
     if event.get("recurrence") and not event.get("recurringEventId"):
         return None
 
-    # DROP: cancelled events that are not part of a series we track
-    if event.get("status") == "cancelled":
-        return None
+    # KEEP cancelled events — they produce a -3.0 cooling signal in the bridge.
+    # Mark them so downstream can apply the right edge weight.
+    is_cancelled = event.get("status") == "cancelled"
 
     attendees = event.get("attendees", [])
 
@@ -212,6 +212,7 @@ def classify_event(event, org_domain=None):
         "meeting_type": meeting_type,
         "is_recurring": is_recurring,
         "attendee_count": attendee_count,
+        "is_cancelled": is_cancelled,
         "is_external": any(
             not a.get("email", "").endswith(f"@{org_domain or ''}")
             for a in attendees

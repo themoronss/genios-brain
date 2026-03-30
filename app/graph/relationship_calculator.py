@@ -323,6 +323,71 @@ def calculate_response_metrics(db, contact_id: str) -> Dict:
     }
 
 
+def calculate_ghosting_score(db, contact_id: str) -> float:
+    """
+    Calculate a ghosting score (0.0-1.0) that measures how unresponsive a contact is.
+
+    Formula:
+      ghosting = (unanswered_emails / total_outbound) * 0.4
+               + (declined_meetings / total_meetings) * 0.3
+               + (days_since_last_inbound / 60) * 0.3
+
+    Returns 0.0 (fully responsive) to 1.0 (completely unresponsive).
+    """
+    result = db.execute(
+        text("""
+            SELECT
+                COUNT(*) FILTER (WHERE direction = 'outbound') AS total_outbound,
+                COUNT(*) FILTER (WHERE direction = 'inbound') AS total_inbound,
+                COUNT(*) FILTER (WHERE source = 'calendar') AS total_meetings,
+                COUNT(*) FILTER (WHERE source = 'calendar' AND rsvp_status = 'declined') AS declined_meetings,
+                COUNT(*) FILTER (WHERE source = 'calendar' AND sentiment < 0) AS negative_meetings,
+                COUNT(*) FILTER (WHERE direction = 'outbound' AND has_attachment = TRUE
+                    AND NOT EXISTS (
+                        SELECT 1 FROM interactions i2
+                        WHERE i2.contact_id = interactions.contact_id
+                        AND i2.direction = 'inbound'
+                        AND i2.interaction_at > interactions.interaction_at
+                        AND i2.interaction_at < interactions.interaction_at + INTERVAL '7 days'
+                    )
+                ) AS unanswered_with_attachment,
+                EXTRACT(DAY FROM (NOW() - MAX(interaction_at) FILTER (WHERE direction = 'inbound'))) AS days_since_inbound
+            FROM interactions
+            WHERE contact_id = :cid
+        """),
+        {"cid": contact_id}
+    ).fetchone()
+
+    if not result or not result[0]:
+        return 0.0
+
+    total_outbound = result[0] or 0
+    total_inbound = result[1] or 0
+    total_meetings = result[2] or 0
+    declined_meetings = result[3] + result[4]  # declined + negative-sentiment
+    days_since_inbound = float(result[6]) if result[6] else 60.0
+
+    # Unanswered ratio: outbound emails that never got a reply
+    unanswered_ratio = 0.0
+    if total_outbound > 0:
+        unanswered_ratio = max(0.0, 1.0 - (total_inbound / total_outbound))
+
+    # Meeting decline ratio
+    decline_ratio = 0.0
+    if total_meetings > 0:
+        decline_ratio = min(1.0, declined_meetings / total_meetings)
+
+    # Recency of last inbound (capped at 60 days)
+    recency_score = min(1.0, days_since_inbound / 60.0)
+
+    ghosting = (
+        unanswered_ratio * 0.4 +
+        decline_ratio * 0.3 +
+        recency_score * 0.3
+    )
+    return round(min(1.0, max(0.0, ghosting)), 3)
+
+
 def calculate_composite_score(
     freshness: float, confidence: float, consistency: float,
     signal: float, authority: float
@@ -585,6 +650,49 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
     # Calculate relationship stage (updated with bidirectionality)
     stage = calculate_relationship_stage(last_interaction, sentiment_ewma, is_bidirectional=is_bidirectional)
 
+    # Calendar-specific stage overrides (PDF spec Part 4)
+    # Override 1: Recurring weekly 1:1 → always ACTIVE regardless of email recency
+    recurring_1on1 = db.execute(
+        text("""
+            SELECT COUNT(*) FROM interactions
+            WHERE contact_id = :cid AND source = 'calendar'
+            AND is_recurring = TRUE
+            AND interaction_at > NOW() - INTERVAL '30 days'
+            AND edge_weight_multiplier = 12.0
+        """),
+        {"cid": contact_id},
+    ).scalar() or 0
+    if recurring_1on1 >= 2:
+        stage = "ACTIVE"
+
+    # Override 2: 2+ cancellations/declines in 30d → AT_RISK immediately
+    cancel_count = db.execute(
+        text("""
+            SELECT COUNT(*) FROM interactions
+            WHERE contact_id = :cid AND source = 'calendar'
+            AND interaction_at > NOW() - INTERVAL '30 days'
+            AND (rsvp_status = 'declined' OR sentiment < 0)
+        """),
+        {"cid": contact_id},
+    ).scalar() or 0
+    if cancel_count >= 2 and sentiment_ewma < 0.1:
+        stage = "AT_RISK"
+
+    # Override 3: Meeting booked but not yet held → WARMING (forward-looking)
+    upcoming = db.execute(
+        text("""
+            SELECT COUNT(*) FROM upcoming_meetings um
+            JOIN calendar_event_attendees cea ON cea.event_id = um.event_id
+            WHERE um.org_id = (SELECT org_id FROM contacts WHERE id = :cid)
+            AND cea.person_id = :cid
+            AND um.status = 'scheduled'
+            AND um.start_time > NOW()
+        """),
+        {"cid": contact_id},
+    ).scalar() or 0
+    if upcoming > 0 and stage == "COLD":
+        stage = "WARM"
+
     # Calculate freshness score
     freshness_score = compute_freshness(days_since, stage)
 
@@ -623,6 +731,9 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
     composite_score = calculate_composite_score(
         freshness_score, confidence, consistency_score, avg_signal_score, authority_score
     )
+
+    # Calculate ghosting score
+    ghosting_score = calculate_ghosting_score(db, contact_id)
 
     # Store sentiment history (keep last 10)
     sentiment_history = json.dumps(
@@ -731,9 +842,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 stage_changed_at = CASE WHEN :stage_changed THEN NOW() ELSE stage_changed_at END,
                 previous_stage = CASE WHEN :stage_changed THEN :previous_stage ELSE previous_stage END,
                 metadata = jsonb_set(
-                    COALESCE(metadata, '{}'::jsonb),
-                    '{last_recalc_at}',
-                    to_jsonb(NOW())
+                    jsonb_set(
+                        COALESCE(metadata, '{}'::jsonb),
+                        '{last_recalc_at}',
+                        to_jsonb(NOW())
+                    ),
+                    '{ghosting_score}',
+                    to_jsonb(:ghosting_score)
                 )
             WHERE id = :contact_id
         """
@@ -766,6 +881,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
             "summary_generated_at": summary_generated_at,
             "stage_changed": stage_changed,
             "previous_stage": previous_stage,
+            "ghosting_score": ghosting_score,
         },
     )
     db.commit()

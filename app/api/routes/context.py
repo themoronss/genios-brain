@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, root_validator, validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -21,6 +21,7 @@ router = APIRouter()
 class ContextRequest(BaseModel):
     entity: str
     situation: str = None
+    agent_id: str = None  # Optional — identifies which agent is calling
 
     @validator("entity")
     def validate_entity(cls, v):
@@ -59,16 +60,54 @@ def get_cache_key(org_id: str, entity_name: str, situation: str = None) -> str:
     return f"context:{hashlib.md5(key_data.encode()).hexdigest()}"
 
 
+PLAN_LIMITS = {
+    "hustler":    {"daily": 3000,  "weekly": 21000,  "monthly": 90000},
+    "startup":    {"daily": 10000, "weekly": 70000,  "monthly": 300000},
+    "enterprise": {"daily": None,  "weekly": None,   "monthly": None},
+}
+
+
+def check_rate_limit(db: Session, org_id: str) -> dict:
+    """Check if org has exceeded its daily API call limit. Only counts source='api' calls."""
+    tier = db.execute(
+        text("SELECT COALESCE(subscription_tier, 'hustler') FROM orgs WHERE id = :org_id"),
+        {"org_id": org_id},
+    ).scalar() or "hustler"
+
+    limits = PLAN_LIMITS.get(tier, PLAN_LIMITS["hustler"])
+    if limits["daily"] is None:
+        return {"allowed": True, "tier": tier, "used": 0, "limit": None}
+
+    used_today = db.execute(
+        text("""
+            SELECT COUNT(*) FROM context_calls
+            WHERE org_id = :org_id AND called_at >= CURRENT_DATE
+            AND (source = 'api' OR source IS NULL)
+        """),
+        {"org_id": org_id},
+    ).scalar() or 0
+
+    return {
+        "allowed": used_today < limits["daily"],
+        "tier": tier,
+        "used": used_today,
+        "limit": limits["daily"],
+    }
+
+
 def log_context_call(
     db: Session,
     org_id: str,
     entity_name: str,
     context_bundle: dict,
     cache_hit: bool = False,
+    source: str = "api",
+    agent_id: str = None,
 ):
     """
-    Fix C: Log every context API call to context_calls table.
+    Log every context API call to context_calls table.
     Non-blocking — failures are silently swallowed so they never affect the response.
+    source: 'api' (external agent) or 'dashboard' (internal UI click)
     """
     try:
         entity = context_bundle.get("entity") or {}
@@ -77,9 +116,10 @@ def log_context_call(
                 """
                 INSERT INTO context_calls
                     (org_id, entity_name, relationship_stage, action_recommendation,
-                     confidence, cache_hit, called_at)
+                     confidence, cache_hit, source, agent_id, called_at)
                 VALUES
-                    (:org_id, :entity_name, :stage, :action, :confidence, :cache_hit, NOW())
+                    (:org_id, :entity_name, :stage, :action, :confidence, :cache_hit,
+                     :source, :agent_id, NOW())
                 """
             ),
             {
@@ -89,6 +129,8 @@ def log_context_call(
                 "action": context_bundle.get("action_recommendation"),
                 "confidence": context_bundle.get("confidence"),
                 "cache_hit": cache_hit,
+                "source": source,
+                "agent_id": agent_id,
             },
         )
         db.commit()
@@ -105,16 +147,19 @@ def context_error(code: str, message: str, status_code: int = 400):
 
 
 @router.post("/v1/context")
-def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: str = Depends(verify_api_key)):
+def get_context(
+    request: ContextRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+    x_genios_source: str = Header(None, alias="X-GeniOS-Source"),
+):
     """
     Get context bundle for an entity.
 
-    Week 6: Added validation, better error handling, and logging.
-
     Request:
-        - org_id: Organization UUID
-        - entity_name: Person/company name
-        - situation: Optional context (for future use)
+        - entity: Person/company name
+        - situation: Optional context
+        - agent_id: Optional agent identifier
 
     Returns:
         - entity: Detailed entity information
@@ -123,8 +168,30 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
     """
     try:
         start_time = time.time()
+
+        # Determine call source: dashboard UI vs external agent
+        source = "dashboard" if x_genios_source == "dashboard" else "api"
+
+        # Rate limit only external API calls (dashboard calls are unlimited)
+        if source == "api":
+            rate_info = check_rate_limit(db, org_id)
+            if not rate_info["allowed"]:
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": {
+                            "code": "rate_limit_exceeded",
+                            "message": f"Daily limit of {rate_info['limit']} API calls exceeded",
+                            "plan": rate_info["tier"],
+                            "used": rate_info["used"],
+                            "limit": rate_info["limit"],
+                        }
+                    },
+                    headers={"Retry-After": "86400"},
+                )
+
         logger.info(
-            f"Context request for: {request.entity}, org: {org_id}"
+            f"Context request for: {request.entity}, org: {org_id}, source: {source}"
         )
 
         # Check cache first (60 second TTL as per MVP)
@@ -135,11 +202,12 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
             if cached:
                 logger.info(f"Cache hit for {request.entity}")
                 cached_bundle = json.loads(cached) if isinstance(cached, (str, bytes)) else {}
-                # Log cache hit (Fix C)
                 log_context_call(
                     db, org_id, request.entity,
                     cached_bundle,
                     cache_hit=True,
+                    source=source,
+                    agent_id=request.agent_id,
                 )
                 cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
                 cached_bundle["cache_hit"] = True
@@ -203,7 +271,8 @@ def get_context(request: ContextRequest, db: Session = Depends(get_db), org_id: 
         context_bundle["cache_hit"] = False
 
         # Log the call (Fix C)
-        log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False)
+        log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False,
+                         source=source, agent_id=request.agent_id)
 
         # Cache for 60 seconds
         try:
@@ -299,13 +368,22 @@ def report_context_outcome(
         elif outcome_type == "EDITED":
             aer_delta = 0.01
 
-        if aer_delta > 0:
+        # Compute time saved: EXECUTED ~5min, EDITED ~2min of human review eliminated
+        time_delta = 0.0
+        if outcome_type == "EXECUTED":
+            time_delta = 5.0 / 60.0
+        elif outcome_type == "EDITED":
+            time_delta = 2.0 / 60.0
+
+        if aer_delta > 0 or time_delta > 0:
             db.execute(
                 text("""
-                    UPDATE orgs SET aer = LEAST(1.0, COALESCE(aer, 0) + :delta)
+                    UPDATE orgs
+                    SET aer = LEAST(1.0, COALESCE(aer, 0) + :aer_delta),
+                        time_saved_hours = COALESCE(time_saved_hours, 0) + :time_delta
                     WHERE id = :org_id
                 """),
-                {"org_id": org_id, "delta": aer_delta},
+                {"org_id": org_id, "aer_delta": aer_delta, "time_delta": time_delta},
             )
 
         db.commit()
