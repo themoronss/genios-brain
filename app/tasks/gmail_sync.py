@@ -26,6 +26,7 @@ from app.ingestion.entity_extractor import (
 from app.ingestion.email_classifier import classify_email, parse_system_email
 from app.ingestion.bridge_utils import get_email_domain
 from app.graph.relationship_calculator import recalculate_all_relationships
+from app.config import PROCESSING_VERSION
 from datetime import datetime, timezone
 from collections import defaultdict
 
@@ -338,7 +339,7 @@ def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list
 # ── Main sync function ────────────────────────────────────────────────────────
 
 
-def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
+def run_gmail_sync(org_id, max_emails=100, account_email: str = None, force_reprocess: bool = False):
     """
     Sync Gmail emails for an organization.
     Thread-aware: groups messages by threadId and builds conversation context
@@ -353,11 +354,14 @@ def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
               for CC participants, making the graph truly many-to-many.
     Update 4: Accepts optional account_email to sync one specific connected Gmail
               account. If omitted, syncs all connected accounts for the org.
+    Update 5: force_reprocess=True skips the dedup check, allowing already-synced
+              emails to be re-extracted. ON CONFLICT handles idempotency.
 
     Args:
         org_id: Organization ID
         max_emails: Target number of valid emails to sync (default: 100)
         account_email: Specific Gmail account to sync. If None, syncs all accounts.
+        force_reprocess: If True, reprocess already-synced emails (skip dedup check).
     """
     db = SessionLocal()
 
@@ -405,6 +409,7 @@ def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
                 refresh_token=token_row[1],
                 account_identifier=token_row[2],
                 max_emails=max_emails,
+                force_reprocess=force_reprocess,
             )
 
     except Exception as e:
@@ -421,7 +426,8 @@ def run_gmail_sync(org_id, max_emails=100, account_email: str = None):
 
 
 def _sync_single_account(
-    db, org_id, access_token, refresh_token, account_identifier, max_emails
+    db, org_id, access_token, refresh_token, account_identifier, max_emails,
+    force_reprocess=False,
 ):
     """
     Internal: run the full sync pipeline for one Gmail account token.
@@ -448,28 +454,35 @@ def _sync_single_account(
         # ── Update 1: Collect exactly max_emails valid email IDs ──────────────
         valid_ids = collect_valid_email_ids(service, user_email, target=max_emails)
 
-        # Pre-filter: skip emails already in the DB
-        new_ids = []
-        for m in valid_ids:
-            existing = db.execute(
-                text(
+        # Pre-filter: skip emails already in the DB (unless force_reprocess)
+        if force_reprocess:
+            new_ids = valid_ids
+            print(
+                f"🔄 Force reprocess: processing all {len(new_ids)} emails "
+                f"(ON CONFLICT handles dedup)"
+            )
+        else:
+            new_ids = []
+            for m in valid_ids:
+                existing = db.execute(
+                    text(
+                        """
+                        SELECT id FROM interactions
+                        WHERE gmail_message_id = :gmail_id
+                        LIMIT 1
                     """
-                    SELECT id FROM interactions
-                    WHERE gmail_message_id = :gmail_id
-                    LIMIT 1
-                """
-                ),
-                {"gmail_id": m["id"]},
-            ).fetchone()
+                    ),
+                    {"gmail_id": m["id"]},
+                ).fetchone()
 
-            if not existing:
-                new_ids.append(m)
+                if not existing:
+                    new_ids.append(m)
 
-        skipped_existing = len(valid_ids) - len(new_ids)
-        print(
-            f"Skipping {skipped_existing} already synced emails. "
-            f"Processing {len(new_ids)} new emails."
-        )
+            skipped_existing = len(valid_ids) - len(new_ids)
+            print(
+                f"Skipping {skipped_existing} already synced emails. "
+                f"Processing {len(new_ids)} new emails."
+            )
 
         update_sync_progress(
             db, org_id, account_email=account_identifier, sync_total=len(new_ids)
@@ -654,6 +667,7 @@ def _sync_single_account(
                         reply_time_hours=None,
                         account_email=user_email,
                         signal_score=0.1,  # low signal — short email
+                        processed_version=PROCESSING_VERSION,
                     )
                 else:
                     update_relationship_stats_only(
@@ -735,6 +749,7 @@ def _sync_single_account(
                 what_to_avoid=intelligence.get("what_to_avoid"),
                 has_attachment=attachment_info.get("has_attachment", False),
                 unanswered_followup_count=followup_count,
+                processed_version=PROCESSING_VERSION,
             )
 
             # ── Update 3: Create interaction rows for CC participants ──────────
@@ -779,6 +794,7 @@ def _sync_single_account(
                         engagement_level=intelligence.get("engagement_level", "medium"),
                         reply_time_hours=None,
                         account_email=user_email,
+                        processed_version=PROCESSING_VERSION,
                     )
                     print(
                         f"  🔗 CC edge: {cc_email} ↔ gmail:{parsed_msg['gmail_id'][:8]}..."

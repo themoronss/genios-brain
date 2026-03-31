@@ -500,6 +500,7 @@ def create_interaction(
     what_to_avoid=None,
     has_attachment=False,
     unanswered_followup_count=0,
+    processed_version=1,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
@@ -555,7 +556,8 @@ def create_interaction(
             mentioned_people,
             comm_style_signals,
             has_attachment,
-            unanswered_followup_count
+            unanswered_followup_count,
+            processed_version
         )
         VALUES (
             :id,
@@ -578,7 +580,8 @@ def create_interaction(
             :mentioned_people,
             :comm_style_signals,
             :has_attachment,
-            :unanswered_followup_count
+            :unanswered_followup_count,
+            :processed_version
         )
         ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
@@ -592,7 +595,8 @@ def create_interaction(
             mentioned_people = EXCLUDED.mentioned_people,
             comm_style_signals = EXCLUDED.comm_style_signals,
             has_attachment = EXCLUDED.has_attachment,
-            unanswered_followup_count = EXCLUDED.unanswered_followup_count
+            unanswered_followup_count = EXCLUDED.unanswered_followup_count,
+            processed_version = EXCLUDED.processed_version
         """
         ),
         {
@@ -617,6 +621,7 @@ def create_interaction(
             "comm_style_signals": comm_style_signals,
             "has_attachment": has_attachment,
             "unanswered_followup_count": unanswered_followup_count,
+            "processed_version": processed_version,
         },
     )
 
@@ -868,6 +873,8 @@ def upsert_state_entity(db, org_id: str, parsed_state: dict):
     try:
         entity_type = parsed_state.get("entity_type", "OTHER")
         entity_id = parsed_state.get("entity_id")
+        if not entity_id:
+            return  # Skip — can't upsert without an entity_id
         status = parsed_state.get("status", "PENDING")
         reference_id = parsed_state.get("reference_id")
         amount = parsed_state.get("amount")

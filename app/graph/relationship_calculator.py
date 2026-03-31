@@ -840,6 +840,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 is_archived = :is_archived,
                 relationship_summary = COALESCE(:relationship_summary, relationship_summary),
                 summary_generated_at = COALESCE(:summary_generated_at, summary_generated_at),
+                last_recomputed_at = NOW(),
                 stage_changed_at = CASE WHEN :stage_changed THEN NOW() ELSE stage_changed_at END,
                 previous_stage = CASE WHEN :stage_changed THEN :previous_stage ELSE previous_stage END,
                 metadata = jsonb_set(

@@ -4,7 +4,10 @@ from sqlalchemy import text
 from app.api.deps import get_db
 from app.database import SessionLocal
 from app.tasks.gmail_sync import run_gmail_sync
+from app.tasks.reextract import run_recompute, run_reextract
+from app.config import PROCESSING_VERSION
 from datetime import datetime, timezone
+import json
 
 router = APIRouter()
 
@@ -351,4 +354,159 @@ def reset_org_data(org_id: str, db: Session = Depends(get_db)):
         db.rollback()
         from fastapi import HTTPException
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Recompute / Re-extract endpoints ────────────────────────────────────────
+
+
+def _get_recompute_meta(db, org_id: str) -> dict:
+    """Read recompute status — tries dedicated columns, falls back to idle defaults."""
+    try:
+        row = db.execute(
+            text("SELECT recompute_status FROM orgs WHERE id = :org_id"),
+            {"org_id": org_id},
+        ).fetchone()
+        if not row:
+            return {"exists": False}
+        return {"exists": True, "status": row[0] or "idle"}
+    except Exception:
+        db.rollback()
+        # Columns not migrated yet — check org exists, return idle
+        row = db.execute(
+            text("SELECT id FROM orgs WHERE id = :org_id"),
+            {"org_id": org_id},
+        ).fetchone()
+        if not row:
+            return {"exists": False}
+        return {"exists": True, "status": "idle"}
+
+
+def _set_recompute_meta(db, org_id: str, **kwargs):
+    """Write recompute status — tries dedicated columns, silently skips if not migrated."""
+    try:
+        set_parts = []
+        params = {"org_id": org_id}
+        for key, value in kwargs.items():
+            col = f"recompute_{key}" if not key.startswith("recompute_") else key
+            set_parts.append(f"{col} = :{col}")
+            params[col] = value
+        db.execute(text(f"UPDATE orgs SET {', '.join(set_parts)} WHERE id = :org_id"), params)
+        db.commit()
+    except Exception:
+        db.rollback()  # Columns don't exist yet — skip silently
+
+
+@router.post("/api/org/{org_id}/recompute")
+def trigger_recompute(
+    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+):
+    """
+    Tier 1: Rebuild all scores, stages, and relationship graph from existing data.
+    No LLM calls, no API calls — pure recalculation. Safe to run anytime.
+    """
+    meta = _get_recompute_meta(db, org_id)
+    if not meta["exists"]:
+        raise HTTPException(status_code=404, detail="Org not found")
+    if meta["status"] == "running":
+        raise HTTPException(status_code=429, detail="A recompute job is already running. Please wait.")
+
+    _set_recompute_meta(db, org_id, status="running")
+    background_tasks.add_task(run_recompute, org_id)
+
+    return {
+        "status": "recompute_started",
+        "tier": 1,
+        "message": "Rebuilding scores and relationship graph from existing data.",
+    }
+
+
+@router.post("/api/org/{org_id}/reextract")
+def trigger_reextract(
+    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+):
+    """
+    Tier 2: Re-fetch email bodies from Gmail, re-run LLM extraction on stale
+    interactions, then rebuild all scores. Uses API credits.
+    Only reprocesses interactions with processed_version < PROCESSING_VERSION.
+    """
+    meta = _get_recompute_meta(db, org_id)
+    if not meta["exists"]:
+        raise HTTPException(status_code=404, detail="Org not found")
+    if meta["status"] == "running":
+        raise HTTPException(status_code=429, detail="A recompute/reextract job is already running. Please wait.")
+
+    stale_count = db.execute(
+        text("""
+            SELECT COUNT(*) FROM interactions
+            WHERE org_id = :org_id AND source = 'gmail'
+              AND COALESCE(processed_version, 1) < :target
+        """),
+        {"org_id": org_id, "target": PROCESSING_VERSION},
+    ).scalar()
+
+    _set_recompute_meta(db, org_id, status="running", progress=json.dumps({"tier": 2, "stale_count": stale_count}))
+    background_tasks.add_task(run_reextract, org_id)
+
+    return {
+        "status": "reextract_started",
+        "tier": 2,
+        "stale_interactions": stale_count,
+        "target_version": PROCESSING_VERSION,
+        "message": f"Re-extracting {stale_count} interactions with LLM. This may take several minutes.",
+    }
+
+
+@router.get("/api/org/{org_id}/recompute/status")
+def get_recompute_status(org_id: str, db: Session = Depends(get_db)):
+    """Get current recompute/reextract job status."""
+    # Try dedicated columns first
+    try:
+        result = db.execute(
+            text("""
+                SELECT recompute_status, recompute_started_at,
+                       recompute_completed_at, recompute_error, recompute_progress
+                FROM orgs WHERE id = :org_id
+            """),
+            {"org_id": org_id},
+        ).fetchone()
+
+        if not result:
+            raise HTTPException(status_code=404, detail="Org not found")
+
+        progress = None
+        if result[4]:
+            try:
+                progress = json.loads(result[4]) if isinstance(result[4], str) else result[4]
+            except (json.JSONDecodeError, TypeError):
+                progress = None
+
+        return {
+            "status": result[0] or "idle",
+            "started_at": result[1].isoformat() if result[1] else None,
+            "completed_at": result[2].isoformat() if result[2] else None,
+            "error": result[3],
+            "progress": progress,
+            "current_processing_version": PROCESSING_VERSION,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        # Columns not migrated yet — return idle defaults
+        row = db.execute(
+            text("SELECT id FROM orgs WHERE id = :org_id"),
+            {"org_id": org_id},
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Org not found")
+
+        return {
+            "status": "idle",
+            "started_at": None,
+            "completed_at": None,
+            "error": None,
+            "progress": None,
+            "current_processing_version": PROCESSING_VERSION,
+        }
 

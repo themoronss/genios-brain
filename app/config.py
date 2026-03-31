@@ -34,3 +34,6 @@ HUBSPOT_REDIRECT_URI = os.getenv("HUBSPOT_REDIRECT_URI", "http://localhost:8000/
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 10))  # Default 10 for testing to avoid Groq rate limits
+
+# Bump this when extraction logic changes to trigger re-extraction of old interactions
+PROCESSING_VERSION = 2
