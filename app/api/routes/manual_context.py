@@ -8,10 +8,13 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
+from app.plan_enforcer import require_integration, require_operation, check_contact_limit
 from typing import Optional
 import logging
 import uuid
 import os
+
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,7 +36,8 @@ class ManualContextEntry(BaseModel):
 
 @router.post("/api/org/{org_id}/manual-context")
 def add_manual_context(org_id: str, entry: ManualContextEntry, db: Session = Depends(get_db)):
-    """Add a manual context entry — authority_weight=1.0, no decay."""
+    """Add a manual context entry — authority_weight=1.0, no decay. Hustler+ only."""
+    require_operation(db, org_id, "manual_context")
     try:
         # Find or create the contact
         contact = db.execute(
@@ -52,6 +56,16 @@ def add_manual_context(org_id: str, entry: ManualContextEntry, db: Session = Dep
         if contact:
             contact_id = str(contact[0])
         else:
+            limit_check = check_contact_limit(db, org_id)
+            if not limit_check["allowed"]:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "error": "CONTACT_LIMIT_REACHED",
+                        "message": limit_check["message"],
+                        "upgrade_required": True,
+                    },
+                )
             # Create new contact
             contact_id = str(uuid.uuid4())
             db.execute(
@@ -71,8 +85,8 @@ def add_manual_context(org_id: str, entry: ManualContextEntry, db: Session = Dep
         interaction_id = str(uuid.uuid4())
         db.execute(
             text("""
-                INSERT INTO interactions (id, org_id, contact_id, direction, subject, summary, sentiment, interaction_at, intent, weight_score, signal_score)
-                VALUES (:id, :org_id, :contact_id, 'outbound', :subject, :summary, 0.5, COALESCE(:date::timestamp, NOW()), :intent, 1.0, 0.8)
+                INSERT INTO interactions (id, org_id, contact_id, direction, subject, summary, sentiment, interaction_at, intent, source, interaction_type, weight_score, signal_score)
+                VALUES (:id, :org_id, :contact_id, 'outbound', :subject, :summary, 0.5, COALESCE(:date::timestamp, NOW()), :intent, 'manual', 'manual', 1.0, 0.8)
             """),
             {
                 "id": interaction_id,
@@ -102,7 +116,7 @@ def add_manual_context(org_id: str, entry: ManualContextEntry, db: Session = Dep
             db.execute(
                 text("""
                     INSERT INTO commitments (id, org_id, contact_id, commit_text, owner, status)
-                    VALUES (:id, :org_id, :contact_id, :text, 'user', 'open')
+                    VALUES (:id, :org_id, :contact_id, :text, 'user', 'OPEN')
                 """),
                 {
                     "id": str(uuid.uuid4()),
@@ -209,7 +223,8 @@ async def upload_context_file(
     tag: str = Form(default="other"),
     db: Session = Depends(get_db),
 ):
-    """Upload a document (PDF, DOCX, TXT, CSV) for context extraction."""
+    """Upload a document (PDF, DOCX, TXT, CSV) for context extraction. Startup only."""
+    require_integration(db, org_id, "documents")
     try:
         # Validate file type
         allowed_extensions = {".pdf", ".docx", ".txt", ".csv", ".doc"}
@@ -224,6 +239,8 @@ async def upload_context_file(
         file_id = str(uuid.uuid4())
         file_path = os.path.join(UPLOAD_DIR, f"{file_id}{file_ext}")
         content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File too large. Maximum upload size is 10 MB.")
         with open(file_path, "wb") as f:
             f.write(content)
 
@@ -458,5 +475,86 @@ def update_manual_context(org_id: str, entry_id: str, body: ManualContextUpdate,
         return {"updated": True}
     except Exception as e:
         logger.error(f"Update manual context error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Correct Context ───────────────────────────────────────────────────────
+
+_VALID_STAGES = {"ACTIVE", "WARM", "NEEDS_ATTENTION", "DORMANT", "COLD", "AT_RISK"}
+
+class ContextCorrection(BaseModel):
+    relationship_stage: Optional[str] = None
+    topics: Optional[list] = None
+    notes: Optional[str] = None
+
+@router.patch("/api/org/{org_id}/contacts/{contact_id}/correct")
+def correct_context(org_id: str, contact_id: str, body: ContextCorrection, db: Session = Depends(get_db)):
+    """Correct a contact's context fields — relationship stage, topics, notes. Hustler+ only."""
+    require_operation(db, org_id, "correct_context")
+    try:
+        if body.relationship_stage and body.relationship_stage.upper() not in _VALID_STAGES:
+            raise HTTPException(status_code=400, detail=f"Invalid stage. Valid values: {sorted(_VALID_STAGES)}")
+
+        sets = []
+        params: dict = {"id": contact_id, "org_id": org_id}
+        if body.relationship_stage is not None:
+            sets.append("relationship_stage = :stage")
+            params["stage"] = body.relationship_stage.upper()
+        if body.topics is not None:
+            sets.append("topics_aggregate = :topics")
+            params["topics"] = json.dumps(body.topics)
+        if body.notes is not None:
+            sets.append("context_notes = :notes")
+            params["notes"] = body.notes[:1000]
+        if not sets:
+            return {"updated": False}
+
+        result = db.execute(
+            text(f"UPDATE contacts SET {', '.join(sets)} WHERE id = :id AND org_id = :org_id"),
+            params,
+        )
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        db.commit()
+        return {"updated": True, "contact_id": contact_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Correct context error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Override Relationship Stage ───────────────────────────────────────────
+
+class StageOverride(BaseModel):
+    stage: str
+
+@router.patch("/api/org/{org_id}/contacts/{contact_id}/stage")
+def override_stage(org_id: str, contact_id: str, body: StageOverride, db: Session = Depends(get_db)):
+    """Manually override the auto-computed relationship stage for a contact. Hustler+ only."""
+    require_operation(db, org_id, "override_stage")
+    stage = body.stage.upper()
+    if stage not in _VALID_STAGES:
+        raise HTTPException(status_code=400, detail=f"Invalid stage. Valid values: {sorted(_VALID_STAGES)}")
+    try:
+        row = db.execute(
+            text("SELECT relationship_stage FROM contacts WHERE id = :id AND org_id = :org_id"),
+            {"id": contact_id, "org_id": org_id},
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        previous_stage = row[0]
+        db.execute(
+            text("UPDATE contacts SET relationship_stage = :stage WHERE id = :id AND org_id = :org_id"),
+            {"stage": stage, "id": contact_id, "org_id": org_id},
+        )
+        db.commit()
+        return {"contact_id": contact_id, "previous_stage": previous_stage, "new_stage": stage}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Override stage error: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

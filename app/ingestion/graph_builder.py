@@ -7,6 +7,7 @@ import json
 import logging
 
 from app.ingestion.category_detector import detect_entity_category
+from app.plan_enforcer import check_contact_limit
 
 logger = logging.getLogger(__name__)
 
@@ -396,6 +397,14 @@ def upsert_contact(
                 },
             )
         return existing_id
+
+    limit_check = check_contact_limit(db, org_id)
+    if not limit_check["allowed"]:
+        import logging as _log
+        _log.getLogger(__name__).warning(
+            f"Contact limit reached for org {org_id} ({limit_check['count']}/{limit_check['limit']}), skipping new contact: {email}"
+        )
+        return None
 
     contact_id = str(uuid4())
     company = extract_company_from_email(email)

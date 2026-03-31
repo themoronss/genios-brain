@@ -3,6 +3,7 @@ from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.context.bundle_builder import build_context_bundle
+from app.llm_guard import call_with_timeout
 from app.config import GEMINI_API_KEY
 import google.generativeai as genai
 import logging
@@ -138,7 +139,9 @@ Draft a {request.draft_type} based on the above context and request. Be specific
                 model = genai.GenerativeModel(
                     model_name="gemini-2.5-flash", system_instruction=system_prompt
                 )
-                response = model.generate_content(user_prompt)
+                response = call_with_timeout(model.generate_content, user_prompt, fallback=None)
+                if response is None:
+                    raise HTTPException(status_code=504, detail={"error": "TIMEOUT", "message": "Draft generation timed out."})
                 draft_text = response.text
 
                 if draft_text and len(draft_text.strip()) > 10:

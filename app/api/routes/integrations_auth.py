@@ -11,12 +11,15 @@ import os
 import secrets
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.redis_client import redis_client
+from app.api.deps import get_db
+from app.plan_enforcer import require_integration
 from app.ingestion.gmail_connector import create_oauth_flow, build_gmail_service, get_user_email
 from app.config import GOOGLE_REDIRECT_URI
 from app.tasks.gmail_sync import run_gmail_sync
@@ -109,12 +112,42 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     db.close()
 
     from app.config import SYNC_MAX_EMAILS
+    from app.plan_enforcer import get_org_plan
+
     background_tasks.add_task(run_gmail_sync, org_id, SYNC_MAX_EMAILS, connected_email)
+
+    # Startup plan: subscribe to Gmail push notifications
+    plan_info = get_org_plan(db, org_id)
+    if plan_info["tier"] == "startup":
+        background_tasks.add_task(_setup_gmail_watch, org_id, connected_email, access_token, refresh_token)
 
     return RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
+
+def _setup_gmail_watch(org_id: str, email: str, access_token: str, refresh_token: str):
+    """
+    Subscribe the connected Gmail account to push notifications via Gmail watch API.
+    Called as a background task after OAuth connect for Startup plan orgs.
+    Requires GMAIL_PUBSUB_TOPIC env var (e.g. projects/my-project/topics/genios-gmail).
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    topic = os.getenv("GMAIL_PUBSUB_TOPIC")
+    if not topic:
+        logger.warning(f"Gmail watch skipped for org {org_id}: GMAIL_PUBSUB_TOPIC not set")
+        return
+
+    try:
+        gmail_service = build_gmail_service(access_token, refresh_token)
+        watch_request = {"labelIds": ["INBOX"], "topicName": topic}
+        result = gmail_service.users().watch(userId="me", body=watch_request).execute()
+        logger.info(f"Gmail watch established for org {org_id} ({email}): historyId={result.get('historyId')}")
+    except Exception as e:
+        logger.error(f"Gmail watch setup failed for org {org_id} ({email}): {e}")
+
 
 def _store_oauth_state(state: str, org_id: str, extra: dict = None):
     """Store org_id + optional extras in Redis under oauth_state:{state}, TTL 180s."""
@@ -136,7 +169,8 @@ def _pop_oauth_state(state: str):
 # ─── Google Calendar ─────────────────────────────────────────────────────────
 
 @router.get("/auth/gcal/connect")
-def gcal_connect(org_id: str):
+def gcal_connect(org_id: str, db: Session = Depends(get_db)):
+    require_integration(db, org_id, "calendar")
     from app.ingestion.calendar_connector import create_calendar_oauth_flow
 
     flow = create_calendar_oauth_flow()
@@ -219,7 +253,8 @@ async def gcal_callback(state: str, code: str, background_tasks: BackgroundTasks
 # ─── Slack ───────────────────────────────────────────────────────────────────
 
 @router.get("/auth/slack/connect")
-def slack_connect(org_id: str):
+def slack_connect(org_id: str, db: Session = Depends(get_db)):
+    require_integration(db, org_id, "slack")
     from app.ingestion.slack_connector import get_slack_authorize_url
 
     state = secrets.token_urlsafe(32)
@@ -871,6 +906,38 @@ def get_integrations_status(org_id: str):
         else:
             status["gdocs"] = {"connected": False}
 
+        # HubSpot — from oauth_tokens where account_email LIKE 'hubspot:%'
+        hs_row = db.execute(
+            text("""
+                SELECT last_synced_at, sync_status, sync_total, sync_processed
+                FROM oauth_tokens
+                WHERE org_id = :oid AND account_email LIKE 'hubspot:%'
+                ORDER BY created_at DESC LIMIT 1
+            """),
+            {"oid": org_id},
+        ).fetchone()
+        if hs_row:
+            hs_contacts = db.execute(
+                text("SELECT COUNT(*) FROM contacts WHERE org_id = :oid AND data_source = 'hubspot'"),
+                {"oid": org_id},
+            ).scalar() or 0
+            hs_deals = db.execute(
+                text("SELECT COUNT(*) FROM commitments WHERE org_id = :oid AND owner = 'hubspot'"),
+                {"oid": org_id},
+            ).scalar() or 0
+            status["hubspot"] = {
+                "connected": True,
+                "syncStatus": hs_row.sync_status or "idle",
+                "lastSyncAt": hs_row.last_synced_at.isoformat() if hs_row.last_synced_at else None,
+                "metadata": {
+                    "contactsSynced": hs_contacts,
+                    "dealsSynced": hs_deals,
+                    "totalProcessed": hs_row.sync_processed or 0,
+                },
+            }
+        else:
+            status["hubspot"] = {"connected": False}
+
         return status
 
     finally:
@@ -894,7 +961,8 @@ TOOL_CONNECTION_SQL: dict[str, list[str]] = {
     "notion":  ["DELETE FROM notion_connections WHERE org_id = :oid"],
     "gsheets": ["DELETE FROM sheets_connections WHERE org_id = :oid"],
     "gdrive":  ["DELETE FROM gdrive_connections WHERE org_id = :oid"],
-    "gdocs":   ["DELETE FROM gdocs_connections WHERE org_id = :oid"],
+    "gdocs":    ["DELETE FROM gdocs_connections WHERE org_id = :oid"],
+    "hubspot":  ["DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'hubspot:%'"],
 }
 
 # Full wipe — deletes connection AND all synced data for a fresh start
@@ -940,6 +1008,22 @@ TOOL_CLEANUP_SQL: dict[str, list[str]] = {
     "gdocs": [
         "DELETE FROM gdocs_documents WHERE org_id = :oid",
         "DELETE FROM gdocs_connections WHERE org_id = :oid",
+    ],
+    "hubspot": [
+        # Remove HubSpot-sourced interactions (keeps contacts — they're real people)
+        "DELETE FROM interactions WHERE org_id = :oid AND source = 'hubspot'",
+        # Remove HubSpot-only commitments (deals)
+        "DELETE FROM commitments WHERE org_id = :oid AND owner = 'hubspot'",
+        # Remove contacts that came only from HubSpot (no other interactions)
+        """
+        DELETE FROM contacts WHERE org_id = :oid AND data_source = 'hubspot'
+          AND id NOT IN (
+              SELECT DISTINCT contact_id FROM interactions
+              WHERE org_id = :oid AND source != 'hubspot'
+          )
+        """,
+        # Remove the OAuth token
+        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'hubspot:%'",
     ],
 }
 
@@ -1081,6 +1165,7 @@ TOOL_SYNC_TASKS = {
     "gsheets": "app.tasks.sheets_sync.run_sheets_sync",
     "gdrive": "app.tasks.drive_sync.run_drive_sync",
     "gdocs": "app.tasks.docs_sync.run_docs_sync",
+    "hubspot": "app.tasks.hubspot_sync.run_hubspot_sync",
 }
 
 
@@ -1097,3 +1182,69 @@ async def trigger_tool_sync(org_id: str, tool: str, background_tasks: Background
 
     background_tasks.add_task(sync_func, org_id)
     return {"started": True, "tool": tool}
+
+
+# ─── HubSpot OAuth ────────────────────────────────────────────────────────────
+
+@router.get("/auth/hubspot/connect")
+def hubspot_connect(org_id: str):
+    from app.ingestion.hubspot_connector import get_hubspot_authorize_url
+
+    state = secrets.token_urlsafe(32)
+    _store_oauth_state(state, org_id)
+    auth_url = get_hubspot_authorize_url(state)
+    return RedirectResponse(auth_url)
+
+
+@router.get("/auth/hubspot/callback")
+async def hubspot_callback(state: str, code: str, background_tasks: BackgroundTasks):
+    from app.ingestion.hubspot_connector import exchange_code_for_tokens
+
+    state_data = _pop_oauth_state(state)
+    if not state_data:
+        return {"error": "Invalid OAuth state or session expired."}
+
+    org_id = state_data["org_id"]
+    token_data = exchange_code_for_tokens(code)
+
+    hub_id = token_data.get("hub_id") or "unknown"
+    account_key = f"hubspot:{hub_id}"
+
+    from datetime import timedelta
+    expires_in = token_data.get("expires_in", 1800)
+    expiry = datetime.now() + timedelta(seconds=expires_in)
+
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("""
+                INSERT INTO oauth_tokens
+                    (org_id, account_email, access_token, refresh_token, expires_at,
+                     sync_status, created_at)
+                VALUES
+                    (:org_id, :account_email, :access_token, :refresh_token,
+                     :expires_at, 'idle', NOW())
+                ON CONFLICT (org_id, account_email) DO UPDATE SET
+                    access_token  = EXCLUDED.access_token,
+                    refresh_token = EXCLUDED.refresh_token,
+                    expires_at    = EXCLUDED.expires_at,
+                    sync_status   = 'idle',
+                    updated_at    = NOW()
+            """),
+            {
+                "org_id": org_id,
+                "account_email": account_key,
+                "access_token": token_data["access_token"],
+                "refresh_token": token_data.get("refresh_token"),
+                "expires_at": expiry,
+            },
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    # Kick off initial sync in background
+    from app.tasks.hubspot_sync import run_hubspot_sync
+    background_tasks.add_task(run_hubspot_sync, org_id)
+
+    return RedirectResponse(f"{INTEGRATIONS_REDIRECT}?connected=hubspot")

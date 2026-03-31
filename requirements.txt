@@ -20,3 +20,4 @@ sse-starlette
 python-multipart
 PyMuPDF
 python-docx
+razorpay

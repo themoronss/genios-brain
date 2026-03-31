@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import text
 from app.database import SessionLocal
 from app.graph.relationship_calculator import recalculate_all_relationships
+from app.plan_enforcer import get_org_plan
 
 
 def _get_org_ids(db, org_id=None):
@@ -55,6 +56,9 @@ def run_nightly_refresh(org_id: str = None):
         try:
             from app.graph.community_detection import run_louvain_detection
             for oid in org_ids:
+                plan_info = get_org_plan(db, oid)
+                if not plan_info["config"].get("louvain"):
+                    continue  # Trial plan: skip
                 partition = run_louvain_detection(db, oid)
                 print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {oid}")
         except Exception as e:
@@ -115,6 +119,26 @@ def run_nightly_refresh(org_id: str = None):
             db.rollback()
             print(f"⚠️ Daily snapshot failed: {e}")
 
+        # ── Step 8: Weekly graph intelligence reports (Mondays only, Startup) ──
+        try:
+            if datetime.now(timezone.utc).weekday() == 0:  # Monday
+                from app.tasks.weekly_report import run_weekly_reports
+                run_weekly_reports(org_id)
+                print(f"✓ Weekly graph intelligence reports generated")
+        except Exception as e:
+            db.rollback()
+            print(f"⚠️ Weekly reports skipped: {e}")
+
+        # ── Step 9: Apply outcome confidence deltas (Startup learning loop) ─
+        try:
+            from app.tasks.confidence_updater import apply_outcome_confidence_deltas
+            updated = apply_outcome_confidence_deltas(db, org_id)
+            if updated:
+                print(f"✓ Confidence updater: applied deltas to {updated} contact(s)")
+        except Exception as e:
+            db.rollback()
+            print(f"⚠️ Confidence updater skipped: {e}")
+
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Completed nightly refresh for {scope}")
         return updated_count
     except Exception as e:
@@ -124,8 +148,64 @@ def run_nightly_refresh(org_id: str = None):
         db.close()
 
 
+def _compute_graph_quality_score(db, org_id: str) -> float:
+    """
+    Compute graph quality score for an org:
+    - 50%: % contacts with confidence_score > 0.6
+    - 30%: interaction density (avg interactions per contact, normalized to 50)
+    - 20%: commitment completion rate (closed / total commitments)
+    Returns a float in [0, 1].
+    """
+    try:
+        row = db.execute(
+            text("""
+                SELECT
+                    COUNT(*) FILTER (WHERE confidence_score > 0.6)::float
+                        / NULLIF(COUNT(*), 0) AS high_confidence_pct,
+                    LEAST(1.0, AVG(COALESCE(interaction_count, 0)) / 50.0) AS normalized_density
+                FROM contacts
+                WHERE org_id = :org_id AND (is_archived IS NULL OR is_archived = FALSE)
+            """),
+            {"org_id": org_id},
+        ).fetchone()
+
+        commitment_row = db.execute(
+            text("""
+                SELECT
+                    COUNT(*) FILTER (WHERE status = 'CLOSED')::float / NULLIF(COUNT(*), 0)
+                FROM commitments WHERE org_id = :org_id
+            """),
+            {"org_id": org_id},
+        ).fetchone()
+
+        high_confidence_pct = float(row[0] or 0)
+        density = float(row[1] or 0)
+        completion_rate = float(commitment_row[0] or 0) if commitment_row else 0.0
+
+        quality = 0.5 * high_confidence_pct + 0.3 * density + 0.2 * completion_rate
+        return round(min(1.0, max(0.0, quality)), 4)
+    except Exception as e:
+        print(f"⚠️ Graph quality computation failed for org {org_id}: {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return 0.0
+
+
 def _record_daily_snapshot(db, org_id: str):
     """Record daily metrics snapshot for trend sparkline charts."""
+    # Compute and persist graph quality score first
+    quality_score = _compute_graph_quality_score(db, org_id)
+    try:
+        db.execute(
+            text("UPDATE orgs SET graph_quality_score = :score WHERE id = :oid"),
+            {"score": quality_score, "oid": org_id},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+
     stats = db.execute(
         text("""
             SELECT

@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.context.bundle_builder import build_context_bundle, get_contact_by_name
 from app.graph.indirect_edges import find_warm_intro_path
+from app.graph.embedder import embed_text
+from app.plan_enforcer import require_mr_elite_mode
+from app.llm_guard import call_with_timeout
 from app.config import GEMINI_API_KEY
 import google.generativeai as genai
 import logging
@@ -29,6 +32,7 @@ QUERY_TYPE_INSTRUCTIONS = {
     "temporal": "The user wants to know who to reach out to or what relationships need attention. Rank contacts by urgency, recency, and relationship health. Be specific about why each contact matters now.",
     "situation": "The user is preparing for a specific interaction (meeting, call, email). Provide tactical prep: key context, talking points, topics to avoid, and relevant commitments.",
     "action": "The user wants help drafting or deciding on a specific action. Use the relationship context to make the draft/recommendation feel personal and relationship-aware.",
+    "semantic": "The user is asking a strategic question about their network — who to prioritize, follow up with, or invest in. Use the semantic match rankings provided. For each recommended contact, state their name, why they're relevant (match score, stage, days since last contact), and a concrete next action. Be specific and data-backed.",
 }
 
 
@@ -191,6 +195,64 @@ def get_temporal_context(db, org_id: str, limit: int = 8) -> str:
         return "Unable to fetch contact data."
 
 
+def get_semantic_context(db, org_id: str, query: str, limit: int = 8) -> str:
+    """
+    Embed the query string and rank contacts by cosine similarity + relationship health.
+    Returns a formatted context block for Gemini to reason over.
+    """
+    try:
+        query_vec = embed_text(query)
+        # Format as pgvector literal: '[0.1, 0.2, ...]'
+        query_vec_str = "[" + ",".join(str(v) for v in query_vec) + "]"
+
+        rows = db.execute(
+            text("""
+                SELECT
+                    name, company, entity_type, relationship_stage,
+                    COALESCE(composite_score, 0.5) AS health,
+                    COALESCE(sentiment_avg, 0) AS sentiment,
+                    EXTRACT(DAY FROM NOW() - last_interaction_at) AS days_ago,
+                    interaction_count,
+                    ROUND(CAST(
+                        (1 - (embedding <=> CAST(:qvec AS vector))) * 0.5
+                        + COALESCE(composite_score, 0.5) * 0.3
+                        + ((COALESCE(sentiment_avg, 0) + 1.0) / 2.0) * 0.2
+                    AS numeric), 3) AS relevance_score
+                FROM contacts
+                WHERE org_id = :org_id
+                    AND embedding IS NOT NULL
+                    AND (disclosure_level IS NULL OR disclosure_level != 'private')
+                ORDER BY relevance_score DESC
+                LIMIT :limit
+            """),
+            {"org_id": org_id, "qvec": query_vec_str, "limit": limit},
+        ).fetchall()
+
+        if not rows:
+            return "No contacts with embeddings found. Sync your graph first to enable semantic search."
+
+        lines = ["=== SEMANTIC MATCH — CONTACTS MOST RELEVANT TO YOUR QUERY ==="]
+        for r in rows:
+            name, company, etype, stage, health, sentiment, days_ago, count, score = r
+            company_str = f" @ {company}" if company else ""
+            days_str = f"{int(days_ago)}d ago" if days_ago is not None else "never contacted"
+            type_str = etype or "contact"
+            lines.append(
+                f"- {name}{company_str} | {type_str} | {stage or 'unknown'} | "
+                f"Last contact: {days_str} | Health: {float(health):.0%} | Relevance: {float(score):.0%}"
+            )
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        logger.error(f"Semantic context error: {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return "Semantic search unavailable. Ensure contacts have embeddings."
+
+
 @router.post("/api/org/{org_id}/chat")
 def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(get_db)):
     """
@@ -248,7 +310,9 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
                     system_instruction=system_with_context,
                 )
                 chat_session = model.start_chat(history=gemini_history)
-                response = chat_session.send_message(message)
+                response = call_with_timeout(chat_session.send_message, message, fallback=None)
+                if response is None:
+                    raise HTTPException(status_code=504, detail={"error": "TIMEOUT", "message": "LLM response timed out."})
                 reply = response.text.strip()
 
                 return {
@@ -259,11 +323,18 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
                     "warm_intro_paths": intros,
                 }
 
+        # ── Plan gate for restricted query modes ──────────────────────────
+        if query_type in ("temporal", "semantic"):
+            require_mr_elite_mode(db, org_id, query_type)
+
         # ── Build context based on query type ──────────────────────────────
 
         context_block = ""
 
-        if query_type in ("entity", "situation", "action"):
+        if query_type == "semantic":
+            context_block = get_semantic_context(db, org_id, message)
+
+        elif query_type in ("entity", "situation", "action"):
             # Try to find entity from explicit param or message
             entity_name = request.entity_name
             if not entity_name:
@@ -382,7 +453,9 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
         )
 
         chat_session = model.start_chat(history=gemini_history)
-        response = chat_session.send_message(message)
+        response = call_with_timeout(chat_session.send_message, message, fallback=None)
+        if response is None:
+            raise HTTPException(status_code=504, detail={"error": "TIMEOUT", "message": "LLM response timed out."})
         reply = response.text.strip()
 
         return {

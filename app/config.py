@@ -28,5 +28,9 @@ NOTION_CLIENT_ID = os.getenv("NOTION_CLIENT_ID")
 NOTION_CLIENT_SECRET = os.getenv("NOTION_CLIENT_SECRET")
 NOTION_REDIRECT_URI = os.getenv("NOTION_REDIRECT_URI", "http://localhost:8000/auth/notion/callback")
 
+HUBSPOT_CLIENT_ID = os.getenv("HUBSPOT_CLIENT_ID")
+HUBSPOT_CLIENT_SECRET = os.getenv("HUBSPOT_CLIENT_SECRET")
+HUBSPOT_REDIRECT_URI = os.getenv("HUBSPOT_REDIRECT_URI", "http://localhost:8000/auth/hubspot/callback")
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 10))  # Default 10 for testing to avoid Groq rate limits

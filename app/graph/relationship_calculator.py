@@ -27,6 +27,7 @@ SOURCE_WEIGHTS = {
     "jira": 0.05,
     "drive": 0.10,
     "gdocs": 0.10,
+    "hubspot": 0.15,  # CRM — structured relationship signal
 }
 
 # Decay halflife in days

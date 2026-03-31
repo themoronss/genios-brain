@@ -40,6 +40,9 @@ def _row_to_dict(result) -> Dict:
         "relationship_summary": result[26] if len(result) > 26 else None,
         "stage_changed_at": result[27] if len(result) > 27 else None,
         "previous_stage": result[28] if len(result) > 28 else None,
+        "tags": list(result[29]) if len(result) > 29 and result[29] else [],
+        "disclosure_level": result[30] if len(result) > 30 else "public",
+        "restricted_to_agents": list(result[31]) if len(result) > 31 and result[31] else [],
     }
 
 
@@ -62,7 +65,7 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
                     avg_response_time_hours, is_bidirectional,
                     what_works, what_to_avoid, introduced_by,
                     is_archived, relationship_summary, stage_changed_at,
-                    previous_stage
+                    previous_stage, tags, disclosure_level, restricted_to_agents
                 FROM contacts
                 WHERE org_id = :org_id
                 AND (TRIM(LOWER(name)) = TRIM(LOWER(:name)) OR LOWER(email) LIKE LOWER(:email_pattern))
@@ -486,7 +489,8 @@ def determine_action_recommendation(contact: Dict, entity: Dict) -> Dict:
 
 
 def build_context_bundle(
-    db, org_id: str, entity_name: str, situation: str = None
+    db, org_id: str, entity_name: str, situation: str = None,
+    plan_tier: str = None,
 ) -> Dict:
     """
     Build complete context bundle for an entity.
@@ -497,10 +501,20 @@ def build_context_bundle(
         org_id: Organization UUID
         entity_name: Name of the person/company
         situation: Optional situation context
+        plan_tier: Override plan tier (used when already fetched upstream)
 
     Returns:
         Dict with entity details, confidence score, and context_for_agent
     """
+    # Resolve plan tier once
+    if plan_tier is None:
+        try:
+            from app.plan_enforcer import get_org_plan
+            plan_info = get_org_plan(db, org_id)
+            plan_tier = plan_info["tier"]
+        except Exception:
+            plan_tier = "trial"
+
     # 1. Find the contact
     contact = get_contact_by_name(db, org_id, entity_name)
 
@@ -512,8 +526,25 @@ def build_context_bundle(
             "confidence": 0.0,
         }
 
-    # 2. Get recent interactions
-    interactions = get_recent_interactions(db, contact["id"], limit=5)
+    # ── Context score floor (PDF spec §Guardrails) ────────────────────────────
+    # <0.20 → exclude entirely; <0.45 → flag as low confidence
+    contact_confidence = contact.get("confidence_score", 0.5) or 0.5
+    if contact_confidence < 0.20:
+        return {
+            "error": "ENTITY_BELOW_SCORE_FLOOR",
+            "entity_name": entity_name,
+            "context_for_agent": f"Insufficient data to build context for {entity_name}.",
+            "confidence": contact_confidence,
+            "confidence_level": "insufficient",
+        }
+
+    low_confidence_flag = contact_confidence < 0.45
+
+    # 2. Get recent interactions (limited by plan)
+    from app.plan_enforcer import PLAN_CONFIG
+    plan_cfg = PLAN_CONFIG.get(plan_tier, PLAN_CONFIG["trial"])
+    interaction_limit = plan_cfg["max_interactions_per_entity"]
+    interactions = get_recent_interactions(db, contact["id"], limit=interaction_limit)
 
     # 3. Get open commitments with lifecycle info
     open_commitments = get_open_commitments_detailed(db, contact["id"])
@@ -533,6 +564,7 @@ def build_context_bundle(
 
     # 4. Build entity details with enhanced metrics
     entity = {
+        "id": str(contact["id"]) if contact.get("id") else None,
         "name": contact["name"],
         "email": contact.get("email"),
         "company": contact["company"],
@@ -558,6 +590,8 @@ def build_context_bundle(
         "disclosure_rules": disclosure_rules,
         "relationship_summary": contact.get("relationship_summary"),
         "introduced_by": str(contact.get("introduced_by")) if contact.get("introduced_by") else None,
+        "tags": contact.get("tags") or [],
+        "disclosure_level": contact.get("disclosure_level") or "public",
     }
 
     # 5. Generate rich context_for_agent paragraph
@@ -607,7 +641,9 @@ def build_context_bundle(
         "matched_from": contact.get("matched_from", entity_name),
         "recent_interactions": interactions,
         "context_for_agent": context_for_agent,
-        "confidence": contact.get("confidence_score", 0.5),
+        "confidence": contact_confidence,
+        "confidence_level": "low" if low_confidence_flag else "normal",
+        "flagged": low_confidence_flag,
         "coverage_score": coverage_score,
         # ── Action signals — agents check these first ──
         "action_recommendation": action["action_recommendation"],
@@ -678,7 +714,7 @@ def build_context_bundle(
             {
                 "direction": r[0],
                 "sentiment": r[1],
-                "summary": r[2] or r[3],  # summary or subject
+                "summary": _redact_pii(r[2] or r[3]),  # summary or subject — PII stripped
                 "date": str(r[4]) if r[4] else None,
                 "intent": r[5],
             }
@@ -688,6 +724,32 @@ def build_context_bundle(
         bundle["recent_interactions"] = []
 
     return bundle
+
+
+# ── PII Redaction ─────────────────────────────────────────────────────────────
+
+import re as _re
+
+# Patterns that indicate raw email body leaking into summaries
+_PII_PATTERNS = [
+    (_re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'), '[email]'),
+    (_re.compile(r'\b(\+\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b'), '[phone]'),
+    (_re.compile(r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b'), '[card]'),
+]
+
+# Rough heuristic: summaries should not be long walls of text (raw body leak)
+_MAX_SUMMARY_CHARS = 400
+
+
+def _redact_pii(text: str) -> str:
+    """Strip obvious PII and truncate overly long summaries before they leave the bundle."""
+    if not text:
+        return text
+    for pattern, replacement in _PII_PATTERNS:
+        text = pattern.sub(replacement, text)
+    if len(text) > _MAX_SUMMARY_CHARS:
+        text = text[:_MAX_SUMMARY_CHARS] + "…"
+    return text
 
 
 def calculate_confidence_score(

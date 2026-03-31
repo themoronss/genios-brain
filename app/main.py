@@ -23,6 +23,12 @@ from app.api.routes import facts
 from app.api.routes import manual_context
 from app.api.routes import integrations_auth
 from app.api.routes import insights
+from app.api.routes import v1 as v1_routes
+from app.api.routes import segments as segments_routes
+from app.api.routes import webhooks as webhooks_routes
+from app.api.routes import billing as billing_routes
+from app.api.routes import seats as seats_routes
+from app.api.routes import tags_disclosure as tags_disclosure_routes
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +66,8 @@ def _sync_connected_tools(org_id: str):
                 connected.add("gdrive")
             elif email.startswith("gdocs:"):
                 connected.add("gdocs")
+            elif email.startswith("hubspot:"):
+                connected.add("hubspot")
             elif ":" not in email and "@" in email:
                 connected.add("gmail")
     finally:
@@ -75,6 +83,7 @@ def _sync_connected_tools(org_id: str):
         "gsheets": ("app.tasks.sheets_sync", "run_sheets_sync"),
         "gdrive": ("app.tasks.drive_sync", "run_drive_sync"),
         "gdocs": ("app.tasks.docs_sync", "run_docs_sync"),
+        "hubspot": ("app.tasks.hubspot_sync", "run_hubspot_sync"),
     }
 
     import importlib
@@ -112,28 +121,55 @@ async def sync_scheduler_loop():
             db = SessionLocal()
             try:
                 orgs = db.execute(text(
-                    "SELECT id, COALESCE(sync_interval_hours, 24) AS interval_hours FROM orgs"
+                    "SELECT id, COALESCE(sync_interval_hours, 24) AS interval_hours, COALESCE(subscription_tier, 'trial') AS subscription_tier FROM orgs"
                 )).fetchall()
 
                 for org in orgs:
+                    # Phase 4: Plan-gated sync — Trial = manual only (skip scheduler)
+                    plan_tier = org.subscription_tier if hasattr(org, "subscription_tier") else "trial"
+                    if plan_tier == "trial":
+                        continue  # Trial orgs only sync on manual trigger
+
                     last_sync = db.execute(text(
                         "SELECT MAX(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"
                     ), {"oid": str(org.id)}).scalar()
 
-                    interval_seconds = org.interval_hours * 3600
+                    # Hustler: 6h cron. Startup: 6h cron as fallback (real-time via webhook)
+                    effective_interval = org.interval_hours
+                    if plan_tier == "hustler":
+                        effective_interval = min(org.interval_hours, 6)  # cap at 6h per plan
+                    interval_seconds = effective_interval * 3600
+
                     should_run = (
                         not last_sync or
                         (datetime.now(timezone.utc) - last_sync.replace(tzinfo=timezone.utc)).total_seconds() >= interval_seconds
                     )
 
                     if should_run:
-                        logger.info(f"🌙 Running scheduled sync + refresh for org {org.id} (interval: {org.interval_hours}h)")
+                        logger.info(f"🌙 Running scheduled sync + refresh for org {org.id} (tier: {plan_tier}, interval: {effective_interval}h)")
                         loop = asyncio.get_event_loop()
                         # Step 1: Re-sync all connected tools (incremental)
                         await loop.run_in_executor(None, _sync_connected_tools, str(org.id))
                         # Step 2: Recalculate scores, insights, bundles
                         await loop.run_in_executor(None, run_nightly_refresh, str(org.id))
                         logger.info(f"✓ Scheduled sync + refresh complete for org {org.id}")
+
+                # Step 3: Expire stale plans (once per cycle, not per org)
+                try:
+                    from app.plan_enforcer import expire_stale_plans
+                    expired_count = expire_stale_plans(db)
+                    if expired_count:
+                        logger.info(f"⏱ Plan expiry: marked {expired_count} plan(s) as expired")
+                except Exception as exp_err:
+                    logger.warning(f"Plan expiry step failed: {exp_err}")
+
+                # Billing jobs: trial expiry emails + overage invoices
+                try:
+                    from app.tasks.billing_jobs import run_trial_expiry_emails, run_overage_invoices
+                    run_trial_expiry_emails(db)
+                    run_overage_invoices(db)
+                except Exception as billing_err:
+                    logger.warning(f"Billing jobs failed: {billing_err}")
             finally:
                 db.close()
         except Exception as e:
@@ -186,6 +222,12 @@ app.include_router(facts.router)
 app.include_router(manual_context.router)
 app.include_router(integrations_auth.router)
 app.include_router(insights.router)
+app.include_router(v1_routes.router)
+app.include_router(segments_routes.router)
+app.include_router(webhooks_routes.router)
+app.include_router(billing_routes.router)
+app.include_router(seats_routes.router)
+app.include_router(tags_disclosure_routes.router)
 
 
 @app.get("/")

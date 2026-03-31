@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 import bcrypt
 import jwt
+import os
 from datetime import datetime, timedelta
 import secrets
 
@@ -12,8 +13,7 @@ from app.api.deps import get_db
 
 router = APIRouter()
 
-# JWT Secret (use env var in production)
-JWT_SECRET = "genios-secret-key-replace-in-production"
+JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
 
 
 # Pydantic models for auth
@@ -91,12 +91,22 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     # Generate API key
     api_key = f"gn_live_{secrets.token_urlsafe(32)}"
 
-    # Insert user
+    # Insert user — auto-assign trial plan (5-day period)
     result = db.execute(
         text(
             """
-            INSERT INTO orgs (name, email, password_hash, api_key)
-            VALUES (:name, :email, :password_hash, :api_key)
+            INSERT INTO orgs (
+                name, email, password_hash, api_key,
+                subscription_tier, plan_status,
+                plan_started_at, plan_expires_at, period_reset_at,
+                period_context_count
+            )
+            VALUES (
+                :name, :email, :password_hash, :api_key,
+                'trial', 'active',
+                NOW(), NOW() + INTERVAL '5 days', NOW() + INTERVAL '5 days',
+                0
+            )
             RETURNING id
         """
         ),
@@ -246,34 +256,48 @@ def save_notification_prefs(org_id: str, body: NotificationPrefs, db: Session = 
 
 @router.get("/api/org/{org_id}/usage")
 def get_usage_stats(org_id: str, db: Session = Depends(get_db)):
-    # Only count external API calls (source='api') toward quota — not dashboard UI clicks
+    from app.plan_enforcer import get_org_plan, PLAN_CONFIG
+
+    plan_info = get_org_plan(db, org_id)
+    tier = plan_info["tier"]
+    config = plan_info["config"]
     api_filter = "AND (source = 'api' OR source IS NULL)"
+
     today = db.execute(
         text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE {api_filter}"),
         {"oid": org_id},
     ).scalar() or 0
-    week = db.execute(
-        text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '7 days' {api_filter}"),
-        {"oid": org_id},
-    ).scalar() or 0
-    month = db.execute(
-        text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE - INTERVAL '30 days' {api_filter}"),
-        {"oid": org_id},
-    ).scalar() or 0
 
-    tier = db.execute(
-        text("SELECT COALESCE(subscription_tier, 'hustler') FROM orgs WHERE id = :oid"),
-        {"oid": org_id},
-    ).scalar() or "hustler"
+    # Period usage (since last reset)
+    period_reset_at = plan_info.get("period_reset_at")
+    if period_reset_at:
+        period_used = db.execute(
+            text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= :reset_at {api_filter}"),
+            {"oid": org_id, "reset_at": period_reset_at},
+        ).scalar() or 0
+    else:
+        period_used = 0
 
-    limits = {"hustler": (3000, 21000, 90000), "startup": (10000, 70000, 300000), "enterprise": (999999, 999999, 999999)}
-    dl, wl, ml = limits.get(tier, limits["hustler"])
+    expires_at = plan_info.get("expires_at")
+    days_remaining = None
+    if expires_at:
+        from datetime import timezone as tz
+        now = datetime.utcnow().replace(tzinfo=tz.utc)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=tz.utc)
+        days_remaining = max(0, (expires_at - now).days)
 
     return {
-        "today": today, "today_limit": dl,
-        "week": week, "week_limit": wl,
-        "month": month, "month_limit": ml,
-        "plan": tier.capitalize(),
+        "today": today,
+        "today_limit": config["daily_contexts"],
+        "today_warn": int(config["daily_contexts"] * config["daily_warn_pct"]),
+        "period_used": period_used,
+        "period_limit": config["period_contexts"],
+        "plan": tier,
+        "plan_status": plan_info.get("plan_status", "active"),
+        "expires_at": expires_at.isoformat() if expires_at else None,
+        "days_remaining": days_remaining,
+        "overage_allowed": config.get("overage_allowed", False),
     }
 
 

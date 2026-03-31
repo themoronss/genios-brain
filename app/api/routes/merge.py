@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
+from app.plan_enforcer import require_operation
 from typing import Optional
 import uuid
 import re
@@ -265,6 +266,7 @@ def execute_merge(
     Merge contact_a into contact_b: reassign all interactions/commitments
     from contact_a to contact_b, then archive contact_a.
     """
+    require_operation(db, org_id, "merge")
     row = db.execute(
         text("SELECT contact_id_a, contact_id_b FROM merge_queue WHERE id = :id AND org_id = :org_id"),
         {"id": merge_id, "org_id": org_id}
