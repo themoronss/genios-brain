@@ -31,7 +31,7 @@ SOURCE_WEIGHTS = {
 }
 
 # Decay halflife in days
-CONFIDENCE_HALFLIFE_DAYS = 30
+CONFIDENCE_HALFLIFE_DAYS = 90
 
 # EWMA smoothing factor
 EWMA_ALPHA = 0.3  # Recent emails get 30% weight, previous history gets 70%
