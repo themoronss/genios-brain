@@ -219,6 +219,8 @@ def register_agent(
     ).scalar() or 0
 
     if count >= max_agents:
+        from app.core.analytics import capture
+        capture(org_id, "plan_limit_hit", {"feature": "agents", "plan": plan_info["tier"]})
         raise HTTPException(
             status_code=403,
             detail={
@@ -238,6 +240,9 @@ def register_agent(
         {"org_id": org_id, "aid": agent_id, "name": request.name},
     )
     db.commit()
+
+    from app.core.analytics import capture
+    capture(org_id, "agent_registered", {"agent_id": agent_id})
 
     return {
         "registered": True,
@@ -357,6 +362,8 @@ def create_key(
     total = (1 if has_primary else 0) + additional_count
 
     if total >= max_keys:
+        from app.core.analytics import capture
+        capture(org_id, "plan_limit_hit", {"feature": "api_keys", "plan": tier})
         raise HTTPException(
             status_code=403,
             detail={
@@ -387,6 +394,9 @@ def create_key(
     )
     key_id = result.fetchone()[0]
     db.commit()
+
+    from app.core.analytics import capture
+    capture(org_id, "api_key_created", {})
 
     return {
         "id": str(key_id),
@@ -547,6 +557,13 @@ async def v1_document_upload(
             db.commit()
         except Exception as e:
             logger.warning(f"v1 document entity extraction failed: {e}")
+
+    from app.core.analytics import capture
+    capture(org_id, "document_uploaded", {
+        "file_type": file_ext.lstrip("."),
+        "entities_found": entities_found,
+        "size_bytes": len(content),
+    })
 
     return {
         "success": True,

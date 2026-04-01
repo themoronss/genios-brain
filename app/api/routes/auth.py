@@ -64,6 +64,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         algorithm="HS256",
     )
 
+    from app.core.analytics import capture
+    capture(str(result.id), "user_logged_in", {"email": result.email})
+
     return {
         "org_id": str(result.id),
         "token": token,
@@ -130,6 +133,9 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         JWT_SECRET,
         algorithm="HS256",
     )
+
+    from app.core.analytics import capture
+    capture(str(org_id), "user_signed_up", {"plan": "trial", "email": request.email})
 
     return {
         "org_id": str(org_id),

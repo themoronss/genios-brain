@@ -1,6 +1,13 @@
 import os
 os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
+import sentry_sdk
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN", ""),
+    traces_sample_rate=0.1,
+    environment=os.getenv("ENVIRONMENT", "development"),
+)
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -33,10 +40,11 @@ from app.api.routes import tags_disclosure as tags_disclosure_routes
 logger = logging.getLogger(__name__)
 
 
-def _sync_connected_tools(org_id: str):
+def _sync_connected_tools(org_id: str, cron: bool = False):
     """
     Re-sync all connected tools for an org. Each tool's sync is incremental —
     Gmail uses history_id, Calendar uses syncToken — so already-synced data is skipped.
+    cron=True uses larger batch sizes (SYNC_MAX_EMAILS_CRON / SYNC_MAX_CALENDAR_EVENTS_CRON).
     """
     from app.database import SessionLocal
     from sqlalchemy import text
@@ -87,6 +95,24 @@ def _sync_connected_tools(org_id: str):
     }
 
     import importlib
+    from app.config import SYNC_MAX_EMAILS_CRON, SYNC_MAX_EMAILS, SYNC_MAX_CALENDAR_EVENTS_CRON, SYNC_MAX_CALENDAR_EVENTS
+    from sqlalchemy import text as sa_text
+    cron_kwargs = {
+        "gmail": {"max_emails": SYNC_MAX_EMAILS_CRON if cron else SYNC_MAX_EMAILS},
+        "gcal": {"max_results": SYNC_MAX_CALENDAR_EVENTS_CRON if cron else SYNC_MAX_CALENDAR_EVENTS},
+    }
+    # Tool → account_email prefix used in oauth_tokens (for error status update)
+    tool_prefix = {
+        "gmail": None,  # gmail tokens have no prefix — matched by plain email
+        "gcal": "gcal:",
+        "slack": "slack:",
+        "jira": "jira:",
+        "notion": "notion:",
+        "gsheets": "gsheets:",
+        "gdrive": "gdrive:",
+        "gdocs": "gdocs:",
+        "hubspot": "hubspot:",
+    }
     for tool in connected:
         if tool not in tool_sync:
             continue
@@ -94,11 +120,32 @@ def _sync_connected_tools(org_id: str):
         try:
             module = importlib.import_module(module_path)
             sync_func = getattr(module, func_name)
+            kwargs = cron_kwargs.get(tool, {})
             logger.info(f"  ↻ Syncing {tool} for org {org_id}")
-            sync_func(org_id)
+            sync_func(org_id, **kwargs)
             logger.info(f"  ✓ {tool} sync complete for org {org_id}")
         except Exception as e:
-            logger.warning(f"  ⚠ {tool} sync failed for org {org_id}: {e}")
+            logger.error(f"  ✗ {tool} sync failed for org {org_id}: {e}")
+            # Mark sync_status=error on the relevant token row so UI reflects failure
+            try:
+                prefix = tool_prefix.get(tool)
+                err_db = SessionLocal()
+                try:
+                    if prefix:
+                        err_db.execute(sa_text(
+                            "UPDATE oauth_tokens SET sync_status = 'error', sync_error = :err "
+                            "WHERE org_id = :oid AND account_email LIKE :prefix"
+                        ), {"oid": org_id, "err": str(e)[:500], "prefix": f"{prefix}%"})
+                    else:
+                        err_db.execute(sa_text(
+                            "UPDATE oauth_tokens SET sync_status = 'error', sync_error = :err "
+                            "WHERE org_id = :oid AND account_email NOT LIKE '%:%' AND account_email LIKE '%@%'"
+                        ), {"oid": org_id, "err": str(e)[:500]})
+                    err_db.commit()
+                finally:
+                    err_db.close()
+            except Exception:
+                pass  # Never let error-reporting crash the scheduler
 
 
 async def sync_scheduler_loop():
@@ -130,8 +177,9 @@ async def sync_scheduler_loop():
                     if plan_tier == "trial":
                         continue  # Trial orgs only sync on manual trigger
 
+                    # Use MIN so we trigger if ANY tool is overdue, not just when all are recent
                     last_sync = db.execute(text(
-                        "SELECT MAX(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"
+                        "SELECT MIN(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"
                     ), {"oid": str(org.id)}).scalar()
 
                     # Hustler: 6h cron. Startup: 6h cron as fallback (real-time via webhook)
@@ -149,7 +197,7 @@ async def sync_scheduler_loop():
                         logger.info(f"🌙 Running scheduled sync + refresh for org {org.id} (tier: {plan_tier}, interval: {effective_interval}h)")
                         loop = asyncio.get_event_loop()
                         # Step 1: Re-sync all connected tools (incremental)
-                        await loop.run_in_executor(None, _sync_connected_tools, str(org.id))
+                        await loop.run_in_executor(None, lambda oid=str(org.id): _sync_connected_tools(oid, cron=True))
                         # Step 2: Recalculate scores, insights, bundles
                         await loop.run_in_executor(None, run_nightly_refresh, str(org.id))
                         logger.info(f"✓ Scheduled sync + refresh complete for org {org.id}")

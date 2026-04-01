@@ -111,6 +111,9 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     db.commit()
     db.close()
 
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "gmail"})
+
     from app.config import SYNC_MAX_EMAILS
     from app.plan_enforcer import get_org_plan
 
@@ -244,6 +247,9 @@ async def gcal_callback(state: str, code: str, background_tasks: BackgroundTasks
     finally:
         db.close()
 
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "gcal"})
+
     from app.tasks.calendar_sync import run_calendar_sync
     background_tasks.add_task(run_calendar_sync, org_id)
 
@@ -309,6 +315,9 @@ async def slack_callback(state: str, code: str, background_tasks: BackgroundTask
         db.commit()
     finally:
         db.close()
+
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "slack"})
 
     from app.tasks.slack_sync import run_slack_backfill
     background_tasks.add_task(run_slack_backfill, org_id)
@@ -417,6 +426,9 @@ async def jira_callback(state: str, code: str, background_tasks: BackgroundTasks
     finally:
         db.close()
 
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "jira"})
+
     from app.tasks.jira_sync import run_jira_sync
     background_tasks.add_task(run_jira_sync, org_id)
 
@@ -486,6 +498,9 @@ async def notion_callback(state: str, code: str, background_tasks: BackgroundTas
         db.commit()
     finally:
         db.close()
+
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "notion"})
 
     from app.tasks.notion_sync import run_notion_sync
     background_tasks.add_task(run_notion_sync, org_id)
@@ -558,6 +573,9 @@ async def gsheets_callback(state: str, code: str, background_tasks: BackgroundTa
         db.commit()
     finally:
         db.close()
+
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "gsheets"})
 
     from app.tasks.sheets_sync import run_sheets_sync
     background_tasks.add_task(run_sheets_sync, org_id)
@@ -637,6 +655,9 @@ async def gdrive_callback(state: str, code: str, background_tasks: BackgroundTas
     finally:
         db.close()
 
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "gdrive"})
+
     from app.tasks.drive_sync import run_drive_sync
     background_tasks.add_task(run_drive_sync, org_id)
 
@@ -713,6 +734,9 @@ async def gdocs_callback(state: str, code: str, background_tasks: BackgroundTask
         db.commit()
     finally:
         db.close()
+
+    from app.core.analytics import capture
+    capture(org_id, "integration_connected", {"tool": "gdocs"})
 
     from app.tasks.docs_sync import run_docs_sync
     background_tasks.add_task(run_docs_sync, org_id)

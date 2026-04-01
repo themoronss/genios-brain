@@ -33,7 +33,13 @@ HUBSPOT_CLIENT_SECRET = os.getenv("HUBSPOT_CLIENT_SECRET")
 HUBSPOT_REDIRECT_URI = os.getenv("HUBSPOT_REDIRECT_URI", "http://localhost:8000/auth/hubspot/callback")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 10))  # Default 10 for testing to avoid Groq rate limits
+
+# Sync config — controls both normal (manual) and cron sync batch sizes
+SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 15))
+SYNC_MAX_EMAILS_CRON = int(os.getenv("SYNC_MAX_EMAILS_CRON", 100))
+SYNC_MAX_CALENDAR_EVENTS = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS", 250))
+SYNC_MAX_CALENDAR_EVENTS_CRON = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS_CRON", 250))
+SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
 
 # Bump this when extraction logic changes to trigger re-extraction of old interactions
 PROCESSING_VERSION = 2

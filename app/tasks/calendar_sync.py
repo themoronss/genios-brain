@@ -12,6 +12,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import text
 
+from app.config import SYNC_MAX_CALENDAR_EVENTS
 from app.database import SessionLocal
 from app.ingestion.calendar_connector import (
     build_calendar_service,
@@ -54,7 +55,7 @@ def _get_calendar_tokens(db, org_id):
     return row
 
 
-def run_calendar_sync(org_id: str):
+def run_calendar_sync(org_id: str, max_results=None):
     """
     Main Calendar sync entry point. Called after OAuth connect and by scheduler.
 
@@ -98,8 +99,9 @@ def run_calendar_sync(org_id: str):
             calendar_ids = ["primary"]
             logger.info(f"Calendar sync org={org_id}: no calendars selected, defaulting to primary")
 
+        _max_results = max_results if max_results is not None else SYNC_MAX_CALENDAR_EVENTS
         for calendar_id in calendar_ids:
-            _sync_calendar(db, service, org_id, calendar_id, org_domain)
+            _sync_calendar(db, service, org_id, calendar_id, org_domain, max_results=_max_results)
 
         # ── Phase 2: Bridge calendar data into relationship graph ──
         logger.info(f"Calendar bridge: resolving attendees for org={org_id}")
@@ -202,8 +204,10 @@ def run_calendar_sync(org_id: str):
         db.close()
 
 
-def _sync_calendar(db, service, org_id, calendar_id, org_domain):
+def _sync_calendar(db, service, org_id, calendar_id, org_domain, max_results=None):
     """Sync a single calendar using incremental syncToken."""
+    if max_results is None:
+        max_results = SYNC_MAX_CALENDAR_EVENTS
     # Get current sync token from DB
     state_row = db.execute(
         text("""
@@ -223,7 +227,7 @@ def _sync_calendar(db, service, org_id, calendar_id, org_domain):
     try:
         while True:
             events, next_sync_token, next_page_token = fetch_events(
-                service, calendar_id=calendar_id, sync_token=sync_token, max_results=250
+                service, calendar_id=calendar_id, sync_token=sync_token, max_results=max_results
             )
 
             for event in events:

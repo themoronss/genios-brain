@@ -323,6 +323,16 @@ def get_context(
                 )
                 cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
                 cached_bundle["cache_hit"] = True
+                from app.core.analytics import capture as _capture
+                _capture(org_id, "api_context_requested", {
+                    "source": source,
+                    "cache_hit": True,
+                    "confidence": round(float(cached_bundle.get("confidence_score", 0) or 0), 2),
+                    "relationship_stage": cached_bundle.get("relationship_stage"),
+                    "latency_ms": cached_bundle["latency_ms"],
+                    "plan": tier,
+                    "tokens_used": cached_tokens,
+                })
                 from fastapi.responses import JSONResponse
                 return JSONResponse(
                     content=cached_bundle,
@@ -416,6 +426,17 @@ def get_context(
         # Log the call
         log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False,
                          source=source, agent_id=request.agent_id, tokens_used=tokens_used)
+
+        from app.core.analytics import capture
+        capture(org_id, "api_context_requested", {
+            "source": source,
+            "cache_hit": False,
+            "confidence": round(float(context_bundle.get("confidence_score", 0) or 0), 2),
+            "relationship_stage": context_bundle.get("relationship_stage"),
+            "latency_ms": context_bundle.get("latency_ms"),
+            "plan": tier,
+            "tokens_used": tokens_used,
+        })
 
         # Build response headers (quota info + token count)
         response_headers = {"X-Tokens-Used": str(tokens_used)}

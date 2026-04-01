@@ -2,6 +2,7 @@ from sqlalchemy import text
 import time
 from email.utils import parseaddr
 
+from app.config import SYNC_MAX_EMAILS
 from app.database import SessionLocal
 from app.ingestion.gmail_connector import (
     build_gmail_service,
@@ -339,7 +340,7 @@ def collect_valid_email_ids(service, user_email: str, target: int = 100) -> list
 # ── Main sync function ────────────────────────────────────────────────────────
 
 
-def run_gmail_sync(org_id, max_emails=100, account_email: str = None, force_reprocess: bool = False):
+def run_gmail_sync(org_id, max_emails=None, account_email: str = None, force_reprocess: bool = False):
     """
     Sync Gmail emails for an organization.
     Thread-aware: groups messages by threadId and builds conversation context
@@ -359,10 +360,12 @@ def run_gmail_sync(org_id, max_emails=100, account_email: str = None, force_repr
 
     Args:
         org_id: Organization ID
-        max_emails: Target number of valid emails to sync (default: 100)
+        max_emails: Target number of valid emails to sync (default: SYNC_MAX_EMAILS from config)
         account_email: Specific Gmail account to sync. If None, syncs all accounts.
         force_reprocess: If True, reprocess already-synced emails (skip dedup check).
     """
+    if max_emails is None:
+        max_emails = SYNC_MAX_EMAILS
     db = SessionLocal()
 
     try:
@@ -455,6 +458,7 @@ def _sync_single_account(
         valid_ids = collect_valid_email_ids(service, user_email, target=max_emails)
 
         # Pre-filter: skip emails already in the DB (unless force_reprocess)
+        skipped_existing = 0
         if force_reprocess:
             new_ids = valid_ids
             print(
