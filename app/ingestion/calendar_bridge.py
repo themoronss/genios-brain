@@ -582,3 +582,64 @@ def check_meeting_followups(db, org_id: str):
 
     logger.info(f"Calendar bridge: found {insight_count} meetings without follow-up for org={org_id}")
     return insight_count
+
+
+# ─── 8. Co-attendance edges — attendee-to-attendee clustering ──────────────
+
+def create_co_attendance_edges(db, org_id: str):
+    """
+    For each calendar event with 2+ resolved external attendees,
+    create co_attendance rows between every pair.
+
+    Enables community/cluster detection: people who always appear
+    in the same meetings form a hidden team or decision group.
+
+    Uses contact_a_id < contact_b_id ordering for consistent dedup.
+    """
+    # Find events with 2+ resolved external attendees
+    events = db.execute(
+        text("""
+            SELECT ce.id, ce.title, ce.start_time,
+                   ARRAY_AGG(cea.person_id ORDER BY cea.person_id) as attendee_ids
+            FROM calendar_events ce
+            JOIN calendar_event_attendees cea ON cea.event_id = ce.id
+            WHERE ce.org_id = :oid
+            AND cea.person_id IS NOT NULL
+            AND cea.is_external = TRUE
+            GROUP BY ce.id, ce.title, ce.start_time
+            HAVING COUNT(DISTINCT cea.person_id) >= 2
+        """),
+        {"oid": org_id},
+    ).fetchall()
+
+    edge_count = 0
+    for event in events:
+        event_id, title, start_time, attendee_ids = event
+        # Deduplicate attendee list
+        unique_ids = sorted(set(str(a) for a in attendee_ids))
+
+        # Create edges for every pair (N*(N-1)/2)
+        for i in range(len(unique_ids)):
+            for j in range(i + 1, len(unique_ids)):
+                db.execute(
+                    text("""
+                        INSERT INTO co_attendance
+                            (org_id, contact_a_id, contact_b_id,
+                             calendar_event_id, event_title, event_at)
+                        VALUES (:oid, :a, :b, :eid, :title, :at)
+                        ON CONFLICT (contact_a_id, contact_b_id, calendar_event_id)
+                        DO NOTHING
+                    """),
+                    {
+                        "oid": org_id,
+                        "a": unique_ids[i],
+                        "b": unique_ids[j],
+                        "eid": event_id,
+                        "title": title,
+                        "at": start_time,
+                    },
+                )
+                edge_count += 1
+
+    logger.info(f"Calendar bridge: created {edge_count} co-attendance edges for org={org_id}")
+    return edge_count

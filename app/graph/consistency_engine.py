@@ -122,4 +122,23 @@ def calculate_authority_score(db, contact_id: str) -> float:
     # Combined: 60% source quality + 40% directness
     authority = source_score * 0.6 + directness * 0.4
 
-    return round(min(1.0, authority), 3)
+    # Organizer authority boost — who drives the meetings?
+    organizer_data = db.execute(
+        text("""
+            SELECT
+                COUNT(*) FILTER (WHERE is_organizer = TRUE) as organized,
+                COUNT(*) as total_attended
+            FROM calendar_event_attendees
+            WHERE person_id = :contact_id
+        """),
+        {"contact_id": contact_id}
+    ).fetchone()
+
+    if organizer_data and organizer_data[1] >= 3:
+        ratio = organizer_data[0] / organizer_data[1]
+        if ratio > 0.6:
+            authority += 0.15   # Strong initiator — drives meetings
+        elif ratio < 0.2:
+            authority -= 0.05   # Passive attendee / implementer
+
+    return round(min(1.0, max(0.1, authority)), 3)

@@ -395,6 +395,87 @@ def trigger_segment_sync(
     }
 
 
+# ── PUT /v1/segment/assign/{contact_id} ──────────────────────────────────────
+
+class ManualSegmentAssignRequest(BaseModel):
+    segment_id: str
+
+
+@router.put("/v1/segment/assign/{contact_id}")
+def manual_assign_segment(
+    contact_id: str,
+    request: ManualSegmentAssignRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Manually assign a contact to a segment. Overrides auto-classification."""
+    _get_segment_or_404(db, request.segment_id, org_id)
+
+    # Verify contact belongs to org
+    contact = db.execute(
+        text("SELECT id FROM contacts WHERE id = :cid AND org_id = :org_id"),
+        {"cid": contact_id, "org_id": org_id},
+    ).fetchone()
+    if not contact:
+        raise HTTPException(status_code=404, detail={"error": "CONTACT_NOT_FOUND", "message": "Contact not found"})
+
+    # Set segment_id + mark as manual (prevents auto-override)
+    db.execute(
+        text("""
+            UPDATE contacts SET segment_id = :sid, segment_source = 'manual'
+            WHERE id = :cid AND org_id = :org_id
+        """),
+        {"sid": request.segment_id, "cid": contact_id, "org_id": org_id},
+    )
+
+    # Also add to segment_members join table
+    db.execute(
+        text("""
+            INSERT INTO segment_members (segment_id, contact_id, added_at)
+            VALUES (:sid, :cid, NOW())
+            ON CONFLICT (segment_id, contact_id) DO NOTHING
+        """),
+        {"sid": request.segment_id, "cid": contact_id, "org_id": org_id},
+    )
+    db.commit()
+
+    return {"assigned": True, "contact_id": contact_id, "segment_id": request.segment_id, "source": "manual"}
+
+
+# ── POST /v1/segments/backfill ───────────────────────────────────────────────
+
+@router.post("/v1/segments/backfill")
+def backfill_segments(
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """
+    Backfill auto-segment assignment for all contacts that don't have a segment yet.
+    Useful after first enabling segments or adding the feature to an existing org.
+    """
+    from app.ingestion.segment_assigner import auto_assign_segment
+
+    rows = db.execute(
+        text("""
+            SELECT id, entity_type FROM contacts
+            WHERE org_id = :org_id
+              AND (segment_id IS NULL OR segment_source IS NULL)
+            LIMIT 500
+        """),
+        {"org_id": org_id},
+    ).fetchall()
+
+    assigned = 0
+    for row in rows:
+        entity_type = row[1] or "other"
+        auto_assign_segment(db, org_id, str(row[0]), entity_type)
+        assigned += 1
+
+    db.commit()
+
+    return {"backfilled": assigned, "org_id": org_id}
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _validated_sync_interval(hours: int | None, tier: str) -> int | None:

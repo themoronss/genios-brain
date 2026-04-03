@@ -209,8 +209,56 @@ def get_context(
             f"Context request for: {request.entity}, org: {org_id}, source: {source}"
         )
 
-        # Segment scoping: if segment_id provided, verify entity is a member
+        # ── Segment lock check ────────────────────────────────────────────
+        # If a contact exists but is in a locked segment (beyond tier's max_clusters),
+        # return 403 with entity_exists=true so agents know data is behind a gate.
         segment_name = None
+        if source == "api":
+            _plan = plan_info if "plan_info" in dir() else get_org_plan(db, org_id)
+            _tier = _plan["tier"]
+            _max_clusters = _plan["config"]["max_clusters"]
+
+            locked_check = db.execute(
+                text("""
+                    SELECT c.id, c.segment_id, gs.cluster_type, gs.name,
+                           ROW_NUMBER() OVER (PARTITION BY gs.org_id ORDER BY gs.created_at) AS seg_rank
+                    FROM contacts c
+                    LEFT JOIN graph_segments gs ON gs.id = c.segment_id AND gs.org_id = c.org_id
+                    WHERE c.org_id = :org_id
+                      AND LOWER(TRIM(c.name)) = LOWER(TRIM(:entity))
+                    LIMIT 1
+                """),
+                {"org_id": org_id, "entity": request.entity.strip()},
+            ).fetchone()
+
+            if locked_check and locked_check[1] is not None:
+                # Check if this contact's segment is beyond the tier's allowed count
+                seg_rank_row = db.execute(
+                    text("""
+                        SELECT COUNT(*) FROM graph_segments
+                        WHERE org_id = :org_id AND created_at <= (
+                            SELECT created_at FROM graph_segments WHERE id = :sid
+                        )
+                    """),
+                    {"org_id": org_id, "sid": str(locked_check[1])},
+                ).fetchone()
+                seg_rank = seg_rank_row[0] if seg_rank_row else 0
+
+                if seg_rank > _max_clusters:
+                    raise HTTPException(
+                        status_code=403,
+                        detail={
+                            "error": "SEGMENT_LOCKED",
+                            "message": f"'{request.entity}' is in the '{locked_check[3]}' segment which requires a higher plan.",
+                            "entity_exists": True,
+                            "entity_preview": None,
+                            "segment": locked_check[2],
+                            "tier_required": "startup" if _max_clusters < 10 else _tier,
+                            "upgrade_url": "https://genios.ai/upgrade",
+                        },
+                    )
+
+        # Segment scoping: if segment_id provided, verify entity is a member
         if request.segment_id:
             seg_row = db.execute(
                 text("""
@@ -238,12 +286,22 @@ def get_context(
                 {"sid": request.segment_id, "org_id": org_id, "entity": request.entity.strip()},
             ).fetchone()
             if not in_segment:
+                # Check if entity exists at all (for better 403)
+                entity_exists = db.execute(
+                    text("""
+                        SELECT 1 FROM contacts
+                        WHERE org_id = :org_id AND LOWER(TRIM(name)) = LOWER(TRIM(:entity))
+                        LIMIT 1
+                    """),
+                    {"org_id": org_id, "entity": request.entity.strip()},
+                ).fetchone()
                 raise HTTPException(
                     status_code=403,
                     detail={
                         "error": "ENTITY_NOT_IN_SEGMENT",
                         "message": f"'{request.entity}' is not a member of segment '{segment_name}'.",
                         "segment_id": request.segment_id,
+                        "entity_exists": entity_exists is not None,
                     },
                 )
 

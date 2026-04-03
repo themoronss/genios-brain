@@ -8,6 +8,7 @@ import logging
 
 from app.ingestion.category_detector import detect_entity_category
 from app.plan_enforcer import check_contact_limit
+from app.ingestion.segment_assigner import auto_assign_segment
 
 logger = logging.getLogger(__name__)
 
@@ -396,6 +397,8 @@ def upsert_contact(
                     "contact_id": existing_id,
                 },
             )
+        # Auto-assign segment if not already manually set
+        auto_assign_segment(db, org_id, existing_id, final_entity_type or "other")
         return existing_id
 
     limit_check = check_contact_limit(db, org_id)
@@ -471,6 +474,9 @@ def upsert_contact(
 
     final_id = result.fetchone()[0]
 
+    # Auto-assign segment based on detected entity type
+    auto_assign_segment(db, org_id, final_id, final_entity_type or "other")
+
     # Log contact creation/update activity
     log_activity(db, org_id, "contact_created", {"name": name, "email": email, "company": company})
 
@@ -501,6 +507,7 @@ def create_interaction(
     has_attachment=False,
     unanswered_followup_count=0,
     processed_version=1,
+    initiator_email=None,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
@@ -557,7 +564,8 @@ def create_interaction(
             comm_style_signals,
             has_attachment,
             unanswered_followup_count,
-            processed_version
+            processed_version,
+            initiator_email
         )
         VALUES (
             :id,
@@ -581,7 +589,8 @@ def create_interaction(
             :comm_style_signals,
             :has_attachment,
             :unanswered_followup_count,
-            :processed_version
+            :processed_version,
+            :initiator_email
         )
         ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
@@ -596,7 +605,8 @@ def create_interaction(
             comm_style_signals = EXCLUDED.comm_style_signals,
             has_attachment = EXCLUDED.has_attachment,
             unanswered_followup_count = EXCLUDED.unanswered_followup_count,
-            processed_version = EXCLUDED.processed_version
+            processed_version = EXCLUDED.processed_version,
+            initiator_email = EXCLUDED.initiator_email
         """
         ),
         {
@@ -622,6 +632,7 @@ def create_interaction(
             "has_attachment": has_attachment,
             "unanswered_followup_count": unanswered_followup_count,
             "processed_version": processed_version,
+            "initiator_email": initiator_email,
         },
     )
 

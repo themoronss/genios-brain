@@ -106,6 +106,18 @@ def get_graph_data(
         entity_filter = "AND entity_type = :entity_type"
         params["entity_type"] = entity_type
 
+    # Determine segment lock boundary for this org's plan tier
+    from app.plan_enforcer import get_org_plan as _get_plan
+    _plan = _get_plan(db, org_id)
+    _max_clusters = _plan["config"]["max_clusters"]
+
+    # Get ordered segment IDs — segments beyond max_clusters are locked
+    _seg_rows = db.execute(
+        text("SELECT id FROM graph_segments WHERE org_id = :org_id ORDER BY created_at ASC"),
+        {"org_id": org_id},
+    ).fetchall()
+    _locked_seg_ids = {str(r[0]) for i, r in enumerate(_seg_rows) if i >= _max_clusters}
+
     # Get all contacts (with optional entity_type filter)
     contacts = db.execute(
         text(
@@ -116,7 +128,8 @@ def get_graph_data(
                 COALESCE(human_score, 0.5) AS human_score,
                 confidence_score, community_id, size_score, is_bidirectional,
                 freshness_score, composite_score, sentiment_trend,
-                response_rate, avg_response_time_hours
+                response_rate, avg_response_time_hours,
+                segment_id
             FROM contacts
             WHERE org_id = :org_id
             AND relationship_stage IS NOT NULL
@@ -149,6 +162,7 @@ def get_graph_data(
             contact_id_set.add(str(c.id))
         else:
             days_ago = (datetime.now(timezone.utc) - c.last_interaction_at).days if c.last_interaction_at else 999
+            is_locked = str(c.segment_id) in _locked_seg_ids if c.segment_id else False
             nodes.append({
                 "id": str(c.id),
                 "name": c.name or c.email,
@@ -169,6 +183,7 @@ def get_graph_data(
                 "sentiment_trend": c.sentiment_trend,
                 "response_rate": float(c.response_rate or 0),
                 "avg_response_time_hours": float(c.avg_response_time_hours or 0),
+                "locked": is_locked,
             })
             contact_id_set.add(str(c.id))
     for acct_lower, acct_original in account_emails.items():

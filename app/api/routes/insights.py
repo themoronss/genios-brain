@@ -61,6 +61,36 @@ def dismiss_insight(org_id: str, insight_id: str, db: Session = Depends(get_db))
     return {"dismissed": True}
 
 
+@router.get("/api/org/{org_id}/intelligence-dimensions")
+def get_intelligence_dimensions(org_id: str, db: Session = Depends(get_db)):
+    """Get graph intelligence dimension percentages for an org."""
+    row = db.execute(
+        text("""
+            SELECT relationship_pct, authority_pct, state_pct, precedent_pct,
+                   connected_tools, computed_at
+            FROM graph_intelligence_dimensions
+            WHERE org_id = :org_id
+        """),
+        {"org_id": org_id}
+    ).fetchone()
+
+    if not row:
+        return {
+            "relationship_pct": 0, "authority_pct": 0,
+            "state_pct": 0, "precedent_pct": 0,
+            "connected_tools": [], "computed_at": None,
+        }
+
+    return {
+        "relationship_pct": float(row[0] or 0),
+        "authority_pct": float(row[1] or 0),
+        "state_pct": float(row[2] or 0),
+        "precedent_pct": float(row[3] or 0),
+        "connected_tools": row[4] or [],
+        "computed_at": row[5].isoformat() if row[5] else None,
+    }
+
+
 @router.get("/activity")
 def get_activity_feed(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
     """Recent activity events for the activity feed."""

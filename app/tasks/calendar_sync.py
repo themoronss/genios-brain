@@ -30,10 +30,12 @@ from app.ingestion.calendar_bridge import (
     detect_rescheduled_events,
     cross_match_gmail_calendar,
     check_meeting_followups,
+    create_co_attendance_edges,
 )
 from app.ingestion.calendar_extractor import extract_agenda_from_events
 from app.ingestion.bridge_utils import get_org_domain
 from app.graph.relationship_calculator import recalculate_all_relationships
+from app.graph.intelligence_dimensions import compute_intelligence_dimensions
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +133,11 @@ def run_calendar_sync(org_id: str, max_results=None):
         cross_match_gmail_calendar(db, org_id)
         db.commit()
 
+        # Phase 2C: Create co-attendance edges (attendee-to-attendee clustering)
+        logger.info(f"Calendar bridge: creating co-attendance edges for org={org_id}")
+        create_co_attendance_edges(db, org_id)
+        db.commit()
+
         # Phase 3A: Check for missing follow-ups (72h post-meeting)
         logger.info(f"Calendar bridge: checking meeting follow-ups for org={org_id}")
         check_meeting_followups(db, org_id)
@@ -164,6 +171,13 @@ def run_calendar_sync(org_id: str, max_results=None):
                 logger.info(f"Calendar bridge: updated {updated} contacts")
             except Exception as e:
                 logger.error(f"Calendar bridge: relationship recalc failed: {e}")
+
+        # Phase 5: Compute graph intelligence dimension percentages
+        try:
+            compute_intelligence_dimensions(db, org_id)
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Calendar bridge: intelligence dimensions failed (non-critical): {e}")
 
         # Phase 3B: Pre-compute context bundles for upcoming meetings (48h window)
         try:

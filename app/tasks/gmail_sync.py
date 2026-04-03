@@ -729,6 +729,10 @@ def _sync_single_account(
                     else:
                         break  # Found an inbound reply — stop counting
 
+            # Thread initiator = first message sender in this thread
+            thread_first = thread_groups.get(thread_id, [None])[0]
+            thread_initiator = thread_first["from_email"] if thread_first else None
+
             # Create the primary interaction row with signal_score
             create_interaction(
                 db,
@@ -754,6 +758,7 @@ def _sync_single_account(
                 has_attachment=attachment_info.get("has_attachment", False),
                 unanswered_followup_count=followup_count,
                 processed_version=PROCESSING_VERSION,
+                initiator_email=thread_initiator,
             )
 
             # ── Update 3: Create interaction rows for CC participants ──────────
