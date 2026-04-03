@@ -669,7 +669,7 @@ def build_context_bundle(
         "agent_behavior_guidance": (
             "execute_autonomously" if contact.get("confidence_score", 0.5) > 0.80
             else "execute_with_caution" if contact.get("confidence_score", 0.5) >= 0.60
-            else "needs_confirmation" if contact.get("confidence_score", 0.5) >= 0.40
+            else "needs_confirmation" if contact.get("confidence_score", 0.5) >= 0.20
             else "block"
         ),
         "data_quality": {

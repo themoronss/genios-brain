@@ -388,7 +388,7 @@ def get_context(
                     "confidence": round(float(cached_bundle.get("confidence_score", 0) or 0), 2),
                     "relationship_stage": cached_bundle.get("relationship_stage"),
                     "latency_ms": cached_bundle["latency_ms"],
-                    "plan": tier,
+                    "plan": _tier if source == "api" else "dashboard",
                     "tokens_used": cached_tokens,
                 })
                 from fastapi.responses import JSONResponse
