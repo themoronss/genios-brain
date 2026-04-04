@@ -8,11 +8,14 @@ sentry_sdk.init(
     environment=os.getenv("ENVIRONMENT", "development"),
 )
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 from contextlib import asynccontextmanager
 import asyncio
 import logging
+import jwt as pyjwt
 
 from app.api.routes import health
 from app.api.routes import auth
@@ -253,6 +256,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── JWT Auth Middleware — protects dashboard routes ──────────────────────────
+_JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
+_PROTECTED_PREFIXES = ("/api/org/", "/dashboard/", "/activity")
+
+
+class JWTAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+
+        # Skip non-protected routes and OPTIONS (CORS preflight)
+        if request.method == "OPTIONS" or not any(path.startswith(p) for p in _PROTECTED_PREFIXES):
+            return await call_next(request)
+
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer ") or auth_header.startswith("Bearer gn_live_"):
+            return JSONResponse(status_code=401, content={"detail": "Authentication required"})
+
+        token = auth_header[7:]
+        try:
+            payload = pyjwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
+            # Attach org_id from JWT to request state for downstream use
+            request.state.jwt_org_id = payload.get("org_id")
+        except pyjwt.ExpiredSignatureError:
+            return JSONResponse(status_code=401, content={"detail": "Token expired"})
+        except pyjwt.InvalidTokenError:
+            return JSONResponse(status_code=401, content={"detail": "Invalid token"})
+
+        return await call_next(request)
+
+
+app.add_middleware(JWTAuthMiddleware)
 
 app.include_router(health.router)
 app.include_router(auth.router)
