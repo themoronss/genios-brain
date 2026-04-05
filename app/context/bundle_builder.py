@@ -46,32 +46,66 @@ def _row_to_dict(result) -> Dict:
     }
 
 
+_FULL_CONTACT_COLS = """
+    id, name, email, company, relationship_stage,
+    sentiment_avg, last_interaction_at, first_interaction_at,
+    interaction_count, topics_aggregate, communication_style,
+    entity_type, freshness_score, confidence_score,
+    consistency_score, authority_score, composite_score,
+    sentiment_ewma, sentiment_trend, response_rate,
+    avg_response_time_hours, is_bidirectional,
+    what_works, what_to_avoid, introduced_by,
+    is_archived, relationship_summary, stage_changed_at,
+    previous_stage, tags, disclosure_level, restricted_to_agents
+"""
+
+
+def _fetch_full_contact(db, contact_id: str, org_id: str) -> Optional[Dict]:
+    """Fetch full contact row by ID."""
+    result = db.execute(
+        text(f"SELECT {_FULL_CONTACT_COLS} FROM contacts WHERE id = :id AND org_id = :org_id"),
+        {"id": contact_id, "org_id": org_id},
+    ).fetchone()
+    return _row_to_dict(result) if result else None
+
+
 def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
     """
-    Find a contact by name with fuzzy matching.
+    6-tier entity resolution pipeline (ordered by precision):
+      1. Email exact match → confidence 1.0
+      2. Name/email exact match → confidence 1.0
+      3. Email domain + name fuzzy (>70%) → confidence 0.9
+      4. Name exact + company fuzzy (>80%) → confidence 0.85
+      5. Name fuzzy >85% → confidence = score/100
+      6. Name fuzzy 70-85% → confidence 0.5 (let agent decide)
+    Never auto-merges below 0.85 without an email anchor.
     """
     try:
-        # Try exact match first (case insensitive, trimmed)
+        # ── Tier 1: Exact email match (ground truth) ────────────────────
+        if "@" in entity_name:
+            result = db.execute(
+                text(f"""
+                    SELECT {_FULL_CONTACT_COLS} FROM contacts
+                    WHERE org_id = :org_id AND LOWER(email) = LOWER(:email)
+                    LIMIT 1
+                """),
+                {"org_id": org_id, "email": entity_name.strip()},
+            ).fetchone()
+            if result:
+                res = _row_to_dict(result)
+                res["match_confidence"] = 1.0
+                res["matched_from"] = entity_name
+                res["resolution_method"] = "email_exact"
+                return res
+
+        # ── Tier 2: Name or email pattern exact match ───────────────────
         result = db.execute(
-            text(
-                """
-                SELECT
-                    id, name, email, company, relationship_stage,
-                    sentiment_avg, last_interaction_at, first_interaction_at,
-                    interaction_count, topics_aggregate, communication_style,
-                    entity_type, freshness_score, confidence_score,
-                    consistency_score, authority_score, composite_score,
-                    sentiment_ewma, sentiment_trend, response_rate,
-                    avg_response_time_hours, is_bidirectional,
-                    what_works, what_to_avoid, introduced_by,
-                    is_archived, relationship_summary, stage_changed_at,
-                    previous_stage, tags, disclosure_level, restricted_to_agents
-                FROM contacts
+            text(f"""
+                SELECT {_FULL_CONTACT_COLS} FROM contacts
                 WHERE org_id = :org_id
                 AND (TRIM(LOWER(name)) = TRIM(LOWER(:name)) OR LOWER(email) LIKE LOWER(:email_pattern))
                 LIMIT 1
-            """
-            ),
+            """),
             {
                 "org_id": org_id,
                 "name": entity_name,
@@ -83,61 +117,102 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
             res = _row_to_dict(result)
             res["match_confidence"] = 1.0
             res["matched_from"] = entity_name
+            res["resolution_method"] = "name_exact"
             return res
 
-        # Try fuzzy match
+        # ── Fetch all candidates for fuzzy tiers ────────────────────────
         candidates = db.execute(
-            text("SELECT id, name, email FROM contacts WHERE org_id = :org_id"),
+            text("SELECT id, name, email, company FROM contacts WHERE org_id = :org_id"),
             {"org_id": org_id},
         ).fetchall()
 
-        if candidates:
-            choices = {str(row[0]): row[1] for row in candidates if row[1]}
-            best_match = process.extractOne(
-                entity_name, choices, scorer=fuzz.WRatio, score_cutoff=70.0
+        if not candidates:
+            return None
+
+        # ── Tier 3: Email domain + name fuzzy (>70%) → confidence 0.9 ──
+        # If entity_name looks like a name (not email), check if any contact
+        # shares an email domain AND has a fuzzy name match
+        if "@" not in entity_name:
+            # Group candidates by email domain
+            domain_groups = {}
+            for row in candidates:
+                if row[2] and "@" in row[2]:
+                    domain = row[2].split("@")[1].lower()
+                    domain_groups.setdefault(domain, []).append(row)
+
+            for domain, group in domain_groups.items():
+                name_choices = {str(r[0]): r[1] for r in group if r[1]}
+                if name_choices:
+                    match = process.extractOne(
+                        entity_name, name_choices, scorer=fuzz.WRatio, score_cutoff=70.0
+                    )
+                    if match:
+                        contact = _fetch_full_contact(db, match[2], org_id)
+                        if contact:
+                            contact["match_confidence"] = 0.9
+                            contact["matched_from"] = entity_name
+                            contact["resolution_method"] = "email_domain_name_fuzzy"
+                            return contact
+
+        # ── Tier 4: Name exact + company fuzzy (>80%) → confidence 0.85 ──
+        name_exact_candidates = [r for r in candidates if r[1] and r[1].strip().lower() == entity_name.strip().lower()]
+        if not name_exact_candidates and len(entity_name.split()) >= 2:
+            # Try first+last name partial match
+            parts = entity_name.strip().lower().split()
+            name_exact_candidates = [
+                r for r in candidates
+                if r[1] and all(p in r[1].lower() for p in parts)
+            ]
+        if name_exact_candidates and len(name_exact_candidates) > 1:
+            # Multiple exact name matches — use company to disambiguate
+            company_choices = {str(r[0]): r[3] for r in name_exact_candidates if r[3]}
+            if company_choices:
+                company_match = process.extractOne(
+                    entity_name, company_choices, scorer=fuzz.WRatio, score_cutoff=80.0
+                )
+                if company_match:
+                    contact = _fetch_full_contact(db, company_match[2], org_id)
+                    if contact:
+                        contact["match_confidence"] = 0.85
+                        contact["matched_from"] = entity_name
+                        contact["resolution_method"] = "name_exact_company_fuzzy"
+                        return contact
+
+        # ── Tier 5 & 6: Name fuzzy matching ─────────────────────────────
+        choices = {str(row[0]): row[1] for row in candidates if row[1]}
+        best_name = process.extractOne(
+            entity_name, choices, scorer=fuzz.WRatio, score_cutoff=70.0
+        )
+
+        email_choices = {str(row[0]): row[2] for row in candidates if row[2]}
+        best_email = None
+        if email_choices:
+            best_email = process.extractOne(
+                entity_name, email_choices, scorer=fuzz.WRatio, score_cutoff=70.0
             )
 
-            email_choices = {str(row[0]): row[2] for row in candidates if row[2]}
-            best_email_match = None
-            if email_choices:
-                best_email_match = process.extractOne(
-                    entity_name, email_choices, scorer=fuzz.WRatio, score_cutoff=70.0
-                )
+        best = best_name
+        if best_email and (not best or best_email[1] > best[1]):
+            best = best_email
 
-            best = best_match
-            if best_email_match and (not best or best_email_match[1] > best[1]):
-                best = best_email_match
+        if best:
+            score = best[1]
+            matched_id = best[2]
 
-            if best:
-                matched_id = best[2]
-                confidence = best[1] / 100.0
-
-                full_result = db.execute(
-                    text(
-                        """
-                        SELECT
-                            id, name, email, company, relationship_stage,
-                            sentiment_avg, last_interaction_at, first_interaction_at,
-                            interaction_count, topics_aggregate, communication_style,
-                            entity_type, freshness_score, confidence_score,
-                            consistency_score, authority_score, composite_score,
-                            sentiment_ewma, sentiment_trend, response_rate,
-                            avg_response_time_hours, is_bidirectional,
-                            what_works, what_to_avoid, introduced_by,
-                            is_archived, relationship_summary, stage_changed_at,
-                            previous_stage
-                        FROM contacts
-                        WHERE id = :id AND org_id = :org_id
-                        """
-                    ),
-                    {"id": matched_id, "org_id": org_id},
-                ).fetchone()
-
-                if full_result:
-                    res = _row_to_dict(full_result)
-                    res["match_confidence"] = round(confidence, 2)
-                    res["matched_from"] = entity_name
-                    return res
+            contact = _fetch_full_contact(db, matched_id, org_id)
+            if contact:
+                if score >= 85.0:
+                    # Tier 5: High-confidence fuzzy (>85%)
+                    contact["match_confidence"] = round(score / 100.0, 2)
+                    contact["matched_from"] = entity_name
+                    contact["resolution_method"] = "name_fuzzy"
+                    return contact
+                else:
+                    # Tier 6: Low-confidence fuzzy (70-85%) — flag for agent
+                    contact["match_confidence"] = 0.5
+                    contact["matched_from"] = entity_name
+                    contact["resolution_method"] = "name_fuzzy_low"
+                    return contact
 
         return None
     except Exception as e:
@@ -639,6 +714,7 @@ def build_context_bundle(
         "entity": entity,
         "match_confidence": contact.get("match_confidence", 1.0),
         "matched_from": contact.get("matched_from", entity_name),
+        "resolution_method": contact.get("resolution_method", "exact"),
         "recent_interactions": interactions,
         "context_for_agent": context_for_agent,
         "confidence": contact_confidence,

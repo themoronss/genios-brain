@@ -151,98 +151,17 @@ def _sync_connected_tools(org_id: str, cron: bool = False):
                 pass  # Never let error-reporting crash the scheduler
 
 
-async def sync_scheduler_loop():
-    """
-    Background scheduler that:
-    1. Re-syncs all connected tools (incremental — skips existing data)
-    2. Runs nightly refresh (recalc scores, insights, bundles)
-
-    Checks every hour; per-org intervals can be 6, 12, 18, or 24 hours.
-    """
-    await asyncio.sleep(60)  # Wait 60s after startup
-
-    while True:
-        try:
-            from app.database import SessionLocal
-            from app.tasks.nightly_refresh import run_nightly_refresh
-            from sqlalchemy import text
-            from datetime import datetime, timezone
-
-            db = SessionLocal()
-            try:
-                orgs = db.execute(text(
-                    "SELECT id, COALESCE(sync_interval_hours, 24) AS interval_hours, COALESCE(subscription_tier, 'trial') AS subscription_tier FROM orgs"
-                )).fetchall()
-
-                for org in orgs:
-                    # Phase 4: Plan-gated sync — Trial = manual only (skip scheduler)
-                    plan_tier = org.subscription_tier if hasattr(org, "subscription_tier") else "trial"
-                    if plan_tier == "trial":
-                        continue  # Trial orgs only sync on manual trigger
-
-                    # Use MIN so we trigger if ANY tool is overdue, not just when all are recent
-                    last_sync = db.execute(text(
-                        "SELECT MIN(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"
-                    ), {"oid": str(org.id)}).scalar()
-
-                    # Hustler: 6h cron. Startup: 6h cron as fallback (real-time via webhook)
-                    effective_interval = org.interval_hours
-                    if plan_tier == "hustler":
-                        effective_interval = min(org.interval_hours, 6)  # cap at 6h per plan
-                    interval_seconds = effective_interval * 3600
-
-                    should_run = (
-                        not last_sync or
-                        (datetime.now(timezone.utc) - last_sync.replace(tzinfo=timezone.utc)).total_seconds() >= interval_seconds
-                    )
-
-                    if should_run:
-                        logger.info(f"🌙 Running scheduled sync + refresh for org {org.id} (tier: {plan_tier}, interval: {effective_interval}h)")
-                        loop = asyncio.get_event_loop()
-                        # Step 1: Re-sync all connected tools (incremental)
-                        await loop.run_in_executor(None, lambda oid=str(org.id): _sync_connected_tools(oid, cron=True))
-                        # Step 2: Recalculate scores, insights, bundles
-                        await loop.run_in_executor(None, run_nightly_refresh, str(org.id))
-                        logger.info(f"✓ Scheduled sync + refresh complete for org {org.id}")
-
-                # Step 3: Expire stale plans (once per cycle, not per org)
-                try:
-                    from app.plan_enforcer import expire_stale_plans
-                    expired_count = expire_stale_plans(db)
-                    if expired_count:
-                        logger.info(f"⏱ Plan expiry: marked {expired_count} plan(s) as expired")
-                except Exception as exp_err:
-                    logger.warning(f"Plan expiry step failed: {exp_err}")
-
-                # Billing jobs: trial expiry emails + overage invoices
-                try:
-                    from app.tasks.billing_jobs import run_trial_expiry_emails, run_overage_invoices
-                    run_trial_expiry_emails(db)
-                    run_overage_invoices(db)
-                except Exception as billing_err:
-                    logger.warning(f"Billing jobs failed: {billing_err}")
-            finally:
-                db.close()
-        except Exception as e:
-            logger.error(f"✗ Sync scheduler error: {e}")
-
-        await asyncio.sleep(3600)  # Check every hour
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage background tasks for the FastAPI app lifecycle."""
-    # Start sync scheduler loop as background task
-    refresh_task = asyncio.create_task(sync_scheduler_loop())
-    logger.info("✓ Sync scheduler started (checks hourly, per-org intervals)")
+    """
+    App lifecycle manager.
+    Scheduling is handled by Celery Beat (see app/celery_app.py).
+    The in-process scheduler loop has been removed — all sync/refresh
+    work now runs in separate Celery worker processes.
+    """
+    logger.info("✓ App started. Sync scheduling handled by Celery Beat.")
     yield
-    # Shutdown: cancel the background task cleanly
-    refresh_task.cancel()
-    try:
-        await refresh_task
-    except asyncio.CancelledError:
-        pass
-    logger.info("Sync scheduler stopped")
+    logger.info("App shutting down.")
 
 
 app = FastAPI(lifespan=lifespan)

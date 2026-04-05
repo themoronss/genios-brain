@@ -3,8 +3,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.api.deps import get_db
 from app.database import SessionLocal
-from app.tasks.gmail_sync import run_gmail_sync
-from app.tasks.reextract import run_recompute, run_reextract
 from app.config import PROCESSING_VERSION
 from datetime import datetime, timezone
 import json
@@ -12,33 +10,9 @@ import json
 router = APIRouter()
 
 
-def sync_task(org_id: str, account_email: str = None):
-    """Background task to sync Gmail (one or all accounts)."""
-    try:
-        from app.config import SYNC_MAX_EMAILS
-        label = f"account={account_email}" if account_email else "all accounts"
-        print(f"Starting Gmail sync for org_id={org_id} [{label}] with max_emails={SYNC_MAX_EMAILS}")
-        run_gmail_sync(org_id, max_emails=SYNC_MAX_EMAILS, account_email=account_email)
-        print(f"Gmail sync completed for org_id={org_id} [{label}]")
-    except Exception as e:
-        print(f"Error during sync: {e}")
-        # Mark sync as error if the whole task crashes
-        db = SessionLocal()
-        try:
-            db.execute(
-                text(
-                    "UPDATE oauth_tokens SET sync_status = 'error', sync_error = :error WHERE org_id = :org_id"
-                ),
-                {"org_id": org_id, "error": str(e)[:500]},
-            )
-            db.commit()
-        finally:
-            db.close()
-
-
 @router.post("/api/org/{org_id}/sync")
 def trigger_sync(
-    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+    org_id: str, db: Session = Depends(get_db)
 ):
     """Trigger manual Gmail sync for organization (syncs all connected accounts)."""
 
@@ -69,12 +43,14 @@ def trigger_sync(
     )
     db.commit()
 
-    # Trigger background sync for all accounts
-    background_tasks.add_task(sync_task, org_id, None)
+    # Queue sync via Celery (runs in separate worker process)
+    from app.celery_app import task_gmail_sync
+    from app.config import SYNC_MAX_EMAILS
+    task_gmail_sync.delay(org_id, max_emails=SYNC_MAX_EMAILS, account_email=None)
 
     return {
-        "status": "sync_started",
-        "message": "Gmail sync started in background. This may take 2-5 minutes.",
+        "status": "queued",
+        "message": "Gmail sync queued. This may take 2-5 minutes.",
         "org_id": org_id,
     }
 
@@ -284,12 +260,14 @@ def trigger_account_sync(
     )
     db.commit()
 
-    background_tasks.add_task(sync_task, org_id, account_email)
+    from app.celery_app import task_gmail_sync
+    from app.config import SYNC_MAX_EMAILS
+    task_gmail_sync.delay(org_id, max_emails=SYNC_MAX_EMAILS, account_email=account_email)
 
     return {
-        "status": "sync_started",
+        "status": "queued",
         "account_email": account_email,
-        "message": f"Sync started for {account_email}. This may take 2-5 minutes.",
+        "message": f"Sync queued for {account_email}. This may take 2-5 minutes.",
     }
 
 
@@ -398,7 +376,7 @@ def _set_recompute_meta(db, org_id: str, **kwargs):
 
 @router.post("/api/org/{org_id}/recompute")
 def trigger_recompute(
-    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+    org_id: str, db: Session = Depends(get_db)
 ):
     """
     Tier 1: Rebuild all scores, stages, and relationship graph from existing data.
@@ -411,10 +389,11 @@ def trigger_recompute(
         raise HTTPException(status_code=429, detail="A recompute job is already running. Please wait.")
 
     _set_recompute_meta(db, org_id, status="running")
-    background_tasks.add_task(run_recompute, org_id)
+    from app.celery_app import task_recompute
+    task_recompute.delay(org_id)
 
     return {
-        "status": "recompute_started",
+        "status": "recompute_queued",
         "tier": 1,
         "message": "Rebuilding scores and relationship graph from existing data.",
     }
@@ -422,7 +401,7 @@ def trigger_recompute(
 
 @router.post("/api/org/{org_id}/reextract")
 def trigger_reextract(
-    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+    org_id: str, db: Session = Depends(get_db)
 ):
     """
     Tier 2: Re-fetch email bodies from Gmail, re-run LLM extraction on stale
@@ -445,10 +424,11 @@ def trigger_reextract(
     ).scalar()
 
     _set_recompute_meta(db, org_id, status="running", progress=json.dumps({"tier": 2, "stale_count": stale_count}))
-    background_tasks.add_task(run_reextract, org_id)
+    from app.celery_app import task_reextract
+    task_reextract.delay(org_id)
 
     return {
-        "status": "reextract_started",
+        "status": "reextract_queued",
         "tier": 2,
         "stale_interactions": stale_count,
         "target_version": PROCESSING_VERSION,

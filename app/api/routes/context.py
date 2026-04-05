@@ -362,46 +362,11 @@ def get_context(
                     },
                 )
 
-        # Check cache first (60 second TTL as per MVP)
+        # ── Cache lookup: precomputed (situation-independent) → Redis → fresh build ──
+        # Layer 1: Precomputed bundles (24h TTL, situation-independent, highest hit rate)
+        context_bundle = None
         cache_key = get_cache_key(org_id, request.entity, request.situation)
 
-        try:
-            cached = redis_client.get(cache_key)
-            if cached:
-                logger.info(f"Cache hit for {request.entity}")
-                cached_bundle = json.loads(cached) if isinstance(cached, (str, bytes)) else {}
-                cached_tokens = max(1, len(cached_bundle.get("context_for_agent", "")) // 4)
-                log_context_call(
-                    db, org_id, request.entity,
-                    cached_bundle,
-                    cache_hit=True,
-                    source=source,
-                    agent_id=request.agent_id,
-                    tokens_used=cached_tokens,
-                )
-                cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
-                cached_bundle["cache_hit"] = True
-                from app.core.analytics import capture as _capture
-                _capture(org_id, "api_context_requested", {
-                    "source": source,
-                    "cache_hit": True,
-                    "confidence": round(float(cached_bundle.get("confidence_score", 0) or 0), 2),
-                    "relationship_stage": cached_bundle.get("relationship_stage"),
-                    "latency_ms": cached_bundle["latency_ms"],
-                    "plan": _tier if source == "api" else "dashboard",
-                    "tokens_used": cached_tokens,
-                })
-                from fastapi.responses import JSONResponse
-                return JSONResponse(
-                    content=cached_bundle,
-                    headers={"X-Tokens-Used": str(cached_tokens)},
-                )
-        except Exception as redis_error:
-            # Continue if Redis fails (don't block on cache errors)
-            logger.warning(f"Redis cache read failed: {redis_error}")
-
-        # Try pre-computed bundle first (24h cache from nightly refresh)
-        context_bundle = None
         try:
             precomputed = db.execute(
                 text("""
@@ -418,15 +383,80 @@ def get_context(
 
             if precomputed and precomputed[0]:
                 context_bundle = precomputed[0] if isinstance(precomputed[0], dict) else json.loads(precomputed[0])
-                # Set cache_age_seconds
                 if precomputed[1]:
                     age = (datetime.now(timezone.utc) - precomputed[1]).total_seconds()
                     context_bundle["cache_age_seconds"] = int(age)
                 logger.info(f"Serving pre-computed bundle for {request.entity}")
+
+                cached_tokens = max(1, len(context_bundle.get("context_for_agent", "")) // 4)
+                log_context_call(
+                    db, org_id, request.entity,
+                    context_bundle,
+                    cache_hit=True,
+                    source=source,
+                    agent_id=request.agent_id,
+                    tokens_used=cached_tokens,
+                )
+                context_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
+                context_bundle["cache_hit"] = True
+                context_bundle["cache_source"] = "precomputed"
+                from app.core.analytics import capture as _capture
+                _capture(org_id, "api_context_requested", {
+                    "source": source,
+                    "cache_hit": True,
+                    "cache_source": "precomputed",
+                    "confidence": round(float(context_bundle.get("confidence_score", 0) or 0), 2),
+                    "relationship_stage": context_bundle.get("relationship_stage"),
+                    "latency_ms": context_bundle["latency_ms"],
+                    "plan": _tier if source == "api" else "dashboard",
+                    "tokens_used": cached_tokens,
+                })
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    content=context_bundle,
+                    headers={"X-Tokens-Used": str(cached_tokens)},
+                )
         except Exception as e:
             logger.debug(f"Pre-computed bundle lookup failed: {e}")
 
-        # Fall back to on-demand build — enforced 3s timeout (PDF guardrail)
+        # Layer 2: Redis cache (60s TTL, situation-keyed, for repeat identical calls)
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logger.info(f"Redis cache hit for {request.entity}")
+                cached_bundle = json.loads(cached) if isinstance(cached, (str, bytes)) else {}
+                cached_tokens = max(1, len(cached_bundle.get("context_for_agent", "")) // 4)
+                log_context_call(
+                    db, org_id, request.entity,
+                    cached_bundle,
+                    cache_hit=True,
+                    source=source,
+                    agent_id=request.agent_id,
+                    tokens_used=cached_tokens,
+                )
+                cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
+                cached_bundle["cache_hit"] = True
+                cached_bundle["cache_source"] = "redis"
+                from app.core.analytics import capture as _capture
+                _capture(org_id, "api_context_requested", {
+                    "source": source,
+                    "cache_hit": True,
+                    "cache_source": "redis",
+                    "confidence": round(float(cached_bundle.get("confidence_score", 0) or 0), 2),
+                    "relationship_stage": cached_bundle.get("relationship_stage"),
+                    "latency_ms": cached_bundle["latency_ms"],
+                    "plan": _tier if source == "api" else "dashboard",
+                    "tokens_used": cached_tokens,
+                })
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    content=cached_bundle,
+                    headers={"X-Tokens-Used": str(cached_tokens)},
+                )
+        except Exception as redis_error:
+            logger.warning(f"Redis cache read failed: {redis_error}")
+
+        # Layer 3: Fresh build — enforced 3s timeout (PDF guardrail)
         if not context_bundle:
             context_bundle = call_with_timeout(
                 build_context_bundle,

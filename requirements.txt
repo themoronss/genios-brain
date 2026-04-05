@@ -4,6 +4,7 @@ sqlalchemy
 psycopg2-binary
 pgvector
 redis
+celery[redis]
 python-dotenv
 pydantic
 requests

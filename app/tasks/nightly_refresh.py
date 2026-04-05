@@ -9,7 +9,7 @@ import sys
 import os
 import json
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 # Add parent directory to path for direct execution
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,6 +20,19 @@ from app.graph.relationship_calculator import recalculate_all_relationships
 from app.plan_enforcer import get_org_plan
 
 
+REFRESH_PHASES = [
+    "recalculate_relationships",
+    "louvain_detection",
+    "insights_engine",
+    "inferred_edges",
+    "overdue_commitments",
+    "precompute_bundles",
+    "daily_snapshots",
+    "weekly_reports",
+    "confidence_updater",
+]
+
+
 def _get_org_ids(db, org_id=None):
     """Return list of org IDs to process."""
     if org_id:
@@ -28,116 +41,234 @@ def _get_org_ids(db, org_id=None):
     return [str(r[0]) for r in rows]
 
 
+def _is_phase_done(db, org_id: str, phase: str) -> bool:
+    """Check if a phase has already completed for this org today."""
+    try:
+        row = db.execute(
+            text("""
+                SELECT status FROM refresh_jobs
+                WHERE org_id = :org_id AND phase = :phase AND run_date = CURRENT_DATE
+            """),
+            {"org_id": org_id, "phase": phase},
+        ).fetchone()
+        return row is not None and row[0] == "completed"
+    except Exception:
+        return False
+
+
+def _mark_phase(db, org_id: str, phase: str, status: str, error: str = None):
+    """Record phase status in refresh_jobs table."""
+    try:
+        now = datetime.now(timezone.utc)
+        db.execute(
+            text("""
+                INSERT INTO refresh_jobs (org_id, phase, run_date, status, started_at, completed_at, error_message)
+                VALUES (:org_id, :phase, CURRENT_DATE, :status, :now,
+                        CASE WHEN :status IN ('completed', 'failed') THEN :now ELSE NULL END,
+                        :error)
+                ON CONFLICT (org_id, phase, run_date) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    completed_at = CASE WHEN EXCLUDED.status IN ('completed', 'failed') THEN :now ELSE refresh_jobs.completed_at END,
+                    error_message = EXCLUDED.error_message
+            """),
+            {"org_id": org_id, "phase": phase, "status": status, "now": now, "error": error},
+        )
+        db.commit()
+    except Exception as e:
+        print(f"  ⚠️ Phase tracking write failed ({phase}): {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+
 def run_nightly_refresh(org_id: str = None):
     """
-    Run nightly refresh job:
-    1. Recalculate all relationship stages (sentiment, confidence, freshness, etc.)
+    Run nightly refresh job with per-org, per-phase progress tracking.
+    Phases are idempotent — completed phases are skipped on restart.
+
+    Phases:
+    1. Recalculate all relationship stages
     2. Run Louvain community detection
-    3. Run insights engine (signal detection queries)
-    4. Pre-compute context bundles for active contacts (24h cache)
+    3. Run insights engine
+    4. Compute inferred edges
     5. Mark overdue commitments
+    6. Pre-compute context bundles
+    7. Record daily snapshots
+    8. Weekly reports (Mondays)
+    9. Apply confidence deltas
 
     Args:
-        org_id: Optional — limit refresh to a single org (used for post-sync refresh).
-                If None, recalculates all orgs.
+        org_id: Optional — limit refresh to a single org.
     """
     scope = f"org {org_id}" if org_id else "ALL orgs"
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Starting nightly relationship refresh for {scope}...")
 
     db = SessionLocal()
     org_ids = _get_org_ids(db, org_id)
+    # Use first org_id for phase tracking (or a sentinel for all-org runs)
+    track_id = org_ids[0] if len(org_ids) == 1 else org_ids[0]
 
     try:
         # ── Step 1: Recalculate relationships ────────────────────────────
-        updated_count = recalculate_all_relationships(db, org_id)
-        print(f"✓ Successfully updated {updated_count} contacts for {scope}")
+        phase = "recalculate_relationships"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                updated_count = recalculate_all_relationships(db, org_id)
+                print(f"✓ Successfully updated {updated_count} contacts for {scope}")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Relationship recalc failed: {e}")
+                updated_count = 0
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
+            updated_count = 0
 
         # ── Step 2: Louvain community detection ──────────────────────────
-        try:
-            from app.graph.community_detection import run_louvain_detection
-            for oid in org_ids:
-                plan_info = get_org_plan(db, oid)
-                if not plan_info["config"].get("louvain"):
-                    continue  # Trial plan: skip
-                partition = run_louvain_detection(db, oid)
-                print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {oid}")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Louvain detection skipped: {e}")
+        phase = "louvain_detection"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                from app.graph.community_detection import run_louvain_detection
+                for oid in org_ids:
+                    plan_info = get_org_plan(db, oid)
+                    if not plan_info["config"].get("louvain"):
+                        continue
+                    partition = run_louvain_detection(db, oid)
+                    print(f"  ✓ Louvain: {len(set(partition.values())) if partition else 0} communities for org {oid}")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Louvain detection skipped: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
         # ── Step 3: Run insights engine ──────────────────────────────────
-        try:
-            from app.graph.insights_engine import run_insights_engine
-            for oid in org_ids:
-                insights = run_insights_engine(db, oid)
-                print(f"  ✓ Insights: {len(insights)} signals for org {oid}")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Insights engine skipped: {e}")
+        phase = "insights_engine"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                from app.graph.insights_engine import run_insights_engine
+                for oid in org_ids:
+                    insights = run_insights_engine(db, oid)
+                    print(f"  ✓ Insights: {len(insights)} signals for org {oid}")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Insights engine skipped: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
-        # ── Step 4: Compute inferred edges (indirect relationships) ───────
-        try:
-            from app.graph.indirect_edges import compute_inferred_edges
-            for oid in org_ids:
-                inferred_count = compute_inferred_edges(db, oid)
-                print(f"  ✓ Inferred edges: {inferred_count} indirect connections for org {oid}")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Inferred edge computation skipped: {e}")
+        # ── Step 4: Compute inferred edges ───────────────────────────────
+        phase = "inferred_edges"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                from app.graph.indirect_edges import compute_inferred_edges
+                for oid in org_ids:
+                    inferred_count = compute_inferred_edges(db, oid)
+                    print(f"  ✓ Inferred edges: {inferred_count} indirect connections for org {oid}")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Inferred edge computation skipped: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
         # ── Step 5: Mark overdue commitments ─────────────────────────────
-        try:
-            overdue_count = db.execute(
-                text("""
-                    UPDATE commitments
-                    SET status = 'OVERDUE'
-                    WHERE status = 'OPEN'
-                    AND due_date < NOW()
-                    AND due_date IS NOT NULL
-                """)
-            ).rowcount
-            db.commit()
-            if overdue_count:
-                print(f"✓ Marked {overdue_count} commitments as OVERDUE")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Overdue marking failed: {e}")
+        phase = "overdue_commitments"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                overdue_count = db.execute(
+                    text("""
+                        UPDATE commitments
+                        SET status = 'OVERDUE'
+                        WHERE status = 'OPEN'
+                        AND due_date < NOW()
+                        AND due_date IS NOT NULL
+                    """)
+                ).rowcount
+                db.commit()
+                if overdue_count:
+                    print(f"✓ Marked {overdue_count} commitments as OVERDUE")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Overdue marking failed: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
-        # ── Step 6: Pre-compute context bundles for active contacts ──────
-        try:
-            _precompute_bundles(db, org_id)
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Bundle pre-computation skipped: {e}")
+        # ── Step 6: Pre-compute context bundles ──────────────────────────
+        phase = "precompute_bundles"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                _precompute_bundles(db, org_id)
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Bundle pre-computation skipped: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
-        # ── Step 7: Record daily snapshot for trend sparklines ────────────
-        try:
-            for oid in org_ids:
-                _record_daily_snapshot(db, oid)
-            print(f"✓ Daily snapshots recorded for {len(org_ids)} org(s)")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Daily snapshot failed: {e}")
+        # ── Step 7: Record daily snapshots ───────────────────────────────
+        phase = "daily_snapshots"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                for oid in org_ids:
+                    _record_daily_snapshot(db, oid)
+                print(f"✓ Daily snapshots recorded for {len(org_ids)} org(s)")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Daily snapshot failed: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
-        # ── Step 8: Weekly graph intelligence reports (Mondays only, Startup) ──
-        try:
-            if datetime.now(timezone.utc).weekday() == 0:  # Monday
-                from app.tasks.weekly_report import run_weekly_reports
-                run_weekly_reports(org_id)
-                print(f"✓ Weekly graph intelligence reports generated")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Weekly reports skipped: {e}")
+        # ── Step 8: Weekly reports (Mondays only) ────────────────────────
+        phase = "weekly_reports"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                if datetime.now(timezone.utc).weekday() == 0:  # Monday
+                    from app.tasks.weekly_report import run_weekly_reports
+                    run_weekly_reports(org_id)
+                    print(f"✓ Weekly graph intelligence reports generated")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Weekly reports skipped: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
-        # ── Step 9: Apply outcome confidence deltas (Startup learning loop) ─
-        try:
-            from app.tasks.confidence_updater import apply_outcome_confidence_deltas
-            updated = apply_outcome_confidence_deltas(db, org_id)
-            if updated:
-                print(f"✓ Confidence updater: applied deltas to {updated} contact(s)")
-        except Exception as e:
-            db.rollback()
-            print(f"⚠️ Confidence updater skipped: {e}")
+        # ── Step 9: Confidence updater ───────────────────────────────────
+        phase = "confidence_updater"
+        if not _is_phase_done(db, track_id, phase):
+            _mark_phase(db, track_id, phase, "running")
+            try:
+                from app.tasks.confidence_updater import apply_outcome_confidence_deltas
+                updated = apply_outcome_confidence_deltas(db, org_id)
+                if updated:
+                    print(f"✓ Confidence updater: applied deltas to {updated} contact(s)")
+                _mark_phase(db, track_id, phase, "completed")
+            except Exception as e:
+                db.rollback()
+                _mark_phase(db, track_id, phase, "failed", str(e))
+                print(f"⚠️ Confidence updater skipped: {e}")
+        else:
+            print(f"  ↩ Skipping {phase} (already completed today)")
 
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Completed nightly refresh for {scope}")
         return updated_count
