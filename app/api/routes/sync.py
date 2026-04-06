@@ -10,9 +10,35 @@ import json
 router = APIRouter()
 
 
+def _run_in_background(background_tasks, celery_task, *args, fallback_fn=None, **kwargs):
+    """Try Celery first. If unavailable, fall back to BackgroundTasks."""
+    try:
+        celery_task.delay(*args, **kwargs)
+    except Exception:
+        if fallback_fn:
+            background_tasks.add_task(fallback_fn, *args, **kwargs)
+
+
+def _sync_fallback(org_id: str, max_emails=None, account_email=None):
+    """BackgroundTasks fallback for sync when Celery is not available."""
+    try:
+        from app.tasks.gmail_sync import run_gmail_sync
+        run_gmail_sync(org_id, max_emails=max_emails, account_email=account_email)
+    except Exception as e:
+        db = SessionLocal()
+        try:
+            db.execute(
+                text("UPDATE oauth_tokens SET sync_status = 'error', sync_error = :err WHERE org_id = :oid"),
+                {"oid": org_id, "err": str(e)[:500]},
+            )
+            db.commit()
+        finally:
+            db.close()
+
+
 @router.post("/api/org/{org_id}/sync")
 def trigger_sync(
-    org_id: str, db: Session = Depends(get_db)
+    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """Trigger manual Gmail sync for organization (syncs all connected accounts)."""
 
@@ -43,14 +69,17 @@ def trigger_sync(
     )
     db.commit()
 
-    # Queue sync via Celery (runs in separate worker process)
     from app.celery_app import task_gmail_sync
     from app.config import SYNC_MAX_EMAILS
-    task_gmail_sync.delay(org_id, max_emails=SYNC_MAX_EMAILS, account_email=None)
+    _run_in_background(
+        background_tasks, task_gmail_sync,
+        org_id, max_emails=SYNC_MAX_EMAILS, account_email=None,
+        fallback_fn=_sync_fallback,
+    )
 
     return {
-        "status": "queued",
-        "message": "Gmail sync queued. This may take 2-5 minutes.",
+        "status": "sync_started",
+        "message": "Gmail sync started. This may take 2-5 minutes.",
         "org_id": org_id,
     }
 
@@ -262,12 +291,16 @@ def trigger_account_sync(
 
     from app.celery_app import task_gmail_sync
     from app.config import SYNC_MAX_EMAILS
-    task_gmail_sync.delay(org_id, max_emails=SYNC_MAX_EMAILS, account_email=account_email)
+    _run_in_background(
+        background_tasks, task_gmail_sync,
+        org_id, max_emails=SYNC_MAX_EMAILS, account_email=account_email,
+        fallback_fn=_sync_fallback,
+    )
 
     return {
-        "status": "queued",
+        "status": "sync_started",
         "account_email": account_email,
-        "message": f"Sync queued for {account_email}. This may take 2-5 minutes.",
+        "message": f"Sync started for {account_email}. This may take 2-5 minutes.",
     }
 
 
@@ -376,7 +409,7 @@ def _set_recompute_meta(db, org_id: str, **kwargs):
 
 @router.post("/api/org/{org_id}/recompute")
 def trigger_recompute(
-    org_id: str, db: Session = Depends(get_db)
+    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """
     Tier 1: Rebuild all scores, stages, and relationship graph from existing data.
@@ -390,10 +423,14 @@ def trigger_recompute(
 
     _set_recompute_meta(db, org_id, status="running")
     from app.celery_app import task_recompute
-    task_recompute.delay(org_id)
+    from app.tasks.reextract import run_recompute
+    _run_in_background(
+        background_tasks, task_recompute, org_id,
+        fallback_fn=run_recompute,
+    )
 
     return {
-        "status": "recompute_queued",
+        "status": "recompute_started",
         "tier": 1,
         "message": "Rebuilding scores and relationship graph from existing data.",
     }
@@ -401,7 +438,7 @@ def trigger_recompute(
 
 @router.post("/api/org/{org_id}/reextract")
 def trigger_reextract(
-    org_id: str, db: Session = Depends(get_db)
+    org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """
     Tier 2: Re-fetch email bodies from Gmail, re-run LLM extraction on stale
@@ -425,10 +462,14 @@ def trigger_reextract(
 
     _set_recompute_meta(db, org_id, status="running", progress=json.dumps({"tier": 2, "stale_count": stale_count}))
     from app.celery_app import task_reextract
-    task_reextract.delay(org_id)
+    from app.tasks.reextract import run_reextract
+    _run_in_background(
+        background_tasks, task_reextract, org_id,
+        fallback_fn=run_reextract,
+    )
 
     return {
-        "status": "reextract_queued",
+        "status": "reextract_started",
         "tier": 2,
         "stale_interactions": stale_count,
         "target_version": PROCESSING_VERSION,
