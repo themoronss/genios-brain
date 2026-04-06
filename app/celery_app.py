@@ -14,6 +14,7 @@ Celery Beat (periodic scheduler):
 """
 
 import os
+import ssl
 from celery import Celery
 from celery.schedules import crontab
 
@@ -30,7 +31,20 @@ else:
     BROKER_URL = REDIS_URL + "/1"
     RESULT_URL = REDIS_URL + "/2"
 
+# Add ssl_cert_reqs for rediss:// (Upstash TLS)
+if BROKER_URL.startswith("rediss://"):
+    BROKER_URL += "?ssl_cert_reqs=CERT_NONE"
+    RESULT_URL += "?ssl_cert_reqs=CERT_NONE"
+
 celery = Celery("genios", broker=BROKER_URL, backend=RESULT_URL)
+
+# SSL config for rediss:// connections
+_redis_ssl = REDIS_URL.startswith("rediss://")
+_broker_transport_options = {}
+if _redis_ssl:
+    _broker_transport_options = {
+        "ssl": {"ssl_cert_reqs": ssl.CERT_NONE}
+    }
 
 celery.conf.update(
     # Serialization
@@ -46,6 +60,9 @@ celery.conf.update(
         "high_priority": {"exchange": "high_priority", "routing_key": "high"},
         "low_priority": {"exchange": "low_priority", "routing_key": "low"},
     },
+    # SSL for Upstash/TLS Redis
+    broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if _redis_ssl else None,
+    redis_backend_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if _redis_ssl else None,
     # Reliability
     task_acks_late=True,
     worker_prefetch_multiplier=1,
