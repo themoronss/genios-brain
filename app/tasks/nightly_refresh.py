@@ -281,40 +281,67 @@ def run_nightly_refresh(org_id: str = None):
 
 def _compute_graph_quality_score(db, org_id: str) -> float:
     """
-    Compute graph quality score for an org:
-    - 50%: % contacts with confidence_score > 0.6
-    - 30%: interaction density (avg interactions per contact, normalized to 50)
-    - 20%: commitment completion rate (closed / total commitments)
-    Returns a float in [0, 1].
+    Stage-aware brain health score (0–1, displayed as 0–100 on frontend).
+
+    Three tiers based on total interactions:
+      Early   (<200)  : coverage-based — rewards having contacts + active relationships
+      Growth  (200–1K): density normalised to 10 interactions/contact (not 50)
+      Mature  (1K+)   : original formula, density normalised to 50
+
+    Components (all tiers):
+      40% → active relationship ratio  (ACTIVE/WARM contacts ÷ total contacts)
+      35% → interaction density        (avg interactions/contact, tier-scaled)
+      25% → data completeness          (contacts with confidence_score > 0.5)
     """
     try:
         row = db.execute(
             text("""
                 SELECT
-                    COUNT(*) FILTER (WHERE confidence_score > 0.6)::float
-                        / NULLIF(COUNT(*), 0) AS high_confidence_pct,
-                    LEAST(1.0, AVG(COALESCE(interaction_count, 0)) / 50.0) AS normalized_density
+                    COUNT(*)                                                        AS total_contacts,
+                    COUNT(*) FILTER (WHERE relationship_stage IN ('ACTIVE','WARM')) AS active_contacts,
+                    AVG(COALESCE(interaction_count, 0))                             AS avg_interactions,
+                    COUNT(*) FILTER (WHERE confidence_score > 0.5)::float
+                        / NULLIF(COUNT(*), 0)                                       AS completeness_pct
                 FROM contacts
                 WHERE org_id = :org_id AND (is_archived IS NULL OR is_archived = FALSE)
             """),
             {"org_id": org_id},
         ).fetchone()
 
-        commitment_row = db.execute(
-            text("""
-                SELECT
-                    COUNT(*) FILTER (WHERE status = 'CLOSED')::float / NULLIF(COUNT(*), 0)
-                FROM commitments WHERE org_id = :org_id
-            """),
+        total_interactions = db.execute(
+            text("SELECT COUNT(*) FROM interactions WHERE org_id = :org_id"),
             {"org_id": org_id},
-        ).fetchone()
+        ).scalar() or 0
 
-        high_confidence_pct = float(row[0] or 0)
-        density = float(row[1] or 0)
-        completion_rate = float(commitment_row[0] or 0) if commitment_row else 0.0
+        total_contacts    = int(row[0] or 0)
+        active_contacts   = int(row[1] or 0)
+        avg_interactions  = float(row[2] or 0)
+        completeness_pct  = float(row[3] or 0)
 
-        quality = 0.5 * high_confidence_pct + 0.3 * density + 0.2 * completion_rate
+        if total_contacts == 0:
+            return 0.0
+
+        # Active relationship ratio
+        active_ratio = active_contacts / total_contacts
+
+        # Tier-aware density normalisation
+        if total_interactions < 200:
+            # Early: normalise to 5 — even 5 emails per contact scores 100%
+            density = min(1.0, avg_interactions / 5.0)
+        elif total_interactions < 1000:
+            # Growth: normalise to 10
+            density = min(1.0, avg_interactions / 10.0)
+        else:
+            # Mature: original 50
+            density = min(1.0, avg_interactions / 50.0)
+
+        quality = (
+            0.40 * active_ratio +
+            0.35 * density +
+            0.25 * completeness_pct
+        )
         return round(min(1.0, max(0.0, quality)), 4)
+
     except Exception as e:
         print(f"⚠️ Graph quality computation failed for org {org_id}: {e}")
         try:
