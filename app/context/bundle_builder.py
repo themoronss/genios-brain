@@ -563,6 +563,95 @@ def determine_action_recommendation(contact: Dict, entity: Dict) -> Dict:
     }
 
 
+_SITUATION_KEYWORDS = {
+    "deal_stuck":       ["stuck", "stalled", "no response", "no reply", "blocked", "not moving", "delayed", "no progress"],
+    "follow_up":        ["follow up", "follow-up", "check in", "check-in", "reach out", "ping", "nudge", "reconnect"],
+    "discovery_call":   ["discovery", "call", "meeting", "demo", "intro call", "first call", "prepare", "briefing"],
+    "renewal":          ["renewal", "renew", "contract", "expiry", "expires", "extend", "upsell", "expand"],
+    "churn_risk":       ["churn", "at risk", "unhappy", "escalation", "escalated", "cancelling", "leaving", "health"],
+    "cold_outreach":    ["cold", "intro", "first time", "never met", "reach out", "new contact", "prospecting"],
+    "attrition_risk":   ["resign", "leaving", "quit", "attrition", "retention", "linkedin", "job", "offer"],
+}
+
+
+def _classify_situation(situation: str) -> Optional[str]:
+    """Map free-text situation to a situation_type key."""
+    if not situation:
+        return None
+    low = situation.lower()
+    for stype, keywords in _SITUATION_KEYWORDS.items():
+        if any(kw in low for kw in keywords):
+            return stype
+    return None
+
+
+def _get_company_contacts(db, org_id: str, company_name: str, exclude_contact_id: str = None) -> List[Dict]:
+    """
+    Return all contacts at a given company, ordered by relationship strength.
+    Used to surface the full stakeholder map when agent asks about a company or deal.
+    """
+    try:
+        # Match on company name OR company_domain — domain is more reliable
+        # because it's derived from email (e.g. techcorp.com) not from a string
+        rows = db.execute(text("""
+            SELECT id, name, email, relationship_stage, sentiment_ewma,
+                   sentiment_trend, last_interaction_at, interaction_count,
+                   entity_type, authority_score, company_domain
+            FROM contacts
+            WHERE org_id = :org_id
+              AND is_archived = FALSE
+              AND (
+                  LOWER(TRIM(company)) = LOWER(TRIM(:company))
+                  OR (
+                      company_domain IS NOT NULL
+                      AND company_domain = (
+                          SELECT company_domain FROM contacts
+                          WHERE org_id = :org_id
+                            AND LOWER(TRIM(company)) = LOWER(TRIM(:company))
+                          LIMIT 1
+                      )
+                  )
+              )
+              AND (:exclude IS NULL OR id::text != :exclude)
+            ORDER BY
+                CASE relationship_stage
+                    WHEN 'ACTIVE' THEN 1 WHEN 'WARM' THEN 2
+                    WHEN 'NEEDS_ATTENTION' THEN 3 WHEN 'DORMANT' THEN 4
+                    WHEN 'COLD' THEN 5 ELSE 6
+                END,
+                interaction_count DESC
+            LIMIT 10
+        """), {
+            "org_id": org_id,
+            "company": company_name,
+            "exclude": str(exclude_contact_id) if exclude_contact_id else None,
+        }).fetchall()
+
+        result = []
+        for r in rows:
+            last_at = r[6]
+            days_ago = None
+            if last_at:
+                if hasattr(last_at, 'tzinfo') and last_at.tzinfo is None:
+                    last_at = last_at.replace(tzinfo=timezone.utc)
+                days_ago = (datetime.now(timezone.utc) - last_at).days
+            result.append({
+                "id": str(r[0]),
+                "name": r[1],
+                "email": r[2],
+                "relationship_stage": r[3],
+                "sentiment_ewma": round(float(r[4]), 2) if r[4] is not None else None,
+                "sentiment_trend": r[5],
+                "last_contact_days_ago": days_ago,
+                "interaction_count": r[7] or 0,
+                "entity_type": r[8],
+                "authority_score": round(float(r[9]), 2) if r[9] is not None else None,
+            })
+        return result
+    except Exception:
+        return []
+
+
 def build_context_bundle(
     db, org_id: str, entity_name: str, situation: str = None,
     plan_tier: str = None,
@@ -624,6 +713,13 @@ def build_context_bundle(
     # 3. Get open commitments with lifecycle info
     open_commitments = get_open_commitments_detailed(db, contact["id"])
 
+    # 3b. Company-level stakeholder map — all other contacts at the same company
+    company_contacts = []
+    if contact.get("company"):
+        company_contacts = _get_company_contacts(
+            db, org_id, contact["company"], exclude_contact_id=contact["id"]
+        )
+
     # Calculate stage_since_days
     stage_since_days = None
     if contact.get("stage_changed_at"):
@@ -673,6 +769,37 @@ def build_context_bundle(
     context_for_agent = generate_context_paragraph(
         contact, interactions, entity, open_commitments
     )
+    if company_contacts:
+        context_for_agent = _append_company_context(context_for_agent, company_contacts)
+
+    # Prepend situation-specific insight line
+    if situation_type and situation_signals:
+        if situation_type == "deal_stuck":
+            unanswered = situation_signals.get("unanswered_outbound", 0)
+            days_no_reply = situation_signals.get("days_since_last_inbound")
+            if unanswered and days_no_reply is not None:
+                context_for_agent = (
+                    f"[Situation: deal may be stuck — {unanswered} outbound(s) unanswered, "
+                    f"no inbound in {days_no_reply}d] " + context_for_agent
+                )
+        elif situation_type == "discovery_call":
+            topics = situation_signals.get("suggested_topics", [])
+            topics_str = ", ".join(topics[:3]) if topics else "unknown"
+            context_for_agent = (
+                f"[Situation: discovery call — known topics: {topics_str}] " + context_for_agent
+            )
+        elif situation_type in ("churn_risk", "renewal"):
+            traj = situation_signals.get("trajectory_direction", "stable")
+            context_for_agent = (
+                f"[Situation: {situation_type.replace('_', ' ')} — sentiment trajectory: {traj}] "
+                + context_for_agent
+            )
+        elif situation_type == "follow_up":
+            rr = situation_signals.get("response_rate")
+            rr_str = f", response rate: {round(rr*100)}%" if rr is not None else ""
+            context_for_agent = (
+                f"[Situation: follow-up{rr_str}] " + context_for_agent
+            )
 
     # Determine action recommendation and escalation signal
     action = determine_action_recommendation(contact, entity)
@@ -687,6 +814,130 @@ def build_context_bundle(
     if contact.get("topics_aggregate"): coverage_parts += 1
     if open_commitments: coverage_parts += 1
     coverage_score = round(coverage_parts / 7.0, 2)
+
+    # ── Situation classification → targeted extra signals ────────────────────
+    situation_type = _classify_situation(situation)
+    situation_signals = {}
+
+    if situation_type == "deal_stuck":
+        # Surface: days since last inbound, outbound count without reply, last negative signal
+        try:
+            row = db.execute(text("""
+                SELECT
+                    COUNT(*) FILTER (WHERE direction = 'outbound') AS outbound_count,
+                    MAX(interaction_at) FILTER (WHERE direction = 'inbound') AS last_inbound_at,
+                    COUNT(*) FILTER (WHERE direction = 'outbound'
+                        AND interaction_at > COALESCE(
+                            (SELECT MAX(i2.interaction_at) FROM interactions i2
+                             WHERE i2.contact_id = interactions.contact_id AND i2.direction = 'inbound'),
+                            '1970-01-01'::timestamptz
+                        )
+                    ) AS unanswered_outbound
+                FROM interactions
+                WHERE contact_id = :cid AND org_id = :oid
+            """), {"cid": str(contact["id"]), "oid": org_id}).fetchone()
+            if row:
+                last_inbound = row[1]
+                days_since_inbound = None
+                if last_inbound:
+                    if hasattr(last_inbound, 'tzinfo') and last_inbound.tzinfo is None:
+                        last_inbound = last_inbound.replace(tzinfo=timezone.utc)
+                    days_since_inbound = (datetime.now(timezone.utc) - last_inbound).days
+                situation_signals = {
+                    "outbound_count": row[0],
+                    "days_since_last_inbound": days_since_inbound,
+                    "unanswered_outbound": row[2],
+                }
+        except Exception:
+            pass
+
+    elif situation_type == "discovery_call":
+        # Surface: all recent touchpoints + topics discussed + what to reference
+        try:
+            touchpoints = db.execute(text("""
+                SELECT direction, intent, summary, interaction_at
+                FROM interactions
+                WHERE contact_id = :cid AND org_id = :oid
+                ORDER BY interaction_at DESC NULLS LAST
+                LIMIT 5
+            """), {"cid": str(contact["id"]), "oid": org_id}).fetchall()
+            situation_signals = {
+                "recent_touchpoints": [
+                    {
+                        "direction": r[0], "intent": r[1],
+                        "summary": _redact_pii(r[2] or "")[:150],
+                        "date": str(r[3])[:10] if r[3] else None,
+                    } for r in touchpoints
+                ],
+                "suggested_topics": contact.get("topics_aggregate", [])[:5],
+            }
+        except Exception:
+            pass
+
+    elif situation_type in ("churn_risk", "renewal"):
+        # Surface: sentiment trajectory over last N interactions
+        try:
+            sentiments = db.execute(text("""
+                SELECT sentiment, interaction_at
+                FROM interactions
+                WHERE contact_id = :cid AND org_id = :oid AND sentiment IS NOT NULL
+                ORDER BY interaction_at DESC NULLS LAST
+                LIMIT 10
+            """), {"cid": str(contact["id"]), "oid": org_id}).fetchall()
+            vals = [round(float(r[0]), 2) for r in sentiments]
+            situation_signals = {
+                "sentiment_trajectory": vals,
+                "trajectory_direction": (
+                    "declining" if len(vals) >= 3 and vals[0] < vals[-1] - 0.2
+                    else "improving" if len(vals) >= 3 and vals[0] > vals[-1] + 0.2
+                    else "stable"
+                ),
+                "open_tickets": sum(1 for c in open_commitments if not c.get("is_soft")),
+            }
+        except Exception:
+            pass
+
+    elif situation_type == "follow_up":
+        # Surface: cooldown status, last outbound timing, response rate
+        situation_signals = {
+            "cooldown_active": cooldown_active if 'cooldown_active' in dir() else None,
+            "hours_since_last_outbound": hours_since_last_outbound if 'hours_since_last_outbound' in dir() else None,
+            "response_rate": contact.get("response_rate"),
+            "days_since_last_contact": (
+                (datetime.now(timezone.utc) - contact["last_interaction_at"].replace(tzinfo=timezone.utc)).days
+                if contact.get("last_interaction_at") and hasattr(contact["last_interaction_at"], 'replace')
+                else None
+            ),
+        }
+
+    # ── Last signal: most recent meaningful interaction ──────────────────────
+    last_signal = None
+    try:
+        ls_row = db.execute(text("""
+            SELECT direction, sentiment, summary, subject, interaction_at, intent, interaction_type
+            FROM interactions
+            WHERE contact_id = :cid AND org_id = :oid
+            ORDER BY interaction_at DESC NULLS LAST
+            LIMIT 1
+        """), {"cid": str(contact["id"]), "oid": org_id}).fetchone()
+        if ls_row:
+            ls_at = ls_row[4]
+            if ls_at:
+                if hasattr(ls_at, 'tzinfo') and ls_at.tzinfo is None:
+                    ls_at = ls_at.replace(tzinfo=timezone.utc)
+                days_ago = (datetime.now(timezone.utc) - ls_at).days
+            else:
+                days_ago = None
+            last_signal = {
+                "days_ago": days_ago,
+                "direction": ls_row[0],
+                "sentiment": round(float(ls_row[1]), 2) if ls_row[1] is not None else None,
+                "summary": _redact_pii(ls_row[2] or ls_row[3]),
+                "intent": ls_row[5],
+                "interaction_type": ls_row[6],
+            }
+    except Exception:
+        pass
 
     # ── Cooldown check: prevent duplicate outreach ──
     cooldown_active = False
@@ -757,6 +1008,13 @@ def build_context_bundle(
         # ── Cooldown: prevent duplicate outreach ──
         "cooldown_active": cooldown_active,
         "hours_since_last_outbound": hours_since_last_outbound,
+        # ── Last signal: most recent interaction summary ──
+        "last_signal": last_signal,
+        # ── Company stakeholder map ──
+        "company_contacts": company_contacts,
+        # ── Situation intelligence ──
+        "situation_type": situation_type,
+        "situation_signals": situation_signals if situation_signals else None,
     }
 
     # Add warm intro paths for COLD/DORMANT contacts
@@ -1022,16 +1280,40 @@ def generate_context_paragraph(
     if contact.get("relationship_summary"):
         parts.append(f"Summary: {contact['relationship_summary'][:300]}")
 
-    # Line 7: Last interaction with direction
+    # Line 7: Last signal — most recent interaction with direction, intent, sentiment
     if interactions and len(interactions) > 0:
         last = interactions[0]
-        if last.get("summary"):
-            summary = last["summary"][:200]
-            direction = last.get("direction", "").lower()
-            if direction == "inbound":
-                parts.append(f"Last from them: {summary}")
-            else:
-                parts.append(f"Last from you: {summary}")
+        summary = (last.get("summary") or "")[:200]
+        direction = last.get("direction", "").lower()
+        intent = last.get("intent")
+        sentiment = last.get("sentiment")
+        days_ago = None
+        if last.get("interaction_at"):
+            try:
+                from datetime import timezone as _tz
+                ts = last["interaction_at"]
+                if isinstance(ts, str):
+                    from datetime import datetime as _dt
+                    ts = _dt.fromisoformat(ts)
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=_tz.utc)
+                days_ago = (datetime.now(_tz.utc) - ts).days
+            except Exception:
+                pass
+
+        timing = f"{days_ago}d ago" if days_ago is not None else "recently"
+        direction_label = "them → you" if direction == "inbound" else "you → them"
+        intent_label = f", intent: {intent}" if intent and intent != "other" else ""
+        sentiment_label = ""
+        if sentiment is not None:
+            if sentiment > 0.3:
+                sentiment_label = ", positive"
+            elif sentiment < -0.3:
+                sentiment_label = ", negative"
+        parts.append(
+            f"Last interaction ({timing}, {direction_label}{intent_label}{sentiment_label})"
+            + (f": {summary}" if summary else ".")
+        )
 
     # Line 8: Interaction type distribution
     interaction_types = entity.get("interaction_types", {})
@@ -1045,3 +1327,23 @@ def generate_context_paragraph(
         parts.append("⚠️ Dormant + declining. Consider warm re-engagement.")
 
     return " ".join(parts)
+
+
+def _append_company_context(context_for_agent: str, company_contacts: List[Dict]) -> str:
+    """Append company stakeholder map to context paragraph if other contacts exist."""
+    if not company_contacts:
+        return context_for_agent
+    lines = ["Other contacts at this company:"]
+    for c in company_contacts[:5]:
+        stage = c.get("relationship_stage", "UNKNOWN")
+        days = c.get("last_contact_days_ago")
+        timing = f"{days}d ago" if days is not None else "never contacted"
+        sentiment = c.get("sentiment_ewma")
+        sentiment_note = ""
+        if sentiment is not None:
+            if sentiment > 0.3:
+                sentiment_note = ", positive"
+            elif sentiment < -0.3:
+                sentiment_note = ", negative"
+        lines.append(f"  - {c['name']} ({stage}, last: {timing}{sentiment_note})")
+    return context_for_agent + " " + " ".join(lines)
