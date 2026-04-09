@@ -141,12 +141,22 @@ def get_graph_data(
         params,
     ).fetchall()
 
-    # ── Email account nodes (one per connected Gmail) ─────────────────────
+    # ── Email account nodes (one per connected Gmail / Calendar) ───────────
     account_rows = db.execute(
         text("SELECT DISTINCT COALESCE(account_email, 'default') FROM oauth_tokens WHERE org_id = :org_id AND account_email NOT LIKE 'gcal:%'"),
         {"org_id": org_id},
     ).fetchall()
     account_emails = {r[0].lower().strip(): r[0] for r in account_rows}
+
+    # Fallback: if no Gmail tokens, derive hub email from orgs table or calendar interactions
+    if not account_emails:
+        org_email_row = db.execute(
+            text("SELECT email FROM orgs WHERE id = :oid"),
+            {"oid": org_id},
+        ).fetchone()
+        if org_email_row and org_email_row.email:
+            fallback = org_email_row.email.strip()
+            account_emails = {fallback.lower(): fallback}
 
     nodes = []
     contact_id_set = set()
@@ -303,11 +313,23 @@ def get_graph_data(
         {"org_id": org_id}
     ).fetchall()
 
+    # Connected tools — derive from oauth_tokens + sync tables
+    connected_tools = []
+    if db.execute(text("SELECT 1 FROM oauth_tokens WHERE org_id = :org_id AND account_email NOT LIKE '%:%' LIMIT 1"), {"org_id": org_id}).fetchone():
+        connected_tools.append("gmail")
+    if db.execute(text("SELECT 1 FROM calendar_sync_state WHERE org_id = :org_id LIMIT 1"), {"org_id": org_id}).fetchone():
+        connected_tools.append("gcal")
+    if db.execute(text("SELECT 1 FROM slack_workspaces WHERE org_id = :org_id LIMIT 1"), {"org_id": org_id}).fetchone():
+        connected_tools.append("slack")
+    if db.execute(text("SELECT 1 FROM notion_connections WHERE org_id = :org_id LIMIT 1"), {"org_id": org_id}).fetchone():
+        connected_tools.append("notion")
+
     return {
         "nodes": nodes,
         "links": links,
         "entity_type_counts": entity_type_counts,
         "communities": [{"community_id": c[0], "color": c[1], "node_count": c[2]} for c in communities],
+        "connected_tools": connected_tools,
     }
 
 

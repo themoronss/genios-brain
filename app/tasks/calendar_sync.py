@@ -77,6 +77,13 @@ def run_calendar_sync(org_id: str, max_results=None):
             logger.warning(f"Calendar sync: no tokens found for org {org_id}")
             return
 
+        # Mark sync as running
+        db.execute(
+            text("UPDATE calendar_sync_state SET sync_status = 'running', sync_error = NULL WHERE org_id = :oid"),
+            {"oid": org_id},
+        )
+        db.commit()
+
         service = build_calendar_service(token_row.access_token, token_row.refresh_token)
 
         # Get org domain for internal/external detection
@@ -211,8 +218,23 @@ def run_calendar_sync(org_id: str, max_results=None):
         except Exception as e:
             logger.warning(f"Calendar bridge: meeting prep context failed (non-critical): {e}")
 
+        # Mark sync as completed
+        db.execute(
+            text("UPDATE calendar_sync_state SET sync_status = 'idle' WHERE org_id = :oid"),
+            {"oid": org_id},
+        )
+        db.commit()
+
     except Exception as e:
         logger.error(f"Calendar sync failed for org {org_id}: {e}")
+        try:
+            db.execute(
+                text("UPDATE calendar_sync_state SET sync_status = 'error', sync_error = :err WHERE org_id = :oid"),
+                {"oid": org_id, "err": str(e)[:500]},
+            )
+            db.commit()
+        except Exception:
+            pass
         raise
     finally:
         db.close()
@@ -239,23 +261,35 @@ def _sync_calendar(db, service, org_id, calendar_id, org_domain, max_results=Non
     next_sync_token = None
 
     try:
+        page_token = None
         while True:
             events, next_sync_token, next_page_token = fetch_events(
-                service, calendar_id=calendar_id, sync_token=sync_token, max_results=max_results
+                service, calendar_id=calendar_id, sync_token=sync_token,
+                page_token=page_token, max_results=max_results
             )
 
             for event in events:
                 classification = classify_event(event, org_domain)
                 if classification is None:
                     events_filtered += 1
+                    logger.debug(
+                        f"Calendar sync: filtered event '{event.get('summary', '(no title)')}' "
+                        f"[visibility={event.get('visibility')} type={event.get('eventType')} "
+                        f"attendees={len(event.get('attendees', []))} "
+                        f"has_desc={bool(event.get('description'))}]"
+                    )
                     continue  # Quality gate: drop this event
 
                 _upsert_calendar_event(db, org_id, calendar_id, event, classification, org_domain)
                 events_added += 1
 
+                # Commit in batches to avoid Supabase pooler statement timeout
+                if events_added % 25 == 0:
+                    db.commit()
+
             if not next_page_token:
                 break
-            # Continue paginating with same sync_token, different page_token
+            page_token = next_page_token
 
         db.commit()
         logger.info(

@@ -66,38 +66,34 @@ def list_calendars(service):
     return result.get("items", [])
 
 
-def fetch_events(service, calendar_id="primary", sync_token=None, max_results=250):
+def fetch_events(service, calendar_id="primary", sync_token=None, page_token=None, max_results=250):
     """
     Fetch calendar events using incremental sync via syncToken.
     On first call, sync_token is None — fetches full event list.
     On subsequent calls, pass the syncToken from the previous response.
+    For pagination, pass page_token from previous response.
 
     Returns:
         (events: list, next_sync_token: str, next_page_token: str or None)
-
-    Signal taxonomy — NEVER call this with private calendars.
-    Callers must apply quality gates BEFORE writing to DB:
-      - DROP visibility == "private"
-      - DROP all-day events with zero attendees (OOO/holidays/focus blocks)
-      - DROP event_type == "focusTime" or "outOfOffice"
-      - DROP all attendees share same org domain (internal-only)
-      - DROP description empty AND attendee_count == 1 (blocked time)
-      - DROP master RRULE events (recurringEventId absent + recurrence[] present)
-      - DROP if user RSVP status is "declined"
     """
     kwargs = {
         "calendarId": calendar_id,
         "maxResults": max_results,
-        "singleEvents": True,  # Expand recurring events into instances
     }
     if sync_token:
+        # Incremental sync — syncToken is incompatible with timeMin/orderBy/singleEvents
         kwargs["syncToken"] = sync_token
+        if page_token:
+            kwargs["pageToken"] = page_token
     else:
         # Full sync: fetch future + 90 days back
+        kwargs["singleEvents"] = True
+        kwargs["orderBy"] = "startTime"
         from datetime import datetime, timedelta, timezone
         time_min = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
         kwargs["timeMin"] = time_min
-        kwargs["orderBy"] = "startTime"
+        if page_token:
+            kwargs["pageToken"] = page_token
 
     try:
         result = service.events().list(**kwargs).execute()

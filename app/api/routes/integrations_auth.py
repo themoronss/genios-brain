@@ -804,7 +804,8 @@ def get_integrations_status(org_id: str):
         gcal_row = db.execute(
             text("""
                 SELECT last_full_sync_at, last_sync_events_added,
-                       last_sync_events_filtered, total_events_synced
+                       last_sync_events_filtered, total_events_synced,
+                       COALESCE(sync_status, 'idle') AS sync_status
                 FROM calendar_sync_state WHERE org_id = :oid LIMIT 1
             """),
             {"oid": org_id},
@@ -830,7 +831,7 @@ def get_integrations_status(org_id: str):
             ).scalar() or 0
             status["gcal"] = {
                 "connected": True,
-                "syncStatus": "idle",
+                "syncStatus": gcal_row.sync_status,
                 "lastSyncAt": gcal_row.last_full_sync_at.isoformat() if gcal_row.last_full_sync_at else None,
                 "metadata": {
                     "eventsTotal": gcal_counts.active_events or 0,
@@ -962,6 +963,14 @@ def get_integrations_status(org_id: str):
         else:
             status["hubspot"] = {"connected": False}
 
+        # Include plan's allowed integrations so frontend can gate UI
+        from app.plan_enforcer import get_org_plan
+        plan_info = get_org_plan(db, org_id)
+        status["_plan"] = {
+            "tier": plan_info["tier"],
+            "integrations_allowed": sorted(plan_info["config"]["integrations_allowed"]),
+        }
+
         return status
 
     finally:
@@ -992,15 +1001,112 @@ TOOL_CONNECTION_SQL: dict[str, list[str]] = {
 # Full wipe — deletes connection AND all synced data for a fresh start
 TOOL_CLEANUP_SQL: dict[str, list[str]] = {
     "gmail": [
-        # Tokens only — email interactions stay (they represent real relationships)
+        # Remove Gmail-sourced interactions
+        "DELETE FROM interactions WHERE org_id = :oid AND (source IS NULL OR source = 'gmail')",
+        # Remove commitments extracted from Gmail
+        "DELETE FROM commitments WHERE org_id = :oid AND (owner IS NULL OR owner = 'gmail')",
+        # Clean FK-dependent tables before deleting Gmail-only contacts
+        """DELETE FROM insights WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        """DELETE FROM contact_facts WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        """DELETE FROM precomputed_bundles WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        """DELETE FROM segment_members WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        """DELETE FROM authority_assignments WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        """DELETE FROM precedent_graph WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        """DELETE FROM merge_queue WHERE contact_id_a IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        ) OR contact_id_b IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND (data_source IS NULL OR data_source = 'gmail')
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
+        )""",
+        # Now remove Gmail-only contacts
+        """DELETE FROM contacts WHERE org_id = :oid
+          AND (data_source IS NULL OR data_source = 'gmail')
+          AND id NOT IN (
+              SELECT DISTINCT contact_id FROM interactions
+              WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail'
+          )
+        """,
+        # Remove OAuth tokens
         "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email NOT LIKE '%:%'",
     ],
     "gcal": [
-        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'gcal:%'",
+        # Remove calendar-sourced interactions
+        "DELETE FROM interactions WHERE org_id = :oid AND source = 'calendar'",
+        # Remove co-attendance edges
+        "DELETE FROM co_attendance WHERE org_id = :oid",
+        # Clean FK-dependent tables for contacts with no remaining interactions
+        """DELETE FROM insights WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        """DELETE FROM contact_facts WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        """DELETE FROM precomputed_bundles WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        """DELETE FROM segment_members WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        """DELETE FROM authority_assignments WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        """DELETE FROM precedent_graph WHERE contact_id IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        """DELETE FROM merge_queue WHERE contact_id_a IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        ) OR contact_id_b IN (
+            SELECT id FROM contacts WHERE org_id = :oid
+              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
+        )""",
+        # Remove orphaned contacts (no remaining interactions from any source)
+        """DELETE FROM contacts WHERE org_id = :oid
+          AND id NOT IN (
+              SELECT DISTINCT contact_id FROM interactions
+              WHERE org_id = :oid
+          )
+        """,
+        # Remove calendar-specific tables
         "DELETE FROM upcoming_meetings WHERE org_id = :oid",
         # calendar_event_attendees cascades from calendar_events
         "DELETE FROM calendar_events WHERE org_id = :oid",
         "DELETE FROM calendar_sync_state WHERE org_id = :oid",
+        # Remove OAuth tokens
+        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'gcal:%'",
     ],
     "slack": [
         "DELETE FROM slack_messages WHERE org_id = :oid",
