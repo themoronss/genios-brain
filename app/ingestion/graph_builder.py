@@ -12,6 +12,23 @@ from app.ingestion.segment_assigner import auto_assign_segment
 
 logger = logging.getLogger(__name__)
 
+# Per Graph Enrichment spec: source authority hierarchy for conflict resolution.
+# When two sources disagree on entity_type, company, or role, higher authority wins.
+SOURCE_AUTHORITY = {
+    "manual": 1.00,
+    "admin_api": 0.97,
+    "notion_policy": 0.90,
+    "sheets_threshold": 0.88,
+    "gmail": 0.75,
+    "calendar": 0.75,
+    "slack": 0.65,
+    "hubspot": 0.60,
+    "sheets_crm": 0.55,
+    "notion_content": 0.05,
+    "docs_content": 0.05,
+    "drive": 0.05,
+}
+
 
 def log_activity(db, org_id: str, event_type: str, event_data: dict = None):
     """Log an activity event for the activity feed. Non-blocking."""
@@ -334,6 +351,50 @@ def find_existing_contact_by_domain_and_name(db, org_id: str, email: str, name: 
     return None
 
 
+def upsert_company(db, org_id: str, domain: str, name: str, entity_type: str = None) -> str:
+    """
+    Create or update a company node. Returns company_id.
+    Per Graph Enrichment spec: company nodes are separate entities linked via WORKS_AT.
+    """
+    if not domain:
+        return None
+
+    # Map contact entity_type to company category
+    category_map = {
+        "investor": "investor_firm", "lead": "investor_firm",
+        "customer": "customer_org", "vendor": "vendor",
+        "partner": "partner", "team": "team",
+    }
+    category = category_map.get(entity_type, "other")
+
+    try:
+        db.execute(
+            text("""
+                INSERT INTO companies (id, org_id, name, domain, category, created_at)
+                VALUES (gen_random_uuid(), :org_id, :name, :domain, :category, NOW())
+                ON CONFLICT (org_id, domain) DO UPDATE SET
+                    name = CASE
+                        WHEN LENGTH(EXCLUDED.name) > LENGTH(companies.name) THEN EXCLUDED.name
+                        ELSE companies.name
+                    END,
+                    category = CASE
+                        WHEN EXCLUDED.category != 'other' THEN EXCLUDED.category
+                        ELSE companies.category
+                    END
+            """),
+            {"org_id": org_id, "name": name or domain, "domain": domain, "category": category},
+        )
+        result = db.execute(
+            text("SELECT id FROM companies WHERE org_id = :org_id AND domain = :domain"),
+            {"org_id": org_id, "domain": domain},
+        ).fetchone()
+        return str(result[0]) if result else None
+    except Exception as e:
+        import logging as _log
+        _log.getLogger(__name__).warning(f"upsert_company failed for {domain}: {e}")
+        return None
+
+
 def upsert_contact(
     db, org_id, email, name, entity_type: str = None,
     thread_topics: list = None, email_body: str = ""
@@ -476,6 +537,15 @@ def upsert_contact(
 
     # Auto-assign segment based on detected entity type
     auto_assign_segment(db, org_id, final_id, final_entity_type or "other")
+
+    # Create company node and link contact via WORKS_AT (company_id FK)
+    if domain:
+        company_id = upsert_company(db, org_id, domain, company or domain, final_entity_type)
+        if company_id:
+            db.execute(
+                text("UPDATE contacts SET company_id = :cid WHERE id = :contact_id AND company_id IS NULL"),
+                {"cid": company_id, "contact_id": final_id},
+            )
 
     # Log contact creation/update activity
     log_activity(db, org_id, "contact_created", {"name": name, "email": email, "company": company})
@@ -623,7 +693,7 @@ def create_interaction(
             "interaction_type": interaction_type,
             "reply_time_hours": reply_time_hours,
             "weight_score": weight_score,
-            "signal_score": final_signal_score,
+            "signal_score": None,  # Computed at query time only (CLM spec)
             "topics": topics,
             "account_email": account_email,
             "source": "gmail",

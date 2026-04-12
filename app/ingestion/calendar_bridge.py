@@ -236,7 +236,7 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                 "interaction_at": row.start_time,
                 "sentiment": sentiment,
                 "weight_score": 0.9 if edge_weight > 0 else 0.3,
-                "signal_score": 0.8 if edge_weight > 0 else 0.4,
+                "signal_score": None,  # Computed at query time only (CLM spec)
                 "duration_minutes": row.duration_minutes,
                 "attendee_count": attendee_count,
                 "rsvp_status": row.rsvp_status,
@@ -278,7 +278,7 @@ def link_upcoming_meeting_contacts(db, org_id: str):
                 FROM calendar_event_attendees cea
                 LEFT JOIN contacts c ON c.id = cea.person_id
                 WHERE cea.event_id = :eid AND cea.person_id IS NOT NULL
-                ORDER BY c.composite_score DESC NULLS LAST
+                ORDER BY c.context_score DESC NULLS LAST
                 LIMIT 1
             """),
             {"eid": row.event_id},

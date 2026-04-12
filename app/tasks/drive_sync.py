@@ -91,10 +91,12 @@ def run_drive_sync(org_id: str):
 
         # ── Phase 2: Bridge Drive data into relationship graph ──
         try:
-            from app.ingestion.drive_bridge import resolve_drive_people_to_contacts, create_drive_interactions
+            from app.ingestion.drive_bridge import resolve_drive_people_to_contacts, create_drive_interactions, extract_drive_authority
             resolve_drive_people_to_contacts(db, org_id)
             db.commit()
             created = create_drive_interactions(db, org_id)
+            db.commit()
+            extract_drive_authority(db, org_id)
             db.commit()
             if created > 0:
                 recalculate_all_relationships(db, org_id)

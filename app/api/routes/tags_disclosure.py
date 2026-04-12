@@ -72,12 +72,12 @@ def list_contacts(
             rows = db.execute(
                 text("""
                     SELECT id, name, email, company, relationship_stage,
-                           tags, disclosure_level, composite_score
+                           tags, disclosure_level, context_score
                     FROM contacts
                     WHERE org_id = :org_id
                       AND disclosure_level != 'private'
                       AND tags @> ARRAY[:tag]::text[]
-                    ORDER BY composite_score DESC NULLS LAST
+                    ORDER BY context_score DESC NULLS LAST
                     LIMIT :limit
                 """),
                 {**params, "tag": tag_clean},
@@ -86,11 +86,11 @@ def list_contacts(
             rows = db.execute(
                 text("""
                     SELECT id, name, email, company, relationship_stage,
-                           tags, disclosure_level, composite_score
+                           tags, disclosure_level, context_score
                     FROM contacts
                     WHERE org_id = :org_id
                       AND disclosure_level != 'private'
-                    ORDER BY composite_score DESC NULLS LAST
+                    ORDER BY context_score DESC NULLS LAST
                     LIMIT :limit
                 """),
                 params,
@@ -106,7 +106,7 @@ def list_contacts(
                     "relationship_stage": r[4],
                     "tags": r[5] or [],
                     "disclosure_level": r[6] or "public",
-                    "composite_score": float(r[7] or 0.5),
+                    "context_score": float(r[7] or 0.5),
                 }
                 for r in rows
             ]

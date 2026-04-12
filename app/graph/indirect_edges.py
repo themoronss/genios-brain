@@ -90,6 +90,103 @@ def compute_inferred_edges(db: Session, org_id: str):
         return 0
 
 
+def compute_mentioned_in_edges(db: Session, org_id: str):
+    """
+    Create MENTIONED_IN edges when a contact's name appears in an email
+    sent to/from a different contact. Per Graph Enrichment spec:
+    cross-category M2M relationships discovered from mentions.
+    """
+    try:
+        # Get contacts with names long enough to match reliably (>= 4 chars)
+        contacts = db.execute(
+            text("""
+                SELECT id, LOWER(name) as name, entity_type
+                FROM contacts
+                WHERE org_id = :org_id AND name IS NOT NULL AND LENGTH(name) >= 4
+            """),
+            {"org_id": org_id},
+        ).fetchall()
+
+        if not contacts:
+            return 0
+
+        contact_map = {str(c.id): {"name": c.name, "entity_type": c.entity_type} for c in contacts}
+        count = 0
+
+        # For each interaction that has mentioned_people[], resolve to contact IDs
+        mentions = db.execute(
+            text("""
+                SELECT i.id, i.contact_id, i.mentioned_people
+                FROM interactions i
+                WHERE i.org_id = :org_id
+                  AND i.mentioned_people IS NOT NULL
+                  AND array_length(i.mentioned_people, 1) > 0
+                  AND NOT EXISTS (
+                      SELECT 1 FROM activity_log al
+                      WHERE al.org_id = :org_id
+                        AND al.event_type = 'mentioned_in_processed'
+                        AND al.event_data LIKE '%' || i.id::text || '%'
+                  )
+                LIMIT 500
+            """),
+            {"org_id": org_id},
+        ).fetchall()
+
+        for m in mentions:
+            interaction_id = str(m.id)
+            source_contact_id = str(m.contact_id)
+            mentioned_names = m.mentioned_people or []
+
+            for mentioned_name in mentioned_names:
+                mentioned_lower = mentioned_name.lower().strip()
+                if len(mentioned_lower) < 4:
+                    continue
+
+                # Find matching contact by name
+                for cid, cinfo in contact_map.items():
+                    if cid == source_contact_id:
+                        continue
+                    if mentioned_lower in cinfo["name"] or cinfo["name"] in mentioned_lower:
+                        # Log MENTIONED_IN edge as activity
+                        source_name = contact_map.get(source_contact_id, {}).get("name", "unknown")
+                        db.execute(
+                            text("""
+                                INSERT INTO activity_log (id, org_id, event_type, event_data, created_at)
+                                VALUES (gen_random_uuid(), :org_id, 'mentioned_in',
+                                        :data, NOW())
+                                ON CONFLICT DO NOTHING
+                            """),
+                            {
+                                "org_id": org_id,
+                                "data": f"{cinfo['name']} mentioned in email with {source_name} (interaction: {interaction_id})",
+                            },
+                        )
+                        count += 1
+                        break  # One match per mentioned name is enough
+
+            # Mark interaction as processed for mention detection
+            db.execute(
+                text("""
+                    INSERT INTO activity_log (id, org_id, event_type, event_data, created_at)
+                    VALUES (gen_random_uuid(), :org_id, 'mentioned_in_processed', :data, NOW())
+                    ON CONFLICT DO NOTHING
+                """),
+                {"org_id": org_id, "data": interaction_id},
+            )
+
+        db.commit()
+        logger.info(f"Computed {count} MENTIONED_IN edges for org {org_id}")
+        return count
+
+    except Exception as e:
+        logger.error(f"MENTIONED_IN edge computation failed: {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return 0
+
+
 def find_warm_intro_path(db: Session, org_id: str, target_contact_id: str):
     """
     Given a target contact, find if any of the user's ACTIVE/WARM contacts

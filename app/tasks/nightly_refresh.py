@@ -169,10 +169,11 @@ def run_nightly_refresh(org_id: str = None):
         if not _is_phase_done(db, track_id, phase):
             _mark_phase(db, track_id, phase, "running")
             try:
-                from app.graph.indirect_edges import compute_inferred_edges
+                from app.graph.indirect_edges import compute_inferred_edges, compute_mentioned_in_edges
                 for oid in org_ids:
                     inferred_count = compute_inferred_edges(db, oid)
-                    print(f"  ✓ Inferred edges: {inferred_count} indirect connections for org {oid}")
+                    mentioned_count = compute_mentioned_in_edges(db, oid)
+                    print(f"  ✓ Inferred edges: {inferred_count} indirect + {mentioned_count} MENTIONED_IN for org {oid}")
                 _mark_phase(db, track_id, phase, "completed")
             except Exception as e:
                 db.rollback()
@@ -414,7 +415,7 @@ def _precompute_bundles(db, org_id: str = None):
                 WHERE c.org_id = :org_id
                 AND c.relationship_stage IN ('ACTIVE', 'WARM', 'NEEDS_ATTENTION')
                 AND (c.is_archived = FALSE OR c.is_archived IS NULL)
-                ORDER BY c.composite_score DESC NULLS LAST
+                ORDER BY c.context_score DESC NULLS LAST
                 LIMIT 100
             """),
             {"org_id": org_id}
@@ -427,7 +428,7 @@ def _precompute_bundles(db, org_id: str = None):
                 FROM contacts c
                 WHERE c.relationship_stage IN ('ACTIVE', 'WARM', 'NEEDS_ATTENTION')
                 AND (c.is_archived = FALSE OR c.is_archived IS NULL)
-                ORDER BY c.composite_score DESC NULLS LAST
+                ORDER BY c.context_score DESC NULLS LAST
                 LIMIT 500
             """)
         ).fetchall()

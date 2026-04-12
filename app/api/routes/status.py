@@ -99,6 +99,15 @@ def get_graph_data(
     who share the same email thread.
     """
 
+    # Segment type mapping: entity_type → continent ID for graph visualization
+    _TYPE_TO_SEGMENT = {
+        "investor": "investors", "lead": "investors",
+        "customer": "customers",
+        "partner": "partners",
+        "vendor": "vendors",
+        "team": "team",
+    }
+
     # Build WHERE clause for optional entity_type filter
     entity_filter = ""
     params: dict = {"org_id": org_id}
@@ -127,9 +136,9 @@ def get_graph_data(
                 sentiment_avg, interaction_count, last_interaction_at, entity_type,
                 COALESCE(human_score, 0.5) AS human_score,
                 confidence_score, community_id, size_score, is_bidirectional,
-                freshness_score, composite_score, sentiment_trend,
+                freshness_score, context_score, sentiment_trend,
                 response_rate, avg_response_time_hours,
-                segment_id
+                segment_id, clm_state
             FROM contacts
             WHERE org_id = :org_id
             AND relationship_stage IS NOT NULL
@@ -183,13 +192,15 @@ def get_graph_data(
                 "interaction_count": c.interaction_count,
                 "email": c.email,
                 "entity_type": c.entity_type or "other",
+                "segment_type": _TYPE_TO_SEGMENT.get(c.entity_type or "", "operations"),
                 "human_score": float(c.human_score),
                 "confidence_score": float(c.confidence_score or 0),
                 "community_id": c.community_id,
                 "size_score": float(c.size_score or 0),
                 "is_bidirectional": bool(c.is_bidirectional) if c.is_bidirectional is not None else False,
                 "freshness_score": float(c.freshness_score or 0),
-                "composite_score": float(c.composite_score or 0),
+                "context_score": float(c.context_score or 0),
+                "clm_state": c.clm_state or "active",
                 "sentiment_trend": c.sentiment_trend,
                 "response_rate": float(c.response_rate or 0),
                 "avg_response_time_hours": float(c.avg_response_time_hours or 0),
@@ -217,7 +228,8 @@ def get_graph_data(
                    i.contact_id,
                    COUNT(*) AS cnt,
                    c.sentiment_trend,
-                   c.is_bidirectional
+                   c.is_bidirectional,
+                   MODE() WITHIN GROUP (ORDER BY COALESCE(i.source, 'gmail')) AS predominant_source
             FROM interactions i
             JOIN contacts c ON i.contact_id = c.id
             WHERE i.org_id = :org_id
@@ -225,6 +237,12 @@ def get_graph_data(
         """),
         {"org_id": org_id},
     ).fetchall()
+
+    # Map interaction source to edge_type
+    _source_to_edge = {
+        "gmail": "email", "calendar": "meeting", "drive": "shared_with",
+        "slack": "email", "hubspot": "email",
+    }
 
     for edge in acct_edges:
         source_acct = f"acct_{edge[0]}"
@@ -235,6 +253,7 @@ def get_graph_data(
             target = contact_id_to_acct.get(raw_contact_id, raw_contact_id)
 
             if source_acct != target:
+                predominant = edge[5] if len(edge) > 5 else "gmail"
                 links.append({
                     "source": source_acct,
                     "target": target,
@@ -242,7 +261,7 @@ def get_graph_data(
                     "interaction_count": interaction_count,
                     "sentiment_trend": edge[3],
                     "is_bidirectional": bool(edge[4]) if edge[4] is not None else False,
-                    "link_type": "primary",
+                    "link_type": _source_to_edge.get(predominant, "email"),
                 })
 
     # ── Link 2: Contact ↔ Contact cross-edges (CC + calendar co-attendees) ──
@@ -293,6 +312,71 @@ def get_graph_data(
                     "is_bidirectional": True,
                     "link_type": "cc_shared",
                 })
+
+    # ── Company nodes + WORKS_AT edges ──────────────────────────────────
+    company_rows = db.execute(
+        text("""
+            SELECT co.id, co.name, co.domain, co.category, co.interaction_count
+            FROM companies co
+            WHERE co.org_id = :org_id
+              AND EXISTS (SELECT 1 FROM contacts c WHERE c.company_id = co.id AND c.org_id = :org_id)
+        """),
+        {"org_id": org_id},
+    ).fetchall()
+
+    company_id_set = set()
+    for co in company_rows:
+        co_id = f"company_{co.id}"
+        company_id_set.add(co_id)
+        nodes.append({
+            "id": co_id,
+            "name": co.name or co.domain,
+            "company": None,
+            "relationship_stage": "ACTIVE",
+            "last_interaction_days": 0,
+            "sentiment_avg": 0,
+            "interaction_count": co.interaction_count or 0,
+            "email": None,
+            "entity_type": "company",
+            "human_score": 1.0,
+            "confidence_score": 0.8,
+            "community_id": None,
+            "size_score": 0.5,
+            "is_bidirectional": False,
+            "freshness_score": 0.5,
+            "context_score": 0.5,
+            "sentiment_trend": None,
+            "response_rate": 0,
+            "avg_response_time_hours": 0,
+            "locked": False,
+            "domain": co.domain,
+            "category": co.category,
+        })
+
+    # WORKS_AT edges: contact → company
+    works_at_rows = db.execute(
+        text("""
+            SELECT c.id as contact_id, c.company_id
+            FROM contacts c
+            WHERE c.org_id = :org_id AND c.company_id IS NOT NULL
+        """),
+        {"org_id": org_id},
+    ).fetchall()
+
+    for wa in works_at_rows:
+        contact_id = str(wa.contact_id)
+        company_node_id = f"company_{wa.company_id}"
+        if contact_id in contact_id_set and company_node_id in company_id_set:
+            target = contact_id_to_acct.get(contact_id, contact_id)
+            links.append({
+                "source": target,
+                "target": company_node_id,
+                "strength": 0.3,
+                "interaction_count": 0,
+                "sentiment_trend": None,
+                "is_bidirectional": False,
+                "link_type": "works_at",
+            })
 
     # ── Entity type counts for filter buttons ───────────────────────────
     type_counts_rows = db.execute(
@@ -400,6 +484,62 @@ def get_contacts(
         "limit": limit,
         "offset": offset,
     }
+
+
+@router.get("/api/org/{org_id}/brain/activity")
+def get_brain_activity(org_id: str, db: Session = Depends(get_db)):
+    """Brain activity status for graph header — polled every 30s. Read-only, not toggles."""
+    try:
+        # Reactive: emails/interactions ingested in last 15 min
+        reactive = db.execute(
+            text("SELECT COUNT(*) FROM interactions WHERE org_id = :oid AND created_at > NOW() - INTERVAL '15 minutes'"),
+            {"oid": org_id},
+        ).scalar() or 0
+
+        # Proactive: insights generated today
+        proactive = db.execute(
+            text("SELECT COUNT(*) FROM insights WHERE org_id = :oid AND generated_at > CURRENT_DATE AND is_dismissed = FALSE"),
+            {"oid": org_id},
+        ).scalar() or 0
+
+        # Totals
+        total_contacts = db.execute(
+            text("SELECT COUNT(*) FROM contacts WHERE org_id = :oid AND relationship_stage IS NOT NULL"),
+            {"oid": org_id},
+        ).scalar() or 0
+
+        total_interactions = db.execute(
+            text("SELECT COUNT(*) FROM interactions WHERE org_id = :oid"),
+            {"oid": org_id},
+        ).scalar() or 0
+
+        # Graph sync status
+        last_sync = db.execute(
+            text("SELECT MIN(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"),
+            {"oid": org_id},
+        ).scalar()
+
+        graph_status = "live"
+        if not last_sync:
+            graph_status = "syncing"
+
+        return {
+            "reactive_signal_count": reactive,
+            "proactive_insight_count": proactive,
+            "predictive_alert_count": 0,
+            "graph_status": graph_status,
+            "total_contacts": total_contacts,
+            "total_interactions": total_interactions,
+        }
+    except Exception as e:
+        return {
+            "reactive_signal_count": 0,
+            "proactive_insight_count": 0,
+            "predictive_alert_count": 0,
+            "graph_status": "error",
+            "total_contacts": 0,
+            "total_interactions": 0,
+        }
 
 
 @router.get("/v1/graph/stats")
@@ -524,7 +664,7 @@ def export_graph_csv(org_id: str, db: Session = Depends(get_db)):
                 relationship_stage, last_interaction_at,
                 interaction_count, sentiment_avg,
                 freshness_score, confidence_score, consistency_score,
-                authority_score, composite_score, response_rate,
+                authority_score, context_score, response_rate,
                 avg_response_time_hours, is_bidirectional, community_id
             FROM contacts
             WHERE org_id = :org_id
@@ -541,7 +681,7 @@ def export_graph_csv(org_id: str, db: Session = Depends(get_db)):
         "relationship_stage", "last_interaction_at",
         "interaction_count", "sentiment_avg",
         "freshness_score", "confidence_score", "consistency_score",
-        "authority_score", "composite_score", "response_rate",
+        "authority_score", "context_score", "response_rate",
         "avg_response_time_hours", "is_bidirectional", "community_id",
     ])
     for c in contacts:

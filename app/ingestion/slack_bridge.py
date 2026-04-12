@@ -166,7 +166,7 @@ def create_slack_interactions(db, org_id: str):
                 "sentiment": sentiment,
                 "interaction_type": interaction_type,
                 "weight_score": 0.7 if is_dm else 0.5,
-                "signal_score": 0.7 if is_dm else 0.4,
+                "signal_score": None,  # Computed at query time only (CLM spec)
                 "edge_weight_multiplier": edge_weight,
                 "channel_id": msg.channel_id,
                 "message_ts": msg.message_ts,

@@ -525,12 +525,18 @@ async def v1_document_upload(
         except ImportError:
             pass
 
-    # Entity extraction
+    # Entity enrichment + Precedent Graph embedding
+    # Per Graph Enrichment spec: documents enrich topics/consistency on existing nodes,
+    # but do NOT create interaction rows (no behavioral signal from documents).
     entities_found = 0
+    chunks_stored = 0
     if text_content and len(text_content) > 20:
+        # 1. Entity extraction — enrich topics only, no interaction creation
         try:
             from app.ingestion.entity_extractor import extract_email_intelligence
             intelligence = extract_email_intelligence(text_content[:3000], f"Document: {file.filename}")
+            doc_topics = intelligence.get("topics", [])
+
             for entity_info in intelligence.get("entities", []):
                 entity_name = entity_info if isinstance(entity_info, str) else entity_info.get("name", "")
                 if not entity_name:
@@ -540,28 +546,52 @@ async def v1_document_upload(
                     {"org_id": org_id, "name": entity_name},
                 ).fetchone()
                 if existing:
+                    # Enrich data_sources + topics only — no stage/sentiment/freshness change
                     db.execute(
                         text("""
-                            INSERT INTO interactions (id, org_id, contact_id, direction, subject, summary, sentiment, interaction_at, weight_score, signal_score)
-                            VALUES (:id, :org_id, :cid, 'inbound', :subj, :summary, 0.5, NOW(), 0.7, 0.5)
+                            UPDATE contacts SET
+                                sources = array_cat(
+                                    COALESCE(sources, '{}'),
+                                    CASE WHEN NOT ('docs' = ANY(COALESCE(sources, '{}'))) THEN ARRAY['docs'] ELSE '{}' END
+                                )
+                            WHERE id = :cid AND org_id = :org_id
                         """),
-                        {
-                            "id": str(uuid.uuid4()),
-                            "org_id": org_id,
-                            "cid": str(existing[0]),
-                            "subj": f"Upload: {file.filename}",
-                            "summary": intelligence.get("summary", text_content[:200]),
-                        },
+                        {"cid": str(existing[0]), "org_id": org_id},
                     )
                     entities_found += 1
             db.commit()
         except Exception as e:
             logger.warning(f"v1 document entity extraction failed: {e}")
 
+        # 2. Precedent Graph — chunk and embed document for vector search
+        try:
+            from app.context.precedent_search import store_document_chunks
+            # Simple chunking: split by paragraphs, target ~400-600 tokens
+            paragraphs = [p.strip() for p in text_content.split("\n\n") if len(p.strip()) > 50]
+            chunks = []
+            current_chunk = ""
+            for para in paragraphs:
+                if len(current_chunk) + len(para) > 2000:
+                    if current_chunk:
+                        chunks.append(current_chunk)
+                    current_chunk = para
+                else:
+                    current_chunk = current_chunk + "\n\n" + para if current_chunk else para
+            if current_chunk:
+                chunks.append(current_chunk)
+
+            chunks_stored = store_document_chunks(
+                db, org_id, file_id, file.filename or "Untitled",
+                chunks, doc_type="upload", metadata={"tag": tag},
+            )
+        except Exception as e:
+            logger.warning(f"v1 document chunk embedding failed: {e}")
+
     from app.core.analytics import capture
     capture(org_id, "document_uploaded", {
         "file_type": file_ext.lstrip("."),
         "entities_found": entities_found,
+        "chunks_stored": chunks_stored,
         "size_bytes": len(content),
     })
 
@@ -574,5 +604,6 @@ async def v1_document_upload(
         "size_bytes": len(content),
         "text_extracted": len(text_content) > 0,
         "entities_found": entities_found,
+        "chunks_stored": chunks_stored,
         "status": "indexed" if text_content else "queued",
     }

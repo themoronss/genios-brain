@@ -23,6 +23,7 @@ router = APIRouter()
 class ContextRequest(BaseModel):
     entity: str
     situation: str = None
+    context_size: str = "medium"  # small | medium | large (per CLM spec)
     agent_id: str = None      # Optional — identifies which agent is calling
     segment_id: str = None    # Optional — scope bundle to contacts in this segment
     tag: str = None           # Optional — only return entity if it has this tag
@@ -461,6 +462,7 @@ def get_context(
             context_bundle = call_with_timeout(
                 build_context_bundle,
                 db, org_id, request.entity, request.situation,
+                context_size=getattr(request, "context_size", "medium"),
                 fallback=None,  # timeout uses LLM_TIMEOUT_SECONDS env var (default 30s)
             )
             if context_bundle is None:
@@ -797,7 +799,7 @@ def search_context(
         if request.query_type == "temporal":
             order = "c.last_interaction_at DESC NULLS LAST"
         else:
-            order = "c.composite_score DESC NULLS LAST, c.interaction_count DESC"
+            order = "c.context_score DESC NULLS LAST, c.interaction_count DESC"
 
         results = db.execute(
             text(f"""
@@ -805,7 +807,7 @@ def search_context(
                     c.id, c.name, c.email, c.company, c.relationship_stage,
                     c.sentiment_avg, c.interaction_count, c.last_interaction_at,
                     c.entity_type, c.confidence_score, c.freshness_score,
-                    c.composite_score
+                    c.context_score
                 FROM contacts c
                 WHERE {where_clause}
                 ORDER BY {order}
@@ -831,7 +833,7 @@ def search_context(
                 "entity_type": r[8] or "other",
                 "confidence_score": float(r[9] or 0.5),
                 "freshness_score": float(r[10] or 0.5),
-                "composite_score": float(r[11] or 0.5),
+                "context_score": float(r[11] or 0.5),
             })
 
         return {
@@ -970,17 +972,17 @@ def get_llms_txt(
     rows = db.execute(text("""
         SELECT name, company, entity_type, relationship_stage,
                sentiment_avg, interaction_count, last_interaction_at,
-               composite_score
+               context_score
         FROM contacts
         WHERE org_id = :org_id AND (is_archived = FALSE OR is_archived IS NULL)
-        ORDER BY composite_score DESC NULLS LAST
+        ORDER BY context_score DESC NULLS LAST
         LIMIT 10
     """), {"org_id": org_id}).fetchall()
 
     graph_stats = db.execute(text("""
         SELECT COUNT(*) as total_contacts,
                COUNT(CASE WHEN relationship_stage = 'ACTIVE' THEN 1 END) as active,
-               AVG(composite_score) as avg_score
+               AVG(context_score) as avg_score
         FROM contacts WHERE org_id = :org_id AND (is_archived = FALSE OR is_archived IS NULL)
     """), {"org_id": org_id}).fetchone()
 
@@ -1001,7 +1003,7 @@ def get_llms_txt(
         lines.append(
             f"- {r.name} ({r.company or 'unknown'}) | {r.entity_type or 'contact'} | "
             f"Stage: {stage} | Interactions: {r.interaction_count or 0} | "
-            f"Last: {last} | Score: {round(float(r.composite_score or 0), 2)}"
+            f"Last: {last} | Score: {round(float(r.context_score or 0), 2)}"
         )
 
     lines.append("")

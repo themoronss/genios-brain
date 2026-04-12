@@ -22,6 +22,7 @@ def parse_headers(payload):
         "date": None,
         "cc_list": [],  # Update 3: many-to-many CC support
         "has_unsubscribe": False,  # List-Unsubscribe header detection
+        "raw_headers": {},  # Tier 0 classifier needs Precedence, Auto-Submitted, etc.
     }
 
     for h in headers:
@@ -48,6 +49,11 @@ def parse_headers(payload):
         # Detect List-Unsubscribe header (marketing/automated signal)
         if h["name"].lower() == "list-unsubscribe":
             data["has_unsubscribe"] = True
+            data["raw_headers"]["List-Unsubscribe"] = h["value"]
+
+        # Capture headers needed by Tier 0 classifier
+        if h["name"].lower() in ("precedence", "auto-submitted"):
+            data["raw_headers"][h["name"]] = h["value"]
 
         # Update 3: Parse CC into a list of {name, email} dicts
         # getaddresses() handles comma-separated multi-address strings correctly

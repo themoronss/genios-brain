@@ -22,7 +22,6 @@ from app.ingestion.graph_builder import (
 )
 from app.ingestion.entity_extractor import (
     extract_email_intelligence,
-    compute_signal_score,
 )
 from app.ingestion.email_classifier import classify_email, parse_system_email
 from app.ingestion.bridge_utils import get_email_domain
@@ -435,7 +434,7 @@ def _sync_single_account(
     """
     Internal: run the full sync pipeline for one Gmail account token.
     """
-    # Mark sync as running
+    # Mark sync as running + bootstrap status
     update_sync_progress(
         db,
         org_id,
@@ -446,6 +445,20 @@ def _sync_single_account(
         sync_error=None,
         sync_started_at=datetime.now(timezone.utc),
     )
+    # Set bootstrap_status to ingesting (CLM spec)
+    try:
+        db.execute(
+            text("""
+                UPDATE oauth_tokens
+                SET bootstrap_status = CASE WHEN bootstrap_status != 'live' THEN 'ingesting' ELSE bootstrap_status END,
+                    bootstrap_started_at = COALESCE(bootstrap_started_at, NOW())
+                WHERE org_id = :oid AND account_email = :acct
+            """),
+            {"oid": org_id, "acct": account_identifier},
+        )
+        db.commit()
+    except Exception:
+        pass
 
     try:
         service = build_gmail_service(access_token, refresh_token)
@@ -563,6 +576,8 @@ def _sync_single_account(
                 "direction": direction,
                 # Update 3: carry CC list for many-to-many linking
                 "cc_list": parsed.get("cc_list", []),
+                # Raw headers for Tier 0 classifier (Precedence, Auto-Submitted, etc.)
+                "raw_headers": parsed.get("raw_headers", {}),
             }
 
             thread_groups[thread_id].append(parsed_msg)
@@ -604,19 +619,18 @@ def _sync_single_account(
             direction = parsed_msg["direction"]
             cc_list = parsed_msg.get("cc_list", [])
 
-            # ── Update 1.1: Classify email ────────────────────────────────────
+            # ── Classify email (Tier 0/1/2/SYSTEM) ───────────────────────────
             from_email = parsed_msg["from_email"]
-
-            # Get headers for unsubscribe detection
-            headers = (
-                {}
-            )  # Would need to pass this from fetch, but for now use empty dict
+            raw_headers = parsed_msg.get("raw_headers", {})
+            recipient_count = 1 + len(cc_list)
 
             category = classify_email(
                 subject=subject or "",
                 sender_email=from_email or "",
                 body=body_text or "",
-                headers=headers,
+                headers=raw_headers,
+                recipient_count=recipient_count,
+                org_domain=user_email.split("@")[-1] if user_email and "@" in user_email else None,
             )
 
             # ── Branch processing by category ─────────────────────────────────
@@ -636,54 +650,29 @@ def _sync_single_account(
                 )
                 continue
 
-            elif category == "DISCARD":
-                # Skip marketing/newsletter emails
+            elif category == "TIER_0":
+                # Hard discard — zero graph impact, zero LLM cost
                 discarded_emails += 1
                 update_sync_progress(
                     db, org_id, account_email=account_identifier, sync_processed=i
                 )
                 continue
 
-            elif category == "WEAK":
-                # PDF spec: "weight short replies differently — add email length as
-                # calibration signal". Apply heuristic sentiment instead of skipping.
+            elif category == "TIER_1":
+                # Edge stats only — update counters, NO interaction row, NO LLM
                 contact_id = upsert_contact(
                     db, org_id, contact_email, contact_name, entity_type=None
                 )
-                heuristic_sentiment = quick_sentiment_heuristic(body_text or "")
-                if heuristic_sentiment != 0.0:
-                    # Store interaction with heuristic sentiment (low-weight signal)
-                    create_interaction(
-                        db,
-                        org_id,
-                        contact_id,
-                        parsed_msg["gmail_id"],
-                        subject,
-                        f"Short reply ({len((body_text or '').split())} words)",
-                        parsed_msg["date"],
-                        direction,
-                        sentiment=heuristic_sentiment * 0.3,  # 0.3x weight for short emails
-                        intent="other",
-                        commitments=[],
-                        topics=[],
-                        interaction_type="email_reply" if direction == "inbound" else "email_one_way",
-                        engagement_level="low",
-                        reply_time_hours=None,
-                        account_email=user_email,
-                        signal_score=0.1,  # low signal — short email
-                        processed_version=PROCESSING_VERSION,
-                    )
-                else:
-                    update_relationship_stats_only(
-                        db, org_id, contact_id, parsed_msg["date"]
-                    )
+                update_relationship_stats_only(
+                    db, org_id, contact_id, parsed_msg["date"]
+                )
                 weak_emails += 1
                 update_sync_progress(
                     db, org_id, account_email=account_identifier, sync_processed=i
                 )
                 continue
 
-            # ── STRONG category: Full LLM extraction ──────────────────────────
+            # ── TIER_2: Full LLM extraction ───────────────────────────────────
 
             # Build thread context from messages already processed in this thread
             thread_context = build_thread_context(thread_processed[thread_id])
@@ -703,8 +692,7 @@ def _sync_single_account(
                 thread_context=thread_context,
             )
 
-            # Compute signal score
-            signal = compute_signal_score(intelligence, body_text or "")
+            # Signal score removed from ingestion — computed at query time only (CLM spec)
             llm_processed += 1
 
             # Rate limiting: Groq allows 30 requests/minute
@@ -751,7 +739,7 @@ def _sync_single_account(
                 engagement_level=intelligence.get("engagement_level", "medium"),
                 reply_time_hours=None,
                 account_email=user_email,
-                signal_score=signal,
+                signal_score=None,  # Signal computed at query time only (CLM spec)
                 mentioned_people=intelligence.get("mentioned_people", []),
                 what_works=intelligence.get("what_works"),
                 what_to_avoid=intelligence.get("what_to_avoid"),
@@ -854,6 +842,21 @@ def _sync_single_account(
             sync_status="completed",
             last_synced_at=datetime.now(timezone.utc),
         )
+        # Set bootstrap_status to live (CLM spec)
+        try:
+            db.execute(
+                text("""
+                    UPDATE oauth_tokens
+                    SET bootstrap_status = 'live',
+                        bootstrap_completed_at = NOW(),
+                        bootstrap_email_count = :count
+                    WHERE org_id = :oid AND account_email = :acct
+                """),
+                {"oid": org_id, "acct": account_identifier, "count": processed_count},
+            )
+            db.commit()
+        except Exception:
+            pass
 
     except Exception as e:
         print(f"❌ Sync failed for account {account_identifier}: {e}")

@@ -23,7 +23,7 @@ from app.config import PROCESSING_VERSION
 from app.ingestion.gmail_connector import build_gmail_service, fetch_full_message, get_user_email
 from app.ingestion.email_parser import parse_headers, extract_email_body, detect_attachments
 from app.ingestion.email_classifier import classify_email
-from app.ingestion.entity_extractor import extract_email_intelligence, compute_signal_score
+from app.ingestion.entity_extractor import extract_email_intelligence
 from app.ingestion.graph_builder import (
     upsert_contact,
     create_interaction,
@@ -223,7 +223,7 @@ def run_reextract(org_id: str, batch_size: int = BATCH_SIZE):
                         headers=headers,
                     )
 
-                    if category == "DISCARD":
+                    if category == "TIER_0":
                         # Mark as processed so we don't re-visit
                         db.execute(
                             text("UPDATE interactions SET processed_version = :v WHERE id = :id"),
@@ -232,7 +232,7 @@ def run_reextract(org_id: str, batch_size: int = BATCH_SIZE):
                         skipped += 1
                         continue
 
-                    if category == "WEAK":
+                    if category == "TIER_1":
                         heuristic = quick_sentiment_heuristic(body_text or "")
                         weight = _calculate_interaction_weight(
                             "email_reply" if direction == "inbound" else "email_one_way",
@@ -275,7 +275,7 @@ def run_reextract(org_id: str, batch_size: int = BATCH_SIZE):
                         thread_context="",  # Thread context not stored; accept minor quality loss
                     )
 
-                    signal = compute_signal_score(intelligence, body_text or "")
+                    signal = None  # Signal computed at query time only (CLM spec)
                     weight = _calculate_interaction_weight(
                         intelligence.get("interaction_type", "email_one_way"),
                         intelligence.get("engagement_level", "medium"),

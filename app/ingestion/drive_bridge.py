@@ -162,3 +162,52 @@ def create_drive_interactions(db, org_id: str):
 
     logger.info(f"Drive bridge: created {created} file-shared interactions for org={org_id}")
     return created
+
+
+# Per Graph Enrichment spec: Shared Drive roles → Authority Graph
+DRIVE_ROLE_AUTHORITY = {
+    "organizer": 5,
+    "fileOrganizer": 4,
+    "writer": 3,
+    "commenter": 1,
+    "reader": 0,
+}
+
+
+def extract_drive_authority(db, org_id: str):
+    """
+    Extract authority levels from Shared Drive member roles.
+    Per spec: manager=5, contentManager=4, contributor=2, commenter=1, reader=0.
+    Writes authority_score to contacts table.
+    """
+    members = db.execute(
+        text("""
+            SELECT m.person_id, m.role, m.email
+            FROM gdrive_shared_drive_members m
+            WHERE m.org_id = :oid AND m.person_id IS NOT NULL
+        """),
+        {"oid": org_id},
+    ).fetchall()
+
+    updated = 0
+    for m in members:
+        role = (m.role or "reader").lower()
+        authority_level = DRIVE_ROLE_AUTHORITY.get(role, 0)
+        # Normalize to 0-1 scale (max authority = 5)
+        authority_score = round(authority_level / 5.0, 2)
+
+        # Only update if Drive-inferred authority is higher than current
+        db.execute(
+            text("""
+                UPDATE contacts
+                SET authority_score = GREATEST(COALESCE(authority_score, 0), :auth_score)
+                WHERE id = :cid AND org_id = :oid
+            """),
+            {"auth_score": authority_score, "cid": str(m.person_id), "oid": org_id},
+        )
+        updated += 1
+
+    if updated:
+        db.commit()
+    logger.info(f"Drive authority: updated {updated} contacts for org={org_id}")
+    return updated

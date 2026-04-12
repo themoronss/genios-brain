@@ -328,7 +328,7 @@ def list_members(
     rows = db.execute(
         text("""
             SELECT c.id, c.name, c.email, c.company, c.relationship_stage,
-                   c.composite_score, sm.added_at
+                   c.context_score, sm.added_at
             FROM segment_members sm
             JOIN contacts c ON c.id = sm.contact_id
             WHERE sm.segment_id = :sid
@@ -346,7 +346,7 @@ def list_members(
                 "email": r.email,
                 "company": r.company,
                 "relationship_stage": r.relationship_stage,
-                "composite_score": float(r.composite_score or 0),
+                "context_score": float(r.context_score or 0),
                 "added_at": r.added_at.isoformat() if r.added_at else None,
             }
             for r in rows

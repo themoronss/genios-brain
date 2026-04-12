@@ -267,6 +267,12 @@ celery.conf.beat_schedule = {
         "schedule": 21600.0,  # 6 hours
         "options": {"queue": "low_priority"},
     },
+    # Nightly refresh at 2am — full score recalculation across all nodes
+    "nightly-refresh": {
+        "task": "app.celery_app.task_nightly_refresh",
+        "schedule": crontab(hour=2, minute=0),
+        "options": {"queue": "low_priority"},
+    },
 }
 
 

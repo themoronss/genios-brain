@@ -28,13 +28,13 @@ def _get_monday(dt: datetime) -> datetime:
 def generate_report_for_org(db, org_id: str) -> dict:
     """Build the weekly intelligence report payload for one org."""
 
-    # Top 5 strongest relationships (highest composite_score)
+    # Top 5 strongest relationships (highest context_score)
     top = db.execute(
         text("""
-            SELECT name, company, relationship_stage, composite_score, interaction_count
+            SELECT name, company, relationship_stage, context_score, interaction_count
             FROM contacts
             WHERE org_id = :oid AND (is_archived = FALSE OR is_archived IS NULL)
-            ORDER BY composite_score DESC NULLS LAST
+            ORDER BY context_score DESC NULLS LAST
             LIMIT 5
         """),
         {"oid": org_id},
@@ -79,7 +79,7 @@ def generate_report_for_org(db, org_id: str) -> dict:
     clusters = db.execute(
         text("""
             SELECT community_id, COUNT(*) AS size,
-                   ROUND(AVG(composite_score)::numeric, 2) AS avg_score
+                   ROUND(AVG(context_score)::numeric, 2) AS avg_score
             FROM contacts
             WHERE org_id = :oid
             AND community_id IS NOT NULL
@@ -105,7 +105,7 @@ def generate_report_for_org(db, org_id: str) -> dict:
     graph_stats = db.execute(
         text("""
             SELECT COUNT(*) AS total,
-                   ROUND(AVG(composite_score)::numeric, 2) AS avg_score,
+                   ROUND(AVG(context_score)::numeric, 2) AS avg_score,
                    COUNT(CASE WHEN relationship_stage = 'ACTIVE' THEN 1 END) AS active_count
             FROM contacts
             WHERE org_id = :oid AND (is_archived = FALSE OR is_archived IS NULL)

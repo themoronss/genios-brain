@@ -389,24 +389,78 @@ def calculate_ghosting_score(db, contact_id: str) -> float:
     return round(min(1.0, max(0.0, ghosting)), 3)
 
 
-def calculate_composite_score(
-    freshness: float, confidence: float, consistency: float,
-    signal: float, authority: float
+def calculate_context_score(
+    freshness: float, confidence: float, sentiment: float,
+    authority: float, consistency: float,
+    bootstrap_status: str = "live"
 ) -> float:
     """
-    Calculate composite context score per MVP V1 Detailing spec.
-    Threshold: >= 0.45 to include in context bundles.
+    NODE Context Score — for graph display and ContactDrawer.
+    No signal (no query context). No hard gates.
+    Per CLM spec: bootstrapping nodes get neutral 0.50.
 
-    Weights: freshness 25%, confidence 25%, consistency 20%, signal 15%, authority 15%
+    Weights: confidence 35%, freshness 25%, sentiment 25%, authority 10%, consistency 5%
     """
-    composite = (
+    if bootstrap_status in ("ingesting", "bootstrapping"):
+        return 0.50
+
+    sentiment_normalized = (sentiment + 1.0) / 2.0
+    score = (
+        confidence * 0.35 +
+        freshness * 0.25 +
+        sentiment_normalized * 0.25 +
+        authority * 0.10 +
+        consistency * 0.05
+    )
+    return round(min(1.0, score), 3)
+
+
+VOLATILE_FACT_TYPES = {"current_role", "current_company", "relationship_stage", "deal_status", "budget"}
+RETRIEVAL_THRESHOLD = 0.45
+
+
+def compute_fact_retrieval_score(
+    freshness: float, confidence: float, signal: float,
+    consistency: float, authority: float,
+    fact_type: str = None
+) -> float:
+    """
+    FACT Retrieval Score — used ONLY inside genios.context() bundle assembly.
+    Includes signal (computed at query time). Has hard gates.
+    Per CLM spec: 0.25F + 0.25C + 0.30S + 0.10Co + 0.10A
+    """
+    # Hard gates — retrieval only, never for display
+    if confidence < 0.15:
+        return 0.0
+    if freshness < 0.10 and fact_type in VOLATILE_FACT_TYPES:
+        return 0.0
+
+    score = (
         freshness * 0.25 +
         confidence * 0.25 +
-        consistency * 0.20 +
-        signal * 0.15 +
-        authority * 0.15
+        signal * 0.30 +
+        consistency * 0.10 +
+        authority * 0.10
     )
-    return round(min(1.0, composite), 3)
+    return round(min(1.0, score), 3)
+
+
+def compute_clm_state(freshness: float, bootstrap_status: str = "live") -> str:
+    """
+    Compute Context Lifecycle Management state from freshness score.
+    Drives edge visual encoding and agent behavior overrides.
+    """
+    if bootstrap_status in ("ingesting", "bootstrapping"):
+        return "bootstrapping"
+    if freshness >= 0.90:
+        return "fresh"
+    if freshness >= 0.70:
+        return "active"
+    if freshness >= 0.45:
+        return "aging"
+    if freshness >= 0.10:
+        return "stale"
+    return "archived"
 
 
 def aggregate_communication_style(db, contact_id: str) -> Dict:
@@ -721,17 +775,13 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         consistency_score = 0.5
         authority_score = 0.5
 
-    # Calculate average signal score
-    signal_result = db.execute(
-        text("SELECT AVG(signal_score) FROM interactions WHERE contact_id = :contact_id AND signal_score IS NOT NULL"),
-        {"contact_id": contact_id}
-    ).fetchone()
-    avg_signal_score = float(signal_result[0]) if signal_result and signal_result[0] else 0.5
-
-    # Calculate composite score
-    composite_score = calculate_composite_score(
-        freshness_score, confidence, consistency_score, avg_signal_score, authority_score
+    # Calculate context score — uses sentiment_ewma (already computed above)
+    context_score = calculate_context_score(
+        freshness_score, confidence, sentiment_ewma, authority_score, consistency_score
     )
+
+    # Calculate CLM state from freshness
+    clm_state = compute_clm_state(freshness_score)
 
     # Calculate ghosting score
     ghosting_score = calculate_ghosting_score(db, contact_id)
@@ -832,7 +882,8 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
                 size_score = :size_score,
                 consistency_score = :consistency_score,
                 authority_score = :authority_score,
-                composite_score = :composite_score,
+                context_score = :context_score,
+                clm_state = :clm_state,
                 response_rate = :response_rate,
                 avg_response_time_hours = :avg_response_time_hours,
                 what_works = COALESCE(:what_works, what_works),
@@ -873,7 +924,8 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
             "size_score": size_score,
             "consistency_score": consistency_score,
             "authority_score": authority_score,
-            "composite_score": composite_score,
+            "context_score": context_score,
+            "clm_state": clm_state,
             "response_rate": response_metrics["response_rate"],
             "avg_response_time_hours": response_metrics["avg_response_time_hours"],
             "what_works": comm_style.get("what_works"),
@@ -902,7 +954,7 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         "size_score": size_score,
         "consistency_score": consistency_score,
         "authority_score": authority_score,
-        "composite_score": composite_score,
+        "context_score": context_score,
         "response_rate": response_metrics["response_rate"],
         "avg_response_time_hours": response_metrics["avg_response_time_hours"],
         "what_works": comm_style.get("what_works"),

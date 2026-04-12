@@ -99,7 +99,7 @@ def get_active_facts(
         params: dict = {"org_id": org_id, "limit": limit, "offset": offset}
 
         if min_score > 0:
-            where_clauses.append("c.composite_score >= :min_score")
+            where_clauses.append("c.context_score >= :min_score")
             params["min_score"] = min_score
 
         if entity_name:
@@ -117,12 +117,12 @@ def get_active_facts(
                 SELECT
                     c.id, c.name, c.email, c.company, c.entity_type,
                     c.relationship_stage, c.freshness_score, c.confidence_score,
-                    c.consistency_score, c.authority_score, c.composite_score,
+                    c.consistency_score, c.authority_score, c.context_score,
                     c.last_interaction_at, c.interaction_count, c.sentiment_avg,
                     c.topics_aggregate
                 FROM contacts c
                 WHERE {where_sql}
-                ORDER BY c.composite_score DESC NULLS LAST
+                ORDER BY c.context_score DESC NULLS LAST
                 LIMIT :limit OFFSET :offset
             """),
             params,

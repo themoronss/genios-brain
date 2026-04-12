@@ -27,7 +27,7 @@ def _row_to_dict(result) -> Dict:
         "confidence_score": result[13] if len(result) > 13 else 0.5,
         "consistency_score": result[14] if len(result) > 14 else 0.5,
         "authority_score": result[15] if len(result) > 15 else 0.5,
-        "composite_score": result[16] if len(result) > 16 else 0.5,
+        "context_score": result[16] if len(result) > 16 else 0.5,
         "sentiment_ewma": result[17] if len(result) > 17 else 0.0,
         "sentiment_trend": result[18] if len(result) > 18 else "STABLE",
         "response_rate": result[19] if len(result) > 19 else None,
@@ -51,7 +51,7 @@ _FULL_CONTACT_COLS = """
     sentiment_avg, last_interaction_at, first_interaction_at,
     interaction_count, topics_aggregate, communication_style,
     entity_type, freshness_score, confidence_score,
-    consistency_score, authority_score, composite_score,
+    consistency_score, authority_score, context_score,
     sentiment_ewma, sentiment_trend, response_rate,
     avg_response_time_hours, is_bidirectional,
     what_works, what_to_avoid, introduced_by,
@@ -574,6 +574,34 @@ _SITUATION_KEYWORDS = {
 }
 
 
+def _derive_agent_behavior(
+    relationship_stage: str, sentiment_ewma: float,
+    clm_state: str, context_score: float
+) -> str:
+    """
+    Derive agent behavior from CLM state + context_score.
+    Per CLM spec: stage overrides > CLM state > context_score thresholds.
+    """
+    # AT_RISK always blocks
+    if (relationship_stage or "").upper() == "AT_RISK" or sentiment_ewma < -0.3:
+        return "block"
+    # CLM overrides
+    if clm_state == "bootstrapping":
+        return "building_context"
+    if clm_state == "archived":
+        return "block"
+    if clm_state == "stale":
+        return "escalate_to_human"
+    # Context score thresholds
+    if context_score >= 0.80:
+        return "autonomous"
+    if context_score >= 0.60:
+        return "safe_execute"
+    if context_score >= 0.45:
+        return "needs_confirmation"
+    return "block"
+
+
 def _classify_situation(situation: str) -> Optional[str]:
     """Map free-text situation to a situation_type key."""
     if not situation:
@@ -654,7 +682,7 @@ def _get_company_contacts(db, org_id: str, company_name: str, exclude_contact_id
 
 def build_context_bundle(
     db, org_id: str, entity_name: str, situation: str = None,
-    plan_tier: str = None,
+    plan_tier: str = None, context_size: str = "medium",
 ) -> Dict:
     """
     Build complete context bundle for an entity.
@@ -981,9 +1009,9 @@ def build_context_bundle(
             "freshness": float(contact.get("freshness_score") or 0.5),
             "confidence": float(contact.get("confidence_score") or 0.5),
             "consistency": float(contact.get("consistency_score") or 0.5),
-            "signal": float(contact.get("composite_score") or 0.5),
+            "signal": float(contact.get("context_score") or 0.5),
             "authority": float(contact.get("authority_score") or 0.5),
-            "composite": float(contact.get("composite_score") or 0.5),
+            "composite": float(contact.get("context_score") or 0.5),
         },
         # ── PDF spec: sources_used, confidence_breakdown ──
         "sources_used": ["gmail"],
@@ -992,13 +1020,14 @@ def build_context_bundle(
         },
         "generated_at": generated_at.isoformat(),
         "cache_age_seconds": 0,
-        # ── Agent behavior guidance based on confidence ──
-        "agent_behavior_guidance": (
-            "execute_autonomously" if contact.get("confidence_score", 0.5) > 0.80
-            else "execute_with_caution" if contact.get("confidence_score", 0.5) >= 0.60
-            else "needs_confirmation" if contact.get("confidence_score", 0.5) >= 0.20
-            else "block"
+        # ── Agent behavior from CLM state + context_score (per CLM spec) ──
+        "agent_behavior": _derive_agent_behavior(
+            contact.get("relationship_stage", ""),
+            contact.get("sentiment_ewma", 0),
+            contact.get("clm_state", "active"),
+            contact_confidence,
         ),
+        "clm_state": contact.get("clm_state", "active"),
         "data_quality": {
             "confidence_score": contact.get("confidence_score", 0.5),
             "coverage_score": coverage_score,
@@ -1031,6 +1060,20 @@ def build_context_bundle(
         except Exception as e:
             logger.warning(f"Warm intro lookup failed: {e}") if logger else None
 
+    # Add precedents from Precedent Graph (document chunks)
+    if situation:
+        try:
+            from app.context.precedent_search import search_precedents
+            precedents = search_precedents(db, org_id, situation, limit=3)
+            if precedents:
+                bundle["precedents"] = precedents
+                top_prec = precedents[0]
+                bundle["context_for_agent"] += (
+                    f" Similar situation: {top_prec['doc_title']} — {top_prec['situation'][:100]}."
+                )
+        except Exception as e:
+            logger.warning(f"Precedent search failed: {e}") if logger else None
+
     # Add recent_interactions from raw interactions table (last 10)
     try:
         raw_interactions = db.execute(
@@ -1056,6 +1099,35 @@ def build_context_bundle(
         ]
     except Exception as e:
         bundle["recent_interactions"] = []
+
+    # ── Context size handling (CLM spec: small/medium/large) ────────────────
+    HIGH_STAKES_KEYWORDS = [
+        "contract", "legal", "first meeting", "board", "term sheet",
+        "due diligence", "acquisition", "partnership agreement",
+        "series", "funding", "investment", "deal closing",
+    ]
+    resolved_size = context_size or "medium"
+    if situation and any(kw in (situation or "").lower() for kw in HIGH_STAKES_KEYWORDS):
+        resolved_size = "large"
+
+    bundle["context_size"] = resolved_size
+
+    if resolved_size == "small":
+        # Strip heavy sections — keep entity basics + commitments + recommended action
+        for key in ["recent_interactions", "situational_context", "warm_intro_paths",
+                     "precedents", "company_contacts", "situation_signals", "scores",
+                     "data_quality", "confidence_breakdown"]:
+            bundle.pop(key, None)
+    elif resolved_size == "large":
+        # Add full score breakdown for large bundles
+        bundle["score_breakdown"] = {
+            "context_score": bundle.get("confidence", 0.5),
+            "confidence": float(contact.get("confidence_score") or 0.5),
+            "freshness": float(contact.get("freshness_score") or 0.5),
+            "sentiment": round((contact.get("sentiment_ewma", 0) + 1) / 2, 3),
+            "authority": float(contact.get("authority_score") or 0.5),
+            "consistency": float(contact.get("consistency_score") or 0.5),
+        }
 
     return bundle
 

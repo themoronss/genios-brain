@@ -142,7 +142,7 @@ def get_temporal_context(db, org_id: str, limit: int = 8) -> str:
                     name, company, relationship_stage, last_interaction_at,
                     interaction_count, entity_type,
                     EXTRACT(DAY FROM NOW() - last_interaction_at) as days_ago,
-                    sentiment_avg, composite_score
+                    sentiment_avg, context_score
                 FROM contacts
                 WHERE org_id = :org_id
                     AND relationship_stage IN ('NEEDS_ATTENTION', 'WARM', 'DORMANT', 'AT_RISK')
@@ -168,7 +168,7 @@ def get_temporal_context(db, org_id: str, limit: int = 8) -> str:
                         name, company, relationship_stage, last_interaction_at,
                         interaction_count, entity_type,
                         EXTRACT(DAY FROM NOW() - last_interaction_at) as days_ago,
-                        sentiment_avg, composite_score
+                        sentiment_avg, context_score
                     FROM contacts
                     WHERE org_id = :org_id AND relationship_stage IS NOT NULL
                     ORDER BY last_interaction_at DESC NULLS LAST
@@ -209,13 +209,13 @@ def get_semantic_context(db, org_id: str, query: str, limit: int = 8) -> str:
             text("""
                 SELECT
                     name, company, entity_type, relationship_stage,
-                    COALESCE(composite_score, 0.5) AS health,
+                    COALESCE(context_score, 0.5) AS health,
                     COALESCE(sentiment_avg, 0) AS sentiment,
                     EXTRACT(DAY FROM NOW() - last_interaction_at) AS days_ago,
                     interaction_count,
                     ROUND(CAST(
                         (1 - (embedding <=> CAST(:qvec AS vector))) * 0.5
-                        + COALESCE(composite_score, 0.5) * 0.3
+                        + COALESCE(context_score, 0.5) * 0.3
                         + ((COALESCE(sentiment_avg, 0) + 1.0) / 2.0) * 0.2
                     AS numeric), 3) AS relevance_score
                 FROM contacts
@@ -359,7 +359,7 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
                                 text("""
                                     SELECT name FROM contacts
                                     WHERE org_id = :org_id AND entity_type = :etype
-                                    ORDER BY interaction_count DESC, composite_score DESC NULLS LAST
+                                    ORDER BY interaction_count DESC, context_score DESC NULLS LAST
                                     LIMIT 1
                                 """),
                                 {"org_id": org_id, "etype": entity_type},
@@ -393,7 +393,7 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
                         f"Scores — Freshness: {scores.get('freshness', 0.5):.0%}, "
                         f"Confidence: {scores.get('confidence', 0.5):.0%}, "
                         f"Consistency: {scores.get('consistency', 0.5):.0%}, "
-                        f"Composite: {scores.get('composite', 0.5):.0%}\n"
+                        f"Context: {scores.get('context', 0.5):.0%}\n"
                         f"Response rate: {entity.get('response_rate', 'unknown')}, "
                         f"Avg reply time: {entity.get('avg_response_time_hours', 'unknown')}h\n"
                         f"Action signal: {bundle.get('action_recommendation', 'proceed')} — {bundle.get('action_reason', '')}"
