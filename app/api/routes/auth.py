@@ -67,12 +67,24 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     from app.core.analytics import capture
     capture(str(result.id), "user_logged_in", {"email": result.email})
 
-    return {
+    from fastapi.responses import JSONResponse
+    response = JSONResponse(content={
         "org_id": str(result.id),
-        "token": token,
+        "token": token,  # kept in body for backward compat during migration
         "name": result.name,
         "email": result.email,
-    }
+    })
+    # Set HttpOnly cookie — browser sends it automatically on subsequent requests
+    response.set_cookie(
+        key="genios_token",
+        value=token,
+        httponly=True,
+        secure=True,           # HTTPS only
+        samesite="lax",        # protects against CSRF
+        max_age=7 * 24 * 3600, # 7 days (matches JWT expiry)
+        path="/",
+    )
+    return response
 
 
 @router.post("/auth/register", response_model=AuthResponse, status_code=201)
@@ -137,12 +149,34 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     from app.core.analytics import capture
     capture(str(org_id), "user_signed_up", {"plan": "trial", "email": request.email})
 
-    return {
+    from fastapi.responses import JSONResponse
+    response = JSONResponse(content={
         "org_id": str(org_id),
         "token": token,
         "name": request.name,
         "email": request.email,
-    }
+    }, status_code=201)
+    response.set_cookie(
+        key="genios_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+    return response
+
+
+# ── Logout ────────────────────────────────────────────────────────────────────
+
+@router.post("/auth/logout")
+def auth_logout():
+    """Clear the HttpOnly auth cookie."""
+    from fastapi.responses import JSONResponse
+    response = JSONResponse(content={"logged_out": True})
+    response.delete_cookie("genios_token", path="/")
+    return response
 
 
 # ── Profile ───────────────────────────────────────────────────────────────────

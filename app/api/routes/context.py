@@ -186,7 +186,7 @@ def get_context(
                             },
                         )
 
-            check_agent_loop(org_id, request.agent_id, plan_info["tier"])
+            check_agent_loop(org_id, request.agent_id, plan_info["tier"], entity=request.entity)
             quota = check_period_quota(db, org_id)
             if not quota["allowed"]:
                 raise HTTPException(
@@ -457,20 +457,26 @@ def get_context(
         except Exception as redis_error:
             logger.warning(f"Redis cache read failed: {redis_error}")
 
-        # Layer 3: Fresh build — enforced 3s timeout (PDF guardrail)
+        # Layer 3: Fresh build — timeout from LLM_TIMEOUT_SECONDS (default 30s)
         if not context_bundle:
             context_bundle = call_with_timeout(
                 build_context_bundle,
                 db, org_id, request.entity, request.situation,
                 context_size=getattr(request, "context_size", "medium"),
-                fallback=None,  # timeout uses LLM_TIMEOUT_SECONDS env var (default 30s)
+                fallback=None,
             )
             if context_bundle is None:
+                # call_with_timeout returns None on timeout OR on any internal
+                # exception — log server-side to distinguish, but surface a
+                # single user-friendly error.
                 raise HTTPException(
                     status_code=504,
                     detail={
-                        "error": "TIMEOUT",
-                        "message": "Context build timed out (3s limit). Try again or simplify the entity name.",
+                        "error": "BUILD_FAILED",
+                        "message": (
+                            "Context build failed or timed out. "
+                            "Check server logs for the underlying exception."
+                        ),
                     },
                 )
 
@@ -542,11 +548,12 @@ def get_context(
             if quota.get("overage"):
                 response_headers["X-Quota-Overage"] = "true"
 
-        # Cache for 60 seconds
+        # Cache — TTL from env (default 300s / 5 min)
+        from app.context.cache import CACHE_TTL_SECONDS
         try:
             redis_client.setex(
                 cache_key,
-                60,
+                CACHE_TTL_SECONDS,
                 json.dumps(context_bundle, default=str),
             )
             logger.info(f"Cached context for {request.entity}")

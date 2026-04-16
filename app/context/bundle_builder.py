@@ -8,6 +8,25 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from rapidfuzz import process, fuzz
 
+from app.tunables import (
+    broadcast_local_regex,
+    broadcast_domain_regex,
+    BROADCAST_MIN_ONEWAY_COUNT,
+)
+
+
+# Cache compiled regexes at import. Change env → restart process.
+_BROADCAST_LOCAL = broadcast_local_regex()
+_BROADCAST_DOMAIN = broadcast_domain_regex()
+
+
+def _is_broadcast_address(email: str) -> bool:
+    """Address-pattern check. See app/tunables.py for the configurable lists."""
+    if not email:
+        return False
+    email = email.lower()
+    return bool(_BROADCAST_LOCAL.search(email) or _BROADCAST_DOMAIN.search(email))
+
 
 def _row_to_dict(result) -> Dict:
     return {
@@ -392,25 +411,46 @@ def get_open_commitments_detailed(db, contact_id: str) -> List[Dict]:
         ).fetchall()
 
         commitments = []
+        # Dedupe: extractor occasionally double-writes near-identical commits.
+        # Key on (owner, normalized_text) — keep the most actionable row
+        # (OVERDUE > OPEN > SOFT, then earliest due date).
+        seen: dict = {}
         for row in results:
+            text_raw = row[0] or ""
+            norm = " ".join(text_raw.lower().split())
+            key = ((row[1] or "").lower(), norm)
+            if not norm:
+                continue
+
             days_until_due = row[4]
-            is_overdue = days_until_due is not None and days_until_due < 0
             status = row[3]
+            rec = {
+                "text": text_raw,
+                "owner": row[1],
+                "due_date": str(row[2]) if row[2] else None,
+                "status": status,
+                "is_overdue": days_until_due is not None and days_until_due < 0,
+                "is_soft": status == "SOFT",
+                "days_until_due": int(days_until_due) if days_until_due else None,
+                "created_at": str(row[5]),
+            }
 
-            commitments.append(
-                {
-                    "text": row[0],
-                    "owner": row[1],
-                    "due_date": str(row[2]) if row[2] else None,
-                    "status": status,
-                    "is_overdue": is_overdue,
-                    "is_soft": status == "SOFT",
-                    "days_until_due": int(days_until_due) if days_until_due else None,
-                    "created_at": str(row[5]),
-                }
-            )
+            if key not in seen:
+                seen[key] = rec
+                continue
 
-        return commitments
+            # keep the more urgent record
+            order = {"OVERDUE": 0, "OPEN": 1, "SOFT": 2}
+            if order.get(status, 9) < order.get(seen[key]["status"], 9):
+                seen[key] = rec
+            elif (
+                status == seen[key]["status"]
+                and row[2] is not None
+                and (seen[key]["due_date"] is None or str(row[2]) < seen[key]["due_date"])
+            ):
+                seen[key] = rec
+
+        return list(seen.values())
     except Exception as e:
         print(f"⚠️ Error fetching commitments: {e}")
         return []
@@ -719,8 +759,12 @@ def build_context_bundle(
         }
 
     # ── Context score floor (PDF spec §Guardrails) ────────────────────────────
-    # <0.20 → exclude entirely; <0.45 → flag as low confidence
-    contact_confidence = contact.get("confidence_score", 0.5) or 0.5
+    # Use the HIGHEST of confidence_score and context_score — they track
+    # different signals and one is often populated while the other is stale.
+    # <0.20 → exclude entirely; <0.45 → flag as low confidence.
+    conf_raw = contact.get("confidence_score") or 0.0
+    ctx_raw = contact.get("context_score") or 0.0
+    contact_confidence = max(float(conf_raw), float(ctx_raw), 0.5 if not (conf_raw or ctx_raw) else 0.0)
     if contact_confidence < 0.20:
         return {
             "error": "ENTITY_BELOW_SCORE_FLOOR",
@@ -761,6 +805,32 @@ def build_context_bundle(
     entity_type_upper = (contact.get("entity_type") or "").upper()
     disclosure_rules = _determine_disclosure_rules(entity_type_upper, contact["topics_aggregate"])
 
+    # Resolve communication_style honestly — never report "Unknown" when we
+    # have descriptive hints. Prefer explicit style → fall back to what_works
+    # → finally an empty string (NOT None — keeps the contract string-typed
+    # so existing consumers doing .lower() / concatenation don't break).
+    _raw_style = (contact.get("communication_style") or "").strip()
+    _what_works = (contact.get("what_works") or "").strip()
+    if _raw_style and _raw_style.lower() != "unknown":
+        _resolved_style = _raw_style
+    elif _what_works:
+        _resolved_style = _what_works
+    else:
+        _resolved_style = ""  # honest absence, still a string
+
+    # ── Broadcast/marketing detector ─────────────────────────────────────────
+    # Aligned with /v1/contacts?exclude_broadcast. Two signals, either enough:
+    #   1. Address pattern — noreply, info@, vacancy@, contract.notes@, etc.
+    #   2. Behavioral     — no replies from us AND they've sent ≥3 times
+    # See _is_broadcast_address() below for the exhaustive pattern list.
+    _email_lower = (contact.get("email") or "").lower()
+    _pattern_hit = _is_broadcast_address(_email_lower)
+    _one_way_heavy = (
+        (not contact.get("is_bidirectional"))
+        and (contact.get("interaction_count") or 0) >= BROADCAST_MIN_ONEWAY_COUNT
+    )
+    _is_broadcast = _pattern_hit or _one_way_heavy
+
     # 4. Build entity details with enhanced metrics
     entity = {
         "id": str(contact["id"]) if contact.get("id") else None,
@@ -774,13 +844,20 @@ def build_context_bundle(
         "sentiment_ewma": round(contact.get("sentiment_ewma", 0.0), 2),
         "sentiment_trend": contact.get("sentiment_trend", "STABLE"),
         "last_interaction": format_time_ago(contact["last_interaction_at"]),
-        "communication_style": contact["communication_style"] or "Unknown",
+        "communication_style": _resolved_style,
         "what_works": contact.get("what_works"),
         "what_to_avoid": contact.get("what_to_avoid"),
         "topics_of_interest": contact["topics_aggregate"][:5],
-        "open_commitments": len(open_commitments),
-        "open_commitments_detail": open_commitments,
-        "overdue_commitments": sum(1 for c in open_commitments if c.get("is_overdue")),
+        # Phase 3.5: suppress commitments from non-bidirectional/broadcast contacts.
+        # Newsletter CTAs ("apply for program", "attend event") are extracted
+        # at ingestion (P1) but hidden at read time. Only surface commitments
+        # from real conversations (is_bidirectional) or manually confirmed.
+        "open_commitments": len(open_commitments) if contact.get("is_bidirectional") or not _is_broadcast else 0,
+        "open_commitments_detail": open_commitments if contact.get("is_bidirectional") or not _is_broadcast else [],
+        "overdue_commitments": (
+            sum(1 for c in open_commitments if c.get("is_overdue"))
+            if contact.get("is_bidirectional") or not _is_broadcast else 0
+        ),
         "interaction_count": contact["interaction_count"] or 0,
         "interaction_types": get_interaction_type_summary(interactions),
         "response_rate": contact.get("response_rate"),
@@ -791,7 +868,119 @@ def build_context_bundle(
         "introduced_by": str(contact.get("introduced_by")) if contact.get("introduced_by") else None,
         "tags": contact.get("tags") or [],
         "disclosure_level": contact.get("disclosure_level") or "public",
+        "is_broadcast": _is_broadcast,
     }
+
+    # ── Cooldown check (computed early so follow_up situation can use it) ──
+    cooldown_active = False
+    hours_since_last_outbound = None
+    try:
+        last_outbound = db.execute(text("""
+            SELECT MAX(interaction_at) FROM interactions
+            WHERE contact_id = :cid AND direction = 'outbound'
+        """), {"cid": str(contact["id"])}).scalar()
+        if last_outbound:
+            from datetime import timezone as _tz
+            if last_outbound.tzinfo is None:
+                last_outbound = last_outbound.replace(tzinfo=_tz.utc)
+            hours_since_last_outbound = round(
+                (datetime.now(_tz.utc) - last_outbound).total_seconds() / 3600, 1
+            )
+            cooldown_active = hours_since_last_outbound < 72  # 72h email cooldown
+    except Exception:
+        pass
+
+    # ── Situation classification → targeted extra signals ────────────────────
+    # Must run BEFORE context_for_agent is built so the prepend block can use it.
+    situation_type = _classify_situation(situation)
+    situation_signals: dict = {}
+
+    if situation_type == "deal_stuck":
+        try:
+            row = db.execute(text("""
+                SELECT
+                    COUNT(*) FILTER (WHERE direction = 'outbound') AS outbound_count,
+                    MAX(interaction_at) FILTER (WHERE direction = 'inbound') AS last_inbound_at,
+                    COUNT(*) FILTER (WHERE direction = 'outbound'
+                        AND interaction_at > COALESCE(
+                            (SELECT MAX(i2.interaction_at) FROM interactions i2
+                             WHERE i2.contact_id = interactions.contact_id AND i2.direction = 'inbound'),
+                            '1970-01-01'::timestamptz
+                        )
+                    ) AS unanswered_outbound
+                FROM interactions
+                WHERE contact_id = :cid AND org_id = :oid
+            """), {"cid": str(contact["id"]), "oid": org_id}).fetchone()
+            if row:
+                last_inbound = row[1]
+                days_since_inbound = None
+                if last_inbound:
+                    if hasattr(last_inbound, 'tzinfo') and last_inbound.tzinfo is None:
+                        last_inbound = last_inbound.replace(tzinfo=timezone.utc)
+                    days_since_inbound = (datetime.now(timezone.utc) - last_inbound).days
+                situation_signals = {
+                    "outbound_count": row[0],
+                    "days_since_last_inbound": days_since_inbound,
+                    "unanswered_outbound": row[2],
+                }
+        except Exception:
+            pass
+
+    elif situation_type == "discovery_call":
+        try:
+            touchpoints = db.execute(text("""
+                SELECT direction, intent, summary, interaction_at
+                FROM interactions
+                WHERE contact_id = :cid AND org_id = :oid
+                ORDER BY interaction_at DESC NULLS LAST
+                LIMIT 5
+            """), {"cid": str(contact["id"]), "oid": org_id}).fetchall()
+            situation_signals = {
+                "recent_touchpoints": [
+                    {
+                        "direction": r[0], "intent": r[1],
+                        "summary": _redact_pii(r[2] or "")[:150],
+                        "date": str(r[3])[:10] if r[3] else None,
+                    } for r in touchpoints
+                ],
+                "suggested_topics": contact.get("topics_aggregate", [])[:5],
+            }
+        except Exception:
+            pass
+
+    elif situation_type in ("churn_risk", "renewal"):
+        try:
+            sentiments = db.execute(text("""
+                SELECT sentiment, interaction_at
+                FROM interactions
+                WHERE contact_id = :cid AND org_id = :oid AND sentiment IS NOT NULL
+                ORDER BY interaction_at DESC NULLS LAST
+                LIMIT 10
+            """), {"cid": str(contact["id"]), "oid": org_id}).fetchall()
+            vals = [round(float(r[0]), 2) for r in sentiments]
+            situation_signals = {
+                "sentiment_trajectory": vals,
+                "trajectory_direction": (
+                    "declining" if len(vals) >= 3 and vals[0] < vals[-1] - 0.2
+                    else "improving" if len(vals) >= 3 and vals[0] > vals[-1] + 0.2
+                    else "stable"
+                ),
+                "open_tickets": sum(1 for c in open_commitments if not c.get("is_soft")),
+            }
+        except Exception:
+            pass
+
+    elif situation_type == "follow_up":
+        situation_signals = {
+            "cooldown_active": cooldown_active,
+            "hours_since_last_outbound": hours_since_last_outbound,
+            "response_rate": contact.get("response_rate"),
+            "days_since_last_contact": (
+                (datetime.now(timezone.utc) - contact["last_interaction_at"].replace(tzinfo=timezone.utc)).days
+                if contact.get("last_interaction_at") and hasattr(contact["last_interaction_at"], 'replace')
+                else None
+            ),
+        }
 
     # 5. Generate rich context_for_agent paragraph
     context_for_agent = generate_context_paragraph(
@@ -832,6 +1021,35 @@ def build_context_bundle(
     # Determine action recommendation and escalation signal
     action = determine_action_recommendation(contact, entity)
 
+    # ── Reconcile with agent_behavior so the two signals never contradict ──
+    # agent_behavior is derived separately from context_score/CLM state.
+    # If it says "block", action_recommendation must not stay at "proceed".
+    # This prevents a permissive LLM from ignoring the stricter block signal.
+    _ab = _derive_agent_behavior(
+        contact.get("relationship_stage", ""),
+        contact.get("sentiment_ewma", 0),
+        contact.get("clm_state", "active"),
+        contact_confidence,
+    )
+    if _ab == "block" and action["action_recommendation"] == "proceed":
+        action = {
+            "action_recommendation": "block",
+            "escalation_recommended": True,
+            "action_reason": (
+                f"Confidence too low ({contact_confidence:.2f}) for safe auto-contact. "
+                "Collect more signals before drafting."
+            ),
+        }
+    elif _ab in ("escalate_to_human", "needs_confirmation") and action["action_recommendation"] == "proceed":
+        action = {
+            "action_recommendation": "warn",
+            "escalation_recommended": _ab == "escalate_to_human",
+            "action_reason": (
+                f"Confidence is {contact_confidence:.2f}. "
+                "Draft allowed but human review recommended before sending."
+            ),
+        }
+
     # Calculate coverage score (data completeness)
     coverage_parts = 0
     if contact.get("email"): coverage_parts += 1
@@ -842,101 +1060,6 @@ def build_context_bundle(
     if contact.get("topics_aggregate"): coverage_parts += 1
     if open_commitments: coverage_parts += 1
     coverage_score = round(coverage_parts / 7.0, 2)
-
-    # ── Situation classification → targeted extra signals ────────────────────
-    situation_type = _classify_situation(situation)
-    situation_signals = {}
-
-    if situation_type == "deal_stuck":
-        # Surface: days since last inbound, outbound count without reply, last negative signal
-        try:
-            row = db.execute(text("""
-                SELECT
-                    COUNT(*) FILTER (WHERE direction = 'outbound') AS outbound_count,
-                    MAX(interaction_at) FILTER (WHERE direction = 'inbound') AS last_inbound_at,
-                    COUNT(*) FILTER (WHERE direction = 'outbound'
-                        AND interaction_at > COALESCE(
-                            (SELECT MAX(i2.interaction_at) FROM interactions i2
-                             WHERE i2.contact_id = interactions.contact_id AND i2.direction = 'inbound'),
-                            '1970-01-01'::timestamptz
-                        )
-                    ) AS unanswered_outbound
-                FROM interactions
-                WHERE contact_id = :cid AND org_id = :oid
-            """), {"cid": str(contact["id"]), "oid": org_id}).fetchone()
-            if row:
-                last_inbound = row[1]
-                days_since_inbound = None
-                if last_inbound:
-                    if hasattr(last_inbound, 'tzinfo') and last_inbound.tzinfo is None:
-                        last_inbound = last_inbound.replace(tzinfo=timezone.utc)
-                    days_since_inbound = (datetime.now(timezone.utc) - last_inbound).days
-                situation_signals = {
-                    "outbound_count": row[0],
-                    "days_since_last_inbound": days_since_inbound,
-                    "unanswered_outbound": row[2],
-                }
-        except Exception:
-            pass
-
-    elif situation_type == "discovery_call":
-        # Surface: all recent touchpoints + topics discussed + what to reference
-        try:
-            touchpoints = db.execute(text("""
-                SELECT direction, intent, summary, interaction_at
-                FROM interactions
-                WHERE contact_id = :cid AND org_id = :oid
-                ORDER BY interaction_at DESC NULLS LAST
-                LIMIT 5
-            """), {"cid": str(contact["id"]), "oid": org_id}).fetchall()
-            situation_signals = {
-                "recent_touchpoints": [
-                    {
-                        "direction": r[0], "intent": r[1],
-                        "summary": _redact_pii(r[2] or "")[:150],
-                        "date": str(r[3])[:10] if r[3] else None,
-                    } for r in touchpoints
-                ],
-                "suggested_topics": contact.get("topics_aggregate", [])[:5],
-            }
-        except Exception:
-            pass
-
-    elif situation_type in ("churn_risk", "renewal"):
-        # Surface: sentiment trajectory over last N interactions
-        try:
-            sentiments = db.execute(text("""
-                SELECT sentiment, interaction_at
-                FROM interactions
-                WHERE contact_id = :cid AND org_id = :oid AND sentiment IS NOT NULL
-                ORDER BY interaction_at DESC NULLS LAST
-                LIMIT 10
-            """), {"cid": str(contact["id"]), "oid": org_id}).fetchall()
-            vals = [round(float(r[0]), 2) for r in sentiments]
-            situation_signals = {
-                "sentiment_trajectory": vals,
-                "trajectory_direction": (
-                    "declining" if len(vals) >= 3 and vals[0] < vals[-1] - 0.2
-                    else "improving" if len(vals) >= 3 and vals[0] > vals[-1] + 0.2
-                    else "stable"
-                ),
-                "open_tickets": sum(1 for c in open_commitments if not c.get("is_soft")),
-            }
-        except Exception:
-            pass
-
-    elif situation_type == "follow_up":
-        # Surface: cooldown status, last outbound timing, response rate
-        situation_signals = {
-            "cooldown_active": cooldown_active if 'cooldown_active' in dir() else None,
-            "hours_since_last_outbound": hours_since_last_outbound if 'hours_since_last_outbound' in dir() else None,
-            "response_rate": contact.get("response_rate"),
-            "days_since_last_contact": (
-                (datetime.now(timezone.utc) - contact["last_interaction_at"].replace(tzinfo=timezone.utc)).days
-                if contact.get("last_interaction_at") and hasattr(contact["last_interaction_at"], 'replace')
-                else None
-            ),
-        }
 
     # ── Last signal: most recent meaningful interaction ──────────────────────
     last_signal = None
@@ -964,25 +1087,6 @@ def build_context_bundle(
                 "intent": ls_row[5],
                 "interaction_type": ls_row[6],
             }
-    except Exception:
-        pass
-
-    # ── Cooldown check: prevent duplicate outreach ──
-    cooldown_active = False
-    hours_since_last_outbound = None
-    try:
-        last_outbound = db.execute(text("""
-            SELECT MAX(interaction_at) FROM interactions
-            WHERE contact_id = :cid AND direction = 'outbound'
-        """), {"cid": str(contact["id"])}).scalar()
-        if last_outbound:
-            from datetime import timezone as tz
-            if last_outbound.tzinfo is None:
-                last_outbound = last_outbound.replace(tzinfo=tz.utc)
-            hours_since_last_outbound = round(
-                (datetime.now(tz.utc) - last_outbound).total_seconds() / 3600, 1
-            )
-            cooldown_active = hours_since_last_outbound < 72  # 72h email cooldown
     except Exception:
         pass
 
@@ -1046,6 +1150,39 @@ def build_context_bundle(
         "situation_signals": situation_signals if situation_signals else None,
     }
 
+    # ── L5 Anomaly Detection: surface active anomalies for this contact ──
+    try:
+        anomaly_rows = db.execute(
+            text("""
+                SELECT anomaly_type, engagement_z, sentiment_z, deviation_score,
+                       summary, detected_at
+                FROM contact_anomalies
+                WHERE contact_id = :cid AND org_id = :oid AND status = 'active'
+                ORDER BY deviation_score DESC
+                LIMIT 3
+            """),
+            {"cid": str(contact["id"]), "oid": org_id},
+        ).fetchall()
+        if anomaly_rows:
+            bundle["anomalies"] = [
+                {
+                    "type": r.anomaly_type,
+                    "engagement_z": round(float(r.engagement_z or 0), 2),
+                    "sentiment_z": round(float(r.sentiment_z or 0), 2),
+                    "deviation_score": round(float(r.deviation_score), 2),
+                    "summary": r.summary,
+                    "detected_at": r.detected_at.isoformat() if r.detected_at else None,
+                }
+                for r in anomaly_rows
+            ]
+            # Prepend anomaly alert to context_for_agent
+            top_anomaly = anomaly_rows[0]
+            bundle["context_for_agent"] = (
+                f"[ANOMALY: {top_anomaly.summary}] " + bundle["context_for_agent"]
+            )
+    except Exception:
+        pass  # Anomaly table might not exist yet; fail silently
+
     # Add warm intro paths for COLD/DORMANT contacts
     if contact.get("relationship_stage") in ("COLD", "DORMANT"):
         try:
@@ -1073,6 +1210,25 @@ def build_context_bundle(
                 )
         except Exception as e:
             logger.warning(f"Precedent search failed: {e}") if logger else None
+
+    # ── L6 Fingerprint-based precedent matching ──
+    try:
+        from app.graph.fingerprint import build_fingerprint, match_precedents
+        fp = build_fingerprint(contact, situation_type)
+        fp_matches = match_precedents(db, org_id, fp, limit=5)
+        if fp_matches:
+            bundle["fingerprint_matches"] = fp_matches
+            top_match = fp_matches[0]
+            if top_match.get("success_rate") is not None:
+                n = top_match["match_pool_size"]
+                rate = int(top_match["success_rate"] * 100)
+                best_action = top_match.get("action_taken") or "direct engagement"
+                bundle["context_for_agent"] += (
+                    f" Historical precedent: {n} similar situations, "
+                    f"{rate}% recovered. Best action: {best_action}."
+                )
+    except Exception:
+        pass  # Table might not exist yet or no matches
 
     # Add recent_interactions from raw interactions table (last 10)
     try:

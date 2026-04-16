@@ -15,8 +15,14 @@ logger = logging.getLogger(__name__)
 
 _THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="llm_guard")
 
-# Hard cap on LLM calls per context request (PDF spec)
-LLM_CALLS_HARD_CAP = 3
+# Hard cap for a TRUE loop: repeated calls for the SAME entity by the SAME
+# agent within 60s. Distinct entities don't count — a buyer asking
+# "summarize my top 5 leads" fans out to 5 legitimate lookups.
+# Overridable via env for integrators on burst workloads.
+ENTITY_REPEAT_CAP = int(os.getenv("GENIOS_ENTITY_REPEAT_CAP", "8"))
+
+# Legacy name kept for import compatibility. Don't use for new logic.
+LLM_CALLS_HARD_CAP = ENTITY_REPEAT_CAP
 
 # Timeout for LLM/bundle calls.
 # PDF spec says 3s — but free-tier models (Gemini Flash, Groq) can take 10-20s.
@@ -49,26 +55,31 @@ def call_with_timeout(fn: Callable, *args, timeout: float = None, fallback: Any 
         return fallback
 
 
-def check_agent_loop(org_id: str, agent_id: str, plan_tier: str) -> bool:
+def check_agent_loop(org_id: str, agent_id: str, plan_tier: str, entity: str = None) -> bool:
     """
-    Agent loop protection: track consecutive context calls from the same agent.
-    Returns True if allowed, raises HTTP 429 if loop detected (>= hard cap).
+    Loop protection: flag when the same agent asks for the SAME entity
+    repeatedly (>= ENTITY_REPEAT_CAP) within 60s. Distinct entities are
+    legitimate fan-out and don't count.
 
-    Uses Redis sorted set with 60s TTL window.
-    Hard cap = 3 LLM calls per context (all plans per PDF spec).
+    Backwards-compat: older callers without `entity` get permissive behavior
+    (no per-entity keying), which matches the intent — RPM is already
+    enforced separately by check_rpm_limit.
+
+    Returns True if allowed, raises HTTP 429 if a true loop is detected.
     """
     try:
         from app.redis_client import redis_client
-        from app.plan_enforcer import PLAN_CONFIG
         from fastapi import HTTPException
 
-        config = PLAN_CONFIG.get(plan_tier, PLAN_CONFIG["trial"])
-        chain_depth_limit = config["max_chain_depth"]
+        # Normalize entity → lower, stripped. Empty = skip per-entity check.
+        ent_key = (entity or "").strip().lower()
+        if not ent_key:
+            return True
 
-        loop_key = f"agent_loop:{org_id}:{agent_id or 'default'}"
         now = int(time.time())
-        window_start = now - 60  # 60-second window
+        window_start = now - 60
 
+        loop_key = f"entity_loop:{org_id}:{agent_id or 'default'}:{ent_key[:128]}"
         pipe = redis_client.pipeline()
         pipe.zremrangebyscore(loop_key, 0, window_start)
         pipe.zcard(loop_key)
@@ -77,20 +88,24 @@ def check_agent_loop(org_id: str, agent_id: str, plan_tier: str) -> bool:
         results = pipe.execute()
         call_count = results[1]
 
-        if call_count >= LLM_CALLS_HARD_CAP:
+        if call_count >= ENTITY_REPEAT_CAP:
             raise HTTPException(
                 status_code=429,
                 detail={
-                    "error": "AGENT_LOOP_DETECTED",
-                    "message": f"Agent loop detected: {call_count} context calls in 60s window. Max {LLM_CALLS_HARD_CAP} allowed.",
+                    "error": "ENTITY_REPEAT_LIMIT",
+                    "message": (
+                        f"Same entity requested {call_count} times in 60s by this agent. "
+                        f"Cap is {ENTITY_REPEAT_CAP}. This looks like a loop — try a different query."
+                    ),
+                    "entity": ent_key,
                     "calls_in_window": call_count,
-                    "hard_cap": LLM_CALLS_HARD_CAP,
+                    "hard_cap": ENTITY_REPEAT_CAP,
                 },
             )
 
         return True
     except Exception as e:
-        if hasattr(e, "status_code"):  # Re-raise HTTPException
+        if hasattr(e, "status_code"):
             raise
         logger.warning(f"Agent loop check failed (non-critical): {e}")
         return True

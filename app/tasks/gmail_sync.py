@@ -23,7 +23,7 @@ from app.ingestion.graph_builder import (
 from app.ingestion.entity_extractor import (
     extract_email_intelligence,
 )
-from app.ingestion.email_classifier import classify_email, parse_system_email
+from app.ingestion.email_classifier import classify_email, classify_sender, parse_system_email
 from app.ingestion.bridge_utils import get_email_domain
 from app.graph.relationship_calculator import recalculate_all_relationships
 from app.config import PROCESSING_VERSION
@@ -633,6 +633,61 @@ def _sync_single_account(
                 org_domain=user_email.split("@")[-1] if user_email and "@" in user_email else None,
             )
 
+            # ── Phase 3.1: Classify the SENDER (header-based) and persist ────
+            # This runs for ALL tiers. Even TIER_0 senders get a contact row
+            # tagged with their classification. P1: store everything, tag it.
+            sender_class = classify_sender(
+                sender_email=from_email or "",
+                headers=raw_headers,
+                recipient_count=recipient_count,
+            )
+            if sender_class["classification"] != "unknown" and contact_email:
+                try:
+                    # Upsert contact (creates if new, updates classification if changed)
+                    _cls_contact_id = upsert_contact(
+                        db, org_id, contact_email, contact_name, entity_type=None
+                    )
+                    # Only update if no manual override exists
+                    db.execute(
+                        text("""
+                            UPDATE contacts
+                            SET classification = CASE
+                                    WHEN classification_override IS NOT NULL THEN classification
+                                    ELSE :cls
+                                END,
+                                classification_confidence = CASE
+                                    WHEN classification_override IS NOT NULL THEN classification_confidence
+                                    ELSE :conf
+                                END,
+                                classification_method = CASE
+                                    WHEN classification_override IS NOT NULL THEN classification_method
+                                    ELSE :method
+                                END,
+                                classified_at = CASE
+                                    WHEN classification_override IS NOT NULL THEN classified_at
+                                    ELSE NOW()
+                                END
+                            WHERE id = :cid AND org_id = :oid
+                              AND (classification_override IS NULL)
+                              AND (classification IS NULL OR classification = 'unknown'
+                                   OR :conf > COALESCE(classification_confidence, 0))
+                        """),
+                        {
+                            "cid": str(_cls_contact_id),
+                            "oid": org_id,
+                            "cls": sender_class["classification"],
+                            "conf": sender_class["confidence"],
+                            "method": sender_class["method"],
+                        },
+                    )
+                    db.commit()
+                except Exception as e:
+                    logger.debug(f"Classification persist failed for {contact_email}: {e}")
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+
             # ── Branch processing by category ─────────────────────────────────
             if category == "SYSTEM":
                 # Parse structured state data (GST, payments, invoices) → State Graph (v2.2)
@@ -672,38 +727,14 @@ def _sync_single_account(
                 )
                 continue
 
-            # ── TIER_2: Full LLM extraction ───────────────────────────────────
+            # ── TIER_2: Store raw interaction NOW, extract via async worker LATER ──
+            # Per Phase 1.1: sync writes the row instantly (no LLM wait),
+            # Celery worker picks up pending rows and extracts in batch.
 
-            # Build thread context from messages already processed in this thread
-            thread_context = build_thread_context(thread_processed[thread_id])
-
-            # Detect if this is a reply
-            is_reply = bool(
-                subject and ("re:" in subject.lower() or "fwd:" in subject.lower())
-            )
-            is_reply = is_reply or len(thread_processed[thread_id]) > 0
-
-            # Extract intelligence using LLM with thread context
-            intelligence = extract_email_intelligence(
-                subject,
-                body_text,
-                sender_name=contact_name,
-                is_reply=is_reply,
-                thread_context=thread_context,
-            )
-
-            # Signal score removed from ingestion — computed at query time only (CLM spec)
-            llm_processed += 1
-
-            # Rate limiting: Groq allows 30 requests/minute
-            time.sleep(2)
-
-            # ── Update 2: Pass contact_role + topics/body for category detection ──
-            contact_role = intelligence.get("contact_role")
+            # Upsert contact without LLM-derived role (role updated by extractor later)
             contact_id = upsert_contact(
                 db, org_id, contact_email, contact_name,
-                entity_type=contact_role,
-                thread_topics=intelligence.get("topics", []),
+                entity_type=None,
                 email_body=body_text or "",
             )
 
@@ -715,39 +746,44 @@ def _sync_single_account(
                     if prev.get("direction") == "outbound":
                         followup_count += 1
                     else:
-                        break  # Found an inbound reply — stop counting
+                        break
 
             # Thread initiator = first message sender in this thread
             thread_first = thread_groups.get(thread_id, [None])[0]
             thread_initiator = thread_first["from_email"] if thread_first else None
 
-            # Create the primary interaction row with signal_score
+            # Create the interaction with extraction_status='pending'.
+            # Summary/sentiment/topics/commitments stay NULL until the
+            # async extractor processes this row.
             create_interaction(
                 db,
                 org_id,
                 contact_id,
                 parsed_msg["gmail_id"],
                 subject,
-                intelligence["summary"],
+                f"[Pending extraction] {(subject or 'No subject')[:100]}",  # placeholder summary
                 parsed_msg["date"],
                 direction,
-                sentiment=intelligence["sentiment"],
-                intent=intelligence["intent"],
-                commitments=intelligence.get("commitments", []),
-                topics=intelligence.get("topics", []),
-                interaction_type=intelligence.get("interaction_type", "email_one_way"),
-                engagement_level=intelligence.get("engagement_level", "medium"),
+                sentiment=None,
+                intent=None,
+                commitments=[],
+                topics=[],
+                interaction_type="email_one_way",
+                engagement_level=None,
                 reply_time_hours=None,
                 account_email=user_email,
-                signal_score=None,  # Signal computed at query time only (CLM spec)
-                mentioned_people=intelligence.get("mentioned_people", []),
-                what_works=intelligence.get("what_works"),
-                what_to_avoid=intelligence.get("what_to_avoid"),
+                signal_score=None,
+                mentioned_people=[],
+                what_works=None,
+                what_to_avoid=None,
                 has_attachment=attachment_info.get("has_attachment", False),
                 unanswered_followup_count=followup_count,
                 processed_version=PROCESSING_VERSION,
                 initiator_email=thread_initiator,
+                raw_body=body_text,
+                extraction_status="pending",
             )
+            llm_processed += 1  # counter still tracks how many need extraction
 
             # ── Update 3: Create interaction rows for CC participants ──────────
             for cc_person in cc_list:
@@ -826,7 +862,16 @@ def _sync_single_account(
             f"{system_emails} SYSTEM (state), {discarded_emails} DISCARD (skipped)"
         )
 
-        # Recalculate relationship stages after sync
+        # Run async LLM extraction for pending interaction rows
+        print("Running async LLM extraction for pending rows...")
+        try:
+            from app.tasks.extract_interactions import run_pending_extractions
+            extracted = run_pending_extractions(org_id)
+            print(f"✓ Extracted {extracted} interactions via LLM")
+        except Exception as e:
+            print(f"✗ Extraction task failed (rows stay pending for retry): {e}")
+
+        # Recalculate relationship stages after sync + extraction
         print("Recalculating relationship stages...")
         try:
             updated_count = recalculate_all_relationships(db, org_id)

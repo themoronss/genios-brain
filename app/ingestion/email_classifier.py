@@ -72,6 +72,60 @@ COMMITMENT_PATTERNS = re.compile(
 MASS_SEND_THRESHOLD = 50  # Spec: 50+ recipients
 
 
+def classify_sender(
+    sender_email: str,
+    headers: Optional[Dict[str, str]] = None,
+    recipient_count: int = 1,
+) -> Dict[str, Any]:
+    """
+    Classify who the SENDER is, independent of the email content tier.
+    Returns {classification, confidence, method} to persist on the contact row.
+
+    Phase 3.1: header-based detection. ~80% accuracy at zero LLM cost.
+    LLM classifier (Phase 3.2) runs later for the remaining 20%.
+    """
+    headers = headers or {}
+    sender_lower = (sender_email or "").lower()
+    sender_domain = sender_lower.split("@")[-1] if "@" in sender_lower else ""
+
+    # ── Check 1: List-Unsubscribe header → definitive newsletter signal
+    if headers.get("List-Unsubscribe") or headers.get("list-unsubscribe"):
+        return {"classification": "newsletter", "confidence": 0.95, "method": "header"}
+
+    # ── Check 2: Precedence: bulk/list → mass mailing
+    precedence = (headers.get("Precedence") or headers.get("precedence") or "").lower()
+    if precedence in ("bulk", "list", "junk"):
+        return {"classification": "newsletter", "confidence": 0.90, "method": "header"}
+
+    # ── Check 3: Auto-Submitted → bot
+    auto_submitted = headers.get("Auto-Submitted") or headers.get("auto-submitted")
+    if auto_submitted and auto_submitted.lower() != "no":
+        return {"classification": "bot", "confidence": 0.85, "method": "header"}
+
+    # ── Check 4: X-Mailer / X-Campaign headers → marketing platform
+    x_mailer = (headers.get("X-Mailer") or headers.get("x-mailer") or "").lower()
+    x_campaign = headers.get("X-Campaign-Id") or headers.get("x-campaign-id")
+    marketing_mailers = ("mailchimp", "sendgrid", "mailgun", "hubspot", "klaviyo",
+                         "brevo", "sendinblue", "convertkit", "beehiiv", "substack")
+    if any(m in x_mailer for m in marketing_mailers) or x_campaign:
+        return {"classification": "newsletter", "confidence": 0.90, "method": "header"}
+
+    # ── Check 5: Known promo domain
+    if sender_domain in PROMO_DOMAINS:
+        return {"classification": "newsletter", "confidence": 0.85, "method": "header"}
+
+    # ── Check 6: noreply/notifications pattern → bot
+    if any(p in sender_lower for p in TIER_0_SENDER_PATTERNS):
+        return {"classification": "bot", "confidence": 0.80, "method": "header"}
+
+    # ── Check 7: Mass send (50+ recipients) → newsletter
+    if recipient_count >= MASS_SEND_THRESHOLD:
+        return {"classification": "newsletter", "confidence": 0.70, "method": "header"}
+
+    # ── No signal — leave as unknown for LLM classifier to handle later
+    return {"classification": "unknown", "confidence": 0.0, "method": "none"}
+
+
 def classify_email(
     subject: str, sender_email: str, body: str,
     headers: Optional[Dict[str, str]] = None,

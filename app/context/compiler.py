@@ -125,7 +125,7 @@ def compile_context(db, org_id: str, situation: str):
         Dictionary with situation and relevant contacts with their recent interactions
     """
     # Check Redis cache first
-    cached_bundle = get_cached_context(org_id, situation)
+    cached_bundle = get_cached_context(org_id, situation=situation)
     if cached_bundle:
         return cached_bundle
 
@@ -179,6 +179,6 @@ def compile_context(db, org_id: str, situation: str):
     context_bundle = {"situation": situation, "contacts": top_contacts}
 
     # Store in Redis cache
-    set_cached_context(org_id, situation, context_bundle)
+    set_cached_context(org_id, situation=situation, bundle=context_bundle)
 
     return context_bundle

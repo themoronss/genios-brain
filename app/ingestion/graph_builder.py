@@ -578,12 +578,16 @@ def create_interaction(
     unanswered_followup_count=0,
     processed_version=1,
     initiator_email=None,
+    raw_body=None,
+    extraction_status=None,
 ):
     """
     Create an interaction record with enhanced LLM extraction data.
     Stores engagement signals, interaction type, and commitments with lifecycle.
 
-    Update 1.1: Added signal_score parameter for classification-based prioritization.
+    Phase 1.1: added raw_body + extraction_status for async LLM extraction.
+    When extraction_status='pending', summary/sentiment/topics are placeholders
+    and will be filled by the async extractor worker.
     """
     if commitments is None:
         commitments = []
@@ -635,7 +639,9 @@ def create_interaction(
             has_attachment,
             unanswered_followup_count,
             processed_version,
-            initiator_email
+            initiator_email,
+            raw_body,
+            extraction_status
         )
         VALUES (
             :id,
@@ -660,23 +666,27 @@ def create_interaction(
             :has_attachment,
             :unanswered_followup_count,
             :processed_version,
-            :initiator_email
+            :initiator_email,
+            :raw_body,
+            :extraction_status
         )
         ON CONFLICT (gmail_message_id, contact_id)
         DO UPDATE SET
-            sentiment = EXCLUDED.sentiment,
-            intent = EXCLUDED.intent,
+            sentiment = COALESCE(EXCLUDED.sentiment, interactions.sentiment),
+            intent = COALESCE(EXCLUDED.intent, interactions.intent),
             interaction_type = EXCLUDED.interaction_type,
             weight_score = EXCLUDED.weight_score,
             signal_score = EXCLUDED.signal_score,
-            topics = EXCLUDED.topics,
+            topics = CASE WHEN EXCLUDED.topics IS NOT NULL AND array_length(EXCLUDED.topics, 1) > 0 THEN EXCLUDED.topics ELSE interactions.topics END,
             account_email = EXCLUDED.account_email,
             mentioned_people = EXCLUDED.mentioned_people,
             comm_style_signals = EXCLUDED.comm_style_signals,
             has_attachment = EXCLUDED.has_attachment,
             unanswered_followup_count = EXCLUDED.unanswered_followup_count,
             processed_version = EXCLUDED.processed_version,
-            initiator_email = EXCLUDED.initiator_email
+            initiator_email = EXCLUDED.initiator_email,
+            raw_body = COALESCE(EXCLUDED.raw_body, interactions.raw_body),
+            extraction_status = COALESCE(EXCLUDED.extraction_status, interactions.extraction_status)
         """
         ),
         {
@@ -702,6 +712,8 @@ def create_interaction(
             "has_attachment": has_attachment,
             "unanswered_followup_count": unanswered_followup_count,
             "processed_version": processed_version,
+            "raw_body": raw_body[:5000] if raw_body else None,  # cap at 5KB per email
+            "extraction_status": extraction_status,
             "initiator_email": initiator_email,
         },
     )

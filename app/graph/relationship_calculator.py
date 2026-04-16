@@ -853,13 +853,36 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
         relationship_summary = generate_relationship_summary(db, contact_id, contact_name)
         summary_generated_at = datetime.now(timezone.utc)
 
-    # Detect stage change for tracking
+    # Detect stage change for tracking + L6 precedent recording
     current_stage_row = db.execute(
-        text("SELECT relationship_stage FROM contacts WHERE id = :id"),
+        text("SELECT relationship_stage, org_id, name, entity_type, sentiment_ewma, sentiment_trend, last_interaction_at, stage_changed_at FROM contacts WHERE id = :id"),
         {"id": contact_id}
     ).fetchone()
     previous_stage = current_stage_row[0] if current_stage_row else None
     stage_changed = previous_stage and previous_stage != stage
+
+    # Phase 5: auto-record precedent on stage transitions
+    if stage_changed and current_stage_row:
+        try:
+            from app.graph.fingerprint import record_stage_transition
+            record_stage_transition(
+                db,
+                org_id=str(current_stage_row[1]),
+                contact_id=contact_id,
+                contact={
+                    "name": current_stage_row[2],
+                    "entity_type": current_stage_row[3],
+                    "sentiment_ewma": float(current_stage_row[4] or 0),
+                    "sentiment_trend": current_stage_row[5],
+                    "last_interaction_at": current_stage_row[6],
+                    "stage_changed_at": current_stage_row[7],
+                    "relationship_stage": previous_stage,
+                },
+                previous_stage=previous_stage,
+                new_stage=stage,
+            )
+        except Exception as e:
+            logger.warning(f"Precedent recording failed for {contact_id}: {e}") if 'logger' in dir() else None
 
     # Update contact with all fields including new V1 Detailing scores
     db.execute(

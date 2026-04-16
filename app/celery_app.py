@@ -246,6 +246,58 @@ def task_sync_all_tools(org_id: str):
     _sync_connected_tools(org_id, cron=True)
 
 
+# ── Phase 3-6 background tasks ──────────────────────────────────────────────
+
+@celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
+def task_classify_contacts(self, org_id: str = None):
+    """Phase 3: LLM-based contact classification (batched)."""
+    try:
+        from app.tasks.classify_contacts import run_classify_contacts
+        run_classify_contacts(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
+def task_anomaly_scan(self, org_id: str = None):
+    """Phase 4: L5 anomaly detection (baselines + z-scores)."""
+    try:
+        from app.tasks.anomaly_scanner import run_anomaly_scan
+        run_anomaly_scan(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
+def task_proactive_scan(self, org_id: str = None):
+    """Phase 6: Full proactive scan (anomalies → root cause → synthesis → insights)."""
+    try:
+        from app.tasks.proactive_scanner import run_proactive_scan
+        run_proactive_scan(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
+def task_deliver_webhooks(self, org_id: str = None):
+    """Phase 6.3: Deliver pending insight webhooks."""
+    try:
+        from app.tasks.webhook_delivery import deliver_pending_insights
+        deliver_pending_insights(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=2, default_retry_delay=60, queue="low_priority")
+def task_extract_pending(self, org_id: str = None):
+    """Phase 1.1: Process pending LLM extractions (async batch)."""
+    try:
+        from app.tasks.extract_interactions import run_pending_extractions
+        run_pending_extractions(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
 # ── Celery Beat schedule (replaces sync_scheduler_loop) ──────────────────────
 
 celery.conf.beat_schedule = {
@@ -272,6 +324,30 @@ celery.conf.beat_schedule = {
         "task": "app.celery_app.task_nightly_refresh",
         "schedule": crontab(hour=2, minute=0),
         "options": {"queue": "low_priority"},
+    },
+    # Phase 1.1: Process pending LLM extractions every 5 minutes
+    "extract-pending": {
+        "task": "app.celery_app.task_extract_pending",
+        "schedule": 300.0,  # 5 min
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 3: LLM contact classification — daily at 3am
+    "daily-classify-contacts": {
+        "task": "app.celery_app.task_classify_contacts",
+        "schedule": crontab(hour=3, minute=0),
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 4+6: Proactive scan (anomalies → insights) every 6 hours
+    "proactive-scan-6h": {
+        "task": "app.celery_app.task_proactive_scan",
+        "schedule": 21600.0,  # 6 hours
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 6.3: Deliver pending webhooks every 5 minutes
+    "deliver-webhooks": {
+        "task": "app.celery_app.task_deliver_webhooks",
+        "schedule": 300.0,  # 5 min
+        "options": {"queue": "high_priority"},
     },
 }
 

@@ -16,38 +16,27 @@ def _json_serializer(obj):
     raise TypeError(f"Type {type(obj)} not serializable")
 
 
-def _generate_cache_key(org_id: str, situation: str) -> str:
+CACHE_TTL_SECONDS = int(__import__("os").getenv("GENIOS_CACHE_TTL_SECONDS", "300"))
+
+
+def _generate_cache_key(org_id: str, entity: str = "", situation: str = "") -> str:
     """
     Generate a cache key for the context bundle.
 
     Format: ctx:{org_id}:{hash}
-    Hash: First 16 characters of sha256(situation)
-
-    Args:
-        org_id: Organization ID
-        situation: The situation text
-
-    Returns:
-        Cache key string
+    Hash includes entity + situation so different entities never share a cache
+    entry (fixes the "situation-only key" bug from L1 diagram).
     """
-    # Create hash from situation only
-    hash_digest = hashlib.sha256(situation.encode()).hexdigest()[:16]
-
+    normalized = f"{org_id}:{(entity or '').strip().lower()}:{(situation or '').strip().lower()[:100]}"
+    hash_digest = hashlib.sha256(normalized.encode()).hexdigest()[:16]
     return f"ctx:{org_id}:{hash_digest}"
 
 
-def get_cached_context(org_id: str, situation: str):
+def get_cached_context(org_id: str, entity: str = "", situation: str = ""):
     """
     Retrieve cached context bundle from Redis.
-
-    Args:
-        org_id: Organization ID
-        situation: The situation text
-
-    Returns:
-        Cached context bundle (dict) or None if not found
     """
-    cache_key = _generate_cache_key(org_id, situation)
+    cache_key = _generate_cache_key(org_id, entity, situation)
 
     try:
         cached_data = redis_client.get(cache_key)
@@ -63,26 +52,16 @@ def get_cached_context(org_id: str, situation: str):
         return None
 
 
-def set_cached_context(org_id: str, situation: str, bundle: dict):
+def set_cached_context(org_id: str, entity: str = "", situation: str = "", bundle: dict = None):
     """
     Store context bundle in Redis cache.
-
-    Args:
-        org_id: Organization ID
-        situation: The situation text
-        bundle: The context bundle to cache
-
-    Returns:
-        True if successful, False otherwise
+    TTL default 300s (5 min) — env-overridable via GENIOS_CACHE_TTL_SECONDS.
     """
-    cache_key = _generate_cache_key(org_id, situation)
+    cache_key = _generate_cache_key(org_id, entity, situation)
 
     try:
-        # Convert dict to JSON string with custom serializer
-        cached_data = json.dumps(bundle, default=_json_serializer)
-
-        # Store with 60 second TTL
-        redis_client.setex(cache_key, 60, cached_data)
+        cached_data = json.dumps(bundle or {}, default=_json_serializer)
+        redis_client.setex(cache_key, CACHE_TTL_SECONDS, cached_data)
 
         return True
     except Exception as e:

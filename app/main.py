@@ -1,6 +1,10 @@
 import os
 os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
+# Structured logging — must init before any logger is created
+from app.logging_config import setup_logging, generate_request_id, request_id_var
+setup_logging()
+
 import sentry_sdk
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN", ""),
@@ -39,6 +43,8 @@ from app.api.routes import webhooks as webhooks_routes
 from app.api.routes import billing as billing_routes
 from app.api.routes import seats as seats_routes
 from app.api.routes import tags_disclosure as tags_disclosure_routes
+from app.api.routes import proactive as proactive_routes
+from app.api.routes import writeback as writeback_routes
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +182,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Request ID Middleware — attaches a unique ID to every request ────────────
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        rid = request.headers.get("X-Request-ID") or generate_request_id()
+        request_id_var.set(rid)
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = rid
+        return response
+
+app.add_middleware(RequestIdMiddleware)
+
 # ── JWT Auth Middleware — protects dashboard routes ──────────────────────────
 _JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
 _PROTECTED_PREFIXES = ("/api/org/", "/dashboard/", "/activity")
@@ -189,19 +206,28 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or not any(path.startswith(p) for p in _PROTECTED_PREFIXES):
             return await call_next(request)
 
+        # Try Authorization header first (backward compat), then HttpOnly cookie
+        token = None
         auth_header = request.headers.get("authorization", "")
-        if not auth_header.startswith("Bearer ") or auth_header.startswith("Bearer gn_live_"):
+        if auth_header.startswith("Bearer ") and not auth_header.startswith("Bearer gn_live_"):
+            token = auth_header[7:]
+        elif request.cookies.get("genios_token"):
+            token = request.cookies["genios_token"]
+
+        if not token:
             return JSONResponse(status_code=401, content={"detail": "Authentication required"})
 
-        token = auth_header[7:]
         try:
             payload = pyjwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
-            # Attach org_id from JWT to request state for downstream use
             request.state.jwt_org_id = payload.get("org_id")
         except pyjwt.ExpiredSignatureError:
-            return JSONResponse(status_code=401, content={"detail": "Token expired"})
+            response = JSONResponse(status_code=401, content={"detail": "Token expired"})
+            response.delete_cookie("genios_token", path="/")
+            return response
         except pyjwt.InvalidTokenError:
-            return JSONResponse(status_code=401, content={"detail": "Invalid token"})
+            response = JSONResponse(status_code=401, content={"detail": "Invalid token"})
+            response.delete_cookie("genios_token", path="/")
+            return response
 
         return await call_next(request)
 
@@ -230,6 +256,8 @@ app.include_router(webhooks_routes.router)
 app.include_router(billing_routes.router)
 app.include_router(seats_routes.router)
 app.include_router(tags_disclosure_routes.router)
+app.include_router(proactive_routes.router)
+app.include_router(writeback_routes.router)
 
 
 @app.get("/")

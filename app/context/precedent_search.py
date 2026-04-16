@@ -47,12 +47,12 @@ def search_precedents(
                     dc.chunk_text,
                     dc.doc_title,
                     dc.metadata,
-                    1 - (dc.embedding <=> :embedding::vector) AS similarity
+                    1 - (dc.embedding <=> CAST(:embedding AS vector)) AS similarity
                 FROM document_chunks dc
                 WHERE dc.org_id = :org_id
                   AND dc.embedding IS NOT NULL
-                  AND 1 - (dc.embedding <=> :embedding::vector) >= :threshold
-                ORDER BY dc.embedding <=> :embedding::vector
+                  AND 1 - (dc.embedding <=> CAST(:embedding AS vector)) >= :threshold
+                ORDER BY dc.embedding <=> CAST(:embedding AS vector)
                 LIMIT :limit
             """),
             {
@@ -76,6 +76,12 @@ def search_precedents(
 
     except Exception as e:
         logger.warning(f"Precedent search query failed: {e}")
+        # Reset the aborted transaction so subsequent queries on the same
+        # session don't fail with InFailedSqlTransaction.
+        try:
+            db.rollback()
+        except Exception:
+            pass
         return []
 
 
@@ -122,8 +128,9 @@ def store_document_chunks(
                     )
                     VALUES (
                         :org_id, :doc_id, :doc_type, :doc_title,
-                        :chunk_index, :chunk_text, :embedding::vector,
-                        :metadata::jsonb
+                        :chunk_index, :chunk_text,
+                        CAST(:embedding AS vector),
+                        CAST(:metadata AS jsonb)
                     )
                     ON CONFLICT (org_id, doc_id, chunk_index) DO UPDATE SET
                         chunk_text = EXCLUDED.chunk_text,

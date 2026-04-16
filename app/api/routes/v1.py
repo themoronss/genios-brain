@@ -2,6 +2,7 @@
 V1 canonical API endpoints per PDF spec.
   GET  /v1/sync                 — sync status for authenticated org
   GET  /v1/org                  — org profile, plan, usage, graph stats
+  GET  /v1/contacts             — search / list contacts (partial name, email, company)
   POST /v1/agent                — register agent ID (plan-limited)
   GET  /v1/agent/{agent_id}     — describe a registered agent
   GET  /v1/keys                 — list API keys
@@ -17,14 +18,20 @@ import secrets
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, verify_api_key
 from app.plan_enforcer import get_org_plan
+from app.tunables import (
+    BROADCAST_MIN_ONEWAY_COUNT,
+    broadcast_local_sql_regex,
+    broadcast_domain_sql_regex,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +182,162 @@ def v1_org_info(
             "max_clusters": config["max_clusters"],
         },
     }
+
+
+# ── GET /v1/contacts ──────────────────────────────────────────────────────────
+
+@router.get("/v1/contacts")
+def v1_search_contacts(
+    q: Optional[str] = Query(None, description="Partial name, email, or company. Empty = recent contacts."),
+    stage: Optional[str] = Query(None, description="Filter by relationship_stage (ACTIVE, WARM, COLD, etc)."),
+    needs_attention: bool = Query(False, description="Shortcut: only contacts with stage=NEEDS_ATTENTION."),
+    recent_days: Optional[int] = Query(None, ge=1, le=365, description="Only contacts with last_interaction within N days."),
+    silent_days: Optional[int] = Query(None, ge=1, le=365, description="Only contacts we've NOT interacted with in >= N days (re-engagement list)."),
+    overdue: bool = Query(False, description="Only contacts with at least one OVERDUE commitment."),
+    exclude_broadcast: bool = Query(True, description="Exclude one-way/marketing senders (noreply, info@, etc). Default true."),
+    has_anomaly: bool = Query(False, description="Only contacts with active anomalies (L5 detection)."),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """
+    Search or list contacts in the org's graph.
+
+    Agents use this to resolve "Alice at Acme" or "Ashish from HDFC" into
+    a canonical contact before calling /v1/context. Also supports
+    "who needs attention" queries for dashboard-style prompts.
+
+    Ranking: exact-email > exact-name > fuzzy match > recent interaction.
+    """
+    where = ["c.org_id = :org_id", "(c.is_archived IS FALSE OR c.is_archived IS NULL)"]
+    params: dict = {"org_id": org_id, "limit": limit}
+
+    if q:
+        q_clean = q.strip()
+        params["q_exact"] = q_clean.lower()
+        params["q_like"] = f"%{q_clean.lower()}%"
+        where.append(
+            "(LOWER(c.email) = :q_exact "
+            "OR LOWER(c.name) = :q_exact "
+            "OR LOWER(c.email) LIKE :q_like "
+            "OR LOWER(c.name) LIKE :q_like "
+            "OR LOWER(COALESCE(c.company, '')) LIKE :q_like)"
+        )
+
+    if needs_attention:
+        where.append("c.relationship_stage = 'NEEDS_ATTENTION'")
+    elif stage:
+        params["stage"] = stage.upper()
+        where.append("UPPER(c.relationship_stage) = :stage")
+
+    if recent_days is not None:
+        params["recent_days"] = recent_days
+        where.append("c.last_interaction_at >= NOW() - (:recent_days || ' days')::interval")
+
+    if silent_days is not None:
+        params["silent_days"] = silent_days
+        where.append(
+            "(c.last_interaction_at IS NULL "
+            "OR c.last_interaction_at < NOW() - (:silent_days || ' days')::interval)"
+        )
+
+    if overdue:
+        where.append(
+            "EXISTS (SELECT 1 FROM commitments cm WHERE cm.contact_id = c.id "
+            "AND cm.status = 'OPEN' AND cm.due_date IS NOT NULL AND cm.due_date < NOW())"
+        )
+
+    # ── Broadcast detection — Phase 3.4: prefer DB classification column,
+    # fall back to regex for contacts not yet classified.
+    params["broadcast_local_re"] = broadcast_local_sql_regex()
+    params["broadcast_domain_re"] = broadcast_domain_sql_regex()
+    params["broadcast_min_count"] = BROADCAST_MIN_ONEWAY_COUNT
+
+    broadcast_sql = """
+        (
+          -- Prefer persisted classification (from header parse or LLM)
+          COALESCE(c.classification_override, c.classification) IN ('newsletter', 'bot', 'transactional')
+          -- Fall back to regex for unclassified contacts
+          OR (
+            COALESCE(c.classification_override, c.classification, 'unknown') = 'unknown'
+            AND (
+              LOWER(COALESCE(c.email, '')) ~ :broadcast_local_re
+              OR LOWER(COALESCE(c.email, '')) ~ :broadcast_domain_re
+              OR (
+                c.is_bidirectional IS NOT TRUE
+                AND COALESCE(c.interaction_count, 0) >= :broadcast_min_count
+              )
+            )
+          )
+        )
+    """
+
+    if exclude_broadcast:
+        where.append(f"NOT {broadcast_sql}")
+
+    if has_anomaly:
+        where.append(
+            "EXISTS (SELECT 1 FROM contact_anomalies ca "
+            "WHERE ca.contact_id = c.id AND ca.status = 'active')"
+        )
+
+    select_cols = f"""
+        c.id, c.name, c.email, c.company,
+        c.relationship_stage, c.sentiment_trend,
+        c.last_interaction_at, c.interaction_count,
+        c.context_score, c.confidence_score,
+        COALESCE(c.classification_override, c.classification, 'unknown') AS classification,
+        {broadcast_sql} AS is_broadcast,
+        (SELECT COUNT(*) FROM commitments cm
+            WHERE cm.contact_id = c.id AND cm.status = 'OPEN') AS open_commitments
+    """
+
+    sql = f"""
+        SELECT {select_cols}
+        FROM contacts c
+        WHERE {' AND '.join(where)}
+        ORDER BY
+            -- exact email match first
+            CASE WHEN LOWER(c.email) = :q_exact THEN 0
+                 WHEN LOWER(c.name) = :q_exact THEN 1
+                 ELSE 2 END,
+            c.last_interaction_at DESC NULLS LAST,
+            c.interaction_count DESC NULLS LAST
+        LIMIT :limit
+    """ if q else f"""
+        SELECT {select_cols}
+        FROM contacts c
+        WHERE {' AND '.join(where)}
+        ORDER BY c.last_interaction_at DESC NULLS LAST
+        LIMIT :limit
+    """
+
+    rows = db.execute(text(sql), params).fetchall()
+
+    contacts = []
+    for r in rows:
+        last_at = r.last_interaction_at
+        days_ago = None
+        if last_at:
+            if hasattr(last_at, "tzinfo") and last_at.tzinfo is None:
+                last_at = last_at.replace(tzinfo=timezone.utc)
+            days_ago = (datetime.now(timezone.utc) - last_at).days
+        contacts.append({
+            "id": str(r.id),
+            "name": r.name,
+            "email": r.email,
+            "company": r.company,
+            "relationship_stage": r.relationship_stage,
+            "sentiment_trend": r.sentiment_trend,
+            "last_interaction_days_ago": days_ago,
+            "interaction_count": r.interaction_count or 0,
+            "open_commitments": r.open_commitments or 0,
+            "context_score": round(float(r.context_score or 0), 3),
+            "classification": r.classification or "unknown",
+            "is_broadcast": bool(r.is_broadcast),
+        })
+
+    return {"contacts": contacts, "count": len(contacts), "query": q or None}
 
 
 # ── POST /v1/agent  /  GET /v1/agent/{agent_id} ────────────────────────────────
@@ -526,42 +689,111 @@ async def v1_document_upload(
             pass
 
     # Entity enrichment + Precedent Graph embedding
-    # Per Graph Enrichment spec: documents enrich topics/consistency on existing nodes,
-    # but do NOT create interaction rows (no behavioral signal from documents).
+    # Upgraded: documents now CREATE contacts (not just enrich existing ones)
+    # and add lightweight 'document_mention' interactions so the graph builds.
     entities_found = 0
+    contacts_created = 0
     chunks_stored = 0
     if text_content and len(text_content) > 20:
-        # 1. Entity extraction — enrich topics only, no interaction creation
+        # 1. Entity extraction — create OR enrich contacts + add document interaction
         try:
             from app.ingestion.entity_extractor import extract_email_intelligence
+            from app.ingestion.graph_builder import upsert_contact
+
             intelligence = extract_email_intelligence(text_content[:3000], f"Document: {file.filename}")
             doc_topics = intelligence.get("topics", [])
+            doc_summary = intelligence.get("summary", f"Mentioned in document: {file.filename}")
 
             for entity_info in intelligence.get("entities", []):
                 entity_name = entity_info if isinstance(entity_info, str) else entity_info.get("name", "")
-                if not entity_name:
+                if not entity_name or len(entity_name) < 2:
                     continue
+
+                # Check if contact exists
                 existing = db.execute(
                     text("SELECT id FROM contacts WHERE org_id = :org_id AND LOWER(name) = LOWER(:name) LIMIT 1"),
                     {"org_id": org_id, "name": entity_name},
                 ).fetchone()
+
                 if existing:
-                    # Enrich data_sources + topics only — no stage/sentiment/freshness change
+                    contact_id = str(existing[0])
+                    # Enrich existing: add 'docs' source + merge topics
                     db.execute(
                         text("""
                             UPDATE contacts SET
                                 sources = array_cat(
                                     COALESCE(sources, '{}'),
                                     CASE WHEN NOT ('docs' = ANY(COALESCE(sources, '{}'))) THEN ARRAY['docs'] ELSE '{}' END
+                                ),
+                                topics_aggregate = (
+                                    SELECT ARRAY(SELECT DISTINCT unnest(
+                                        array_cat(COALESCE(topics_aggregate, '{}'), :topics)
+                                    ) LIMIT 10)
                                 )
                             WHERE id = :cid AND org_id = :org_id
                         """),
-                        {"cid": str(existing[0]), "org_id": org_id},
+                        {"cid": contact_id, "org_id": org_id, "topics": doc_topics[:5]},
                     )
                     entities_found += 1
+                else:
+                    # CREATE new contact from document mention
+                    contact_id = upsert_contact(
+                        db, org_id,
+                        email=None,  # no email from document — name only
+                        name=entity_name,
+                        entity_type=intelligence.get("contact_role"),
+                    )
+                    if contact_id:
+                        # Add topics + source
+                        db.execute(
+                            text("""
+                                UPDATE contacts SET
+                                    sources = ARRAY['docs'],
+                                    topics_aggregate = :topics
+                                WHERE id = :cid AND org_id = :org_id
+                            """),
+                            {"cid": str(contact_id), "org_id": org_id, "topics": doc_topics[:5]},
+                        )
+                        contacts_created += 1
+                        entities_found += 1
+
+                # Create a lightweight interaction so the contact shows in the graph
+                if contact_id:
+                    try:
+                        interaction_id = str(uuid.uuid4())
+                        db.execute(
+                            text("""
+                                INSERT INTO interactions (
+                                    id, org_id, contact_id, direction, subject,
+                                    summary, interaction_at, sentiment, intent,
+                                    source, topics, interaction_type
+                                )
+                                VALUES (
+                                    :id, :org_id, :cid, 'inbound', :subject,
+                                    :summary, NOW(), 0.0, 'reference',
+                                    'document', :topics, 'document_mention'
+                                )
+                                ON CONFLICT DO NOTHING
+                            """),
+                            {
+                                "id": interaction_id,
+                                "org_id": org_id,
+                                "cid": str(contact_id),
+                                "subject": f"Document: {file.filename}",
+                                "summary": f"Mentioned in {file.filename}: {doc_summary[:200]}",
+                                "topics": doc_topics[:5],
+                            },
+                        )
+                    except Exception:
+                        pass  # duplicate or constraint — safe to skip
+
             db.commit()
         except Exception as e:
             logger.warning(f"v1 document entity extraction failed: {e}")
+            try:
+                db.rollback()
+            except Exception:
+                pass
 
         # 2. Precedent Graph — chunk and embed document for vector search
         try:

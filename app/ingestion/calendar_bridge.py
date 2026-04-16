@@ -12,13 +12,42 @@ Per PDF spec signal weights:
   - Cancelled meeting         = -3.0x
 """
 
+import json
 import logging
+import re
 from uuid import uuid4
 from sqlalchemy import text
 
 from app.ingestion.graph_builder import upsert_contact
+from app.tunables import (
+    MEETING_TITLE_TOPIC_MAP,
+    TITLE_TOPIC_STOPWORDS,
+    TITLE_TOPIC_MIN_LEN,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _topics_from_title(title: str) -> list[str]:
+    """Cheap fallback topic extraction from meeting titles. Returns at most 3.
+    Keyword map, stopword list, and min-token-length all live in app/tunables.py.
+    """
+    if not title:
+        return []
+    lower = title.lower()
+    hits = []
+    for topic, kws in MEETING_TITLE_TOPIC_MAP.items():
+        if any(kw in lower for kw in kws) and topic not in hits:
+            hits.append(topic)
+
+    if not hits:
+        stopset = set(TITLE_TOPIC_STOPWORDS)
+        for tok in re.split(r"[^\w]+", lower):
+            if len(tok) >= TITLE_TOPIC_MIN_LEN and tok not in stopset and not tok.isdigit():
+                hits.append(tok)
+                if len(hits) >= 2:
+                    break
+    return hits[:3]
 
 
 # ─── 1. Resolve attendees to contacts ─────────────────────────────────────────
@@ -116,6 +145,7 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                 ce.location_type,
                 ce.meeting_type,
                 ce.organizer_email,
+                ce.topics_extracted,
                 cea.person_id AS contact_id,
                 cea.rsvp_status,
                 cea.email AS attendee_email
@@ -179,6 +209,23 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
             {"eid": row.event_id},
         ).scalar() or 1
 
+        # Determine topics for this interaction.
+        # Prefer LLM-extracted topics from calendar_extractor; otherwise
+        # fall back to cheap keyword extraction from the title so the
+        # contact's topics_aggregate isn't empty for meeting-heavy users.
+        event_topics: list[str] = []
+        try:
+            if row.topics_extracted:
+                raw = row.topics_extracted
+                if isinstance(raw, str):
+                    raw = json.loads(raw)
+                if isinstance(raw, list):
+                    event_topics = [str(t) for t in raw if t][:5]
+        except Exception:
+            event_topics = []
+        if not event_topics:
+            event_topics = _topics_from_title(row.title or "")
+
         interaction_id = str(uuid4())
         # Use synthetic gmail_message_id to satisfy unique constraint
         synthetic_msg_id = f"cal:{row.google_event_id}:{row.contact_id}"
@@ -199,7 +246,8 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                     source, weight_score, signal_score,
                     duration_minutes, attendee_count,
                     rsvp_status, location_type,
-                    is_recurring, edge_weight_multiplier
+                    is_recurring, edge_weight_multiplier,
+                    topics
                 )
                 VALUES (
                     :id, :org_id, :contact_id,
@@ -210,7 +258,8 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                     'calendar', :weight_score, :signal_score,
                     :duration_minutes, :attendee_count,
                     :rsvp_status, :location_type,
-                    :is_recurring, :edge_weight_multiplier
+                    :is_recurring, :edge_weight_multiplier,
+                    :topics
                 )
                 ON CONFLICT (calendar_event_id, contact_id)
                     WHERE calendar_event_id IS NOT NULL
@@ -221,7 +270,8 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                     rsvp_status = EXCLUDED.rsvp_status,
                     sentiment = EXCLUDED.sentiment,
                     direction = EXCLUDED.direction,
-                    account_email = EXCLUDED.account_email
+                    account_email = EXCLUDED.account_email,
+                    topics = COALESCE(EXCLUDED.topics, interactions.topics)
             """),
             {
                 "id": interaction_id,
@@ -243,6 +293,7 @@ def create_meeting_interactions(db, org_id: str, org_domain: str | None):
                 "location_type": row.location_type,
                 "is_recurring": row.is_recurring or False,
                 "edge_weight_multiplier": edge_weight,
+                "topics": event_topics or None,
             },
         )
         created_count += 1

@@ -61,7 +61,7 @@ PLAN_CONFIG: dict = {
         "context_depth": "shallow",
         "overage_allowed": True,
         "overage_cost_per_1k": 500,
-        "integrations_allowed": {"gmail", "calendar"},
+        "integrations_allowed": {"gmail", "calendar", "documents"},
         "operations_allowed": {"manual_context", "correct_context", "merge", "override_stage"},
         "mr_elite_modes": {"entity", "temporal"},
         "sync_method": "6h_cron",
