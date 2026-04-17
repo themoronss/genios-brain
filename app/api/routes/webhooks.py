@@ -1,7 +1,9 @@
 """
-Webhook ingest endpoints — Phase 10.
-  POST /v1/webhooks/gmail   — Gmail push notification receiver (Startup only)
-  GET  /v1/webhooks/events  — Last 50 webhook events for the authenticated org
+Webhook ingest endpoints.
+  POST /v1/webhooks/gmail     — Gmail Pub/Sub push receiver (Startup only)
+  GET  /v1/webhooks/events    — Last 50 webhook events for the authenticated org
+
+Calendar push receiver lives in webhooks_calendar.py (split for file-size budget).
 """
 
 import base64
@@ -80,7 +82,7 @@ async def gmail_push_webhook(request: Request, db: Session = Depends(get_db)):
         logger.debug(f"Gmail webhook: org {org_id} is on {plan_info['tier']} plan — skipping real-time sync")
         return {"acknowledged": True, "action": "plan_not_eligible"}
 
-    # Log the webhook event
+    # Log the webhook event (legacy tracking table)
     event_id = None
     try:
         row = db.execute(
@@ -99,6 +101,18 @@ async def gmail_push_webhook(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.warning(f"Gmail webhook event log failed (non-critical): {e}")
         db.rollback()
+
+    # Phase 2: mirror into canonical event_log
+    try:
+        from app.memory import event_log
+        event_log.append(
+            db, org_id=org_id, source="gmail", verb="push",
+            actor=email_address, object_type="mailbox",
+            object_id=str(history_id) if history_id else None,
+            payload={"email": email_address, "historyId": history_id},
+        )
+    except Exception as e:
+        logger.debug(f"event_log.append (gmail push) failed: {e}")
 
     # Trigger incremental Gmail sync in background — Redis lock prevents pile-up
     def _run_sync():

@@ -109,18 +109,21 @@ def fetch_events(service, calendar_id="primary", sync_token=None, page_token=Non
     return events, next_sync_token, next_page_token
 
 
-def setup_watch_channel(service, calendar_id, webhook_url):
+def setup_watch_channel(service, calendar_id, webhook_url, channel_token: str = None):
     """
     Set up push notifications for a calendar via watch channel.
     CRITICAL: Expiry is set to 6.5 days (NOT 7) to ensure renewal before Google's
     7-day hard limit. The renewal cron must run before this timestamp.
 
+    channel_token (optional) — opaque secret Google echoes back in every push as
+    X-Goog-Channel-Token; receiver verifies it to reject spoofed calls.
+
     Returns:
-        dict with channelId, resourceId, expiration (ms timestamp)
+        dict with id (channelId), resourceId, expiration (ms timestamp),
+        and 'token' echoed back for caller to persist.
     """
     from datetime import datetime, timedelta, timezone
 
-    # 6.5 days = 561,600 seconds
     expiry_ms = int(
         (datetime.now(timezone.utc) + timedelta(days=6, hours=12)).timestamp() * 1000
     )
@@ -132,7 +135,12 @@ def setup_watch_channel(service, calendar_id, webhook_url):
         "address": webhook_url,
         "expiration": expiry_ms,
     }
+    if channel_token:
+        body["token"] = channel_token
+
     result = service.events().watch(calendarId=calendar_id, body=body).execute()
+    if channel_token:
+        result["token"] = channel_token
     return result
 
 

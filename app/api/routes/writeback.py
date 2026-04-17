@@ -18,6 +18,9 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, verify_api_key
+from app.api.routes.approvals import enqueue as enqueue_approval
+from app.memory import event_log
+from app.policy import enforcement as policy_enforcement
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +52,38 @@ def log_interaction(
     without waiting for the next Gmail/Calendar sync. The relationship
     calculator will pick it up on the next recalc cycle.
     """
-    # Resolve entity to contact
     entity = req.entity.strip()
     if not entity:
         raise HTTPException(status_code=400, detail="entity is required")
+
+    # Phase 3 policy gate — writeback is internal_write risk tier.
+    payload = {
+        "entity": entity, "direction": req.direction, "channel": req.channel,
+        "summary": req.summary, "topics": req.topics or [],
+    }
+    decision, ledger_id = policy_enforcement.evaluate_and_open(
+        db, org_id=org_id, agent_id=req.agent_id or "unknown",
+        action_type="writeback", risk_tier="internal_write",
+        target_ref=entity, payload=payload,
+    )
+    if decision["decision"] == "block":
+        policy_enforcement.close(db, ledger_id, "failed", f"policy_block:{decision.get('rule_name')}")
+        raise HTTPException(status_code=403, detail={
+            "error": "POLICY_BLOCK", "rule_id": decision["rule_id"],
+            "rule_name": decision["rule_name"],
+        })
+    if decision["decision"] == "require_approval":
+        approval_id = enqueue_approval(
+            db, org_id=org_id, agent_id=req.agent_id or "unknown",
+            action_type="writeback", risk_tier="internal_write",
+            target_ref=entity, payload=payload,
+            action_ledger_id=ledger_id, triggered_rule_id=decision["rule_id"],
+            reason=f"matched rule {decision.get('rule_name')}",
+        )
+        raise HTTPException(status_code=202, detail={
+            "status": "awaiting_approval", "approval_id": approval_id,
+            "rule_id": decision["rule_id"], "rule_name": decision["rule_name"],
+        })
 
     # Try email exact match first, then name fuzzy
     contact = None
@@ -119,7 +150,16 @@ def log_interaction(
         db.commit()
     except Exception as e:
         db.rollback()
+        policy_enforcement.close(db, ledger_id, "failed", str(e)[:500])
         raise HTTPException(status_code=500, detail=f"Failed to log interaction: {e}")
+
+    # Mirror into canonical event_log + finalize ledger.
+    event_log.append(
+        db, org_id=org_id, source="agent", verb=req.direction,
+        actor=req.agent_id or "unknown", object_type="interaction",
+        object_id=interaction_id, payload=payload,
+    )
+    policy_enforcement.close(db, ledger_id, "success")
 
     return {
         "logged": True,

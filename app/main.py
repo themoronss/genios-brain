@@ -40,6 +40,12 @@ from app.api.routes import insights
 from app.api.routes import v1 as v1_routes
 from app.api.routes import segments as segments_routes
 from app.api.routes import webhooks as webhooks_routes
+from app.api.routes import webhooks_calendar as webhooks_calendar_routes
+from app.api.routes import policies as policies_routes
+from app.api.routes import approvals as approvals_routes
+from app.api.routes import retrieval as retrieval_routes
+from app.api.routes import explain as explain_routes
+from app.api.routes import live as live_routes
 from app.api.routes import billing as billing_routes
 from app.api.routes import seats as seats_routes
 from app.api.routes import tags_disclosure as tags_disclosure_routes
@@ -253,6 +259,12 @@ app.include_router(insights.router)
 app.include_router(v1_routes.router)
 app.include_router(segments_routes.router)
 app.include_router(webhooks_routes.router)
+app.include_router(webhooks_calendar_routes.router)
+app.include_router(policies_routes.router)
+app.include_router(approvals_routes.router)
+app.include_router(retrieval_routes.router)
+app.include_router(explain_routes.router)
+app.include_router(live_routes.router)
 app.include_router(billing_routes.router)
 app.include_router(seats_routes.router)
 app.include_router(tags_disclosure_routes.router)

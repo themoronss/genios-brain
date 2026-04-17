@@ -298,6 +298,26 @@ def task_extract_pending(self, org_id: str = None):
         raise self.retry(exc=exc)
 
 
+@celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")
+def task_renew_watches(self):
+    """Phase 1.3: Proactively renew Gmail + Calendar watch channels before expiry."""
+    try:
+        from app.tasks.renew_watches import run_renew_watches
+        return run_renew_watches()
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=1, default_retry_delay=60, queue="low_priority")
+def task_expire_approvals(self):
+    """Phase 3: Auto-expire stale pending approvals past their expires_at."""
+    try:
+        from app.tasks.expire_approvals import run_expire_approvals
+        return run_expire_approvals()
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
 # ── Celery Beat schedule (replaces sync_scheduler_loop) ──────────────────────
 
 celery.conf.beat_schedule = {
@@ -348,6 +368,18 @@ celery.conf.beat_schedule = {
         "task": "app.celery_app.task_deliver_webhooks",
         "schedule": 300.0,  # 5 min
         "options": {"queue": "high_priority"},
+    },
+    # Phase 1.3: Renew Gmail + Calendar watch channels daily before 7-day expiry.
+    "renew-watches-daily": {
+        "task": "app.celery_app.task_renew_watches",
+        "schedule": crontab(hour=4, minute=0),
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 3: Expire stale approval requests every 5 min.
+    "expire-approvals-5m": {
+        "task": "app.celery_app.task_expire_approvals",
+        "schedule": 300.0,  # 5 min
+        "options": {"queue": "low_priority"},
     },
 }
 

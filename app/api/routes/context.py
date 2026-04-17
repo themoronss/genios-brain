@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, verify_api_key, check_rpm_limit, check_abuse_detection
 from app.context.bundle_builder import build_context_bundle
+from app.coordination import blackboard
 from app.plan_enforcer import get_org_plan
 from app.redis_client import redis_client
 import json
@@ -27,6 +28,7 @@ class ContextRequest(BaseModel):
     agent_id: str = None      # Optional — identifies which agent is calling
     segment_id: str = None    # Optional — scope bundle to contacts in this segment
     tag: str = None           # Optional — only return entity if it has this tag
+    as_of: str = None         # Phase 2 bitemporal: ISO-8601 timestamp ("what did we know on date X")
 
     @validator("entity")
     def validate_entity(cls, v):
@@ -35,6 +37,17 @@ class ContextRequest(BaseModel):
         if len(v) > 200:
             raise ValueError("Entity name too long")
         return v.strip()
+
+    @validator("as_of")
+    def validate_as_of(cls, v):
+        if v is None:
+            return v
+        from datetime import datetime
+        try:
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except Exception:
+            raise ValueError("as_of must be an ISO-8601 timestamp")
+        return v
 
 
 class EntityDetails(BaseModel):
@@ -154,6 +167,25 @@ def get_context(
 
         # Abuse detection (all sources)
         check_abuse_detection(org_id)
+
+        # Phase 2: bitemporal short-circuit. When as_of is set we bypass the
+        # normal cache/build pipeline and return a historical snapshot from
+        # event_log + versioned rows.
+        if request.as_of:
+            from app.memory.as_of import build_as_of_bundle
+            snapshot = build_as_of_bundle(db, org_id, request.entity, request.as_of)
+            if snapshot.get("error"):
+                code = snapshot["error"]
+                status_map = {"INVALID_AS_OF": 400, "NO_HISTORY_AT_AS_OF": 404}
+                raise HTTPException(
+                    status_code=status_map.get(code, 400),
+                    detail={"error": code, "message": f"{code}: {request.as_of}"},
+                )
+            snapshot["other_agents_active"] = blackboard.peek(
+                org_id, request.entity.lower().strip()
+            )
+            from fastapi.responses import JSONResponse
+            return JSONResponse(content=snapshot)
 
         # Quota check — only external API calls consume quota
         if source == "api":
@@ -401,6 +433,7 @@ def get_context(
                 context_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
                 context_bundle["cache_hit"] = True
                 context_bundle["cache_source"] = "precomputed"
+                context_bundle["other_agents_active"] = blackboard.peek(org_id, request.entity.lower().strip())
                 from app.core.analytics import capture as _capture
                 _capture(org_id, "api_context_requested", {
                     "source": source,
@@ -438,6 +471,7 @@ def get_context(
                 cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
                 cached_bundle["cache_hit"] = True
                 cached_bundle["cache_source"] = "redis"
+                cached_bundle["other_agents_active"] = blackboard.peek(org_id, request.entity.lower().strip())
                 from app.core.analytics import capture as _capture
                 _capture(org_id, "api_context_requested", {
                     "source": source,
@@ -559,6 +593,9 @@ def get_context(
             logger.info(f"Cached context for {request.entity}")
         except Exception as redis_error:
             logger.warning(f"Redis cache write failed: {redis_error}")
+
+        # Attach live blackboard peek (never cached — always fresh)
+        context_bundle["other_agents_active"] = blackboard.peek(org_id, request.entity.lower().strip())
 
         from fastapi.responses import JSONResponse
         return JSONResponse(content=context_bundle, headers=response_headers)
