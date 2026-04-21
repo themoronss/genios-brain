@@ -25,7 +25,7 @@ from app.database import SessionLocal
 logger = logging.getLogger(__name__)
 
 
-def _generate_insight_text(anomaly: dict, contact: dict, precedents: list) -> dict:
+def _generate_insight_text(anomaly: dict, contact: dict, precedents: list, org_id: str = None) -> dict:
     """
     L7 Synthesis: generate memory_view + genios_view from structured data.
     LLM does NOT generate intelligence — it formats intelligence that already exists.
@@ -69,15 +69,11 @@ Return ONLY valid JSON:
 {{"memory_view": "...", "genios_view": "..."}}"""
 
     try:
-        # Use Groq primary, Gemini fallback (same pattern as entity_extractor)
-        try:
-            from app.ingestion.entity_extractor import _call_groq
-            raw = _call_groq(prompt)
-        except Exception:
-            import google.generativeai as genai
-            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            raw = model.generate_content(prompt).text
+        from app.llm import llm_client
+        raw = llm_client.call(
+            org_id=org_id, purpose="narrative",
+            prompt=prompt, temperature=0.2, max_tokens=512,
+        )
 
         raw = raw.strip()
         if raw.startswith("```"):
@@ -188,6 +184,7 @@ def run_proactive_scan(org_id: str = None):
                     "open_commitments": anomaly.open_commitments or 0,
                 },
                 precedents=precedents,
+                org_id=str(anomaly.org_id),
             )
 
             # Step 5: Store insight

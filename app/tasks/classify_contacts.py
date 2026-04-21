@@ -57,21 +57,17 @@ Return ONLY valid JSON array. One object per contact, same order:
 No explanations. No markdown. JSON only."""
 
 
-def _call_llm(prompt: str) -> list[dict]:
-    """Call Groq (primary) or Gemini (fallback) for batch classification."""
+def _call_llm(prompt: str, org_id: str = None) -> list[dict]:
+    """Batch classification via unified LLMClient (Groq primary, Gemini fallback)."""
+    from app.llm import llm_client
     try:
-        from app.ingestion.entity_extractor import _call_groq
-        raw = _call_groq(prompt)
-    except Exception:
-        try:
-            import google.generativeai as genai
-            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = model.generate_content(prompt)
-            raw = response.text
-        except Exception as e:
-            logger.warning(f"LLM classification failed: {e}")
-            return []
+        raw = llm_client.call(
+            org_id=org_id, purpose="classify_email",
+            prompt=prompt, temperature=0.1, max_tokens=1024,
+        )
+    except Exception as e:
+        logger.warning(f"LLM classification failed: {e}")
+        return []
 
     # Parse JSON from response
     raw = raw.strip()
@@ -146,7 +142,7 @@ def run_classify_contacts(org_id: str = None):
             ]
 
             prompt = _build_batch_prompt(contacts_data)
-            results = _call_llm(prompt)
+            results = _call_llm(prompt, org_id=str(batch[0].org_id) if batch else None)
 
             for result in results:
                 idx = result.get("index", 0) - 1

@@ -83,6 +83,7 @@ def run_pending_extractions(org_id: str = None):
                     body,
                     sender_name=row.contact_name or "",
                     is_reply="re:" in subject.lower() or "fwd:" in subject.lower(),
+                    org_id=str(row.org_id),
                 )
 
                 # Update the interaction with extracted data

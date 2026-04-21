@@ -165,6 +165,7 @@ def extract_email_intelligence(
     sender_name: str = None,
     is_reply: bool = False,
     thread_context: str = "",
+    org_id: str = None,
 ) -> Dict:
     """
     Extract comprehensive intelligence from an email using LLM.
@@ -262,8 +263,9 @@ Return ONLY this JSON — no markdown, no explanation:
 
         while retry_count < max_retries:
             try:
-                response = groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
+                from app.llm import llm_client
+                result_text = llm_client.call(
+                    org_id=org_id, purpose="extract_entities",
                     messages=[
                         {
                             "role": "system",
@@ -271,11 +273,8 @@ Return ONLY this JSON — no markdown, no explanation:
                         },
                         {"role": "user", "content": prompt},
                     ],
-                    temperature=0.1,
-                    max_tokens=700,
-                )
-
-                result_text = response.choices[0].message.content.strip()
+                    temperature=0.1, max_tokens=700,
+                ).strip()
 
                 # Remove markdown code blocks if present
                 if result_text.startswith("```"):
@@ -345,14 +344,9 @@ Return ONLY this JSON — no markdown, no explanation:
                         time.sleep(wait_time)
                     else:
                         print(f"❌ Max retries reached for rate limit")
-                        if HAS_GEMINI_FALLBACK:
-                            print("🔄 Falling back to Gemini...")
-                            return _extract_with_gemini(prompt)
                         raise
                 else:
-                    if HAS_GEMINI_FALLBACK and retry_count == 0:
-                        print(f"⚠️ Groq error: {error_str[:100]}, trying Gemini...")
-                        return _extract_with_gemini(prompt)
+                    # LLMClient already handles Groq→Gemini fallback internally.
                     raise
 
     except Exception as e:
@@ -447,20 +441,13 @@ Return only the number.
 """
 
     try:
-        response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=10,
+        from app.llm import llm_client
+        out = llm_client.call(
+            org_id=None, purpose="extract_entities",
+            prompt=prompt, temperature=0.1, max_tokens=10,
         )
-        return float(response.choices[0].message.content.strip())
+        return float(out.strip())
     except Exception:
-        if HAS_GEMINI_FALLBACK:
-            try:
-                response = gemini_model.generate_content(prompt)
-                return float(response.text.strip())
-            except Exception:
-                return 0.0
         return 0.0
 
 

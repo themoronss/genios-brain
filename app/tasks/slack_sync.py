@@ -187,7 +187,7 @@ def _upsert_message(db, org_id, workspace_id, channel_id, message, tier):
             VALUES (
                 :org_id, :workspace_id, :channel_id, :message_ts,
                 :thread_ts, :is_root, :sender_id,
-                :text_content, :text_cleaned, :is_bot, :raw::jsonb
+                :text_content, :text_cleaned, :is_bot, CAST(:raw AS jsonb)
             )
             ON CONFLICT (workspace_id, channel_id, message_ts) DO NOTHING
         """),

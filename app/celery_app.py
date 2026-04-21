@@ -7,16 +7,19 @@ Queues:
   - low_priority: nightly refresh, weekly reports, billing (batch work)
 
 Worker start command:
-  celery -A app.celery_app worker --loglevel=info -Q high_priority,low_priority
+  celery -A app.celery_app worker --loglevel=info -Q high_priority,low_priority,brain_router
 
 Celery Beat (periodic scheduler):
   celery -A app.celery_app beat --loglevel=info
 """
 
+import logging
 import os
 import ssl
 from celery import Celery
 from celery.schedules import crontab
+
+logger = logging.getLogger(__name__)
 
 # Use Redis DB 1 for Celery broker (DB 0 is used for caching)
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -248,6 +251,55 @@ def task_sync_all_tools(org_id: str):
 
 # ── Phase 3-6 background tasks ──────────────────────────────────────────────
 
+@celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
+def task_morning_digest(self, org_id: str = None):
+    """Morning digest (BUILD-1). Fires hourly; each tick checks if any org's
+    local time == their digest_hour and sends a summary of top 3-5 pending
+    recommendations from the last 24h. Purely additive — doesn't mark
+    individual recs as delivered, doesn't block or replace hard-trigger
+    webhooks."""
+    try:
+        from app.tasks.morning_digest import run_morning_digest
+        return run_morning_digest(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
+def task_precedent_writer(self, org_id: str = None):
+    """Harvest recommendation outcomes into precedent_situations. Nightly 4am.
+    Turns the feedback loop into compounding knowledge — without this,
+    precedent_situations only grows on stage transitions (narrow)."""
+    try:
+        from app.tasks.precedent_writer import run_precedent_writer
+        return run_precedent_writer(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
+def task_auto_merge(self, org_id: str = None):
+    """Auto-apply merge queue candidates >= 0.95. Soft-archives loser contact;
+    undo endpoint available for 7 days. Runs every 30 minutes."""
+    try:
+        from app.tasks.auto_merge import run_auto_merge
+        return run_auto_merge(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
+def task_score_writer(self, org_id: str = None):
+    """Score writer: recomputes freshness/confidence/consistency/authority/
+    context_score on every contact due for refresh. Runs every 15 min.
+    Without this, scoring columns stay at DB defaults forever."""
+    try:
+        from app.tasks.score_writer import run_score_writer
+        return run_score_writer(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_classify_contacts(self, org_id: str = None):
     """Phase 3: LLM-based contact classification (batched)."""
@@ -286,6 +338,64 @@ def task_deliver_webhooks(self, org_id: str = None):
         deliver_pending_insights(org_id)
     except Exception as exc:
         raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=2, default_retry_delay=30, queue="high_priority")
+def task_refresh_bundle(self, org_id: str, contact_id: str):
+    """Event-driven pre-compute of one contact's context bundle. Called from
+    the brain router after debounce. Keeps /v1/context Layer 1 fresh so pulls
+    stay <400ms with real data."""
+    try:
+        from app.tasks.refresh_bundle import run_refresh_bundle
+        return run_refresh_bundle(org_id, contact_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, queue="brain_router")
+def task_brain_router(self):
+    """Phase 2: one router tick — consume events, debounce, reason, gate."""
+    try:
+        from app.brain.router import run_once
+        return run_once()
+    except Exception:
+        # Router failures must not retry — each tick is independent and
+        # losing one tick is cheaper than a retry storm on Upstash.
+        logger.exception("brain_router tick failed")
+        return {"consumed": 0, "flushed": 0, "pushed": 0, "error": True}
+
+
+@celery.task(bind=True, queue="low_priority")
+def task_lifecycle_hourly(self):
+    """Phase 4.5: hourly lifecycle transitions (ingest→validate→live, live↔fade)."""
+    try:
+        from app.lifecycle import run_hourly
+        return run_hourly()
+    except Exception as exc:
+        logger.exception("lifecycle_hourly failed")
+        raise self.retry(exc=exc, countdown=300, max_retries=2)
+
+
+@celery.task(bind=True, queue="low_priority")
+def task_lifecycle_nightly(self):
+    """Phase 4.5: nightly lifecycle transitions (fade→dormant→archive)."""
+    try:
+        from app.lifecycle import run_nightly
+        return run_nightly()
+    except Exception as exc:
+        logger.exception("lifecycle_nightly failed")
+        raise self.retry(exc=exc, countdown=600, max_retries=2)
+
+
+@celery.task(bind=True, queue="low_priority")
+def task_calibration_nightly(self):
+    """Phase 4.10: per-tenant Platt scaling over recent outcomes (dormant by default)."""
+    try:
+        from app.brain.calibration import run_nightly
+        return run_nightly()
+    except Exception as exc:
+        logger.exception("calibration_nightly failed")
+        raise self.retry(exc=exc, countdown=600, max_retries=2)
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=60, queue="low_priority")
@@ -357,17 +467,65 @@ celery.conf.beat_schedule = {
         "schedule": crontab(hour=3, minute=0),
         "options": {"queue": "low_priority"},
     },
+    # Score writer — recompute per-contact scores every 15 min
+    "score-writer-15m": {
+        "task": "app.celery_app.task_score_writer",
+        "schedule": 900.0,  # 15 min
+        "options": {"queue": "low_priority"},
+    },
+    # Auto-merge — apply high-confidence duplicates every 30 min
+    "auto-merge-30m": {
+        "task": "app.celery_app.task_auto_merge",
+        "schedule": 1800.0,  # 30 min
+        "options": {"queue": "low_priority"},
+    },
+    # Precedent writer — nightly harvest of recommendation outcomes
+    "precedent-writer-nightly": {
+        "task": "app.celery_app.task_precedent_writer",
+        "schedule": crontab(hour=4, minute=0),
+        "options": {"queue": "low_priority"},
+    },
+    # Morning digest — hourly tick; task only sends when local time == digest_hour
+    "morning-digest-hourly": {
+        "task": "app.celery_app.task_morning_digest",
+        "schedule": crontab(minute=5),  # :05 of every hour — offset from syncs
+        "options": {"queue": "low_priority"},
+    },
     # Phase 4+6: Proactive scan (anomalies → insights) every 6 hours
     "proactive-scan-6h": {
         "task": "app.celery_app.task_proactive_scan",
         "schedule": 21600.0,  # 6 hours
         "options": {"queue": "low_priority"},
     },
-    # Phase 6.3: Deliver pending webhooks every 5 minutes
+    # Phase 1.7: Deliver pending webhooks every 30s (durable retry via delivery_attempts)
     "deliver-webhooks": {
         "task": "app.celery_app.task_deliver_webhooks",
-        "schedule": 300.0,  # 5 min
+        "schedule": 30.0,
         "options": {"queue": "high_priority"},
+    },
+    # Phase 2: brain router tick — consume event stream, debounce, reason, gate
+    "brain-router-5s": {
+        "task": "app.celery_app.task_brain_router",
+        "schedule": 5.0,
+        "options": {"queue": "brain_router"},
+    },
+    # Phase 4.5: hourly lifecycle transitions
+    "lifecycle-hourly": {
+        "task": "app.celery_app.task_lifecycle_hourly",
+        "schedule": crontab(minute=17),
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 4.5: nightly lifecycle transitions
+    "lifecycle-nightly": {
+        "task": "app.celery_app.task_lifecycle_nightly",
+        "schedule": crontab(hour=2, minute=30),
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 4.10: nightly calibration fit per tenant (dormant by default)
+    "calibration-nightly": {
+        "task": "app.celery_app.task_calibration_nightly",
+        "schedule": crontab(hour=3, minute=0),
+        "options": {"queue": "low_priority"},
     },
     # Phase 1.3: Renew Gmail + Calendar watch channels daily before 7-day expiry.
     "renew-watches-daily": {

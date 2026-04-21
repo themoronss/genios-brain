@@ -158,6 +158,8 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
          "order_id": order_id, "org_id": org_id},
     )
     db.commit()
+    from app.plan_enforcer import _plan_cache_invalidate
+    _plan_cache_invalidate(org_id)
     logger.info(f"Plan activated: org={org_id} plan={plan}")
     from app.core.analytics import capture
     capture(org_id, "plan_upgraded", {"plan": plan, "payment_id": payment_id})

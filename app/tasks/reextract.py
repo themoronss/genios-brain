@@ -273,6 +273,7 @@ def run_reextract(org_id: str, batch_size: int = BATCH_SIZE):
                         sender_name=contact_name,
                         is_reply=bool(subject and "re:" in subject.lower()),
                         thread_context="",  # Thread context not stored; accept minor quality loss
+                        org_id=org_id,
                     )
 
                     signal = None  # Signal computed at query time only (CLM spec)

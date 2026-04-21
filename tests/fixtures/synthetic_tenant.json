@@ -1,0 +1,40 @@
+{
+  "test_org_id": "00000000-0000-0000-0000-000000000001",
+  "rls_org_a": "00000000-0000-0000-0000-000000000001",
+  "rls_org_b": "00000000-0000-0000-0000-000000000002",
+  "stability_entity_name": "Priya Sharma",
+  "latency_entity_name": "Priya Sharma",
+  "entity_extraction_cases": [
+    {
+      "subject": "Intro to Sarah",
+      "body": "Hi — looping in Sarah Chen from Sequoia. Priya and I chatted about the roadmap.",
+      "sender": "alex@example.com",
+      "gold_mentioned": ["sarah chen", "priya"]
+    },
+    {
+      "subject": "Follow up on board",
+      "body": "Vikram will circle back next week. Adding Rachel for visibility.",
+      "sender": "ceo@example.com",
+      "gold_mentioned": ["vikram", "rachel"]
+    }
+  ],
+  "resolution_cases": [
+    {
+      "input_name": "Priya Sharma",
+      "input_email": "priya@example.com",
+      "expected_contact_id": "placeholder-fixture-id"
+    }
+  ],
+  "ingest_cases": [
+    {
+      "subject": "Can we reschedule?",
+      "body": "Something came up. Let's move the call to Thursday 4pm. I'll send a new invite.",
+      "sender": "partner@example.com"
+    },
+    {
+      "subject": "Re: Series A term sheet",
+      "body": "Appreciate the detail. We'll review internally and revert by Friday with our red-lines.",
+      "sender": "investor@example.com"
+    }
+  ]
+}

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, root_validator, validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, verify_api_key, check_rpm_limit, check_abuse_detection
+from app.api.deps import get_db, verify_api_key, check_rpm_limit, check_abuse_detection, preflight_ratelimit
 from app.context.bundle_builder import build_context_bundle
 from app.coordination import blackboard
 from app.plan_enforcer import get_org_plan
@@ -165,13 +165,14 @@ def get_context(
         # Determine call source: dashboard UI vs external agent
         source = "dashboard" if x_genios_source == "dashboard" else "api"
 
-        # Abuse detection (all sources)
-        check_abuse_detection(org_id)
-
         # Phase 2: bitemporal short-circuit. When as_of is set we bypass the
         # normal cache/build pipeline and return a historical snapshot from
         # event_log + versioned rows.
+        # (Run BEFORE preflight — historical queries aren't rate-limited the
+        # same way; we still want abuse detection to apply though.)
         if request.as_of:
+            # Minimal abuse-flag check only; full preflight applies to live pulls.
+            check_abuse_detection(org_id)
             from app.memory.as_of import build_as_of_bundle
             snapshot = build_as_of_bundle(db, org_id, request.entity, request.as_of)
             if snapshot.get("error"):
@@ -187,14 +188,20 @@ def get_context(
             from fastapi.responses import JSONResponse
             return JSONResponse(content=snapshot)
 
-        # Quota check — only external API calls consume quota
+        # Single-pipeline preflight for API callers: abuse + RPM + RPH + loop
+        # in one Redis round-trip. Dashboard calls skip rate limiting.
         if source == "api":
-            # Get tier for RPM + loop checks
             plan_info = get_org_plan(db, org_id)
-            check_rpm_limit(org_id, request.agent_id, plan_info["tier"])
+            preflight_ratelimit(
+                org_id,
+                request.agent_id,
+                plan_info["tier"],
+                entity=request.entity,
+                check_loop=True,
+            )
 
             # Validate agent_id against registered_agents (2.4 — irregular caller handling)
-            # Only enforced when org has registered at least one agent
+            # Only enforced when org has registered at least one agent.
             if request.agent_id:
                 reg_count = db.execute(
                     text("SELECT COUNT(*) FROM registered_agents WHERE org_id = :org_id"),
@@ -217,8 +224,9 @@ def get_context(
                                 "agent_id": request.agent_id,
                             },
                         )
-
-            check_agent_loop(org_id, request.agent_id, plan_info["tier"], entity=request.entity)
+        else:
+            # Dashboard path — abuse flag only (no RPM / loop enforcement)
+            check_abuse_detection(org_id)
             quota = check_period_quota(db, org_id)
             if not quota["allowed"]:
                 raise HTTPException(
@@ -407,7 +415,10 @@ def get_context(
                     FROM precomputed_bundles pb
                     JOIN contacts c ON pb.contact_id = c.id AND pb.org_id = c.org_id
                     WHERE pb.org_id = :org_id
-                    AND LOWER(c.name) = LOWER(:entity_name)
+                    AND (
+                        LOWER(c.name) = LOWER(:entity_name)
+                        OR LOWER(c.email) = LOWER(:entity_name)
+                    )
                     AND pb.expires_at > NOW()
                     LIMIT 1
                 """),
@@ -491,28 +502,48 @@ def get_context(
         except Exception as redis_error:
             logger.warning(f"Redis cache read failed: {redis_error}")
 
-        # Layer 3: Fresh build — timeout from LLM_TIMEOUT_SECONDS (default 30s)
+        # Layer 3: Minimal-real fallback + enqueue full refresh.
+        #
+        # GeniOS is a context-intelligence API — agents calling on the hot
+        # path must get *real* data, never an empty pack. If the pre-computed
+        # bundle is missing (new contact / first pull / eviction), we serve a
+        # minimal real bundle from a single indexed query (<150ms) and enqueue
+        # the full rebuild. The next pull hits Layer 1 with the rich shape.
         if not context_bundle:
-            context_bundle = call_with_timeout(
-                build_context_bundle,
-                db, org_id, request.entity, request.situation,
-                context_size=getattr(request, "context_size", "medium"),
-                fallback=None,
-            )
-            if context_bundle is None:
-                # call_with_timeout returns None on timeout OR on any internal
-                # exception — log server-side to distinguish, but surface a
-                # single user-friendly error.
-                raise HTTPException(
-                    status_code=504,
-                    detail={
-                        "error": "BUILD_FAILED",
-                        "message": (
-                            "Context build failed or timed out. "
-                            "Check server logs for the underlying exception."
-                        ),
-                    },
+            from app.context.minimal_bundle import build_minimal_bundle
+            minimal = build_minimal_bundle(db, org_id, request.entity)
+
+            if minimal:
+                # Trigger the full pre-compute so next call upgrades to rich data.
+                try:
+                    from app.celery_app import task_refresh_bundle
+                    task_refresh_bundle.delay(org_id, minimal["entity"]["id"])
+                except Exception as enq_err:
+                    logger.debug(f"bundle refresh enqueue failed: {enq_err}")
+
+                minimal["latency_ms"] = int((time.time() - start_time) * 1000)
+                minimal["cache_hit"] = False
+                minimal["cache_source"] = "minimal"
+
+                log_context_call(
+                    db, org_id, request.entity, minimal, cache_hit=False,
+                    source=source, agent_id=request.agent_id,
+                    tokens_used=max(1, len(minimal.get("context_for_agent", "")) // 4),
                 )
+
+                minimal["other_agents_active"] = blackboard.peek(
+                    org_id, request.entity.lower().strip()
+                )
+                from fastapi.responses import JSONResponse
+                return JSONResponse(content=minimal)
+
+            # Entity truly unknown in this org — that's a real 404.
+            context_error(
+                "ENTITY_NOT_FOUND",
+                f"Contact '{request.entity}' not found in your network.",
+                404,
+            )
+
 
         # Handle error from bundle_builder (entity not found / below score floor)
         if context_bundle.get("error"):
@@ -897,7 +928,15 @@ def get_entity_context(
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
-    """Pull full context for a specific entity by ID."""
+    """Pull full context for a specific entity by ID (contact UUID)."""
+    import uuid as _uuid
+    try:
+        _uuid.UUID(entity_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=404,
+            detail={"error_code": "entity_not_found", "message": f"Entity {entity_id} not found"},
+        )
     try:
         contact = db.execute(
             text("""

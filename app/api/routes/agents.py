@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.api.deps import get_db
+from app.api.deps import get_db, verify_api_key
 from datetime import datetime, timezone
 import logging
 import uuid
@@ -13,20 +13,26 @@ router = APIRouter()
 
 
 class SessionStartRequest(BaseModel):
-    org_id: str
     agent_id: str
     session_id: str = None  # auto-generate if not provided
 
 
 class SessionEndRequest(BaseModel):
-    org_id: str
     session_id: str
     status: str = "COMPLETED"  # COMPLETED or FAILED
 
 
 @router.post("/v1/agents/session/start")
-def start_agent_session(request: SessionStartRequest, db: Session = Depends(get_db)):
-    """Open an agent session for cross-agent conflict detection."""
+def start_agent_session(
+    request: SessionStartRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Open an agent session for cross-agent conflict detection.
+
+    org_id is derived from the API key (Bearer gn_live_...), not the body,
+    so a key can only open sessions for its own org.
+    """
     session_id = request.session_id or str(uuid.uuid4())
 
     try:
@@ -40,7 +46,7 @@ def start_agent_session(request: SessionStartRequest, db: Session = Depends(get_
                     started_at = NOW(),
                     ended_at = NULL
             """),
-            {"org_id": request.org_id, "agent_id": request.agent_id, "session_id": session_id}
+            {"org_id": org_id, "agent_id": request.agent_id, "session_id": session_id}
         )
         db.commit()
 
@@ -56,7 +62,11 @@ def start_agent_session(request: SessionStartRequest, db: Session = Depends(get_
 
 
 @router.post("/v1/agents/session/end")
-def end_agent_session(request: SessionEndRequest, db: Session = Depends(get_db)):
+def end_agent_session(
+    request: SessionEndRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
     """Close an agent session after task completion."""
     status = request.status if request.status in ("COMPLETED", "FAILED") else "COMPLETED"
 
@@ -68,7 +78,7 @@ def end_agent_session(request: SessionEndRequest, db: Session = Depends(get_db))
                 WHERE org_id = :org_id AND session_id = :session_id AND status = 'ACTIVE'
                 RETURNING id, agent_id
             """),
-            {"org_id": request.org_id, "session_id": request.session_id, "status": status}
+            {"org_id": org_id, "session_id": request.session_id, "status": status}
         )
         db.commit()
 

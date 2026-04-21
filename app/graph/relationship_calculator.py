@@ -963,6 +963,22 @@ def recalculate_contact_relationship(db, contact_id: str) -> Dict:
     )
     db.commit()
 
+    # Phase 2 — emit fact.updated so the brain router can batch + reason.
+    try:
+        from app.brain import event_bus
+        event_bus.publish("fact.updated", {
+            "org_id": str(current_stage_row[1]) if current_stage_row else None,
+            "subject_entity_id": str(contact_id),
+            "source": "relationship_calculator",
+            "stage": stage,
+            "previous_stage": previous_stage,
+            "context_score": context_score,
+            "confidence": confidence,
+            "stage_changed": stage_changed,
+        })
+    except Exception as _e:
+        pass  # event bus outage must never break ingestion
+
     return {
         "stage": stage,
         "sentiment_avg": sentiment_avg,

@@ -723,6 +723,7 @@ def _get_company_contacts(db, org_id: str, company_name: str, exclude_contact_id
 def build_context_bundle(
     db, org_id: str, entity_name: str, situation: str = None,
     plan_tier: str = None, context_size: str = "medium",
+    remaining_ms: int = 10_000,
 ) -> Dict:
     """
     Build complete context bundle for an entity.
@@ -1197,17 +1198,35 @@ def build_context_bundle(
         except Exception as e:
             logger.warning(f"Warm intro lookup failed: {e}") if logger else None
 
-    # Add precedents from Precedent Graph (document chunks)
+    # Add precedents — resolver prefers structured precedent_situations when
+    # GENIOS_PRECEDENTS_V2 is enabled, falls back to document_chunks otherwise.
     if situation:
         try:
-            from app.context.precedent_search import search_precedents
-            precedents = search_precedents(db, org_id, situation, limit=3)
+            from app.context.precedent_search import search_precedents_any
+            precedents = search_precedents_any(
+                db, org_id, situation,
+                stage=(contact.get("relationship_stage") if contact else None),
+                situation_category=None,  # bundle flow has no insight_type
+                entity_type=(contact.get("entity_type") if contact else None),
+                limit=3,
+            )
             if precedents:
                 bundle["precedents"] = precedents
                 top_prec = precedents[0]
-                bundle["context_for_agent"] += (
-                    f" Similar situation: {top_prec['doc_title']} — {top_prec['situation'][:100]}."
-                )
+                # v2 rows carry extra context ("3/4 RECOVERED when X sent") —
+                # include it in the narrative when available.
+                if top_prec.get("source") == "precedent_situations":
+                    outcome_hint = top_prec.get("outcome", "mixed")
+                    n = top_prec.get("n_cases", 0)
+                    rate = top_prec.get("success_rate", 0.0)
+                    bundle["context_for_agent"] += (
+                        f" Historical precedent ({n} similar cases, "
+                        f"{outcome_hint}, success rate {rate:.0%})."
+                    )
+                else:
+                    bundle["context_for_agent"] += (
+                        f" Similar situation: {top_prec['doc_title']} — {top_prec['situation'][:100]}."
+                    )
         except Exception as e:
             logger.warning(f"Precedent search failed: {e}") if logger else None
 
@@ -1256,26 +1275,28 @@ def build_context_bundle(
     except Exception as e:
         bundle["recent_interactions"] = []
 
-    # ── Context size handling (CLM spec: small/medium/large) ────────────────
+    # ── Context size handling (Phase 3 rename: short/medium/long) ──────────
+    # Accept legacy names (small/medium/large) as aliases for 90d per deviation F.
+    _SIZE_ALIAS = {"small": "short", "large": "long"}
     HIGH_STAKES_KEYWORDS = [
         "contract", "legal", "first meeting", "board", "term sheet",
         "due diligence", "acquisition", "partnership agreement",
         "series", "funding", "investment", "deal closing",
     ]
-    resolved_size = context_size or "medium"
+    resolved_size = _SIZE_ALIAS.get(context_size or "medium", context_size or "medium")
     if situation and any(kw in (situation or "").lower() for kw in HIGH_STAKES_KEYWORDS):
-        resolved_size = "large"
+        resolved_size = "long"
 
     bundle["context_size"] = resolved_size
 
-    if resolved_size == "small":
+    if resolved_size == "short":
         # Strip heavy sections — keep entity basics + commitments + recommended action
         for key in ["recent_interactions", "situational_context", "warm_intro_paths",
                      "precedents", "company_contacts", "situation_signals", "scores",
                      "data_quality", "confidence_breakdown"]:
             bundle.pop(key, None)
-    elif resolved_size == "large":
-        # Add full score breakdown for large bundles
+    elif resolved_size == "long":
+        # Add full score breakdown for long bundles
         bundle["score_breakdown"] = {
             "context_score": bundle.get("confidence", 0.5),
             "confidence": float(contact.get("confidence_score") or 0.5),
@@ -1284,6 +1305,23 @@ def build_context_bundle(
             "authority": float(contact.get("authority_score") or 0.5),
             "consistency": float(contact.get("consistency_score") or 0.5),
         }
+
+    # Phase 3.5 — narrative for medium/long packs (Pull API passes remaining_ms).
+    if resolved_size in ("medium", "long"):
+        try:
+            from app.brain.narrative import build_narrative
+            facts = bundle.get("recent_interactions") or []
+            narrative = build_narrative(
+                org_id=org_id,
+                entity=entity_name,
+                facts=facts,
+                pack_size=resolved_size,
+                remaining_ms=int(remaining_ms),
+            )
+            if narrative:
+                bundle["narrative"] = narrative
+        except Exception as _e:
+            pass  # narrative is best-effort
 
     return bundle
 

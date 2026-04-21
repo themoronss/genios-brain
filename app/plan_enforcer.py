@@ -110,12 +110,29 @@ def get_plan_config(tier: str) -> dict:
 
 # ── Org plan info ─────────────────────────────────────────────────────────────
 
+# In-process 30s cache — plan/tier changes rarely (only on billing events).
+# `period_context_count` and `period_reset_at` are cached too; consumers
+# needing up-to-the-second quota must call `check_period_quota` directly.
+_PLAN_CACHE: dict = {}
+_PLAN_CACHE_TTL_S = 30
+
+
+def _plan_cache_invalidate(org_id: str) -> None:
+    """Drop cached plan for an org. Call from billing write paths."""
+    _PLAN_CACHE.pop(org_id, None)
+
+
 def get_org_plan(db: Session, org_id: str) -> dict:
     """
     Fetch org's current plan tier, expiry, and period usage.
     Returns a dict with keys: tier, config, expires_at, plan_status,
     period_context_count, period_reset_at.
     """
+    import time as _time
+    cached = _PLAN_CACHE.get(org_id)
+    if cached and (_time.time() - cached[1]) < _PLAN_CACHE_TTL_S:
+        return cached[0]
+
     row = db.execute(
         text("""
             SELECT
@@ -131,18 +148,20 @@ def get_org_plan(db: Session, org_id: str) -> dict:
     ).fetchone()
 
     if not row:
-        return {"tier": "trial", "config": PLAN_CONFIG["trial"], "plan_status": "active",
-                "expires_at": None, "period_context_count": 0, "period_reset_at": None}
-
-    tier = row.tier or "trial"
-    return {
-        "tier": tier,
-        "config": get_plan_config(tier),
-        "expires_at": row.plan_expires_at,
-        "plan_status": row.plan_status or "active",
-        "period_context_count": row.period_context_count or 0,
-        "period_reset_at": row.period_reset_at,
-    }
+        result = {"tier": "trial", "config": PLAN_CONFIG["trial"], "plan_status": "active",
+                  "expires_at": None, "period_context_count": 0, "period_reset_at": None}
+    else:
+        tier = row.tier or "trial"
+        result = {
+            "tier": tier,
+            "config": get_plan_config(tier),
+            "expires_at": row.plan_expires_at,
+            "plan_status": row.plan_status or "active",
+            "period_context_count": row.period_context_count or 0,
+            "period_reset_at": row.period_reset_at,
+        }
+    _PLAN_CACHE[org_id] = (result, _time.time())
+    return result
 
 
 def is_plan_expired(plan_info: dict) -> bool:

@@ -105,7 +105,7 @@ def create_segment(
     result = db.execute(
         text("""
             INSERT INTO graph_segments (org_id, name, cluster_type, config, sync_interval_hours, created_at)
-            VALUES (:org_id, :name, :type, :config::jsonb, :sync_hours, NOW())
+            VALUES (:org_id, :name, :type, CAST(:config AS jsonb), :sync_hours, NOW())
             RETURNING id, org_id, name, cluster_type, config, sync_interval_hours, last_synced_at, created_at
         """),
         {
@@ -198,7 +198,7 @@ def update_segment(
         updates.append("cluster_type = :cluster_type")
         params["cluster_type"] = request.cluster_type
     if request.config is not None:
-        updates.append("config = :config::jsonb")
+        updates.append("config = CAST(:config AS jsonb)")
         params["config"] = __import__("json").dumps(request.config)
     if request.sync_interval_hours is not None:
         sync_hours = _validated_sync_interval(request.sync_interval_hours, plan_info["tier"])

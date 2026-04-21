@@ -43,3 +43,35 @@ SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
 
 # Bump this when extraction logic changes to trigger re-extraction of old interactions
 PROCESSING_VERSION = 2
+
+# ── Phase 1 — LLM foundation, Pull API deadline, webhook retry ──
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_HAIKU_MODEL = os.getenv("ANTHROPIC_HAIKU_MODEL", "claude-haiku-4-5-20251001")
+ANTHROPIC_SONNET_MODEL = os.getenv("ANTHROPIC_SONNET_MODEL", "claude-sonnet-4-6")
+GENIOS_ANTHROPIC_ENABLED = os.getenv("GENIOS_ANTHROPIC_ENABLED", "false").lower() == "true"
+
+GENIOS_LLM_DAILY_CAP_USD = float(os.getenv("GENIOS_LLM_DAILY_CAP_USD", "50.0"))
+GENIOS_PULL_DEADLINE_MS = int(os.getenv("GENIOS_PULL_DEADLINE_MS", "400"))
+GENIOS_WEBHOOK_RETRY_SCHEDULE = [
+    int(s) for s in os.getenv(
+        "GENIOS_WEBHOOK_RETRY_SCHEDULE", "30,120,600,3600,21600,86400"
+    ).split(",") if s.strip()
+]
+
+# ── Phase 2 — reasoning loop (event bus, detectors, reasoner, gate) ──
+GENIOS_REASONER_ENABLED = os.getenv("GENIOS_REASONER_ENABLED", "false").lower() == "true"
+GENIOS_BATCH_WINDOW_SECONDS = int(os.getenv("GENIOS_BATCH_WINDOW_SECONDS", "30"))
+GENIOS_MIN_PUSH_PRIORITY = float(os.getenv("GENIOS_MIN_PUSH_PRIORITY", "0.60"))
+GENIOS_MIN_PUSH_CONFIDENCE = float(os.getenv("GENIOS_MIN_PUSH_CONFIDENCE", "0.50"))
+GENIOS_WEBHOOK_DAILY_BUDGET = int(os.getenv("GENIOS_WEBHOOK_DAILY_BUDGET", "300"))
+GENIOS_EVENT_STREAM = os.getenv("GENIOS_EVENT_STREAM", "genios:events:fact")
+GENIOS_EVENT_GROUP = os.getenv("GENIOS_EVENT_GROUP", "brain_router")
+GENIOS_EVENT_MAXLEN = int(os.getenv("GENIOS_EVENT_MAXLEN", "100000"))
+
+# ── Phase 3 — learning loop (recommendations, cascade, narrative) ──
+GENIOS_CASCADE_ENABLED = os.getenv("GENIOS_CASCADE_ENABLED", "false").lower() == "true"
+
+# ── Phase 4 — correctness (calibration; observability deferred per deviations R) ──
+GENIOS_CALIBRATION_ENABLED = os.getenv("GENIOS_CALIBRATION_ENABLED", "false").lower() == "true"

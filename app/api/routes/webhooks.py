@@ -88,7 +88,7 @@ async def gmail_push_webhook(request: Request, db: Session = Depends(get_db)):
         row = db.execute(
             text("""
                 INSERT INTO webhook_events (org_id, source, event_type, payload, status, received_at)
-                VALUES (:org_id, 'gmail', 'push_notification', :payload::jsonb, 'received', NOW())
+                VALUES (:org_id, 'gmail', 'push_notification', CAST(:payload AS jsonb), 'received', NOW())
                 RETURNING id
             """),
             {

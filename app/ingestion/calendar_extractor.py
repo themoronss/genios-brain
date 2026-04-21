@@ -2,95 +2,25 @@
 Calendar Agenda Extractor — LLM-based extraction of topics and commitments
 from calendar event descriptions.
 
-Only runs on events with description > 50 chars.
-Primary: Groq (llama-3.3-70b-versatile) — same as Gmail extractor.
-Fallback: Gemini (if Groq rate-limits or fails).
+Only runs on events with description > 50 chars. All LLM traffic goes through
+the unified LLMClient (Groq primary, Gemini fallback, cost logged).
 """
 
 import json
 import logging
-import time
+from uuid import uuid4
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.llm import llm_client
+
 logger = logging.getLogger(__name__)
-
-# ── Primary: Groq ─────────────────────────────────────────────────────────────
-try:
-    from groq import Groq
-    import os
-    _groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    HAS_GROQ = bool(os.getenv("GROQ_API_KEY"))
-except Exception:
-    _groq_client = None
-    HAS_GROQ = False
-
-# ── Fallback: Gemini ──────────────────────────────────────────────────────────
-try:
-    import google.generativeai as genai
-    from app.config import GEMINI_API_KEY
-    if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
-    HAS_GEMINI = bool(GEMINI_API_KEY)
-    _gemini_model = genai.GenerativeModel("gemini-2.0-flash") if HAS_GEMINI else None
-except Exception:
-    HAS_GEMINI = False
-    _gemini_model = None
-
-RATE_LIMIT_DELAY = 2  # seconds between retries
-
-
-def _call_groq(prompt: str) -> str:
-    """Call Groq with up to 3 retries + exponential backoff on 429."""
-    for attempt in range(3):
-        try:
-            resp = _groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "You are a precise meeting intelligence extraction assistant. Return only valid JSON."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.1,
-                max_tokens=500,
-            )
-            return resp.choices[0].message.content.strip()
-        except Exception as e:
-            err = str(e)
-            if "429" in err or "rate_limit" in err.lower():
-                if attempt < 2:
-                    time.sleep(RATE_LIMIT_DELAY * (2 ** attempt))
-                    continue
-                raise  # exhausted retries → caller will try Gemini
-            raise  # non-rate-limit error → caller will try Gemini
-
-
-def _call_gemini(prompt: str) -> str:
-    """Call Gemini as fallback."""
-    response = _gemini_model.generate_content(
-        prompt,
-        generation_config={"temperature": 0.1, "max_output_tokens": 500},
-    )
-    return response.text.strip()
-
-
-def _extract(prompt: str) -> str:
-    """Try Groq first, fall back to Gemini on any failure."""
-    if HAS_GROQ:
-        try:
-            return _call_groq(prompt)
-        except Exception as e:
-            logger.warning(f"Calendar extractor: Groq failed ({e}), trying Gemini fallback")
-            if HAS_GEMINI:
-                return _call_gemini(prompt)
-            raise
-    elif HAS_GEMINI:
-        return _call_gemini(prompt)
-    else:
-        raise RuntimeError("No LLM available (GROQ_API_KEY and GEMINI_API_KEY both missing)")
 
 
 def _parse_result(result_text: str) -> dict:
     """Strip markdown code fences and parse JSON."""
+    result_text = result_text.strip()
     if result_text.startswith("```"):
         result_text = result_text.split("```")[1]
         if result_text.startswith("json"):
@@ -105,10 +35,6 @@ def extract_agenda_from_events(db: Session, org_id: str) -> int:
 
     Returns count of events processed.
     """
-    if not HAS_GROQ and not HAS_GEMINI:
-        logger.warning("Calendar extractor: no LLM available (set GROQ_API_KEY or GEMINI_API_KEY), skipping")
-        return 0
-
     events = db.execute(
         text("""
             SELECT id, title, organizer_email, meeting_type,
@@ -157,12 +83,18 @@ If no commitments are found, return empty array. Max 5 topics, max 5 commitments
 """
 
         try:
-            result_text = _extract(prompt)
+            result_text = llm_client.call(
+                org_id=org_id, purpose="calendar_extract",
+                messages=[
+                    {"role": "system", "content": "You are a precise meeting intelligence extraction assistant. Return only valid JSON."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.1, max_tokens=500,
+            )
             result = _parse_result(result_text)
 
             topics = result.get("topics", [])[:5]
             commitments = result.get("commitments", [])[:5]
-            # Map LLM meeting_type to valid DB enum values
             _VALID_MEETING_TYPES = {"internal", "sales", "investor", "one_on_one", "group", "unknown"}
             _LLM_TYPE_MAP = {
                 "intro": "sales", "demo": "sales", "review": "internal",
@@ -207,8 +139,6 @@ If no commitments are found, return empty array. Max 5 topics, max 5 commitments
 
 def _store_calendar_commitment(db, org_id: str, event_id, commitment: dict):
     """Store an extracted calendar commitment in the commitments table."""
-    from uuid import uuid4
-
     text_val = str(commitment.get("text", ""))[:200]
     if not text_val:
         return

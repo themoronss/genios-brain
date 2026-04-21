@@ -294,7 +294,7 @@ def _upsert_jira_issue(db, org_id, issue):
                 :org_id, :issue_id, :issue_key, :project_key, :summary,
                 :issue_type, :status, :status_category, :is_terminal,
                 :priority, :assignee_id, :sprint_id,
-                :due_date, :story_points, :labels::jsonb, :created_at, :updated_at
+                :due_date, :story_points, CAST(:labels AS jsonb), :created_at, :updated_at
             )
             ON CONFLICT (org_id, issue_id) DO UPDATE SET
                 summary = EXCLUDED.summary,

@@ -24,3 +24,7 @@ python-docx
 razorpay
 posthog
 sentry-sdk
+# Phase 1 — dev dep for CI CVE scanning
+pip-audit==2.7.3
+# Phase 4 — calibration (Platt scaling over recommendation outcomes)
+scikit-learn==1.5.2

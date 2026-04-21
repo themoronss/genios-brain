@@ -1,20 +1,13 @@
-import google.generativeai as genai
-from app.config import GEMINI_API_KEY
+"""Embedding helper. Routes through llm_client.embed — usage logged to llm_usage."""
+from typing import Optional
+
+from app.llm import llm_client
 
 
-genai.configure(api_key=GEMINI_API_KEY)
-
-
-def embed_text(text: str):
+def embed_text(text: str, org_id: Optional[str] = None):
     """
-    Embed text using Google's Generative AI embedding model.
-    Uses gemini-embedding-001 with output_dimensionality=768 (MRL truncation).
-    768 dims enables pgvector HNSW indexing (limit: 2000) with only 0.26% quality loss.
+    Embed text with gemini-embedding-001 (output_dimensionality=768).
+    768 dims enables pgvector HNSW indexing (limit 2000), ~0.26% quality loss.
+    Pass org_id when available so usage is attributed; None for system calls.
     """
-    result = genai.embed_content(
-        model="models/gemini-embedding-001",
-        content=text,
-        output_dimensionality=768,
-    )
-
-    return result["embedding"]
+    return llm_client.embed(org_id=org_id, text_in=text)

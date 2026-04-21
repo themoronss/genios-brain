@@ -725,6 +725,20 @@ def create_interaction(
     # Store commitments in separate table for lifecycle tracking
     _store_commitments(db, org_id, contact_id, interaction_id, commitments, direction)
 
+    # Phase 2 — emit fact.updated for the brain router.
+    try:
+        from app.brain import event_bus
+        event_bus.publish("fact.updated", {
+            "org_id": str(org_id),
+            "subject_entity_id": str(contact_id),
+            "source": "graph_builder",
+            "interaction_id": str(interaction_id),
+            "intent": intent,
+            "sentiment": sentiment,
+        })
+    except Exception:
+        pass  # never block ingestion on bus failure
+
     return interaction_id
 
 

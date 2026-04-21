@@ -76,10 +76,12 @@ def hybrid_search(
     query_embedding: Optional[list] = None,
     limit: int = 10,
     contact_id: Optional[str] = None,
+    seed_entity_ids: Optional[list] = None,
 ) -> list:
     """
-    Convenience wrapper: BM25 + vector → RRF → rerank.
+    Convenience wrapper: BM25 + vector + graph-walk → RRF → rerank.
     Pass `query_embedding=None` to skip the vector branch (BM25-only).
+    Pass `seed_entity_ids` to blend in graph neighbors (Phase 3.6).
     """
     from app.retrieval import bm25, fuse, store
 
@@ -92,6 +94,19 @@ def hybrid_search(
         vec = store.search(db, org_id, query_embedding, limit=50, contact_id=contact_id)
         if vec:
             lists.append(vec)
+
+    # Phase 3.6 — graph walk as an additional input list to RRF.
+    seeds = list(seed_entity_ids or [])
+    if contact_id and contact_id not in seeds:
+        seeds.append(contact_id)
+    if seeds:
+        try:
+            from app.graph.neighbors import get_neighbors
+            graph_list = get_neighbors(db, org_id, seeds, hops=2)
+            if graph_list:
+                lists.append(graph_list)
+        except Exception:
+            pass  # retrieval must not fail on graph branch
 
     fused = fuse.rrf_fuse(lists, limit=50) if lists else []
     return rerank(query, fused, top_k=limit)

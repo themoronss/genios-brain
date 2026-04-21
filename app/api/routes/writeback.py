@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -179,20 +179,23 @@ class OutcomeRequest(BaseModel):
     agent_id: Optional[str] = None
 
 
-@router.post("/v1/outcome", status_code=201)
+@router.post("/v1/outcome", status_code=201, deprecated=True)
 def log_outcome(
     req: OutcomeRequest,
+    response: Response,
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
     """
-    Feedback loop: agent reports whether the context bundle was useful.
+    DEPRECATED — prefer POST /v1/feedback (Phase 3.2). Kept live as an alias
+    until the SDK 1.0 migration completes. Responds with a `Sunset` header
+    per RFC 8594.
 
-    Over time, this data enables:
-    - Measuring which context fields agents actually use
-    - Identifying which contact types get better/worse outcomes
-    - Tuning the scoring formulas based on real results
+    Feedback loop: agent reports whether the context bundle was useful.
     """
+    response.headers["Sunset"] = "Wed, 31 Dec 2026 23:59:59 GMT"
+    response.headers["Deprecation"] = "true"
+    response.headers["Link"] = '</v1/feedback>; rel="successor-version"'
     if req.outcome not in ("positive", "negative", "neutral"):
         raise HTTPException(status_code=400, detail="outcome must be: positive | negative | neutral")
 

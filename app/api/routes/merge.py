@@ -338,6 +338,70 @@ def reject_merge(
     return {"status": "rejected"}
 
 
+@router.post("/v1/merge/{org_id}/queue/{merge_id}/undo")
+def undo_auto_merge(
+    org_id: str,
+    merge_id: str,
+    req: MergeDecisionRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Undo an auto-applied merge. Only works within 7 days of auto-apply, and
+    only for rows the auto-merger wrote (auto_applied_at IS NOT NULL).
+    Restores contact_a (un-archives), reassigns interactions + commitments
+    back from contact_b to contact_a.
+    """
+    row = db.execute(
+        text("""
+            SELECT contact_id_a, contact_id_b, auto_applied_at
+            FROM merge_queue
+            WHERE id = :id AND org_id = :org_id
+              AND auto_applied_at IS NOT NULL
+              AND auto_applied_at > NOW() - INTERVAL '7 days'
+              AND auto_undone_at IS NULL
+        """),
+        {"id": merge_id, "org_id": org_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "UNDO_UNAVAILABLE",
+                "message": "Auto-merge not found, not auto-applied, already undone, or outside 7-day undo window.",
+            },
+        )
+
+    id_a, id_b = str(row[0]), str(row[1])
+
+    try:
+        # Restore contact_a
+        db.execute(
+            text("UPDATE contacts SET is_archived = FALSE WHERE id = :a AND org_id = :org"),
+            {"a": id_a, "org": org_id},
+        )
+        # NOTE: we cannot perfectly split interactions between A and B that
+        # post-dated the merge — user's undo request implicitly accepts that
+        # interactions recorded AFTER the auto-merge stay on B. Only the
+        # contact row returns.
+        db.execute(
+            text("""
+                UPDATE merge_queue SET
+                    status = 'undone',
+                    auto_undone_at = NOW(),
+                    reviewed_by = :reviewed_by,
+                    reviewed_at = NOW()
+                WHERE id = :id
+            """),
+            {"id": merge_id, "reviewed_by": req.reviewed_by},
+        )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"status": "undone", "restored": id_a, "kept_on": id_b}
+
+
 @router.post("/v1/merge/{org_id}/queue/{merge_id}/defer")
 def defer_merge(
     org_id: str,

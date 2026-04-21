@@ -12,13 +12,11 @@ from app.graph.indirect_edges import find_warm_intro_path
 from app.graph.embedder import embed_text
 from app.plan_enforcer import require_mr_elite_mode
 from app.llm_guard import call_with_timeout
-from app.config import GEMINI_API_KEY
-import google.generativeai as genai
+from app.llm import llm_client
 import logging
 import re
 
 logger = logging.getLogger(__name__)
-genai.configure(api_key=GEMINI_API_KEY)
 
 router = APIRouter()
 
@@ -300,20 +298,21 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
                     f"{context_block}"
                 )
 
-                gemini_history = []
+                messages = [{"role": "system", "content": system_with_context}]
                 for msg in request.history[-6:]:
-                    role = "user" if msg.role == "user" else "model"
-                    gemini_history.append({"role": role, "parts": [msg.content]})
+                    role = "user" if msg.role == "user" else "assistant"
+                    messages.append({"role": role, "content": msg.content})
+                messages.append({"role": "user", "content": message})
 
-                model = genai.GenerativeModel(
-                    model_name="gemini-2.5-flash",
-                    system_instruction=system_with_context,
+                reply = call_with_timeout(
+                    llm_client.call,
+                    org_id=org_id, purpose="chat",
+                    messages=messages, temperature=0.4, max_tokens=1024,
+                    fallback=None,
                 )
-                chat_session = model.start_chat(history=gemini_history)
-                response = call_with_timeout(chat_session.send_message, message, fallback=None)
-                if response is None:
+                if reply is None:
                     raise HTTPException(status_code=504, detail={"error": "TIMEOUT", "message": "LLM response timed out."})
-                reply = response.text.strip()
+                reply = reply.strip()
 
                 return {
                     "reply": reply,
@@ -441,22 +440,22 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
             f"{context_block}"
         )
 
-        # Build conversation history
-        gemini_history = []
+        # Build conversation (flattened for unified LLM client)
+        messages = [{"role": "system", "content": system_with_context}]
         for msg in request.history[-6:]:  # Last 6 messages for context window
-            role = "user" if msg.role == "user" else "model"
-            gemini_history.append({"role": role, "parts": [msg.content]})
+            role = "user" if msg.role == "user" else "assistant"
+            messages.append({"role": role, "content": msg.content})
+        messages.append({"role": "user", "content": message})
 
-        model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            system_instruction=system_with_context,
+        reply = call_with_timeout(
+            llm_client.call,
+            org_id=org_id, purpose="chat",
+            messages=messages, temperature=0.4, max_tokens=1024,
+            fallback=None,
         )
-
-        chat_session = model.start_chat(history=gemini_history)
-        response = call_with_timeout(chat_session.send_message, message, fallback=None)
-        if response is None:
+        if reply is None:
             raise HTTPException(status_code=504, detail={"error": "TIMEOUT", "message": "LLM response timed out."})
-        reply = response.text.strip()
+        reply = reply.strip()
 
         return {
             "reply": reply,

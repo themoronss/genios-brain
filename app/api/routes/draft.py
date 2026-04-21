@@ -3,7 +3,6 @@ import os
 import time
 
 from fastapi import APIRouter, Depends, HTTPException
-from groq import Groq
 from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
@@ -12,16 +11,11 @@ from app.api.deps import get_db
 from app.api.routes.approvals import enqueue as enqueue_approval
 from app.context.bundle_builder import build_context_bundle
 from app.coordination import blackboard
+from app.llm import llm_client
 from app.llm_guard import call_with_timeout
 from app.policy import enforcement as policy_enforcement
 
 logger = logging.getLogger(__name__)
-
-# Use Groq (matches the model used by entity_extractor + proactive_scanner).
-# Gemini stays around for other endpoints; drafts go through Groq to avoid
-# the paid-tier rate limits we were hitting.
-_GROQ_CLIENT = Groq(api_key=os.getenv("GROQ_API_KEY"))
-_GROQ_MODEL = os.getenv("GROQ_DRAFT_MODEL", "llama-3.3-70b-versatile")
 
 router = APIRouter()
 
@@ -219,22 +213,20 @@ USER REQUEST:
 
 Draft a {request.draft_type} based on the above context and request. Be specific, reference past interactions when relevant, and match the communication style described in the context."""
 
-        # Step 3: Call Groq with retry logic
+        # Step 3: Call LLM with retry logic
         if not os.getenv("GROQ_API_KEY"):
             logger.error("GROQ_API_KEY not configured")
             raise HTTPException(status_code=500, detail="AI service not configured")
 
         def _generate() -> str:
-            resp = _GROQ_CLIENT.chat.completions.create(
-                model=_GROQ_MODEL,
+            return llm_client.call(
+                org_id=request.org_id, purpose="draft",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_prompt},
                 ],
-                temperature=0.4,
-                max_tokens=800,
-            )
-            return (resp.choices[0].message.content or "").strip()
+                temperature=0.4, max_tokens=800,
+            ).strip()
 
         draft_text = None
         max_retries = 3
