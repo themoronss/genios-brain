@@ -125,7 +125,7 @@ def compute_mentioned_in_edges(db: Session, org_id: str):
                       SELECT 1 FROM activity_log al
                       WHERE al.org_id = :org_id
                         AND al.event_type = 'mentioned_in_processed'
-                        AND al.event_data LIKE '%' || i.id::text || '%'
+                        AND al.event_data::text LIKE '%' || i.id::text || '%'
                   )
                 LIMIT 500
             """),

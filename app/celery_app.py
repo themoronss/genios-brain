@@ -558,12 +558,13 @@ def task_scheduled_sync():
 
     try:
         orgs = db.execute(sa_text(
-            "SELECT id, COALESCE(sync_interval_hours, 24) AS interval_hours, "
-            "COALESCE(subscription_tier, 'trial') AS subscription_tier FROM orgs"
+            "SELECT id, COALESCE(sync_interval_hours, 24) AS interval_hours FROM orgs"
         )).fetchall()
 
         for org in orgs:
-            plan_tier = org.subscription_tier if hasattr(org, "subscription_tier") else "trial"
+            from app.plan_enforcer import get_org_plan
+            plan = get_org_plan(db, str(org.id))
+            plan_tier = plan.get("tier", "trial")
             if plan_tier == "trial":
                 continue  # Trial orgs: manual sync only
 

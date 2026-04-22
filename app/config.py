@@ -42,7 +42,7 @@ SYNC_MAX_CALENDAR_EVENTS_CRON = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS_CRON", 2
 SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
 
 # Bump this when extraction logic changes to trigger re-extraction of old interactions
-PROCESSING_VERSION = 2
+PROCESSING_VERSION = 3
 
 # ── Phase 1 — LLM foundation, Pull API deadline, webhook retry ──
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")

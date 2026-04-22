@@ -36,7 +36,7 @@ def _detect_no_follow_up_investors(db, org_id: str) -> List[Dict]:
         "detail": f"Investors without updates: {names}. Consider sending a traction update.",
         "contact_id": str(results[0][0]) if results else None,
         "contact_name": results[0][1] if results else None,
-        "metadata": {"count": count, "contacts": [{"name": r[1], "days_since": int(r[3])} for r in results[:5]]},
+        "metadata": {"count": count, "contacts": [{"name": r[1], "days_since": int(r[3] or 0)} for r in results[:5]]},
     }]
 
 
@@ -135,11 +135,11 @@ def _detect_new_contacts_no_followup(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P2",
         "category": "new_contact_no_followup",
-        "title": f"New contact {r[1]} — no outbound sent yet ({int(r[4])} days)",
-        "detail": f"{r[1]} ({r[2] or 'Unknown'}, {r[3] or 'other'}) was added {int(r[4])} days ago but you haven't sent any outbound yet. Reach out while the connection is fresh.",
+        "title": f"New contact {r[1]} — no outbound sent yet ({int(r[4] or 0)} days)",
+        "detail": f"{r[1]} ({r[2] or 'Unknown'}, {r[3] or 'other'}) was added {int(r[4] or 0)} days ago but you haven't sent any outbound yet. Reach out while the connection is fresh.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"days_old": int(r[4]), "entity_type": r[3]},
+        "metadata": {"days_old": int(r[4] or 0), "entity_type": r[3]},
     } for r in results]
 
 
@@ -164,11 +164,11 @@ def _detect_advisor_dormant(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P2",
         "category": "advisor_dormant",
-        "title": f"Advisor {r[1]} — silent for {int(r[3])} days",
-        "detail": f"Advisor {r[1]} ({r[2] or 'Unknown'}) has not been in contact for {int(r[3])} days. Advisors should be updated at least quarterly.",
+        "title": f"Advisor {r[1]} — silent for {int(r[3] or 0)} days",
+        "detail": f"Advisor {r[1]} ({r[2] or 'Unknown'}) has not been in contact for {int(r[3] or 0)} days. Advisors should be updated at least quarterly.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"days_since": int(r[3])},
+        "metadata": {"days_since": int(r[3] or 0)},
     } for r in results]
 
 
@@ -194,11 +194,11 @@ def _detect_customer_churn_risk(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P1",
         "category": "customer_churn_risk",
-        "title": f"Customer {r[1]} — churn risk (sentiment {round(float(r[3] or 0), 2)}, silent {int(r[4])} days)",
-        "detail": f"Customer {r[1]} ({r[2] or 'Unknown'}) has negative sentiment and has not contacted you in {int(r[4])} days. Immediate outreach needed.",
+        "title": f"Customer {r[1]} — churn risk (sentiment {round(float(r[3] or 0), 2)}, silent {int(r[4] or 0)} days)",
+        "detail": f"Customer {r[1]} ({r[2] or 'Unknown'}) has negative sentiment and has not contacted you in {int(r[4] or 0)} days. Immediate outreach needed.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"sentiment_ewma": float(r[3] or 0), "days_since": int(r[4])},
+        "metadata": {"sentiment_ewma": float(r[3] or 0), "days_since": int(r[4] or 0)},
     } for r in results]
 
 
@@ -224,11 +224,11 @@ def _detect_candidate_pipeline_stall(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P2",
         "category": "candidate_pipeline_stall",
-        "title": f"Candidate {r[1]} — pipeline stalled ({int(r[3])} days no contact)",
-        "detail": f"Candidate {r[1]} ({r[2] or 'Unknown'}) has been in your pipeline for {int(r[3])} days without follow-up. Good candidates don't wait long.",
+        "title": f"Candidate {r[1]} — pipeline stalled ({int(r[3] or 0)} days no contact)",
+        "detail": f"Candidate {r[1]} ({r[2] or 'Unknown'}) has been in your pipeline for {int(r[3] or 0)} days without follow-up. Good candidates don't wait long.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"days_since": int(r[3])},
+        "metadata": {"days_since": int(r[3] or 0)},
     } for r in results]
 
 
@@ -255,11 +255,11 @@ def _detect_high_interaction_low_signal(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P3",
         "category": "high_interaction_low_signal",
-        "title": f"{r[1]} — {int(r[3])} interactions, no structured commitments",
-        "detail": f"{r[1]} ({r[2] or 'Unknown'}) has {int(r[3])} email interactions but no commitments have been extracted. This may be a high-value relationship worth structuring.",
+        "title": f"{r[1]} — {int(r[3] or 0)} interactions, no structured commitments",
+        "detail": f"{r[1]} ({r[2] or 'Unknown'}) has {int(r[3] or 0)} email interactions but no commitments have been extracted. This may be a high-value relationship worth structuring.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"interaction_count": int(r[3]), "entity_type": r[4]},
+        "metadata": {"interaction_count": int(r[3] or 0), "entity_type": r[4]},
     } for r in results]
 
 
@@ -284,11 +284,11 @@ def _detect_media_contact_cold(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P3",
         "category": "media_contact_cold",
-        "title": f"Media contact {r[1]} — cold for {int(r[3])} days",
-        "detail": f"{r[1]} ({r[2] or 'press'}) has not been in contact for {int(r[3])} days. Warm up press/media relationships ahead of announcements.",
+        "title": f"Media contact {r[1]} — cold for {int(r[3] or 0)} days",
+        "detail": f"{r[1]} ({r[2] or 'press'}) has not been in contact for {int(r[3] or 0)} days. Warm up press/media relationships ahead of announcements.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"days_since": int(r[3])},
+        "metadata": {"days_since": int(r[3] or 0)},
     } for r in results]
 
 
@@ -316,11 +316,11 @@ def _detect_partner_stall(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P2",
         "category": "partner_stall",
-        "title": f"Partner {r[1]} — no contact for {int(r[3])} days" + (f" + {int(r[4])} open commitments" if r[4] else ""),
-        "detail": f"Partnership with {r[1]} ({r[2] or 'Unknown'}) has stalled. {int(r[3])} days since last contact" + (f" with {int(r[4])} open commitments." if r[4] else "."),
+        "title": f"Partner {r[1]} — no contact for {int(r[3] or 0)} days" + (f" + {int(r[4] or 0)} open commitments" if r[4] else ""),
+        "detail": f"Partnership with {r[1]} ({r[2] or 'Unknown'}) has stalled. {int(r[3] or 0)} days since last contact" + (f" with {int(r[4] or 0)} open commitments." if r[4] else "."),
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"days_since": int(r[3]), "open_commitments": int(r[4])},
+        "metadata": {"days_since": int(r[3] or 0), "open_commitments": int(r[4] or 0)},
     } for r in results]
 
 
@@ -352,11 +352,11 @@ def _detect_top_referrer_not_engaged(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P3",
         "category": "top_referrer_cold",
-        "title": f"{r[1]} — introduced {int(r[2])} contacts but no recent outbound",
-        "detail": f"{r[1]} ({r[2] or 'Unknown'}) made {int(r[3])} introductions for you but hasn't received an outbound in {int(r[4] or 0)} days. Keep your referral sources warm.",
+        "title": f"{r[1]} — introduced {int(r[2] or 0)} contacts but no recent outbound",
+        "detail": f"{r[1]} ({r[2] or 'Unknown'}) made {int(r[3] or 0)} introductions for you but hasn't received an outbound in {int(r[4] or 0)} days. Keep your referral sources warm.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"intro_count": int(r[3]), "days_since_outbound": int(r[4] or 0)},
+        "metadata": {"intro_count": int(r[3] or 0), "days_since_outbound": int(r[4] or 0)},
     } for r in results]
 
 
@@ -425,11 +425,11 @@ def _detect_introduction_chain_unused(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P2",
         "category": "unused_introduction",
-        "title": f"{r[1]} — introduced by {r[4]} but never contacted ({int(r[5])} days)",
-        "detail": f"{r[1]} ({r[2] or 'Unknown'}) was introduced by {r[4]} {int(r[5])} days ago but you have never sent an outbound message. Don't let warm introductions go cold.",
+        "title": f"{r[1]} — introduced by {r[4]} but never contacted ({int(r[5] or 0)} days)",
+        "detail": f"{r[1]} ({r[2] or 'Unknown'}) was introduced by {r[4]} {int(r[5] or 0)} days ago but you have never sent an outbound message. Don't let warm introductions go cold.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"introduced_by": r[4], "days_since_intro": int(r[5]), "entity_type": r[3]},
+        "metadata": {"introduced_by": r[4], "days_since_intro": int(r[5] or 0), "entity_type": r[3]},
     } for r in results]
 
 
@@ -451,11 +451,11 @@ def _detect_total_interaction_milestone(db, org_id: str) -> List[Dict]:
         "insight_type": "relationship",
         "priority": "P3",
         "category": "interaction_milestone",
-        "title": f"{r[1]} — {int(r[3])} interaction milestone reached",
-        "detail": f"You've now had {int(r[3])} interactions with {r[1]} ({r[2] or 'Unknown'}). This is a significant relationship depth milestone.",
+        "title": f"{r[1]} — {int(r[3] or 0)} interaction milestone reached",
+        "detail": f"You've now had {int(r[3] or 0)} interactions with {r[1]} ({r[2] or 'Unknown'}). This is a significant relationship depth milestone.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"milestone": int(r[3]), "entity_type": r[4]},
+        "metadata": {"milestone": int(r[3] or 0), "entity_type": r[4]},
     } for r in results]
 
 

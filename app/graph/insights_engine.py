@@ -16,6 +16,7 @@ from typing import List, Dict
 import json
 
 from app.graph.detectors import ALL_DETECTORS
+from app.tasks.proactive_scanner import _generate_insight_text
 
 
 def run_insights_engine(db, org_id: str) -> List[Dict]:
@@ -45,15 +46,39 @@ def run_insights_engine(db, org_id: str) -> List[Dict]:
             print(f"⚠️ Insight detector failed: {e}")
             continue
 
-    # Batch insert all insights
+    # Batch insert all insights with LLM synthesis
     for insight in insights:
+        # Generate memory_view + genios_view via LLM
+        try:
+            synthesis = _generate_insight_text(
+                anomaly={
+                    "anomaly_type": insight.get("category", "general"),
+                    "summary": insight.get("detail", insight.get("title", "")),
+                    "engagement_z": None,
+                    "sentiment_z": None,
+                },
+                contact={
+                    "name": insight.get("contact_name", ""),
+                    "company": insight.get("metadata", {}).get("company") if isinstance(insight.get("metadata"), dict) else None,
+                    "relationship_stage": None,
+                    "days_since_last": insight.get("metadata", {}).get("days_since") if isinstance(insight.get("metadata"), dict) else None,
+                    "open_commitments": 0,
+                },
+                precedents=[],
+                org_id=org_id,
+            )
+        except Exception:
+            synthesis = {"memory_view": None, "genios_view": None}
+
         db.execute(
             text("""
                 INSERT INTO insights (id, org_id, insight_type, priority, category,
-                    title, detail, contact_id, contact_name, metadata, generated_at, expires_at)
+                    title, detail, contact_id, contact_name, metadata, generated_at, expires_at,
+                    memory_view, genios_view)
                 VALUES (:id, :org_id, :insight_type, :priority, :category,
                     :title, :detail, :contact_id, :contact_name, :metadata, NOW(),
-                    NOW() + INTERVAL '7 days')
+                    NOW() + INTERVAL '7 days', :memory_view, :genios_view)
+                ON CONFLICT DO NOTHING
             """),
             {
                 "id": str(uuid4()),
@@ -66,6 +91,8 @@ def run_insights_engine(db, org_id: str) -> List[Dict]:
                 "contact_id": insight.get("contact_id"),
                 "contact_name": insight.get("contact_name"),
                 "metadata": json.dumps(insight.get("metadata", {})),
+                "memory_view": synthesis.get("memory_view"),
+                "genios_view": synthesis.get("genios_view"),
             }
         )
 

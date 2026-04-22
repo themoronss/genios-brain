@@ -74,7 +74,7 @@ def build_networkx_graph(db, org_id: str) -> nx.Graph:
     ).fetchall()
 
     for edge in edges:
-        source, target, weight = str(edge[0]), str(edge[1]), edge[2]
+        source, target, weight = str(edge[0]), str(edge[1]), float(edge[2])
         if source in G.nodes and target in G.nodes:
             G.add_edge(source, target, weight=weight)
 
@@ -99,7 +99,7 @@ def build_networkx_graph(db, org_id: str) -> nx.Graph:
     ).fetchall()
 
     for edge in account_edges:
-        source, target, weight = str(edge[0]), str(edge[1]), edge[2]
+        source, target, weight = str(edge[0]), str(edge[1]), float(edge[2])
         if source in G.nodes and target in G.nodes:
             if G.has_edge(source, target):
                 G[source][target]["weight"] += weight

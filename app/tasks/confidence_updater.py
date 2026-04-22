@@ -18,10 +18,10 @@ def apply_outcome_confidence_deltas(db, org_id: str = None) -> int:
     try:
         # Scope to Startup orgs only — always enforce tier regardless of org_id scope
         if org_id:
-            org_filter = "AND co.org_id = :org_id AND o.plan_tier = 'startup' AND o.plan_expires_at > NOW()"
+            org_filter = "AND co.org_id = :org_id AND o.subscription_tier = 'startup' AND o.plan_expires_at > NOW()"
             params: dict = {"org_id": org_id}
         else:
-            org_filter = "AND o.plan_tier = 'startup' AND o.plan_expires_at > NOW()"
+            org_filter = "AND o.subscription_tier = 'startup' AND o.plan_expires_at > NOW()"
             params = {}
 
         # Fetch unapplied outcomes with their linked contact (via context_calls)

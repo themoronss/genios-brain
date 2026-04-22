@@ -25,11 +25,11 @@ def _detect_overdue_commitments(db, org_id: str) -> List[Dict]:
         "insight_type": "state",
         "priority": "P1",
         "category": "overdue_commitment",
-        "title": f"Overdue: {r[2][:60]} — {int(r[5])} days past due",
-        "detail": f"Commitment to {r[1]} ({r[4]}): \"{r[2]}\". Due {r[3].strftime('%b %d') if r[3] else 'unknown'}. {int(r[5])} days overdue.",
+        "title": f"Overdue: {r[2][:60]} — {int(r[5] or 0)} days past due",
+        "detail": f"Commitment to {r[1]} ({r[4]}): \"{r[2]}\". Due {r[3].strftime('%b %d') if r[3] else 'unknown'}. {int(r[5] or 0)} days overdue.",
         "contact_id": str(r[0]),
         "contact_name": r[1],
-        "metadata": {"commit_text": r[2], "days_overdue": int(r[5]), "owner": r[4]},
+        "metadata": {"commit_text": r[2], "days_overdue": int(r[5] or 0), "owner": r[4]},
     } for r in results]
 
 
@@ -51,11 +51,11 @@ def _detect_stalled_deals(db, org_id: str) -> List[Dict]:
         "insight_type": "state",
         "priority": "P2",
         "category": "stalled_state",
-        "title": f"{r[0]} {r[1]} stalled {int(r[6])} days — still {r[5]}",
-        "detail": f"{r[0]} for {r[2] or 'Unknown'} (amount: {r[3] or 'N/A'}) has been {r[5]} for {int(r[6])} days.",
+        "title": f"{r[0]} {r[1]} stalled {int(r[6] or 0)} days — still {r[5]}",
+        "detail": f"{r[0]} for {r[2] or 'Unknown'} (amount: {r[3] or 'N/A'}) has been {r[5]} for {int(r[6] or 0)} days.",
         "contact_id": None,
         "contact_name": None,
-        "metadata": {"entity_type": r[0], "entity_id": r[1], "days_stalled": int(r[6])},
+        "metadata": {"entity_type": r[0], "entity_id": r[1], "days_stalled": int(r[6] or 0)},
     } for r in results]
 
 
@@ -123,10 +123,10 @@ def _detect_commitment_blockers(db, org_id: str) -> List[Dict]:
         "priority": "P1",
         "category": "commitment_blocker",
         "title": f"Overdue commitment to {r[2]}: {(r[3] or '')[:60]}",
-        "detail": f"Commitment to {r[2]} is {int(r[5])} day{'s' if int(r[5]) != 1 else ''} overdue. This may be blocking the relationship from progressing.",
+        "detail": f"Commitment to {r[2]} is {int(r[5] or 0)} day{'s' if int(r[5] or 0) != 1 else ''} overdue. This may be blocking the relationship from progressing.",
         "contact_id": str(r[1]),
         "contact_name": r[2],
-        "metadata": {"days_overdue": int(r[5]), "commitment_text": r[3], "due_date": str(r[4])},
+        "metadata": {"days_overdue": int(r[5] or 0), "commitment_text": r[3], "due_date": str(r[4])},
     } for r in results]
 
 
@@ -150,11 +150,11 @@ def _detect_long_pending_state_entities(db, org_id: str) -> List[Dict]:
         "insight_type": "state",
         "priority": "P2",
         "category": "long_pending_state",
-        "title": f"{r[0]} {r[1]} from {r[2] or 'Unknown'} — pending {int(r[5])} days",
-        "detail": f"A {r[0]} for {r[2] or 'Unknown'} (amount: {r[3] or 'N/A'}) has been pending for {int(r[5])} days. Follow up to resolve.",
+        "title": f"{r[0]} {r[1]} from {r[2] or 'Unknown'} — pending {int(r[5] or 0)} days",
+        "detail": f"A {r[0]} for {r[2] or 'Unknown'} (amount: {r[3] or 'N/A'}) has been pending for {int(r[5] or 0)} days. Follow up to resolve.",
         "contact_id": None,
         "contact_name": None,
-        "metadata": {"entity_type": r[0], "entity_id": r[1], "days_pending": int(r[5]), "amount": str(r[3] or "")},
+        "metadata": {"entity_type": r[0], "entity_id": r[1], "days_pending": int(r[5] or 0), "amount": str(r[3] or "")},
     } for r in results]
 
 
@@ -180,11 +180,11 @@ def _detect_vendor_invoice_overdue(db, org_id: str) -> List[Dict]:
         "insight_type": "state",
         "priority": "P1",
         "category": "vendor_invoice_overdue",
-        "title": f"Overdue {r[0]}: {r[2] or 'Unknown'} — {int(r[5])} days past due",
-        "detail": f"{r[0].capitalize()} from {r[2] or 'Unknown'} (amount: {r[3] or 'N/A'}) is {int(r[5])} days overdue. This may affect vendor relationships.",
+        "title": f"Overdue {r[0]}: {r[2] or 'Unknown'} — {int(r[5] or 0)} days past due",
+        "detail": f"{r[0].capitalize()} from {r[2] or 'Unknown'} (amount: {r[3] or 'N/A'}) is {int(r[5] or 0)} days overdue. This may affect vendor relationships.",
         "contact_id": None,
         "contact_name": None,
-        "metadata": {"entity_type": r[0], "vendor": r[2], "days_overdue": int(r[5]), "amount": str(r[3] or "")},
+        "metadata": {"entity_type": r[0], "vendor": r[2], "days_overdue": int(r[5] or 0), "amount": str(r[3] or "")},
     } for r in results]
 
 
