@@ -68,6 +68,8 @@ def compute_baselines(org_id: str = None):
                     JOIN interactions i ON i.contact_id = c.id AND i.org_id = c.org_id
                     WHERE i.interaction_at >= NOW() - (:window_days || ' days')::interval
                       AND (c.is_archived IS FALSE OR c.is_archived IS NULL)
+                      AND COALESCE(c.classification_override, c.classification, 'unknown')
+                          NOT IN ('newsletter', 'bot', 'transactional')
                       {where}
                     GROUP BY c.id, c.org_id
                     HAVING COUNT(i.id) >= :min_interactions
@@ -203,6 +205,8 @@ def scan_anomalies(org_id: str = None):
                 JOIN contacts c ON cb.contact_id = c.id
                 WHERE cb.engagement_avg IS NOT NULL
                   AND cb.interactions_in_window >= {MIN_INTERACTIONS_FOR_BASELINE}
+                  AND COALESCE(c.classification_override, c.classification, 'unknown')
+                      NOT IN ('newsletter', 'bot', 'transactional')
                   {where}
             """),
             params,

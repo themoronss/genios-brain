@@ -45,6 +45,18 @@ def list_insights(
     else:
         where.append("i.is_dismissed = FALSE")
 
+    # Post-filter: hide insights whose underlying contact is now classified as
+    # broadcast (newsletter/bot/transactional). The classification can change
+    # after an insight was generated — this keeps stale broadcast insights out
+    # of the response without needing a re-scan or DB purge.
+    where.append(
+        "(i.contact_id IS NULL OR NOT EXISTS ("
+        "  SELECT 1 FROM contacts c WHERE c.id = i.contact_id"
+        "    AND COALESCE(c.classification_override, c.classification, 'unknown')"
+        "        IN ('newsletter', 'bot', 'transactional')"
+        "))"
+    )
+
     rows = db.execute(
         text(f"""
             SELECT i.id, i.insight_type, i.priority, i.category,
