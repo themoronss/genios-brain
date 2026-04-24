@@ -25,6 +25,38 @@ from app.database import SessionLocal
 logger = logging.getLogger(__name__)
 
 
+def _compute_priority(
+    anomaly_type: str,
+    confidence_score: float,
+    relationship_stage: str | None,
+    open_commitments: int,
+    days_since_last: int | None,
+) -> str:
+    """Dynamic insight priority — closes the outcome → priority loop.
+
+    confidence_score is fed from context_outcomes by confidence_updater, so a
+    brain that has been right about this contact promotes its own future
+    alerts; one that has been wrong demotes them.
+    """
+    base = {"gone_silent": 3, "sentiment_drop": 3, "engagement_drop": 2, "response_slowdown": 1}.get(anomaly_type, 2)
+    if confidence_score >= 0.7:
+        base += 1
+    elif confidence_score < 0.3:
+        base -= 1
+    stage = (relationship_stage or "").upper()
+    if stage in ("NEEDS_ATTENTION", "AT_RISK"):
+        base += 1
+    elif stage in ("DORMANT", "COLD"):
+        base -= 1
+    if open_commitments and open_commitments >= 2:
+        base += 1
+    if days_since_last and days_since_last > 90:
+        base -= 1
+    if base >= 4:
+        return "high"
+    return "medium" if base >= 2 else "low"
+
+
 def _generate_insight_text(anomaly: dict, contact: dict, precedents: list, org_id: str = None) -> dict:
     """
     L7 Synthesis: generate memory_view + genios_view from structured data.
@@ -124,6 +156,7 @@ def run_proactive_scan(org_id: str = None):
                        c.name, c.email, c.company, c.relationship_stage,
                        c.entity_type, c.sentiment_ewma, c.sentiment_trend,
                        c.last_interaction_at, c.interaction_count,
+                       COALESCE(c.confidence_score, 0.5) AS confidence_score,
                        (SELECT COUNT(*) FROM commitments cm
                         WHERE cm.contact_id = ca.contact_id AND cm.status = 'OPEN'
                        ) AS open_commitments
@@ -134,6 +167,22 @@ def run_proactive_scan(org_id: str = None):
                       SELECT 1 FROM insights i
                       WHERE i.anomaly_id = ca.id AND i.is_dismissed = FALSE
                   )
+                  -- Brain learning: if the user has dismissed >= 2 insights for
+                  -- this (contact, anomaly_type) pair within the last 30 days,
+                  -- mute it for the cooldown period. The brain treats repeated
+                  -- dismissal as a signal that this alert is noise to this user.
+                  AND COALESCE((
+                      SELECT COUNT(*) FROM insights di
+                      JOIN contact_anomalies dca ON di.anomaly_id = dca.id
+                      WHERE di.contact_id = ca.contact_id
+                        AND dca.anomaly_type = ca.anomaly_type
+                        AND di.is_dismissed = TRUE
+                        AND di.generated_at > NOW() - INTERVAL '30 days'
+                  ), 0) < 2
+                  -- Brain judgment: one-way senders (newsletters that got past
+                  -- the broadcast filter, e.g. niche programs) shouldn't fire
+                  -- relationship-cooling insights — silence is normal there.
+                  AND (c.is_bidirectional IS TRUE OR ca.anomaly_type NOT IN ('gone_silent', 'engagement_drop'))
                 ORDER BY ca.deviation_score DESC
                 LIMIT 20
             """),
@@ -197,12 +246,13 @@ def run_proactive_scan(org_id: str = None):
                     "sentiment_drop": "sentiment_alert",
                     "response_slowdown": "response_risk",
                 }
-                priority_map = {
-                    "gone_silent": "high",
-                    "engagement_drop": "medium",
-                    "sentiment_drop": "high",
-                    "response_slowdown": "low",
-                }
+                priority = _compute_priority(
+                    anomaly_type=anomaly.anomaly_type,
+                    confidence_score=float(anomaly.confidence_score or 0.5),
+                    relationship_stage=anomaly.relationship_stage,
+                    open_commitments=int(anomaly.open_commitments or 0),
+                    days_since_last=days_since,
+                )
 
                 db.execute(
                     text("""
@@ -222,7 +272,7 @@ def run_proactive_scan(org_id: str = None):
                     {
                         "id": insight_id,
                         "oid": str(anomaly.org_id),
-                        "priority": priority_map.get(anomaly.anomaly_type, "medium"),
+                        "priority": priority,
                         "category": category_map.get(anomaly.anomaly_type, "other"),
                         "title": f"{anomaly.name}: {anomaly.anomaly_type.replace('_', ' ')}",
                         "detail": insight_text["genios_view"],

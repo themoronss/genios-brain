@@ -330,6 +330,18 @@ def task_proactive_scan(self, org_id: str = None):
         raise self.retry(exc=exc)
 
 
+@celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
+def task_oauth_healthcheck(self, org_id: str = None):
+    """Daily OAuth credential probe — surfaces broken tokens before they
+    silently rot the brain's input layer. Best-effort; failures here never
+    block sync, they just inform the user via /v1/sync."""
+    try:
+        from app.tasks.oauth_healthcheck import run_oauth_healthcheck
+        run_oauth_healthcheck(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_deliver_webhooks(self, org_id: str = None):
     """Phase 6.3: Deliver pending insight webhooks."""
@@ -465,6 +477,14 @@ celery.conf.beat_schedule = {
     "daily-classify-contacts": {
         "task": "app.celery_app.task_classify_contacts",
         "schedule": crontab(hour=3, minute=0),
+        "options": {"queue": "low_priority"},
+    },
+    # Brain integrity: probe every OAuth credential daily so silent token
+    # failures surface in /v1/sync as `health: degraded` instead of letting
+    # the brain reason over stale data for days.
+    "oauth-healthcheck-daily": {
+        "task": "app.celery_app.task_oauth_healthcheck",
+        "schedule": crontab(hour=5, minute=15),
         "options": {"queue": "low_priority"},
     },
     # Score writer — recompute per-contact scores every 15 min

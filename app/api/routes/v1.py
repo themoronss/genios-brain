@@ -75,21 +75,36 @@ def v1_sync_status(
     else:
         overall = "idle"
 
+    # OAuth health is probed daily by task_oauth_healthcheck and cached in
+    # Redis. Surface it here so the brain can self-report when its inputs
+    # have rotted (expired tokens, revoked grants) — silent degradation is
+    # what separates "live brain" from "stale CRM".
+    from app.tasks.oauth_healthcheck import get_health as _oauth_health
+
+    accounts = []
+    any_degraded = False
+    for r in rows:
+        health = _oauth_health(org_id, r.account_email) or {}
+        health_status = health.get("status")  # healthy | refreshed | broken | None
+        if health_status == "broken":
+            any_degraded = True
+        accounts.append({
+            "account_email": r.account_email,
+            "sync_status": r.sync_status or "idle",
+            "last_sync": r.last_synced_at.isoformat() if r.last_synced_at else None,
+            "sync_total": r.sync_total or 0,
+            "sync_processed": r.sync_processed or 0,
+            "sync_error": r.sync_error,
+            "oauth_health": health_status,
+            "oauth_checked_at": health.get("checked_at"),
+        })
+
     return {
         "synced": bool(last_times),
         "last_sync": overall_last,
         "sync_status": overall,
-        "accounts": [
-            {
-                "account_email": r.account_email,
-                "sync_status": r.sync_status or "idle",
-                "last_sync": r.last_synced_at.isoformat() if r.last_synced_at else None,
-                "sync_total": r.sync_total or 0,
-                "sync_processed": r.sync_processed or 0,
-                "sync_error": r.sync_error,
-            }
-            for r in rows
-        ],
+        "health": "degraded" if any_degraded else "ok",
+        "accounts": accounts,
     }
 
 
