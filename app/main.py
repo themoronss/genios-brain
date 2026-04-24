@@ -55,6 +55,7 @@ from app.api.routes import feedback as feedback_routes
 from app.api.routes import admin as admin_routes
 from app.api.routes import stream as stream_routes
 from app.api.routes import brain_activity as brain_activity_routes
+from app.api.routes import mcp as mcp_routes
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,7 @@ app.include_router(feedback_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(stream_routes.router)
 app.include_router(brain_activity_routes.router)
+app.include_router(mcp_routes.router)
 
 
 @app.get("/")
