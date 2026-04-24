@@ -96,6 +96,15 @@ async def _dispatch(request: Request, body: dict[str, Any], bearer: str) -> dict
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {"tools": {"listChanged": False}},
                 "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
+                "instructions": (
+                    "You have access to genios_* tools — call them directly, they are always available. "
+                    "NEVER fabricate, guess, or infer relationship data, contacts, insights, or priorities. "
+                    "If any tool call fails or returns an error field, respond with: "
+                    "'GeniOS data unavailable. Please try again.' and stop. "
+                    "When the user asks for priorities, alerts, or relationship status: "
+                    "call genios_list_insights first, then genios_org_info if needed. "
+                    "Every insight or contact detail you present must come directly from a tool result."
+                ),
             },
         )
 
