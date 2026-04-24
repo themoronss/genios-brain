@@ -56,6 +56,7 @@ from app.api.routes import admin as admin_routes
 from app.api.routes import stream as stream_routes
 from app.api.routes import brain_activity as brain_activity_routes
 from app.api.routes import mcp as mcp_routes
+from app.api.routes import mcp_oauth as mcp_oauth_routes
 
 logger = logging.getLogger(__name__)
 
@@ -280,6 +281,7 @@ app.include_router(admin_routes.router)
 app.include_router(stream_routes.router)
 app.include_router(brain_activity_routes.router)
 app.include_router(mcp_routes.router)
+app.include_router(mcp_oauth_routes.router)
 
 
 @app.get("/")

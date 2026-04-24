@@ -26,6 +26,7 @@ import httpx
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from app.api.routes.mcp_oauth import resolve_oauth_token
 from app.api.routes.mcp_tools import TOOLS, call_tool
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,17 @@ def _extract_bearer(request: Request) -> str | None:
     if auth.lower().startswith("bearer "):
         return auth[7:].strip() or None
     return None
+
+
+def _resolve_bearer(bearer: str) -> str | None:
+    """Return the underlying gn_live_* key for a bearer, or None if invalid.
+
+    - Raw `gn_live_*` passes through unchanged (local stdio, CLI, curl).
+    - Any other token is looked up as an OAuth access_token (Claude Web).
+    """
+    if bearer.startswith("gn_live_"):
+        return bearer
+    return resolve_oauth_token(bearer)
 
 
 async def _dispatch(request: Request, body: dict[str, Any], bearer: str) -> dict[str, Any] | None:
@@ -129,8 +141,12 @@ async def _dispatch(request: Request, body: dict[str, Any], bearer: str) -> dict
 
 @router.post("/mcp")
 async def mcp_post(request: Request):
-    bearer = _extract_bearer(request)
-    if not bearer or not bearer.startswith("gn_live_"):
+    raw_bearer = _extract_bearer(request)
+    bearer = _resolve_bearer(raw_bearer) if raw_bearer else None
+    if not bearer:
+        # Advertise both auth schemes so Claude Web triggers OAuth discovery
+        # while CLI/stdio clients can still paste a gn_live_* key directly.
+        resource = _issuer_url(request)
         return JSONResponse(
             status_code=401,
             content={
@@ -138,10 +154,15 @@ async def mcp_post(request: Request):
                 "id": None,
                 "error": {
                     "code": -32001,
-                    "message": "Missing or invalid API key. Send 'Authorization: Bearer gn_live_*'.",
+                    "message": "Missing or invalid credential. Send 'Authorization: Bearer <gn_live_* or OAuth access_token>'.",
                 },
             },
-            headers={"WWW-Authenticate": 'Bearer realm="genios-mcp"'},
+            headers={
+                "WWW-Authenticate": (
+                    f'Bearer realm="genios-mcp", '
+                    f'resource_metadata="{resource}/.well-known/oauth-protected-resource"'
+                ),
+            },
         )
 
     try:
@@ -198,6 +219,12 @@ async def mcp_delete(request: Request):
 @router.get("/mcp/health")
 async def mcp_health():
     return {"status": "ok", "name": SERVER_NAME, "version": SERVER_VERSION, "protocol": PROTOCOL_VERSION}
+
+
+def _issuer_url(request: Request) -> str:
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.hostname
+    return f"{proto}://{host}"
 
 
 def _session_headers(request: Request) -> dict[str, str]:
