@@ -1184,6 +1184,42 @@ def build_context_bundle(
     except Exception:
         pass  # Anomaly table might not exist yet; fail silently
 
+    # Add related outbound — cross-contact surface of user's own recent sends
+    # on the same theme. Flag-gated via GENIOS_RELATED_OUTBOUND_ENABLED.
+    # Purely additive: if the helper returns [] (disabled, no match, or error)
+    # the bundle is unchanged.
+    try:
+        from app.context.related_outbound import (
+            get_related_outbound, format_related_outbound_line,
+        )
+        _topics = contact.get("topics_aggregate") or []
+        # Embed the situation only when topics are weak — avoids an extra
+        # embedding call on every context request.
+        _sit_emb = None
+        if situation and (not _topics or len(_topics) < 2):
+            try:
+                from app.context.situation_embedder import embed_situation
+                _sit_emb = embed_situation(situation)
+            except Exception:
+                _sit_emb = None
+
+        related = get_related_outbound(
+            db, org_id,
+            contact_id_to_exclude=str(contact.get("id")) if contact.get("id") else None,
+            topics=_topics or None,
+            situation_embedding=_sit_emb,
+            window_days=14,
+            limit=5,
+        )
+        if related:
+            bundle["related_outbound"] = related
+            line = format_related_outbound_line(related)
+            if line:
+                bundle["context_for_agent"] += line
+    except Exception as e:
+        if logger:
+            logger.debug(f"related_outbound enrichment skipped: {e}")
+
     # Add warm intro paths for COLD/DORMANT contacts
     if contact.get("relationship_stage") in ("COLD", "DORMANT"):
         try:

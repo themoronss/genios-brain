@@ -12,6 +12,7 @@ from app.graph.detectors.cross_tool import CROSS_TOOL_DETECTORS
 from app.graph.detectors.role_drift import ROLE_DRIFT_DETECTORS
 from app.graph.detectors.authority_change import AUTHORITY_CHANGE_DETECTORS
 from app.graph.detectors.contradiction import CONTRADICTION_DETECTORS
+from app.graph.detectors.campaigns import CAMPAIGN_DETECTORS
 
 ALL_DETECTORS = (
     RELATIONSHIP_DETECTORS
@@ -23,4 +24,5 @@ ALL_DETECTORS = (
     + ROLE_DRIFT_DETECTORS
     + AUTHORITY_CHANGE_DETECTORS
     + CONTRADICTION_DETECTORS
+    + CAMPAIGN_DETECTORS
 )
