@@ -117,7 +117,11 @@ def run_once() -> dict:
             for cand in candidates:
                 cand.setdefault("org_id", org_id)
                 result = reasoner_mod.reason(db, cand)
-                priority = scorer_mod.score(result)
+                priority = scorer_mod.score(
+                    result,
+                    org_id=org_id,
+                    insight_type=cand.get("insight_type") or "",
+                )
                 allowed, blocked_reason = gate_mod.allow(
                     candidate=cand, reason_result=result, priority=priority,
                 )

@@ -34,11 +34,15 @@ Return exactly this JSON shape, nothing else:
   "action": "one concrete next step the operator should take",
   "subject_importance": 0.0,
   "time_urgency": 0.0,
-  "novelty": 0.0
+  "novelty": 0.0,
+  "actionability": 0.0
 }}
 
 Rules:
-- confidence in [0,1]; subject_importance/time_urgency/novelty each in [0,1].
+- confidence in [0,1]; subject_importance/time_urgency/novelty/actionability each in [0,1].
+- actionability = how realistically the operator can do something useful in the next 7 days.
+  Reachable contact + clear next step + recent context → high (0.8+).
+  Cold/dormant entity, no mutual connection, vague action → low (<0.3).
 - keep=false if confidence < 0.35 or the signal duplicates a recent one.
 - reason must reference data points in the supporting facts or precedents.
 """

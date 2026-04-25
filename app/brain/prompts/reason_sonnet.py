@@ -32,6 +32,8 @@ Return JSON with the same keys as the first-pass, overridden by your judgment:
   "action": "one concrete next step",
   "subject_importance": 0.0,
   "time_urgency": 0.0,
-  "novelty": 0.0
+  "novelty": 0.0,
+  "actionability": 0.0
 }}
+actionability = how realistically the operator can act in the next 7 days [0,1].
 """

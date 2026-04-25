@@ -7,6 +7,8 @@ Hourly job:
   - validate → live:   freshness ≥ 0.6 AND confidence ≥ 0.7
   - live → fade:       freshness < 0.4
   - fade → live:       a new corroborating fact arrived (freshness recomputed ≥ 0.6)
+  - dormant → live:    dormant entity reawakened (new high-confidence fact pushed
+                       freshness back ≥ 0.6 AND confidence ≥ 0.6) — guide §A·09 revival
 
 Nightly job:
   - fade → dormant:   age > 14d AND not corroborated in the last 14d
@@ -85,6 +87,22 @@ def run_hourly(org_id: str | None = None) -> dict:
             SET lifecycle = 'live', updated_at = NOW()
             WHERE lifecycle = 'fade'
               AND COALESCE(freshness_score, 0) >= 0.6
+              {where_org}
+            """,
+            **params,
+        )
+
+        # Revival: dormant fact's contact got a new corroborating signal that
+        # bumped freshness AND confidence back above thresholds. The fact's
+        # full history stays attached.
+        counts["dormant_to_live"] = _exec(
+            db,
+            f"""
+            UPDATE contact_facts
+            SET lifecycle = 'live', updated_at = NOW()
+            WHERE lifecycle = 'dormant'
+              AND COALESCE(freshness_score, 0) >= 0.6
+              AND COALESCE(confidence_score, 0) >= 0.6
               {where_org}
             """,
             **params,

@@ -27,18 +27,47 @@ class TenantCostGuardrailExceeded(Exception):
     """Raised when an org has hit GENIOS_LLM_DAILY_CAP_USD for today."""
 
 
-# purpose → (provider, model). Phase 1: Groq-heavy. Flip when Anthropic live.
-ROUTES = {
+# purpose → (provider, model). Defaults are Groq-heavy for Phase 1.
+# Override any purpose via env: LLM_ROUTE_<UPPER_PURPOSE>="provider:model"
+#   e.g. LLM_ROUTE_REASON_HAIKU="anthropic:claude-haiku-4-5-20251001"
+#        LLM_ROUTE_NARRATIVE="openai:gpt-4o-mini"
+# Provider must be one of: groq | gemini | anthropic | openai.
+_DEFAULT_ROUTES = {
     "classify_email":   ("groq",      "llama-3.3-70b-versatile"),
     "extract_entities": ("groq",      "llama-3.3-70b-versatile"),
     "calendar_extract": ("groq",      "llama-3.3-70b-versatile"),
     "draft":            ("groq",      "llama-3.3-70b-versatile"),
     "chat":             ("gemini",    "gemini-2.5-flash"),
-    "reason_haiku":     ("groq",      "llama-3.3-70b-versatile"),  # → anthropic
-    "reason_sonnet":    ("groq",      "llama-3.3-70b-versatile"),  # → anthropic
-    "narrative":        ("groq",      "llama-3.3-70b-versatile"),  # → anthropic
+    "reason_haiku":     ("groq",      "llama-3.3-70b-versatile"),
+    "reason_sonnet":    ("groq",      "llama-3.3-70b-versatile"),
+    "narrative":        ("groq",      "llama-3.3-70b-versatile"),
     "embed":            ("gemini",    "gemini-embedding-001"),
 }
+
+
+def _load_routes() -> dict:
+    """Build ROUTES from defaults + env overrides. Called once at import."""
+    out = dict(_DEFAULT_ROUTES)
+    for purpose in list(out.keys()):
+        env_key = f"LLM_ROUTE_{purpose.upper()}"
+        raw = os.getenv(env_key, "").strip()
+        if not raw:
+            continue
+        if ":" not in raw:
+            logger.warning(f"{env_key}={raw!r} ignored — expected 'provider:model'")
+            continue
+        provider, model = raw.split(":", 1)
+        provider = provider.strip().lower()
+        model = model.strip()
+        if provider not in {"groq", "gemini", "anthropic", "openai"}:
+            logger.warning(f"{env_key}={raw!r} ignored — unknown provider {provider!r}")
+            continue
+        out[purpose] = (provider, model)
+        logger.info(f"LLM route override: {purpose} → {provider}:{model}")
+    return out
+
+
+ROUTES = _load_routes()
 
 
 class LLMClient:
@@ -81,6 +110,8 @@ class LLMClient:
                 text_out, in_tok, out_tok = self._call_gemini(model, messages, temperature, max_tokens)
             elif provider == "anthropic":
                 text_out, in_tok, out_tok = self._call_anthropic(model, messages, temperature, max_tokens)
+            elif provider == "openai":
+                text_out, in_tok, out_tok = self._call_openai(model, messages, temperature, max_tokens)
             else:
                 raise ValueError(f"Unknown provider: {provider}")
         except Exception as primary_err:
@@ -186,6 +217,23 @@ class LLMClient:
         content = "".join(parts)
         in_tok = getattr(resp.usage, "input_tokens", 0)
         out_tok = getattr(resp.usage, "output_tokens", 0)
+        return content, int(in_tok or 0), int(out_tok or 0)
+
+    def _call_openai(self, model, messages, temperature, max_tokens):
+        if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("dummy"):
+            raise NotImplementedError(
+                "OpenAI not enabled — set OPENAI_API_KEY."
+            )
+        from openai import OpenAI  # type: ignore
+        client = OpenAI(api_key=config.OPENAI_API_KEY)
+        resp = client.chat.completions.create(
+            model=model, messages=messages,
+            temperature=temperature, max_tokens=max_tokens,
+        )
+        content = resp.choices[0].message.content or ""
+        u = getattr(resp, "usage", None)
+        in_tok = getattr(u, "prompt_tokens", 0) if u else 0
+        out_tok = getattr(u, "completion_tokens", 0) if u else 0
         return content, int(in_tok or 0), int(out_tok or 0)
 
     def _configure_gemini(self) -> None:

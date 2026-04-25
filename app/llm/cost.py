@@ -13,6 +13,11 @@ PRICING = {
     # Anthropic — wired for Phase 1.5
     ("anthropic", "claude-haiku-4-5-20251001"): {"input": 1.00, "output": 5.00},
     ("anthropic", "claude-sonnet-4-6"):         {"input": 3.00, "output": 15.00},
+
+    # OpenAI — https://openai.com/api/pricing
+    ("openai", "gpt-4o-mini"): {"input": 0.15, "output": 0.60},
+    ("openai", "gpt-4o"):      {"input": 2.50, "output": 10.00},
+    ("openai", "gpt-4.1-mini"):{"input": 0.40, "output": 1.60},
 }
 
 

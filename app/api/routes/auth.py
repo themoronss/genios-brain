@@ -271,6 +271,17 @@ def get_notification_prefs(org_id: str, db: Session = Depends(get_db)):
     return {**defaults, **prefs}
 
 
+class QuietHoursWindow(BaseModel):
+    start: str  # "HH:MM"
+    end:   str  # "HH:MM"; if end<=start the window crosses midnight
+
+
+class QuietHours(BaseModel):
+    enabled: bool = False
+    tz: str = "UTC"
+    windows: list[QuietHoursWindow] = []
+
+
 class NotificationPrefs(BaseModel):
     syncComplete: bool = True
     conflictDetected: bool = True
@@ -280,6 +291,7 @@ class NotificationPrefs(BaseModel):
     weeklyDigest: bool = False
     emailNotifications: bool = True
     browserNotifications: bool = False
+    quiet_hours: QuietHours | None = None
 
 @router.put("/api/org/{org_id}/notifications/preferences")
 def save_notification_prefs(org_id: str, body: NotificationPrefs, db: Session = Depends(get_db)):

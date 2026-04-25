@@ -29,6 +29,7 @@ class ReasonResult(BaseModel):
     subject_importance: confloat(ge=0.0, le=1.0) = 0.0
     time_urgency: confloat(ge=0.0, le=1.0) = 0.0
     novelty: confloat(ge=0.0, le=1.0) = 0.0
+    actionability: confloat(ge=0.0, le=1.0) = 0.5  # default mid; older LLMs may omit
 
 
 def _format_facts(facts: list[dict]) -> str:

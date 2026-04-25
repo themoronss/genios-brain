@@ -33,6 +33,7 @@ HUBSPOT_CLIENT_SECRET = os.getenv("HUBSPOT_CLIENT_SECRET")
 HUBSPOT_REDIRECT_URI = os.getenv("HUBSPOT_REDIRECT_URI", "http://localhost:8000/auth/hubspot/callback")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # Sync config — controls both normal (manual) and cron sync batch sizes
 SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 15))

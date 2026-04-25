@@ -1,10 +1,11 @@
-"""Push gate (spec §8.5) — 5 blocking rules between reasoner and dispatcher.
+"""Push gate (spec §8.5) — 6 blocking rules between reasoner and dispatcher.
 
 1. Reasoner said keep=False                 → block
-2. confidence < calibrated threshold        → block   (Item 4 — uses Platt scaling when available)
+2. confidence < calibrated threshold        → block   (uses Platt scaling when available)
 3. priority   < GENIOS_MIN_PUSH_PRIORITY    → block
-4. deduped in the last 24h (Redis SET)      → block
-5. Org daily budget exhausted                → block
+4. inside org's configured quiet hours       → block
+5. deduped in the last 24h (Redis SET)      → block
+6. Org daily budget exhausted                → block
 
 All pass → return True. Any block → False + reason.
 
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 _DEDUP_TTL = 24 * 3600
 _CAL_CACHE_TTL = 600  # 10 min
+_QUIET_CACHE_TTL = 300  # 5 min — settings rarely change
 _MAX_ECE_FOR_USE = 0.15
 _MIN_SAMPLES_FOR_USE = 50
 
@@ -49,6 +51,96 @@ def _budget_key(org_id: str) -> str:
 
 def _calibration_cache_key(org_id: str) -> str:
     return f"cal_model:{org_id}"
+
+
+def _quiet_cache_key(org_id: str) -> str:
+    return f"quiet_hours:{org_id}"
+
+
+def _in_quiet_hours(org_id: str) -> bool:
+    """Check if 'now' falls inside org's configured quiet hours.
+
+    Schema (orgs.notification_prefs->quiet_hours):
+      {"enabled": true, "tz": "Asia/Kolkata",
+       "windows": [{"start": "22:00", "end": "08:00"}]}
+    Window with end<=start is treated as crossing midnight.
+    Fail-soft: any error or missing config → return False (don't block).
+    """
+    if not org_id:
+        return False
+
+    cache_key = _quiet_cache_key(org_id)
+    cfg = None
+    try:
+        cached = redis_client.get(cache_key)
+        if cached == "__none__":
+            return False
+        if cached:
+            cfg = json.loads(cached)
+    except Exception:
+        cfg = None
+
+    if cfg is None:
+        db = SessionLocal()
+        try:
+            row = db.execute(
+                text("SELECT notification_prefs FROM orgs WHERE id = :oid"),
+                {"oid": org_id},
+            ).fetchone()
+        except Exception as e:
+            logger.debug(f"quiet hours pg lookup failed: {e}")
+            db.close()
+            return False
+        finally:
+            try: db.close()
+            except Exception: pass
+
+        prefs = (row.notification_prefs if row else None) or {}
+        if isinstance(prefs, str):
+            try: prefs = json.loads(prefs)
+            except Exception: prefs = {}
+        cfg = (prefs or {}).get("quiet_hours") or {}
+
+        try:
+            redis_client.setex(
+                cache_key, _QUIET_CACHE_TTL,
+                json.dumps(cfg) if cfg else "__none__",
+            )
+        except Exception:
+            pass
+
+    if not cfg or not cfg.get("enabled"):
+        return False
+
+    windows = cfg.get("windows") or []
+    if not windows:
+        return False
+
+    tz_name = cfg.get("tz") or "UTC"
+    try:
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo(tz_name))
+    except Exception:
+        now = datetime.now(timezone.utc)
+
+    cur_min = now.hour * 60 + now.minute
+    for w in windows:
+        try:
+            s_h, s_m = (int(p) for p in (w.get("start") or "0:0").split(":"))
+            e_h, e_m = (int(p) for p in (w.get("end")   or "0:0").split(":"))
+        except Exception:
+            continue
+        s = s_h * 60 + s_m
+        e = e_h * 60 + e_m
+        if s == e:
+            continue
+        if s < e:
+            if s <= cur_min < e:
+                return True
+        else:  # crosses midnight
+            if cur_min >= s or cur_min < e:
+                return True
+    return False
 
 
 def _load_calibration(org_id: str) -> Optional[dict]:
@@ -170,9 +262,16 @@ def allow(
     if priority < config.GENIOS_MIN_PUSH_PRIORITY:
         return False, "below_min_priority"
 
+    # Rule 4 — quiet hours (org-configurable; fail-soft on errors)
+    try:
+        if _in_quiet_hours(org_id):
+            return False, "quiet_hours"
+    except Exception as e:
+        logger.warning(f"quiet hours check failed open: {e}")
+
     subj = str(candidate.get("contact_id") or candidate.get("subject_entity_id") or "")
 
-    # Rule 4 — dedup 24h
+    # Rule 5 — dedup 24h
     dkey = _dedup_key(org_id, itype, subj)
     try:
         if redis_client.set(dkey, "1", ex=_DEDUP_TTL, nx=True) is None:
@@ -180,7 +279,7 @@ def allow(
     except Exception as e:
         logger.warning(f"dedup check failed open: {e}")
 
-    # Rule 5 — daily budget
+    # Rule 6 — daily budget
     bkey = _budget_key(org_id)
     try:
         used = int(redis_client.get(bkey) or 0)
