@@ -28,8 +28,9 @@ Return JSON with the same keys as the first-pass, overridden by your judgment:
 {{
   "keep": true,
   "confidence": 0.0,
-  "reason": "one sentence citing the specific signal and why it matters now",
-  "action": "one concrete next step",
+  "reason": "2 sentences. Specific entity + signal in #1; why it matters now in #2.",
+  "action": "Concrete imperative; name mutual connection if available; name deadline if available.",
+  "evidence": ["short anchor 1", "short anchor 2"],
   "subject_importance": 0.0,
   "time_urgency": 0.0,
   "novelty": 0.0,

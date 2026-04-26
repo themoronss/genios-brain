@@ -11,7 +11,7 @@ All pass → return True. Any block → False + reason.
 
 Rule 2 — calibration integration:
   When `GENIOS_CALIBRATION_ENABLED=true` AND calibration_models.is_active=true
-  AND ece<0.15 AND sample_count>=50 for the org, apply the Platt curve
+  AND ece<0.15 AND sample_count>=20 for the org, apply the Platt curve
   (A, B) to the raw confidence so gate decisions use calibrated confidence.
   Per-type thresholds override the flat GENIOS_MIN_PUSH_CONFIDENCE when set.
   Fall back to flat threshold otherwise (fail-safe).
@@ -37,7 +37,7 @@ _DEDUP_TTL = 24 * 3600
 _CAL_CACHE_TTL = 600  # 10 min
 _QUIET_CACHE_TTL = 300  # 5 min — settings rarely change
 _MAX_ECE_FOR_USE = 0.15
-_MIN_SAMPLES_FOR_USE = 50
+_MIN_SAMPLES_FOR_USE = 20  # lowered from 50 — small startups reach this in ~7d not 30d
 
 
 def _dedup_key(org_id: str, insight_type: str, subject_entity_id: str) -> str:

@@ -135,6 +135,15 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     org_id = result.fetchone()[0]
     db.commit()
 
+    # Seed Precedent graph so Op.04 pattern matching is alive from Day 1.
+    # Fail-soft: never block signup on seed failure.
+    try:
+        from app.tasks.seed_precedents import seed_for_org
+        seed_for_org(str(org_id))
+    except Exception as _seed_err:
+        import logging as _log
+        _log.getLogger(__name__).warning(f"precedent seed skipped: {_seed_err}")
+
     # Generate token
     token = jwt.encode(
         {

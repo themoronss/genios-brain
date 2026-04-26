@@ -26,6 +26,7 @@ class ReasonResult(BaseModel):
     confidence: confloat(ge=0.0, le=1.0) = 0.0
     reason: str = ""
     action: str = ""
+    evidence: list[str] = []  # 2-4 short anchors backing the recommendation
     subject_importance: confloat(ge=0.0, le=1.0) = 0.0
     time_urgency: confloat(ge=0.0, le=1.0) = 0.0
     novelty: confloat(ge=0.0, le=1.0) = 0.0

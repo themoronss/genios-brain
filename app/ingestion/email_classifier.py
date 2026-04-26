@@ -38,6 +38,21 @@ TIER_0_DISCARD_KEYWORDS = [
     "unsubscribe", "newsletter", "automated", "digest", "marketing",
 ]
 
+# Subject-line patterns that strongly indicate marketing / promo content
+# even when sender headers are clean (small senders that hand-roll campaigns).
+TIER_0_SUBJECT_MARKETING = re.compile(
+    r"(\b\d{1,3}\s*%\s*off\b|\bflat\s+\d|\blimited\s+time\b|\bblack\s+friday\b|"
+    r"\bsale\s+ends\b|\bdon'?t\s+miss\b|\bclaim\s+your\b|\blast\s+chance\b|"
+    r"\bcyber\s+monday\b|\bspecial\s+offer\b|\bexclusive\s+offer\b|"
+    r"\bweekly\s+(digest|roundup|recap|update)\b|\bdaily\s+(digest|update)\b|"
+    r"\b(your\s+(weekly|daily|monthly)\s+\w+)\b|"
+    r"\b(this\s+week\s+in)\b|\b(top\s+\d+\s+(stories|reads|articles|deals))\b|"
+    r"^\s*[✨⚡🔥🎉🎁⭐]+|"
+    r"^\s*re:\s*\[\w+\s+digest\]|"
+    r"\bbreaking:\s+|\btrending:\s+|\bjust\s+launched\b)",
+    re.IGNORECASE,
+)
+
 OOO_SUBJECT_PATTERN = re.compile(
     r"^(out of office|ooo|auto[\s-]?reply|automatic reply)", re.IGNORECASE
 )
@@ -208,6 +223,11 @@ def classify_email(
     # Discard keywords in sender
     if any(keyword in sender_lower for keyword in TIER_0_DISCARD_KEYWORDS):
         logger.debug(f"TIER_0 (keyword in sender): {sender_email}")
+        return "TIER_0"
+
+    # Marketing patterns in subject (catches hand-rolled campaigns from clean senders)
+    if subject and TIER_0_SUBJECT_MARKETING.search(subject):
+        logger.debug(f"TIER_0 (marketing subject pattern): {subject[:50]}")
         return "TIER_0"
 
     # Mass sends: 50+ recipients and sender is not your domain

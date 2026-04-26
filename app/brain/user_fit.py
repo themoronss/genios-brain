@@ -4,7 +4,7 @@ Returns the rolling 90-day acted/(acted+ignored+dismissed) ratio for an org's
 insight type. Used by the priority scorer to give weight to insight types
 this tenant historically actually acts on.
 
-  - Below MIN_SAMPLES (30) → return 0.5 (uniform default).
+  - Below MIN_SAMPLES (15) → return 0.5 (uniform default).
   - Above → return clamped acted-rate, optionally re-cast against a baseline.
 
 Cache: Redis 1h TTL. Misses fall back to Postgres; if Postgres errors,
@@ -23,7 +23,7 @@ from app.redis_client import redis_client
 logger = logging.getLogger(__name__)
 
 _TTL = 3600  # 1 hour
-_MIN_SAMPLES = 30
+_MIN_SAMPLES = 15  # lowered from 30 — small startups reach this faster
 _DEFAULT = 0.5
 
 

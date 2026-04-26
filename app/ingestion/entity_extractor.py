@@ -87,6 +87,68 @@ VALID_CONTACT_ROLES = {
 }
 
 
+# ── Few-shot extraction examples ────────────────────────────────────────
+# Two short, representative emails with their expected JSON output. Anchors
+# the LLM on commitment detection, evidence_span citation, and third-party
+# mention extraction. Examples are static so they ride the prompt cache.
+_FEW_SHOT_EXAMPLES = """
+Below are two examples of correct extraction. Match this style and rigor.
+
+EXAMPLE 1 — commitment + named third-party
+Subject: Re: Q3 retention numbers
+From: Jordan Lee
+Body: Thanks for the demo yesterday. I'll send the revised pricing by Friday
+and loop in Sarah Chen, our VP Finance, for the budget conversation.
+Output:
+{
+  "summary": "Jordan to send revised pricing by Friday and loop in VP Finance.",
+  "sentiment": 0.4,
+  "intent": "commitment",
+  "interaction_type": "commitment",
+  "commitments": [
+    {"text": "send revised pricing by Friday", "owner": "us", "due_signal": "Friday",
+     "confidence": 0.9,
+     "evidence_span": "I'll send the revised pricing by Friday"},
+    {"text": "loop in VP Finance for budget conversation", "owner": "us", "due_signal": null,
+     "confidence": 0.7,
+     "evidence_span": "loop in Sarah Chen, our VP Finance, for the budget conversation"}
+  ],
+  "topics": ["pricing", "budget approval", "Q3 retention"],
+  "engagement_level": "high",
+  "contact_role": "customer",
+  "is_human_email": true,
+  "mentioned_people": ["Sarah Chen"],
+  "what_works": "Direct, decision-oriented replies",
+  "what_to_avoid": null
+}
+
+EXAMPLE 2 — soft signal, no firm commitment
+Subject: catching up
+From: Priya Kapoor
+Body: Hey, hope all is well. We should grab coffee sometime next week
+if you're around. No rush.
+Output:
+{
+  "summary": "Priya proposing to meet for coffee next week, low urgency.",
+  "sentiment": 0.3,
+  "intent": "follow_up",
+  "interaction_type": "email_reply",
+  "commitments": [
+    {"text": "grab coffee next week", "owner": "them", "due_signal": "next week",
+     "confidence": 0.4,
+     "evidence_span": "We should grab coffee sometime next week"}
+  ],
+  "topics": ["catch-up meeting"],
+  "engagement_level": "medium",
+  "contact_role": "other",
+  "is_human_email": true,
+  "mentioned_people": [],
+  "what_works": "Casual, low-pressure tone",
+  "what_to_avoid": "Heavy formality"
+}
+"""
+
+
 # ── PDF spec: Aggressive role/title extraction from email signatures ────
 
 # Title-to-role mapping for fast deterministic classification
@@ -213,10 +275,11 @@ Extract the following and return ONLY valid JSON:
 3. "intent": ONE of: follow_up, request, commitment, introduction, negotiation, update, question, other
 4. "interaction_type": ONE of: email_reply, email_one_way, commitment, other
 5. "commitments": Array of ALL promises made — include BOTH firm AND soft commitments.
-   Each item: {{"text": "what was promised", "owner": "them or us", "due_signal": "date mention or null", "confidence": 0.0-1.0}}
+   Each item: {{"text": "what was promised", "owner": "them or us", "due_signal": "date mention or null", "confidence": 0.0-1.0, "evidence_span": "literal sentence from the body that supports this"}}
    - Firm commitments (clear explicit promise): confidence 0.8-1.0
    - Soft commitments ("maybe", "I'll try", "we should", "sometime next week"): confidence 0.3-0.6
    - Include ALL commitments regardless of confidence — do not filter any out
+   - evidence_span MUST be a verbatim substring of the email body. If you cannot quote the body, omit the commitment.
 6. "topics": Array of 2-5 key business topics (e.g. ["Series A", "product demo", "retention data"])
 7. "engagement_level": "high" (detailed/thoughtful response), "medium" (standard reply), "low" (one-liner)
 8. "contact_role": ONE of: investor, customer, vendor, partner, candidate, team, lead, advisor, media, other
@@ -246,7 +309,7 @@ Return ONLY this JSON — no markdown, no explanation:
   "sentiment": 0.0,
   "intent": "...",
   "interaction_type": "email_reply",
-  "commitments": [{{"text": "...", "owner": "them", "due_signal": null, "confidence": 0.9}}],
+  "commitments": [{{"text": "...", "owner": "them", "due_signal": null, "confidence": 0.9, "evidence_span": "verbatim quote from body"}}],
   "topics": [],
   "engagement_level": "medium",
   "contact_role": "other",
@@ -264,14 +327,20 @@ Return ONLY this JSON — no markdown, no explanation:
         while retry_count < max_retries:
             try:
                 from app.llm import llm_client
+                # System message holds static rubric + few-shot anchors so it
+                # rides the prompt cache (70%+ savings at steady state).
+                _system = (
+                    "You are a precise relationship-intelligence extraction "
+                    "assistant. Always return valid JSON only. No markdown. "
+                    "Cite verbatim evidence from the email body for any "
+                    "commitment you emit; never invent facts.\n"
+                    + _FEW_SHOT_EXAMPLES
+                )
                 result_text = llm_client.call(
                     org_id=org_id, purpose="extract_entities",
                     messages=[
-                        {
-                            "role": "system",
-                            "content": "You are a precise data extraction assistant. Always return valid JSON only. No markdown.",
-                        },
-                        {"role": "user", "content": prompt},
+                        {"role": "system", "content": _system},
+                        {"role": "user",   "content": prompt},
                     ],
                     temperature=0.1, max_tokens=700,
                 ).strip()
@@ -284,10 +353,20 @@ Return ONLY this JSON — no markdown, no explanation:
 
                 result = json.loads(result_text)
 
-                # Separate hard and soft commitments
+                # Separate hard and soft commitments + enforce evidence guard.
+                # A commitment without verbatim evidence in the body is dropped
+                # (LLM hallucination guard). A short body the LLM saw is in
+                # `safe_body`; we require evidence_span to be a substring.
                 all_commitments = result.get("commitments", [])
                 cleaned_commitments = []
+                _body_lower = (safe_body or "").lower()
+                _dropped_no_evidence = 0
                 for c in all_commitments[:15]:
+                    span = (c.get("evidence_span") or "").strip()
+                    # Soft check: at least 8 chars and present in body (case-insensitive).
+                    if not span or len(span) < 8 or span.lower() not in _body_lower:
+                        _dropped_no_evidence += 1
+                        continue
                     conf = float(c.get("confidence", 0.5))
                     cleaned_commitments.append(
                         {
@@ -295,9 +374,15 @@ Return ONLY this JSON — no markdown, no explanation:
                             "owner": str(c.get("owner", "them")),
                             "due_signal": c.get("due_signal"),
                             "confidence": round(max(0.0, min(1.0, conf)), 2),
+                            "evidence_span": span[:300],
                             # Tag soft commitments so downstream can distinguish
                             "is_soft": conf < 0.7,
                         }
+                    )
+                if _dropped_no_evidence:
+                    import logging as _logging
+                    _logging.getLogger(__name__).info(
+                        f"extractor_evidence_guard dropped={_dropped_no_evidence} kept={len(cleaned_commitments)}"
                     )
 
                 # Update 2: Validate and normalize contact_role

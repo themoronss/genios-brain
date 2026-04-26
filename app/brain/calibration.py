@@ -20,7 +20,7 @@ from app.database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
-_MIN_SAMPLES = 50
+_MIN_SAMPLES = 20  # lowered from 50 — small startups reach this in ~7d
 _LOOKBACK_DAYS = 60
 
 

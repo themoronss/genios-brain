@@ -706,7 +706,31 @@ def _sync_single_account(
                 continue
 
             elif category == "TIER_0":
-                # Hard discard — zero graph impact, zero LLM cost
+                # Hard discard from extraction — zero LLM cost, zero graph
+                # impact (no interaction row, no fact write).
+                # BUT: brain still benefits from knowing "Acme sent 50 newsletters
+                # but 0 personal emails" → not a real relationship. Bump a
+                # lightweight marketing counter on the contact (created earlier
+                # by sender_class block if recognized). Graph stays clean.
+                if contact_email:
+                    try:
+                        _mk_contact_id = upsert_contact(
+                            db, org_id, contact_email, contact_name, entity_type=None
+                        )
+                        db.execute(
+                            text("""
+                                UPDATE contacts
+                                SET marketing_email_count = COALESCE(marketing_email_count, 0) + 1,
+                                    last_marketing_email_at = NOW()
+                                WHERE id = :cid AND org_id = :oid
+                            """),
+                            {"cid": str(_mk_contact_id), "oid": org_id},
+                        )
+                        db.commit()
+                    except Exception as e:
+                        logger.debug(f"TIER_0 marketing counter skip {contact_email}: {e}")
+                        try: db.rollback()
+                        except Exception: pass
                 discarded_emails += 1
                 update_sync_progress(
                     db, org_id, account_email=account_identifier, sync_processed=i
