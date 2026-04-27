@@ -74,6 +74,21 @@ def list_insights(
         params,
     ).fetchall()
 
+    # Pull-mode delivery: surfacing the insight via the API counts as delivered.
+    # Webhook delivery is opt-in; without it, insights would otherwise sit in
+    # `pending` forever. Mark only what we actually returned.
+    pending_ids = [str(r.id) for r in rows if r.delivery_status == "pending"]
+    if pending_ids:
+        db.execute(
+            text("""
+                UPDATE insights
+                SET delivery_status = 'delivered', delivered_at = NOW()
+                WHERE id = ANY(:ids) AND delivery_status = 'pending'
+            """),
+            {"ids": pending_ids},
+        )
+        db.commit()
+
     return {
         "insights": [
             {

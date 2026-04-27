@@ -21,23 +21,18 @@ from celery.schedules import crontab
 
 logger = logging.getLogger(__name__)
 
-# Use Redis DB 1 for Celery broker (DB 0 is used for caching)
+# Single-DB Redis: managed providers like Upstash only expose DB 0.
+# Use the same URL for cache, broker, and result backend; Celery namespaces
+# its keys via `global_keyprefix` so they don't collide with the cache.
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-# Append /1 for broker, /2 for result backend (avoid cache collision)
-if REDIS_URL.endswith("/0"):
-    BROKER_URL = REDIS_URL[:-2] + "/1"
-    RESULT_URL = REDIS_URL[:-2] + "/2"
-elif REDIS_URL[-2] == "/":
-    BROKER_URL = REDIS_URL
-    RESULT_URL = REDIS_URL
-else:
-    BROKER_URL = REDIS_URL + "/1"
-    RESULT_URL = REDIS_URL + "/2"
+BROKER_URL = REDIS_URL
+RESULT_URL = REDIS_URL
 
 # Add ssl_cert_reqs for rediss:// (Upstash TLS)
 if BROKER_URL.startswith("rediss://"):
-    BROKER_URL += "?ssl_cert_reqs=CERT_NONE"
-    RESULT_URL += "?ssl_cert_reqs=CERT_NONE"
+    sep = "&" if "?" in BROKER_URL else "?"
+    BROKER_URL += f"{sep}ssl_cert_reqs=CERT_NONE"
+    RESULT_URL += f"{sep}ssl_cert_reqs=CERT_NONE"
 
 celery = Celery("genios", broker=BROKER_URL, backend=RESULT_URL)
 
@@ -66,6 +61,9 @@ celery.conf.update(
     # SSL for Upstash/TLS Redis
     broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if _redis_ssl else None,
     redis_backend_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if _redis_ssl else None,
+    # Single-DB namespacing (so broker/result keys don't collide with cache)
+    broker_transport_options={"global_keyprefix": "genios:celery:"},
+    result_backend_transport_options={"global_keyprefix": "genios:result:"},
     # Reliability
     task_acks_late=True,
     worker_prefetch_multiplier=1,
