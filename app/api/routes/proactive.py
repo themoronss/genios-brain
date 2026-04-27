@@ -83,7 +83,7 @@ def list_insights(
             text("""
                 UPDATE insights
                 SET delivery_status = 'delivered', delivered_at = NOW()
-                WHERE id = ANY(:ids) AND delivery_status = 'pending'
+                WHERE id::text = ANY(:ids) AND delivery_status = 'pending'
             """),
             {"ids": pending_ids},
         )
