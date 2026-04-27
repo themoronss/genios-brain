@@ -35,9 +35,11 @@ HUBSPOT_REDIRECT_URI = os.getenv("HUBSPOT_REDIRECT_URI", "http://localhost:8000/
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-# Sync config — controls both normal (manual) and cron sync batch sizes
-SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 15))
-SYNC_MAX_EMAILS_CRON = int(os.getenv("SYNC_MAX_EMAILS_CRON", 100))
+# Sync config — controls both normal (manual) and cron sync batch sizes.
+# Defaults bumped: 15/100 was too shallow to build a meaningful interaction
+# graph (single thread per contact, blank summaries). Real memory needs depth.
+SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 200))
+SYNC_MAX_EMAILS_CRON = int(os.getenv("SYNC_MAX_EMAILS_CRON", 500))
 SYNC_MAX_CALENDAR_EVENTS = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS", 250))
 SYNC_MAX_CALENDAR_EVENTS_CRON = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS_CRON", 250))
 SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))

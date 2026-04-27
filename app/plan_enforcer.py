@@ -33,7 +33,7 @@ PLAN_CONFIG: dict = {
         "max_api_keys": 1,
         "rpm_per_agent": 10,
         "rph_org": 50,
-        "context_depth": "shallow",        # strip authority/state/precedent fields
+        "context_depth": "full",           # ship real product on every tier
         "overage_allowed": False,
         "integrations_allowed": {"gmail"},
         "operations_allowed": set(),       # no manual context, merge, etc.
@@ -58,7 +58,7 @@ PLAN_CONFIG: dict = {
         "max_api_keys": 1,
         "rpm_per_agent": 20,
         "rph_org": 200,
-        "context_depth": "shallow",
+        "context_depth": "full",
         "overage_allowed": True,
         "overage_cost_per_1k": 500,
         "integrations_allowed": {"gmail", "calendar", "documents"},

@@ -86,7 +86,9 @@ def run_pending_extractions(org_id: str = None):
                     org_id=str(row.org_id),
                 )
 
-                # Update the interaction with extracted data
+                # Update the interaction with extracted data.
+                # Keep a 1000-char excerpt of the body so a blank/failed summary
+                # still has recoverable context (vs nuking the whole body).
                 db.execute(
                     text("""
                         UPDATE interactions
@@ -96,7 +98,7 @@ def run_pending_extractions(org_id: str = None):
                             topics = :topics,
                             interaction_type = :interaction_type,
                             extraction_status = 'extracted',
-                            raw_body = NULL
+                            raw_body = LEFT(raw_body, 1000)
                         WHERE id = :id
                     """),
                     {
