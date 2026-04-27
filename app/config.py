@@ -44,8 +44,11 @@ SYNC_MAX_CALENDAR_EVENTS = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS", 250))
 SYNC_MAX_CALENDAR_EVENTS_CRON = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS_CRON", 250))
 SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
 
-# Bump this when extraction logic changes to trigger re-extraction of old interactions
-PROCESSING_VERSION = 3
+# Bump this when extraction logic changes to trigger re-extraction of old interactions.
+# v4 (2026-04-28): retain LEFT(raw_body, 1000) excerpt instead of nulling raw_body
+# after extraction; sync depth raised 15→200/100→500. Re-extract recovers blank
+# summaries and surfaces excerpts that were previously discarded.
+PROCESSING_VERSION = 4
 
 # ── Phase 1 — LLM foundation, Pull API deadline, webhook retry ──
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
