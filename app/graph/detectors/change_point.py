@@ -48,9 +48,9 @@ def _detect_engagement_change_point(db, org_id: str) -> List[Dict]:
             FROM contacts c
             WHERE c.org_id = :org_id
               AND c.is_archived IS NOT TRUE
-              AND c.is_bidirectional IS TRUE
-              AND COALESCE(c.classification_override, c.classification, 'unknown')
-                  NOT IN ('newsletter', 'bot', 'transactional')
+              -- Same reasoning as inbound_ack — classification is more reliable
+              -- than is_bidirectional for filtering noise.
+              AND COALESCE(c.classification_override, c.classification, 'unknown') = 'real_person'
               AND COALESCE(c.interaction_count, 0) >= 6
               AND c.last_interaction_at IS NOT NULL
               AND c.last_interaction_at > NOW() - (INTERVAL '1 day' * :lookback)

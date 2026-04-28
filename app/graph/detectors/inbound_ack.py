@@ -59,11 +59,12 @@ def _detect_unacknowledged_inbound(db, org_id: str) -> List[Dict]:
             FROM last_inbound li
             JOIN contacts c ON c.id = li.contact_id
             WHERE c.is_archived IS NOT TRUE
-              -- Hide broadcast / automated senders — they don't expect replies
-              AND COALESCE(c.classification_override, c.classification, 'unknown')
-                  NOT IN ('newsletter', 'bot', 'transactional')
-              -- Real two-way relationship — filters cold-mail spam
-              AND c.is_bidirectional IS TRUE
+              -- Real person, not broadcast / automated.
+              -- We use classification=real_person rather than is_bidirectional
+              -- because the bidirectional flag often lags the data (a contact
+              -- that's mostly inbound until you reply once is still flagged
+              -- one-way). classification is set by the classify task.
+              AND COALESCE(c.classification_override, c.classification, 'unknown') = 'real_person'
               -- No outbound to this contact since the inbound landed
               AND NOT EXISTS (
                   SELECT 1 FROM interactions out_i
