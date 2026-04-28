@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def _enabled() -> bool:
-    return os.getenv("GENIOS_RELATED_OUTBOUND_ENABLED", "false").lower() in ("1", "true", "yes")
+    # Default-on as of Phase 3 Task 3.2 — surfacing prior outbound on the
+    # same topic is core to "approve, don't think" UX. Tenants can opt out
+    # by setting GENIOS_RELATED_OUTBOUND_ENABLED=false.
+    return os.getenv("GENIOS_RELATED_OUTBOUND_ENABLED", "true").lower() in ("1", "true", "yes")
 
 
 def get_related_outbound(

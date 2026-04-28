@@ -13,6 +13,8 @@ from app.graph.detectors.role_drift import ROLE_DRIFT_DETECTORS
 from app.graph.detectors.authority_change import AUTHORITY_CHANGE_DETECTORS
 from app.graph.detectors.contradiction import CONTRADICTION_DETECTORS
 from app.graph.detectors.campaigns import CAMPAIGN_DETECTORS
+from app.graph.detectors.inbound_ack import INBOUND_ACK_DETECTORS
+from app.graph.detectors.change_point import CHANGE_POINT_DETECTORS
 
 ALL_DETECTORS = (
     RELATIONSHIP_DETECTORS
@@ -25,4 +27,6 @@ ALL_DETECTORS = (
     + AUTHORITY_CHANGE_DETECTORS
     + CONTRADICTION_DETECTORS
     + CAMPAIGN_DETECTORS
+    + INBOUND_ACK_DETECTORS
+    + CHANGE_POINT_DETECTORS
 )

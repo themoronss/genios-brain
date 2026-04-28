@@ -18,7 +18,10 @@ from sqlalchemy import text
 
 
 def _enabled() -> bool:
-    return os.getenv("GENIOS_CAMPAIGN_DETECTORS_ENABLED", "false").lower() in ("1", "true", "yes")
+    # Default-on as of Phase 3 Task 3.2 — campaign awareness is part of the
+    # core "brain notices what you're doing" promise. Set the env var to
+    # "false" to opt a tenant out without a redeploy.
+    return os.getenv("GENIOS_CAMPAIGN_DETECTORS_ENABLED", "true").lower() in ("1", "true", "yes")
 
 
 def _detect_active_outbound_campaign(db, org_id: str) -> List[Dict]:

@@ -13,6 +13,7 @@ from app.ingestion.gmail_connector import (
 )
 
 from app.ingestion.email_parser import parse_headers, extract_email_body, detect_attachments
+from app.ingestion.attachment_extractor import extract_attachment_text
 from app.ingestion.graph_builder import (
     upsert_contact,
     create_interaction,
@@ -532,6 +533,14 @@ def _sync_single_account(
             parsed = parse_headers(payload)
             body_text = extract_email_body(payload)
             attachment_info = detect_attachments(payload)
+
+            # Phase 2 Task 2.1 — pull text out of supported attachments and
+            # append to the body so the LLM extractor sees what was sent.
+            # PDF/DOCX/plain only; fail-soft on unsupported or corrupt files.
+            if attachment_info.get("has_attachment"):
+                attach_text = extract_attachment_text(service, m["id"], payload)
+                if attach_text:
+                    body_text = (body_text + "\n\n" + attach_text)[:8000]
 
             from_email = parsed["from_email"]
             to_email = parsed["to_email"]
