@@ -1343,14 +1343,27 @@ def build_context_bundle(
         }
 
     # Phase 3.5 — narrative for medium/long packs (Pull API passes remaining_ms).
+    # Programmatic by default (zero LLM tokens). Pass contact metadata so the
+    # template-based path can produce a meaningful headline without an LLM.
     if resolved_size in ("medium", "long"):
         try:
             from app.brain.narrative import build_narrative
             facts = bundle.get("recent_interactions") or []
+            recent = facts[0] if facts else {}
+            contact_meta = {
+                "stage": bundle.get("relationship_stage"),
+                "sentiment_ewma": (contact.get("sentiment_ewma") if contact else None),
+                "open_commitments": bundle.get("open_commitments_count")
+                                    or len(bundle.get("open_commitments") or []),
+                "last_interaction_at": bundle.get("last_interaction_at")
+                                       or recent.get("interaction_at"),
+                "last_subject": recent.get("title") or recent.get("subject"),
+            }
             narrative = build_narrative(
                 org_id=org_id,
                 entity=entity_name,
                 facts=facts,
+                contact_meta=contact_meta,
                 pack_size=resolved_size,
                 remaining_ms=int(remaining_ms),
             )
