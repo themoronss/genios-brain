@@ -276,6 +276,19 @@ def task_precedent_writer(self, org_id: str = None):
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
+def task_hebbian_nightly(self, org_id: str = None):
+    """Hebbian edge update on contact_facts. Nightly 4:30am, after precedent
+    writer. Strengthens edges between facts that contributed to acted-on
+    recommendations; decays facts that haven't co-activated in 30 days
+    (potentiated facts are exempt). Mig 079."""
+    try:
+        from app.tasks.hebbian_nightly import run_hebbian_nightly
+        return run_hebbian_nightly(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
 def task_auto_merge(self, org_id: str = None):
     """Auto-apply merge queue candidates >= 0.95. Soft-archives loser contact;
     undo endpoint available for 7 days. Runs every 30 minutes."""
@@ -501,6 +514,14 @@ celery.conf.beat_schedule = {
     "precedent-writer-nightly": {
         "task": "app.celery_app.task_precedent_writer",
         "schedule": crontab(hour=4, minute=0),
+        "options": {"queue": "low_priority"},
+    },
+    # Mig 079: Hebbian edge update — runs after precedent writer so the day's
+    # acted recommendations are accounted for. Strengthens facts that wired
+    # together; decays the rest (except potentiated).
+    "hebbian-nightly": {
+        "task": "app.celery_app.task_hebbian_nightly",
+        "schedule": crontab(hour=4, minute=30),
         "options": {"queue": "low_priority"},
     },
     # Morning digest — hourly tick; task only sends when local time == digest_hour

@@ -48,7 +48,11 @@ SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
 # v4 (2026-04-28): retain LEFT(raw_body, 1000) excerpt instead of nulling raw_body
 # after extraction; sync depth raised 15→200/100→500. Re-extract recovers blank
 # summaries and surfaces excerpts that were previously discarded.
-PROCESSING_VERSION = 4
+# v5 (2026-04-28): drop the 1000-char truncation entirely — keep full raw_body.
+# The verbatim body powers MMR diversification, trigram fuzzy retrieval, and
+# Section B reasoning. Re-extract restores the full text on rows extracted
+# under v4 (which only held the first 1000 chars).
+PROCESSING_VERSION = 5
 
 # ── Phase 1 — LLM foundation, Pull API deadline, webhook retry ──
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")

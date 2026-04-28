@@ -87,8 +87,11 @@ def run_pending_extractions(org_id: str = None):
                 )
 
                 # Update the interaction with extracted data.
-                # Keep a 1000-char excerpt of the body so a blank/failed summary
-                # still has recoverable context (vs nuking the whole body).
+                # v5: keep raw_body in full. The body is the verbatim signal —
+                # MMR/trigram retrieval and Section B reasoning both want it
+                # intact. The 1000-char truncation discarded ~80% of every
+                # email after extraction; recovering it is the lever that
+                # MemPalace identified at 96.6% R@5.
                 db.execute(
                     text("""
                         UPDATE interactions
@@ -97,8 +100,7 @@ def run_pending_extractions(org_id: str = None):
                             intent = :intent,
                             topics = :topics,
                             interaction_type = :interaction_type,
-                            extraction_status = 'extracted',
-                            raw_body = LEFT(raw_body, 1000)
+                            extraction_status = 'extracted'
                         WHERE id = :id
                     """),
                     {

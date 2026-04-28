@@ -82,11 +82,23 @@ def hybrid_search(
     Convenience wrapper: BM25 + vector + graph-walk → RRF → rerank.
     Pass `query_embedding=None` to skip the vector branch (BM25-only).
     Pass `seed_entity_ids` to blend in graph neighbors (Phase 3.6).
+
+    Mig 079: query expansion runs first — alias hits become extra
+    must-or terms in the BM25 tsquery, and alias-resolved contacts
+    are injected as graph seeds.
     """
-    from app.retrieval import bm25, fuse, store
+    from app.retrieval import bm25, fuse, store, expand
+
+    expansion = expand.expand_query(db, org_id, query)
+    expanded_q = expand.build_expanded_tsquery(expansion)
 
     lists = []
-    bm = bm25.search(db, org_id, query, limit=50, contact_id=contact_id)
+    bm = bm25.search(
+        db, org_id, query,
+        limit=50,
+        contact_id=contact_id,
+        expanded_query=expanded_q or None,
+    )
     if bm:
         lists.append(bm)
 
@@ -96,9 +108,15 @@ def hybrid_search(
             lists.append(vec)
 
     # Phase 3.6 — graph walk as an additional input list to RRF.
+    # Mig 079: alias-resolved contacts are added as additional seeds
+    # so a query like "3one4" walks from the resolved contact even when
+    # the caller didn't supply a contact_id.
     seeds = list(seed_entity_ids or [])
     if contact_id and contact_id not in seeds:
         seeds.append(contact_id)
+    for cid in expansion.get("contact_ids", []):
+        if cid not in seeds:
+            seeds.append(cid)
     if seeds:
         try:
             from app.graph.neighbors import get_neighbors
@@ -108,5 +126,8 @@ def hybrid_search(
         except Exception:
             pass  # retrieval must not fail on graph branch
 
-    fused = fuse.rrf_fuse(lists, limit=50) if lists else []
+    fused = (
+        fuse.rrf_fuse(lists, limit=50, db=db, org_id=org_id)
+        if lists else []
+    )
     return rerank(query, fused, top_k=limit)
