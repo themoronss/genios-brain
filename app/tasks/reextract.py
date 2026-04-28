@@ -22,6 +22,7 @@ from app.database import SessionLocal
 from app.config import PROCESSING_VERSION
 from app.ingestion.gmail_connector import build_gmail_service, fetch_full_message, get_user_email
 from app.ingestion.email_parser import parse_headers, extract_email_body, detect_attachments
+from app.ingestion.attachment_extractor import extract_attachment_text
 from app.ingestion.email_classifier import classify_email
 from app.ingestion.entity_extractor import extract_email_intelligence
 from app.ingestion.graph_builder import (
@@ -210,6 +211,18 @@ def run_reextract(org_id: str, batch_size: int = BATCH_SIZE):
                     payload = msg.get("payload", {})
                     body_text = extract_email_body(payload)
                     attachment_info = detect_attachments(payload)
+
+                    # Phase 2 Task 2.1 — pull attachment text on reextract too,
+                    # not just on fresh Gmail sync. Old messages with PDFs/DOCX
+                    # attachments need this re-run pass to surface their content.
+                    if attachment_info.get("has_attachment"):
+                        try:
+                            attach_text = extract_attachment_text(service, gmail_id, payload)
+                            if attach_text:
+                                body_text = (body_text + "\n\n" + attach_text)[:8000]
+                        except Exception as _ae:
+                            # Fail-soft — never block reextract on attachment errors
+                            print(f"  ⚠ attachment extract failed for {gmail_id}: {_ae}")
 
                     # Classify
                     headers = {
