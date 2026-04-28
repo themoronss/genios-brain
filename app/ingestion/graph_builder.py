@@ -535,6 +535,38 @@ def upsert_contact(
 
     final_id = result.fetchone()[0]
 
+    # Mig 079: keep entity_aliases in sync so /v1/messages/search expansion +
+    # bundle_builder Tier 4.5 trigram resolution catches new contacts. Idempotent
+    # via UNIQUE(org_id, contact_id, alias_text); silently skipped if the table
+    # isn't present (stale DB).
+    try:
+        if email:
+            db.execute(
+                text("""
+                    INSERT INTO entity_aliases
+                        (org_id, contact_id, alias_text, alias_kind, confidence)
+                    VALUES (:oid, :cid, lower(:email), 'email', 1.00)
+                    ON CONFLICT (org_id, contact_id, alias_text) DO NOTHING
+                """),
+                {"oid": org_id, "cid": final_id, "email": email},
+            )
+        if name and name.strip():
+            db.execute(
+                text("""
+                    INSERT INTO entity_aliases
+                        (org_id, contact_id, alias_text, alias_kind, confidence)
+                    VALUES (:oid, :cid, :name, 'display_name', 0.95)
+                    ON CONFLICT (org_id, contact_id, alias_text) DO NOTHING
+                """),
+                {"oid": org_id, "cid": final_id, "name": name.strip()},
+            )
+    except Exception:
+        # entity_aliases or pg_trgm missing — drop the work, don't fail upsert.
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
     # Auto-assign segment based on detected entity type
     auto_assign_segment(db, org_id, final_id, final_entity_type or "other")
 
