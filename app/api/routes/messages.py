@@ -67,12 +67,43 @@ def search_messages(
 
     if use_fts:
         params["q"] = q.strip()
-        sql = """
+
+        # Mig 079: alias-aware expansion. Lets queries like "aanya" also
+        # match interactions tied to "Aanya Gupta" / her email aliases.
+        try:
+            from app.retrieval.expand import expand_query, build_expanded_tsquery
+            expansion = expand_query(db, org_id, q)
+            qx = build_expanded_tsquery(expansion)
+        except Exception as e:
+            logger.debug(f"alias expansion skipped: {e}")
+            qx = ""
+
+        params["qx"] = qx if qx else None
+
+        # When expansion produced extra terms, OR them into both the WHERE
+        # clause and the rank expression. Otherwise the legacy single-q path
+        # runs unchanged.
+        if qx:
+            tsv_match = (
+                "(i.search_tsv @@ plainto_tsquery('english', :q) "
+                " OR i.search_tsv @@ to_tsquery('english', :qx))"
+            )
+            rank_expr = (
+                "GREATEST("
+                "  ts_rank(i.search_tsv, plainto_tsquery('english', :q)),"
+                "  ts_rank(i.search_tsv, to_tsquery('english', :qx))"
+                ") AS rank"
+            )
+        else:
+            tsv_match = "i.search_tsv @@ plainto_tsquery('english', :q)"
+            rank_expr = "ts_rank(i.search_tsv, plainto_tsquery('english', :q)) AS rank"
+
+        sql = f"""
             SELECT
                 i.id, i.contact_id, c.name AS contact_name,
                 i.subject, i.raw_snippet, i.summary, i.topics,
                 i.direction, i.interaction_at,
-                ts_rank(i.search_tsv, plainto_tsquery('english', :q)) AS rank
+                {rank_expr}
             FROM interactions i
             JOIN contacts c ON c.id = i.contact_id
             WHERE i.org_id = :org_id
@@ -80,7 +111,7 @@ def search_messages(
               AND (:direction IS NULL OR i.direction = :direction)
               AND (:contact_id IS NULL OR i.contact_id = CAST(:contact_id AS uuid))
               AND COALESCE(c.disclosure_level, 'public') = 'public'
-              AND i.search_tsv @@ plainto_tsquery('english', :q)
+              AND {tsv_match}
             ORDER BY rank DESC, i.interaction_at DESC
             LIMIT :limit
         """

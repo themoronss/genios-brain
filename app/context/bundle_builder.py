@@ -197,6 +197,37 @@ def get_contact_by_name(db, org_id: str, entity_name: str) -> Optional[Dict]:
                         contact["resolution_method"] = "name_exact_company_fuzzy"
                         return contact
 
+        # ── Tier 4.5 (mig 079): entity_aliases trigram lookup ────────────
+        # Catches "aanya" → "Aanya Gupta" via the backfilled alias index
+        # without needing to scan all candidates with WRatio. Cheap, indexed.
+        try:
+            alias_row = db.execute(
+                text("""
+                    SELECT contact_id, alias_text, alias_kind,
+                           similarity(lower(alias_text), :n) AS sim
+                    FROM entity_aliases
+                    WHERE org_id = :oid
+                      AND similarity(lower(alias_text), :n) >= 0.45
+                    ORDER BY sim DESC
+                    LIMIT 1
+                """),
+                {"oid": org_id, "n": entity_name.strip().lower()},
+            ).fetchone()
+            if alias_row and alias_row[3] is not None:
+                contact = _fetch_full_contact(db, str(alias_row[0]), org_id)
+                if contact:
+                    contact["match_confidence"] = round(float(alias_row[3]), 2)
+                    contact["matched_from"] = entity_name
+                    contact["resolution_method"] = f"alias_{alias_row[2]}"
+                    return contact
+        except Exception as e:
+            # entity_aliases or pg_trgm missing on stale DB — fall through
+            # to legacy fuzzy matching.
+            try:
+                db.rollback()
+            except Exception:
+                pass
+
         # ── Tier 5 & 6: Name fuzzy matching ─────────────────────────────
         choices = {str(row[0]): row[1] for row in candidates if row[1]}
         best_name = process.extractOne(
