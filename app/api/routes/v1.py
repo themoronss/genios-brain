@@ -231,12 +231,20 @@ def v1_search_contacts(
         q_clean = q.strip()
         params["q_exact"] = q_clean.lower()
         params["q_like"] = f"%{q_clean.lower()}%"
+        params["q_trgm"] = q_clean.lower()
+        # Fuzzy match via pg_trgm `%` operator. Uses the GIN indexes from
+        # migration 042 (idx_contacts_name_trgm, idx_contacts_email_trgm).
+        # Default similarity threshold is 0.3, which catches typos, partial
+        # matches, and short forms without returning unrelated rows.
         where.append(
             "(LOWER(c.email) = :q_exact "
             "OR LOWER(c.name) = :q_exact "
             "OR LOWER(c.email) LIKE :q_like "
             "OR LOWER(c.name) LIKE :q_like "
-            "OR LOWER(COALESCE(c.company, '')) LIKE :q_like)"
+            "OR LOWER(COALESCE(c.company, '')) LIKE :q_like "
+            "OR c.name % :q_trgm "
+            "OR c.email % :q_trgm "
+            "OR COALESCE(c.company, '') % :q_trgm)"
         )
 
     if needs_attention:
