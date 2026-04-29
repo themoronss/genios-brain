@@ -31,6 +31,8 @@ class ReasonResult(BaseModel):
     time_urgency: confloat(ge=0.0, le=1.0) = 0.0
     novelty: confloat(ge=0.0, le=1.0) = 0.0
     actionability: confloat(ge=0.0, le=1.0) = 0.5  # default mid; older LLMs may omit
+    # Set by cascade.escalate() when Sonnet was invoked. None on direct Haiku output.
+    escalation_reason: Optional[str] = None
 
 
 def _format_facts(facts: list[dict]) -> str:

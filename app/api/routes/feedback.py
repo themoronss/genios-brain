@@ -98,4 +98,19 @@ def post_feedback(
     except Exception as e:
         logger.debug(f"feedback event publish failed: {e}")
 
+    # Section B learning loop: write a natural-language episode so precedent
+    # harvest and future bundles can learn from this outcome. Best-effort —
+    # failure here must not affect the API response.
+    try:
+        from app.feedback.episode_writer import record_from_feedback
+        record_from_feedback(
+            db,
+            org_id=org_id,
+            recommendation_id=str(row[0]),
+            outcome=req.outcome,
+            notes=req.notes,
+        )
+    except Exception as e:
+        logger.debug(f"feedback episode write failed: {e}")
+
     return {"recorded": True, "recommendation_id": str(row[0]), "outcome": req.outcome}

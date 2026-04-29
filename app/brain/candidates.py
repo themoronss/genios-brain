@@ -37,4 +37,13 @@ def generate(
             if ids is None or str(cand.get("contact_id")) in ids:
                 cand["detector"] = detector.__name__
                 candidates.append(cand)
+
+    # Section B intelligence: annotate candidates with convergence info per
+    # contact (how many independent detector categories agree). Annotation
+    # only — no filtering yet, so single-signal candidates still flow.
+    try:
+        from app.brain.convergence import annotate
+        annotate(candidates)
+    except Exception as e:
+        logger.debug(f"convergence annotate failed: {e}")
     return candidates

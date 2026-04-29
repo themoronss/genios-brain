@@ -1403,6 +1403,14 @@ def build_context_bundle(
         except Exception as _e:
             pass  # narrative is best-effort
 
+    # Section B: prune to Haiku-friendly budget so reasoner doesn't get
+    # silently truncated inside the LLM call. No-op when already under budget.
+    try:
+        from app.context.budget import prune_bundle_to_budget
+        prune_bundle_to_budget(bundle)
+    except Exception as _e:
+        pass  # pruning is best-effort
+
     return bundle
 
 

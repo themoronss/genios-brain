@@ -68,7 +68,12 @@ def escalate(
         raw = raw[4:].strip()
     try:
         data = json.loads(raw)
-        return ReasonResult(**data)
+        result = ReasonResult(**data)
+        # Mark this result as having gone through the Sonnet escalation so
+        # downstream observability and the learning loop can distinguish it.
+        if result.escalation_reason is None:
+            result.escalation_reason = "grey_band_confidence"
+        return result
     except (json.JSONDecodeError, ValidationError) as e:
         logger.warning(f"cascade sonnet parse failed: {e}")
         return None

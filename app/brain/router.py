@@ -22,6 +22,7 @@ from app import config
 from app.brain import candidates as candgen
 from app.brain import event_bus
 from app.brain import gate as gate_mod
+from app.brain import lifecycle_modifier as lc_mod
 from app.brain import reasoner as reasoner_mod
 from app.brain import scorer as scorer_mod
 from app.database import SessionLocal
@@ -122,6 +123,13 @@ def run_once() -> dict:
                     org_id=org_id,
                     insight_type=cand.get("insight_type") or "",
                 )
+                # Lifecycle-aware modifier: stale-evidence recommendations
+                # are deprioritized automatically. 1.0 = no penalty (no facts
+                # on this contact yet), values < 1.0 reflect fading evidence.
+                lc_factor = lc_mod.lifecycle_modifier(
+                    db, org_id, cand.get("contact_id") or entity_id,
+                )
+                priority = max(0.0, min(1.0, priority * lc_factor))
                 allowed, blocked_reason = gate_mod.allow(
                     candidate=cand, reason_result=result, priority=priority,
                 )
@@ -140,9 +148,14 @@ def run_once() -> dict:
                     # webhook dispatcher picks it up on its next tick.
                     # Payload v2 (migration 073): evidence, precedent_links,
                     # suggested_action, confidence_level, rationale.
+                    # Migration 080 adds: reasoning_trace, facts_used,
+                    # escalation_reason.
                     try:
                         from app.brain.payload_v2 import build_payload_v2
-                        payload = build_payload_v2(db, org_id, entity_id, cand, result, priority)
+                        payload = build_payload_v2(
+                            db, org_id, entity_id, cand, result, priority,
+                            lifecycle_modifier=lc_factor,
+                        )
 
                         rec_id = str(uuid4())
                         db.execute(
@@ -152,7 +165,8 @@ def run_once() -> dict:
                                     category, priority, confidence,
                                     title, reason, action, metadata,
                                     evidence, precedent_links, suggested_action,
-                                    confidence_level, rationale
+                                    confidence_level, rationale,
+                                    reasoning_trace, facts_used, escalation_reason
                                 ) VALUES (
                                     :id, :oid, :sub, :itype,
                                     :cat, :prio, :conf,
@@ -160,7 +174,9 @@ def run_once() -> dict:
                                     CAST(:evidence AS jsonb),
                                     CAST(:precedent_links AS jsonb),
                                     CAST(:suggested_action AS jsonb),
-                                    :conf_level, :rationale
+                                    :conf_level, :rationale,
+                                    CAST(:reasoning_trace AS jsonb),
+                                    :facts_used, :escalation_reason
                                 )
                             """),
                             {
@@ -176,6 +192,9 @@ def run_once() -> dict:
                                 "suggested_action": json.dumps(payload["suggested_action"], default=str),
                                 "conf_level": payload["confidence_level"],
                                 "rationale": payload["rationale"],
+                                "reasoning_trace": json.dumps(payload["reasoning_trace"], default=str),
+                                "facts_used": payload["facts_used"],
+                                "escalation_reason": payload["escalation_reason"],
                             },
                         )
                         db.commit()

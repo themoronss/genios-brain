@@ -421,6 +421,20 @@ def task_calibration_nightly(self):
         raise self.retry(exc=exc, countdown=600, max_retries=2)
 
 
+@celery.task(bind=True, queue="low_priority")
+def task_baseline_writer(self, org_id: str = None):
+    """Recompute per-contact personal baselines (response_hours, email_words).
+    Detectors use these for z-score deviations instead of absolute thresholds.
+    Nightly. Read-only on contacts; writes to personal_baselines.
+    """
+    try:
+        from app.tasks.baseline_writer import run_baseline_writer
+        return run_baseline_writer(org_id)
+    except Exception as exc:
+        logger.exception("baseline_writer failed")
+        raise self.retry(exc=exc, countdown=600, max_retries=2)
+
+
 @celery.task(bind=True, max_retries=2, default_retry_delay=60, queue="low_priority")
 def task_extract_pending(self, org_id: str = None):
     """Phase 1.1: Process pending LLM extractions (async batch)."""
@@ -564,6 +578,14 @@ celery.conf.beat_schedule = {
     "calibration-nightly": {
         "task": "app.celery_app.task_calibration_nightly",
         "schedule": crontab(hour=3, minute=0),
+        "options": {"queue": "low_priority"},
+    },
+    # Section B intelligence: per-contact baselines for z-score detectors.
+    # Runs after lifecycle (2:30) and before calibration (3:00) so calibration
+    # sees fresh baselines.
+    "baseline-writer-nightly": {
+        "task": "app.celery_app.task_baseline_writer",
+        "schedule": crontab(hour=2, minute=45),
         "options": {"queue": "low_priority"},
     },
     # Phase 1.3: Renew Gmail + Calendar watch channels daily before 7-day expiry.

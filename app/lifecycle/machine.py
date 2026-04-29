@@ -31,6 +31,25 @@ def _exec(db, sql: str, **params) -> int:
     return db.execute(text(sql), params).rowcount or 0
 
 
+def _publish_transitions(run_kind: str, org_id: str | None, counts: dict) -> None:
+    """Emit one event per non-zero transition so downstream consumers
+    (calibration, episode writer, brain router) can react. Failures are
+    swallowed — the state machine must never block on the event bus.
+    """
+    movements = {k: v for k, v in counts.items() if v}
+    if not movements:
+        return
+    try:
+        from app.brain.event_bus import publish
+        publish("lifecycle.transitioned", {
+            "run": run_kind,
+            "org_id": org_id,
+            "movements": movements,
+        })
+    except Exception as e:
+        logger.warning(f"lifecycle event publish failed: {e}")
+
+
 def run_hourly(org_id: str | None = None) -> dict:
     """Promotions + demotions based on current freshness/confidence."""
     db = SessionLocal()
@@ -109,6 +128,7 @@ def run_hourly(org_id: str | None = None) -> dict:
         )
         db.commit()
         logger.info(f"lifecycle_hourly: {counts}")
+        _publish_transitions("hourly", org_id, counts)
         return counts
     finally:
         db.close()
@@ -162,6 +182,7 @@ def run_nightly(org_id: str | None = None) -> dict:
         )
         db.commit()
         logger.info(f"lifecycle_nightly: {counts}")
+        _publish_transitions("nightly", org_id, counts)
         return counts
     finally:
         db.close()

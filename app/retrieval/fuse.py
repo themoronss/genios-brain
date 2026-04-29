@@ -228,13 +228,16 @@ def _potentiated_contact_ids(db, org_id: str, contact_ids: set) -> set:
     contact_ids = {c for c in contact_ids if c}
     if not contact_ids:
         return set()
+    # Section B intelligence: include both 'live' (full weight) and 'fade'
+    # (still informative — fading facts carry historical signal). Excludes
+    # ingest/validate (not yet ready) and dormant/archive (not active reasoning).
     rows = db.execute(
         text("""
             SELECT DISTINCT contact_id::text
             FROM contact_facts
             WHERE org_id = :oid
               AND is_potentiated = TRUE
-              AND lifecycle_state = 'ACTIVE'
+              AND lifecycle IN ('live', 'fade')
               AND contact_id::text = ANY(:cids)
         """),
         {"oid": org_id, "cids": list(contact_ids)},

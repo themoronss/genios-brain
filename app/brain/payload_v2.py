@@ -192,10 +192,13 @@ def build_payload_v2(
     candidate: dict,
     reason_result: Any,
     priority: float,
+    *,
+    lifecycle_modifier: Optional[float] = None,
 ) -> dict:
-    """Compose the five v2 fields. All fields guaranteed present (may be
-    empty list / None / empty string) — never raises so the insert can't
-    fail on payload assembly."""
+    """Compose the v2 fields plus the migration-080 intelligence fields.
+    All fields guaranteed present (may be empty list / None / empty string) —
+    never raises so the insert can't fail on payload assembly.
+    """
     contact = _fetch_contact(db, subject_entity_id) if subject_entity_id else None
     insight_type = candidate.get("insight_type")
 
@@ -210,10 +213,51 @@ def build_payload_v2(
         or f"{insight_type}: priority={priority:.2f}"
     )
 
+    # Migration 080 fields — observability for the learning loop.
+    escalation_reason = getattr(reason_result, "escalation_reason", None)
+    facts_used = _facts_used_anchors(reason_result, evidence)
+    reasoning_trace = _build_reasoning_trace(
+        reason_result, lifecycle_modifier, escalation_reason,
+    )
+
     return {
         "evidence": evidence,
         "precedent_links": precedent_links,
         "suggested_action": suggested_action,
         "confidence_level": confidence_level,
         "rationale": rationale,
+        "facts_used": facts_used,
+        "reasoning_trace": reasoning_trace,
+        "escalation_reason": escalation_reason,
+    }
+
+
+def _facts_used_anchors(reason_result: Any, evidence: list[dict]) -> list[str]:
+    """Short text anchors of the facts that drove this recommendation. The
+    reasoner emits a list of 2-4 evidence strings; fall back to evidence-dict
+    types when the LLM omits them. Stored as text[] on recommendations.
+    """
+    anchors = list(getattr(reason_result, "evidence", None) or [])
+    if anchors:
+        return [str(a)[:240] for a in anchors if a][:5]
+    return [
+        f"{e.get('type')}={e.get('value')}"[:240]
+        for e in evidence if e.get("type")
+    ][:5]
+
+
+def _build_reasoning_trace(
+    reason_result: Any,
+    lifecycle_modifier: Optional[float],
+    escalation_reason: Optional[str],
+) -> dict:
+    """Compact JSON blob that captures HOW the recommendation was formed."""
+    return {
+        "model_keep": bool(getattr(reason_result, "keep", False)),
+        "raw_confidence": float(getattr(reason_result, "confidence", 0.0) or 0.0),
+        "lifecycle_modifier": (
+            None if lifecycle_modifier is None else round(float(lifecycle_modifier), 3)
+        ),
+        "escalated": escalation_reason is not None,
+        "escalation_reason": escalation_reason,
     }
