@@ -556,10 +556,13 @@ celery.conf.beat_schedule = {
         "schedule": 30.0,
         "options": {"queue": "high_priority"},
     },
-    # Phase 2: brain router tick — consume event stream, debounce, reason, gate
-    "brain-router-5s": {
+    # Phase 2: brain router tick — consume event stream, debounce, reason, gate.
+    # 15s tick (was 5s): event_log debounce window is 30s anyway, so a 15s poll
+    # adds negligible end-to-end latency while cutting Redis traffic 3x. Critical
+    # for staying under Upstash limits at production volumes.
+    "brain-router-15s": {
         "task": "app.celery_app.task_brain_router",
-        "schedule": 5.0,
+        "schedule": 15.0,
         "options": {"queue": "brain_router"},
     },
     # Phase 4.5: hourly lifecycle transitions

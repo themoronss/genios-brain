@@ -73,26 +73,31 @@ def run_once() -> dict:
         if not org_id or not entity_id:
             continue
         pending[(org_id, entity_id)] += 1
-        _open_window(org_id, entity_id)
+        # NOTE: _open_window NOT called per event — see pipelined batch below.
+
+    # Open debounce windows once per unique (org, entity) in a single
+    # pipelined Redis round-trip. setex is idempotent so deduping events
+    # that share the same key produces identical state with far fewer ops.
+    if pending:
+        try:
+            pipe = redis_client.pipeline()
+            now_ts = int(time.time())
+            for org_id, entity_id in pending.keys():
+                pipe.setex(
+                    _debounce_key(org_id, entity_id),
+                    config.GENIOS_BATCH_WINDOW_SECONDS,
+                    now_ts,
+                )
+            pipe.execute()
+        except Exception as e:
+            logger.warning(f"debounce pipelined setex failed: {e}")
 
     # Ack events up front — the flush work is idempotent via the dedup layer.
     event_bus.ack(entry_ids)
 
-    # Brain-activity dashboard counters (Item 6). Best-effort — never blocks.
-    if pending:
-        try:
-            now_iso = str(int(time.time()))
-            # Write last-tick markers per-org (first org in this batch wins the
-            # `last_tick` slot; that's fine for a demo counter).
-            for (oid, _eid), count in pending.items():
-                redis_client.set(f"brain:router:last_tick:{oid}", now_iso, ex=3600)
-                redis_client.incrby(f"brain:router:last_consumed:{oid}", count)
-                redis_client.expire(f"brain:router:last_consumed:{oid}", 3600)
-        except Exception as _e:
-            logger.debug(f"brain activity counter write failed: {_e}")
-
     flushed = 0
     pushed = 0
+    flushed_org_counts: dict[str, int] = defaultdict(int)
     db = SessionLocal()
     try:
         for (org_id, entity_id), n in pending.items():
@@ -102,6 +107,7 @@ def run_once() -> dict:
                 continue
 
             flushed += 1
+            flushed_org_counts[org_id] += n
 
             # Pre-compute this contact's bundle in the background so the next
             # /v1/context pull hits Layer 1 cache with fresh data. Fire-and-
@@ -204,5 +210,20 @@ def run_once() -> dict:
                         logger.warning(f"recommendation insert failed: {e}")
     finally:
         db.close()
+
+    # Brain-activity dashboard counters — ONLY when something actually flushed
+    # (was running every tick when events were merely received, even if window
+    # wasn't ready). Pipelined, deduped per org, so 1 round-trip total.
+    if flushed and flushed_org_counts:
+        try:
+            now_iso = str(int(time.time()))
+            pipe = redis_client.pipeline()
+            for oid, count in flushed_org_counts.items():
+                pipe.set(f"brain:router:last_tick:{oid}", now_iso, ex=3600)
+                pipe.incrby(f"brain:router:last_consumed:{oid}", count)
+                pipe.expire(f"brain:router:last_consumed:{oid}", 3600)
+            pipe.execute()
+        except Exception as _e:
+            logger.debug(f"brain activity counter write failed: {_e}")
 
     return {"consumed": len(batch), "flushed": flushed, "pushed": pushed}
