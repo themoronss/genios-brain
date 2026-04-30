@@ -60,7 +60,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_HAIKU_MODEL = os.getenv("ANTHROPIC_HAIKU_MODEL", "claude-haiku-4-5-20251001")
 ANTHROPIC_SONNET_MODEL = os.getenv("ANTHROPIC_SONNET_MODEL", "claude-sonnet-4-6")
-GENIOS_ANTHROPIC_ENABLED = os.getenv("GENIOS_ANTHROPIC_ENABLED", "false").lower() == "true"
+GENIOS_ANTHROPIC_ENABLED = os.getenv("GENIOS_ANTHROPIC_ENABLED", "true").lower() == "true"
 
 GENIOS_LLM_DAILY_CAP_USD = float(os.getenv("GENIOS_LLM_DAILY_CAP_USD", "50.0"))
 GENIOS_PULL_DEADLINE_MS = int(os.getenv("GENIOS_PULL_DEADLINE_MS", "400"))
@@ -71,7 +71,7 @@ GENIOS_WEBHOOK_RETRY_SCHEDULE = [
 ]
 
 # ── Phase 2 — reasoning loop (event bus, detectors, reasoner, gate) ──
-GENIOS_REASONER_ENABLED = os.getenv("GENIOS_REASONER_ENABLED", "false").lower() == "true"
+GENIOS_REASONER_ENABLED = os.getenv("GENIOS_REASONER_ENABLED", "true").lower() == "true"
 GENIOS_BATCH_WINDOW_SECONDS = int(os.getenv("GENIOS_BATCH_WINDOW_SECONDS", "30"))
 GENIOS_MIN_PUSH_PRIORITY = float(os.getenv("GENIOS_MIN_PUSH_PRIORITY", "0.60"))
 GENIOS_MIN_PUSH_CONFIDENCE = float(os.getenv("GENIOS_MIN_PUSH_CONFIDENCE", "0.50"))
@@ -81,7 +81,7 @@ GENIOS_EVENT_GROUP = os.getenv("GENIOS_EVENT_GROUP", "brain_router")
 GENIOS_EVENT_MAXLEN = int(os.getenv("GENIOS_EVENT_MAXLEN", "100000"))
 
 # ── Phase 3 — learning loop (recommendations, cascade, narrative) ──
-GENIOS_CASCADE_ENABLED = os.getenv("GENIOS_CASCADE_ENABLED", "false").lower() == "true"
+GENIOS_CASCADE_ENABLED = os.getenv("GENIOS_CASCADE_ENABLED", "true").lower() == "true"
 
 # ── Phase 4 — correctness (calibration; observability deferred per deviations R) ──
 GENIOS_CALIBRATION_ENABLED = os.getenv("GENIOS_CALIBRATION_ENABLED", "false").lower() == "true"

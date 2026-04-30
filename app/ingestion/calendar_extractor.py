@@ -19,12 +19,17 @@ logger = logging.getLogger(__name__)
 
 
 def _parse_result(result_text: str) -> dict:
-    """Strip markdown code fences and parse JSON."""
+    """Strip markdown code fences + preamble and parse JSON."""
     result_text = result_text.strip()
-    if result_text.startswith("```"):
-        result_text = result_text.split("```")[1]
-        if result_text.startswith("json"):
-            result_text = result_text[4:]
+    if "```" in result_text:
+        chunks = result_text.split("```")
+        result_text = chunks[1] if len(chunks) >= 3 else chunks[-1]
+        if result_text.lstrip().startswith("json"):
+            result_text = result_text.lstrip()[4:]
+    if not result_text.lstrip().startswith("{"):
+        lo, hi = result_text.find("{"), result_text.rfind("}")
+        if lo >= 0 and hi > lo:
+            result_text = result_text[lo:hi + 1]
     return json.loads(result_text.strip())
 
 

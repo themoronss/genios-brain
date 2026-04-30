@@ -34,13 +34,13 @@ class TenantCostGuardrailExceeded(Exception):
 # Provider must be one of: groq | gemini | anthropic | openai.
 _DEFAULT_ROUTES = {
     "classify_email":   ("groq",      "llama-3.3-70b-versatile"),
-    "extract_entities": ("groq",      "llama-3.3-70b-versatile"),
-    "calendar_extract": ("groq",      "llama-3.3-70b-versatile"),
+    "extract_entities": ("anthropic", "claude-haiku-4-5-20251001"),
+    "calendar_extract": ("anthropic", "claude-haiku-4-5-20251001"),
     "draft":            ("groq",      "llama-3.3-70b-versatile"),
     "chat":             ("gemini",    "gemini-2.5-flash"),
-    "reason_haiku":     ("groq",      "llama-3.3-70b-versatile"),
-    "reason_sonnet":    ("groq",      "llama-3.3-70b-versatile"),
-    "narrative":        ("groq",      "llama-3.3-70b-versatile"),
+    "reason_haiku":     ("anthropic", "claude-haiku-4-5-20251001"),
+    "reason_sonnet":    ("anthropic", "claude-sonnet-4-6"),
+    "narrative":        ("anthropic", "claude-haiku-4-5-20251001"),
     "embed":            ("gemini",    "gemini-embedding-001"),
 }
 
@@ -115,8 +115,22 @@ class LLMClient:
             else:
                 raise ValueError(f"Unknown provider: {provider}")
         except Exception as primary_err:
-            # Provider fallback: Groq → Gemini on quota / transient errors.
-            if provider == "groq":
+            # Provider fallback chain: Anthropic → Groq → Gemini.
+            # Keeps the pipeline alive when a provider has quota/auth/transient errors.
+            if provider == "anthropic":
+                logger.warning(f"Anthropic failed for {purpose}, falling back to Groq: {primary_err}")
+                try:
+                    text_out, in_tok, out_tok = self._call_groq(
+                        "llama-3.3-70b-versatile", messages, temperature, max_tokens
+                    )
+                    provider, model = "groq", "llama-3.3-70b-versatile"
+                except Exception as groq_err:
+                    logger.warning(f"Groq fallback also failed for {purpose}, falling back to Gemini: {groq_err}")
+                    text_out, in_tok, out_tok = self._call_gemini(
+                        "gemini-2.5-flash", messages, temperature, max_tokens
+                    )
+                    provider, model = "gemini", "gemini-2.5-flash"
+            elif provider == "groq":
                 logger.warning(f"Groq failed for {purpose}, falling back to Gemini: {primary_err}")
                 text_out, in_tok, out_tok = self._call_gemini(
                     "gemini-2.5-flash", messages, temperature, max_tokens
@@ -209,10 +223,25 @@ class LLMClient:
             )
         import anthropic  # type: ignore
         client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-        resp = client.messages.create(
-            model=model, messages=messages,
-            temperature=temperature, max_tokens=max_tokens,
-        )
+        # Anthropic requires system messages as a top-level `system=` param,
+        # not as role="system" in messages. Strip & concatenate.
+        system_parts = []
+        user_messages = []
+        for m in messages:
+            if m.get("role") == "system":
+                if m.get("content"):
+                    system_parts.append(m["content"])
+            else:
+                user_messages.append(m)
+        kwargs = {
+            "model": model,
+            "messages": user_messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if system_parts:
+            kwargs["system"] = "\n\n".join(system_parts)
+        resp = client.messages.create(**kwargs)
         parts = [b.text for b in resp.content if getattr(b, "type", "") == "text"]
         content = "".join(parts)
         in_tok = getattr(resp.usage, "input_tokens", 0)

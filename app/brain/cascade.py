@@ -63,11 +63,18 @@ def escalate(
         logger.warning(f"cascade sonnet call failed: {e}")
         return None
 
-    raw = raw.strip().strip("`")
-    if raw.startswith("json"):
-        raw = raw[4:].strip()
+    raw = raw.strip()
+    if "```" in raw:
+        chunks = raw.split("```")
+        raw = chunks[1] if len(chunks) >= 3 else chunks[-1]
+        if raw.lstrip().startswith("json"):
+            raw = raw.lstrip()[4:]
+    if not raw.lstrip().startswith("{"):
+        lo, hi = raw.find("{"), raw.rfind("}")
+        if lo >= 0 and hi > lo:
+            raw = raw[lo:hi + 1]
     try:
-        data = json.loads(raw)
+        data = json.loads(raw.strip())
         result = ReasonResult(**data)
         # Mark this result as having gone through the Sonnet escalation so
         # downstream observability and the learning loop can distinguish it.

@@ -345,11 +345,20 @@ Return ONLY this JSON — no markdown, no explanation:
                     temperature=0.1, max_tokens=700,
                 ).strip()
 
-                # Remove markdown code blocks if present
-                if result_text.startswith("```"):
-                    result_text = result_text.split("```")[1]
-                    if result_text.startswith("json"):
-                        result_text = result_text[4:]
+                # Strip markdown fences + preamble. Haiku occasionally adds
+                # "Here is the JSON:" before a fenced block; find {…} bounds.
+                if "```" in result_text:
+                    chunks = result_text.split("```")
+                    if len(chunks) >= 3:
+                        result_text = chunks[1]
+                    else:
+                        result_text = chunks[-1]
+                    if result_text.lstrip().startswith("json"):
+                        result_text = result_text.lstrip()[4:]
+                if not result_text.lstrip().startswith("{"):
+                    lo, hi = result_text.find("{"), result_text.rfind("}")
+                    if lo >= 0 and hi > lo:
+                        result_text = result_text[lo:hi + 1]
 
                 result = json.loads(result_text)
 

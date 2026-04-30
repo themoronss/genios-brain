@@ -78,10 +78,15 @@ def _call_llm(candidate: dict, facts: list, precedents: list, attempt_temp: floa
 
 def _parse(raw: str) -> Optional[ReasonResult]:
     raw = raw.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
+    if "```" in raw:
+        chunks = raw.split("```")
+        raw = chunks[1] if len(chunks) >= 3 else chunks[-1]
+        if raw.lstrip().startswith("json"):
+            raw = raw.lstrip()[4:]
+    if not raw.lstrip().startswith("{"):
+        lo, hi = raw.find("{"), raw.rfind("}")
+        if lo >= 0 and hi > lo:
+            raw = raw[lo:hi + 1]
     try:
         data = json.loads(raw.strip())
         return ReasonResult(**data)
