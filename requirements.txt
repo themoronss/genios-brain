@@ -10,7 +10,7 @@ pydantic
 requests
 google-generativeai
 groq
-anthropic==0.39.0
+anthropic>=0.40.0,<1.0.0
 google-auth-oauthlib
 google-api-python-client
 bcrypt
