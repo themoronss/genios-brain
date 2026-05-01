@@ -1,0 +1,108 @@
+# Declarative probe list — what to check against the live brain.
+#
+# Edit this file to add/remove checks. The audit script reads it and
+# reports on every capability listed here.
+#
+# Each probe has:
+#   id:          short stable key (used in diff log)
+#   capability:  human-readable capability name (matches section 3 matrix)
+#   expected:    what "met" looks like (short text)
+#   type:        endpoint | field | behavior
+#   target:      endpoint path OR dotted field path in a context bundle
+#   contact:     (for field/behavior probes) which entity to probe against
+#   assertion:   python expression evaluated against the response
+#
+# `assertion` has `r` (the response dict) and `ok` (bool) in scope.
+
+probes:
+  - id: context_returns_bundle
+    capability: "/v1/context returns a usable bundle for a known contact"
+    type: endpoint
+    target: /v1/context
+    contact: tripathihk2014@gmail.com
+    expected: "HTTP 200 with entity + context_for_agent"
+    assertion: "r.get('entity') is not None and bool(r.get('context_for_agent'))"
+
+  - id: situation_classified
+    capability: "Situation auto-classified from free text"
+    type: field
+    contact: tripathihk2014@gmail.com
+    situation: "follow up on recent chat"
+    expected: "situation_type set to a non-null string"
+    assertion: "r.get('situation_type') is not None"
+
+  - id: contact_search
+    capability: "Contact search / autocomplete"
+    type: endpoint
+    target: /v1/contacts?q=harsh
+    expected: "endpoint exists, returns list"
+    assertion: "isinstance(r, dict) and ('contacts' in r or 'results' in r)"
+
+  - id: communication_style_populated
+    capability: "`communication_style` populated when style data exists"
+    type: field
+    contact: tripathihk2014@gmail.com
+    expected: "non-empty string when what_works is populated (or honest null)"
+    assertion: |
+      (
+        (lambda e:
+          (bool(e.get('communication_style')) and str(e.get('communication_style')).lower() != 'unknown')
+          if bool(e.get('what_works'))
+          else True  # if no what_works either, missing style is acceptable
+        )(r.get('entity') or {})
+      )
+
+  - id: what_works_populated
+    capability: "`what_works` / `what_to_avoid` populated"
+    type: field
+    contact: tripathihk2014@gmail.com
+    expected: "at least one populated"
+    assertion: "bool((r.get('entity') or {}).get('what_works')) or bool((r.get('entity') or {}).get('what_to_avoid'))"
+
+  - id: no_duplicate_commitments
+    capability: "No duplicate commitments"
+    type: behavior
+    contact: tripathihk2014@gmail.com
+    expected: "each commitment text unique"
+    assertion: |
+      (
+        (lambda cs: len(cs) == len({c.get('text','').strip().lower() for c in cs}))
+        (((r.get('entity') or {}).get('open_commitments_detail') or []))
+      )
+
+  - id: topics_from_meetings
+    capability: "Topics extracted from meetings"
+    type: behavior
+    contact: pro14888@adobe.com
+    expected: "topics_of_interest non-empty for contact with meetings"
+    assertion: "bool((r.get('entity') or {}).get('topics_of_interest'))"
+
+  - id: agent_signal_consistent
+    capability: "`agent_behavior` and `action_recommendation` agree"
+    type: behavior
+    contact: atin@example.com
+    expected: "block/proceed signals don't contradict"
+    assertion: |
+      (
+        (lambda ab, ar: not (ab == 'block' and ar == 'proceed'))
+        (r.get('agent_behavior'), r.get('action_recommendation'))
+      )
+
+  - id: broadcast_filtered
+    capability: "Promo/no-reply senders filtered from graph"
+    type: behavior
+    contact: information@hdfcbank.net
+    expected: "marked as broadcast OR not returned as WARM"
+    assertion: |
+      (
+        (r.get('entity') is None)
+        or ((r.get('entity') or {}).get('is_broadcast') is True)
+        or ((r.get('entity') or {}).get('relationship_stage') in ('COLD', None))
+      )
+
+  - id: latency_under_2s
+    capability: "Latency acceptable for interactive use"
+    type: behavior
+    contact: tripathihk2014@gmail.com
+    expected: "< 2000 ms on a fresh build"
+    assertion: "(r.get('latency_ms') or 99999) < 2000"

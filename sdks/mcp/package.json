@@ -1,0 +1,29 @@
+{
+  "name": "@genios/mcp",
+  "version": "1.0.0-rc.3",
+  "description": "Genios MCP server — expose relationship memory to any MCP-compatible AI client",
+  "main": "dist/index.js",
+  "bin": {
+    "genios-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepare": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
