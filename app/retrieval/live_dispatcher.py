@@ -27,12 +27,12 @@ from app.retrieval import doc_search
 logger = logging.getLogger(__name__)
 
 # Hard timeouts per source (seconds). Calendar is fastest; docs need embed.
-# Gmail/Calendar can spend 1-2s on token refresh (401 → re-auth) before the
-# actual API call — bumped to 6s/5s so first call after token expiry doesn't
-# silently return [].
-_TIMEOUT_GMAIL = 6.0
-_TIMEOUT_CALENDAR = 5.0
-_TIMEOUT_DOCS = 4.0
+# Gmail token refresh (401 → re-auth) + 3 metadata fetches = ~6s realistic
+# worst case. Setting to 10s comfortably covers cold-start while keeping
+# request total bounded under our 12s P99 ceiling.
+_TIMEOUT_GMAIL = 10.0
+_TIMEOUT_CALENDAR = 8.0
+_TIMEOUT_DOCS = 6.0
 
 # Default routing keywords → which sources to hit.
 # Matched against query text (case-insensitive). When nothing matches,
