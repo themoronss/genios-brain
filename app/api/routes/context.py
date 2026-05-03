@@ -574,8 +574,60 @@ def get_context(
                 minimal["other_agents_active"] = blackboard.peek(
                     org_id, request.entity.lower().strip()
                 )
+                # Phase 2: attach intent_signal so callers see the classifier output
+                if intent_signal is not None:
+                    try:
+                        minimal["intent_signal"] = intent_signal.model_dump()
+                    except Exception:
+                        pass
                 from fastapi.responses import JSONResponse
                 return JSONResponse(content=minimal)
+
+            # ── Phase 1: Live Tool Dispatch fallback (was 404) ───────────
+            # Graph + minimal both missed. Before giving up, try going LIVE
+            # into Gmail / Calendar / uploaded docs. Returns a 200 with
+            # `live_fetch` payload when anything found; falls through to 404
+            # only when truly nothing exists anywhere.
+            try:
+                from app.retrieval import live_dispatcher
+                live_query = f"{request.entity} {request.situation or ''}".strip()
+                live_results = live_dispatcher.dispatch(
+                    org_id, live_query, limit_per_source=5,
+                )
+                if live_results.get("total"):
+                    live_text = live_dispatcher.format_for_bundle(live_results)
+                    payload = {
+                        "entity_name": request.entity,
+                        "context_for_agent": (
+                            f"No cached profile for {request.entity}. "
+                            f"Pulled {live_results['total']} live items from "
+                            f"{', '.join(live_results['sources_hit'])}:\n\n{live_text}"
+                        ),
+                        "confidence": 0.55,
+                        "matched_from": request.entity,
+                        "resolution_method": "live_tool_fetch",
+                        "live_fetch": live_results,
+                        "fallback_used": True,
+                        "cache_hit": False,
+                        "cache_source": "live",
+                        "latency_ms": int((time.time() - start_time) * 1000),
+                    }
+                    if intent_signal is not None:
+                        try:
+                            payload["intent_signal"] = intent_signal.model_dump()
+                        except Exception:
+                            pass
+                    log_context_call(
+                        db, org_id, request.entity, payload, cache_hit=False,
+                        source=source, agent_id=request.agent_id,
+                        tokens_used=max(1, len(payload.get("context_for_agent", "")) // 4),
+                        latency_ms=payload["latency_ms"],
+                        cache_source="live",
+                    )
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(content=payload)
+            except Exception as live_err:
+                logger.debug(f"live dispatch fallback failed: {live_err}")
 
             # Entity truly unknown in this org — that's a real 404.
             context_error(

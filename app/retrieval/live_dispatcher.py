@@ -27,9 +27,12 @@ from app.retrieval import doc_search
 logger = logging.getLogger(__name__)
 
 # Hard timeouts per source (seconds). Calendar is fastest; docs need embed.
-_TIMEOUT_GMAIL = 2.5
-_TIMEOUT_CALENDAR = 2.0
-_TIMEOUT_DOCS = 2.0
+# Gmail/Calendar can spend 1-2s on token refresh (401 → re-auth) before the
+# actual API call — bumped to 6s/5s so first call after token expiry doesn't
+# silently return [].
+_TIMEOUT_GMAIL = 6.0
+_TIMEOUT_CALENDAR = 5.0
+_TIMEOUT_DOCS = 4.0
 
 # Default routing keywords → which sources to hit.
 # Matched against query text (case-insensitive). When nothing matches,
@@ -53,14 +56,23 @@ _KEYWORD_ROUTING = {
 
 
 def _route(query: str) -> List[str]:
-    """Pick which sources to query based on keyword hints."""
+    """Pick which sources to query based on keyword hints.
+
+    GMAIL is ALWAYS included — it's the broadest signal source and most
+    user questions touch email even when they look topical. Calendar and
+    docs are added when their keywords match. This avoids the bug where
+    'pitch deck' would route ONLY to docs and miss the email thread that
+    contains the deck link.
+    """
     q = (query or "").lower()
-    sources = []
-    for src, kws in _KEYWORD_ROUTING.items():
-        if any(k in q for k in kws):
-            sources.append(src)
-    if not sources:
-        # No keyword match — search broadly. Cost guard limits abuse.
+    sources = ["gmail"]  # always
+    if any(k in q for k in _KEYWORD_ROUTING["calendar"]):
+        sources.append("calendar")
+    if any(k in q for k in _KEYWORD_ROUTING["docs"]):
+        sources.append("docs")
+    # If nothing additional matched, still hit calendar+docs lightly so a
+    # generic query gets the full picture. Cost guard limits abuse.
+    if sources == ["gmail"]:
         sources = ["gmail", "calendar", "docs"]
     return sources
 
