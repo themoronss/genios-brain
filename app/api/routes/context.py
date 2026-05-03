@@ -94,11 +94,14 @@ def log_context_call(
     source: str = "api",
     agent_id: str = None,
     tokens_used: int = None,
+    latency_ms: int = None,
+    cache_source: str = None,
 ):
     """
     Log every context API call to context_calls table.
     Non-blocking — failures are silently swallowed so they never affect the response.
     source: 'api' (external agent) or 'dashboard' (internal UI click)
+    cache_source: 'precomputed' | 'redis' | 'minimal' | 'fresh' — feeds public benchmarks p95 by path
     """
     try:
         entity = context_bundle.get("entity") or {}
@@ -107,10 +110,12 @@ def log_context_call(
                 """
                 INSERT INTO context_calls
                     (org_id, entity_name, relationship_stage, action_recommendation,
-                     confidence, cache_hit, source, agent_id, tokens_used, called_at)
+                     confidence, cache_hit, source, agent_id, tokens_used,
+                     latency_ms, cache_source, called_at)
                 VALUES
                     (:org_id, :entity_name, :stage, :action, :confidence, :cache_hit,
-                     :source, :agent_id, :tokens_used, NOW())
+                     :source, :agent_id, :tokens_used,
+                     :latency_ms, :cache_source, NOW())
                 """
             ),
             {
@@ -123,6 +128,8 @@ def log_context_call(
                 "source": source,
                 "agent_id": agent_id,
                 "tokens_used": tokens_used,
+                "latency_ms": latency_ms,
+                "cache_source": cache_source,
             },
         )
         db.commit()
@@ -403,6 +410,25 @@ def get_context(
                     },
                 )
 
+        # ── Phase 2: Intent + Emotion classification (entry-point) ───────────
+        # One Haiku call (cached 5min) returns {intent, domain, emotion, urgency,
+        # requires_live_fetch, confidence}. Drives bundle live-fetch + tone shaping.
+        # Fail-soft — never blocks request. Returns neutral default on any error.
+        intent_signal = None
+        try:
+            from app.intent import classify as classify_intent
+            intent_signal = classify_intent(
+                f"{request.entity} {request.situation or ''}".strip(),
+                org_id=org_id,
+            )
+            logger.info(
+                f"intent_signal entity={request.entity[:40]} "
+                f"intent={intent_signal.intent} emotion={intent_signal.emotion} "
+                f"urgency={intent_signal.urgency} live={intent_signal.requires_live_fetch}"
+            )
+        except Exception as _e:
+            logger.debug(f"intent classify skipped: {_e}")
+
         # ── Cache lookup: precomputed (situation-independent) → Redis → fresh build ──
         # Layer 1: Precomputed bundles (24h TTL, situation-independent, highest hit rate)
         context_bundle = None
@@ -433,6 +459,7 @@ def get_context(
                 logger.info(f"Serving pre-computed bundle for {request.entity}")
 
                 cached_tokens = max(1, len(context_bundle.get("context_for_agent", "")) // 4)
+                _lat = int((time.time() - start_time) * 1000)
                 log_context_call(
                     db, org_id, request.entity,
                     context_bundle,
@@ -440,11 +467,19 @@ def get_context(
                     source=source,
                     agent_id=request.agent_id,
                     tokens_used=cached_tokens,
+                    latency_ms=_lat,
+                    cache_source="precomputed",
                 )
-                context_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
+                context_bundle["latency_ms"] = _lat
                 context_bundle["cache_hit"] = True
                 context_bundle["cache_source"] = "precomputed"
                 context_bundle["other_agents_active"] = blackboard.peek(org_id, request.entity.lower().strip())
+                # Phase 2: attach fresh intent signal even on cache hit
+                if intent_signal is not None:
+                    try:
+                        context_bundle["intent_signal"] = intent_signal.model_dump()
+                    except Exception:
+                        pass
                 from app.core.analytics import capture as _capture
                 _capture(org_id, "api_context_requested", {
                     "source": source,
@@ -471,6 +506,7 @@ def get_context(
                 logger.info(f"Redis cache hit for {request.entity}")
                 cached_bundle = json.loads(cached) if isinstance(cached, (str, bytes)) else {}
                 cached_tokens = max(1, len(cached_bundle.get("context_for_agent", "")) // 4)
+                _lat = int((time.time() - start_time) * 1000)
                 log_context_call(
                     db, org_id, request.entity,
                     cached_bundle,
@@ -478,8 +514,10 @@ def get_context(
                     source=source,
                     agent_id=request.agent_id,
                     tokens_used=cached_tokens,
+                    latency_ms=_lat,
+                    cache_source="redis",
                 )
-                cached_bundle["latency_ms"] = int((time.time() - start_time) * 1000)
+                cached_bundle["latency_ms"] = _lat
                 cached_bundle["cache_hit"] = True
                 cached_bundle["cache_source"] = "redis"
                 cached_bundle["other_agents_active"] = blackboard.peek(org_id, request.entity.lower().strip())
@@ -529,6 +567,8 @@ def get_context(
                     db, org_id, request.entity, minimal, cache_hit=False,
                     source=source, agent_id=request.agent_id,
                     tokens_used=max(1, len(minimal.get("context_for_agent", "")) // 4),
+                    latency_ms=minimal["latency_ms"],
+                    cache_source="minimal",
                 )
 
                 minimal["other_agents_active"] = blackboard.peek(
@@ -586,7 +626,8 @@ def get_context(
 
         # Log the call
         log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False,
-                         source=source, agent_id=request.agent_id, tokens_used=tokens_used)
+                         source=source, agent_id=request.agent_id, tokens_used=tokens_used,
+                         latency_ms=context_bundle.get("latency_ms"), cache_source="fresh")
 
         from app.core.analytics import capture
         capture(org_id, "api_context_requested", {

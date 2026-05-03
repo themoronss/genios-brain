@@ -445,6 +445,30 @@ def task_extract_pending(self, org_id: str = None):
         raise self.retry(exc=exc)
 
 
+# ── Phase 6: Churn scan + retention offer composition ──────────────────────
+
+@celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
+def task_churn_scan(self, org_id: str = None):
+    """Phase 6: Daily engagement_health snapshot. Fires churn_risk detector
+    candidates on next router cycle for orgs in the actionable band."""
+    try:
+        from app.tasks.churn_scan import run_churn_scan
+        return run_churn_scan(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
+@celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
+def task_retention_offers(self, org_id: str = None):
+    """Phase 6: Compose personalised offers for high-risk orgs and push
+    them into pending_alerts so they surface in next Claude reply."""
+    try:
+        from app.tasks.retention_offer import run_retention_offers
+        return run_retention_offers(org_id)
+    except Exception as exc:
+        raise self.retry(exc=exc)
+
+
 @celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")
 def task_renew_watches(self):
     """Phase 1.3: Proactively renew Gmail + Calendar watch channels before expiry."""
@@ -601,6 +625,22 @@ celery.conf.beat_schedule = {
     "expire-approvals-5m": {
         "task": "app.celery_app.task_expire_approvals",
         "schedule": 300.0,  # 5 min
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 6: Churn scan — daily engagement_health snapshot at 02:15 UTC
+    # (between lifecycle hourly :17 and lifecycle nightly 02:30 — staggered
+    # so the brain has fresh score data when the detector fires).
+    "churn-scan-daily": {
+        "task": "app.celery_app.task_churn_scan",
+        "schedule": crontab(hour=2, minute=15),
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 6: Retention offer composition — runs after churn scan and
+    # baseline writer. Pushes into pending_alerts → surfaces in next
+    # Claude/MCP turn.
+    "retention-offers-daily": {
+        "task": "app.celery_app.task_retention_offers",
+        "schedule": crontab(hour=3, minute=15),
         "options": {"queue": "low_priority"},
     },
 }

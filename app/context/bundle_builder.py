@@ -755,6 +755,7 @@ def build_context_bundle(
     db, org_id: str, entity_name: str, situation: str = None,
     plan_tier: str = None, context_size: str = "medium",
     remaining_ms: int = 10_000,
+    intent_signal=None,  # Phase 2: IntentSignal | None — drives live fetch + tone
 ) -> Dict:
     """
     Build complete context bundle for an entity.
@@ -783,6 +784,34 @@ def build_context_bundle(
     contact = get_contact_by_name(db, org_id, entity_name)
 
     if not contact:
+        # ── Phase 1: Live Tool Dispatch (graph miss fallback) ────────────
+        # Graph doesn't know this entity. Don't fail — go LIVE into the
+        # connected tools (Gmail / Calendar / uploaded docs) and synthesise
+        # an answer from real-time data.
+        try:
+            from app.retrieval import live_dispatcher
+            live_query = (situation or entity_name).strip()
+            live_results = live_dispatcher.dispatch(
+                org_id, f"{entity_name} {situation or ''}".strip(),
+                limit_per_source=5,
+            )
+            if live_results.get("total"):
+                live_text = live_dispatcher.format_for_bundle(live_results)
+                return {
+                    "entity_name": entity_name,
+                    "context_for_agent": (
+                        f"No cached profile for {entity_name}. "
+                        f"Pulled {live_results['total']} live items from "
+                        f"{', '.join(live_results['sources_hit'])}:\n\n{live_text}"
+                    ),
+                    "confidence": 0.55,
+                    "matched_from": entity_name,
+                    "resolution_method": "live_tool_fetch",
+                    "live_fetch": live_results,
+                    "fallback_used": True,
+                }
+        except Exception as _e:
+            pass  # live fetch best-effort, fall through to legacy 404
         return {
             "error": "Contact not found",
             "entity_name": entity_name,
@@ -1402,6 +1431,64 @@ def build_context_bundle(
                 bundle["narrative"] = narrative
         except Exception as _e:
             pass  # narrative is best-effort
+
+    # ── Phase 1+2: Conditional Live Enrichment (intent-aware) ────────────
+    # Trigger live dispatch when:
+    #   - Phase 2 intent_signal says requires_live_fetch=True (LLM-judged), OR
+    #   - keyword heuristic matches (fallback when no intent signal), OR
+    #   - graph is sparse (<5 interactions) AND a situation was provided
+    # Result is APPENDED to context_for_agent — never replaces graph data.
+    if situation:
+        situation_lc = situation.lower()
+        live_triggers = (
+            "invoice", "receipt", "payment", "transaction", "razorpay",
+            "stripe", "subscription", "bill",
+            "upcoming meeting", "next meeting", "tomorrow", "today",
+            "document", "doc says", "pdf", "deck", "spec",
+        )
+        intent_says_live = bool(
+            intent_signal and getattr(intent_signal, "requires_live_fetch", False)
+        )
+        keyword_says_live = any(t in situation_lc for t in live_triggers)
+        sparse_graph = len(interactions or []) < 5
+        should_live = intent_says_live or keyword_says_live
+        if should_live or sparse_graph:
+            try:
+                from app.retrieval import live_dispatcher
+                live_query = f"{entity_name} {situation}".strip()
+                live_results = live_dispatcher.dispatch(
+                    org_id, live_query, limit_per_source=3,
+                )
+                if live_results.get("total"):
+                    live_text = live_dispatcher.format_for_bundle(live_results)
+                    bundle["live_fetch"] = live_results
+                    existing = bundle.get("context_for_agent") or ""
+                    bundle["context_for_agent"] = (
+                        existing + "\n\n" + live_text
+                    ).strip()
+            except Exception as _e:
+                pass  # live enrichment best-effort
+
+    # ── Phase 2: stash intent signal on bundle for Phase 3 + observability ──
+    if intent_signal is not None:
+        try:
+            bundle["intent_signal"] = (
+                intent_signal.model_dump()
+                if hasattr(intent_signal, "model_dump")
+                else dict(intent_signal)
+            )
+        except Exception:
+            pass
+
+    # ── Phase 3: Tone-adaptive output shaping ─────────────────────────────
+    # Rewrites context_for_agent + suggested_action to match the user's
+    # emotional state + urgency. Best-effort — falls through silently.
+    if intent_signal is not None:
+        try:
+            from app.brain import response_shaper
+            bundle = response_shaper.shape_bundle(bundle, intent_signal)
+        except Exception as _e:
+            pass
 
     # Section B: prune to Haiku-friendly budget so reasoner doesn't get
     # silently truncated inside the LLM call. No-op when already under budget.

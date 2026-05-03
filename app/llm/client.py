@@ -42,6 +42,12 @@ _DEFAULT_ROUTES = {
     "reason_sonnet":    ("anthropic", "claude-sonnet-4-6"),
     "narrative":        ("anthropic", "claude-haiku-4-5-20251001"),
     "embed":            ("gemini",    "gemini-embedding-001"),
+    # ── Phase 2: intent + emotion classifier (cheap, cached 5min) ──
+    "classify_intent":  ("anthropic", "claude-haiku-4-5-20251001"),
+    # ── Phase 3: tone-adaptive output rewrite ──
+    "shape_response":   ("anthropic", "claude-haiku-4-5-20251001"),
+    # ── Phase 6: personalized retention offer composition ──
+    "compose_retention_offer": ("anthropic", "claude-haiku-4-5-20251001"),
 }
 
 

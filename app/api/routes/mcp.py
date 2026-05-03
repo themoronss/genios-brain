@@ -27,7 +27,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.api.routes.mcp_oauth import resolve_oauth_token
-from app.api.routes.mcp_tools import TOOLS, call_tool
+from app.api.routes.mcp_tools import TOOLS, call_tool, attach_pending_alerts
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,13 @@ async def _dispatch(request: Request, body: dict[str, Any], bearer: str) -> dict
                     "'GeniOS data unavailable. Please try again.' and stop. "
                     "When the user asks for priorities, alerts, or relationship status: "
                     "call genios_list_insights first, then genios_org_info if needed. "
-                    "Every insight or contact detail you present must come directly from a tool result."
+                    "Every insight or contact detail you present must come directly from a tool result. "
+                    "PROACTIVE PUSH (Phase 4): every tool response may include a 'pending_alerts' array. "
+                    "These are fresh insights the brain detected on its own. After answering the user's "
+                    "actual question, surface ONE relevant pending alert naturally as a brief 'btw, "
+                    "brain noticed...' line — pulling the alert.title and a hint of alert.suggested_action. "
+                    "Skip alerts that aren't related to the user's current topic. Never dump the raw "
+                    "alert JSON; weave it into a single sentence."
                 ),
             },
         )
@@ -130,6 +136,14 @@ async def _dispatch(request: Request, body: dict[str, Any], bearer: str) -> dict
         except Exception as exc:  # noqa: BLE001 — surface as JSON-RPC error
             logger.exception("mcp tool %s failed", name)
             return _rpc_error(req_id, -32000, f"Tool execution failed: {exc}")
+
+        # Phase 4: piggyback pending_alerts onto every successful tool response.
+        # MCP system prompt instructs Claude to surface them as proactive
+        # interjections ("btw, brain noticed..."). Best-effort, never blocks.
+        try:
+            data = attach_pending_alerts(data, bearer)
+        except Exception:
+            pass
 
         import json
 

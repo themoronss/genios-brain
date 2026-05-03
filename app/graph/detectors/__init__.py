@@ -15,6 +15,7 @@ from app.graph.detectors.contradiction import CONTRADICTION_DETECTORS
 from app.graph.detectors.campaigns import CAMPAIGN_DETECTORS
 from app.graph.detectors.inbound_ack import INBOUND_ACK_DETECTORS
 from app.graph.detectors.change_point import CHANGE_POINT_DETECTORS
+from app.graph.detectors.churn_risk import CHURN_DETECTORS  # Phase 6
 
 ALL_DETECTORS = (
     RELATIONSHIP_DETECTORS
@@ -29,4 +30,5 @@ ALL_DETECTORS = (
     + CAMPAIGN_DETECTORS
     + INBOUND_ACK_DETECTORS
     + CHANGE_POINT_DETECTORS
+    + CHURN_DETECTORS  # Phase 6
 )

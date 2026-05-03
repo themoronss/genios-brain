@@ -41,6 +41,7 @@ PLAN_CONFIG: dict = {
         "sync_method": "manual",
         "louvain": False,
         "max_clusters": 1,
+        "live_fetch_daily_cap": 10,        # Phase 7: live tool fetches/day
     },
     "hustler": {
         "period_days": 30,
@@ -67,6 +68,7 @@ PLAN_CONFIG: dict = {
         "sync_method": "6h_cron",
         "louvain": True,
         "max_clusters": 3,
+        "live_fetch_daily_cap": 100,       # Phase 7
     },
     "startup": {
         "period_days": 30,
@@ -96,6 +98,7 @@ PLAN_CONFIG: dict = {
         "sync_method": "realtime_webhook",
         "louvain": True,
         "max_clusters": 10,
+        "live_fetch_daily_cap": 1000,      # Phase 7
     },
 }
 

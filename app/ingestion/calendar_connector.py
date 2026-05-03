@@ -226,3 +226,115 @@ def classify_event(event, org_domain=None):
 
 class SyncTokenExpiredError(Exception):
     pass
+
+
+# ── Phase 1: Live Tool Dispatcher ──────────────────────────────────────────
+# Real-time Calendar search invoked when graph data is missing/insufficient.
+
+def live_search(
+    org_id: str,
+    query: str = "",
+    days_back: int = 30,
+    days_forward: int = 60,
+    limit: int = 10,
+) -> list:
+    """
+    Live Calendar search — invoked from /v1/context when graph misses.
+
+    Loads the gcal: prefixed token from oauth_tokens, runs Calendar's
+    `q=` search across the primary calendar in the chosen window. Returns
+    lightweight event summaries. NEVER raises — returns [] on failure.
+
+    Args:
+        org_id: org UUID (string)
+        query: free-text search across event title/description/attendees
+        days_back: how far back to look
+        days_forward: how far forward to look (defaults to upcoming 60d)
+        limit: max events (hard cap 25)
+
+    Returns:
+        list of dicts: {id, summary, start, end, attendees, location, source}
+    """
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import text as sa_text
+    from app.database import SessionLocal
+
+    if not org_id:
+        return []
+    limit = min(max(1, int(limit)), 25)
+
+    db = SessionLocal()
+    try:
+        token_row = db.execute(
+            sa_text(
+                """
+                SELECT access_token, refresh_token, account_email
+                FROM oauth_tokens
+                WHERE org_id = :oid
+                  AND account_email LIKE 'gcal:%'
+                  AND access_token IS NOT NULL
+                LIMIT 1
+                """
+            ),
+            {"oid": org_id},
+        ).fetchone()
+    finally:
+        db.close()
+
+    if not token_row:
+        return []
+
+    try:
+        service = build_calendar_service(
+            token_row.access_token, token_row.refresh_token
+        )
+        time_min = (
+            datetime.now(timezone.utc) - timedelta(days=days_back)
+        ).isoformat()
+        time_max = (
+            datetime.now(timezone.utc) + timedelta(days=days_forward)
+        ).isoformat()
+
+        kwargs = {
+            "calendarId": "primary",
+            "maxResults": limit,
+            "singleEvents": True,
+            "orderBy": "startTime",
+            "timeMin": time_min,
+            "timeMax": time_max,
+        }
+        if query:
+            kwargs["q"] = query
+
+        resp = service.events().list(**kwargs).execute()
+        events = resp.get("items", []) or []
+    except Exception:
+        return []
+
+    results = []
+    for ev in events[:limit]:
+        try:
+            results.append({
+                "id": ev.get("id"),
+                "summary": ev.get("summary", ""),
+                "description": (ev.get("description") or "")[:500],
+                "start": (ev.get("start") or {}).get(
+                    "dateTime", (ev.get("start") or {}).get("date")
+                ),
+                "end": (ev.get("end") or {}).get(
+                    "dateTime", (ev.get("end") or {}).get("date")
+                ),
+                "location": ev.get("location", ""),
+                "attendees": [
+                    {
+                        "email": a.get("email"),
+                        "response": a.get("responseStatus"),
+                    }
+                    for a in (ev.get("attendees") or [])[:10]
+                ],
+                "status": ev.get("status"),
+                "source": "calendar_live",
+            })
+        except Exception:
+            continue
+    return results

@@ -862,3 +862,37 @@ async def v1_document_upload(
         "chunks_stored": chunks_stored,
         "status": "indexed" if text_content else "queued",
     }
+
+
+# ── Phase 6: Manual retention check + offer ────────────────────────────────
+
+@router.post("/v1/retention/check")
+def v1_retention_check(
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Manually trigger a churn snapshot + offer composition for THIS org.
+    Useful for testing and dashboard 'check now' buttons. Returns the
+    computed snapshot + the composed offer (if any)."""
+    from app.tasks.churn_scan import _compute_for_org
+    from app.tasks.retention_offer import compose_offer
+
+    try:
+        snapshot = _compute_for_org(db, org_id)
+    except Exception as e:
+        raise HTTPException(status_code=500,
+                            detail=f"churn_scan failed: {str(e)[:200]}")
+
+    offer = None
+    if snapshot.get("churn_score", 0) >= 0.30:
+        try:
+            offer = compose_offer(org_id)
+        except Exception as e:
+            logger.warning(f"retention offer compose failed: {e}")
+
+    return {
+        "org_id": org_id,
+        "snapshot": snapshot,
+        "offer": offer,
+        "actionable": snapshot.get("churn_score", 0) >= 0.30,
+    }

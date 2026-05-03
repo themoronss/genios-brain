@@ -141,6 +141,48 @@ TOOLS: list[dict[str, Any]] = [
         "description": "Sync state of connected data sources (Gmail, Calendar, Slack).",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        # ── Phase 5: flagship live search tool ──
+        "name": "genios_live_search",
+        "description": (
+            "Live multi-tool search. Use when the user asks for SPECIFIC "
+            "data the cached graph may not have — an invoice, a transaction, "
+            "an upcoming meeting, the contents of an uploaded document. "
+            "Brain dispatches in real time to Gmail, Calendar, and uploaded "
+            "docs in parallel and returns merged results in <2s. "
+            "Examples: 'last invoice from Razorpay', 'next meeting with Rohit', "
+            "'what does the pricing PDF say about enterprise tier'."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "sources": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["gmail", "calendar", "docs"]},
+                    "description": "Optional explicit sources; omit to auto-route.",
+                },
+                "limit_per_source": {"type": "integer", "default": 5},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        # ── Phase 5: recent activity stream ──
+        "name": "genios_recent",
+        "description": (
+            "Recent brain activity: latest recommendations, lifecycle "
+            "transitions, fresh insights. Use for 'what's new', 'last 24h', "
+            "or as a daily catch-up call."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {"type": "integer", "default": 1, "description": "Lookback window (default 1 day)"},
+                "limit": {"type": "integer", "default": 10},
+            },
+        },
+    },
 ]
 
 
@@ -236,6 +278,34 @@ async def call_tool(
     if name == "genios_trigger_scan":
         return await _post(client, "/v1/scan", headers, {})
 
+    # ── Phase 5: genios_live_search — dispatcher direct call ──────────────
+    if name == "genios_live_search":
+        query = (arguments.get("query") or "").strip()
+        if not query:
+            return {"error": "query is required"}
+        org_id = _resolve_org_id_from_bearer(bearer_token)
+        if not org_id:
+            return {"error": "auth_required"}
+        sources = arguments.get("sources") or None
+        limit_per = int(arguments.get("limit_per_source") or 5)
+        try:
+            from app.retrieval import live_dispatcher
+            return live_dispatcher.dispatch(
+                org_id, query,
+                sources=sources, limit_per_source=limit_per,
+            )
+        except Exception as e:
+            return {"error": "live_dispatch_failed", "detail": str(e)[:200]}
+
+    # ── Phase 5: genios_recent — recent activity wrapper ──────────────────
+    if name == "genios_recent":
+        days = int(arguments.get("days", 1))
+        limit = int(arguments.get("limit", 10))
+        return await _get(
+            client, "/v1/insights", headers,
+            {"limit": limit, "recent_days": days},
+        )
+
     return {"error": f"unknown tool: {name}"}
 
 
@@ -264,3 +334,127 @@ def _safe_json(r: httpx.Response) -> Any:
         return r.json()
     except ValueError:
         return {"error": "invalid_json_from_upstream", "body": r.text[:500]}
+
+
+# ── Phase 4: Proactive push — pending_alerts piggyback ──────────────────────
+# Every successful MCP tool response is wrapped with up to 3 pending_alerts
+# from the brain. The MCP system prompt instructs Claude to surface them
+# naturally as "btw, brain noticed...". This is THE proactive moment.
+
+import hashlib as _hashlib  # local alias to avoid top-level reorg
+
+_MAX_ALERTS_PER_RESPONSE = 3
+
+
+def _resolve_org_id_from_bearer(bearer_token: str) -> str | None:
+    """Hash + lookup. Mirrors verify_api_key in app/api/deps.py but doesn't
+    raise — returns None on failure so MCP responses keep working."""
+    if not bearer_token or not bearer_token.startswith("gn_live_"):
+        return None
+    try:
+        from sqlalchemy import text as _text
+        from app.database import SessionLocal
+        hashed = _hashlib.sha256(bearer_token.encode()).hexdigest()
+        db = SessionLocal()
+        try:
+            row = db.execute(
+                _text("""
+                    SELECT id FROM orgs
+                    WHERE api_key = :raw OR api_key_hash = :h
+                    LIMIT 1
+                """),
+                {"raw": bearer_token, "h": hashed},
+            ).fetchone()
+            if row:
+                return str(row[0])
+            row = db.execute(
+                _text("""
+                    SELECT org_id FROM api_keys
+                    WHERE key_hash = :h AND is_active = TRUE
+                    LIMIT 1
+                """),
+                {"h": hashed},
+            ).fetchone()
+            if row:
+                return str(row[0])
+        finally:
+            db.close()
+    except Exception:
+        return None
+    return None
+
+
+def drain_pending_alerts(org_id: str, limit: int = _MAX_ALERTS_PER_RESPONSE) -> list:
+    """Pop up to `limit` undelivered alerts for this org, mark delivered."""
+    if not org_id:
+        return []
+    try:
+        from sqlalchemy import text as _text
+        from app.database import SessionLocal
+        db = SessionLocal()
+        try:
+            rows = db.execute(
+                _text("""
+                    SELECT id, insight_type, contact_name, title, body,
+                           suggested_action, priority, confidence
+                    FROM pending_alerts
+                    WHERE org_id = :oid
+                      AND delivered = FALSE
+                      AND (expires_at IS NULL OR expires_at > NOW())
+                    ORDER BY priority DESC, created_at DESC
+                    LIMIT :lim
+                """),
+                {"oid": org_id, "lim": int(limit)},
+            ).fetchall()
+            if not rows:
+                return []
+            ids = [str(r[0]) for r in rows]
+            db.execute(
+                _text("""
+                    UPDATE pending_alerts
+                    SET delivered = TRUE,
+                        delivered_at = NOW(),
+                        delivered_via = 'mcp'
+                    WHERE id = ANY(CAST(:ids AS uuid[]))
+                """),
+                {"ids": ids},
+            )
+            db.commit()
+            return [
+                {
+                    "id": str(r[0]),
+                    "type": r[1],
+                    "contact": r[2],
+                    "title": r[3],
+                    "body": r[4],
+                    "suggested_action": r[5],
+                    "priority": float(r[6] or 0.0),
+                    "confidence": float(r[7] or 0.0),
+                }
+                for r in rows
+            ]
+        finally:
+            db.close()
+    except Exception:
+        return []
+
+
+def attach_pending_alerts(data: Any, bearer_token: str) -> Any:
+    """Wrap a tool response with pending_alerts piggyback. Best-effort —
+    on any failure, returns the original data unchanged."""
+    if data is None or not isinstance(data, (dict, list)):
+        return data
+    try:
+        org_id = _resolve_org_id_from_bearer(bearer_token)
+        if not org_id:
+            return data
+        alerts = drain_pending_alerts(org_id)
+        if not alerts:
+            return data
+        if isinstance(data, list):
+            return {"result": data, "pending_alerts": alerts}
+        out = dict(data)
+        out["pending_alerts"] = alerts
+        return out
+    except Exception:
+        return data

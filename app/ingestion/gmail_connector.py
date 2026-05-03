@@ -197,3 +197,90 @@ def get_user_email(service):
     """
     profile = service.users().getProfile(userId="me").execute()
     return profile.get("emailAddress")
+
+
+# ── Phase 1: Live Tool Dispatcher ──────────────────────────────────────────
+# Real-time Gmail search invoked when graph data is missing/insufficient.
+# Returns lightweight summaries (no full body fetch) so latency stays <2s.
+
+def live_search(org_id: str, query: str, limit: int = 5) -> list:
+    """
+    Live Gmail search — invoked from /v1/context when graph misses.
+
+    Loads OAuth token from oauth_tokens (no prefix = gmail), runs Gmail's
+    server-side `q=` search, fetches metadata + 200-char snippet for each
+    hit. NEVER raises — returns [] on any failure so caller can fall through.
+
+    Args:
+        org_id: org UUID (string)
+        query: Gmail query (e.g. "razorpay invoice", "from:rohit subject:Q2")
+        limit: max messages to return (default 5, hard cap 10 for latency)
+
+    Returns:
+        list of dicts: {id, thread_id, from, subject, snippet, date, source}
+    """
+    from sqlalchemy import text as sa_text
+    from app.database import SessionLocal
+
+    if not org_id or not query:
+        return []
+    limit = min(max(1, int(limit)), 10)
+
+    db = SessionLocal()
+    try:
+        token_row = db.execute(
+            sa_text(
+                """
+                SELECT access_token, refresh_token, account_email
+                FROM oauth_tokens
+                WHERE org_id = :oid
+                  AND (account_email NOT LIKE '%:%' OR account_email IS NULL)
+                  AND access_token IS NOT NULL
+                LIMIT 1
+                """
+            ),
+            {"oid": org_id},
+        ).fetchone()
+    finally:
+        db.close()
+
+    if not token_row:
+        return []
+
+    try:
+        service = build_gmail_service(
+            token_row.access_token, token_row.refresh_token
+        )
+        resp = service.users().messages().list(
+            userId="me", q=query, maxResults=limit,
+        ).execute()
+        msg_refs = resp.get("messages", []) or []
+    except Exception:
+        return []
+
+    results = []
+    for ref in msg_refs[:limit]:
+        try:
+            msg = service.users().messages().get(
+                userId="me",
+                id=ref["id"],
+                format="metadata",
+                metadataHeaders=["From", "To", "Subject", "Date"],
+            ).execute()
+            headers = {
+                h["name"]: h["value"]
+                for h in msg.get("payload", {}).get("headers", [])
+            }
+            results.append({
+                "id": msg["id"],
+                "thread_id": msg.get("threadId"),
+                "from": headers.get("From", ""),
+                "to": headers.get("To", ""),
+                "subject": headers.get("Subject", ""),
+                "date": headers.get("Date", ""),
+                "snippet": (msg.get("snippet") or "")[:300],
+                "source": "gmail_live",
+            })
+        except Exception:
+            continue
+    return results

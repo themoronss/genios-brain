@@ -205,6 +205,51 @@ def run_once() -> dict:
                         )
                         db.commit()
                         pushed += 1
+
+                        # ── Phase 4: write to pending_alerts so this insight
+                        # piggybacks on the next MCP response into Claude.
+                        # Best-effort — never blocks the recommendation insert.
+                        try:
+                            contact_name = None
+                            try:
+                                row = db.execute(
+                                    text("SELECT name FROM contacts WHERE id = :cid"),
+                                    {"cid": entity_id},
+                                ).fetchone()
+                                if row:
+                                    contact_name = row[0]
+                            except Exception:
+                                pass
+                            db.execute(
+                                text("""
+                                    INSERT INTO pending_alerts (
+                                        org_id, recommendation_id, insight_type,
+                                        contact_id, contact_name, title, body,
+                                        suggested_action, priority, confidence
+                                    ) VALUES (
+                                        :oid, :rid, :itype,
+                                        :cid, :cname, :title, :body,
+                                        CAST(:sa AS jsonb), :prio, :conf
+                                    )
+                                """),
+                                {
+                                    "oid": org_id,
+                                    "rid": rec_id,
+                                    "itype": cand.get("insight_type", "generic"),
+                                    "cid": entity_id,
+                                    "cname": contact_name,
+                                    "title": cand.get("title") or result.reason[:120],
+                                    "body": result.reason,
+                                    "sa": json.dumps(payload["suggested_action"], default=str),
+                                    "prio": priority,
+                                    "conf": result.confidence,
+                                },
+                            )
+                            db.commit()
+                        except Exception as _alert_err:
+                            try: db.rollback()
+                            except Exception: pass
+                            logger.debug(f"pending_alerts write failed: {_alert_err}")
                     except Exception as e:
                         db.rollback()
                         logger.warning(f"recommendation insert failed: {e}")
