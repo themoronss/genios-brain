@@ -588,9 +588,15 @@ def get_context(
             # into Gmail / Calendar / uploaded docs. Returns a 200 with
             # `live_fetch` payload when anything found; falls through to 404
             # only when truly nothing exists anywhere.
+            #
+            # IMPORTANT: Gmail `q=` does AND-match across whitespace tokens.
+            # If the entity didn't resolve, including its raw text in the
+            # query guarantees zero hits. Prefer situation-only when present;
+            # fall back to entity only when no situation provided.
             try:
                 from app.retrieval import live_dispatcher
-                live_query = f"{request.entity} {request.situation or ''}".strip()
+                situation_clean = (request.situation or "").strip()
+                live_query = situation_clean if situation_clean else request.entity
                 live_results = live_dispatcher.dispatch(
                     org_id, live_query, limit_per_source=5,
                 )
