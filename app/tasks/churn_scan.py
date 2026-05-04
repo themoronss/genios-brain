@@ -66,6 +66,8 @@ def _compute_for_org(db, org_id: str) -> dict:
     dismiss_rate = (dismissed / labeled) if labeled >= 5 else 0.0
 
     # ── Last login (best-effort — orgs.last_login_at if exists) ──────────
+    # Each best-effort query is wrapped + rolled-back individually so a
+    # missing column doesn't poison the rest of the transaction.
     last_login = None
     try:
         row = db.execute(
@@ -74,6 +76,8 @@ def _compute_for_org(db, org_id: str) -> dict:
         ).fetchone()
         last_login = row[0] if row else None
     except Exception:
+        try: db.rollback()
+        except Exception: pass
         last_login = None
 
     # ── Sync errors in last 7d ───────────────────────────────────────────
@@ -87,7 +91,8 @@ def _compute_for_org(db, org_id: str) -> dict:
             {"oid": org_id},
         ).scalar() or 0
     except Exception:
-        pass
+        try: db.rollback()
+        except Exception: pass
 
     # ── Sentiment avg over recent contacts ───────────────────────────────
     sentiment_avg = 0.0
@@ -102,7 +107,8 @@ def _compute_for_org(db, org_id: str) -> dict:
         ).scalar()
         sentiment_avg = float(s or 0.0)
     except Exception:
-        pass
+        try: db.rollback()
+        except Exception: pass
 
     # ── Score breakdown ──────────────────────────────────────────────────
     hard = 0.0
