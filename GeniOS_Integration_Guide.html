@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeniOS Integration Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..800,0..100;1,9..144,300..800,0..100&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF9F6;
+    --surface: #FFFFFF;
+    --surface-2: #F4F2EC;
+    --ink: #0A0A0A;
+    --ink-2: #2A2A2A;
+    --muted: #6B6B6B;
+    --subtle: #9A968C;
+    --border: #E5E2DA;
+    --border-strong: #CFCBC1;
+    --accent: #B45309;
+    --accent-soft: #FEF3C7;
+    --code-bg: #111111;
+    --code-ink: #E8E6E0;
+    --code-comment: #6B6B6B;
+    --code-string: #B7C7A0;
+    --code-keyword: #D9A36B;
+    --code-fn: #E8E6E0;
+    --code-num: #C9A36B;
+    --good: #047857;
+    --warn: #B45309;
+    --bad: #B91C1C;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 32px; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.65;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* HEADER */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(250, 249, 246, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand-mark {
+    width: 22px; height: 22px;
+    background: var(--ink);
+    color: var(--bg);
+    display: grid; place-items: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 12px;
+    border-radius: 4px;
+    font-style: italic;
+  }
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .topbar-meta .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--good);
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.15);
+  }
+
+  /* HERO */
+  .hero {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 80px 32px 48px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 350;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: 1.0;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    margin-bottom: 28px;
+    font-variation-settings: "SOFT" 30, "opsz" 144;
+  }
+  .hero-title em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--accent);
+  }
+  .hero-sub {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 680px;
+    font-weight: 400;
+  }
+  .hero-meta {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    padding-top: 32px;
+    border-top: 1px dashed var(--border-strong);
+  }
+  .hero-meta-item .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .hero-meta-item .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    color: var(--ink);
+    word-break: break-all;
+  }
+
+  /* LAYOUT */
+  .layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px 32px 96px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 56px;
+  }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; gap: 32px; }
+    .toc { position: static !important; max-height: none !important; }
+  }
+
+  /* TOC */
+  .toc {
+    position: sticky;
+    top: 80px;
+    align-self: start;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  .toc-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc li {
+    counter-increment: toc;
+    margin-bottom: 2px;
+  }
+  .toc a {
+    display: block;
+    padding: 6px 0 6px 28px;
+    font-size: 13.5px;
+    color: var(--muted);
+    text-decoration: none;
+    position: relative;
+    line-height: 1.4;
+    transition: color 0.15s ease;
+  }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--subtle);
+    font-weight: 500;
+  }
+  .toc a:hover {
+    color: var(--ink);
+  }
+  .toc a:hover::before {
+    color: var(--accent);
+  }
+
+  /* CONTENT */
+  .content {
+    min-width: 0;
+    max-width: 760px;
+  }
+  .section {
+    margin-bottom: 72px;
+    scroll-margin-top: 80px;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 36px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    color: var(--ink);
+    font-variation-settings: "SOFT" 20;
+  }
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 21px;
+    letter-spacing: -0.01em;
+    margin-top: 36px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  h4 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+  p {
+    margin-bottom: 16px;
+    color: var(--ink-2);
+  }
+  p strong, li strong { color: var(--ink); font-weight: 600; }
+  em { font-style: italic; color: var(--ink); }
+  a.inline { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(180, 83, 9, 0.3); }
+  a.inline:hover { border-bottom-color: var(--accent); }
+
+  ul, ol { margin: 0 0 18px 0; padding-left: 22px; }
+  li { margin-bottom: 6px; color: var(--ink-2); }
+
+  /* Lead paragraph */
+  .lead {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    line-height: 1.45;
+    font-weight: 350;
+    color: var(--ink);
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+  .lead em { color: var(--accent); }
+
+  /* INLINE CODE */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88em;
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 20px 0;
+    border: 1px solid #1F1F1F;
+  }
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #161616;
+    border-bottom: 1px solid #232323;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .code-head .lang {
+    color: var(--code-keyword);
+  }
+  .code-block pre {
+    padding: 18px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    color: var(--code-ink);
+  }
+  .code-block pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  /* Token colors */
+  .tk-key { color: #E8B86A; }
+  .tk-str { color: #B7C7A0; }
+  .tk-num { color: #D6A66B; }
+  .tk-cmt { color: #6B6B6B; font-style: italic; }
+  .tk-kw  { color: #D9A36B; font-weight: 500; }
+  .tk-fn  { color: #E8E6E0; }
+  .tk-pc  { color: #888; }
+
+  /* TABLES */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 24px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  thead {
+    background: var(--surface-2);
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(180, 83, 9, 0.02); }
+  td code { font-size: 12.5px; }
+  td.num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--ink); white-space: nowrap; }
+  td strong { color: var(--ink); }
+
+  /* CALLOUTS */
+  .callout {
+    margin: 24px 0;
+    padding: 18px 22px 18px 24px;
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .callout-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout strong { color: var(--ink); }
+
+  /* ASCII / FLOW BLOCKS */
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--ink-2);
+    margin: 22px 0;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* PILLS */
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 100px;
+    border: 1px solid var(--border-strong);
+    color: var(--ink-2);
+    background: var(--surface);
+    vertical-align: middle;
+  }
+  .pill.warm { background: #FEF3C7; color: #92400E; border-color: #FCD34D; }
+  .pill.risk { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; }
+  .pill.cold { background: #DBEAFE; color: #1E40AF; border-color: #93C5FD; }
+  .pill.good { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+
+  /* REQ/RESP HEADER */
+  .endpoint {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin: 16px 0;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .endpoint .method {
+    background: var(--accent);
+    color: #FFF;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  /* COMBO BOX */
+  .combo-box {
+    background: linear-gradient(to bottom right, var(--accent-soft), #FFFBEB);
+    border: 1px solid #FCD34D;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 24px 0;
+  }
+  .combo-box .combo-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .combo-box .combo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(180, 83, 9, 0.15);
+  }
+  .combo-box .combo-item .ck {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .combo-box .combo-item .cv {
+    color: var(--ink);
+    font-size: 14.5px;
+    line-height: 1.4;
+  }
+  @media (max-width: 600px) {
+    .combo-box .combo-grid { grid-template-columns: 1fr; }
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .footer-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-brand {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .footer-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* Anchor offset */
+  .anchor { display: block; position: relative; top: -64px; visibility: hidden; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="#top" class="brand">
+      <span class="brand-mark">G</span>
+      <span>GeniOS<span style="color:var(--muted); font-weight:400;"> &middot; Brain</span></span>
+    </a>
+    <div class="topbar-meta"><span class="dot"></span>v3 &middot; Integration Guide</div>
+  </div>
+</div>
+
+<a id="top"></a>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Developer Documentation</div>
+  <h1 class="hero-title">Integration <em>Guide</em></h1>
+  <p class="hero-sub">
+    Add relationship intelligence to any AI agent, SaaS product, or developer workflow &mdash; in
+    minutes, not months. Five integration paths. One brain layer.
+  </p>
+
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <div class="label">Base URL</div>
+      <div class="value">squid-app-2zuqf.ondigitalocean.app</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="label">Auth</div>
+      <div class="value">Bearer gn_live_&lt;your_key&gt;</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="label">Latency (cached)</div>
+      <div class="value">&lt; 400 ms</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="label">Last Updated</div>
+      <div class="value">2026-05-04</div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- TOC -->
+  <aside class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">What GeniOS Provides</a></li>
+      <li><a href="#s2">Integration Paths</a></li>
+      <li><a href="#s2b">Reactive vs Proactive</a></li>
+      <li><a href="#s3">REST API</a></li>
+      <li><a href="#s4">MCP Server</a></li>
+      <li><a href="#s5">LangGraph Node</a></li>
+      <li><a href="#s6">Webhook Triggers</a></li>
+      <li><a href="#s6b">Where to Surface Alerts</a></li>
+      <li><a href="#s7">Python &amp; Node SDKs</a></li>
+      <li><a href="#s8">Authentication</a></li>
+      <li><a href="#s9">Plan Tiers &amp; Limits</a></li>
+      <li><a href="#s10">Common Use Cases</a></li>
+      <li><a href="#s11">Recommended Combo</a></li>
+      <li><a href="#s12">Why GeniOS vs DIY</a></li>
+      <li><a href="#s13">Quick Verify</a></li>
+      <li><a href="#s14">Support</a></li>
+    </ol>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- 1 -->
+    <section class="section" id="s1">
+      <div class="section-num">&sect; 01 &mdash; Overview</div>
+      <h2>What GeniOS Provides</h2>
+      <p class="lead">
+        GeniOS is the <em>brain layer</em> for any AI agent or product that touches people-related data &mdash;
+        emails, calendars, contacts, documents.
+      </p>
+      <p>
+        It runs continuously across a customer's connected tools (Gmail, Calendar, Docs, Drive, Slack, Jira,
+        Notion, HubSpot) and exposes five capabilities through a single API surface:
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th style="width:32%;">Capability</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Relationship intelligence</strong></td>
+              <td>Stage <span class="pill warm">WARM</span> <span class="pill risk">AT_RISK</span> <span class="pill cold">COLD</span> <span class="pill">NEEDS_ATTENTION</span>, EWMA sentiment, sentiment trend, communication style, authority score, freshness score.</td>
+            </tr>
+            <tr>
+              <td><strong>Commitments &amp; Anomalies</strong></td>
+              <td>Auto-extracted from emails &mdash; who promised what, when, status. Plus z-score anomaly flags on sentiment/engagement drops.</td>
+            </tr>
+            <tr>
+              <td><strong>Proactive insights</strong></td>
+              <td>50+ detectors fire when something matters: going cold, overdue commitment, anomaly, role change.</td>
+            </tr>
+            <tr>
+              <td><strong>Live tool fetch</strong></td>
+              <td>When the cached graph misses, GeniOS calls Gmail / Calendar / Docs in real time.</td>
+            </tr>
+            <tr>
+              <td><strong>Reasoning + actions</strong></td>
+              <td>Every response includes a ready-to-use paragraph, agent guidance ("do / avoid"), and a concrete next step.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Pitch &mdash; one sentence</div>
+        <p><em>Pipes (your inbox / phone / CRM) + GeniOS (the brain) = an agent that actually understands context.</em></p>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="section" id="s2">
+      <div class="section-num">&sect; 02 &mdash; Paths</div>
+      <h2>Integration Paths at a Glance</h2>
+      <p>Five ways in. Pick one, or mix. The most powerful combination is <strong>MCP + Webhook</strong> &mdash; the agent gets on-demand intelligence (MCP) and gets woken up when the brain detects something proactively (webhook).</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th style="width:5%;">#</th><th style="width:28%;">Path</th><th style="width:18%;">Setup time</th><th>Best for</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="num">1</td><td><strong>REST API</strong></td><td class="num">30 min</td><td>Any backend or agent in any language</td></tr>
+            <tr><td class="num">2</td><td><strong>MCP Server</strong></td><td class="num">5 min</td><td>Claude Desktop, Cursor, Claude Web, ChatGPT, any MCP-compatible agent</td></tr>
+            <tr><td class="num">3</td><td><strong>LangGraph Node</strong></td><td class="num">2 hrs</td><td>Modern agents built on LangGraph</td></tr>
+            <tr><td class="num">4</td><td><strong>Webhook &rarr; Reverse Trigger</strong></td><td class="num">3 hrs</td><td>Proactive agents that act on detected events</td></tr>
+            <tr><td class="num">5</td><td><strong>Python / Node SDK</strong></td><td class="num">15 min</td><td>Quick integration for Python or Node services</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2b -->
+    <section class="section" id="s2b">
+      <div class="section-num">&sect; 02b &mdash; Two Modes</div>
+      <h2>Reactive vs Proactive &mdash; how each path delivers</h2>
+      <p class="lead">
+        Every path supports <em>both</em> modes &mdash; but the wiring differs. Read this once, then pick.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:24%;">Mode</th>
+              <th style="width:38%;">What it means</th>
+              <th>How GeniOS delivers it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Reactive</strong></td>
+              <td>You ask &mdash; GeniOS answers. Triggered by your code / agent / user query.</td>
+              <td>Hit <code>POST /v1/context</code> (or its MCP / SDK / LangGraph wrapper). Returns a 35-field intelligence bundle in &lt; 400 ms (cached) or 2&ndash;12 s (live fetch). Includes reasoning, anomalies, agent guidance &mdash; not just a memory dump.</td>
+            </tr>
+            <tr>
+              <td><strong>Proactive</strong></td>
+              <td>GeniOS notices something you didn't ask about &mdash; going cold, overdue commitment, anomaly &mdash; and surfaces it.</td>
+              <td>Two mechanisms: <strong>(a)</strong> Poll <code>GET /v1/insights</code> on a schedule (works today, ~800 ms response). <strong>(b)</strong> Subscribe a webhook &mdash; GeniOS pushes when a detector fires (manual setup with your rep currently).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Per-path support matrix</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Path</th>
+              <th>Reactive</th>
+              <th>Proactive (today)</th>
+              <th>Proactive mechanism</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>REST API</strong></td>
+              <td><span class="pill good">YES</span></td>
+              <td><span class="pill good">YES</span></td>
+              <td>Poll <code>GET /v1/insights</code> every 5&ndash;15 min from your backend</td>
+            </tr>
+            <tr>
+              <td><strong>MCP Server</strong></td>
+              <td><span class="pill good">YES</span></td>
+              <td><span class="pill good">YES</span></td>
+              <td>The agent's LLM calls <code>genios_list_insights</code> when the user asks "what should I know" / "any alerts". Plus optional <code>pending_alerts</code> piggyback on every tool response.</td>
+            </tr>
+            <tr>
+              <td><strong>LangGraph Node</strong></td>
+              <td><span class="pill good">YES</span></td>
+              <td><span class="pill good">YES</span></td>
+              <td>Add a periodic node (or scheduled graph entry) that calls <code>/v1/insights</code> and routes to the appropriate action node.</td>
+            </tr>
+            <tr>
+              <td><strong>Webhook</strong></td>
+              <td>&mdash;</td>
+              <td><span class="pill warm">SETUP</span></td>
+              <td>Customer-self-serve registration not in dashboard yet &mdash; contact your GeniOS rep to wire up your endpoint URL.</td>
+            </tr>
+            <tr>
+              <td><strong>Python / Node SDK</strong></td>
+              <td><span class="pill good">YES</span></td>
+              <td><span class="pill good">YES</span></td>
+              <td>Wraps <code>/v1/insights</code> &mdash; call <code>client.insights()</code> on a timer, or use SDK's helper schedulers if available.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Recommendation</div>
+        <p>For first integration, do <strong>REST</strong> (or MCP) for reactive + <strong>poll <code>/v1/insights</code> every 10 min</strong> for proactive. This gives you full brain behaviour with zero infrastructure. Upgrade to webhook push when you need sub-minute alerting.</p>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="section" id="s3">
+      <div class="section-num">&sect; 03 &mdash; Path 1</div>
+      <h2>REST API</h2>
+      <p><em>Universal &middot; language-agnostic &middot; 30 min to integrate.</em></p>
+
+      <h3>When to use it</h3>
+      <p>You have an agent, CRM, mailer, or app written in any language. You want to fetch relationship context <strong>just-in-time</strong> before the LLM acts.</p>
+
+      <h3>Endpoint</h3>
+      <div class="endpoint">
+        <span class="method">POST</span>
+        <span>https://squid-app-2zuqf.ondigitalocean.app/v1/context</span>
+      </div>
+
+      <h4>Headers</h4>
+      <div class="code-block">
+        <div class="code-head"><span>request headers</span><span class="lang">http</span></div>
+<pre><span class="tk-key">Authorization:</span> Bearer gn_live_xxxxx
+<span class="tk-key">Content-Type:</span> application/json</pre>
+      </div>
+
+      <h4>Request body</h4>
+      <div class="code-block">
+        <div class="code-head"><span>POST /v1/context</span><span class="lang">json</span></div>
+<pre>{
+  <span class="tk-key">"entity"</span>: <span class="tk-str">"Alice Chen"</span>,
+  <span class="tk-key">"situation"</span>: <span class="tk-str">"follow up about pricing"</span>,
+  <span class="tk-key">"agent_id"</span>: <span class="tk-str">"my-sales-agent"</span>,
+  <span class="tk-key">"context_size"</span>: <span class="tk-str">"medium"</span>
+}</pre>
+      </div>
+
+      <h4>Field reference</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>entity</code></td><td>string</td><td>yes</td><td>Person name, email, or company</td></tr>
+            <tr><td><code>situation</code></td><td>string</td><td>no</td><td>Free-text context &mdash; drives intent classification + live fetch</td></tr>
+            <tr><td><code>agent_id</code></td><td>string</td><td>no</td><td>Identifier for which agent is calling</td></tr>
+            <tr><td><code>context_size</code></td><td>string</td><td>no</td><td><code>small</code> &middot; <code>medium</code> &middot; <code>large</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Typical response (abridged)</h4>
+      <p>The full response is rich (35+ top-level fields). Below are the high-signal ones every agent will use:</p>
+      <div class="code-block">
+        <div class="code-head"><span>200 OK</span><span class="lang">json</span></div>
+<pre>{
+  <span class="tk-key">"entity"</span>: {
+    <span class="tk-key">"id"</span>: <span class="tk-str">"uuid"</span>,
+    <span class="tk-key">"name"</span>: <span class="tk-str">"Alice Chen"</span>,
+    <span class="tk-key">"email"</span>: <span class="tk-str">"alice@acme.com"</span>,
+    <span class="tk-key">"company"</span>: <span class="tk-str">"Acme Inc"</span>,
+    <span class="tk-key">"relationship_stage"</span>: <span class="tk-str">"WARM"</span>,
+    <span class="tk-key">"sentiment_ewma"</span>: <span class="tk-num">0.39</span>,
+    <span class="tk-key">"sentiment_trend"</span>: <span class="tk-str">"STABLE"</span>,
+    <span class="tk-key">"interaction_count"</span>: <span class="tk-num">7</span>,
+    <span class="tk-key">"what_works"</span>: <span class="tk-str">"Short emails with specific metrics"</span>,
+    <span class="tk-key">"what_to_avoid"</span>: <span class="tk-str">"Long narrative emails"</span>,
+    <span class="tk-key">"is_broadcast"</span>: <span class="tk-kw">false</span>,
+    <span class="tk-key">"response_rate"</span>: <span class="tk-num">0.71</span>,
+    <span class="tk-key">"disclosure_level"</span>: <span class="tk-str">"public"</span>
+  },
+  <span class="tk-key">"context_for_agent"</span>: <span class="tk-str">"[ANOMALY: Alice's sentiment has declined 2.0 std devs] Alice from Acme &mdash; 7 exchanges, last contact 18 days ago, prefers concise + numbers..."</span>,
+  <span class="tk-key">"action_recommendation"</span>: <span class="tk-str">"escalate"</span>,
+  <span class="tk-key">"narrative"</span>: <span class="tk-str">"Synthesized 2-3 sentence story across all interactions"</span>,
+  <span class="tk-key">"agent_behavior"</span>: {
+    <span class="tk-key">"do"</span>: [<span class="tk-str">"reference Q2 commitment concretely"</span>],
+    <span class="tk-key">"avoid"</span>: [<span class="tk-str">"generic 'circling back' tone"</span>],
+    <span class="tk-key">"escalate_to_human_if"</span>: <span class="tk-str">"sentiment dips below -0.3"</span>
+  },
+  <span class="tk-key">"anomalies"</span>: [
+    { <span class="tk-key">"type"</span>: <span class="tk-str">"sentiment_drop"</span>, <span class="tk-key">"z_score"</span>: <span class="tk-num">-2.0</span>, <span class="tk-key">"since_days"</span>: <span class="tk-num">14</span> }
+  ],
+  <span class="tk-key">"scores"</span>: {
+    <span class="tk-key">"signal"</span>: <span class="tk-num">0.56</span>,
+    <span class="tk-key">"authority"</span>: <span class="tk-num">0.30</span>,
+    <span class="tk-key">"composite"</span>: <span class="tk-num">0.56</span>,
+    <span class="tk-key">"freshness"</span>: <span class="tk-num">0.55</span>,
+    <span class="tk-key">"confidence"</span>: <span class="tk-num">0.57</span>,
+    <span class="tk-key">"consistency"</span>: <span class="tk-num">1.00</span>
+  },
+  <span class="tk-key">"confidence"</span>: <span class="tk-num">0.5688</span>,
+  <span class="tk-key">"confidence_level"</span>: <span class="tk-str">"medium"</span>,
+  <span class="tk-key">"intent_signal"</span>: {
+    <span class="tk-key">"intent"</span>: <span class="tk-str">"informational"</span>,
+    <span class="tk-key">"domain"</span>: <span class="tk-str">"contact"</span>,
+    <span class="tk-key">"emotion"</span>: <span class="tk-str">"neutral"</span>,
+    <span class="tk-key">"urgency"</span>: <span class="tk-str">"med"</span>,
+    <span class="tk-key">"requires_live_fetch"</span>: <span class="tk-kw">false</span>
+  },
+  <span class="tk-key">"recent_interactions"</span>: [
+    { <span class="tk-key">"date"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"subject"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"summary"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"direction"</span>: <span class="tk-str">"outbound"</span> }
+  ],
+  <span class="tk-key">"company_contacts"</span>: [
+    { <span class="tk-key">"name"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"email"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"stage"</span>: <span class="tk-str">"ACTIVE"</span> }
+  ],
+  <span class="tk-key">"live_fetch"</span>: { <span class="tk-key">"total"</span>: <span class="tk-num">0</span>, <span class="tk-key">"sources_hit"</span>: [] },
+  <span class="tk-key">"clm_state"</span>: <span class="tk-str">"active"</span>,
+  <span class="tk-key">"flagged"</span>: <span class="tk-kw">false</span>,
+  <span class="tk-key">"escalation_recommended"</span>: <span class="tk-kw">false</span>,
+  <span class="tk-key">"cache_hit"</span>: <span class="tk-kw">true</span>,
+  <span class="tk-key">"cache_source"</span>: <span class="tk-str">"precomputed"</span>,
+  <span class="tk-key">"latency_ms"</span>: <span class="tk-num">380</span>
+}</pre>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Full payload</div>
+        <p>The response also includes <code>match_confidence</code>, <code>matched_from</code>, <code>resolution_method</code>, <code>data_quality</code>, <code>coverage_score</code>, <code>sources_used</code>, <code>disclosure_rules</code>, <code>related_outbound</code>, <code>situation_signals</code>, <code>situation_type</code>, <code>hours_since_last_outbound</code>, <code>last_signal</code>, <code>cooldown_active</code>, <code>fingerprint_matches</code>, and <code>pending_alerts</code>. Hit the API once and inspect the raw payload to see them all.</p>
+      </div>
+
+      <h3>Code &middot; Node.js / TypeScript</h3>
+      <div class="code-block">
+        <div class="code-head"><span>genios.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">async function</span> <span class="tk-fn">getRelationshipContext</span>(entity: <span class="tk-kw">string</span>, situation?: <span class="tk-kw">string</span>) {
+  <span class="tk-kw">const</span> response = <span class="tk-kw">await</span> <span class="tk-fn">fetch</span>(<span class="tk-str">"https://squid-app-2zuqf.ondigitalocean.app/v1/context"</span>, {
+    method: <span class="tk-str">"POST"</span>,
+    headers: {
+      <span class="tk-str">"Authorization"</span>: <span class="tk-str">`Bearer ${process.env.GENIOS_KEY}`</span>,
+      <span class="tk-str">"Content-Type"</span>: <span class="tk-str">"application/json"</span>
+    },
+    body: JSON.<span class="tk-fn">stringify</span>({ entity, situation })
+  });
+  <span class="tk-kw">return await</span> response.<span class="tk-fn">json</span>();
+}
+
+<span class="tk-cmt">// Use it</span>
+<span class="tk-kw">const</span> ctx = <span class="tk-kw">await</span> <span class="tk-fn">getRelationshipContext</span>(<span class="tk-str">"Alice Chen"</span>, <span class="tk-str">"follow up about pricing"</span>);
+console.<span class="tk-fn">log</span>(ctx.context_for_agent);     <span class="tk-cmt">// ready for LLM prompt</span>
+console.<span class="tk-fn">log</span>(ctx.action_recommendation);  <span class="tk-cmt">// show to user</span></pre>
+      </div>
+
+      <h3>Code &middot; Python</h3>
+      <div class="code-block">
+        <div class="code-head"><span>genios.py</span><span class="lang">python</span></div>
+<pre><span class="tk-kw">import</span> requests
+
+<span class="tk-kw">def</span> <span class="tk-fn">get_relationship_context</span>(entity: <span class="tk-kw">str</span>, situation: <span class="tk-kw">str</span> = <span class="tk-kw">None</span>) -&gt; <span class="tk-kw">dict</span>:
+    r = requests.<span class="tk-fn">post</span>(
+        <span class="tk-str">"https://squid-app-2zuqf.ondigitalocean.app/v1/context"</span>,
+        headers={<span class="tk-str">"Authorization"</span>: <span class="tk-str">f"Bearer {GENIOS_KEY}"</span>},
+        json={<span class="tk-str">"entity"</span>: entity, <span class="tk-str">"situation"</span>: situation}
+    )
+    <span class="tk-kw">return</span> r.<span class="tk-fn">json</span>()
+
+ctx = <span class="tk-fn">get_relationship_context</span>(<span class="tk-str">"Alice Chen"</span>, <span class="tk-str">"follow up about pricing"</span>)
+<span class="tk-fn">print</span>(ctx[<span class="tk-str">"context_for_agent"</span>])
+<span class="tk-fn">print</span>(ctx[<span class="tk-str">"action_recommendation"</span>])</pre>
+      </div>
+
+      <h3>Latency expectations</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Scenario</th><th>Latency</th></tr></thead>
+          <tbody>
+            <tr><td>Cached graph hit</td><td class="num">&lt; 400 ms</td></tr>
+            <tr><td>Live tool fetch fallback</td><td class="num">2 &ndash; 12 sec</td></tr>
+            <tr><td>First call on a fresh contact</td><td class="num">3 &ndash; 5 sec</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Proactive layer &mdash; poll <code>/v1/insights</code></h3>
+      <p>REST gives you reactive intelligence on demand. To get proactive alerts (the brain telling <em>you</em> what to look at), poll the insights endpoint on a schedule:</p>
+
+      <div class="endpoint">
+        <span class="method">GET</span>
+        <span>https://squid-app-2zuqf.ondigitalocean.app/v1/insights?limit=10</span>
+      </div>
+
+      <h4>Response shape</h4>
+      <div class="code-block">
+        <div class="code-head"><span>200 OK</span><span class="lang">json</span></div>
+<pre>{
+  <span class="tk-key">"insights"</span>: [
+    {
+      <span class="tk-key">"id"</span>: <span class="tk-str">"uuid"</span>,
+      <span class="tk-key">"type"</span>: <span class="tk-str">"anomaly"</span>,
+      <span class="tk-key">"priority"</span>: <span class="tk-str">"high"</span>,
+      <span class="tk-key">"category"</span>: <span class="tk-str">"sentiment_alert"</span>,
+      <span class="tk-key">"title"</span>: <span class="tk-str">"Siddhant Ahluwalia: sentiment drop"</span>,
+      <span class="tk-key">"detail"</span>: <span class="tk-str">"Sentiment declined 2.0 std devs over 14 days; 5 historical precedents failed to recover."</span>,
+      <span class="tk-key">"contact_id"</span>: <span class="tk-str">"uuid"</span>,
+      <span class="tk-key">"contact_name"</span>: <span class="tk-str">"Siddhant Ahluwalia"</span>,
+      <span class="tk-key">"memory_view"</span>: <span class="tk-str">"Short narrative for the user."</span>,
+      <span class="tk-key">"genios_view"</span>: <span class="tk-str">"What the brain recommends &mdash; concrete next step."</span>,
+      <span class="tk-key">"generated_at"</span>: <span class="tk-str">"2026-04-30T20:29:28Z"</span>,
+      <span class="tk-key">"delivered_at"</span>: <span class="tk-kw">null</span>
+    }
+  ],
+  <span class="tk-key">"count"</span>: <span class="tk-num">3</span>
+}</pre>
+      </div>
+
+      <h4>Polling code &middot; Node.js</h4>
+      <div class="code-block">
+        <div class="code-head"><span>poller.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">async function</span> <span class="tk-fn">pollGeniosInsights</span>() {
+  <span class="tk-kw">const</span> r = <span class="tk-kw">await</span> <span class="tk-fn">fetch</span>(<span class="tk-str">"https://squid-app-2zuqf.ondigitalocean.app/v1/insights?limit=10"</span>, {
+    headers: { <span class="tk-str">"Authorization"</span>: <span class="tk-str">`Bearer ${process.env.GENIOS_KEY}`</span> }
+  });
+  <span class="tk-kw">const</span> { insights } = <span class="tk-kw">await</span> r.<span class="tk-fn">json</span>();
+  <span class="tk-kw">for</span> (<span class="tk-kw">const</span> i <span class="tk-kw">of</span> insights) {
+    <span class="tk-kw">if</span> (i.priority === <span class="tk-str">"P1"</span> || i.priority === <span class="tk-str">"high"</span>) {
+      <span class="tk-kw">await</span> yourAgent.<span class="tk-fn">act</span>(i);  <span class="tk-cmt">// route to appropriate handler</span>
+    }
+  }
+}
+
+<span class="tk-fn">setInterval</span>(pollGeniosInsights, <span class="tk-num">10 * 60 * 1000</span>);  <span class="tk-cmt">// every 10 min</span></pre>
+      </div>
+
+      <h4>Polling code &middot; Python</h4>
+      <div class="code-block">
+        <div class="code-head"><span>poller.py</span><span class="lang">python</span></div>
+<pre><span class="tk-kw">import</span> requests, time
+
+<span class="tk-kw">def</span> <span class="tk-fn">poll_insights</span>():
+    r = requests.<span class="tk-fn">get</span>(
+        <span class="tk-str">"https://squid-app-2zuqf.ondigitalocean.app/v1/insights?limit=10"</span>,
+        headers={<span class="tk-str">"Authorization"</span>: <span class="tk-str">f"Bearer {GENIOS_KEY}"</span>}
+    )
+    <span class="tk-kw">for</span> i <span class="tk-kw">in</span> r.<span class="tk-fn">json</span>().<span class="tk-fn">get</span>(<span class="tk-str">"insights"</span>, []):
+        <span class="tk-kw">if</span> i[<span class="tk-str">"priority"</span>] <span class="tk-kw">in</span> (<span class="tk-str">"P1"</span>, <span class="tk-str">"high"</span>):
+            your_agent.<span class="tk-fn">act</span>(i)
+
+<span class="tk-kw">while</span> <span class="tk-kw">True</span>:
+    <span class="tk-fn">poll_insights</span>()
+    time.<span class="tk-fn">sleep</span>(<span class="tk-num">600</span>)  <span class="tk-cmt"># every 10 min</span></pre>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Reactive + Proactive together</div>
+        <p>One backend running both: a request handler hitting <code>/v1/context</code> (reactive) <strong>and</strong> a background scheduler hitting <code>/v1/insights</code> every 10 min (proactive). That's the full brain &mdash; not a memory layer.</p>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="section" id="s4">
+      <div class="section-num">&sect; 04 &mdash; Path 2</div>
+      <h2>MCP Server</h2>
+      <p><em>Zero-code for MCP-compatible agents &middot; 5 min to set up.</em></p>
+
+      <h3>When to use it</h3>
+      <p>Your agent already speaks MCP (Model Context Protocol) &mdash; Claude Desktop, Cursor, Claude Web, ChatGPT, Cline, Windsurf, Zed, or any custom MCP client. <strong>No code change needed in the agent itself.</strong> The LLM auto-discovers GeniOS tools and decides when to call them.</p>
+
+      <h3>Setup &middot; Claude Web / ChatGPT</h3>
+      <ol>
+        <li>Settings &rarr; Connectors &rarr; Add custom connector</li>
+        <li>Name: <code>GeniOS</code></li>
+        <li>URL: <code>https://squid-app-2zuqf.ondigitalocean.app/mcp</code></li>
+        <li>Advanced settings &rarr; Authorization &rarr; Bearer token &rarr; paste <code>gn_live_xxxxx</code></li>
+        <li>Save &rarr; Connect &rarr; done</li>
+      </ol>
+
+      <h3>Setup &middot; Claude Desktop / Cursor / VS Code</h3>
+      <div class="code-block">
+        <div class="code-head"><span>mcp.config.yaml</span><span class="lang">yaml</span></div>
+<pre><span class="tk-key">mcp_servers:</span>
+  - <span class="tk-key">name:</span> genios
+    <span class="tk-key">url:</span> https://squid-app-2zuqf.ondigitalocean.app/mcp
+    <span class="tk-key">auth:</span>
+      <span class="tk-key">type:</span> bearer
+      <span class="tk-key">token:</span> gn_live_xxxxx</pre>
+      </div>
+
+      <h3>Tools exposed (auto-discovered by LLM)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:36%;">Tool</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>genios_get_context</code></td><td>Full relationship bundle for a person or company</td></tr>
+            <tr><td><code>genios_search_contacts</code></td><td>Search contacts by partial name, stage, attention flags</td></tr>
+            <tr><td><code>genios_list_insights</code></td><td>Pull proactive alerts (anomalies, going cold, overdue)</td></tr>
+            <tr><td><code>genios_live_search</code></td><td>Real-time multi-tool search (Gmail / Calendar / Docs)</td></tr>
+            <tr><td><code>genios_recent</code></td><td>Latest brain activity (recommendations, transitions)</td></tr>
+            <tr><td><code>genios_org_info</code></td><td>Org profile, plan, usage</td></tr>
+            <tr><td><code>genios_log_interaction</code></td><td>Write-back: log an action just taken</td></tr>
+            <tr><td><code>genios_log_outcome</code></td><td>Feedback: was the context useful?</td></tr>
+            <tr><td><code>genios_trigger_scan</code></td><td>Manually trigger a proactive scan</td></tr>
+            <tr><td><code>genios_sync_status</code></td><td>Status of connected data sources</td></tr>
+            <tr><td><code>genios_list_segments</code></td><td>List contact segments</td></tr>
+            <tr><td><code>genios_get_segment_members</code></td><td>Members of a specific segment</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>What the LLM does</h3>
+      <p>The agent's LLM sees the tool list and calls them naturally:</p>
+      <ul>
+        <li><em>"What's the latest with Alice?"</em> &rarr; calls <code>genios_get_context</code></li>
+        <li><em>"Anything I should know today?"</em> &rarr; calls <code>genios_list_insights</code></li>
+        <li><em>"Find Razorpay invoices in my email"</em> &rarr; calls <code>genios_live_search</code></li>
+      </ul>
+
+      <h3>Proactive layer in MCP</h3>
+      <p>MCP gets you proactive intelligence two ways:</p>
+      <ol>
+        <li><strong>User-initiated</strong> &mdash; "Anything I should know today?" &rarr; LLM auto-calls <code>genios_list_insights</code> &rarr; surfaces priority items.</li>
+        <li><strong>Scheduled inside the agent</strong> &mdash; for headless agents, schedule a tool call to <code>genios_list_insights</code> on a timer (every 5&ndash;15 min). Each pulled item routes to the appropriate action handler.</li>
+        <li><strong>Pending alerts piggyback</strong> &mdash; every <code>genios_get_context</code> response may include <code>pending_alerts</code>. The LLM is instructed to surface those naturally as <em>"By the way, the brain noticed..."</em>. Best for chat-style agents where users are actively engaged.</li>
+      </ol>
+
+      <div class="callout">
+        <div class="callout-label">Recommendation</div>
+        <p>For chat agents (Claude, ChatGPT) &mdash; the LLM already calls <code>genios_list_insights</code> when relevant; no scheduler needed. For headless / background agents (Inkbox-style) &mdash; combine <code>genios_get_context</code> on event with a scheduled <code>genios_list_insights</code> for proactive coverage.</p>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="section" id="s5">
+      <div class="section-num">&sect; 05 &mdash; Path 3</div>
+      <h2>LangGraph Node</h2>
+      <p><em>For graph-based agents &middot; 2 hrs to integrate.</em></p>
+
+      <h3>When to use it</h3>
+      <p>Your agent is built with <strong>LangGraph</strong> &mdash; the most common framework for production AI agents. GeniOS slots in as a dedicated node in the agent graph.</p>
+
+      <h3>Architecture</h3>
+      <div class="flow">   Inbound trigger (email &middot; scheduled)
+                &darr;
+   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+   &#9474;  fetch_genios_context  &#9474;  &larr; GeniOS REST call
+   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                &darr;
+   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+   &#9474;  draft_reply (LLM)     &#9474;  &larr; uses ctx in prompt
+   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                &darr;
+   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+   &#9474;  send_via_&lt;channel&gt;    &#9474;  &larr; Inkbox &middot; Gmail &middot; etc
+   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+      <h3>Code &middot; LangGraph (Python)</h3>
+      <div class="code-block">
+        <div class="code-head"><span>agent.py</span><span class="lang">python</span></div>
+<pre><span class="tk-kw">from</span> langgraph.graph <span class="tk-kw">import</span> StateGraph, END
+<span class="tk-kw">from</span> typing <span class="tk-kw">import</span> TypedDict
+<span class="tk-kw">import</span> requests
+
+<span class="tk-kw">class</span> <span class="tk-fn">AgentState</span>(TypedDict):
+    incoming_email: <span class="tk-kw">dict</span>
+    genios_context: <span class="tk-kw">dict</span>
+    draft_reply: <span class="tk-kw">str</span>
+
+GENIOS_URL = <span class="tk-str">"https://squid-app-2zuqf.ondigitalocean.app"</span>
+GENIOS_KEY = <span class="tk-str">"gn_live_xxxxx"</span>
+
+<span class="tk-cmt"># Node 1 - pull GeniOS context</span>
+<span class="tk-kw">def</span> <span class="tk-fn">fetch_genios_context</span>(state: AgentState) -&gt; AgentState:
+    email = state[<span class="tk-str">"incoming_email"</span>]
+    response = requests.<span class="tk-fn">post</span>(
+        <span class="tk-str">f"{GENIOS_URL}/v1/context"</span>,
+        headers={<span class="tk-str">"Authorization"</span>: <span class="tk-str">f"Bearer {GENIOS_KEY}"</span>},
+        json={
+            <span class="tk-str">"entity"</span>: email[<span class="tk-str">"from"</span>],
+            <span class="tk-str">"situation"</span>: <span class="tk-str">f"replying to: {email['subject']}"</span>
+        }
+    ).<span class="tk-fn">json</span>()
+    <span class="tk-kw">return</span> {**state, <span class="tk-str">"genios_context"</span>: response}
+
+<span class="tk-cmt"># Node 2 - draft reply with context</span>
+<span class="tk-kw">def</span> <span class="tk-fn">draft_reply</span>(state: AgentState) -&gt; AgentState:
+    ctx = state[<span class="tk-str">"genios_context"</span>]
+    email = state[<span class="tk-str">"incoming_email"</span>]
+    prompt = <span class="tk-str">f"""Reply to this email using the relationship context.
+
+CONTEXT:
+{ctx['context_for_agent']}
+
+Stage:           {ctx['entity']['relationship_stage']}
+Sentiment:       {ctx['entity']['sentiment_ewma']} ({ctx['entity']['sentiment_trend']})
+What works:      {ctx['entity'].get('what_works', '')}
+What to avoid:   {ctx['entity'].get('what_to_avoid', '')}
+Agent guidance:  {ctx.get('agent_behavior', {})}
+Suggested:       {ctx['action_recommendation']}
+
+EMAIL:
+{email['body']}
+"""</span>
+    reply = llm.<span class="tk-fn">invoke</span>(prompt)
+    <span class="tk-kw">return</span> {**state, <span class="tk-str">"draft_reply"</span>: reply}
+
+<span class="tk-cmt"># Node 3 - send</span>
+<span class="tk-kw">def</span> <span class="tk-fn">send_email</span>(state: AgentState) -&gt; AgentState:
+    inkbox.email.<span class="tk-fn">send</span>(
+        to=state[<span class="tk-str">"incoming_email"</span>][<span class="tk-str">"from"</span>],
+        body=state[<span class="tk-str">"draft_reply"</span>]
+    )
+    <span class="tk-kw">return</span> state
+
+<span class="tk-cmt"># Build the graph</span>
+graph = <span class="tk-fn">StateGraph</span>(AgentState)
+graph.<span class="tk-fn">add_node</span>(<span class="tk-str">"fetch_context"</span>, fetch_genios_context)
+graph.<span class="tk-fn">add_node</span>(<span class="tk-str">"draft"</span>, draft_reply)
+graph.<span class="tk-fn">add_node</span>(<span class="tk-str">"send"</span>, send_email)
+graph.<span class="tk-fn">add_edge</span>(<span class="tk-str">"fetch_context"</span>, <span class="tk-str">"draft"</span>)
+graph.<span class="tk-fn">add_edge</span>(<span class="tk-str">"draft"</span>, <span class="tk-str">"send"</span>)
+graph.<span class="tk-fn">add_edge</span>(<span class="tk-str">"send"</span>, END)
+graph.<span class="tk-fn">set_entry_point</span>(<span class="tk-str">"fetch_context"</span>)
+
+agent = graph.<span class="tk-fn">compile</span>()
+agent.<span class="tk-fn">invoke</span>({<span class="tk-str">"incoming_email"</span>: {<span class="tk-str">"from"</span>: <span class="tk-str">"alice@acme.com"</span>, <span class="tk-str">"subject"</span>: <span class="tk-str">"..."</span>, <span class="tk-str">"body"</span>: <span class="tk-str">"..."</span>}})</pre>
+      </div>
+
+      <h3>Why LangGraph specifically</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:28%;">Property</th><th>Benefit</th></tr></thead>
+          <tbody>
+            <tr><td><strong>State persists</strong></td><td>GeniOS context is available across every later node &mdash; no re-fetching.</td></tr>
+            <tr><td><strong>Resumable</strong></td><td>If the agent crashes mid-workflow, it restarts from the last node with context intact.</td></tr>
+            <tr><td><strong>Observable</strong></td><td>Each node's input/output can be logged independently for debugging.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Proactive layer &middot; scheduled "watch" sub-graph</h3>
+      <p>Add a separate scheduled graph that polls <code>/v1/insights</code> and routes each high-priority item to your action graph. Two graphs, one shared state schema:</p>
+      <div class="code-block">
+        <div class="code-head"><span>watch_graph.py</span><span class="lang">python</span></div>
+<pre><span class="tk-kw">from</span> langgraph.graph <span class="tk-kw">import</span> StateGraph, END
+
+<span class="tk-cmt"># Node 1 - poll proactive insights</span>
+<span class="tk-kw">def</span> <span class="tk-fn">poll_genios_insights</span>(state):
+    r = requests.<span class="tk-fn">get</span>(
+        <span class="tk-str">f"{GENIOS_URL}/v1/insights?limit=10"</span>,
+        headers={<span class="tk-str">"Authorization"</span>: <span class="tk-str">f"Bearer {GENIOS_KEY}"</span>}
+    ).<span class="tk-fn">json</span>()
+    high_pri = [i <span class="tk-kw">for</span> i <span class="tk-kw">in</span> r[<span class="tk-str">"insights"</span>] <span class="tk-kw">if</span> i[<span class="tk-str">"priority"</span>] <span class="tk-kw">in</span> (<span class="tk-str">"P1"</span>, <span class="tk-str">"high"</span>)]
+    <span class="tk-kw">return</span> {**state, <span class="tk-str">"pending"</span>: high_pri}
+
+<span class="tk-cmt"># Node 2 - dispatch to action</span>
+<span class="tk-kw">def</span> <span class="tk-fn">dispatch</span>(state):
+    <span class="tk-kw">for</span> i <span class="tk-kw">in</span> state[<span class="tk-str">"pending"</span>]:
+        <span class="tk-kw">if</span> i[<span class="tk-str">"type"</span>] == <span class="tk-str">"anomaly"</span>:
+            send_alert_to_human(i)
+        <span class="tk-kw">elif</span> i[<span class="tk-str">"type"</span>] == <span class="tk-str">"state"</span>:
+            invoke_followup_agent(i)
+    <span class="tk-kw">return</span> state
+
+watch = <span class="tk-fn">StateGraph</span>(<span class="tk-kw">dict</span>)
+watch.<span class="tk-fn">add_node</span>(<span class="tk-str">"poll"</span>, poll_genios_insights)
+watch.<span class="tk-fn">add_node</span>(<span class="tk-str">"dispatch"</span>, dispatch)
+watch.<span class="tk-fn">add_edge</span>(<span class="tk-str">"poll"</span>, <span class="tk-str">"dispatch"</span>)
+watch.<span class="tk-fn">add_edge</span>(<span class="tk-str">"dispatch"</span>, END)
+watch.<span class="tk-fn">set_entry_point</span>(<span class="tk-str">"poll"</span>)
+
+watch_agent = watch.<span class="tk-fn">compile</span>()
+
+<span class="tk-cmt"># Run via cron / Celery / setInterval every 10 min</span>
+<span class="tk-kw">while</span> <span class="tk-kw">True</span>:
+    watch_agent.<span class="tk-fn">invoke</span>({})
+    time.<span class="tk-fn">sleep</span>(<span class="tk-num">600</span>)</pre>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="section" id="s6">
+      <div class="section-num">&sect; 06 &mdash; Path 4</div>
+      <h2>Webhook &rarr; Reverse Trigger</h2>
+      <p><em>Proactive agents &middot; 3 hrs to integrate.</em></p>
+
+      <h3>When to use it</h3>
+      <p>You want your agent to <strong>act proactively</strong> when GeniOS detects something &mdash; without the user having to ask. Examples: send a check-in when a contact goes cold, draft a follow-up when a commitment is overdue, alert sales when an investor goes silent.</p>
+
+      <h3>Architecture</h3>
+      <div class="flow">   GeniOS brain (24/7)
+        &darr;
+   Detector fires: "Alice going AT_RISK + board meeting Friday"
+        &darr;
+   POST your-webhook-url/genios-webhook
+        &darr;
+   Your agent wakes up &rarr; composes action &rarr; executes</div>
+
+      <h3>Webhook payload</h3>
+      <div class="code-block">
+        <div class="code-head"><span>POST &rarr; your-webhook-url</span><span class="lang">json</span></div>
+<pre>{
+  <span class="tk-key">"alert_id"</span>: <span class="tk-str">"a1b2c3d4-..."</span>,
+  <span class="tk-key">"insight_type"</span>: <span class="tk-str">"going_cold"</span>,
+  <span class="tk-key">"contact"</span>: {
+    <span class="tk-key">"name"</span>: <span class="tk-str">"Alice Chen"</span>,
+    <span class="tk-key">"email"</span>: <span class="tk-str">"alice@acme.com"</span>,
+    <span class="tk-key">"stage_change"</span>: <span class="tk-str">"WARM &rarr; AT_RISK"</span>
+  },
+  <span class="tk-key">"title"</span>: <span class="tk-str">"Alice Chen going cold &mdash; 18 days silent"</span>,
+  <span class="tk-key">"body"</span>: <span class="tk-str">"Sentiment dropped 0.4 &rarr; 0.1. Q2 deal at risk."</span>,
+  <span class="tk-key">"suggested_action"</span>: {
+    <span class="tk-key">"verb"</span>: <span class="tk-str">"send_warm_check_in"</span>,
+    <span class="tk-key">"target"</span>: <span class="tk-str">"alice@acme.com"</span>,
+    <span class="tk-key">"draft"</span>: <span class="tk-str">"Hi Alice, wanted to circle back on the Q2 numbers we discussed last month..."</span>
+  },
+  <span class="tk-key">"priority"</span>: <span class="tk-num">0.78</span>,
+  <span class="tk-key">"confidence"</span>: <span class="tk-num">0.82</span>
+}</pre>
+      </div>
+
+      <h3>Webhook handler &middot; Express</h3>
+      <div class="code-block">
+        <div class="code-head"><span>webhook.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">import</span> express <span class="tk-kw">from</span> <span class="tk-str">"express"</span>;
+<span class="tk-kw">const</span> app = <span class="tk-fn">express</span>();
+app.<span class="tk-fn">use</span>(express.<span class="tk-fn">json</span>());
+
+app.<span class="tk-fn">post</span>(<span class="tk-str">"/genios-webhook"</span>, <span class="tk-kw">async</span> (req, res) =&gt; {
+  <span class="tk-kw">const</span> alert = req.body;
+
+  <span class="tk-cmt">// Wake up your agent with the suggested action</span>
+  <span class="tk-kw">await</span> yourAgent.<span class="tk-fn">execute</span>({
+    instruction: <span class="tk-str">`${alert.title}\nBrain suggests: ${alert.suggested_action.draft}\nAct via the appropriate channel.`</span>,
+    contact: alert.contact
+  });
+
+  res.<span class="tk-fn">json</span>({ ok: <span class="tk-kw">true</span> });
+});
+
+app.<span class="tk-fn">listen</span>(<span class="tk-num">3000</span>);</pre>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Setup status</div>
+        <p><strong>Customer-self-serve registration is not in the dashboard yet.</strong> Send your webhook URL + the events you want subscribed to (e.g. <code>going_cold</code>, <code>commitment_overdue</code>, <code>anomaly_detected</code>) to your GeniOS rep &mdash; we'll wire it up server-side and confirm with a test ping. Until then, use polling (Path 1: <code>/v1/insights</code>) for proactive alerts &mdash; same data, just pulled instead of pushed.</p>
+      </div>
+    </section>
+
+    <!-- 6b -->
+    <section class="section" id="s6b">
+      <div class="section-num">&sect; 06b &mdash; Where it Shows Up</div>
+      <h2>Showing Proactive Alerts in Your Product</h2>
+      <p class="lead">
+        One alert from GeniOS &mdash; <em>five</em> places you can show it. Pick what fits your product.
+      </p>
+
+      <h3>Step 1 &middot; pull alerts (one function, runs every 10 min)</h3>
+      <div class="code-block">
+        <div class="code-head"><span>fetchAlerts.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">async function</span> <span class="tk-fn">fetchAlerts</span>() {
+  <span class="tk-kw">const</span> r = <span class="tk-kw">await</span> <span class="tk-fn">fetch</span>(<span class="tk-str">"https://squid-app-2zuqf.ondigitalocean.app/v1/insights?limit=10"</span>, {
+    headers: { <span class="tk-str">"Authorization"</span>: <span class="tk-str">`Bearer ${process.env.GENIOS_KEY}`</span> }
+  });
+  <span class="tk-kw">const</span> { insights } = <span class="tk-kw">await</span> r.<span class="tk-fn">json</span>();
+  <span class="tk-kw">for</span> (<span class="tk-kw">const</span> a <span class="tk-kw">of</span> insights) <span class="tk-fn">routeAlert</span>(a);  <span class="tk-cmt">// see Step 2</span>
+}
+<span class="tk-fn">setInterval</span>(fetchAlerts, <span class="tk-num">10 * 60 * 1000</span>);</pre>
+      </div>
+
+      <h3>Step 2 &middot; route to your channels (pick any combo)</h3>
+      <p>Each alert from <code>/v1/insights</code> has these fields you'll use:</p>
+      <div class="code-block">
+        <div class="code-head"><span>alert shape</span><span class="lang">json</span></div>
+<pre>{ <span class="tk-key">"id"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"priority"</span>: <span class="tk-str">"P1"</span>, <span class="tk-key">"type"</span>: <span class="tk-str">"anomaly"</span>,
+  <span class="tk-key">"title"</span>: <span class="tk-str">"Siddhant: sentiment drop"</span>,
+  <span class="tk-key">"genios_view"</span>: <span class="tk-str">"Reach out within 48h, mention Q2 commitment..."</span>,
+  <span class="tk-key">"contact_id"</span>: <span class="tk-str">"..."</span>, <span class="tk-key">"contact_name"</span>: <span class="tk-str">"Siddhant Ahluwalia"</span> }</pre>
+      </div>
+
+      <h3>Step 3 &middot; choose where to show it</h3>
+      <p>Five surfaces. Each is ~10 lines. Visual preview + code below.</p>
+
+      <!-- Surface 1: In-app panel -->
+      <h4>A &middot; In-app "Needs Attention" panel</h4>
+      <div class="callout" style="background:#FFF; border-left:3px solid var(--accent); margin:12px 0;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink);">
+          &#9733; What needs your attention <span style="color:var(--muted);">(3)</span><br>
+          <span style="color:var(--bad); font-weight:600;">P1</span> &middot; <strong>Siddhant: sentiment drop</strong><br>
+          <span style="color:var(--muted);">Reach out within 48h&hellip;</span> &nbsp;
+          <span style="color:var(--accent); border-bottom:1px solid var(--accent);">Take action &rarr;</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>NeedsAttention.tsx</span><span class="lang">react</span></div>
+<pre>{alerts.<span class="tk-fn">map</span>(a =&gt; (
+  <span style="color:#9CDCFE">&lt;div</span> <span style="color:#9CDCFE">key</span>={a.id} <span style="color:#9CDCFE">className</span>={<span class="tk-str">`alert ${a.priority}`</span>}<span style="color:#9CDCFE">&gt;</span>
+    <span style="color:#9CDCFE">&lt;span</span> <span style="color:#9CDCFE">className</span>=<span class="tk-str">"pill"</span><span style="color:#9CDCFE">&gt;</span>{a.priority}<span style="color:#9CDCFE">&lt;/span&gt;</span>
+    <span style="color:#9CDCFE">&lt;strong&gt;</span>{a.title}<span style="color:#9CDCFE">&lt;/strong&gt;</span>
+    <span style="color:#9CDCFE">&lt;p&gt;</span>{a.genios_view}<span style="color:#9CDCFE">&lt;/p&gt;</span>
+    <span style="color:#9CDCFE">&lt;button</span> <span style="color:#9CDCFE">onClick</span>={() =&gt; <span class="tk-fn">act</span>(a)}<span style="color:#9CDCFE">&gt;</span>Take action<span style="color:#9CDCFE">&lt;/button&gt;</span>
+  <span style="color:#9CDCFE">&lt;/div&gt;</span>
+))}</pre>
+      </div>
+
+      <!-- Surface 2: Toast -->
+      <h4>B &middot; Toast popup (P1 only)</h4>
+      <div class="callout" style="background:#FEE2E2; border-left:3px solid var(--bad); margin:12px 0; max-width:380px;">
+        <div style="font-size:13px; color:var(--ink);">
+          <strong>&#9888; Siddhant: sentiment drop</strong><br>
+          <span style="color:var(--muted); font-size:12px;">Reach out within 48h&hellip;</span> &nbsp;
+          <span style="color:var(--accent); font-weight:600;">[Open]</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>onAlert.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">if</span> (a.priority === <span class="tk-str">"P1"</span>) {
+  toast.<span class="tk-fn">error</span>(a.title, {
+    description: a.genios_view,
+    action: { label: <span class="tk-str">"Open"</span>, onClick: () =&gt; <span class="tk-fn">openContact</span>(a.contact_id) }
+  });
+}</pre>
+      </div>
+
+      <!-- Surface 3: Slack -->
+      <h4>C &middot; Slack DM</h4>
+      <div class="callout" style="background:#FFF; border:1px solid var(--border); border-left:3px solid #4A154B; margin:12px 0;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink);">
+          <strong>&#127760; Siddhant: sentiment drop</strong><br>
+          <span style="color:var(--ink-2);">Reach out within 48h, mention Q2 commitment&hellip;</span><br>
+          <span style="background:var(--accent); color:#FFF; padding:2px 8px; border-radius:4px; font-size:11px;">Draft reply</span>
+          &nbsp;
+          <span style="border:1px solid var(--border-strong); padding:2px 8px; border-radius:4px; font-size:11px; color:var(--muted);">Dismiss</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>slack.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">await</span> slack.chat.<span class="tk-fn">postMessage</span>({
+  channel: userDmId,
+  blocks: [
+    { type: <span class="tk-str">"section"</span>, text: { type: <span class="tk-str">"mrkdwn"</span>, text: <span class="tk-str">`*${a.title}*\n${a.genios_view}`</span> } },
+    { type: <span class="tk-str">"actions"</span>, elements: [
+      { type: <span class="tk-str">"button"</span>, text: { type: <span class="tk-str">"plain_text"</span>, text: <span class="tk-str">"Draft reply"</span> },
+        url: <span class="tk-str">`https://yourapp.com/draft/${a.contact_id}`</span> }
+    ]}
+  ]
+});</pre>
+      </div>
+
+      <!-- Surface 4: Email -->
+      <h4>D &middot; Email digest (daily 8am)</h4>
+      <div class="callout" style="background:#FFF; border:1px solid var(--border); margin:12px 0;">
+        <div style="font-size:13px; color:var(--ink);">
+          <strong>Today &mdash; 3 things need attention</strong>
+          <div style="border-left:3px solid var(--accent); padding-left:10px; margin-top:8px;">
+            <strong>Siddhant: sentiment drop</strong><br>
+            <span style="color:var(--muted); font-size:12px;">Reach out within 48h&hellip;</span><br>
+            <span style="color:var(--accent); font-size:12px;">Open contact &rarr;</span>
+          </div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>digest.html</span><span class="lang">html</span></div>
+<pre>{{#each alerts}}
+  <span style="color:#9CDCFE">&lt;div</span> <span style="color:#9CDCFE">style</span>=<span class="tk-str">"border-left:3px solid #B45309; padding-left:10px;"</span><span style="color:#9CDCFE">&gt;</span>
+    <span style="color:#9CDCFE">&lt;strong&gt;</span>{{title}}<span style="color:#9CDCFE">&lt;/strong&gt;</span>
+    <span style="color:#9CDCFE">&lt;p&gt;</span>{{genios_view}}<span style="color:#9CDCFE">&lt;/p&gt;</span>
+    <span style="color:#9CDCFE">&lt;a</span> <span style="color:#9CDCFE">href</span>=<span class="tk-str">"/contacts/{{contact_id}}"</span><span style="color:#9CDCFE">&gt;</span>Open &rarr;<span style="color:#9CDCFE">&lt;/a&gt;</span>
+  <span style="color:#9CDCFE">&lt;/div&gt;</span>
+{{/each}}</pre>
+      </div>
+
+      <!-- Surface 5: Auto-action -->
+      <h4>E &middot; Auto-action (your agent acts on its own)</h4>
+      <div class="callout" style="background:var(--accent-soft); border-left:3px solid var(--accent); margin:12px 0;">
+        <div style="font-size:13px; color:var(--ink);">
+          <strong>&#9889; Brain detected. Agent acted.</strong><br>
+          <span style="color:var(--muted); font-size:12px;">Sent draft reply to Siddhant referencing Q2 commitment &middot; logged to your CRM.</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>autoAct.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">if</span> (a.type === <span class="tk-str">"anomaly"</span> &amp;&amp; trustedAutoAction) {
+  <span class="tk-kw">await</span> yourAgent.<span class="tk-fn">execute</span>({
+    instruction: a.genios_view,
+    contact: a.contact_id
+  });
+}</pre>
+      </div>
+
+      <h3>Combined router (drop into your code)</h3>
+      <div class="code-block">
+        <div class="code-head"><span>routeAlert.ts &middot; called from Step 1</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">function</span> <span class="tk-fn">routeAlert</span>(a) {
+  db.<span class="tk-fn">insertAlert</span>(a);                                         <span class="tk-cmt">// A: in-app panel</span>
+  <span class="tk-kw">if</span> (a.priority === <span class="tk-str">"P1"</span>) <span class="tk-fn">showToast</span>(a);                       <span class="tk-cmt">// B: toast</span>
+  <span class="tk-kw">if</span> (a.priority === <span class="tk-str">"P1"</span>) <span class="tk-fn">slackDM</span>(a);                         <span class="tk-cmt">// C: Slack</span>
+  <span class="tk-kw">if</span> (a.type === <span class="tk-str">"anomaly"</span> &amp;&amp; trustedAutoAction) <span class="tk-fn">autoAct</span>(a);  <span class="tk-cmt">// E: agent</span>
+}
+<span class="tk-cmt">// D: email digest is a separate cron at 8am — drains today's alerts from db</span></pre>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Recommendation</div>
+        <p>Start with <strong>A (in-app panel) + B (toast for P1)</strong>. Add Slack/email/auto-action when you grow. Each surface is independent &mdash; turn on/off freely.</p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="section" id="s7">
+      <div class="section-num">&sect; 07 &mdash; Path 5</div>
+      <h2>Python &amp; Node SDKs</h2>
+      <p><em>Quick integration &middot; 15 min.</em></p>
+
+      <h3>Python</h3>
+      <div class="code-block">
+        <div class="code-head"><span>install</span><span class="lang">bash</span></div>
+<pre>pip install genios</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>example.py</span><span class="lang">python</span></div>
+<pre><span class="tk-kw">from</span> genios <span class="tk-kw">import</span> Client
+
+client = <span class="tk-fn">Client</span>(api_key=<span class="tk-str">"gn_live_xxxxx"</span>)
+
+ctx = client.<span class="tk-fn">context</span>(entity=<span class="tk-str">"Alice Chen"</span>, situation=<span class="tk-str">"follow up"</span>)
+<span class="tk-fn">print</span>(ctx.context_for_agent)
+<span class="tk-fn">print</span>(ctx.action_recommendation)
+
+insights = client.<span class="tk-fn">insights</span>(limit=<span class="tk-num">10</span>)
+<span class="tk-kw">for</span> i <span class="tk-kw">in</span> insights:
+    <span class="tk-fn">print</span>(i.title, i.priority)</pre>
+      </div>
+
+      <h3>Node</h3>
+      <div class="code-block">
+        <div class="code-head"><span>install</span><span class="lang">bash</span></div>
+<pre>npm install @genios/sdk</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>example.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">import</span> { Genios } <span class="tk-kw">from</span> <span class="tk-str">"@genios/sdk"</span>;
+
+<span class="tk-kw">const</span> genios = <span class="tk-kw">new</span> <span class="tk-fn">Genios</span>({ apiKey: <span class="tk-str">"gn_live_xxxxx"</span> });
+
+<span class="tk-kw">const</span> ctx = <span class="tk-kw">await</span> genios.<span class="tk-fn">context</span>({
+  entity: <span class="tk-str">"Alice Chen"</span>,
+  situation: <span class="tk-str">"follow up"</span>
+});
+console.<span class="tk-fn">log</span>(ctx.contextForAgent);
+
+<span class="tk-kw">const</span> insights = <span class="tk-kw">await</span> genios.<span class="tk-fn">insights</span>({ limit: <span class="tk-num">10</span> });</pre>
+      </div>
+
+      <h3>Proactive scheduler &middot; both languages</h3>
+      <p>Wrap the insights call in a timer to get push-like behaviour without the webhook dependency:</p>
+      <div class="code-block">
+        <div class="code-head"><span>scheduler.py</span><span class="lang">python</span></div>
+<pre><span class="tk-kw">from</span> genios <span class="tk-kw">import</span> Client
+<span class="tk-kw">import</span> time
+
+client = <span class="tk-fn">Client</span>(api_key=<span class="tk-str">"gn_live_xxxxx"</span>)
+
+<span class="tk-kw">while</span> <span class="tk-kw">True</span>:
+    <span class="tk-kw">for</span> i <span class="tk-kw">in</span> client.<span class="tk-fn">insights</span>(limit=<span class="tk-num">10</span>):
+        <span class="tk-kw">if</span> i.priority <span class="tk-kw">in</span> (<span class="tk-str">"P1"</span>, <span class="tk-str">"high"</span>):
+            your_agent.<span class="tk-fn">handle_proactive_alert</span>(i)
+    time.<span class="tk-fn">sleep</span>(<span class="tk-num">600</span>)  <span class="tk-cmt"># every 10 min</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>scheduler.ts</span><span class="lang">typescript</span></div>
+<pre><span class="tk-kw">import</span> { Genios } <span class="tk-kw">from</span> <span class="tk-str">"@genios/sdk"</span>;
+<span class="tk-kw">const</span> genios = <span class="tk-kw">new</span> <span class="tk-fn">Genios</span>({ apiKey: <span class="tk-str">"gn_live_xxxxx"</span> });
+
+<span class="tk-fn">setInterval</span>(<span class="tk-kw">async</span> () =&gt; {
+  <span class="tk-kw">const</span> insights = <span class="tk-kw">await</span> genios.<span class="tk-fn">insights</span>({ limit: <span class="tk-num">10</span> });
+  <span class="tk-kw">for</span> (<span class="tk-kw">const</span> i <span class="tk-kw">of</span> insights) {
+    <span class="tk-kw">if</span> (i.priority === <span class="tk-str">"P1"</span> || i.priority === <span class="tk-str">"high"</span>) {
+      <span class="tk-kw">await</span> yourAgent.<span class="tk-fn">handleProactiveAlert</span>(i);
+    }
+  }
+}, <span class="tk-num">10 * 60 * 1000</span>);  <span class="tk-cmt">// every 10 min</span></pre>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="section" id="s8">
+      <div class="section-num">&sect; 08 &mdash; Auth</div>
+      <h2>Authentication</h2>
+      <p>All requests require a Bearer token in the <code>Authorization</code> header.</p>
+
+      <div class="endpoint">
+        <span class="method">HEADER</span>
+        <span>Authorization: Bearer gn_live_xxxxxxxxxxxxxxxxxxxxxxxxx</span>
+      </div>
+
+      <h4>Get your key</h4>
+      <ol>
+        <li>Log in to <code>https://brain.thegenios.com</code></li>
+        <li>Settings &rarr; API Keys &rarr; Generate Key</li>
+        <li>Copy the <code>gn_live_...</code> token (shown once)</li>
+      </ol>
+
+      <div class="callout">
+        <div class="callout-label">Security</div>
+        <p><strong>Treat the key like a password.</strong> Each call is rate-limited per key based on plan tier. Rotate immediately if exposed.</p>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="section" id="s9">
+      <div class="section-num">&sect; 09 &mdash; Limits</div>
+      <h2>Plan Tiers &amp; Limits</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Daily contexts</th>
+              <th>Rate / agent</th>
+              <th>Max contacts</th>
+              <th>Live fetches / day</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Trial</strong> <span class="pill">5 days</span></td>
+              <td class="num">100</td>
+              <td class="num">10 / min</td>
+              <td class="num">100</td>
+              <td class="num">10</td>
+            </tr>
+            <tr>
+              <td><strong>Hustler</strong> <span class="pill">monthly</span></td>
+              <td class="num">200</td>
+              <td class="num">20 / min</td>
+              <td class="num">300</td>
+              <td class="num">100</td>
+            </tr>
+            <tr>
+              <td><strong>Startup</strong> <span class="pill">monthly</span></td>
+              <td class="num">666</td>
+              <td class="num">50 / min</td>
+              <td class="num">2000</td>
+              <td class="num">1000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Overage is supported on Hustler and Startup tiers.</p>
+    </section>
+
+    <!-- 10 -->
+    <section class="section" id="s10">
+      <div class="section-num">&sect; 10 &mdash; Patterns</div>
+      <h2>Common Use Cases</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:30%;">Use case</th><th>Pattern</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>A. Customer support agent</strong><br><span style="color:var(--muted);font-size:13px;">Inkbox-style</span></td>
+              <td>Before the agent replies to an inbound, call <code>/v1/context</code> with the customer's email. Use <code>relationship_stage</code> + <code>sentiment_trend</code> to decide tone &mdash; escalate to human if <span class="pill risk">AT_RISK</span> or <em>frustrated</em>.</td>
+            </tr>
+            <tr>
+              <td><strong>B. Outbound sales agent</strong></td>
+              <td>Before drafting outreach, call <code>/v1/context</code> for <code>entity.what_works</code>, <code>entity.what_to_avoid</code>, and <code>recent_interactions</code>. Reference recent threads concretely instead of generic "circling back".</td>
+            </tr>
+            <tr>
+              <td><strong>C. Founder's executive assistant</strong></td>
+              <td>Subscribe to webhook for <code>pending_alerts</code>. Your agent receives proactive alerts (going cold, overdue commitment, anomaly) and drafts the right action automatically.</td>
+            </tr>
+            <tr>
+              <td><strong>D. CRM enrichment</strong></td>
+              <td>On contact view in your CRM, call <code>/v1/context</code> and display the bundle inline &mdash; stage, sentiment, last interaction, agent guidance, suggested next step.</td>
+            </tr>
+            <tr>
+              <td><strong>E. Proactive notification feed</strong></td>
+              <td>Hit <code>/v1/insights</code> periodically and surface the top items in your product UI as a <em>"What needs your attention"</em> panel.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="section" id="s11">
+      <div class="section-num">&sect; 11 &mdash; Recommended</div>
+      <h2>Recommended Combo</h2>
+      <p>For most customers, this is the highest-leverage configuration:</p>
+
+      <div class="combo-box">
+        <div class="combo-title">MCP <span style="color:var(--accent);">+</span> Webhook</div>
+        <p style="color:var(--ink-2); margin-bottom:0;">
+          <strong>MCP</strong> gives the agent on-demand intelligence. <strong>Webhook</strong> wakes the agent up proactively. Together: context-aware <em>and</em> proactive &mdash; a major leap from default agent behaviour.
+        </p>
+        <div class="combo-grid">
+          <div class="combo-item">
+            <div class="ck">Setup time</div>
+            <div class="cv">~ 1 day</div>
+          </div>
+          <div class="combo-item">
+            <div class="ck">Code change</div>
+            <div class="cv">~ 50 lines</div>
+          </div>
+          <div class="combo-item">
+            <div class="ck">MCP path</div>
+            <div class="cv">On-demand intelligence</div>
+          </div>
+          <div class="combo-item">
+            <div class="ck">Webhook path</div>
+            <div class="cv">Proactive wake-up</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="section" id="s12">
+      <div class="section-num">&sect; 12 &mdash; Build vs Buy</div>
+      <h2>Why GeniOS vs Building It Yourself</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:42%;">Capability</th>
+              <th>DIY effort</th>
+              <th>With GeniOS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Sentiment EWMA tracking</td><td class="num">2 weeks</td><td><span class="pill good">0 &mdash; built-in</span></td></tr>
+            <tr><td>50+ proactive detectors</td><td class="num">6 months</td><td><span class="pill good">0 &mdash; running</span></td></tr>
+            <tr><td>Commitment LLM extraction</td><td class="num">1 month + tuning</td><td><span class="pill good">0 &mdash; built-in</span></td></tr>
+            <tr><td>Cross-tool graph (Gmail + Cal + Slack)</td><td class="num">2 &ndash; 3 quarters</td><td><span class="pill good">0 &mdash; Day 1</span></td></tr>
+            <tr><td>Live email / calendar search fallback</td><td class="num">2 months</td><td><span class="pill good">0 &mdash; built-in</span></td></tr>
+            <tr><td>Hebbian learning loop</td><td class="num">research project</td><td><span class="pill good">0 &mdash; running nightly</span></td></tr>
+            <tr><td>Per-tenant calibration</td><td class="num">multi-week ML work</td><td><span class="pill good">0 &mdash; automatic</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="section" id="s13">
+      <div class="section-num">&sect; 13 &mdash; Verify</div>
+      <h2>Quick Verify (30 seconds)</h2>
+      <p>Run this curl to confirm your integration is wired correctly:</p>
+      <div class="code-block">
+        <div class="code-head"><span>verify.sh</span><span class="lang">bash</span></div>
+<pre>curl -X POST https://squid-app-2zuqf.ondigitalocean.app/v1/context \
+  -H <span class="tk-str">"Authorization: Bearer gn_live_xxxxx"</span> \
+  -H <span class="tk-str">"Content-Type: application/json"</span> \
+  -d <span class="tk-str">'{"entity":"Alice Chen","situation":"follow up"}'</span></pre>
+      </div>
+      <p>You should see a JSON response with <code>entity</code>, <code>context_for_agent</code>, <code>action_recommendation</code>, <code>confidence</code>, <code>intent_signal</code>, <code>scores</code>, and <code>latency_ms</code> fields. If you see this &mdash; integration is working.</p>
+    </section>
+
+    <!-- 14 -->
+    <section class="section" id="s14">
+      <div class="section-num">&sect; 14 &mdash; Help</div>
+      <h2>Support</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:30%;">Channel</th><th>Address</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Dashboard</strong></td><td><code>https://brain.thegenios.com</code> (login + API key management)</td></tr>
+            <tr><td><strong>Email</strong></td><td><code>homiansmedia@gmail.com</code></td></tr>
+            <tr><td><strong>Direct support</strong></td><td>Request a Slack / WhatsApp channel from your GeniOS rep</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">GeniOS Brain &mdash; <em>the brain layer for AI agents.</em></div>
+    <div class="footer-meta">v3 &middot; Last updated 2026-05-04</div>
+  </div>
+</footer>
+
+</body>
+</html>
