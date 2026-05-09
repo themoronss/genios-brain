@@ -26,15 +26,16 @@ from app.policy import connector_crud, trust_crud
 logger = logging.getLogger(__name__)
 
 
-def _insert_canonical_email(db, org_id: str, agent_uuid: str, ev: dict) -> Optional[str]:
-    """Reuse the same insert path as POST /v1/ingest/email. Returns interaction_id
-    or None if duplicate / invalid."""
+def _insert_canonical_email(db, org_id: str, agent_uuid: Optional[str],
+                            account_id: Optional[str], ev: dict) -> Optional[str]:
+    """Phase 12: workspace-keyed insert. account_id is the connector_credentials.id
+    of the source — read-time scope filter joins against agent_account_grants.
+    `agent_uuid` is kept for forensic audit only."""
     ext = (ev.get("external_id") or "").strip()
     sender = (ev.get("from_address") or "").strip().lower()
     if not ext or not sender:
         return None
 
-    # Idempotency
     dup = db.execute(
         text("SELECT id::text FROM interactions WHERE org_id=:o AND source='email' AND external_id=:e"),
         {"o": org_id, "e": ext},
@@ -42,7 +43,6 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: str, ev: dict) -> Optio
     if dup:
         return None
 
-    # Upsert contact
     contact_id = db.execute(
         text("SELECT id::text FROM contacts WHERE org_id=:o AND LOWER(email)=:e"),
         {"o": org_id, "e": sender},
@@ -57,8 +57,6 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: str, ev: dict) -> Optio
             {"o": org_id, "e": sender, "n": sender.split("@")[0]},
         ).scalar()
 
-    trusted = trust_crud.is_trusted(db, agent_uuid, sender_email=sender, contact_id=contact_id)
-
     sent_at = ev.get("sent_at") or ""
     try:
         sent_dt = datetime.fromisoformat(sent_at.replace("Z", "+00:00")) if sent_at else datetime.now(timezone.utc)
@@ -68,14 +66,14 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: str, ev: dict) -> Optio
     iid = db.execute(
         text("""
             INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, direction, subject, summary,
+                (org_id, contact_id, agent_uuid, account_id, direction, subject, summary,
                  raw_snippet, interaction_at, source, external_id,
-                 thread_external_id, interaction_kind, trusted_sender)
-            VALUES (:o, :c, :a, :dir, :subj, :sum, :raw, :at, 'email', :ext, :thr, 'email', :tr)
+                 thread_external_id, interaction_kind)
+            VALUES (:o, :c, :a, :acct, :dir, :subj, :sum, :raw, :at, 'email', :ext, :thr, 'email')
             RETURNING id::text
         """),
         {
-            "o": org_id, "c": contact_id, "a": agent_uuid,
+            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
             "dir": ev.get("direction", "inbound"),
             "subj": (ev.get("subject") or "")[:500],
             "sum": (ev.get("body_text") or ev.get("body_html") or "")[:2000],
@@ -83,7 +81,6 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: str, ev: dict) -> Optio
             "at": sent_dt,
             "ext": ext,
             "thr": ev.get("thread_external_id") or ev.get("in_reply_to_external_id"),
-            "tr": trusted,
         },
     ).scalar()
     return iid
@@ -159,9 +156,45 @@ def _insert_calendar_event(db, org_id: str, agent_uuid: str, ev: dict) -> Option
     return last_iid
 
 
+def _set_sync_status(db, connector_id: str, status: str,
+                     error: Optional[str] = None,
+                     accepted: int = 0,
+                     reset_failures: bool = False):
+    """Phase 12 polish: write last_sync_status / error / at on every sync run.
+    Bumps consecutive_failures on failure, resets on success."""
+    err = (error or "")[:500] if error else None
+    if reset_failures or status == "success":
+        db.execute(
+            text("""
+                UPDATE connector_credentials
+                SET last_sync_status = :s,
+                    last_sync_error  = :e,
+                    last_sync_at     = NOW(),
+                    last_email_count = :n,
+                    consecutive_failures = 0
+                WHERE id = :id
+            """),
+            {"s": status, "e": err, "n": accepted, "id": connector_id},
+        )
+    else:
+        db.execute(
+            text("""
+                UPDATE connector_credentials
+                SET last_sync_status = :s,
+                    last_sync_error  = :e,
+                    last_sync_at     = NOW(),
+                    consecutive_failures = COALESCE(consecutive_failures, 0) + 1
+                WHERE id = :id
+            """),
+            {"s": status, "e": err, "id": connector_id},
+        )
+    db.commit()
+
+
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_sync_connector(self, connector_id: str):
-    """Sync one connector. Idempotent — safe to run repeatedly."""
+    """Sync one connector. Idempotent — safe to run repeatedly.
+    Writes last_sync_status on every outcome (success / auth_failed / failed)."""
     db = SessionLocal()
     accepted = 0
     duplicates = 0
@@ -182,11 +215,18 @@ def task_sync_connector(self, connector_id: str):
         provider = (row.metadata or {}).get("provider", "custom")
         ops = adapters.get(provider)
         if not ops:
-            logger.warning(f"sync: no adapter for provider={provider}")
+            _set_sync_status(db, connector_id, "failed", error=f"No adapter for provider '{provider}'")
             return {"connector_id": connector_id, "status": "no_adapter", "provider": provider}
 
         creds = connector_crud.decrypt_metadata(row.metadata)
         since = (row.last_event_at or (datetime.now(timezone.utc) - timedelta(days=7))).isoformat()
+
+        # Mark syncing in flight (UI shows yellow spinner)
+        db.execute(
+            text("UPDATE connector_credentials SET last_sync_status='syncing' WHERE id=:id"),
+            {"id": connector_id},
+        )
+        db.commit()
 
         # Email path (Inkbox / IMAP / Gmail / Postmark / ...)
         if row.source == "email" and "fetch_email" in ops:
@@ -194,17 +234,19 @@ def task_sync_connector(self, connector_id: str):
                 events = ops["fetch_email"](creds, since)
             except PermissionError as pe:
                 logger.error(f"sync: permission denied for {connector_id}: {pe}")
+                _set_sync_status(db, connector_id, "auth_failed", error=str(pe))
                 return {"connector_id": connector_id, "status": "auth_failed", "error": str(pe)}
             except Exception as e:
                 logger.warning(f"sync: fetch failed for {connector_id}: {e}")
+                _set_sync_status(db, connector_id, "failed", error=str(e))
                 return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
 
             for ev in events:
-                iid = _insert_canonical_email(db, row.org_id, row.agent_uuid, ev)
+                iid = _insert_canonical_email(db, row.org_id, row.agent_uuid, connector_id, ev)
                 if iid:
                     accepted += 1
                     if "mark_read" in ops:
-                        try: ops["mark_read"](creds, ev.get("external_id"))
+                        try: ops["mark_read"](creds, ev)  # pass full event so adapter uses _inkbox_id directly
                         except Exception: pass
                 else:
                     duplicates += 1
@@ -215,16 +257,17 @@ def task_sync_connector(self, connector_id: str):
                     {"id": connector_id},
                 )
             db.commit()
+            _set_sync_status(db, connector_id, "success", accepted=accepted)
 
         # Calendar path — events become interactions of kind='meeting'
         elif row.source == "calendar" and "fetch_calendar" in ops:
             try:
                 events = ops["fetch_calendar"](creds, since)
             except PermissionError as pe:
-                logger.error(f"sync: calendar auth failed for {connector_id}: {pe}")
+                _set_sync_status(db, connector_id, "auth_failed", error=str(pe))
                 return {"connector_id": connector_id, "status": "auth_failed", "error": str(pe)}
             except Exception as e:
-                logger.warning(f"sync: calendar fetch failed: {e}")
+                _set_sync_status(db, connector_id, "failed", error=str(e))
                 return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
 
             for ev in events:
@@ -240,6 +283,10 @@ def task_sync_connector(self, connector_id: str):
                     {"id": connector_id},
                 )
             db.commit()
+            _set_sync_status(db, connector_id, "success", accepted=accepted)
+        else:
+            _set_sync_status(db, connector_id, "failed", error="No fetch handler for source type")
+
         return {
             "connector_id": connector_id,
             "provider": provider,
@@ -250,6 +297,8 @@ def task_sync_connector(self, connector_id: str):
     except Exception as e:
         db.rollback()
         logger.exception(f"sync_connector {connector_id} failed: {e}")
+        try: _set_sync_status(db, connector_id, "failed", error=str(e))
+        except Exception: pass
         try: self.retry(exc=e)
         except Exception: pass
         return {"connector_id": connector_id, "status": "error", "error": str(e)[:200]}
@@ -259,15 +308,17 @@ def task_sync_connector(self, connector_id: str):
 
 @celery.task(queue="low_priority")
 def task_sync_all_connectors():
-    """Beat-triggered every 5 min. Fans out one sub-task per active connector."""
+    """Beat-triggered every 5 min. Fans out one sub-task per active workspace
+    connector that has pull credentials (Phase 12: workspace-level only —
+    legacy per-agent rows still picked up for back-compat until migrated)."""
     db = SessionLocal()
     try:
         rows = db.execute(
             text("""
                 SELECT id::text FROM connector_credentials
                 WHERE is_active = TRUE
-                  AND source IN ('email', 'phone', 'sms')
-                  AND metadata ? 'api_key'  -- only pull connectors (have creds)
+                  AND source IN ('email', 'phone', 'sms', 'calendar')
+                  AND (metadata ? 'api_key' OR metadata ? 'password')
             """),
         ).fetchall()
         for r in rows:

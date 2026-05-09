@@ -27,7 +27,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_auth_ctx, get_db, verify_api_key
-from app.policy import agent_crud, connector_crud, scope_filter, scope_loader, trust_crud
+from app.policy import agent_crud, connector_crud, grants_crud, scope_filter, scope_loader, trust_crud
 from app.policy.scope_loader import AuthCtx
 
 logger = logging.getLogger(__name__)
@@ -138,6 +138,8 @@ def list_agents(db: Session = Depends(get_db), org_id: str = Depends(verify_api_
                 "blocked_24h": int(r.blocked_24h or 0),
                 "created_at": r.created_at.isoformat() if r.created_at else None,
                 "is_default": r.agent_id == "default_agent",
+                # Phase 11.5: tools connected per agent (visible on list page)
+                "connectors": list(r.connectors or []),
             }
             for r in rows
         ],
@@ -282,146 +284,71 @@ def archive_agent(slug: str, db: Session = Depends(get_db), org_id: str = Depend
     return {"agent_id": slug, "status": "archived"}
 
 
-# ── Connectors per agent (Phase 6 — Inkbox integration) ─────────────────────
-class ConnectorCreateRequest(BaseModel):
-    source:   str                  # 'inkbox_email' | 'inkbox_phone' | 'inkbox_sms' | ...
-    metadata: dict = {}            # e.g. {"mailbox_address": "...", "phone_number": "..."}
+# ── Per-agent grants (Phase 12 — workspace tools, agent picks subset) ───────
+# Tools are connected at workspace level on the Integrations page. Each
+# connection produces an "account". Agents grant themselves access to a
+# subset of those accounts; sync runs at workspace level and the grant
+# table gates what each agent reads via scope_filter.interaction_clauses.
 
-    @validator("source")
-    def _v_src(cls, v):
-        v = (v or "").strip().lower()
-        if not v:
-            raise ValueError("source required")
-        if v not in connector_crud.KNOWN_SOURCES:
-            # Allow unknown sources — but warn the caller
-            pass
-        return v
+class GrantsReplaceRequest(BaseModel):
+    accounts: list[dict] = []
+    # Each: {"account_id": "<uuid>", "account_kind": "oauth" | "connector"}
 
 
-@router.get("/v1/agents/{slug}/connectors")
-def list_connectors(slug: str, db: Session = Depends(get_db), org_id: str = Depends(verify_api_key)):
+@router.get("/v1/agents/{slug}/grants")
+def list_grants(slug: str, db: Session = Depends(get_db), org_id: str = Depends(verify_api_key)):
     row = agent_crud.find_agent(db, org_id, slug)
     if not row:
         raise _http({"error": "AGENT_NOT_FOUND"}, 404)
-    rows = connector_crud.list_for_agent(db, org_id, row[0])
-    # Never leak signing_secret or any sensitive credentials in list responses.
-    # Replace credential blobs with a presence flag for UX (e.g. "api_key set").
-    _SECRETS = {"signing_secret", "api_key", "password", "oauth_token",
-                "refresh_token", "imap_password"}
-    def _safe_meta(m: dict) -> dict:
-        m = m or {}
-        out = {k: v for k, v in m.items() if k not in _SECRETS}
-        out["has_api_key"] = bool(m.get("api_key"))
-        out["has_password"] = bool(m.get("password"))
-        return out
-
+    granted = grants_crud.list_for_agent(db, org_id, row[0])
+    workspace = grants_crud.list_workspace_accounts(db, org_id)
+    granted_keys = {(g.account_id, g.account_kind) for g in granted}
     return {
-        "connectors": [
+        "agent_id": slug,
+        "grants": [
             {
-                "id": r[0],
-                "source": r[1],
-                "metadata": _safe_meta(r[2]),
-                "is_active": bool(r[3]),
-                "created_at": r[4].isoformat() if r[4] else None,
-                "last_event_at": r[5].isoformat() if r[5] else None,
-            } for r in rows
-        ]
+                "grant_id":     g.grant_id,
+                "account_id":   g.account_id,
+                "account_kind": g.account_kind,
+                "tool":         g.tool,
+                "label":        g.account_label,
+                "granted_at":   g.granted_at.isoformat() if g.granted_at else None,
+            } for g in granted
+        ],
+        # Available accounts the customer can toggle (workspace-wide)
+        "available_accounts": [
+            {
+                "account_id":   a[0],
+                "account_kind": a[1],
+                "tool":         a[2],
+                "label":        a[3],
+                "last_event_at": a[4].isoformat() if a[4] else None,
+                "granted":      (a[0], a[1]) in granted_keys,
+            } for a in workspace
+        ],
     }
 
 
-@router.post("/v1/agents/{slug}/connectors", status_code=201)
-def create_connector(
+@router.put("/v1/agents/{slug}/grants")
+def replace_grants(
     slug: str,
-    req: ConnectorCreateRequest,
+    req: GrantsReplaceRequest,
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
+    """Atomic replace — clears existing grants, sets new list. Master agent's
+    grants are ignored (master sees everything via data_visibility='all')."""
     row = agent_crud.find_agent(db, org_id, slug)
     if not row:
         raise _http({"error": "AGENT_NOT_FOUND"}, 404)
     try:
-        conn_id, raw_secret = connector_crud.upsert(db, org_id, row[0], req.source, req.metadata)
+        count = grants_crud.replace_grants(db, org_id, row[0], req.accounts)
         db.commit()
     except Exception as e:
         db.rollback()
-        logger.error(f"create_connector failed: {e}")
-        raise _http("Connector creation failed", 500)
-
-    # Phase 10: if customer provided pull credentials (api_key, password, etc.),
-    # kick off an initial sync immediately so they don't sit at "no events yet"
-    # waiting 5 min for the next beat tick.
-    has_pull_creds = bool(
-        req.metadata.get("api_key") or req.metadata.get("password")
-        or req.metadata.get("oauth_token")
-    )
-    if has_pull_creds:
-        try:
-            from app.tasks.sync_connector import task_sync_connector
-            task_sync_connector.delay(conn_id)
-        except Exception as e:
-            logger.debug(f"initial sync enqueue skipped: {e}")
-
-    # Strip sensitive fields from echoed metadata (we never echo plaintext creds)
-    safe_meta = {k: v for k, v in req.metadata.items()
-                 if k not in ("api_key", "password", "oauth_token", "refresh_token", "imap_password")}
-    return {
-        "id": conn_id,
-        "source": req.source,
-        "metadata": safe_meta,
-        "signing_secret": raw_secret,
-        "initial_sync_enqueued": has_pull_creds,
-        "warning": (
-            "Store this signing_secret securely if you're using webhook push. "
-            "If you provided api_key/password, Genios will pull on a 5-min schedule."
-        ),
-    }
-
-
-# ── Manual sync trigger ──────────────────────────────────────────────────────
-@router.post("/v1/agents/{slug}/connectors/{connector_id}/sync", status_code=202)
-def sync_connector_now(
-    slug: str,
-    connector_id: str,
-    db: Session = Depends(get_db),
-    org_id: str = Depends(verify_api_key),
-):
-    """Manual 'Sync now' button — fires the pull immediately (out-of-band)."""
-    row = agent_crud.find_agent(db, org_id, slug)
-    if not row:
-        raise _http({"error": "AGENT_NOT_FOUND"}, 404)
-    exists = db.execute(
-        text("""
-            SELECT 1 FROM connector_credentials
-            WHERE id=:c AND org_id=:o AND agent_uuid=:a AND is_active=TRUE
-        """),
-        {"c": connector_id, "o": org_id, "a": row[0]},
-    ).fetchone()
-    if not exists:
-        raise _http({"error": "CONNECTOR_NOT_FOUND"}, 404)
-    try:
-        from app.tasks.sync_connector import task_sync_connector
-        task_sync_connector.delay(connector_id)
-    except Exception as e:
-        logger.warning(f"sync_now enqueue failed: {e}")
-        raise _http({"error": "SYNC_DISPATCH_FAILED"}, 503)
-    return {"connector_id": connector_id, "status": "enqueued"}
-
-
-@router.delete("/v1/agents/{slug}/connectors/{connector_id}")
-def delete_connector(
-    slug: str,
-    connector_id: str,
-    db: Session = Depends(get_db),
-    org_id: str = Depends(verify_api_key),
-):
-    row = agent_crud.find_agent(db, org_id, slug)
-    if not row:
-        raise _http({"error": "AGENT_NOT_FOUND"}, 404)
-    ok = connector_crud.deactivate(db, org_id, row[0], connector_id)
-    if not ok:
-        raise _http({"error": "CONNECTOR_NOT_FOUND"}, 404)
-    db.commit()
-    return {"id": connector_id, "is_active": False}
+        logger.error(f"replace_grants failed: {e}")
+        raise _http("Grants update failed", 500)
+    return {"agent_id": slug, "granted_count": count}
 
 
 # ── Per-agent trust list (Phase 6.5 — instruction senders) ──────────────────

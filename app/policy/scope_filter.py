@@ -159,12 +159,21 @@ def interaction_clauses(
     bind_prefix: str = "siv",
 ) -> tuple[str, dict[str, Any]]:
     """
-    Restrict an interactions-table read to the calling agent's own data when
-    `policy.data_visibility == 'own'`. Master / 'all' visibility returns no
-    fragment (sees everything).
+    Phase 12: scoped agents see ONLY interactions whose source-account is in
+    the agent's grant list. Master agents (`data_visibility='all'`) see
+    everything.
 
-    Returns (' AND ...', binds) or ('', {}). Callers concatenate the fragment
-    onto an existing WHERE clause.
+    Behaviour:
+      - master (data_visibility='all') → no filter
+      - scoped (own) without agent_uuid → block all (defensive)
+      - scoped with agent_uuid →
+          interactions.account_id IN (SELECT … FROM agent_account_grants WHERE agent_uuid = :me)
+
+    Note: workspace-level untagged rows (no account_id) are visible to scoped
+    agents only when they have AT LEAST ONE grant (otherwise the agent is
+    fully sandboxed). This preserves the "Gmail at workspace, agents pick
+    accounts" model — pre-grant-system rows behave as universally visible
+    until the customer migrates them.
     """
     if not agent_uuid:
         return "", {}
@@ -174,9 +183,13 @@ def interaction_clauses(
     a = interaction_alias
     bp = bind_prefix
     binds = {f"{bp}_agent": agent_uuid}
-    # Untagged rows (agent_uuid IS NULL) belong to workspace-level syncs (Gmail
-    # OAuth, etc.) and are visible to every agent — they're shared org data.
-    return f" AND ({a}.agent_uuid IS NULL OR {a}.agent_uuid = :{bp}_agent)", binds
+    # account_id grant join + back-compat for legacy rows without account_id.
+    return (
+        f" AND ({a}.account_id IS NULL OR EXISTS ("
+        f"  SELECT 1 FROM agent_account_grants g "
+        f"  WHERE g.agent_uuid = :{bp}_agent AND g.account_id = {a}.account_id"
+        f"))"
+    ), binds
 
 
 def fact_clauses(

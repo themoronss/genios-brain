@@ -42,7 +42,11 @@ def _headers(api_key: str) -> dict:
 
 
 def _normalise_email(raw: dict, mailbox_address: str) -> dict:
-    """Map Inkbox MessageResponse → canonical /v1/ingest/email payload."""
+    """Map Inkbox MessageResponse → canonical /v1/ingest/email payload.
+
+    Phase 12 polish: keeps Inkbox's internal `id` (UUID) as `_inkbox_id` so
+    `mark_read` can PATCH directly without re-listing to find the UUID.
+    """
     return {
         "external_id":  raw.get("message_id") or raw.get("id") or "",
         "from_address": raw.get("from_address") or "",
@@ -53,6 +57,8 @@ def _normalise_email(raw: dict, mailbox_address: str) -> dict:
         "direction":    raw.get("direction") or "inbound",
         "thread_external_id":      raw.get("thread_id"),
         "in_reply_to_external_id": raw.get("reply_to"),
+        # Out-of-band: not part of canonical schema, used only by mark_read
+        "_inkbox_id": raw.get("id"),
     }
 
 
@@ -106,20 +112,39 @@ def fetch_emails(credentials: dict, since_iso: Optional[str] = None) -> list[dic
     ]
 
 
-def mark_read(credentials: dict, external_id: str) -> bool:
+def mark_read(credentials: dict, external_id_or_event: object) -> bool:
     """PATCH the message to set is_read=true so next sync skips it.
 
-    Note: external_id we pass is the RFC822 Message-ID we stored. Inkbox's
-    PATCH expects the Inkbox internal `id`, not message_id — we look it up
-    via the stored mailbox/message in metadata if available, else search.
+    Accepts either:
+      * the canonical event dict (preferred — has `_inkbox_id` for direct PATCH)
+      * the raw external_id string (fallback — does a list+search to find UUID)
     """
     key = (credentials.get("api_key") or "").strip()
     mailbox = (credentials.get("mailbox_address") or "").strip().lower()
-    if not (key and mailbox and external_id):
+    if not (key and mailbox):
         return False
 
-    # Resolve internal id from message_id by re-querying the page.
-    # Cheap approach: list first page, find matching message_id.
+    # Path A: direct PATCH using the internal id we already have
+    if isinstance(external_id_or_event, dict):
+        internal_id = external_id_or_event.get("_inkbox_id")
+        if internal_id:
+            try:
+                rp = requests.patch(
+                    f"{INKBOX_BASE}/api/v1/mail/mailboxes/{mailbox}/messages/{internal_id}",
+                    headers={**_headers(key), "Content-Type": "application/json"},
+                    json={"is_read": True}, timeout=TIMEOUT_SEC,
+                )
+                return rp.status_code < 400
+            except requests.RequestException:
+                return False
+        external_id = external_id_or_event.get("external_id")
+    else:
+        external_id = external_id_or_event
+
+    if not external_id:
+        return False
+
+    # Path B (fallback): re-list and search by message_id — slower
     try:
         list_url = f"{INKBOX_BASE}/api/v1/mail/mailboxes/{mailbox}/messages"
         r = requests.get(list_url, headers=_headers(key), params={"limit": 50}, timeout=TIMEOUT_SEC)
@@ -130,9 +155,9 @@ def mark_read(credentials: dict, external_id: str) -> bool:
         if not match:
             return False
         internal_id = match.get("id")
-        patch_url = f"{INKBOX_BASE}/api/v1/mail/mailboxes/{mailbox}/messages/{internal_id}"
         rp = requests.patch(
-            patch_url, headers={**_headers(key), "Content-Type": "application/json"},
+            f"{INKBOX_BASE}/api/v1/mail/mailboxes/{mailbox}/messages/{internal_id}",
+            headers={**_headers(key), "Content-Type": "application/json"},
             json={"is_read": True}, timeout=TIMEOUT_SEC,
         )
         return rp.status_code < 400
@@ -165,11 +190,42 @@ def normalise_webhook(payload: dict) -> Optional[dict]:
     }
 
 
+def verify_credentials(credentials: dict) -> tuple[bool, str]:
+    """Pre-flight check called at connect-time. Hits GET /mailboxes/{email}
+    to confirm (a) API key is valid, (b) mailbox exists, (c) key has access.
+
+    Returns (ok, message). On success, message is the verified mailbox label.
+    On failure, message is a human-readable error suitable for surfacing in
+    the dashboard ("Invalid API key", "Mailbox not found", etc.).
+    """
+    key = (credentials.get("api_key") or "").strip()
+    mailbox = (credentials.get("mailbox_address") or "").strip().lower()
+    if not key:
+        return False, "API key is required"
+    if not mailbox:
+        return False, "Mailbox address is required"
+    try:
+        r = requests.get(
+            f"{INKBOX_BASE}/api/v1/mail/mailboxes/{mailbox}",
+            headers=_headers(key), timeout=TIMEOUT_SEC,
+        )
+    except requests.RequestException as e:
+        return False, f"Inkbox unreachable: {e}"
+    if r.status_code in (401, 403):
+        return False, "Invalid Inkbox API key"
+    if r.status_code == 404:
+        return False, f"Mailbox '{mailbox}' not found in your Inkbox org"
+    if r.status_code >= 400:
+        return False, f"Inkbox error {r.status_code}: {r.text[:120]}"
+    return True, mailbox
+
+
 def _register():
     register("inkbox", {
-        "fetch_email":      fetch_emails,
-        "mark_read":        mark_read,
+        "fetch_email":       fetch_emails,
+        "mark_read":         mark_read,
         "normalise_webhook": normalise_webhook,
+        "verify":            verify_credentials,
     })
 
 

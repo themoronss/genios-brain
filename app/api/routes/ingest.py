@@ -92,6 +92,24 @@ def _parse_ts(s: str) -> datetime:
         return datetime.now(timezone.utc)
 
 
+def _resolve_account_id_for_ingest(db, org_id: str, agent_uuid: Optional[str], source: str) -> Optional[str]:
+    """Phase 12: ingested data carries the source-account UUID so scoped agents
+    can be filtered by their grants. We look up the active workspace-level
+    connector for this source (agent_uuid IS NULL) — falling back to the
+    legacy per-agent row if it still exists."""
+    row = db.execute(
+        text("""
+            SELECT id::text FROM connector_credentials
+            WHERE org_id = :o AND source = :s AND is_active = TRUE
+              AND (agent_uuid IS NULL OR agent_uuid = :a)
+            ORDER BY (agent_uuid IS NULL) DESC, created_at DESC
+            LIMIT 1
+        """),
+        {"o": org_id, "s": source, "a": agent_uuid},
+    ).fetchone()
+    return row[0] if row else None
+
+
 def _audit(db, org_id, agent_uuid, source, external_id, outcome,
            interaction_id=None, contact_id=None, error=None, payload_bytes=0):
     try:
@@ -111,8 +129,43 @@ def _audit(db, org_id, agent_uuid, source, external_id, outcome,
         logger.warning(f"ingest_events log failed: {e}")
 
 
-def _verify_hmac_or_bootstrap(db, agent_uuid, source, raw_body, signature):
-    """Returns (ok, mode) where mode is 'hmac' | 'bootstrap' | 'reject'."""
+def _verify_inkbox_signature(raw_body, request_id, timestamp, signature, signing_key, tolerance_sec=300):
+    """Inkbox webhook signature: HMAC-SHA256({request_id}.{timestamp}.{body}, signing_key).
+    Header format: X-Inkbox-Signature: sha256=<hex>. Timestamp tolerance 300s."""
+    import hashlib, hmac as _hmac, time
+    if not (request_id and timestamp and signature and signing_key):
+        return False
+    try:
+        if abs(time.time() - int(timestamp)) > tolerance_sec:
+            return False
+    except (ValueError, TypeError):
+        return False
+    message = f"{request_id}.{timestamp}.{raw_body.decode('utf-8', errors='replace')}".encode()
+    expected = _hmac.new(signing_key.encode(), message, hashlib.sha256).hexdigest()
+    provided = signature.removeprefix("sha256=").strip()
+    return _hmac.compare_digest(expected, provided)
+
+
+def _verify_hmac_or_bootstrap(db, agent_uuid, source, raw_body, signature,
+                              inkbox_request_id=None, inkbox_timestamp=None,
+                              inkbox_signature=None):
+    """Returns (ok, mode) where mode is 'hmac' | 'inkbox_hmac' | 'bootstrap' | 'reject'.
+
+    Two signature paths:
+      1. Inkbox-native: X-Inkbox-Signature with {req_id}.{ts}.{body} HMAC
+      2. Genios-native: X-Genios-Signature with {body}-only HMAC (legacy)
+    """
+    # Prefer Inkbox-native signature if those headers are present
+    if inkbox_signature and inkbox_request_id and inkbox_timestamp:
+        secret = connector_crud.get_signing_secret(db, agent_uuid, source)
+        if secret is None:
+            # No signing key registered yet — accept (bootstrap) but log
+            return True, "bootstrap"
+        ok = _verify_inkbox_signature(raw_body, inkbox_request_id, inkbox_timestamp,
+                                       inkbox_signature, secret)
+        return ok, "inkbox_hmac" if ok else "reject"
+
+    # Legacy / Genios-native path
     secret = connector_crud.get_signing_secret(db, agent_uuid, source)
     if secret is None:
         return True, "bootstrap"
@@ -224,13 +277,22 @@ async def _common_ingest(
     """Single chokepoint for all three ingest endpoints."""
     raw = await request.body()
     org_id, agent_uuid = auth.org_id, auth.agent_uuid
+    if not org_id:
+        _audit(db, None, None, source, None, "rejected_unknown_agent",
+               error="org not resolved", payload_bytes=len(raw))
+        raise HTTPException(status_code=401, detail={"error": "AUTH_REQUIRED"})
 
-    if not agent_uuid:
-        _audit(db, org_id, None, source, None, "rejected_unknown_agent",
-               error="agent_uuid not resolved", payload_bytes=len(raw))
-        raise HTTPException(status_code=401, detail={"error": "AGENT_KEY_REQUIRED"})
+    # Phase 12 polish: detect Inkbox-native signature headers if present
+    h = request.headers
+    inkbox_req_id = h.get("X-Inkbox-Request-ID") or h.get("x-inkbox-request-id")
+    inkbox_ts     = h.get("X-Inkbox-Timestamp")  or h.get("x-inkbox-timestamp")
+    inkbox_sig    = h.get("X-Inkbox-Signature")  or h.get("x-inkbox-signature")
 
-    ok, mode = _verify_hmac_or_bootstrap(db, agent_uuid, source, raw, signature)
+    ok, mode = _verify_hmac_or_bootstrap(
+        db, agent_uuid, source, raw, signature,
+        inkbox_request_id=inkbox_req_id, inkbox_timestamp=inkbox_ts,
+        inkbox_signature=inkbox_sig,
+    )
     if not ok:
         _audit(db, org_id, agent_uuid, source, None, "rejected_signature",
                error="HMAC mismatch", payload_bytes=len(raw))
@@ -276,23 +338,29 @@ async def _common_ingest(
 
 
 # ── Per-source insert functions ──────────────────────────────────────────────
+# Phase 12: each interaction is tagged with the source-account UUID so
+# read-time scope filter can join against agent_account_grants. Trust list
+# is now resolved AT READ TIME against any agent that's granted this account
+# — at ingest we still tag the inserting-agent if known (for audit only).
+
 def _insert_email(db, org_id, agent_uuid, b: EmailIngest):
     counterparty = b.from_address if b.direction == "inbound" else (b.to[0] if b.to else "")
     contact_id = _upsert_contact_by_email(db, org_id, counterparty)
+    account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "email")
     trusted = trust_crud.is_trusted(
         db, agent_uuid, sender_email=counterparty, contact_id=contact_id,
-    )
+    ) if agent_uuid else False
     iid = db.execute(
         text("""
             INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, direction, subject, summary,
-                 raw_snippet, interaction_at, source, external_id,
-                 thread_external_id, interaction_kind, trusted_sender)
-            VALUES (:o, :c, :a, :dir, :subj, :sum, :raw, :at, :src, :ext, :thr, 'email', :trust)
+                (org_id, contact_id, agent_uuid, account_id, direction,
+                 subject, summary, raw_snippet, interaction_at, source,
+                 external_id, thread_external_id, interaction_kind, trusted_sender)
+            VALUES (:o, :c, :a, :acct, :dir, :subj, :sum, :raw, :at, :src, :ext, :thr, 'email', :trust)
             RETURNING id::text
         """),
         {
-            "o": org_id, "c": contact_id, "a": agent_uuid,
+            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
             "dir": b.direction, "subj": (b.subject or "")[:500],
             "sum": (b.body_text or b.body_html or "")[:2000],
             "raw": (b.body_text or b.body_html or "")[:5000],
@@ -308,20 +376,21 @@ def _insert_email(db, org_id, agent_uuid, b: EmailIngest):
 def _insert_call(db, org_id, agent_uuid, b: CallIngest):
     counterparty = b.from_number if b.direction == "inbound" else b.to_number
     contact_id = _upsert_contact_by_phone(db, org_id, counterparty)
+    account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "phone")
     trusted = trust_crud.is_trusted(
         db, agent_uuid, sender_phone=counterparty, contact_id=contact_id,
-    )
+    ) if agent_uuid else False
     iid = db.execute(
         text("""
             INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, direction, summary, raw_snippet,
-                 interaction_at, source, external_id, interaction_kind,
-                 duration_sec, transcript, trusted_sender)
-            VALUES (:o, :c, :a, :dir, :sum, :raw, :at, :src, :ext, 'call', :dur, :tr, :trust)
+                (org_id, contact_id, agent_uuid, account_id, direction,
+                 summary, raw_snippet, interaction_at, source, external_id,
+                 interaction_kind, duration_sec, transcript, trusted_sender)
+            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, :src, :ext, 'call', :dur, :tr, :trust)
             RETURNING id::text
         """),
         {
-            "o": org_id, "c": contact_id, "a": agent_uuid,
+            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
             "dir": b.direction,
             "sum": (b.transcript or f"Call {b.duration_sec}s")[:2000],
             "raw": (b.transcript or "")[:5000],
@@ -337,19 +406,21 @@ def _insert_call(db, org_id, agent_uuid, b: CallIngest):
 def _insert_sms(db, org_id, agent_uuid, b: SmsIngest):
     counterparty = b.from_number if b.direction == "inbound" else b.to_number
     contact_id = _upsert_contact_by_phone(db, org_id, counterparty)
+    account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "sms")
     trusted = trust_crud.is_trusted(
         db, agent_uuid, sender_phone=counterparty, contact_id=contact_id,
-    )
+    ) if agent_uuid else False
     iid = db.execute(
         text("""
             INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, direction, summary, raw_snippet,
-                 interaction_at, source, external_id, interaction_kind, trusted_sender)
-            VALUES (:o, :c, :a, :dir, :sum, :raw, :at, :src, :ext, 'sms', :trust)
+                (org_id, contact_id, agent_uuid, account_id, direction,
+                 summary, raw_snippet, interaction_at, source, external_id,
+                 interaction_kind, trusted_sender)
+            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, :src, :ext, 'sms', :trust)
             RETURNING id::text
         """),
         {
-            "o": org_id, "c": contact_id, "a": agent_uuid,
+            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
             "dir": b.direction,
             "sum": (b.body or "")[:2000],
             "raw": (b.body or "")[:5000],

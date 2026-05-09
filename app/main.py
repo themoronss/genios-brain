@@ -29,7 +29,7 @@ from app.api.routes import draft
 from app.api.routes import sync
 from app.api.routes import agents
 from app.api.routes import agent_registry
-from app.api.routes import agent_oauth
+from app.api.routes import workspace_integrations
 from app.api.routes import ingest as ingest_routes
 from app.api.routes import events
 from app.api.routes import chat
@@ -260,7 +260,7 @@ app.include_router(draft.router)
 app.include_router(sync.router)
 app.include_router(agents.router)
 app.include_router(agent_registry.router)
-app.include_router(agent_oauth.router)
+app.include_router(workspace_integrations.router)
 app.include_router(ingest_routes.router)
 app.include_router(events.router)
 app.include_router(chat.router)

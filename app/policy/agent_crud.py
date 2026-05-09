@@ -166,7 +166,24 @@ def list_agents_with_counters(db: Session, org_id: str):
                    (SELECT COUNT(*) FROM context_calls cc
                       WHERE cc.org_id = ra.org_id AND cc.agent_id = ra.agent_id
                         AND cc.scope_blocked = TRUE
-                        AND cc.called_at > NOW() - INTERVAL '24 hours') AS blocked_24h
+                        AND cc.called_at > NOW() - INTERVAL '24 hours') AS blocked_24h,
+                   -- Phase 11.5: at-a-glance tool list per agent.
+                   -- Returns array of {source, provider, last_event_at} for the
+                   -- list page so the customer can SEE which tools each agent
+                   -- has without opening the drawer.
+                   (
+                     SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                                'source',        cc.source,
+                                'provider',      cc.metadata->>'provider',
+                                'account',       COALESCE(
+                                                    cc.metadata->>'mailbox_address',
+                                                    cc.metadata->>'phone_number',
+                                                    cc.metadata->>'account'),
+                                'last_event_at', cc.last_event_at
+                             ) ORDER BY cc.created_at), '[]'::jsonb)
+                     FROM connector_credentials cc
+                     WHERE cc.agent_uuid = ra.id AND cc.is_active = TRUE
+                   ) AS connectors
             FROM registered_agents ra
             LEFT JOIN agent_scopes asc_ ON asc_.agent_uuid = ra.id AND asc_.is_active = TRUE
             WHERE ra.org_id = :o AND ra.status != 'archived'

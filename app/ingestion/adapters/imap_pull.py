@@ -122,14 +122,44 @@ def mark_read(credentials: dict, external_id: str) -> bool:
     return True
 
 
+def verify_credentials(credentials: dict) -> tuple[bool, str]:
+    """Connect-time validation: try LOGIN + SELECT INBOX. Disconnect immediately."""
+    host = credentials.get("host")
+    user = credentials.get("username")
+    pwd = credentials.get("password")
+    port = int(credentials.get("port") or 993)
+    use_ssl = credentials.get("ssl", True)
+    if not (host and user and pwd):
+        return False, "Host, username, and password are required"
+    try:
+        if use_ssl:
+            M = imaplib.IMAP4_SSL(host, port, timeout=IMAP_TIMEOUT)
+        else:
+            M = imaplib.IMAP4(host, port, timeout=IMAP_TIMEOUT)
+        try:
+            M.login(user, pwd)
+        except imaplib.IMAP4.error as e:
+            return False, f"IMAP login failed: {str(e)[:100]}"
+        typ, _ = M.select("INBOX")
+        if typ != "OK":
+            return False, "Could not access INBOX folder"
+        try: M.logout()
+        except Exception: pass
+        return True, f"{user}@{host}"
+    except Exception as e:
+        return False, f"IMAP connection failed: {str(e)[:100]}"
+
+
 def _register():
     register("imap", {
         "fetch_email": fetch_emails,
         "mark_read":   mark_read,
+        "verify":      verify_credentials,
     })
     register("custom", {  # alias — generic "custom" provider defaults to IMAP
         "fetch_email": fetch_emails,
         "mark_read":   mark_read,
+        "verify":      verify_credentials,
     })
 
 
