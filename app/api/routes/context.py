@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, root_validator, validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, verify_api_key, check_rpm_limit, check_abuse_detection, preflight_ratelimit
+from app.api.deps import get_db, verify_api_key, check_rpm_limit, check_abuse_detection, preflight_ratelimit, get_auth_ctx
 from app.context.bundle_builder import build_context_bundle
+from app.policy import scope_filter
+from app.policy.scope_loader import AuthCtx
 from app.coordination import blackboard
 from app.plan_enforcer import get_org_plan
 from app.redis_client import redis_client
@@ -96,12 +98,17 @@ def log_context_call(
     tokens_used: int = None,
     latency_ms: int = None,
     cache_source: str = None,
+    scope_hash: str = None,
+    scope_blocked: bool = False,
+    scope_source: str = None,
 ):
     """
     Log every context API call to context_calls table.
     Non-blocking — failures are silently swallowed so they never affect the response.
-    source: 'api' (external agent) or 'dashboard' (internal UI click)
-    cache_source: 'precomputed' | 'redis' | 'minimal' | 'fresh' — feeds public benchmarks p95 by path
+
+    source:        'api' (external agent) or 'dashboard' (internal UI click)
+    cache_source:  'precomputed' | 'redis' | 'minimal' | 'fresh' — feeds benchmarks p95 by path
+    scope_*:       per Agent Registry PRD §06 — audit trail for who saw what
     """
     try:
         entity = context_bundle.get("entity") or {}
@@ -111,11 +118,13 @@ def log_context_call(
                 INSERT INTO context_calls
                     (org_id, entity_name, relationship_stage, action_recommendation,
                      confidence, cache_hit, source, agent_id, tokens_used,
-                     latency_ms, cache_source, called_at)
+                     latency_ms, cache_source, scope_hash, scope_blocked, scope_source,
+                     called_at)
                 VALUES
                     (:org_id, :entity_name, :stage, :action, :confidence, :cache_hit,
                      :source, :agent_id, :tokens_used,
-                     :latency_ms, :cache_source, NOW())
+                     :latency_ms, :cache_source, :scope_hash, :scope_blocked, :scope_source,
+                     NOW())
                 """
             ),
             {
@@ -130,6 +139,9 @@ def log_context_call(
                 "tokens_used": tokens_used,
                 "latency_ms": latency_ms,
                 "cache_source": cache_source,
+                "scope_hash": scope_hash,
+                "scope_blocked": scope_blocked,
+                "scope_source": scope_source,
             },
         )
         db.commit()
@@ -149,25 +161,24 @@ def context_error(code: str, message: str, status_code: int = 400):
 def get_context(
     request: ContextRequest,
     db: Session = Depends(get_db),
-    org_id: str = Depends(verify_api_key),
+    auth: AuthCtx = Depends(get_auth_ctx),
     x_genios_source: str = Header(None, alias="X-GeniOS-Source"),
 ):
     """
     Get context bundle for an entity.
 
-    Request:
-        - entity: Person/company name
-        - situation: Optional context
-        - agent_id: Optional agent identifier
-
-    Returns:
-        - entity: Detailed entity information
-        - context_for_agent: Ready-to-use paragraph for LLM prompts
-        - confidence: 0.0 to 1.0 score
+    Identity is server-derived from the Bearer key (Agent Registry PRD §03).
+    The `agent_id` field on the request body is **logged for audit only** —
+    it cannot grant or change scope.
     """
     try:
         start_time = time.time()
         segment_name = None
+        org_id = auth.org_id
+
+        # Server-derived agent_id always wins. Body's agent_id is kept only
+        # for backward-compat logging.
+        derived_agent_id = auth.agent_id or request.agent_id
 
         # Determine call source: dashboard UI vs external agent
         source = "dashboard" if x_genios_source == "dashboard" else "api"
@@ -378,13 +389,13 @@ def get_context(
                 )
             if disclosure == "restricted":
                 allowed = list(disclosure_row[1] or [])
-                if not request.agent_id or request.agent_id not in allowed:
+                if not derived_agent_id or derived_agent_id not in allowed:
                     raise HTTPException(
                         status_code=403,
                         detail={
                             "error": "CONTACT_RESTRICTED",
-                            "message": f"'{request.entity}' is restricted. Agent '{request.agent_id}' is not authorized.",
-                            "agent_id": request.agent_id,
+                            "message": f"'{request.entity}' is restricted. Agent '{derived_agent_id}' is not authorized.",
+                            "agent_id": derived_agent_id,
                         },
                     )
 
@@ -407,6 +418,39 @@ def get_context(
                         "error": "ENTITY_TAG_MISMATCH",
                         "message": f"'{request.entity}' does not have tag '{request.tag}'.",
                         "tag": request.tag,
+                    },
+                )
+
+        # ── Agent Registry scope pre-check (PRD §07) ──────────────────────────
+        # If the calling agent's scope policy excludes this entity, return 404
+        # not_in_scope before we waste cycles building a bundle. Audit log
+        # captures every blocked attempt with scope_hash for SOC 2 trail.
+        scope_hash = scope_filter.policy_hash(auth.policy)
+        if not scope_filter.is_unrestricted(auth.policy):
+            try:
+                in_scope = scope_filter.is_entity_in_scope(db, org_id, request.entity, auth.policy)
+            except Exception as _se:
+                logger.warning(f"scope pre-check failed (failing open): {_se}")
+                in_scope = True
+            if not in_scope:
+                try:
+                    log_context_call(
+                        db, org_id, request.entity, {"entity": {}},
+                        cache_hit=False, source=source,
+                        agent_id=derived_agent_id,
+                        latency_ms=int((time.time() - start_time) * 1000),
+                        scope_hash=scope_hash, scope_blocked=True,
+                        scope_source=auth.scope_source,
+                    )
+                except Exception:
+                    pass
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "error": "NOT_IN_SCOPE",
+                        "message": f"'{request.entity}' is not visible to agent '{derived_agent_id or 'default'}'.",
+                        "agent_id": derived_agent_id,
+                        "scope_source": auth.scope_source,
                     },
                 )
 
@@ -456,6 +500,14 @@ def get_context(
                 if precomputed[1]:
                     age = (datetime.now(timezone.utc) - precomputed[1]).total_seconds()
                     context_bundle["cache_age_seconds"] = int(age)
+                # Apply scope policy to bundle facts — precomputed rows are
+                # built once for the org and don't know who's calling, so we
+                # post-filter here. Cheap (~µs) since it's a list comprehension.
+                if not scope_filter.is_unrestricted(auth.policy):
+                    if isinstance(context_bundle.get("facts"), list):
+                        context_bundle["facts"] = scope_filter.filter_facts(
+                            context_bundle["facts"], auth.policy
+                        )
                 logger.info(f"Serving pre-computed bundle for {request.entity}")
 
                 cached_tokens = max(1, len(context_bundle.get("context_for_agent", "")) // 4)
@@ -465,10 +517,11 @@ def get_context(
                     context_bundle,
                     cache_hit=True,
                     source=source,
-                    agent_id=request.agent_id,
+                    agent_id=derived_agent_id,
                     tokens_used=cached_tokens,
                     latency_ms=_lat,
                     cache_source="precomputed",
+                    scope_hash=scope_hash, scope_source=auth.scope_source,
                 )
                 context_bundle["latency_ms"] = _lat
                 context_bundle["cache_hit"] = True
@@ -512,10 +565,11 @@ def get_context(
                     cached_bundle,
                     cache_hit=True,
                     source=source,
-                    agent_id=request.agent_id,
+                    agent_id=derived_agent_id,
                     tokens_used=cached_tokens,
                     latency_ms=_lat,
                     cache_source="redis",
+                    scope_hash=scope_hash, scope_source=auth.scope_source,
                 )
                 cached_bundle["latency_ms"] = _lat
                 cached_bundle["cache_hit"] = True
@@ -549,7 +603,12 @@ def get_context(
         # the full rebuild. The next pull hits Layer 1 with the rich shape.
         if not context_bundle:
             from app.context.minimal_bundle import build_minimal_bundle
-            minimal = build_minimal_bundle(db, org_id, request.entity)
+            _dv = (auth.policy or {}).get("data_visibility", "all") if auth.policy else "all"
+            minimal = build_minimal_bundle(
+                db, org_id, request.entity,
+                requesting_agent_uuid=auth.agent_uuid,
+                data_visibility=_dv,
+            )
 
             if minimal:
                 # Trigger the full pre-compute so next call upgrades to rich data.
@@ -565,10 +624,11 @@ def get_context(
 
                 log_context_call(
                     db, org_id, request.entity, minimal, cache_hit=False,
-                    source=source, agent_id=request.agent_id,
+                    source=source, agent_id=derived_agent_id,
                     tokens_used=max(1, len(minimal.get("context_for_agent", "")) // 4),
                     latency_ms=minimal["latency_ms"],
                     cache_source="minimal",
+                    scope_hash=scope_hash, scope_source=auth.scope_source,
                 )
 
                 minimal["other_agents_active"] = blackboard.peek(
@@ -625,10 +685,11 @@ def get_context(
                             pass
                     log_context_call(
                         db, org_id, request.entity, payload, cache_hit=False,
-                        source=source, agent_id=request.agent_id,
+                        source=source, agent_id=derived_agent_id,
                         tokens_used=max(1, len(payload.get("context_for_agent", "")) // 4),
                         latency_ms=payload["latency_ms"],
                         cache_source="live",
+                        scope_hash=scope_hash, scope_source=auth.scope_source,
                     )
                     from fastapi.responses import JSONResponse
                     return JSONResponse(content=payload)
@@ -684,8 +745,9 @@ def get_context(
 
         # Log the call
         log_context_call(db, org_id, request.entity, context_bundle, cache_hit=False,
-                         source=source, agent_id=request.agent_id, tokens_used=tokens_used,
-                         latency_ms=context_bundle.get("latency_ms"), cache_source="fresh")
+                         source=source, agent_id=derived_agent_id, tokens_used=tokens_used,
+                         latency_ms=context_bundle.get("latency_ms"), cache_source="fresh",
+                         scope_hash=scope_hash, scope_source=auth.scope_source)
 
         from app.core.analytics import capture
         capture(org_id, "api_context_requested", {
@@ -937,14 +999,21 @@ class ContextSearchRequest(BaseModel):
 def search_context(
     request: ContextSearchRequest,
     db: Session = Depends(get_db),
-    org_id: str = Depends(verify_api_key),
+    auth: AuthCtx = Depends(get_auth_ctx),
 ):
-    """Temporal and topic-anchored search, returns ranked contacts."""
+    """Temporal and topic-anchored search, returns ranked contacts (scope-aware)."""
     try:
         start_time = time.time()
+        org_id = auth.org_id
         filters = request.filter
         conditions = ["c.org_id = :org_id", "c.relationship_stage IS NOT NULL", "c.relationship_stage != 'unknown'"]
         params: dict = {"org_id": org_id, "limit": min(request.limit, 25)}
+
+        # Agent Registry scope filter — same as /v1/contacts list
+        _frag, _binds = scope_filter.contact_clauses(auth.policy, contact_alias="c")
+        if _frag:
+            conditions.append(_frag.strip().removeprefix("AND "))
+            params.update(_binds)
 
         # Stage filter
         stages = filters.get("stages", [])
@@ -1025,10 +1094,11 @@ def search_context(
 def get_entity_context(
     entity_id: str,
     db: Session = Depends(get_db),
-    org_id: str = Depends(verify_api_key),
+    auth: AuthCtx = Depends(get_auth_ctx),
 ):
-    """Pull full context for a specific entity by ID (contact UUID)."""
+    """Pull full context for a specific entity by ID (contact UUID, scope-aware)."""
     import uuid as _uuid
+    org_id = auth.org_id
     try:
         _uuid.UUID(entity_id)
     except (ValueError, AttributeError):
@@ -1037,20 +1107,31 @@ def get_entity_context(
             detail={"error_code": "entity_not_found", "message": f"Entity {entity_id} not found"},
         )
     try:
-        contact = db.execute(
-            text("""
-                SELECT name FROM contacts WHERE id = :id AND org_id = :org_id
-            """),
-            {"id": entity_id, "org_id": org_id},
-        ).fetchone()
+        # Pull contact with scope filter applied — out-of-scope = 404.
+        _frag, _binds = scope_filter.contact_clauses(auth.policy, contact_alias="c")
+        sql = (
+            "SELECT c.name FROM contacts c WHERE c.id = :id AND c.org_id = :org_id"
+            + _frag
+            + " LIMIT 1"
+        )
+        contact = db.execute(text(sql), {"id": entity_id, "org_id": org_id, **_binds}).fetchone()
 
         if not contact:
             raise HTTPException(
                 status_code=404,
-                detail={"error_code": "entity_not_found", "message": f"Entity {entity_id} not found"},
+                detail={
+                    "error_code": "entity_not_found",
+                    "message": f"Entity {entity_id} not found or not in scope.",
+                    "agent_id": auth.agent_id,
+                },
             )
 
-        context_bundle = build_context_bundle(db, org_id, contact[0])
+        _dv = (auth.policy or {}).get("data_visibility", "all") if auth.policy else "all"
+        context_bundle = build_context_bundle(
+            db, org_id, contact[0],
+            requesting_agent_uuid=auth.agent_uuid,
+            data_visibility=_dv,
+        )
 
         if context_bundle.get("error"):
             raise HTTPException(status_code=404, detail={"error_code": "entity_not_found"})

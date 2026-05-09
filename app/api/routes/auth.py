@@ -135,6 +135,47 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     org_id = result.fetchone()[0]
     db.commit()
 
+    # Auto-create default_agent + full-scope policy + bind primary key.
+    # Day-0 UX stays the same — one key, integrate, ship. The Agent Registry
+    # only surfaces when the customer registers a second agent.
+    try:
+        import json as _json
+        agent_uuid = db.execute(
+            text("""
+                INSERT INTO registered_agents (org_id, agent_id, name, description, status, created_at)
+                VALUES (:o, 'default_agent', 'Default Agent',
+                        'Auto-created. Full org access. Used by primary API key.',
+                        'active', NOW())
+                ON CONFLICT (org_id, agent_id) DO UPDATE SET status = 'active'
+                RETURNING id
+            """),
+            {"o": str(org_id)},
+        ).fetchone()[0]
+        scope_id = db.execute(
+            text("""
+                INSERT INTO agent_scopes (agent_uuid, org_id, version, policy_json, is_active, created_by)
+                VALUES (:a, :o, 1, CAST(:p AS jsonb), TRUE, 'system_signup')
+                RETURNING id
+            """),
+            {
+                "a": str(agent_uuid), "o": str(org_id),
+                "p": _json.dumps({
+                    "version": 1, "connectors": None, "segments": None, "fact_types": None,
+                    "exclude_tags": [], "max_age_days": 3650, "min_confidence": 0.0,
+                    "data_visibility": "all",
+                }),
+            },
+        ).fetchone()[0]
+        db.execute(
+            text("UPDATE orgs SET default_agent_id = :a WHERE id = :o"),
+            {"a": str(agent_uuid), "o": str(org_id)},
+        )
+        db.commit()
+    except Exception as _agent_err:
+        import logging as _log
+        _log.getLogger(__name__).warning(f"default_agent provision failed: {_agent_err}")
+        db.rollback()
+
     # Seed Precedent graph so Op.04 pattern matching is alive from Day 1.
     # Fail-soft: never block signup on seed failure.
     try:

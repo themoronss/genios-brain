@@ -33,11 +33,207 @@ class GeniOSError(Exception):
 
 
 class AgentsNamespace:
+    """Per-agent identity + scope (Agent Registry, PRD §03).
+
+    The bearer key in this client identifies the calling agent. The server
+    enforces scope at the SQL layer — never trust prompt-level filtering.
+
+    Common flow for a customer with multiple agents:
+        admin = GeniOS(api_key="gn_live_<brain_or_default_key>")
+        admin.agents.create(
+            agent_id="sales_ae",
+            scope={
+                "segments": ["Customer"],
+                "fact_types": ["deal_state","commitment","engagement_state"],
+                "max_age_days": 90,
+            },
+        )  # → returns a new key for the sales_ae agent
+    """
+
     def __init__(self, client: "GeniOS"):
         self._client = client
 
+    # Legacy 1.x — keep for backwards compat
     def register(self, name: str, description: str = "") -> dict:
         return self._client._post("/v1/agent", {"agent_id": name, "name": description or name})
+
+    # New (Agent Registry)
+    def create(
+        self,
+        agent_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        scope: Optional[dict] = None,
+    ) -> dict:
+        """Register an agent + scope policy in one call. Server returns a new
+        bearer key bound to this agent."""
+        body = {"agent_id": agent_id}
+        if name is not None: body["name"] = name
+        if description is not None: body["description"] = description
+        if scope is not None: body["scope"] = scope
+        return self._client._post("/v1/agents", body)
+
+    def list(self) -> dict:
+        return self._client._get("/v1/agents")
+
+    def get(self, agent_id: str) -> dict:
+        return self._client._get(f"/v1/agents/{agent_id}")
+
+    def whoami(self) -> dict:
+        """Server-derived identity for this client's bearer key."""
+        return self._client._get("/v1/agents/me")
+
+    def edit_scope(self, agent_id: str, scope: dict) -> dict:
+        return self._client._patch(f"/v1/agents/{agent_id}/scope", {"scope": scope})
+
+    def rotate_key(self, agent_id: str, revoke_old: bool = False) -> dict:
+        return self._client._post(
+            f"/v1/agents/{agent_id}/keys",
+            {"revoke_old": revoke_old},
+        )
+
+    def archive(self, agent_id: str) -> dict:
+        return self._client._delete(f"/v1/agents/{agent_id}")
+
+    def audit(self, agent_id: str, limit: int = 50) -> dict:
+        return self._client._get(f"/v1/agents/{agent_id}/audit?limit={limit}")
+
+    # ── Per-agent connectors (Phase 6 — Inkbox / custom integrations) ─────
+    def list_connectors(self, agent_id: str) -> dict:
+        return self._client._get(f"/v1/agents/{agent_id}/connectors")
+
+    def add_connector(
+        self,
+        agent_id: str,
+        source: str,
+        metadata: Optional[dict] = None,
+    ) -> dict:
+        """Create or rotate a connector for this agent. Returns a `signing_secret`
+        that the caller MUST save and configure in their provider (e.g. Inkbox)
+        for X-Genios-Signature HMAC verification."""
+        return self._client._post(
+            f"/v1/agents/{agent_id}/connectors",
+            {"source": source, "metadata": metadata or {}},
+        )
+
+    def remove_connector(self, agent_id: str, connector_id: str) -> dict:
+        return self._client._delete(f"/v1/agents/{agent_id}/connectors/{connector_id}")
+
+    # ── Per-agent trust list (Phase 6.5) ──────────────────────────────────
+    def list_trust(self, agent_id: str) -> dict:
+        return self._client._get(f"/v1/agents/{agent_id}/trust")
+
+    def add_trust(
+        self,
+        agent_id: str,
+        contact_id: Optional[str] = None,
+        match_email: Optional[str] = None,
+        match_phone: Optional[str] = None,
+        note: Optional[str] = None,
+    ) -> dict:
+        body = {"note": note}
+        if contact_id:  body["contact_id"]  = contact_id
+        if match_email: body["match_email"] = match_email
+        if match_phone: body["match_phone"] = match_phone
+        return self._client._post(f"/v1/agents/{agent_id}/trust", body)
+
+    def remove_trust(self, agent_id: str, trust_id: str) -> dict:
+        return self._client._delete(f"/v1/agents/{agent_id}/trust/{trust_id}")
+
+
+class IngestNamespace:
+    """Push-based ingest from external systems (e.g. Inkbox webhooks).
+
+    All endpoints are agent-keyed — the bearer key identifies which agent
+    this data belongs to. Server enforces idempotency via `external_id`.
+
+    Common flow (Inkbox example):
+        client = GeniOS(api_key="<agent_key>")
+        client.ingest.email(
+            external_id="msg_abc123",
+            from_address="lead@acme.com",
+            to=["sales-bot@inkboxmail.com"],
+            subject="Re: pricing",
+            body_text="...",
+            sent_at="2026-05-07T10:00:00Z",
+        )
+    """
+
+    def __init__(self, client: "GeniOS"):
+        self._client = client
+
+    def email(
+        self,
+        external_id: str,
+        from_address: str,
+        to: list,
+        sent_at: str,
+        subject: Optional[str] = None,
+        body_text: Optional[str] = None,
+        body_html: Optional[str] = None,
+        direction: str = "inbound",
+        in_reply_to_external_id: Optional[str] = None,
+        thread_external_id: Optional[str] = None,
+    ) -> dict:
+        payload = {
+            "external_id": external_id,
+            "from_address": from_address,
+            "to": to,
+            "sent_at": sent_at,
+            "direction": direction,
+        }
+        for k, v in (
+            ("subject", subject), ("body_text", body_text), ("body_html", body_html),
+            ("in_reply_to_external_id", in_reply_to_external_id),
+            ("thread_external_id", thread_external_id),
+        ):
+            if v is not None:
+                payload[k] = v
+        return self._client._post("/v1/ingest/email", payload)
+
+    def call(
+        self,
+        external_id: str,
+        from_number: str,
+        to_number: str,
+        started_at: str,
+        duration_sec: int = 0,
+        transcript: Optional[str] = None,
+        direction: str = "inbound",
+    ) -> dict:
+        payload = {
+            "external_id": external_id,
+            "from_number": from_number,
+            "to_number": to_number,
+            "started_at": started_at,
+            "duration_sec": duration_sec,
+            "direction": direction,
+        }
+        if transcript is not None:
+            payload["transcript"] = transcript
+        return self._client._post("/v1/ingest/call", payload)
+
+    def sms(
+        self,
+        external_id: str,
+        from_number: str,
+        to_number: str,
+        body: str,
+        sent_at: str,
+        direction: str = "inbound",
+    ) -> dict:
+        return self._client._post("/v1/ingest/sms", {
+            "external_id": external_id,
+            "from_number": from_number,
+            "to_number": to_number,
+            "body": body,
+            "sent_at": sent_at,
+            "direction": direction,
+        })
+
+    def events(self, limit: int = 50) -> dict:
+        """Recent ingest events for this agent (audit log)."""
+        return self._client._get(f"/v1/ingest/events?limit={limit}")
 
 
 class StreamNamespace:
@@ -102,6 +298,7 @@ class GeniOS:
         self.base_url = (base_url or os.environ.get("GENIOS_BASE_URL", _DEFAULT_BASE_URL)).rstrip("/")
         self.timeout = timeout
         self.agents = AgentsNamespace(self)
+        self.ingest = IngestNamespace(self)
         self.stream = StreamNamespace(self)
 
     # ── Public methods ──────────────────────────────────────────────────────
@@ -175,6 +372,12 @@ class GeniOS:
 
     def _get(self, path: str, params: Optional[dict] = None) -> dict:
         return self._request("GET", path, params=params)
+
+    def _patch(self, path: str, payload: dict) -> dict:
+        return self._request("PATCH", path, json_body=payload)
+
+    def _delete(self, path: str) -> dict:
+        return self._request("DELETE", path)
 
     def _request(
         self,

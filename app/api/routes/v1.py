@@ -25,7 +25,9 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, verify_api_key
+from app.api.deps import get_db, verify_api_key, get_auth_ctx
+from app.policy import scope_filter
+from app.policy.scope_loader import AuthCtx
 from app.plan_enforcer import get_org_plan
 from app.tunables import (
     BROADCAST_MIN_ONEWAY_COUNT,
@@ -213,8 +215,9 @@ def v1_search_contacts(
     has_anomaly: bool = Query(False, description="Only contacts with active anomalies (L5 detection)."),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    org_id: str = Depends(verify_api_key),
+    auth: "AuthCtx" = Depends(get_auth_ctx),  # type: ignore[name-defined]
 ):
+    org_id = auth.org_id
     """
     Search or list contacts in the org's graph.
 
@@ -226,6 +229,15 @@ def v1_search_contacts(
     """
     where = ["c.org_id = :org_id", "(c.is_archived IS FALSE OR c.is_archived IS NULL)"]
     params: dict = {"org_id": org_id, "limit": limit}
+
+    # ── Agent Registry scope filter (PRD §05) ────────────────────────────
+    # Server-derived from the bearer key. Restricts which contacts an agent
+    # can list at all — segments, exclude_tags applied as SQL WHERE.
+    _scope_frag, _scope_binds = scope_filter.contact_clauses(auth.policy, contact_alias="c")
+    if _scope_frag:
+        # contact_clauses prepends " AND " — strip it for cleaner combination
+        where.append(_scope_frag.strip().removeprefix("AND "))
+        params.update(_scope_binds)
 
     if q:
         q_clean = q.strip()

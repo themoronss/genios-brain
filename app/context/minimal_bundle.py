@@ -18,14 +18,31 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
-def build_minimal_bundle(db: Session, org_id: str, entity: str) -> Optional[Dict]:
+def build_minimal_bundle(
+    db: Session,
+    org_id: str,
+    entity: str,
+    requesting_agent_uuid: Optional[str] = None,
+    data_visibility: str = "all",
+) -> Optional[Dict]:
     """Return a real-but-small bundle for `entity` using a single DB round-trip.
 
     Matches the shape of the full pre-computed bundle so agents consume one schema.
     Returns None if the entity is unknown in this org.
+
+    Phase 7: when caller is a scoped agent (data_visibility='own'), the inner
+    interactions sub-select filters by `agent_uuid` so the agent only sees
+    its own ingested interactions plus untagged (workspace-level) rows.
     """
     is_email = "@" in entity
     lookup_col = "email" if is_email else "name"
+
+    # data_visibility='own' → restrict interactions sub-select
+    _i_extra = ""
+    binds = {"oid": org_id, "ent": entity}
+    if data_visibility == "own" and requesting_agent_uuid:
+        _i_extra = " AND (i.agent_uuid IS NULL OR i.agent_uuid = :req_agent)"
+        binds["req_agent"] = requesting_agent_uuid
 
     # Single query: contact row + last 3 interactions as JSONB aggregate.
     row = db.execute(
@@ -49,7 +66,7 @@ def build_minimal_bundle(db: Session, org_id: str, entity: str) -> Optional[Dict
                             i.interaction_at AS at,
                             i.sentiment AS sentiment
                         FROM interactions i
-                        WHERE i.contact_id = c.id
+                        WHERE i.contact_id = c.id{_i_extra}
                         ORDER BY i.interaction_at DESC
                         LIMIT 3
                     ) x
@@ -59,7 +76,7 @@ def build_minimal_bundle(db: Session, org_id: str, entity: str) -> Optional[Dict
               AND LOWER(c.{lookup_col}) = LOWER(:ent)
             LIMIT 1
         """),
-        {"oid": org_id, "ent": entity},
+        binds,
     ).fetchone()
 
     if not row:

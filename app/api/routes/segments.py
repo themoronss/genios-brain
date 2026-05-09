@@ -492,3 +492,66 @@ def _validated_sync_interval(hours: int | None, tier: str) -> int | None:
     if hours not in (6, 12, 18, 24):
         return 6  # Default to 6h for invalid values
     return hours
+
+
+# ── Manual segment override on a contact (Agent Registry §11) ────────────────
+# When the auto-classifier mistags a contact (e.g. NSRCEL ends up in 'prospects'
+# instead of 'investors'), users hit this endpoint to correct it. Critical for
+# making scope filters trustworthy — if classification is wrong, scope policies
+# blindly enforce the wrong thing.
+
+class ContactSegmentOverrideRequest(BaseModel):
+    segment_id: str | None = None  # None = clear override
+
+
+@router.put("/v1/contacts/{contact_id}/segment")
+def override_contact_segment(
+    contact_id: str,
+    request: ContactSegmentOverrideRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Manually set a contact's segment. Marks segment_source='manual' so the
+    auto-classifier won't overwrite it on the next run."""
+    row = db.execute(
+        text("SELECT 1 FROM contacts WHERE id = :id AND org_id = :o"),
+        {"id": contact_id, "o": org_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail={"error": "CONTACT_NOT_FOUND"})
+
+    if request.segment_id:
+        seg = db.execute(
+            text("SELECT id FROM graph_segments WHERE id = :s AND org_id = :o"),
+            {"s": request.segment_id, "o": org_id},
+        ).fetchone()
+        if not seg:
+            raise HTTPException(status_code=404, detail={"error": "SEGMENT_NOT_FOUND"})
+
+    db.execute(
+        text("""
+            UPDATE contacts
+               SET segment_id = :s,
+                   segment_source = 'manual'
+             WHERE id = :id AND org_id = :o
+        """),
+        {"id": contact_id, "o": org_id, "s": request.segment_id},
+    )
+    db.commit()
+
+    # Bust precomputed bundle so the next /v1/context rebuild reflects the new
+    # segment. Cheap — single UPDATE on indexed column.
+    try:
+        db.execute(
+            text("UPDATE precomputed_bundles SET expires_at = NOW() WHERE contact_id = :c"),
+            {"c": contact_id},
+        )
+        db.commit()
+    except Exception:
+        pass
+
+    return {
+        "contact_id": contact_id,
+        "segment_id": request.segment_id,
+        "segment_source": "manual",
+    }

@@ -34,7 +34,13 @@ if BROKER_URL.startswith("rediss://"):
     BROKER_URL += f"{sep}ssl_cert_reqs=CERT_NONE"
     RESULT_URL += f"{sep}ssl_cert_reqs=CERT_NONE"
 
-celery = Celery("genios", broker=BROKER_URL, backend=RESULT_URL)
+celery = Celery(
+    "genios",
+    broker=BROKER_URL,
+    backend=RESULT_URL,
+    # Phase 10: per-connector pull tasks live in app/tasks/sync_connector.py
+    include=["app.tasks.sync_connector"],
+)
 
 # SSL config for rediss:// connections
 _redis_ssl = REDIS_URL.startswith("rediss://")
@@ -624,6 +630,13 @@ celery.conf.beat_schedule = {
     # Phase 3: Expire stale approval requests every 5 min.
     "expire-approvals-5m": {
         "task": "app.celery_app.task_expire_approvals",
+        "schedule": 300.0,  # 5 min
+        "options": {"queue": "low_priority"},
+    },
+    # Phase 10: pull from per-agent custom connectors (Inkbox, IMAP, ...)
+    # Mirrors Gmail's nightly sync but per-connector.
+    "sync-pull-connectors-5m": {
+        "task": "app.tasks.sync_connector.task_sync_all_connectors",
         "schedule": 300.0,  # 5 min
         "options": {"queue": "low_priority"},
     },

@@ -103,3 +103,8 @@ config.local.py
 
 # Editor backup files
 *.bak
+
+# Local env backups (added after secret leak prevention)
+.env.upstash_backup
+.env.bak
+.env.*.backup

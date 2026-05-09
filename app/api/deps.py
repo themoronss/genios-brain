@@ -1,4 +1,5 @@
 import hashlib
+import json
 import time
 import logging
 from fastapi import Depends, HTTPException, Request
@@ -6,6 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
+from app.policy.scope_loader import AuthCtx, resolve as resolve_scope
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -80,16 +82,19 @@ def _api_key_cache_invalidate(hashed: str) -> None:
 
 
 def verify_api_key(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
     """
-    Verify API key and return org_id.
-    Supports both legacy plain-text keys (for backward compat during migration)
-    and future hashed keys.
+    Verify API key and return org_id (signature preserved — 16+ callers).
 
-    Resolution is cached in Redis for 60s per key hash — saves a DB round-trip
-    on every authenticated request. Cache invalidates on key rotation /
-    suspension via `_api_key_cache_invalidate`.
+    On success this also stashes an `AuthCtx` (org_id, agent, scope policy,
+    scope_source) onto `request.state.auth`. Endpoints that want scope
+    enforcement use `Depends(get_auth_ctx)` to read it; other endpoints
+    keep working unchanged.
+
+    Cached in Redis 60s. Cache invalidates on key rotation / scope edit
+    via `_api_key_cache_invalidate` and `scope_loader.invalidate`.
     """
     check_kill_switch()
 
@@ -99,31 +104,38 @@ def verify_api_key(
 
     hashed = _hash_key(token)
 
-    # Redis cache path
+    # ── Fast path: combined Redis cache (org_id + plan + AuthCtx JSON) ────
     from app.redis_client import redis_client
     cache_key = _api_key_cache_key(hashed)
     try:
         cached = redis_client.get(cache_key)
         if cached:
-            # Stored shape: "<org_id>|<plan_status>"
-            org_id, plan_status = cached.split("|", 1)
-            if plan_status == "suspended":
-                raise HTTPException(
-                    status_code=403,
-                    detail={"error": "ACCOUNT_SUSPENDED", "message": "Account suspended. Contact support."},
-                )
-            if plan_status == "invalid":
-                raise HTTPException(status_code=401, detail="Invalid API Key")
-            return org_id
+            payload = cached if isinstance(cached, str) else cached.decode()
+            try:
+                blob = json.loads(payload)
+                org_id = blob["org_id"]
+                plan_status = blob.get("plan_status", "active")
+                if plan_status == "suspended":
+                    raise HTTPException(
+                        status_code=403,
+                        detail={"error": "ACCOUNT_SUSPENDED", "message": "Account suspended. Contact support."},
+                    )
+                if plan_status == "invalid":
+                    raise HTTPException(status_code=401, detail="Invalid API Key")
+                if blob.get("auth"):
+                    request.state.auth = AuthCtx.from_dict(blob["auth"])
+                return org_id
+            except (json.JSONDecodeError, KeyError):
+                # Legacy "org|status" cache shape — fall through and re-cache
+                pass
     except HTTPException:
         raise
     except Exception:
-        # Cache miss or Redis hiccup — fall through to DB
         pass
 
+    # ── Slow path: DB resolve org + scope in one open session ─────────────
     db = SessionLocal()
     try:
-        # Primary lookup: orgs table (plain-text legacy OR hashed column)
         result = db.execute(
             text("""
                 SELECT id, subscription_tier, plan_status
@@ -134,7 +146,6 @@ def verify_api_key(
             {"raw_key": token, "hashed_key": hashed},
         ).fetchone()
 
-        # Fallback: additional keys in api_keys table (migration 034+)
         if not result:
             result = db.execute(
                 text("""
@@ -145,7 +156,6 @@ def verify_api_key(
                 """),
                 {"hashed_key": hashed},
             ).fetchone()
-            # Update last_used_at for the additional key (non-blocking)
             if result:
                 try:
                     db.execute(
@@ -155,27 +165,51 @@ def verify_api_key(
                     db.commit()
                 except Exception:
                     pass
+
+        # AuthCtx (agent + scope) — same session, single round-trip pair
+        auth_ctx = None
+        if result:
+            try:
+                auth_ctx = resolve_scope(db, hashed)
+                if auth_ctx is None:
+                    # Legacy key (orgs.api_key plaintext, no api_keys row, no
+                    # default_agent backfill yet) — synthesise legacy AuthCtx.
+                    auth_ctx = AuthCtx(
+                        org_id=str(result[0]),
+                        agent_uuid=None,
+                        agent_id=None,
+                        scope_id=None,
+                        policy=None,
+                        scope_source="legacy",
+                        plan_status=result.plan_status or "active",
+                    )
+            except Exception as e:
+                logger.warning(f"AuthCtx resolve failed (degrading to legacy): {e}")
+                auth_ctx = AuthCtx(
+                    org_id=str(result[0]),
+                    scope_source="legacy",
+                    plan_status=result.plan_status or "active",
+                )
     finally:
         db.close()
 
     if not result:
-        # Cache the miss too (short TTL) so brute-force probes don't flood the DB
         try:
-            redis_client.setex(cache_key, 30, "|invalid")
+            redis_client.setex(cache_key, 30, json.dumps({"org_id": "", "plan_status": "invalid"}))
         except Exception:
             pass
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
     plan_status = result.plan_status or "active"
+    org_id = str(result[0])
 
-    # Cache the resolution (both active and suspended — suspended also should
-    # short-circuit without a DB hit)
     try:
-        redis_client.setex(
-            cache_key,
-            _API_KEY_CACHE_TTL,
-            f"{str(result[0])}|{plan_status}",
-        )
+        blob = {
+            "org_id": org_id,
+            "plan_status": plan_status,
+            "auth": auth_ctx.to_dict() if auth_ctx else None,
+        }
+        redis_client.setex(cache_key, _API_KEY_CACHE_TTL, json.dumps(blob, default=str))
     except Exception:
         pass
 
@@ -185,7 +219,26 @@ def verify_api_key(
             detail={"error": "ACCOUNT_SUSPENDED", "message": "Account suspended. Contact support."},
         )
 
-    return str(result[0])
+    if auth_ctx:
+        request.state.auth = auth_ctx
+    return org_id
+
+
+def get_auth_ctx(request: Request, org_id: str = Depends(verify_api_key)) -> AuthCtx:
+    """
+    Scope-aware dependency. Endpoints that enforce policy use this:
+
+        @router.get("/v1/context")
+        def f(auth: AuthCtx = Depends(get_auth_ctx)): ...
+
+    Falls back to a legacy full-scope AuthCtx if `request.state.auth` is
+    unset (e.g. a code path that bypassed the new caching). Never returns
+    None — always carries at least an org_id.
+    """
+    auth = getattr(request.state, "auth", None)
+    if isinstance(auth, AuthCtx):
+        return auth
+    return AuthCtx(org_id=org_id, scope_source="legacy")
 
 
 def check_rpm_limit(org_id: str, agent_id: str, plan_tier: str):

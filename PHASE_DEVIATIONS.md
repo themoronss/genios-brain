@@ -298,6 +298,158 @@ with zero config change. No new infra.
 
 ---
 
+## Phase 7 — Agent Registry  ·  status: **IMPLEMENTED (full PRD scope)**
+
+> Renumbered from "Phase 5" to "Phase 7" to avoid collision with the existing
+> Phase 5 (Production Polish). Phases 1–6 are the original production roadmap;
+> Phases 7+ are post-MVP capability layers driven by external customer asks.
+
+The brain's "who's allowed to read what" gate. Per the Agent Registry PRD: every
+agent gets its own key, the key carries identity + scope cryptographically, and
+scope is enforced as a SQL filter on every read — never as a prompt instruction.
+
+This is a brain-level change, not a memory-layer addition. The brain remains
+the brain (judgment, learning, recommendations); the registry only constrains
+what each downstream agent is allowed to see.
+
+| # | PRD | Implementation | Status |
+|---|---|---|---|
+| 1 | `agent_scopes` table, versioned JSONB policy | [086_agent_registry.sql](migrations/086_agent_registry.sql) — unique-active per agent, GIN index on policy_json | ✓ |
+| 2 | `api_keys.agent_id` + `scope_id` | Added as `agent_uuid` (UUID FK), `scope_id` (BIGINT FK) | ✓ |
+| 3 | `context_calls.scope_hash + scope_blocked + scope_source` | Added + threaded through every `log_context_call` site (5 sites in /v1/context) | ✓ |
+| 4 | AuthCtx-aware `verify_api_key` | Kept `verify_api_key(...) → str` for 16+ callers; added `request.state.auth` + `get_auth_ctx` dep | ✓ |
+| 5 | `scope_filter` SQL chokepoint | [app/policy/scope_filter.py](genios-brain/app/policy/scope_filter.py) — `contact_clauses`, `fact_clauses`, `is_entity_in_scope`, `policy_hash`, `filter_facts` | ✓ |
+| 6 | Wire into all read paths | `/v1/context` (pre-check + post-filter on bundle facts), `/v1/contacts`, `/v1/context/search`, `/v1/context/entity/{id}`. MCP reads inherit via internal ASGI client | ✓ |
+| 7 | Auto-default agent on signup | [auth.py register](genios-brain/app/api/routes/auth.py) | ✓ |
+| 8 | Backfill existing orgs | Mig 086 DO block — every org gets `default_agent` + full-scope policy + key binding | ✓ |
+| 9 | Dashboard `/agents` page | [agents-page.tsx](genios-dashboard/src/components/agents/agents-page.tsx) + 3-step create modal + detail drawer (scope/keys/audit tabs) + reusable scope form + sidebar unlock | ✓ |
+| 10 | Manual segment override (catches misclassifications) | `PUT /v1/contacts/{id}/segment` ([segments.py](genios-brain/app/api/routes/segments.py)) + dashboard client fn | ✓ |
+| 11 | Python SDK | `client.agents.create / list / get / whoami / edit_scope / rotate_key / archive / audit` | ✓ |
+| 12 | Node SDK | Same surface in [sdks/node/src/index.ts](genios-brain/sdks/node/src/index.ts) | ✓ |
+
+**Deviations from PRD shape:**
+
+| # | PRD | What we did | Why |
+|---|---|---|---|
+| A | `api_keys.agent_id` (text slug FK) | `api_keys.agent_uuid` (UUID FK to registered_agents.id) | Existing `registered_agents` PK is UUID. Slug still resolved for audit + display. |
+| B | `404 not_in_scope` vs `200 empty` | **404** — strict mode | Lock Q2 — honest failure surfaces orchestrator bugs |
+| C | Slug archive immutability | Permanent, slug never reused | Lock Q4 — audit integrity |
+| D | RLS on `agent_scopes` | Added `agent_scopes_org_isolation` | Matches mig 053 pattern |
+| E | `empty list ≠ None` in policies | `[]` emits `FALSE` (block everything); `None` skips filter | PRD §05 callout — explicit denial intent |
+
+**Lock decisions (PRD §14):**
+- Q1 — Legacy null `agent_id` keys: treated as full-scope/legacy until backfill flips them. Logged with `scope_source='legacy'`.
+- Q2 — Out-of-scope hit: 404 `not_in_scope` (strict).
+- Q3 — `/v1/agents/me` returns identity + scope summary: ✓
+- Q4 — Slug archive immutable: ✓
+- Q5 — Rate limits: per-agent cap kept (existing); workspace ceiling per plan_enforcer (existing).
+
+**Verified end-to-end:**
+- AST clean across all 11 touched Python files
+- `scope_filter.normalize / contact_clauses / fact_clauses / policy_hash` smoke-tested
+- Empty list correctly emits `AND FALSE` (block-everything semantic)
+- `scope_filter.is_unrestricted` correctly handles None + full-scope dict
+- Imports clean: `agent_registry.router` exposes 8 routes
+- Migration 086 idempotent (`ADD COLUMN IF NOT EXISTS`, `ON CONFLICT DO UPDATE`, `CREATE INDEX IF NOT EXISTS`)
+
+**What is NOT yet built (genuinely future work — not blockers):**
+- **Per-agent calibration** — extending Phase 4 calibration feedback aggregation from `(org, type)` to `(org, agent_id, type)`. Counters are surfaced (`calls_24h/blocked_24h`); full AAR-per-agent moat extension is its own phase.
+- **Drift detection job** — weekly batch flagging contacts whose recent activity pattern doesn't match their assigned segment. Manual override is the immediate remedy; the proactive flag is a polish layer.
+- **Test-scope sandbox** — "what would this scope have returned over the last 7 days." Trivial to add later (re-run audit query against historical context_calls); customers can use the live audit tab for now.
+
+These three items are not deferred Sprint work — they're orthogonal phases that don't gate the Agent Registry from being production-ready.
+
+---
+
+## Phase 8 — Custom Integration (push ingest)  ·  status: **IMPLEMENTED**
+
+Driven by Inkbox's first-customer asks (transcript 2026-05-07). Genios needed
+to accept email / call / SMS events from any external system the customer's
+agents use, with identity + scope enforcement reused from Phase 7.
+
+| # | What | Where | Status |
+|---|------|-------|--------|
+| 1 | New `connector_credentials` table — per-agent (or workspace-level) source binding | [087_inkbox_integration.sql](migrations/087_inkbox_integration.sql) | ✓ |
+| 2 | `interactions.agent_uuid + external_id + source + interaction_kind + duration_sec + transcript + thread_external_id` | mig 087 | ✓ |
+| 3 | New `ingest_events` audit log (every webhook outcome — accepted / duplicate / rejected_signature / rejected_format / rejected_unknown_agent) | mig 087 | ✓ |
+| 4 | Agent-keyed ingest endpoints with HMAC verification + idempotency | [app/api/routes/ingest.py](genios-brain/app/api/routes/ingest.py) | ✓ |
+| 5 | Shared `_common_ingest` helper, per-source insert functions, no code duplication | ingest.py | ✓ |
+| 6 | Per-agent connector CRUD: `POST/GET/DELETE /v1/agents/{slug}/connectors` | [agent_registry.py](genios-brain/app/api/routes/agent_registry.py) | ✓ |
+| 7 | Signing-secret on create (one-time reveal), `metadata.signing_secret` for HMAC verify, secret never in list responses | [connector_crud.py](genios-brain/app/policy/connector_crud.py) | ✓ |
+| 8 | Dashboard "Sources" tab on agent drawer (list / connect / disable) | [agent-detail-drawer.tsx](genios-dashboard/src/components/agents/agent-detail-drawer.tsx) | ✓ |
+| 9 | Python + Node SDK `agents.{listConnectors, addConnector, removeConnector}` + `ingest.{email, call, sms, events}` | [client.py](genios-brain/sdks/python/genios/client.py), [index.ts](genios-brain/sdks/node/src/index.ts) | ✓ |
+| 10 | Live smoke (31/31 PASS): HMAC verify, idempotency, three sources, audit log, secret-leak-free list, end-to-end /v1/context after ingest | `/tmp/genios/phase6_test.py` | ✓ |
+
+**Verified live:**
+- Email/Call/SMS push → contact upserted → interaction stored with `agent_uuid + source + external_id` → enqueued for extraction
+- Bad HMAC → 401 BAD_SIGNATURE
+- Duplicate `external_id` → `{deduped: true}` 200
+- Connector list response strips `signing_secret` from metadata
+
+---
+
+## Phase 8.5 — Own Channels + Per-Agent Trust  ·  status: **IMPLEMENTED**
+
+Smaller asks pulled from the same transcript that didn't fit cleanly under
+"identity" or "ingest":
+
+| # | What | Where | Status |
+|---|------|-------|--------|
+| 1 | `/v1/agents/me` exposes `own_channels` — agent's own mailbox / phone metadata across active connectors | [agent_registry.py](genios-brain/app/api/routes/agent_registry.py) | ✓ |
+| 2 | New `agent_trust` table — per-agent allowlist matching by `contact_id`, `match_email`, or `match_phone` (CHECK enforces exactly one mode) | [088_agent_trust.sql](migrations/088_agent_trust.sql) | ✓ |
+| 3 | `interactions.trusted_sender BOOLEAN` set at ingest time when sender matches trust list | mig 088 + ingest.py | ✓ |
+| 4 | CRUD: `GET/POST/DELETE /v1/agents/{slug}/trust` | agent_registry.py | ✓ |
+| 5 | Helper `trust_crud.is_trusted(...)` invoked in every `_insert_*` path | [trust_crud.py](genios-brain/app/policy/trust_crud.py) | ✓ |
+| 6 | SDK helpers: Python + Node `agents.{listTrust, addTrust, removeTrust}` | client.py, index.ts | ✓ |
+| 7 | Live smoke (25/25 PASS): trust by email + by phone, trusted/untrusted flag verified at DB layer, removal works | `/tmp/genios/phase65_test.py` | ✓ |
+
+**Why this matters:** Inkbox-class outreach bots need to know who's trusted to
+issue instructions. Without it the agent treats every inbound message
+identically; with it, the agent code can branch on `interaction.trusted_sender`.
+
+---
+
+## Phase 9 — Generic Platform + Master/Scoped Isolation  ·  status: **IMPLEMENTED**
+
+Mid-build pivot: Inkbox is **one customer**, not the platform. Phase 8 had
+baked Inkbox naming into the API surface. Phase 9 ungeneric-ed it and fixed
+the data-isolation hole between agents.
+
+| # | What | Why | Where | Status |
+|---|------|-----|-------|--------|
+| 1 | Renamed routes: `/v1/ingest/{email,call,sms}` (canonical); `/v1/ingest/inkbox/*` kept as deprecated aliases for back-compat | Genios is generic; any provider (Postmark, Twilio, custom server) integrates the same way | [ingest.py](genios-brain/app/api/routes/ingest.py) | ✓ |
+| 2 | `connector_credentials.source` standardised to canonical `email/phone/sms`; provider name moved to `metadata.provider` | Decouple type from vendor | connector_crud.py + agent_registry.py | ✓ |
+| 3 | `data_visibility` field on scope policy (`'all'` master / `'own'` scoped) | Per-agent data isolation across shared contacts | [scope_filter.py](genios-brain/app/policy/scope_filter.py) | ✓ |
+| 4 | Migration 089 — backfill: `default_agent → 'all'`, others → `'own'` | Existing agents auto-isolated without breaking master visibility | [089_data_visibility.sql](migrations/089_data_visibility.sql) | ✓ |
+| 5 | `bundle_builder` + `minimal_bundle` accept `requesting_agent_uuid` + `data_visibility`; SQL `(agent_uuid IS NULL OR agent_uuid = me)` clause when scoped | Filter happens at DB, not post-fetch | bundle_builder.py + minimal_bundle.py | ✓ |
+| 6 | Dashboard: generic Email/Phone/SMS buttons + provider dropdown (Inkbox/Postmark/Twilio/SendGrid/Custom) | UI generic | agent-detail-drawer.tsx | ✓ |
+| 7 | SDK paths point to canonical `/v1/ingest/*`; legacy aliases not exposed | Encourage canonical use | client.py, index.ts | ✓ |
+| 8 | Live smoke (18/18 PASS): two scoped agents push to same shared contact → each sees its own; master sees both. DB direct verify confirms isolation. | `/tmp/genios/phase7_test.py` | ✓ |
+
+**Verified isolation example (smoke output):**
+```
+sales agent → 2 interactions (own only)
+cs agent    → 1 interaction (own only)
+master/default → 3 interactions (all)
+```
+
+**Deviations from earlier plan:**
+
+| # | Earlier | Now | Why |
+|---|---------|-----|-----|
+| A | Endpoints `/v1/ingest/inkbox/email` etc. | `/v1/ingest/email` etc. | Genios is platform, not Inkbox-specific |
+| B | `source = 'inkbox_email'` | `source = 'email'` + `metadata.provider = 'inkbox'` | Same |
+| C | KNOWN_SOURCES had inkbox prefixes | Canonical types primary; legacy values still accepted | Back-compat — old rows still readable |
+
+**What is NOT yet built (explicit non-goals for this phase):**
+- **Pull-side Inkbox SDK adapter** — would let Genios actively fetch from Inkbox API. Push receivers + dashboard manual config + customer-side webhook configuration are sufficient for Day 1. Adapter is per-provider polish work.
+- **Encryption at rest** for `connector_credentials.metadata.signing_secret` — currently stored as plaintext alongside SHA-256 hash. RLS + `service_role`-only DB access is the operational guarantee. Fernet-level encryption is deferred until first compliance ask.
+- **Drift detection** for trust list — if a contact in the trust list changes segment / company / domain, no alert. Deferred.
+
+These three are tracked but don't gate Genios from being production-ready as a generic multi-agent context platform.
+
+---
+
 ## Phase 1.5 checklist (when Anthropic key arrives)
 
 1. `.env`: replace `ANTHROPIC_API_KEY` dummy → real key

@@ -53,10 +53,195 @@ export interface StreamOptions {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 
+export interface ScopePolicy {
+  connectors?:     string[] | null;
+  segments?:       string[] | null;
+  fact_types?:     string[] | null;
+  exclude_tags?:   string[];
+  max_age_days?:   number;
+  min_confidence?: number;
+}
+
 class AgentsNamespace {
   constructor(private readonly client: GeniOS) {}
+
+  // Legacy 1.x — keep
   async register(name: string, description = ''): Promise<Record<string, unknown>> {
     return this.client['_post']('/v1/agent', { agent_id: name, name: description || name });
+  }
+
+  /** Register an agent + scope policy. Server returns a new bearer key bound to it. */
+  async create(input: {
+    agentId: string;
+    name?: string;
+    description?: string;
+    scope?: ScopePolicy;
+  }): Promise<Record<string, unknown>> {
+    return this.client['_post']('/v1/agents', {
+      agent_id: input.agentId,
+      name: input.name,
+      description: input.description,
+      scope: input.scope,
+    });
+  }
+
+  async list(): Promise<Record<string, unknown>> {
+    return this.client['_get']('/v1/agents');
+  }
+
+  async get(agentId: string): Promise<Record<string, unknown>> {
+    return this.client['_get'](`/v1/agents/${encodeURIComponent(agentId)}`);
+  }
+
+  /** Server-derived identity for this client's bearer key. */
+  async whoami(): Promise<Record<string, unknown>> {
+    return this.client['_get']('/v1/agents/me');
+  }
+
+  async editScope(agentId: string, scope: ScopePolicy): Promise<Record<string, unknown>> {
+    return this.client['_request']('PATCH', `/v1/agents/${encodeURIComponent(agentId)}/scope`, { scope });
+  }
+
+  async rotateKey(agentId: string, opts?: { name?: string; revokeOld?: boolean }): Promise<Record<string, unknown>> {
+    return this.client['_post'](
+      `/v1/agents/${encodeURIComponent(agentId)}/keys`,
+      { name: opts?.name, revoke_old: opts?.revokeOld ?? false },
+    );
+  }
+
+  async archive(agentId: string): Promise<Record<string, unknown>> {
+    return this.client['_request']('DELETE', `/v1/agents/${encodeURIComponent(agentId)}`);
+  }
+
+  async audit(agentId: string, limit = 50): Promise<Record<string, unknown>> {
+    return this.client['_get'](`/v1/agents/${encodeURIComponent(agentId)}/audit`, { limit: String(limit) });
+  }
+
+  // Per-agent connectors (Phase 6 — Inkbox / custom integrations)
+  async listConnectors(agentId: string): Promise<Record<string, unknown>> {
+    return this.client['_get'](`/v1/agents/${encodeURIComponent(agentId)}/connectors`);
+  }
+
+  async addConnector(
+    agentId: string,
+    source: string,
+    metadata: Record<string, unknown> = {},
+  ): Promise<Record<string, unknown>> {
+    return this.client['_post'](
+      `/v1/agents/${encodeURIComponent(agentId)}/connectors`,
+      { source, metadata },
+    );
+  }
+
+  async removeConnector(agentId: string, connectorId: string): Promise<Record<string, unknown>> {
+    return this.client['_request'](
+      'DELETE',
+      `/v1/agents/${encodeURIComponent(agentId)}/connectors/${encodeURIComponent(connectorId)}`,
+    );
+  }
+
+  // Per-agent trust list (Phase 6.5)
+  async listTrust(agentId: string): Promise<Record<string, unknown>> {
+    return this.client['_get'](`/v1/agents/${encodeURIComponent(agentId)}/trust`);
+  }
+
+  async addTrust(
+    agentId: string,
+    input: { contactId?: string; matchEmail?: string; matchPhone?: string; note?: string },
+  ): Promise<Record<string, unknown>> {
+    const body: Record<string, unknown> = { note: input.note };
+    if (input.contactId)  body.contact_id  = input.contactId;
+    if (input.matchEmail) body.match_email = input.matchEmail;
+    if (input.matchPhone) body.match_phone = input.matchPhone;
+    return this.client['_post'](`/v1/agents/${encodeURIComponent(agentId)}/trust`, body);
+  }
+
+  async removeTrust(agentId: string, trustId: string): Promise<Record<string, unknown>> {
+    return this.client['_request'](
+      'DELETE',
+      `/v1/agents/${encodeURIComponent(agentId)}/trust/${encodeURIComponent(trustId)}`,
+    );
+  }
+}
+
+
+export interface IngestEmailInput {
+  externalId: string;
+  fromAddress: string;
+  to: string[];
+  sentAt: string;
+  subject?: string;
+  bodyText?: string;
+  bodyHtml?: string;
+  direction?: 'inbound' | 'outbound';
+  inReplyToExternalId?: string;
+  threadExternalId?: string;
+}
+
+export interface IngestCallInput {
+  externalId: string;
+  fromNumber: string;
+  toNumber: string;
+  startedAt: string;
+  durationSec?: number;
+  transcript?: string;
+  direction?: 'inbound' | 'outbound';
+}
+
+export interface IngestSmsInput {
+  externalId: string;
+  fromNumber: string;
+  toNumber: string;
+  body: string;
+  sentAt: string;
+  direction?: 'inbound' | 'outbound';
+}
+
+class IngestNamespace {
+  constructor(private readonly client: GeniOS) {}
+
+  async email(input: IngestEmailInput): Promise<Record<string, unknown>> {
+    const payload: Record<string, unknown> = {
+      external_id: input.externalId,
+      from_address: input.fromAddress,
+      to: input.to,
+      sent_at: input.sentAt,
+      direction: input.direction ?? 'inbound',
+    };
+    if (input.subject !== undefined) payload.subject = input.subject;
+    if (input.bodyText !== undefined) payload.body_text = input.bodyText;
+    if (input.bodyHtml !== undefined) payload.body_html = input.bodyHtml;
+    if (input.inReplyToExternalId !== undefined) payload.in_reply_to_external_id = input.inReplyToExternalId;
+    if (input.threadExternalId !== undefined) payload.thread_external_id = input.threadExternalId;
+    return this.client['_post']('/v1/ingest/email', payload);
+  }
+
+  async call(input: IngestCallInput): Promise<Record<string, unknown>> {
+    const payload: Record<string, unknown> = {
+      external_id: input.externalId,
+      from_number: input.fromNumber,
+      to_number: input.toNumber,
+      started_at: input.startedAt,
+      duration_sec: input.durationSec ?? 0,
+      direction: input.direction ?? 'inbound',
+    };
+    if (input.transcript !== undefined) payload.transcript = input.transcript;
+    return this.client['_post']('/v1/ingest/call', payload);
+  }
+
+  async sms(input: IngestSmsInput): Promise<Record<string, unknown>> {
+    return this.client['_post']('/v1/ingest/sms', {
+      external_id: input.externalId,
+      from_number: input.fromNumber,
+      to_number: input.toNumber,
+      body: input.body,
+      sent_at: input.sentAt,
+      direction: input.direction ?? 'inbound',
+    });
+  }
+
+  async events(limit = 50): Promise<Record<string, unknown>> {
+    return this.client['_get']('/v1/ingest/events', { limit: String(limit) });
   }
 }
 
@@ -114,6 +299,7 @@ export class GeniOS {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
   public readonly agents: AgentsNamespace;
+  public readonly ingest: IngestNamespace;
   public readonly stream: StreamNamespace;
 
   constructor(options: GeniOSOptions = {}) {
@@ -124,6 +310,7 @@ export class GeniOS {
     this.baseUrl = (options.baseUrl ?? process.env.GENIOS_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, '');
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.agents = new AgentsNamespace(this);
+    this.ingest = new IngestNamespace(this);
     this.stream = new StreamNamespace(this);
   }
 

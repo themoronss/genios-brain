@@ -756,6 +756,8 @@ def build_context_bundle(
     plan_tier: str = None, context_size: str = "medium",
     remaining_ms: int = 10_000,
     intent_signal=None,  # Phase 2: IntentSignal | None — drives live fetch + tone
+    requesting_agent_uuid: str = None,   # Phase 7: filter interactions by agent
+    data_visibility: str = "all",        # Phase 7: 'all' (master) | 'own' (scoped)
 ) -> Dict:
     """
     Build complete context bundle for an entity.
@@ -1346,16 +1348,25 @@ def build_context_bundle(
         pass  # Table might not exist yet or no matches
 
     # Add recent_interactions from raw interactions table (last 10)
+    # Phase 7: when caller is a scoped agent (data_visibility='own'), only
+    # return interactions tagged with their agent_uuid OR untagged rows
+    # (workspace-level Gmail OAuth, etc. — shared org data).
     try:
+        _i_extra = ""
+        _i_binds = {"contact_id": contact["id"], "org_id": org_id}
+        if data_visibility == "own" and requesting_agent_uuid:
+            _i_extra = " AND (agent_uuid IS NULL OR agent_uuid = :req_agent)"
+            _i_binds["req_agent"] = requesting_agent_uuid
+
         raw_interactions = db.execute(
-            text("""
+            text(f"""
                 SELECT direction, sentiment, summary, subject, interaction_at, intent
                 FROM interactions
-                WHERE contact_id = :contact_id AND org_id = :org_id
+                WHERE contact_id = :contact_id AND org_id = :org_id{_i_extra}
                 ORDER BY interaction_at DESC NULLS LAST
                 LIMIT 10
             """),
-            {"contact_id": contact["id"], "org_id": org_id},
+            _i_binds,
         ).fetchall()
 
         bundle["recent_interactions"] = [
