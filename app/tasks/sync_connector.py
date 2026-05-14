@@ -12,6 +12,7 @@ provider adapter. For each active pull connector:
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -24,6 +25,33 @@ from app.ingestion import adapters
 from app.policy import connector_crud, trust_crud
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_ts(s) -> datetime:
+    try:
+        return datetime.fromisoformat(str(s).replace("Z", "+00:00")) if s else datetime.now(timezone.utc)
+    except Exception:
+        return datetime.now(timezone.utc)
+
+
+def _upsert_contact_by_phone(db, org_id: str, phone: str) -> Optional[str]:
+    p = (phone or "").strip()
+    if not p:
+        return None
+    cid = db.execute(
+        text("SELECT id::text FROM contacts WHERE org_id=:o AND metadata @> :m LIMIT 1"),
+        {"o": org_id, "m": json.dumps({"phone": p})},
+    ).scalar()
+    if cid:
+        return cid
+    return db.execute(
+        text("""
+            INSERT INTO contacts (org_id, email, name, metadata, segment_source)
+            VALUES (:o, :n, :n, :m, 'auto')
+            RETURNING id::text
+        """),
+        {"o": org_id, "n": p, "m": json.dumps({"phone": p})},
+    ).scalar()
 
 
 def _insert_canonical_email(db, org_id: str, agent_uuid: Optional[str],
@@ -156,6 +184,81 @@ def _insert_calendar_event(db, org_id: str, agent_uuid: str, ev: dict) -> Option
     return last_iid
 
 
+def _insert_canonical_sms(db, org_id: str, agent_uuid: Optional[str],
+                          account_id: Optional[str], ev: dict) -> Optional[str]:
+    """SMS/MMS event → interaction(kind='sms', source='sms'). Contact keyed by
+    the remote phone number. Idempotent on (org, source='sms', external_id)."""
+    ext = (ev.get("external_id") or "").strip()
+    number = (ev.get("remote_number") or ev.get("from_number") or ev.get("to_number") or "").strip()
+    if not ext or not number:
+        return None
+    if db.execute(
+        text("SELECT 1 FROM interactions WHERE org_id=:o AND source='sms' AND external_id=:e"),
+        {"o": org_id, "e": ext},
+    ).fetchone():
+        return None
+    contact_id = _upsert_contact_by_phone(db, org_id, number)
+    if not contact_id:
+        return None
+    body = (ev.get("body") or ev.get("text") or "")
+    return db.execute(
+        text("""
+            INSERT INTO interactions
+                (org_id, contact_id, agent_uuid, account_id, direction, summary,
+                 raw_snippet, interaction_at, source, external_id, interaction_kind)
+            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, 'sms', :ext, 'sms')
+            RETURNING id::text
+        """),
+        {
+            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
+            "dir": ev.get("direction") or "inbound",
+            "sum": body[:2000], "raw": body[:5000],
+            "at": _parse_ts(ev.get("sent_at")), "ext": ext,
+        },
+    ).scalar()
+
+
+def _insert_canonical_call(db, org_id: str, agent_uuid: Optional[str],
+                           account_id: Optional[str], ev: dict) -> Optional[str]:
+    """Voice-call event → interaction(kind='call', source='phone') with
+    duration_sec + transcript. Idempotent on (org, source='phone', external_id)."""
+    ext = (ev.get("external_id") or "").strip()
+    number = (ev.get("remote_number") or ev.get("from_number") or ev.get("to_number") or "").strip()
+    if not ext or not number:
+        return None
+    if db.execute(
+        text("SELECT 1 FROM interactions WHERE org_id=:o AND source='phone' AND external_id=:e"),
+        {"o": org_id, "e": ext},
+    ).fetchone():
+        return None
+    contact_id = _upsert_contact_by_phone(db, org_id, number)
+    if not contact_id:
+        return None
+    try:
+        dur = int(ev.get("duration_sec") or 0)
+    except (TypeError, ValueError):
+        dur = 0
+    transcript = ev.get("transcript") or ""
+    summary = transcript if transcript else f"Call ({dur}s)"
+    return db.execute(
+        text("""
+            INSERT INTO interactions
+                (org_id, contact_id, agent_uuid, account_id, direction, summary,
+                 raw_snippet, interaction_at, source, external_id, interaction_kind,
+                 duration_sec, transcript)
+            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, 'phone', :ext, 'call', :dur, :tr)
+            RETURNING id::text
+        """),
+        {
+            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
+            "dir": ev.get("direction") or "inbound",
+            "sum": summary[:2000], "raw": transcript[:5000],
+            "at": _parse_ts(ev.get("started_at")), "ext": ext,
+            "dur": dur, "tr": transcript or None,
+        },
+    ).scalar()
+
+
 def _set_sync_status(db, connector_id: str, status: str,
                      error: Optional[str] = None,
                      accepted: int = 0,
@@ -219,7 +322,9 @@ def task_sync_connector(self, connector_id: str):
             return {"connector_id": connector_id, "status": "no_adapter", "provider": provider}
 
         creds = connector_crud.decrypt_metadata(row.metadata)
-        since = (row.last_event_at or (datetime.now(timezone.utc) - timedelta(days=7))).isoformat()
+        # On a cold start (no prior events) reach back 30 days so the mailbox
+        # arrives with real history; afterwards we only need what's new.
+        since = (row.last_event_at or (datetime.now(timezone.utc) - timedelta(days=30))).isoformat()
 
         # Mark syncing in flight (UI shows yellow spinner)
         db.execute(
@@ -245,8 +350,11 @@ def task_sync_connector(self, connector_id: str):
                 iid = _insert_canonical_email(db, row.org_id, row.agent_uuid, connector_id, ev)
                 if iid:
                     accepted += 1
+                    # Optional: some adapters (e.g. Gmail) expose mark_read; the
+                    # email-server adapters (Inkbox, IMAP) deliberately do not —
+                    # the brain doesn't mutate the customer's mailbox.
                     if "mark_read" in ops:
-                        try: ops["mark_read"](creds, ev)  # pass full event so adapter uses _inkbox_id directly
+                        try: ops["mark_read"](creds, ev)
                         except Exception: pass
                 else:
                     duplicates += 1
@@ -284,8 +392,47 @@ def task_sync_connector(self, connector_id: str):
                 )
             db.commit()
             _set_sync_status(db, connector_id, "success", accepted=accepted)
+
+        # SMS path — Inkbox texts become interactions of kind='sms'
+        elif row.source == "sms" and "fetch_sms" in ops:
+            try:
+                events = ops["fetch_sms"](creds, since)
+            except PermissionError as pe:
+                _set_sync_status(db, connector_id, "auth_failed", error=str(pe))
+                return {"connector_id": connector_id, "status": "auth_failed", "error": str(pe)}
+            except Exception as e:
+                _set_sync_status(db, connector_id, "failed", error=str(e))
+                return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
+            for ev in events:
+                iid = _insert_canonical_sms(db, row.org_id, row.agent_uuid, connector_id, ev)
+                if iid: accepted += 1
+                else: duplicates += 1
+            if accepted > 0:
+                db.execute(text("UPDATE connector_credentials SET last_event_at = NOW() WHERE id = :id"), {"id": connector_id})
+            db.commit()
+            _set_sync_status(db, connector_id, "success", accepted=accepted)
+
+        # Voice-call path — Inkbox calls (+ transcripts) become kind='call'
+        elif row.source == "phone" and "fetch_calls" in ops:
+            try:
+                events = ops["fetch_calls"](creds, since)
+            except PermissionError as pe:
+                _set_sync_status(db, connector_id, "auth_failed", error=str(pe))
+                return {"connector_id": connector_id, "status": "auth_failed", "error": str(pe)}
+            except Exception as e:
+                _set_sync_status(db, connector_id, "failed", error=str(e))
+                return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
+            for ev in events:
+                iid = _insert_canonical_call(db, row.org_id, row.agent_uuid, connector_id, ev)
+                if iid: accepted += 1
+                else: duplicates += 1
+            if accepted > 0:
+                db.execute(text("UPDATE connector_credentials SET last_event_at = NOW() WHERE id = :id"), {"id": connector_id})
+            db.commit()
+            _set_sync_status(db, connector_id, "success", accepted=accepted)
+
         else:
-            _set_sync_status(db, connector_id, "failed", error="No fetch handler for source type")
+            _set_sync_status(db, connector_id, "failed", error=f"No fetch handler for source '{row.source}'")
 
         return {
             "connector_id": connector_id,

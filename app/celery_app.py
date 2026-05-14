@@ -1,13 +1,18 @@
 """
 Celery configuration for GeniOS background task processing.
 
-Broker: Redis (same Upstash instance, DB 1 to avoid cache collision).
+Broker: Redis (same Upstash instance; keys namespaced via global_keyprefix so
+they don't collide with the app cache). No result backend — task return values
+are discarded (nothing calls .get()), which roughly halves Redis traffic.
 Queues:
   - high_priority: manual syncs, recompute (user-triggered, latency-sensitive)
   - low_priority: nightly refresh, weekly reports, billing (batch work)
+  - brain_router: the event-stream router tick
 
-Worker start command:
-  celery -A app.celery_app worker --loglevel=info -Q high_priority,low_priority,brain_router
+Worker start command (must include brain_router; --without-* cuts Redis chatter):
+  celery -A app.celery_app worker --loglevel=info \
+      -Q high_priority,low_priority,brain_router \
+      --without-gossip --without-mingle --without-heartbeat
 
 Celery Beat (periodic scheduler):
   celery -A app.celery_app beat --loglevel=info
@@ -22,39 +27,56 @@ from celery.schedules import crontab
 logger = logging.getLogger(__name__)
 
 # Single-DB Redis: managed providers like Upstash only expose DB 0.
-# Use the same URL for cache, broker, and result backend; Celery namespaces
-# its keys via `global_keyprefix` so they don't collide with the cache.
+# Celery namespaces its broker keys via `global_keyprefix` so they don't
+# collide with the cache.
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 BROKER_URL = REDIS_URL
-RESULT_URL = REDIS_URL
 
-# Add ssl_cert_reqs for rediss:// (Upstash TLS)
-if BROKER_URL.startswith("rediss://"):
+# TLS cert verification for rediss:// (Upstash etc.). Default is CERT_NONE to
+# preserve existing behaviour (and avoid a hard outage if the provider's cert
+# chain isn't in the system CA bundle). Once verified, set
+# REDIS_SSL_CERT_REQS=required in the environment to silence the MITM warning.
+_SSL_CERT_REQS = {
+    "none":     ssl.CERT_NONE,
+    "optional": ssl.CERT_OPTIONAL,
+    "required": ssl.CERT_REQUIRED,
+}
+_ssl_cert_reqs = _SSL_CERT_REQS.get(os.getenv("REDIS_SSL_CERT_REQS", "none").lower(), ssl.CERT_NONE)
+_ssl_cert_reqs_name = {ssl.CERT_NONE: "CERT_NONE", ssl.CERT_OPTIONAL: "CERT_OPTIONAL", ssl.CERT_REQUIRED: "CERT_REQUIRED"}[_ssl_cert_reqs]
+_redis_ssl = REDIS_URL.startswith("rediss://")
+if _redis_ssl:
     sep = "&" if "?" in BROKER_URL else "?"
-    BROKER_URL += f"{sep}ssl_cert_reqs=CERT_NONE"
-    RESULT_URL += f"{sep}ssl_cert_reqs=CERT_NONE"
+    BROKER_URL += f"{sep}ssl_cert_reqs={_ssl_cert_reqs_name}"
 
+# No result backend: we never call .get()/.ready() on task results anywhere,
+# and writing every task's result to Redis (with a 24h TTL) was the single
+# biggest consumer of the Upstash request quota. Disabling it cuts Redis
+# traffic roughly in half. Tasks return values are simply discarded.
 celery = Celery(
     "genios",
     broker=BROKER_URL,
-    backend=RESULT_URL,
+    backend=None,
     # Phase 10: per-connector pull tasks live in app/tasks/sync_connector.py
     include=["app.tasks.sync_connector"],
 )
 
-# SSL config for rediss:// connections
-_redis_ssl = REDIS_URL.startswith("rediss://")
-_broker_transport_options = {}
-if _redis_ssl:
-    _broker_transport_options = {
-        "ssl": {"ssl_cert_reqs": ssl.CERT_NONE}
-    }
+# How often the brain router polls the event stream, and how often pending
+# webhooks are flushed. Both were sub-minute (15s / 30s) — together ~8.6k
+# task dispatches/day, each costing several Redis commands. Bumped to 60s by
+# default (override via env if you need lower latency). The event_log debounce
+# window is 30s and webhook delivery has durable retry, so this only adds a few
+# tens of seconds of latency, not correctness.
+BRAIN_ROUTER_INTERVAL_SEC = float(os.getenv("BRAIN_ROUTER_INTERVAL_SEC", "60"))
+WEBHOOK_DELIVERY_INTERVAL_SEC = float(os.getenv("WEBHOOK_DELIVERY_INTERVAL_SEC", "60"))
 
 celery.conf.update(
     # Serialization
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
+    # No result backend — see comment above.
+    result_backend=None,
+    task_ignore_result=True,
     # Timezone
     timezone="UTC",
     enable_utc=True,
@@ -63,18 +85,15 @@ celery.conf.update(
     task_queues={
         "high_priority": {"exchange": "high_priority", "routing_key": "high"},
         "low_priority": {"exchange": "low_priority", "routing_key": "low"},
+        "brain_router": {"exchange": "brain_router", "routing_key": "brain"},
     },
     # SSL for Upstash/TLS Redis
-    broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if _redis_ssl else None,
-    redis_backend_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE} if _redis_ssl else None,
-    # Single-DB namespacing (so broker/result keys don't collide with cache)
+    broker_use_ssl={"ssl_cert_reqs": _ssl_cert_reqs} if _redis_ssl else None,
+    # Single-DB namespacing (so broker keys don't collide with the cache)
     broker_transport_options={"global_keyprefix": "genios:celery:"},
-    result_backend_transport_options={"global_keyprefix": "genios:result:"},
     # Reliability
     task_acks_late=True,
     worker_prefetch_multiplier=1,
-    # Result expiry (24h)
-    result_expires=86400,
     # Broker connection retry
     broker_connection_retry_on_startup=True,
 )
@@ -580,19 +599,21 @@ celery.conf.beat_schedule = {
         "schedule": 21600.0,  # 6 hours
         "options": {"queue": "low_priority"},
     },
-    # Phase 1.7: Deliver pending webhooks every 30s (durable retry via delivery_attempts)
+    # Phase 1.7: Deliver pending webhooks (durable retry via delivery_attempts).
+    # Interval bumped 30s -> WEBHOOK_DELIVERY_INTERVAL_SEC (default 60s) to cut
+    # Redis dispatch traffic; delivery still retries durably.
     "deliver-webhooks": {
         "task": "app.celery_app.task_deliver_webhooks",
-        "schedule": 30.0,
+        "schedule": WEBHOOK_DELIVERY_INTERVAL_SEC,
         "options": {"queue": "high_priority"},
     },
     # Phase 2: brain router tick — consume event stream, debounce, reason, gate.
-    # 15s tick (was 5s): event_log debounce window is 30s anyway, so a 15s poll
-    # adds negligible end-to-end latency while cutting Redis traffic 3x. Critical
-    # for staying under Upstash limits at production volumes.
-    "brain-router-15s": {
+    # Interval bumped 15s -> BRAIN_ROUTER_INTERVAL_SEC (default 60s): event_log
+    # debounce window is 30s, so this adds only a few tens of seconds of latency
+    # while cutting Redis traffic 4x. Critical for staying under Upstash limits.
+    "brain-router": {
         "task": "app.celery_app.task_brain_router",
-        "schedule": 15.0,
+        "schedule": BRAIN_ROUTER_INTERVAL_SEC,
         "options": {"queue": "brain_router"},
     },
     # Phase 4.5: hourly lifecycle transitions

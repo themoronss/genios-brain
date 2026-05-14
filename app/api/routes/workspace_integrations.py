@@ -20,7 +20,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -35,6 +35,79 @@ router = APIRouter()
 
 def _http(detail, status=400):
     return HTTPException(status_code=status, detail=detail)
+
+
+def _run_connector_sync(connector_id: str) -> None:
+    """Run a connector pull *inline* (FastAPI BackgroundTask), independent of
+    the Celery worker.
+
+    Why: the manual "sync" button and the connect-time initial sync used to
+    only `.delay()` onto the `low_priority` Celery queue. If the worker is
+    down/not deployed, the job sits in Redis forever — the account stays
+    `never_synced` and the dashboard never updates (exactly what Inkbox
+    reported). Running it in the API process makes the button a sure shot:
+    as long as the API is up, the pull happens. `task_sync_connector` opens
+    its own DB session, writes `last_sync_status` on every outcome, and is
+    idempotent (duplicate emails skipped via the external_id unique index),
+    so this is safe even if the 5-min Celery beat also picks it up later.
+    """
+    try:
+        from app.tasks.sync_connector import task_sync_connector
+        task_sync_connector.apply(args=[connector_id])  # eager, no broker needed
+    except Exception as e:  # never let a background pull crash anything
+        logger.warning(f"inline connector sync {connector_id} failed: {e}")
+
+
+# Cap how many phone numbers we auto-provision pull connectors for (an
+# admin-scoped key may see the whole org; agent-scoped keys see ~1).
+_MAX_AUTO_PHONE_NUMBERS = 5
+
+
+def _maybe_provision_inkbox_phone(db: Session, org_id: str, api_key: str) -> list[str]:
+    """If `api_key` has phone scope, create (idempotently) `sms` and `phone`
+    pull connectors for the agent's number(s). Returns the new connector ids.
+    Entirely best-effort — an email-only key just yields []."""
+    new_ids: list[str] = []
+    try:
+        from app.ingestion.adapters import inkbox as _inkbox
+        numbers = _inkbox.list_phone_numbers({"api_key": api_key})[:_MAX_AUTO_PHONE_NUMBERS]
+    except Exception as e:
+        logger.debug(f"inkbox phone discovery skipped: {e}")
+        return new_ids
+
+    for entry in numbers:
+        pnid = (entry or {}).get("phone_number_id")
+        if not pnid:
+            continue
+        for src in ("sms", "phone"):
+            try:
+                # Skip if an active pull connector already exists for this number.
+                exists = db.execute(
+                    text("""
+                        SELECT 1 FROM connector_credentials
+                        WHERE org_id = :o AND source = :s AND is_active = TRUE
+                          AND metadata->>'provider' = 'inkbox'
+                          AND metadata->>'phone_number_id' = :p
+                        LIMIT 1
+                    """),
+                    {"o": org_id, "s": src, "p": str(pnid)},
+                ).fetchone()
+                if exists:
+                    continue
+                md = {"provider": "inkbox", "api_key": api_key, "phone_number_id": str(pnid)}
+                if entry.get("phone_number"):
+                    md["phone_number"] = entry["phone_number"]
+                cid, _ = connector_crud.upsert(db, org_id, agent_uuid=None, source=src, metadata=md)
+                db.execute(
+                    text("UPDATE connector_credentials SET last_sync_status='never_synced' WHERE id=:id"),
+                    {"id": cid},
+                )
+                db.commit()
+                new_ids.append(cid)
+            except Exception as e:
+                db.rollback()
+                logger.warning(f"inkbox phone connector provision failed ({src}/{pnid}): {e}")
+    return new_ids
 
 
 class InkboxConnectRequest(BaseModel):
@@ -75,7 +148,8 @@ def list_accounts(org_id: str, db: Session = Depends(get_db)):
 
 # ── Inkbox: connect a workspace-level Inkbox mailbox ────────────────────────
 @router.post("/api/org/{org_id}/integrations/inkbox/accounts", status_code=201)
-def connect_inkbox(org_id: str, req: InkboxConnectRequest, db: Session = Depends(get_db)):
+def connect_inkbox(org_id: str, req: InkboxConnectRequest,
+                   background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not req.mailbox_address.strip() or not req.api_key.strip():
         raise _http({"error": "INVALID_PAYLOAD", "message": "mailbox_address and api_key required"}, 400)
 
@@ -114,17 +188,21 @@ def connect_inkbox(org_id: str, req: InkboxConnectRequest, db: Session = Depends
         logger.error(f"connect_inkbox failed: {e}")
         raise _http("Connect failed", 500)
 
-    # Initial sync
-    try:
-        from app.tasks.sync_connector import task_sync_connector
-        task_sync_connector.delay(conn_id)
-    except Exception:
-        pass
+    # Initial sync — runs in the API process, not dependent on the Celery worker.
+    background_tasks.add_task(_run_connector_sync, conn_id)
+
+    # Best-effort: if this API key can also see the agent's phone number(s),
+    # provision sms + voice-call pull connectors so we sync those channels too
+    # (mirrors how Gmail+Calendar both light up from one Google connection).
+    phone_conn_ids = _maybe_provision_inkbox_phone(db, org_id, metadata["api_key"])
+    for cid in phone_conn_ids:
+        background_tasks.add_task(_run_connector_sync, cid)
 
     return {
         "account_id":   conn_id,
         "account_kind": "connector",
         "tool":         "inkbox",
+        "phone_channels": len(phone_conn_ids) // 2 if phone_conn_ids else 0,
         "label":        metadata["mailbox_address"],
         "initial_sync_enqueued": True,
     }
@@ -132,7 +210,8 @@ def connect_inkbox(org_id: str, req: InkboxConnectRequest, db: Session = Depends
 
 # ── IMAP: connect a self-hosted email mailbox ───────────────────────────────
 @router.post("/api/org/{org_id}/integrations/imap/accounts", status_code=201)
-def connect_imap(org_id: str, req: ImapConnectRequest, db: Session = Depends(get_db)):
+def connect_imap(org_id: str, req: ImapConnectRequest,
+                 background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not (req.mailbox_address and req.host and req.username and req.password):
         raise _http({"error": "INVALID_PAYLOAD", "message": "mailbox_address/host/username/password required"}, 400)
 
@@ -168,11 +247,8 @@ def connect_imap(org_id: str, req: ImapConnectRequest, db: Session = Depends(get
         logger.error(f"connect_imap failed: {e}")
         raise _http("Connect failed", 500)
 
-    try:
-        from app.tasks.sync_connector import task_sync_connector
-        task_sync_connector.delay(conn_id)
-    except Exception:
-        pass
+    # Initial sync — runs in the API process, not dependent on the Celery worker.
+    background_tasks.add_task(_run_connector_sync, conn_id)
 
     return {
         "account_id":   conn_id,
@@ -220,7 +296,8 @@ def disconnect_account(org_id: str, kind: str, account_id: str, db: Session = De
 
 # ── Manual sync trigger for any account ─────────────────────────────────────
 @router.post("/api/org/{org_id}/integrations/accounts/{kind}/{account_id}/sync", status_code=202)
-def sync_account(org_id: str, kind: str, account_id: str, db: Session = Depends(get_db)):
+def sync_account(org_id: str, kind: str, account_id: str,
+                 background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if kind != "connector":
         # OAuth (Gmail/Calendar) syncs are kicked through their existing flows
         raise _http({"error": "USE_OAUTH_SYNC_ENDPOINT", "message": "For OAuth-managed tools use existing Gmail/Calendar sync routes."}, 400)
@@ -230,10 +307,12 @@ def sync_account(org_id: str, kind: str, account_id: str, db: Session = Depends(
     ).fetchone()
     if not exists:
         raise _http({"error": "ACCOUNT_NOT_FOUND"}, 404)
-    try:
-        from app.tasks.sync_connector import task_sync_connector
-        task_sync_connector.delay(account_id)
-    except Exception as e:
-        logger.warning(f"sync dispatch failed: {e}")
-        raise _http({"error": "SYNC_DISPATCH_FAILED"}, 503)
-    return {"account_id": account_id, "status": "enqueued"}
+    # Flip to 'syncing' synchronously so the dashboard reflects it on the very
+    # next poll, then run the pull in-process (no Celery worker dependency).
+    db.execute(
+        text("UPDATE connector_credentials SET last_sync_status = 'syncing' WHERE id = :id"),
+        {"id": account_id},
+    )
+    db.commit()
+    background_tasks.add_task(_run_connector_sync, account_id)
+    return {"account_id": account_id, "status": "syncing"}

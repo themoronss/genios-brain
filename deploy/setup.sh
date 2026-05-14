@@ -105,7 +105,11 @@ stdout_logfile_maxbytes=10MB
 stderr_logfile_maxbytes=10MB
 
 [program:celery-worker]
-command=/home/genios/genios-brain/venv/bin/celery -A app.celery_app worker --loglevel=info -Q high_priority,low_priority --concurrency=2
+# NOTE: must include the brain_router queue or task_brain_router (dispatched
+# every minute by beat) piles up unconsumed in Redis. The --without-* flags
+# disable Celery's gossip/mingle/heartbeat chatter (pointless for a single
+# worker) which otherwise hammers Redis and burns the Upstash request quota.
+command=/home/genios/genios-brain/venv/bin/celery -A app.celery_app worker --loglevel=info -Q high_priority,low_priority,brain_router --concurrency=2 --without-gossip --without-mingle --without-heartbeat
 directory=/home/genios/genios-brain
 environment=PATH=\"/home/genios/genios-brain/venv/bin\"
 autostart=true
