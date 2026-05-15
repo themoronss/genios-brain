@@ -67,3 +67,77 @@ def z_score(current: float, baseline: Baseline) -> Optional[float]:
     if baseline.stddev <= 0:
         return None
     return (float(current) - baseline.value) / baseline.stddev
+
+
+# Multiplier on the contact's typical response time used to define the
+# "cold horizon". 3x normal cadence is the point where silence is no
+# longer routine. Floor of 7d prevents the prediction from collapsing on
+# contacts with near-instant turnaround.
+_COLD_MULTIPLIER = 3
+_COLD_FLOOR_DAYS = 7
+_COLD_GLOBAL_FALLBACK_DAYS = 21
+
+
+def predict_cold_window(
+    db, org_id: str, contact_id: str, days_since_last: int,
+) -> Optional[int]:
+    """Estimate days remaining before the contact crosses the cold horizon.
+
+    Strategy:
+      1. Prefer contact_baselines.response_time_avg_hours (simple column).
+      2. Fall back to personal_baselines (metric='response_hours') EAV row.
+      3. If neither exists, use a 21-day global default.
+
+    Returns None on unrecoverable DB errors. Returns 0 if already past cold.
+    """
+    if days_since_last is None or days_since_last < 0:
+        return None
+
+    response_hours: Optional[float] = None
+    try:
+        row = db.execute(
+            text(
+                """
+                SELECT response_time_avg_hours
+                FROM contact_baselines
+                WHERE contact_id = :cid
+                ORDER BY computed_at DESC
+                LIMIT 1
+                """
+            ),
+            {"cid": str(contact_id)},
+        ).fetchone()
+        if row and row.response_time_avg_hours is not None:
+            response_hours = float(row.response_time_avg_hours)
+    except Exception as e:
+        logger.debug(f"contact_baselines lookup failed: {e}")
+
+    if response_hours is None:
+        try:
+            row = db.execute(
+                text(
+                    """
+                    SELECT value
+                    FROM personal_baselines
+                    WHERE org_id = :oid
+                      AND contact_id = :cid
+                      AND metric = 'response_hours'
+                    ORDER BY updated_at DESC
+                    LIMIT 1
+                    """
+                ),
+                {"oid": org_id, "cid": str(contact_id)},
+            ).fetchone()
+            if row and row.value is not None:
+                response_hours = float(row.value)
+        except Exception as e:
+            logger.debug(f"personal_baselines lookup failed: {e}")
+
+    if response_hours and response_hours > 0:
+        normal_response_days = response_hours / 24.0
+        cold_threshold_days = max(normal_response_days * _COLD_MULTIPLIER, _COLD_FLOOR_DAYS)
+    else:
+        cold_threshold_days = _COLD_GLOBAL_FALLBACK_DAYS
+
+    remaining = int(cold_threshold_days - days_since_last)
+    return remaining if remaining > 0 else 0

@@ -2,16 +2,14 @@ import os
 import json
 import time
 from typing import Dict, List, Optional
-from groq import Groq
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# Configure Groq (primary)
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-# Fallback to Gemini if needed
+# Direct Gemini handle kept for the legacy _extract_with_gemini fallback path
+# only; the active extraction route goes through llm_client which manages
+# Anthropic → Groq → Gemini fallback internally.
 try:
     import google.generativeai as genai
 
@@ -21,7 +19,8 @@ try:
 except Exception:
     HAS_GEMINI_FALLBACK = False
 
-# Rate limiting settings for Groq
+# Rate-limit pause used by the loop in extract_email_intelligence; the
+# unified llm_client also handles 429s via its provider fallback chain.
 RATE_LIMIT_DELAY = 2
 
 

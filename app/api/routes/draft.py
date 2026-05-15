@@ -213,9 +213,13 @@ USER REQUEST:
 
 Draft a {request.draft_type} based on the above context and request. Be specific, reference past interactions when relevant, and match the communication style described in the context."""
 
-        # Step 3: Call LLM with retry logic
-        if not os.getenv("GROQ_API_KEY"):
-            logger.error("GROQ_API_KEY not configured")
+        # Step 3: Call LLM with retry logic.
+        # `draft` purpose is routed to Anthropic Haiku; the llm_client falls
+        # back to Groq → Gemini internally if Anthropic is unavailable, so
+        # any of these keys being set is enough. Check Anthropic first since
+        # that's the primary route.
+        if not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY")):
+            logger.error("No LLM provider key configured (ANTHROPIC_API_KEY / GROQ_API_KEY / GEMINI_API_KEY)")
             raise HTTPException(status_code=500, detail="AI service not configured")
 
         def _generate() -> str:

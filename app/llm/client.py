@@ -1,7 +1,8 @@
 """Unified LLM client — one call site, cost logged to llm_usage, daily guardrail.
 
-Phase 1 providers wired: Groq (chat), Gemini (chat + embed).
-Anthropic stubbed — set GENIOS_ANTHROPIC_ENABLED=true + real key to activate.
+Providers wired: Anthropic (primary for reasoning + classification + drafting),
+Gemini (chat + embed), Groq (fallback only). Anthropic→Groq→Gemini fallback
+chain handles transient failures.
 
 Routing table maps `purpose` → (provider, model). Swap entries here to move a
 purpose to a different provider without touching callers.
@@ -34,16 +35,16 @@ class TenantCostGuardrailExceeded(Exception):
     """Raised when an org has hit GENIOS_LLM_DAILY_CAP_USD for today."""
 
 
-# purpose → (provider, model). Defaults are Groq-heavy for Phase 1.
+# purpose → (provider, model). Anthropic-primary for reasoning + extraction.
 # Override any purpose via env: LLM_ROUTE_<UPPER_PURPOSE>="provider:model"
 #   e.g. LLM_ROUTE_REASON_HAIKU="anthropic:claude-haiku-4-5-20251001"
 #        LLM_ROUTE_NARRATIVE="openai:gpt-4o-mini"
 # Provider must be one of: groq | gemini | anthropic | openai.
 _DEFAULT_ROUTES = {
-    "classify_email":   ("groq",      "llama-3.3-70b-versatile"),
+    "classify_email":   ("anthropic", "claude-haiku-4-5-20251001"),
     "extract_entities": ("anthropic", "claude-haiku-4-5-20251001"),
     "calendar_extract": ("anthropic", "claude-haiku-4-5-20251001"),
-    "draft":            ("groq",      "llama-3.3-70b-versatile"),
+    "draft":            ("anthropic", "claude-haiku-4-5-20251001"),
     "chat":             ("gemini",    "gemini-2.5-flash"),
     "reason_haiku":     ("anthropic", "claude-haiku-4-5-20251001"),
     "reason_sonnet":    ("anthropic", "claude-sonnet-4-6"),
@@ -55,6 +56,8 @@ _DEFAULT_ROUTES = {
     "shape_response":   ("anthropic", "claude-haiku-4-5-20251001"),
     # ── Phase 6: personalized retention offer composition ──
     "compose_retention_offer": ("anthropic", "claude-haiku-4-5-20251001"),
+    # ── Phase 1 fix-set: proactive scanner judge (keep/dismiss decision) ──
+    "judge_insight":    ("anthropic", "claude-haiku-4-5-20251001"),
 }
 
 

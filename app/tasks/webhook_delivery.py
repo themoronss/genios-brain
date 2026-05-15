@@ -1,12 +1,20 @@
 """
 Webhook delivery — durable retry via `delivery_attempts` table.
 
-Flow (Phase 1.7):
+Flow (Phase 1.7 + Phase 1 fix-set / Item #3):
   1. `schedule_for_insights(org_id)` enqueues a pending row per (insight × webhook).
+     If no active webhook is registered, leave the insight 'pending' for up to
+     7 days so a later subscription can pick it up (bug 3.1).
   2. `deliver_due(org_id)` picks `status='pending' AND next_attempt_at <= NOW()`,
-     attempts POST, records the outcome.
-  3. On failure, schedules the next attempt from GENIOS_WEBHOOK_RETRY_SCHEDULE
-     until attempts are exhausted, then marks the row 'dead' (DLQ).
+     attempts POST, records the outcome. Commits per-row (bug 3.2).
+  3. On failure, schedules the next attempt from GENIOS_WEBHOOK_RETRY_SCHEDULE,
+     unless the response was a permanent 4xx (bug 3.3) in which case the row
+     is parked in DLQ immediately. After GENIOS_WEBHOOK_AUTO_DISABLE_THRESHOLD
+     consecutive failures the webhook_config is auto-disabled (bug 3.4).
+  4. Race-safe: a partial unique index in migration 095 prevents duplicate
+     pending attempts on concurrent schedulers (bug 3.5).
+  5. Payload size capped at MAX_PAYLOAD_BYTES — runaway LLM outputs hit DLQ
+     rather than burning timeouts (bug 3.6).
 
 HMAC-SHA256 signature via X-Genios-Signature (unchanged from old flow).
 """
@@ -22,6 +30,7 @@ from uuid import uuid4
 
 import requests
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from app.config import GENIOS_WEBHOOK_RETRY_SCHEDULE
 from app.database import SessionLocal
@@ -29,6 +38,14 @@ from app.database import SessionLocal
 logger = logging.getLogger(__name__)
 
 WEBHOOK_TIMEOUT = int(os.getenv("GENIOS_WEBHOOK_TIMEOUT_SECONDS", "10"))
+AUTO_DISABLE_THRESHOLD = int(os.getenv("GENIOS_WEBHOOK_AUTO_DISABLE_THRESHOLD", "20"))
+NO_WEBHOOK_EXPIRY_DAYS = int(os.getenv("GENIOS_NO_WEBHOOK_EXPIRY_DAYS", "7"))
+# 64KB ceiling: typical insight payload is <1KB; 64KB catches runaway LLM
+# output without rejecting legitimate verbose insights.
+MAX_PAYLOAD_BYTES = int(os.getenv("GENIOS_WEBHOOK_MAX_PAYLOAD_BYTES", str(64 * 1024)))
+
+# 4xx that are still worth retrying (transient under load, not client error).
+_TRANSIENT_4XX = {408, 425, 429}
 
 
 def _sign_payload(payload: str, secret: str) -> str:
@@ -43,12 +60,56 @@ def _next_delay(attempt_number: int) -> int | None:
     return GENIOS_WEBHOOK_RETRY_SCHEDULE[idx]
 
 
+def _is_permanent_failure(status_code: int | None) -> bool:
+    """4xx (except known transient codes) means the request is malformed or
+    forbidden — no point retrying. 5xx and connection errors stay retryable.
+    """
+    if status_code is None:
+        return False  # network error → retry
+    if 400 <= status_code < 500 and status_code not in _TRANSIENT_4XX:
+        return True
+    return False
+
+
+def _maybe_auto_disable_webhook(db, webhook_id: str) -> None:
+    """Disable the webhook if it has hit the consecutive-failure threshold.
+
+    Runs after every failed attempt; cheap (single UPDATE with guard).
+    """
+    db.execute(
+        text("""
+            UPDATE webhook_config
+            SET is_active = FALSE,
+                disabled_reason = :reason,
+                disabled_at = NOW()
+            WHERE id = :wid
+              AND is_active = TRUE
+              AND consecutive_failures >= :threshold
+        """),
+        {
+            "wid": str(webhook_id),
+            "reason": f"auto: {AUTO_DISABLE_THRESHOLD} consecutive failures",
+            "threshold": AUTO_DISABLE_THRESHOLD,
+        },
+    )
+
+
 # ── Step 1 — enqueue: one row per (insight × active webhook) ──────────────
 def schedule_for_insights(org_id: str | None = None) -> int:
-    """Insert `delivery_attempts` rows for any insight not yet scheduled."""
+    """Insert `delivery_attempts` rows for any insight not yet scheduled.
+
+    Bug 3.1 fix: when there's no active webhook subscribed yet, the insight
+    stays 'pending' (not marked terminal) for up to NO_WEBHOOK_EXPIRY_DAYS
+    so a customer who subscribes a webhook later still receives recent
+    insights. After the grace period it's marked 'no_webhook_expired' so
+    we stop scanning it.
+    """
     db = SessionLocal()
     try:
-        where = "i.delivery_status = 'pending' AND i.is_dismissed = FALSE"
+        where = (
+            "i.delivery_status IN ('pending', 'no_webhook') "
+            "AND i.is_dismissed = FALSE"
+        )
         params = {}
         if org_id:
             where += " AND i.org_id = :org_id"
@@ -56,7 +117,7 @@ def schedule_for_insights(org_id: str | None = None) -> int:
 
         pending = db.execute(
             text(f"""
-                SELECT i.id, i.org_id
+                SELECT i.id, i.org_id, i.generated_at, i.delivery_status
                 FROM insights i
                 WHERE {where}
                   AND NOT EXISTS (
@@ -85,27 +146,55 @@ def schedule_for_insights(org_id: str | None = None) -> int:
             ).fetchall()
 
             if not configs:
+                # Bug 3.1: leave as 'pending' for grace period; only mark
+                # terminal after expiry so re-scans don't loop forever.
                 db.execute(
-                    text("UPDATE insights SET delivery_status = 'no_webhook' WHERE id = :id"),
-                    {"id": str(ins.id)},
+                    text("""
+                        UPDATE insights
+                        SET delivery_status = CASE
+                            WHEN generated_at < NOW() - INTERVAL '1 day' * :grace_days
+                                THEN 'no_webhook_expired'
+                            ELSE 'no_webhook'
+                        END
+                        WHERE id = :id
+                    """),
+                    {"id": str(ins.id), "grace_days": NO_WEBHOOK_EXPIRY_DAYS},
                 )
+                db.commit()
                 continue
 
             for cfg in configs:
-                db.execute(
-                    text("""
-                        INSERT INTO delivery_attempts
-                            (id, org_id, webhook_id, insight_id,
-                             attempt_number, status, scheduled_at, next_attempt_at)
-                        VALUES
-                            (:id, :oid, :wid, :iid,
-                             1, 'pending', NOW(), NOW())
-                    """),
-                    {"id": str(uuid4()), "oid": oid, "wid": str(cfg.id), "iid": str(ins.id)},
-                )
-                enqueued += 1
-
-        db.commit()
+                try:
+                    db.execute(
+                        text("""
+                            INSERT INTO delivery_attempts
+                                (id, org_id, webhook_id, insight_id,
+                                 attempt_number, status, scheduled_at, next_attempt_at)
+                            VALUES
+                                (:id, :oid, :wid, :iid,
+                                 1, 'pending', NOW(), NOW())
+                        """),
+                        {"id": str(uuid4()), "oid": oid, "wid": str(cfg.id), "iid": str(ins.id)},
+                    )
+                    # Bug 3.2: per-row commit so one failure doesn't roll back
+                    # the rest of the batch.
+                    db.commit()
+                    # Webhook subscribed after the fact → re-arm delivery_status.
+                    db.execute(
+                        text(
+                            "UPDATE insights SET delivery_status = 'pending' "
+                            "WHERE id = :id AND delivery_status = 'no_webhook'"
+                        ),
+                        {"id": str(ins.id)},
+                    )
+                    db.commit()
+                    enqueued += 1
+                except IntegrityError:
+                    # Bug 3.5: partial unique index caught a concurrent insert.
+                    db.rollback()
+                    logger.debug(
+                        f"duplicate pending attempt suppressed insight={ins.id} webhook={cfg.id}"
+                    )
         return enqueued
     finally:
         db.close()
@@ -161,6 +250,37 @@ def deliver_due(org_id: str | None = None) -> dict:
                 "generated_at": row.generated_at.isoformat() if row.generated_at else None,
             }
             body = json.dumps(payload, default=str)
+
+            # Bug 3.6: payload size guard. Runaway LLM output → straight to DLQ
+            # rather than burning a 10s HTTP timeout.
+            if len(body.encode("utf-8")) > MAX_PAYLOAD_BYTES:
+                logger.error(
+                    f"webhook payload too large insight={row.i_id} bytes={len(body)}"
+                )
+                try:
+                    db.execute(
+                        text("""
+                            UPDATE delivery_attempts
+                            SET status = 'dead', error = 'payload_too_large',
+                                attempted_at = NOW()
+                            WHERE id = :id
+                        """),
+                        {"id": str(row.id)},
+                    )
+                    db.execute(
+                        text(
+                            "UPDATE insights SET delivery_status = 'failed_permanent' "
+                            "WHERE id = :id"
+                        ),
+                        {"id": str(row.i_id)},
+                    )
+                    db.commit()  # Bug 3.2: per-row commit
+                    dead += 1
+                except Exception as e:
+                    db.rollback()
+                    logger.warning(f"payload_too_large commit failed: {e}")
+                continue
+
             signature = _sign_payload(body, row.secret)
 
             status_code = None
@@ -181,100 +301,117 @@ def deliver_due(org_id: str | None = None) -> dict:
 
             success = status_code is not None and 200 <= status_code < 300
 
-            if success:
+            try:
+                if success:
+                    db.execute(
+                        text("""
+                            UPDATE delivery_attempts
+                            SET status = 'succeeded', status_code = :sc, attempted_at = NOW()
+                            WHERE id = :id
+                        """),
+                        {"id": str(row.id), "sc": status_code},
+                    )
+                    db.execute(
+                        text("""
+                            UPDATE insights
+                            SET delivery_status = 'delivered', delivered_at = NOW()
+                            WHERE id = :id
+                        """),
+                        {"id": str(row.i_id)},
+                    )
+                    db.execute(
+                        text("""
+                            UPDATE webhook_config
+                            SET consecutive_failures = 0, last_delivery_at = NOW()
+                            WHERE id = :wid
+                        """),
+                        {"wid": str(row.webhook_id)},
+                    )
+                    db.commit()  # Bug 3.2
+                    delivered += 1
+                    continue
+
+                # Failure path — close this attempt, schedule next or mark dead
                 db.execute(
                     text("""
                         UPDATE delivery_attempts
-                        SET status = 'succeeded', status_code = :sc, attempted_at = NOW()
+                        SET status = 'failed', status_code = :sc, error = :err, attempted_at = NOW()
                         WHERE id = :id
                     """),
-                    {"id": str(row.id), "sc": status_code},
-                )
-                db.execute(
-                    text("""
-                        UPDATE insights
-                        SET delivery_status = 'delivered', delivered_at = NOW()
-                        WHERE id = :id
-                    """),
-                    {"id": str(row.i_id)},
+                    {"id": str(row.id), "sc": status_code, "err": err},
                 )
                 db.execute(
                     text("""
                         UPDATE webhook_config
-                        SET consecutive_failures = 0, last_delivery_at = NOW()
+                        SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1
                         WHERE id = :wid
                     """),
                     {"wid": str(row.webhook_id)},
                 )
-                delivered += 1
-                continue
+                # Bug 3.4: auto-disable the webhook if it has hit threshold.
+                _maybe_auto_disable_webhook(db, row.webhook_id)
 
-            # Failure path — close this attempt, schedule next or mark dead
-            db.execute(
-                text("""
-                    UPDATE delivery_attempts
-                    SET status = 'failed', status_code = :sc, error = :err, attempted_at = NOW()
-                    WHERE id = :id
-                """),
-                {"id": str(row.id), "sc": status_code, "err": err},
-            )
-            db.execute(
-                text("""
-                    UPDATE webhook_config
-                    SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1
-                    WHERE id = :wid
-                """),
-                {"wid": str(row.webhook_id)},
-            )
+                # Bug 3.3: permanent 4xx → straight to DLQ (skip retries).
+                permanent = _is_permanent_failure(status_code)
+                delay_s = None if permanent else _next_delay(row.attempt_number + 1)
 
-            delay_s = _next_delay(row.attempt_number + 1)
-            if delay_s is None:
-                # Retries exhausted — park in DLQ
-                db.execute(
-                    text("""
-                        INSERT INTO delivery_attempts
-                            (id, org_id, webhook_id, insight_id,
-                             attempt_number, status, status_code, error,
-                             scheduled_at, attempted_at)
-                        VALUES
-                            (:id, :oid, :wid, :iid,
-                             :n, 'dead', :sc, :err,
-                             NOW(), NOW())
-                    """),
-                    {
-                        "id": str(uuid4()), "oid": str(row.org_id),
-                        "wid": str(row.webhook_id), "iid": str(row.i_id),
-                        "n": row.attempt_number + 1, "sc": status_code, "err": err,
-                    },
-                )
-                db.execute(
-                    text("""
-                        UPDATE insights SET delivery_status = 'failed_permanent'
-                        WHERE id = :id
-                    """),
-                    {"id": str(row.i_id)},
-                )
-                dead += 1
-            else:
-                next_at = datetime.now(timezone.utc) + timedelta(seconds=delay_s)
-                db.execute(
-                    text("""
-                        INSERT INTO delivery_attempts
-                            (id, org_id, webhook_id, insight_id,
-                             attempt_number, status, scheduled_at, next_attempt_at)
-                        VALUES
-                            (:id, :oid, :wid, :iid,
-                             :n, 'pending', NOW(), :nxt)
-                    """),
-                    {
-                        "id": str(uuid4()), "oid": str(row.org_id),
-                        "wid": str(row.webhook_id), "iid": str(row.i_id),
-                        "n": row.attempt_number + 1, "nxt": next_at,
-                    },
-                )
-                retried += 1
+                if delay_s is None:
+                    db.execute(
+                        text("""
+                            INSERT INTO delivery_attempts
+                                (id, org_id, webhook_id, insight_id,
+                                 attempt_number, status, status_code, error,
+                                 scheduled_at, attempted_at)
+                            VALUES
+                                (:id, :oid, :wid, :iid,
+                                 :n, 'dead', :sc, :err,
+                                 NOW(), NOW())
+                        """),
+                        {
+                            "id": str(uuid4()), "oid": str(row.org_id),
+                            "wid": str(row.webhook_id), "iid": str(row.i_id),
+                            "n": row.attempt_number + 1, "sc": status_code, "err": err,
+                        },
+                    )
+                    db.execute(
+                        text("""
+                            UPDATE insights SET delivery_status = 'failed_permanent'
+                            WHERE id = :id
+                        """),
+                        {"id": str(row.i_id)},
+                    )
+                    db.commit()  # Bug 3.2
+                    dead += 1
+                else:
+                    next_at = datetime.now(timezone.utc) + timedelta(seconds=delay_s)
+                    try:
+                        db.execute(
+                            text("""
+                                INSERT INTO delivery_attempts
+                                    (id, org_id, webhook_id, insight_id,
+                                     attempt_number, status, scheduled_at, next_attempt_at)
+                                VALUES
+                                    (:id, :oid, :wid, :iid,
+                                     :n, 'pending', NOW(), :nxt)
+                            """),
+                            {
+                                "id": str(uuid4()), "oid": str(row.org_id),
+                                "wid": str(row.webhook_id), "iid": str(row.i_id),
+                                "n": row.attempt_number + 1, "nxt": next_at,
+                            },
+                        )
+                        db.commit()  # Bug 3.2
+                        retried += 1
+                    except IntegrityError:
+                        # Bug 3.5: concurrent scheduler already inserted this.
+                        db.rollback()
+                        logger.debug(
+                            f"duplicate retry attempt suppressed insight={row.i_id}"
+                        )
+            except Exception as e:
+                db.rollback()
+                logger.warning(f"webhook delivery row commit failed: {e}")
 
-        db.commit()
         logger.info(
             f"Webhook delivery: delivered={delivered} retried={retried} dead={dead}"
         )
@@ -323,26 +460,46 @@ def schedule_for_recommendations(org_id: str | None = None) -> int:
                 {"oid": oid},
             ).fetchall()
             if not configs:
-                # Nothing to deliver to — mark as delivered so we stop scanning.
-                db.execute(
-                    text("UPDATE recommendations SET delivered_at = NOW() WHERE id = :id"),
-                    {"id": str(rec.id)},
-                )
+                # Bug 3.1 (recommendations): grace period before terminal.
+                # `recommendations` doesn't have a delivery_status column, so
+                # we leave delivered_at NULL during grace, then set NOW() to
+                # stop scanning after expiry.
+                from app.config import GENIOS_WEBHOOK_RETRY_SCHEDULE as _  # noqa: F401 — keep import order
+
+                try:
+                    rec_age_days = (
+                        datetime.now(timezone.utc) - rec.created_at.replace(tzinfo=timezone.utc)
+                    ).days if hasattr(rec, "created_at") and rec.created_at else 0
+                except Exception:
+                    rec_age_days = 0
+                if rec_age_days > NO_WEBHOOK_EXPIRY_DAYS:
+                    db.execute(
+                        text("UPDATE recommendations SET delivered_at = NOW() WHERE id = :id"),
+                        {"id": str(rec.id)},
+                    )
+                    db.commit()
                 continue
             for cfg in configs:
-                db.execute(
-                    text("""
-                        INSERT INTO delivery_attempts
-                            (id, org_id, webhook_id, recommendation_id,
-                             attempt_number, status, scheduled_at, next_attempt_at)
-                        VALUES
-                            (:id, :oid, :wid, :rid,
-                             1, 'pending', NOW(), NOW())
-                    """),
-                    {"id": str(uuid4()), "oid": oid, "wid": str(cfg.id), "rid": str(rec.id)},
-                )
-                enqueued += 1
-        db.commit()
+                try:
+                    db.execute(
+                        text("""
+                            INSERT INTO delivery_attempts
+                                (id, org_id, webhook_id, recommendation_id,
+                                 attempt_number, status, scheduled_at, next_attempt_at)
+                            VALUES
+                                (:id, :oid, :wid, :rid,
+                                 1, 'pending', NOW(), NOW())
+                        """),
+                        {"id": str(uuid4()), "oid": oid, "wid": str(cfg.id), "rid": str(rec.id)},
+                    )
+                    db.commit()  # Bug 3.2
+                    enqueued += 1
+                except IntegrityError:
+                    # Bug 3.5
+                    db.rollback()
+                    logger.debug(
+                        f"duplicate pending attempt suppressed rec={rec.id} webhook={cfg.id}"
+                    )
         return enqueued
     finally:
         db.close()
@@ -406,6 +563,28 @@ def deliver_due_recommendations(org_id: str | None = None) -> dict:
                 "created_at": row.created_at.isoformat() if row.created_at else None,
             }
             body = json.dumps(payload, default=str)
+
+            # Bug 3.6: payload size guard for recommendations too.
+            if len(body.encode("utf-8")) > MAX_PAYLOAD_BYTES:
+                logger.error(
+                    f"webhook payload too large rec={row.r_id} bytes={len(body)}"
+                )
+                try:
+                    db.execute(
+                        text("""
+                            UPDATE delivery_attempts
+                            SET status='dead', error='payload_too_large', attempted_at=NOW()
+                            WHERE id=:id
+                        """),
+                        {"id": str(row.id)},
+                    )
+                    db.commit()
+                    dead += 1
+                except Exception as e:
+                    db.rollback()
+                    logger.warning(f"rec payload_too_large commit failed: {e}")
+                continue
+
             signature = _sign_payload(body, row.secret)
 
             status_code = None
@@ -427,86 +606,103 @@ def deliver_due_recommendations(org_id: str | None = None) -> dict:
 
             success = status_code is not None and 200 <= status_code < 300
 
-            if success:
+            try:
+                if success:
+                    db.execute(
+                        text("""
+                            UPDATE delivery_attempts
+                            SET status='succeeded', status_code=:sc, attempted_at=NOW()
+                            WHERE id=:id
+                        """),
+                        {"id": str(row.id), "sc": status_code},
+                    )
+                    db.execute(
+                        text("UPDATE recommendations SET delivered_at = NOW() WHERE id = :id"),
+                        {"id": str(row.r_id)},
+                    )
+                    db.execute(
+                        text("""
+                            UPDATE webhook_config
+                            SET consecutive_failures = 0, last_delivery_at = NOW()
+                            WHERE id = :wid
+                        """),
+                        {"wid": str(row.webhook_id)},
+                    )
+                    db.commit()  # Bug 3.2
+                    delivered += 1
+                    continue
+
                 db.execute(
                     text("""
                         UPDATE delivery_attempts
-                        SET status='succeeded', status_code=:sc, attempted_at=NOW()
+                        SET status='failed', status_code=:sc, error=:err, attempted_at=NOW()
                         WHERE id=:id
                     """),
-                    {"id": str(row.id), "sc": status_code},
-                )
-                db.execute(
-                    text("UPDATE recommendations SET delivered_at = NOW() WHERE id = :id"),
-                    {"id": str(row.r_id)},
+                    {"id": str(row.id), "sc": status_code, "err": err},
                 )
                 db.execute(
                     text("""
                         UPDATE webhook_config
-                        SET consecutive_failures = 0, last_delivery_at = NOW()
+                        SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1
                         WHERE id = :wid
                     """),
                     {"wid": str(row.webhook_id)},
                 )
-                delivered += 1
-                continue
+                _maybe_auto_disable_webhook(db, row.webhook_id)  # Bug 3.4
 
-            db.execute(
-                text("""
-                    UPDATE delivery_attempts
-                    SET status='failed', status_code=:sc, error=:err, attempted_at=NOW()
-                    WHERE id=:id
-                """),
-                {"id": str(row.id), "sc": status_code, "err": err},
-            )
-            db.execute(
-                text("""
-                    UPDATE webhook_config
-                    SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1
-                    WHERE id = :wid
-                """),
-                {"wid": str(row.webhook_id)},
-            )
+                # Bug 3.3: permanent 4xx → straight to DLQ.
+                permanent = _is_permanent_failure(status_code)
+                delay_s = None if permanent else _next_delay(row.attempt_number + 1)
 
-            delay_s = _next_delay(row.attempt_number + 1)
-            if delay_s is None:
-                db.execute(
-                    text("""
-                        INSERT INTO delivery_attempts
-                            (id, org_id, webhook_id, recommendation_id,
-                             attempt_number, status, status_code, error,
-                             scheduled_at, attempted_at)
-                        VALUES
-                            (:id, :oid, :wid, :rid,
-                             :n, 'dead', :sc, :err,
-                             NOW(), NOW())
-                    """),
-                    {
-                        "id": str(uuid4()), "oid": str(row.org_id),
-                        "wid": str(row.webhook_id), "rid": str(row.r_id),
-                        "n": row.attempt_number + 1, "sc": status_code, "err": err,
-                    },
-                )
-                dead += 1
-            else:
-                next_at = datetime.now(timezone.utc) + timedelta(seconds=delay_s)
-                db.execute(
-                    text("""
-                        INSERT INTO delivery_attempts
-                            (id, org_id, webhook_id, recommendation_id,
-                             attempt_number, status, scheduled_at, next_attempt_at)
-                        VALUES
-                            (:id, :oid, :wid, :rid,
-                             :n, 'pending', NOW(), :nxt)
-                    """),
-                    {
-                        "id": str(uuid4()), "oid": str(row.org_id),
-                        "wid": str(row.webhook_id), "rid": str(row.r_id),
-                        "n": row.attempt_number + 1, "nxt": next_at,
-                    },
-                )
-                retried += 1
-        db.commit()
+                if delay_s is None:
+                    db.execute(
+                        text("""
+                            INSERT INTO delivery_attempts
+                                (id, org_id, webhook_id, recommendation_id,
+                                 attempt_number, status, status_code, error,
+                                 scheduled_at, attempted_at)
+                            VALUES
+                                (:id, :oid, :wid, :rid,
+                                 :n, 'dead', :sc, :err,
+                                 NOW(), NOW())
+                        """),
+                        {
+                            "id": str(uuid4()), "oid": str(row.org_id),
+                            "wid": str(row.webhook_id), "rid": str(row.r_id),
+                            "n": row.attempt_number + 1, "sc": status_code, "err": err,
+                        },
+                    )
+                    db.commit()
+                    dead += 1
+                else:
+                    next_at = datetime.now(timezone.utc) + timedelta(seconds=delay_s)
+                    try:
+                        db.execute(
+                            text("""
+                                INSERT INTO delivery_attempts
+                                    (id, org_id, webhook_id, recommendation_id,
+                                     attempt_number, status, scheduled_at, next_attempt_at)
+                                VALUES
+                                    (:id, :oid, :wid, :rid,
+                                     :n, 'pending', NOW(), :nxt)
+                            """),
+                            {
+                                "id": str(uuid4()), "oid": str(row.org_id),
+                                "wid": str(row.webhook_id), "rid": str(row.r_id),
+                                "n": row.attempt_number + 1, "nxt": next_at,
+                            },
+                        )
+                        db.commit()
+                        retried += 1
+                    except IntegrityError:
+                        db.rollback()
+                        logger.debug(
+                            f"duplicate retry attempt suppressed rec={row.r_id}"
+                        )
+            except Exception as e:
+                db.rollback()
+                logger.warning(f"recommendation delivery row commit failed: {e}")
+
         return {"delivered": delivered, "retried": retried, "dead": dead}
     finally:
         db.close()

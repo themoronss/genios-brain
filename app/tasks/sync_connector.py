@@ -201,12 +201,17 @@ def _insert_canonical_sms(db, org_id: str, agent_uuid: Optional[str],
     if not contact_id:
         return None
     body = (ev.get("body") or ev.get("text") or "")
+    # Item #6: explicitly set interaction_type='sms' so channel recommendation
+    # can recognize the channel. Without this, default ('other') was set and
+    # the SMS channel was invisible to get_contact_channel_profile().
     return db.execute(
         text("""
             INSERT INTO interactions
                 (org_id, contact_id, agent_uuid, account_id, direction, summary,
-                 raw_snippet, interaction_at, source, external_id, interaction_kind)
-            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, 'sms', :ext, 'sms')
+                 raw_snippet, interaction_at, source, external_id,
+                 interaction_kind, interaction_type)
+            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, 'sms', :ext,
+                    'sms', 'sms')
             RETURNING id::text
         """),
         {
@@ -240,13 +245,16 @@ def _insert_canonical_call(db, org_id: str, agent_uuid: Optional[str],
         dur = 0
     transcript = ev.get("transcript") or ""
     summary = transcript if transcript else f"Call ({dur}s)"
+    # Item #6: set interaction_type='call' explicitly so channel
+    # recommendation can score the call channel correctly.
     return db.execute(
         text("""
             INSERT INTO interactions
                 (org_id, contact_id, agent_uuid, account_id, direction, summary,
-                 raw_snippet, interaction_at, source, external_id, interaction_kind,
-                 duration_sec, transcript)
-            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, 'phone', :ext, 'call', :dur, :tr)
+                 raw_snippet, interaction_at, source, external_id,
+                 interaction_kind, interaction_type, duration_sec, transcript)
+            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, 'phone', :ext,
+                    'call', 'call', :dur, :tr)
             RETURNING id::text
         """),
         {
