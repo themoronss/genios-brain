@@ -8,6 +8,7 @@ purpose to a different provider without touching callers.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -21,6 +22,12 @@ from app.database import SessionLocal
 from app.llm.cost import calc_cost_usd
 
 logger = logging.getLogger(__name__)
+
+# Embedding cache: same text+model → same vector (deterministic). 24h TTL.
+# Cache key includes model + dim so changing either invalidates old entries
+# and prevents semantic mismatch with vectors already stored in pgvector.
+EMBED_CACHE_TTL_SEC = int(os.getenv("GENIOS_EMBED_CACHE_TTL_SEC", "86400"))
+EMBED_CACHE_PREFIX = "embed:"
 
 
 class TenantCostGuardrailExceeded(Exception):
@@ -74,6 +81,33 @@ def _load_routes() -> dict:
 
 
 ROUTES = _load_routes()
+
+
+def _embed_cache_key(model: str, dim: int, text_in: str) -> str:
+    h = hashlib.md5(text_in.encode("utf-8")).hexdigest()
+    return f"{EMBED_CACHE_PREFIX}{model}:{dim}:{h}"
+
+
+def _embed_cache_get(key: str) -> Optional[list]:
+    try:
+        from app.redis_client import redis_client
+        raw = redis_client.get(key)
+        if not raw:
+            return None
+        vec = json.loads(raw)
+        if isinstance(vec, list):
+            return vec
+    except Exception as e:
+        logger.debug(f"embed cache read failed: {e}")
+    return None
+
+
+def _embed_cache_set(key: str, embedding: list) -> None:
+    try:
+        from app.redis_client import redis_client
+        redis_client.setex(key, EMBED_CACHE_TTL_SEC, json.dumps(embedding))
+    except Exception as e:
+        logger.debug(f"embed cache write failed: {e}")
 
 
 class LLMClient:
@@ -161,8 +195,21 @@ class LLMClient:
         text_in: str,
         trace_id: Optional[str] = None,
     ) -> list:
-        """Return a 768-dim embedding. Currently Gemini-only."""
+        """Return a 768-dim embedding. Currently Gemini-only.
+
+        Caches deterministic results in Redis keyed by model+dim+md5(text) so
+        repeated situations ("follow up", "deal stuck") don't re-hit Gemini.
+        Model+dim in the key prevents semantic mismatch if either changes.
+        """
         provider, model = ROUTES["embed"]
+        dim = 768
+
+        cache_key = _embed_cache_key(model, dim, text_in)
+        cached = _embed_cache_get(cache_key)
+        if cached is not None:
+            # Cache hit: skip Gemini + skip llm_usage write (no cost incurred).
+            return cached
+
         if org_id:
             self._check_cost_guardrail(org_id)
 
@@ -172,9 +219,11 @@ class LLMClient:
         result = genai.embed_content(
             model=f"models/{model}",
             content=text_in,
-            output_dimensionality=768,
+            output_dimensionality=dim,
         )
         latency_ms = int((time.monotonic() - t0) * 1000)
+        embedding = result["embedding"]
+        _embed_cache_set(cache_key, embedding)
         # embed_content tokens aren't surfaced on free tier; approximate from input.
         in_tok = max(1, len(text_in) // 4)
         self._log_usage(
@@ -182,7 +231,7 @@ class LLMClient:
             in_tok=in_tok, out_tok=0, cost_usd=0.0,
             latency_ms=latency_ms, trace_id=trace_id,
         )
-        return result["embedding"]
+        return embedding
 
     # ──────────────────────────────────────────────────────────────
     # Providers
