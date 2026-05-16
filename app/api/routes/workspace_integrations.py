@@ -136,12 +136,13 @@ def list_accounts(org_id: str, db: Session = Depends(get_db)):
         grouped.setdefault(tool, []).append({
             "account_id":            r[0],
             "account_kind":          r[1],
-            "label":                 r[3],
-            "last_event_at":         r[4].isoformat() if r[4] else None,
-            "sync_status":           r[5],
-            "sync_error":            r[6],
-            "last_sync_at":          r[7].isoformat() if r[7] else None,
-            "consecutive_failures":  r[8] or 0,
+            "channel":               r[3],   # email / sms / phone / calendar
+            "label":                 r[4],
+            "last_event_at":         r[5].isoformat() if r[5] else None,
+            "sync_status":           r[6],
+            "sync_error":            r[7],
+            "last_sync_at":          r[8].isoformat() if r[8] else None,
+            "consecutive_failures":  r[9] or 0,
         })
     return {"tools": grouped}
 

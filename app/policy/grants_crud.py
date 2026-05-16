@@ -129,9 +129,10 @@ def remove_grant(db: Session, org_id: str, agent_uuid: str,
 
 def list_workspace_accounts(db: Session, org_id: str):
     """All connected accounts at workspace level. Returns rows with
-    (id, kind, tool, label, last_event_at, sync_status, sync_error,
+    (id, kind, tool, channel, label, last_event_at, sync_status, sync_error,
     last_sync_at, consecutive_failures) — UI uses status fields to render
-    badges (green Synced / red Auth failed / yellow Syncing / gray Stale)."""
+    badges (green Synced / red Auth failed / yellow Syncing / gray Stale)
+    and `channel` to render the right icon (📧 email / 💬 sms / 📞 voice)."""
     return db.execute(
         text("""
             SELECT id::text,
@@ -140,6 +141,8 @@ def list_workspace_accounts(db: Session, org_id: str):
                         WHEN account_email LIKE 'tool:%' THEN
                              SPLIT_PART(account_email, ':', 2)
                         ELSE 'gmail' END                AS tool,
+                   CASE WHEN account_email LIKE 'tool:gcal:%' THEN 'calendar'
+                        ELSE 'email' END                AS channel,
                    CASE WHEN account_email LIKE 'tool:%' THEN
                              SPLIT_PART(account_email, ':', 3)
                         ELSE account_email END           AS label,
@@ -154,6 +157,7 @@ def list_workspace_accounts(db: Session, org_id: str):
             SELECT id::text,
                    'connector' AS kind,
                    COALESCE(metadata->>'provider', source) AS tool,
+                   source                               AS channel,
                    COALESCE(metadata->>'mailbox_address',
                             metadata->>'phone_number',
                             metadata->>'account', source) AS label,
@@ -164,7 +168,7 @@ def list_workspace_accounts(db: Session, org_id: str):
                    COALESCE(consecutive_failures, 0)
             FROM connector_credentials
             WHERE org_id = :o AND is_active = TRUE AND agent_uuid IS NULL
-            ORDER BY tool, label
+            ORDER BY tool, channel, label
         """),
         {"o": org_id},
     ).fetchall()
