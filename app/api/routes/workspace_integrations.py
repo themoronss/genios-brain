@@ -165,7 +165,12 @@ def connect_inkbox(org_id: str, req: InkboxConnectRequest,
     ops = adapters.get("inkbox") or {}
     verify = ops.get("verify")
     if verify:
-        ok, msg = verify({"api_key": metadata["api_key"], "mailbox_address": metadata["mailbox_address"]})
+        try:
+            ok, msg = verify({"api_key": metadata["api_key"], "mailbox_address": metadata["mailbox_address"]})
+        except UnicodeEncodeError:
+            # Smart quotes / NBSP / ZWSP in pasted key would crash the HTTP layer.
+            # Surface a clean modal error instead of a generic "Failed to fetch".
+            raise _http({"error": "INVALID_KEY_CHARS", "message": "API key has hidden characters (smart quotes / non-breaking spaces). Re-copy from Inkbox console."}, 400)
         if not ok:
             raise _http({"error": "VERIFY_FAILED", "message": msg}, 400)
 

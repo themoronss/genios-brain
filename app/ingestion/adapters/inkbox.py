@@ -31,11 +31,23 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from typing import Optional
 
 import requests
 
 from . import register
+
+# Inkbox API keys are pure ASCII (ApiKey_<uuid>.<token>). Pasting from the
+# console sometimes drags in NBSP, zero-width space, or smart quotes — those
+# blow up `requests` later with `UnicodeEncodeError: latin-1 codec can't
+# encode...` when set on the X-API-Key header. Strip anything outside the
+# printable-ASCII range up front.
+_NON_PRINTABLE_ASCII = re.compile(r"[^\x21-\x7e]")
+
+
+def _clean_key(k: Optional[str]) -> str:
+    return _NON_PRINTABLE_ASCII.sub("", k or "")
 
 logger = logging.getLogger(__name__)
 
@@ -170,8 +182,8 @@ def _normalise_email(raw: dict, mailbox_address: str) -> dict:
 def fetch_emails(credentials: dict, since_iso: Optional[str] = None) -> list[dict]:
     """Pull recent inbound messages for an Inkbox mailbox.
     credentials: { api_key, mailbox_address }."""
-    key = (credentials.get("api_key") or "").strip()
-    mailbox = (credentials.get("mailbox_address") or credentials.get("account") or "").strip().lower()
+    key = _clean_key(credentials.get("api_key"))
+    mailbox = _clean_key(credentials.get("mailbox_address") or credentials.get("account")).lower()
     if not key:
         raise ValueError("inkbox adapter: api_key required in credentials")
     if not mailbox:
@@ -185,7 +197,7 @@ def fetch_emails(credentials: dict, since_iso: Optional[str] = None) -> list[dic
 
 def _resolve_phone_number_id(credentials: dict, key: str) -> Optional[str]:
     """Use the stored phone_number_id, else discover the agent's first number."""
-    pnid = (credentials.get("phone_number_id") or credentials.get("phone_id") or "").strip()
+    pnid = _clean_key(credentials.get("phone_number_id") or credentials.get("phone_id"))
     if pnid:
         return pnid
     data = _get_json(f"{INKBOX_BASE}/api/v1/phone/numbers", key)
@@ -218,7 +230,7 @@ def _normalise_sms(raw: dict) -> Optional[dict]:
 def fetch_sms(credentials: dict, since_iso: Optional[str] = None) -> list[dict]:
     """Pull recent SMS/MMS for an Inkbox phone number.
     credentials: { api_key, phone_number_id? } — number is auto-discovered if absent."""
-    key = (credentials.get("api_key") or "").strip()
+    key = _clean_key(credentials.get("api_key"))
     if not key:
         raise ValueError("inkbox adapter: api_key required in credentials")
     pnid = _resolve_phone_number_id(credentials, key)
@@ -281,7 +293,7 @@ def _normalise_call(raw: dict, transcript: str) -> Optional[dict]:
 def fetch_calls(credentials: dict, since_iso: Optional[str] = None) -> list[dict]:
     """Pull recent voice calls (with transcripts) for an Inkbox phone number.
     credentials: { api_key, phone_number_id? }."""
-    key = (credentials.get("api_key") or "").strip()
+    key = _clean_key(credentials.get("api_key"))
     if not key:
         raise ValueError("inkbox adapter: api_key required in credentials")
     pnid = _resolve_phone_number_id(credentials, key)
@@ -319,12 +331,17 @@ def normalise_webhook(payload: dict) -> Optional[dict]:
 def verify_credentials(credentials: dict) -> tuple[bool, str]:
     """Connect-time check: GET /mailboxes/{email} confirms the API key is valid,
     the mailbox exists, and the key can access it. Returns (ok, message)."""
-    key = (credentials.get("api_key") or "").strip()
-    mailbox = (credentials.get("mailbox_address") or "").strip().lower()
+    raw_key = (credentials.get("api_key") or "").strip()
+    key = _clean_key(raw_key)
+    mailbox = _clean_key(credentials.get("mailbox_address")).lower()
     if not key:
         return False, "API key is required"
     if not mailbox:
         return False, "Mailbox address is required"
+    if key != raw_key:
+        # Heuristic: smart quotes / NBSP / ZWSP got pasted in. Tell the user
+        # before we even hit Inkbox — otherwise requests crashes on header encode.
+        return False, "API key has hidden characters (smart quotes / non-breaking spaces). Re-copy from Inkbox console into a plain field."
     try:
         r = requests.get(
             f"{INKBOX_BASE}/api/v1/mail/mailboxes/{mailbox}",
@@ -344,7 +361,7 @@ def verify_credentials(credentials: dict) -> tuple[bool, str]:
 def list_phone_numbers(credentials: dict) -> list[dict]:
     """Best-effort: return the phone numbers this API key can see (id + number).
     Empty if the key has no phone scope. Used to auto-provision sms/call pull."""
-    key = (credentials.get("api_key") or "").strip()
+    key = _clean_key(credentials.get("api_key"))
     if not key:
         return []
     try:
