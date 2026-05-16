@@ -148,7 +148,10 @@ def run_reextract(org_id: str, batch_size: int = BATCH_SIZE):
         user_emails = {}
         for token_row in tokens:
             try:
-                svc = build_gmail_service(token_row[0], token_row[1])
+                svc = build_gmail_service(
+                    token_row[0], token_row[1],
+                    db=db, org_id=org_id, account_email=token_row[2],
+                )
                 email = get_user_email(svc)
                 services[token_row[2]] = svc
                 user_emails[token_row[2]] = email

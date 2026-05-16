@@ -175,13 +175,30 @@ def touch_last_event(db: Session, connector_id: str) -> None:
     )
 
 
+class ConnectorDecryptError(RuntimeError):
+    """Raised when an encrypted credential blob can't be decrypted (key rotated,
+    env var missing, or token corrupted). Surfaces in last_sync_error instead
+    of silently emptying the field and producing the misleading
+    'api_key required in credentials' downstream error."""
+
+
 def decrypt_metadata(meta: dict) -> dict:
     """Reverse of upsert's encryption — pulls plaintext back out.
-    Used by Celery sync tasks before calling adapter.fetch."""
+    Used by Celery sync tasks before calling adapter.fetch.
+
+    Raises ConnectorDecryptError when a Fernet-encrypted blob (prefix 'fnc:')
+    fails to decrypt. Returning an empty string here masks the real cause
+    (GENIOS_CONNECTOR_KEY mismatch) behind a generic adapter error."""
     out = dict(meta or {})
     for k in _SENSITIVE_KEYS:
         if k in out and out[k]:
-            plain = _decrypt(str(out[k]))
+            blob = str(out[k])
+            plain = _decrypt(blob)
+            if plain is None and blob.startswith("fnc:"):
+                raise ConnectorDecryptError(
+                    f"failed to decrypt '{k}' — "
+                    "GENIOS_CONNECTOR_KEY mismatch or token corrupted"
+                )
             out[k] = plain or ""
     return out
 

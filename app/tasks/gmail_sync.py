@@ -462,7 +462,10 @@ def _sync_single_account(
         pass
 
     try:
-        service = build_gmail_service(access_token, refresh_token)
+        service = build_gmail_service(
+            access_token, refresh_token,
+            db=db, org_id=org_id, account_email=account_identifier,
+        )
 
         # Get the user's own email address
         user_email = get_user_email(service)

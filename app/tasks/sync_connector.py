@@ -95,9 +95,9 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: Optional[str],
         text("""
             INSERT INTO interactions
                 (org_id, contact_id, agent_uuid, account_id, direction, subject, summary,
-                 raw_snippet, interaction_at, source, external_id,
-                 thread_external_id, interaction_kind)
-            VALUES (:o, :c, :a, :acct, :dir, :subj, :sum, :raw, :at, 'email', :ext, :thr, 'email')
+                 raw_snippet, raw_body, interaction_at, source, external_id,
+                 thread_external_id, interaction_kind, extraction_status)
+            VALUES (:o, :c, :a, :acct, :dir, :subj, :sum, :raw, :body, :at, 'email', :ext, :thr, 'email', 'pending')
             RETURNING id::text
         """),
         {
@@ -106,6 +106,7 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: Optional[str],
             "subj": (ev.get("subject") or "")[:500],
             "sum": (ev.get("body_text") or ev.get("body_html") or "")[:2000],
             "raw": (ev.get("body_text") or ev.get("body_html") or "")[:5000],
+            "body": ev.get("body_text") or ev.get("body_html") or "",
             "at": sent_dt,
             "ext": ext,
             "thr": ev.get("thread_external_id") or ev.get("in_reply_to_external_id"),
@@ -310,18 +311,36 @@ def task_sync_connector(self, connector_id: str):
     accepted = 0
     duplicates = 0
     try:
+        # Concurrency guard: atomically claim the row by flipping
+        # last_sync_status -> 'syncing' only if no peer is mid-sync. The
+        # 5-minute staleness check breaks the lock if a crashed peer left
+        # the flag set. Returning rows here means we won the race; an empty
+        # result means a peer is already syncing this connector — return
+        # immediately rather than racing and overwriting their status.
         row = db.execute(
             text("""
-                SELECT cc.id::text, cc.org_id::text, cc.agent_uuid::text, cc.source,
-                       cc.metadata, cc.last_event_at
-                FROM connector_credentials cc
-                WHERE cc.id = :id AND cc.is_active = TRUE
+                UPDATE connector_credentials
+                SET last_sync_status = 'syncing',
+                    last_sync_at    = NOW()
+                WHERE id = :id
+                  AND is_active = TRUE
+                  AND (
+                      last_sync_status IS NULL
+                      OR last_sync_status != 'syncing'
+                      OR last_sync_at IS NULL
+                      OR last_sync_at < NOW() - INTERVAL '5 minutes'
+                  )
+                RETURNING id::text, org_id::text, agent_uuid::text, source,
+                          metadata, last_event_at
             """),
             {"id": connector_id},
         ).fetchone()
+        db.commit()
         if not row:
-            logger.warning(f"sync: connector {connector_id} not found / inactive")
-            return {"connector_id": connector_id, "status": "missing"}
+            logger.info(
+                f"sync: connector {connector_id} not found / inactive / locked by peer — skipping"
+            )
+            return {"connector_id": connector_id, "status": "skipped_locked"}
 
         provider = (row.metadata or {}).get("provider", "custom")
         ops = adapters.get(provider)
@@ -329,17 +348,18 @@ def task_sync_connector(self, connector_id: str):
             _set_sync_status(db, connector_id, "failed", error=f"No adapter for provider '{provider}'")
             return {"connector_id": connector_id, "status": "no_adapter", "provider": provider}
 
-        creds = connector_crud.decrypt_metadata(row.metadata)
+        try:
+            creds = connector_crud.decrypt_metadata(row.metadata)
+        except connector_crud.ConnectorDecryptError as de:
+            # Surface the real cause (key mismatch / corrupted token) on the
+            # connector row so the dashboard shows a useful error instead of
+            # the misleading 'api_key required in credentials' downstream.
+            _set_sync_status(db, connector_id, "auth_failed", error=str(de))
+            return {"connector_id": connector_id, "status": "decrypt_failed", "error": str(de)}
+
         # On a cold start (no prior events) reach back 30 days so the mailbox
         # arrives with real history; afterwards we only need what's new.
         since = (row.last_event_at or (datetime.now(timezone.utc) - timedelta(days=30))).isoformat()
-
-        # Mark syncing in flight (UI shows yellow spinner)
-        db.execute(
-            text("UPDATE connector_credentials SET last_sync_status='syncing' WHERE id=:id"),
-            {"id": connector_id},
-        )
-        db.commit()
 
         # Email path (Inkbox / IMAP / Gmail / Postmark / ...)
         if row.source == "email" and "fetch_email" in ops:

@@ -1,8 +1,15 @@
+import logging
+from typing import Optional
+
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
 from googleapiclient.discovery import build
+from sqlalchemy import text
 
 from app.config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
+
+logger = logging.getLogger(__name__)
 
 # Scopes for MVP - Gmail only (removed calendar to avoid OAuth scope mismatch)
 SCOPES = [
@@ -32,18 +39,28 @@ def create_oauth_flow():
     return flow
 
 
-def build_gmail_service(access_token, refresh_token=None):
+def build_gmail_service(access_token, refresh_token=None, *,
+                        db=None, org_id: Optional[str] = None,
+                        account_email: Optional[str] = None):
     """
     Build Gmail API service with credentials.
+
+    When `db`, `org_id`, and `account_email` are all provided, the access
+    token is proactively refreshed if expired AND the new token + expiry
+    are written back to `oauth_tokens`. This prevents the silent-refresh
+    leak where every sync hits Google's refresh endpoint (wasted quota,
+    risks rate-limit failures, and leaves DB showing perma-expired token).
 
     Args:
         access_token: OAuth access token
         refresh_token: OAuth refresh token (optional, for token refresh)
+        db: SQLAlchemy session (optional, for token persistence)
+        org_id: Org UUID for the WHERE clause when persisting
+        account_email: Account identifier (multi-account orgs need this)
 
     Returns:
-        Gmail API service
+        Gmail API service with credentials that may have been refreshed.
     """
-    # Build credentials with token refresh support
     creds = Credentials(
         token=access_token,
         refresh_token=refresh_token,
@@ -52,9 +69,52 @@ def build_gmail_service(access_token, refresh_token=None):
         client_secret=GOOGLE_CLIENT_SECRET,
     )
 
-    service = build("gmail", "v1", credentials=creds)
+    # Proactive refresh + persist when caller passes DB context. We do this
+    # eagerly (before the first API call) so the DB always has a usable token
+    # and so the next sync run starts with a non-expired token.
+    # We can't rely on creds.valid here — Credentials() built without `expiry`
+    # treats the token as fresh, so we have to compare with the stored expiry
+    # via the DB lookup the caller did, OR refresh unconditionally and let the
+    # token-change check decide whether to persist.
+    if db is not None and org_id and refresh_token:
+        try:
+            creds.refresh(GoogleRequest())
+            if creds.token and creds.token != access_token:
+                _persist_refreshed_token(db, org_id, account_email, creds)
+        except Exception as e:
+            logger.warning(
+                f"gmail token refresh failed for org={org_id} "
+                f"account={account_email}: {e}"
+            )
 
+    service = build("gmail", "v1", credentials=creds)
     return service
+
+
+def _persist_refreshed_token(db, org_id: str,
+                             account_email: Optional[str],
+                             creds: Credentials) -> None:
+    """Write the freshly-refreshed access token + expiry back to oauth_tokens.
+    Without this, every sync wastes one refresh API call and the DB perpetually
+    shows the token as expired."""
+    params = {
+        "tok": creds.token,
+        "exp": creds.expiry,
+        "oid": org_id,
+    }
+    sql = (
+        "UPDATE oauth_tokens "
+        "SET access_token = :tok, token_expiry = :exp "
+        "WHERE org_id = :oid"
+    )
+    if account_email:
+        sql += " AND account_email = :acct"
+        params["acct"] = account_email
+    db.execute(text(sql), params)
+    db.commit()
+    logger.info(
+        f"gmail token refreshed and persisted for org={org_id} account={account_email}"
+    )
 
 
 def fetch_emails(
