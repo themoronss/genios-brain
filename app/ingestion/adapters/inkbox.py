@@ -316,16 +316,42 @@ def fetch_calls(credentials: dict, since_iso: Optional[str] = None) -> list[dict
 # ── Webhook payload normaliser (push mode — see ingest.py) ───────────────────
 # Inkbox sends: {event_type, timestamp, data: {...}}.
 def normalise_webhook(payload: dict) -> Optional[dict]:
-    """Map an Inkbox mail webhook → canonical email ingest event. Returns None
-    for non-(mail-received) events (SMS/call webhooks arrive on their own routes)."""
+    """Map an Inkbox webhook (mail / text / phone) → canonical ingest event.
+
+    Handled event_type values:
+      - message.received       → email path (uses _normalise_email)
+      - text.received          → SMS path (uses _normalise_sms)
+      - phone.incoming_call    → voice path (uses _normalise_call w/o transcript)
+
+    Returns None for anything else; the caller (ingest.py) then falls back to
+    treating the payload as already-canonical."""
     if not isinstance(payload, dict):
         return None
-    if payload.get("event_type") not in ("message.received",):
-        return None
+    et = payload.get("event_type") or ""
     data = payload.get("data") or {}
-    if not (data.get("id") or data.get("message_id")):
-        return None
-    return _normalise_email(data, "")
+
+    if et == "message.received":
+        if not (data.get("id") or data.get("message_id")):
+            return None
+        return _normalise_email(data, "")
+
+    if et == "text.received":
+        # Inkbox docs: data contains the stored inbound text record. Pull-endpoint
+        # response shape (used by _normalise_sms) is the same record, so reuse.
+        raw = data.get("text_message") or data
+        if not isinstance(raw, dict):
+            return None
+        return _normalise_sms(raw)
+
+    if et == "phone.incoming_call":
+        # Inbound call notification. Transcripts arrive on completion (pull-only),
+        # so for the push event we just record the call envelope.
+        raw = data.get("call") or data
+        if not isinstance(raw, dict):
+            return None
+        return _normalise_call(raw, transcript="")
+
+    return None
 
 
 def verify_credentials(credentials: dict) -> tuple[bool, str]:

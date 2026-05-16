@@ -253,8 +253,16 @@ def _maybe_normalise_vendor_payload(raw: bytes, source: str) -> bytes:
     if not isinstance(body, dict):
         return raw
 
-    # Inkbox shape: {event_type, timestamp, data: MailWebhookMessageData}
-    if source == "email" and body.get("event_type", "").startswith("message.") and isinstance(body.get("data"), dict):
+    # Inkbox shape: {event_type, timestamp, data: ...}. Same normaliser handles
+    # mail (message.received), SMS (text.received), and voice (phone.incoming_call)
+    # — dispatching on event_type internally.
+    et = body.get("event_type", "")
+    inkbox_event_for_source = (
+        (source == "email" and et.startswith("message.")) or
+        (source == "sms"   and et == "text.received") or
+        (source == "phone" and et == "phone.incoming_call")
+    )
+    if inkbox_event_for_source and isinstance(body.get("data"), dict):
         try:
             from app.ingestion.adapters.inkbox import normalise_webhook
             canonical = normalise_webhook(body)

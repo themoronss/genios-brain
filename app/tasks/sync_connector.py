@@ -481,13 +481,74 @@ def task_sync_connector(self, connector_id: str):
         db.close()
 
 
+def _discover_inkbox_phone_channels(db) -> int:
+    """For every active Inkbox email connector, run phone discovery so that
+    SMS + voice connector rows show up automatically when the client provisions
+    a phone number AFTER initial connect. Idempotent: skips numbers already
+    represented in connector_credentials. Returns count of newly created rows."""
+    from app.policy import connector_crud
+    from app.ingestion.adapters import inkbox as _inkbox
+    rows = db.execute(text("""
+        SELECT org_id::text, metadata
+        FROM connector_credentials
+        WHERE is_active = TRUE
+          AND source = 'email'
+          AND metadata->>'provider' = 'inkbox'
+    """)).fetchall()
+    created = 0
+    for org_id, meta in rows:
+        try:
+            creds = connector_crud.decrypt_metadata(meta)
+        except connector_crud.ConnectorDecryptError:
+            continue  # key mismatch — surfaced separately via sync error
+        api_key = creds.get("api_key")
+        if not api_key:
+            continue
+        try:
+            numbers = _inkbox.list_phone_numbers({"api_key": api_key})
+        except Exception as e:
+            logger.debug(f"inkbox phone discovery skipped for org={org_id}: {e}")
+            continue
+        for entry in numbers:
+            pnid = (entry or {}).get("phone_number_id")
+            if not pnid:
+                continue
+            for src in ("sms", "phone"):
+                exists = db.execute(text("""
+                    SELECT 1 FROM connector_credentials
+                    WHERE org_id = :o AND source = :s AND is_active = TRUE
+                      AND metadata->>'provider' = 'inkbox'
+                      AND metadata->>'phone_number_id' = :p
+                    LIMIT 1
+                """), {"o": org_id, "s": src, "p": str(pnid)}).fetchone()
+                if exists:
+                    continue
+                md = {"provider": "inkbox", "api_key": api_key, "phone_number_id": str(pnid)}
+                if entry.get("phone_number"):
+                    md["phone_number"] = entry["phone_number"]
+                connector_crud.upsert(db, org_id, agent_uuid=None, source=src, metadata=md)
+                created += 1
+    if created:
+        db.commit()
+        logger.info(f"inkbox phone discovery: created {created} new connector rows")
+    return created
+
+
 @celery.task(queue="low_priority")
 def task_sync_all_connectors():
     """Beat-triggered every 5 min. Fans out one sub-task per active workspace
     connector that has pull credentials (Phase 12: workspace-level only —
-    legacy per-agent rows still picked up for back-compat until migrated)."""
+    legacy per-agent rows still picked up for back-compat until migrated).
+
+    Also runs phone discovery for Inkbox connectors so SMS/voice channels
+    auto-provision when the client adds a phone number in Inkbox console
+    after the initial email connect."""
     db = SessionLocal()
     try:
+        try:
+            _discover_inkbox_phone_channels(db)
+        except Exception as e:
+            logger.warning(f"inkbox phone discovery failed: {e}")
         rows = db.execute(
             text("""
                 SELECT id::text FROM connector_credentials
