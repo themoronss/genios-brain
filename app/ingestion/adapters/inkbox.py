@@ -348,28 +348,37 @@ def normalise_webhook(payload: dict) -> Optional[dict]:
       - phone.incoming_call    → voice path (uses _normalise_call w/o transcript)
 
     Returns None for anything else; the caller (ingest.py) then falls back to
-    treating the payload as already-canonical."""
+    treating the payload as already-canonical.
+
+    Defensive: Inkbox sometimes wraps the record one level deeper
+    (`data.message`, `data.email`, `data.text_message`, `data.call`) so we
+    unwrap. We DON'T gate on id-field presence — `_normalise_*` already
+    tries every known alias and the EmailIngest/SmsIngest pydantic models
+    will reject downstream with a clear error if external_id stays empty."""
     if not isinstance(payload, dict):
         return None
     et = payload.get("event_type") or ""
     data = payload.get("data") or {}
+    if not isinstance(data, dict):
+        return None
 
     if et == "message.received":
-        if not (data.get("id") or data.get("message_id")):
-            return None
-        return _normalise_email(data, "")
-
-    if et == "text.received":
-        # Inkbox docs: data contains the stored inbound text record. Pull-endpoint
-        # response shape (used by _normalise_sms) is the same record, so reuse.
-        raw = data.get("text_message") or data
+        # Try unwrapping common containers; fall back to data itself.
+        raw = data.get("message") or data.get("email") or data
         if not isinstance(raw, dict):
             return None
+        # Log full shape once so we can verify field names in production.
+        logger.info(f"inkbox message.received keys: {sorted(raw.keys())[:20]}")
+        return _normalise_email(raw, "")
+
+    if et == "text.received":
+        raw = data.get("text_message") or data.get("text") or data.get("message") or data
+        if not isinstance(raw, dict):
+            return None
+        logger.info(f"inkbox text.received keys: {sorted(raw.keys())[:20]}")
         return _normalise_sms(raw)
 
     if et == "phone.incoming_call":
-        # Inbound call notification. Transcripts arrive on completion (pull-only),
-        # so for the push event we just record the call envelope.
         raw = data.get("call") or data
         if not isinstance(raw, dict):
             return None
