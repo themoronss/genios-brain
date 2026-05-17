@@ -199,7 +199,10 @@ def _register_inkbox_webhooks(
             if call_cid:
                 _merge_connector_metadata(db, call_cid, {
                     "inkbox_signing_key": secret,
-                    "call_mode": "auto_accept",
+                    # 'inkbox_managed' = whatever was already set on the
+                    # phone number in Inkbox console (we don't override).
+                    # Will flip to 'webhook' once voice-agent stack lands.
+                    "call_mode": "inkbox_managed",
                     "webhook_registered_at": now_iso,
                 })
     db.commit()
