@@ -26,6 +26,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.config import GENIOS_PUBLIC_URL
 from app.ingestion import adapters
 from app.policy import connector_crud, grants_crud
 
@@ -61,6 +62,143 @@ def _run_connector_sync(connector_id: str) -> None:
 # Cap how many phone numbers we auto-provision pull connectors for (an
 # admin-scoped key may see the whole org; agent-scoped keys see ~1).
 _MAX_AUTO_PHONE_NUMBERS = 5
+
+
+def _merge_connector_metadata(db: Session, connector_id: str, updates: dict) -> None:
+    """Shallow-merge `updates` into connector_credentials.metadata (JSONB).
+    Used to stamp webhook_registered_at / signing_secret / webhook_url after
+    out-of-band registration with Inkbox."""
+    import json as _json
+    db.execute(
+        text("""
+            UPDATE connector_credentials
+            SET metadata = COALESCE(metadata, '{}'::jsonb) || CAST(:patch AS jsonb)
+            WHERE id = :id
+        """),
+        {"id": connector_id, "patch": _json.dumps(updates)},
+    )
+
+
+def _existing_org_signing_secret(db: Session, org_id: str) -> Optional[str]:
+    """Return the org's stored Inkbox signing secret if any active inkbox
+    connector already has one. Keeps us from minting duplicate keys (Inkbox
+    only reveals plaintext once)."""
+    row = db.execute(
+        text("""
+            SELECT metadata->>'signing_secret'
+            FROM connector_credentials
+            WHERE org_id = :o AND is_active = TRUE
+              AND metadata->>'provider' = 'inkbox'
+              AND metadata ? 'signing_secret'
+            LIMIT 1
+        """),
+        {"o": org_id},
+    ).fetchone()
+    return row[0] if row and row[0] else None
+
+
+def _register_inkbox_webhooks(
+    db: Session, org_id: str, api_key: str,
+    email_connector_id: Optional[str],
+    mailbox_address: Optional[str],
+    phone_connector_ids: list[str],
+) -> None:
+    """After connector rows exist, mint a signing key (if org doesn't have one
+    yet) and PATCH each Inkbox resource with our webhook URL. Stamps
+    `webhook_registered_at` + `signing_secret` + `webhook_url` onto the
+    connector metadata. Entirely best-effort — if Inkbox is down or the API
+    key lacks scope, polling stays as the fallback."""
+    if not GENIOS_PUBLIC_URL:
+        logger.warning("inkbox webhooks not registered: GENIOS_PUBLIC_URL is unset")
+        return
+
+    from app.ingestion.adapters import inkbox as _inkbox
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # ── 1. Signing key (org-wide, plaintext returned only on first POST) ──
+    secret = _existing_org_signing_secret(db, org_id)
+    if not secret:
+        try:
+            secret = _inkbox.bootstrap_signing_key(api_key)
+        except Exception as e:
+            logger.warning(f"inkbox signing key bootstrap failed: {e}")
+            secret = None
+    if not secret:
+        logger.warning("inkbox webhooks not registered: no signing secret available")
+        return
+
+    # ── 2. Mailbox webhook ──
+    if email_connector_id and mailbox_address:
+        webhook_url = f"{GENIOS_PUBLIC_URL}/v1/webhooks/inkbox/{email_connector_id}"
+        try:
+            ok = _inkbox.register_mail_webhook(api_key, mailbox_address, webhook_url)
+        except PermissionError as pe:
+            logger.warning(f"inkbox mail webhook 401/403: {pe}")
+            ok = False
+        except Exception as e:
+            logger.warning(f"inkbox mail webhook register failed: {e}")
+            ok = False
+        if ok:
+            _merge_connector_metadata(db, email_connector_id, {
+                "signing_secret": secret,
+                "webhook_url": webhook_url,
+                "webhook_registered_at": now_iso,
+            })
+
+    # ── 3. Phone-number webhooks (SMS + call URLs on the same number) ──
+    # phone_connector_ids has up to 2 rows per number: one source='sms', one
+    # source='phone'. We PATCH the number ONCE per phone_number_id with both
+    # URLs so Inkbox knows where to push texts vs incoming calls.
+    by_pnid: dict[str, dict[str, str]] = {}  # pnid -> {"sms": cid, "phone": cid}
+    for cid in phone_connector_ids:
+        row = db.execute(
+            text("SELECT source, metadata->>'phone_number_id' FROM connector_credentials WHERE id = :id"),
+            {"id": cid},
+        ).fetchone()
+        if not row:
+            continue
+        src, pnid = row[0], row[1]
+        if not pnid or src not in ("sms", "phone"):
+            continue
+        by_pnid.setdefault(pnid, {})[src] = cid
+
+    for pnid, srcs in by_pnid.items():
+        sms_cid = srcs.get("sms")
+        call_cid = srcs.get("phone")
+        sms_url  = f"{GENIOS_PUBLIC_URL}/v1/webhooks/inkbox/{sms_cid}" if sms_cid else None
+        # NOTE: we deliberately do NOT register a call webhook URL — Inkbox's
+        # `phone.incoming_call` is a synchronous handshake (must answer +
+        # bridge audio or reject), and rejecting drops the call. Instead we
+        # leave `incoming_call_action='voicemail'` so callers leave a message
+        # that Inkbox auto-transcribes; we pick that up via the existing
+        # calls poll. Voicemail-mode = graceful degradation, no dead air.
+        # Stamp the phone connector row with webhook_registered_at anyway so
+        # we don't double-PATCH on reconnect — voicemail mode is a deliberate
+        # registered state, not "not yet registered".
+        try:
+            ok = _inkbox.register_phone_webhook(api_key, pnid,
+                                                 sms_webhook_url=sms_url,
+                                                 call_webhook_url=None)
+        except PermissionError as pe:
+            logger.warning(f"inkbox phone webhook 401/403 ({pnid}): {pe}")
+            ok = False
+        except Exception as e:
+            logger.warning(f"inkbox phone webhook register failed ({pnid}): {e}")
+            ok = False
+        if ok:
+            if sms_cid:
+                _merge_connector_metadata(db, sms_cid, {
+                    "signing_secret": secret,
+                    "webhook_url": sms_url,
+                    "webhook_registered_at": now_iso,
+                })
+            if call_cid:
+                _merge_connector_metadata(db, call_cid, {
+                    "signing_secret": secret,
+                    "call_mode": "voicemail",
+                    "webhook_registered_at": now_iso,
+                })
+    db.commit()
 
 
 def _maybe_provision_inkbox_phone(db: Session, org_id: str, api_key: str) -> list[str]:
@@ -133,6 +271,8 @@ def list_accounts(org_id: str, db: Session = Depends(get_db)):
     grouped: dict[str, list[dict]] = {}
     for r in rows:
         tool = r[2] or "unknown"
+        webhook_at = r[10] if len(r) > 10 else None
+        call_mode  = r[11] if len(r) > 11 else None
         grouped.setdefault(tool, []).append({
             "account_id":            r[0],
             "account_kind":          r[1],
@@ -143,6 +283,12 @@ def list_accounts(org_id: str, db: Session = Depends(get_db)):
             "sync_error":            r[7],
             "last_sync_at":          r[8].isoformat() if r[8] else None,
             "consecutive_failures":  r[9] or 0,
+            # Push-mode visibility: UI renders green "Real-time" badge if set,
+            # else "Polling every 5 min". For phone rows, call_mode reveals
+            # voicemail vs webhook-answer mode.
+            "webhook_registered_at": webhook_at,
+            "delivery_mode":         "webhook" if webhook_at else "poll",
+            "call_mode":             call_mode,  # 'voicemail' | 'webhook' | None
         })
     return {"tools": grouped}
 
@@ -204,6 +350,17 @@ def connect_inkbox(org_id: str, req: InkboxConnectRequest,
     for cid in phone_conn_ids:
         background_tasks.add_task(_run_connector_sync, cid)
 
+    # Switch to push mode: mint the org-wide Inkbox signing key (once) and
+    # PATCH each mailbox / phone-number resource with our webhook URL. On
+    # success, polling for email + SMS is automatically skipped downstream
+    # (sync_connector.py looks at metadata.webhook_registered_at). Calls keep
+    # polling because Inkbox exposes no `call.completed` / `transcript.ready`
+    # event — transcripts are pull-only.
+    background_tasks.add_task(
+        _register_inkbox_webhooks_bg, org_id, metadata["api_key"],
+        conn_id, metadata["mailbox_address"], list(phone_conn_ids),
+    )
+
     return {
         "account_id":   conn_id,
         "account_kind": "connector",
@@ -212,6 +369,27 @@ def connect_inkbox(org_id: str, req: InkboxConnectRequest,
         "label":        metadata["mailbox_address"],
         "initial_sync_enqueued": True,
     }
+
+
+def _register_inkbox_webhooks_bg(org_id: str, api_key: str,
+                                   email_connector_id: Optional[str],
+                                   mailbox_address: Optional[str],
+                                   phone_connector_ids: list[str]) -> None:
+    """BackgroundTask wrapper — needs its own DB session because the request
+    session closes when the response is sent."""
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        _register_inkbox_webhooks(
+            db, org_id, api_key,
+            email_connector_id=email_connector_id,
+            mailbox_address=mailbox_address,
+            phone_connector_ids=phone_connector_ids,
+        )
+    except Exception as e:
+        logger.warning(f"inkbox webhook registration background task failed: {e}")
+    finally:
+        db.close()
 
 
 # ── IMAP: connect a self-hosted email mailbox ───────────────────────────────
@@ -265,10 +443,83 @@ def connect_imap(org_id: str, req: ImapConnectRequest,
     }
 
 
+# ── Backfill Inkbox webhook registration for existing customers ─────────────
+# When the webhook feature shipped, already-connected orgs hadn't had their
+# mailboxes / phone numbers PATCHed with our webhook URLs. Rather than force
+# every customer to reconnect, this endpoint sweeps every active inkbox
+# connector for the org and registers webhooks idempotently. Safe to re-run.
+@router.post("/api/org/{org_id}/integrations/inkbox/webhooks/register", status_code=202)
+def backfill_inkbox_webhooks(org_id: str, background_tasks: BackgroundTasks,
+                              db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+            SELECT id::text, source, metadata
+            FROM connector_credentials
+            WHERE org_id = :o AND is_active = TRUE
+              AND metadata->>'provider' = 'inkbox'
+            ORDER BY source
+        """),
+        {"o": org_id},
+    ).fetchall()
+    if not rows:
+        raise _http({"error": "NO_INKBOX_ACCOUNTS", "message": "no active Inkbox connectors for this org"}, 404)
+
+    # Find the email connector to get the canonical api_key + mailbox.
+    email_row = next((r for r in rows if r[1] == "email"), None)
+    if not email_row:
+        raise _http({"error": "NO_EMAIL_CONNECTOR", "message": "Inkbox email connector required for backfill"}, 400)
+
+    try:
+        email_creds = connector_crud.decrypt_metadata(email_row[2])
+    except connector_crud.ConnectorDecryptError as e:
+        raise _http({"error": "DECRYPT_FAILED", "message": str(e)}, 500)
+
+    api_key = email_creds.get("api_key") or ""
+    mailbox = email_creds.get("mailbox_address") or ""
+    phone_ids = [r[0] for r in rows if r[1] in ("sms", "phone")]
+
+    if not api_key:
+        raise _http({"error": "MISSING_API_KEY", "message": "stored Inkbox API key is empty"}, 400)
+
+    background_tasks.add_task(
+        _register_inkbox_webhooks_bg, org_id, api_key,
+        email_row[0], mailbox, phone_ids,
+    )
+    return {
+        "org_id": org_id,
+        "email_connector_id": email_row[0],
+        "phone_connector_count": len(phone_ids),
+        "registration_enqueued": True,
+    }
+
+
 # ── Disconnect any account (oauth or connector) ─────────────────────────────
 @router.delete("/api/org/{org_id}/integrations/accounts/{kind}/{account_id}")
 def disconnect_account(org_id: str, kind: str, account_id: str, db: Session = Depends(get_db)):
     if kind == "connector":
+        # Pull encrypted metadata so we can deregister any Inkbox webhook
+        # before flipping is_active off. Best-effort — never blocks disconnect.
+        meta_row = db.execute(
+            text("SELECT metadata, source FROM connector_credentials WHERE id = :id AND org_id = :o"),
+            {"id": account_id, "o": org_id},
+        ).fetchone()
+        if meta_row and meta_row[0] and (meta_row[0] or {}).get("provider") == "inkbox":
+            try:
+                creds = connector_crud.decrypt_metadata(meta_row[0])
+                from app.ingestion.adapters import inkbox as _inkbox
+                api_key = creds.get("api_key") or ""
+                if api_key:
+                    if meta_row[1] == "email" and creds.get("mailbox_address"):
+                        _inkbox.deregister_mail_webhook(api_key, creds["mailbox_address"])
+                    elif meta_row[1] in ("sms", "phone") and creds.get("phone_number_id"):
+                        _inkbox.deregister_phone_webhook(
+                            api_key, creds["phone_number_id"],
+                            clear_sms=(meta_row[1] == "sms"),
+                            clear_call=(meta_row[1] == "phone"),
+                        )
+            except Exception as e:
+                logger.warning(f"inkbox webhook deregister on disconnect failed: {e}")
+
         res = db.execute(
             text("""
                 UPDATE connector_credentials

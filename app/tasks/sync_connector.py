@@ -549,12 +549,24 @@ def task_sync_all_connectors():
             _discover_inkbox_phone_channels(db)
         except Exception as e:
             logger.warning(f"inkbox phone discovery failed: {e}")
+        # Inkbox email + SMS are skipped here once we've PATCHed their webhook
+        # URL into Inkbox — those events now arrive in real time at
+        # /v1/webhooks/inkbox/{account_id}, so polling them on the 5-min beat
+        # just burns Upstash quota and races the webhook. Calls (`source =
+        # 'phone'`) keep polling: Inkbox exposes no `call.completed` /
+        # `transcript.ready` event, so transcripts must be pulled. Manual
+        # sync still polls everything (it bypasses this dispatcher).
         rows = db.execute(
             text("""
                 SELECT id::text FROM connector_credentials
                 WHERE is_active = TRUE
                   AND source IN ('email', 'phone', 'sms', 'calendar')
                   AND (metadata ? 'api_key' OR metadata ? 'password')
+                  AND NOT (
+                      source IN ('email', 'sms')
+                      AND metadata->>'provider' = 'inkbox'
+                      AND metadata ? 'webhook_registered_at'
+                  )
             """),
         ).fetchall()
         for r in rows:

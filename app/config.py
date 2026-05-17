@@ -6,6 +6,11 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 REDIS_URL = os.getenv("REDIS_URL")
 
+# Public base URL where Genios Brain is reachable from the internet — used
+# when registering inbound webhooks (e.g. Inkbox). For local dev set this to
+# your ngrok tunnel, e.g. https://abc123.ngrok-free.app
+GENIOS_PUBLIC_URL = (os.getenv("GENIOS_PUBLIC_URL") or "").rstrip("/")
+
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 

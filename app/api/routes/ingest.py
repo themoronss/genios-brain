@@ -510,6 +510,271 @@ async def _ingest_sms_alias(
     return await _common_ingest(request, db, auth, signature, "sms", SmsIngest, _insert_sms)
 
 
+# ── Inkbox push webhook (signature-only, no Bearer) ──────────────────────────
+# Inkbox PATCHes a single webhook URL onto each mailbox or phone number, so we
+# can't rely on a per-request Bearer token. Instead the URL embeds the
+# connector_credentials.id → we look up org / agent / source / signing_secret
+# from that row and HMAC-verify the body. One endpoint serves all 3 event
+# types (message.received, text.received, phone.incoming_call); we dispatch
+# on event_type inside.
+#
+# `phone.incoming_call` is SYNCHRONOUS in Inkbox's API — the response body
+# tells Inkbox whether to answer the call (and where to bridge audio) or
+# reject it. MVP: we reject + log so the call still lands in interactions
+# but no one is left talking to dead air. Voice-agent bridging is a V2.
+
+def _apply_delivery_event(db: Session, org_id: str, source: str,
+                          external_id: str, status: str, extra: dict) -> Optional[str]:
+    """Merge a delivery-state event (sent/delivered/bounced/failed/forwarded)
+    into the matching interaction's `delivery_state` JSONB column. Returns
+    interaction_id if found, None if the underlying message hasn't landed yet
+    (in which case the event will be re-applied on the next webhook hit or
+    via a backfill — Inkbox can deliver events out of order)."""
+    import json as _json
+    patch = {"status": status, **extra}
+    row = db.execute(
+        text("""
+            UPDATE interactions
+            SET delivery_state = COALESCE(delivery_state, '{}'::jsonb) || CAST(:patch AS jsonb)
+            WHERE org_id = :o AND source = :s AND external_id = :e
+            RETURNING id::text
+        """),
+        {"o": org_id, "s": source, "e": external_id, "patch": _json.dumps(patch)},
+    ).fetchone()
+    return row[0] if row else None
+
+
+def _mark_contact_bounced(db: Session, org_id: str, email: str, reason: str) -> None:
+    """Stamp `bounced_at` + `bounce_reason` into contacts.metadata so the
+    agent reasoning layer can avoid retrying a dead address."""
+    import json as _json
+    e = (email or "").strip().lower()
+    if not e:
+        return
+    patch = {"bounced_at": datetime.now(timezone.utc).isoformat(),
+             "bounce_reason": (reason or "")[:200]}
+    db.execute(
+        text("""
+            UPDATE contacts
+            SET metadata = COALESCE(metadata, '{}'::jsonb) || CAST(:patch AS jsonb)
+            WHERE org_id = :o AND LOWER(email) = :e
+        """),
+        {"o": org_id, "e": e, "patch": _json.dumps(patch)},
+    )
+
+
+def _load_connector_for_webhook(db: Session, account_id: str):
+    """Look up the active connector by id. Returns
+    (org_id, agent_uuid, source, signing_secret, api_key_meta) or None."""
+    row = db.execute(
+        text("""
+            SELECT org_id::text, agent_uuid::text, source, metadata
+            FROM connector_credentials
+            WHERE id = :id AND is_active = TRUE
+              AND metadata->>'provider' = 'inkbox'
+            LIMIT 1
+        """),
+        {"id": account_id},
+    ).fetchone()
+    if not row:
+        return None
+    meta = row[3] or {}
+    return row[0], row[1], row[2], meta.get("signing_secret"), meta
+
+
+@router.post("/v1/webhooks/inkbox/{account_id}")
+async def ingest_inkbox_webhook(account_id: str, request: Request, db: Session = Depends(get_db)):
+    raw = await request.body()
+    conn = _load_connector_for_webhook(db, account_id)
+    if not conn:
+        # Unknown / disabled connector — return 200 so Inkbox doesn't retry
+        # forever, but flag it. (404 would also work; both stop retries.)
+        logger.warning(f"inkbox webhook for unknown/inactive connector {account_id}")
+        raise HTTPException(status_code=404, detail={"error": "UNKNOWN_CONNECTOR"})
+    org_id, agent_uuid, source, signing_secret, _meta = conn
+
+    h = request.headers
+    inkbox_req_id = h.get("X-Inkbox-Request-ID") or h.get("x-inkbox-request-id")
+    inkbox_ts     = h.get("X-Inkbox-Timestamp")  or h.get("x-inkbox-timestamp")
+    inkbox_sig    = h.get("X-Inkbox-Signature")  or h.get("x-inkbox-signature")
+
+    # Inkbox sends unsigned webhooks BEFORE the org's first signing key is
+    # minted. After bootstrap (we mint on connect) every payload must be
+    # signed. If signing_secret is set but headers are absent → reject.
+    if signing_secret:
+        if not (inkbox_sig and inkbox_req_id and inkbox_ts):
+            _audit(db, org_id, agent_uuid, source, None, "rejected_signature",
+                   error="missing inkbox signature headers", payload_bytes=len(raw))
+            raise HTTPException(status_code=401, detail={"error": "MISSING_SIGNATURE"})
+        if not _verify_inkbox_signature(raw, inkbox_req_id, inkbox_ts, inkbox_sig, signing_secret):
+            _audit(db, org_id, agent_uuid, source, None, "rejected_signature",
+                   error="HMAC mismatch", payload_bytes=len(raw))
+            raise HTTPException(status_code=401, detail={"error": "BAD_SIGNATURE"})
+
+    # Parse payload + dispatch on event_type
+    try:
+        body = json.loads(raw.decode() or "{}")
+    except Exception as e:
+        _audit(db, org_id, agent_uuid, source, None, "rejected_format",
+               error=f"json: {e}"[:200], payload_bytes=len(raw))
+        raise HTTPException(status_code=400, detail={"error": "INVALID_JSON"})
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail={"error": "INVALID_PAYLOAD"})
+
+    event_type = body.get("event_type") or ""
+
+    # Mail delivery-lifecycle events (sent/delivered/bounced/failed/forwarded)
+    # don't create new interactions — they MUTATE the existing outbound row's
+    # delivery_state column. Handled BEFORE the canonical-payload normaliser
+    # because normalise_webhook only knows received-type events. We try to
+    # update first; if no row matches yet (rare race: lifecycle event arrives
+    # before our own DB insert committed), the event is silently dropped —
+    # Inkbox will redeliver, or we re-derive from the next status event.
+    if event_type in ("message.sent", "message.delivered",
+                       "message.bounced", "message.failed", "message.forwarded"):
+        data = body.get("data") or {}
+        ext_id = data.get("message_id") or data.get("id") or ""
+        status = event_type.split(".", 1)[1]  # 'sent' | 'delivered' | ...
+        extra: dict = {f"{status}_at": body.get("timestamp") or datetime.now(timezone.utc).isoformat()}
+        if status == "bounced":
+            extra["bounce_reason"] = data.get("bounce_reason") or data.get("reason") or ""
+        elif status == "failed":
+            extra["failure_reason"] = data.get("failure_reason") or data.get("reason") or ""
+        elif status == "forwarded":
+            extra["forwarded_to"] = data.get("forwarded_to") or data.get("to") or []
+        iid = _apply_delivery_event(db, org_id, source, ext_id, status, extra) if ext_id else None
+        # Bounce → mark contact as bounced (agent reasoning won't keep retrying)
+        if status == "bounced":
+            target = data.get("recipient") or data.get("to") or ""
+            if isinstance(target, list):
+                target = target[0] if target else ""
+            _mark_contact_bounced(db, org_id, target, extra.get("bounce_reason", ""))
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+        _audit(db, org_id, agent_uuid, source, ext_id, "accepted" if iid else "duplicate",
+               interaction_id=iid, payload_bytes=len(raw))
+        return {"accepted": True, "event": event_type, "interaction_id": iid}
+
+    # New-message events (received / text / call) → normalise to canonical dict
+    try:
+        from app.ingestion.adapters.inkbox import normalise_webhook
+        canonical = normalise_webhook(body)
+    except Exception as e:
+        logger.warning(f"inkbox normalise_webhook failed: {e}")
+        canonical = None
+
+    if not canonical:
+        _audit(db, org_id, agent_uuid, source, None, "rejected_format",
+               error=f"unhandled event_type: {event_type}"[:200], payload_bytes=len(raw))
+        # 200 OK so Inkbox doesn't retry an event we will never accept.
+        return {"accepted": False, "reason": "unsupported_event"}
+
+    schema_cls = insert_fn = None
+    if event_type == "message.received":
+        schema_cls, insert_fn = EmailIngest, _insert_email
+    elif event_type == "text.received":
+        # SmsIngest needs from_number/to_number; canonical from adapter has
+        # remote_number/direction → translate. MMS media is preserved on the
+        # interaction's `attachments` JSONB column post-insert (below).
+        rn = canonical.get("remote_number") or ""
+        direction = canonical.get("direction") or "inbound"
+        media = canonical.get("media") or []
+        canonical = {
+            "external_id": canonical["external_id"],
+            "from_number": rn if direction == "inbound" else "",
+            "to_number":   "" if direction == "inbound" else rn,
+            "body":        canonical.get("body") or "",
+            "sent_at":     canonical.get("sent_at") or "",
+            "direction":   direction,
+            "_attachments": media,  # underscore-prefixed → not passed to schema
+        }
+        schema_cls, insert_fn = SmsIngest, _insert_sms
+    elif event_type == "phone.incoming_call":
+        # In voicemail mode (current default) Inkbox should NEVER hit this
+        # branch — we don't register a call webhook URL, so calls go to
+        # Inkbox's auto-transcribed voicemail and arrive via the calls poll.
+        # This handler stays as a defensive fallback in case someone enables
+        # webhook mode out-of-band (e.g. via Inkbox console). We log the
+        # call envelope and respond with `reject` (no dead air — Inkbox
+        # treats reject as a clean hang-up, not silence).
+        # Voice-agent answer + WebSocket bridge will replace this in V2.
+        rn = canonical.get("remote_number") or ""
+        direction = canonical.get("direction") or "inbound"
+        call_body_dict = {
+            "external_id": canonical["external_id"],
+            "from_number": rn if direction == "inbound" else "",
+            "to_number":   "" if direction == "inbound" else rn,
+            "duration_sec": 0,
+            "transcript":   "",
+            "started_at":   canonical.get("started_at") or datetime.now(timezone.utc).isoformat(),
+            "direction":    direction,
+        }
+        try:
+            call_body = CallIngest.parse_obj(call_body_dict)
+            dup = _find_dup(db, org_id, source, call_body.external_id)
+            if not dup:
+                contact_id, interaction_id = _insert_call(db, org_id, agent_uuid, call_body)
+                db.commit()
+                _audit(db, org_id, agent_uuid, source, call_body.external_id, "accepted",
+                       interaction_id=interaction_id, contact_id=contact_id, payload_bytes=len(raw))
+            else:
+                _audit(db, org_id, agent_uuid, source, call_body.external_id, "duplicate",
+                       interaction_id=dup[0], contact_id=dup[1], payload_bytes=len(raw))
+        except Exception as e:
+            db.rollback()
+            logger.warning(f"inkbox incoming_call log failed: {e}")
+            _audit(db, org_id, agent_uuid, source, None, "rejected_format",
+                   error=f"call log: {e}"[:200], payload_bytes=len(raw))
+        # SYNCHRONOUS response — tells Inkbox to reject the call.
+        return {"action": "reject"}
+    else:
+        _audit(db, org_id, agent_uuid, source, None, "rejected_format",
+               error=f"unrouted event_type: {event_type}"[:200], payload_bytes=len(raw))
+        return {"accepted": False, "reason": "unsupported_event"}
+
+    # Email / SMS path — dedupe + insert + enqueue extraction
+    attachments = canonical.pop("_attachments", None)  # MMS media, stored post-insert
+    try:
+        parsed = schema_cls.parse_obj(canonical)
+    except Exception as e:
+        _audit(db, org_id, agent_uuid, source, None, "rejected_format",
+               error=str(e)[:200], payload_bytes=len(raw))
+        raise HTTPException(status_code=400, detail={"error": "INVALID_PAYLOAD"})
+
+    dup = _find_dup(db, org_id, source, parsed.external_id)
+    if dup:
+        _audit(db, org_id, agent_uuid, source, parsed.external_id, "duplicate",
+               interaction_id=dup[0], contact_id=dup[1], payload_bytes=len(raw))
+        return {"deduped": True, "interaction_id": dup[0], "contact_id": dup[1]}
+
+    try:
+        contact_id, interaction_id = insert_fn(db, org_id, agent_uuid, parsed)
+        if attachments:
+            db.execute(
+                text("UPDATE interactions SET attachments = CAST(:a AS jsonb) WHERE id = :id"),
+                {"id": interaction_id, "a": json.dumps(attachments)},
+            )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        _audit(db, org_id, agent_uuid, source, parsed.external_id, "rejected_format",
+               error=f"insert: {e}"[:200], payload_bytes=len(raw))
+        raise HTTPException(status_code=400, detail={"error": "INSERT_FAILED"})
+
+    try:
+        connector_crud.touch_last_event(db, account_id)
+        db.commit()
+    except Exception:
+        pass
+    _enqueue_extraction(interaction_id)
+
+    _audit(db, org_id, agent_uuid, source, parsed.external_id, "accepted",
+           interaction_id=interaction_id, contact_id=contact_id, payload_bytes=len(raw))
+    return {"deduped": False, "interaction_id": interaction_id, "contact_id": contact_id}
+
+
 @router.get("/v1/ingest/events")
 def list_ingest_events(
     limit: int = 50,
@@ -535,3 +800,215 @@ def list_ingest_events(
             } for r in rows
         ]
     }
+
+
+# ── Outbound send (agent replies via the connected provider) ─────────────────
+# These endpoints let the GeniOS reasoning layer / SDK send mail or SMS back
+# through Inkbox (or any other adapter that registers `send_email` /
+# `send_sms`). The outbound message is immediately persisted as a direction=
+# 'outbound' interaction with delivery_state.status='queued'; the
+# message.sent / message.delivered / message.bounced lifecycle webhooks
+# above then mutate that row as Inkbox reports back.
+
+class SendEmailRequest(BaseModel):
+    to:                    list[str]
+    subject:               Optional[str] = None
+    body_text:             Optional[str] = None
+    body_html:             Optional[str] = None
+    cc:                    Optional[list[str]] = None
+    bcc:                   Optional[list[str]] = None
+    in_reply_to_external_id: Optional[str] = None
+    thread_external_id:    Optional[str] = None
+
+
+class SendSmsRequest(BaseModel):
+    to_number:  str
+    body:       str
+    media_urls: Optional[list[str]] = None
+
+
+def _load_send_connector(db: Session, org_id: str, agent_uuid: Optional[str], source: str):
+    """Pull the active connector for outbound use. Prefers workspace-level row
+    (agent_uuid IS NULL), falls back to per-agent. Returns (connector_id,
+    provider, decrypted_credentials, mailbox_or_pnid_meta) or None."""
+    row = db.execute(
+        text("""
+            SELECT id::text, metadata
+            FROM connector_credentials
+            WHERE org_id = :o AND source = :s AND is_active = TRUE
+              AND (agent_uuid IS NULL OR agent_uuid = :a)
+            ORDER BY (agent_uuid IS NULL) DESC, created_at DESC
+            LIMIT 1
+        """),
+        {"o": org_id, "s": source, "a": agent_uuid},
+    ).fetchone()
+    if not row:
+        return None
+    meta = row[1] or {}
+    provider = meta.get("provider", "custom")
+    try:
+        creds = connector_crud.decrypt_metadata(meta)
+    except connector_crud.ConnectorDecryptError as e:
+        raise HTTPException(status_code=500, detail={"error": "DECRYPT_FAILED", "message": str(e)})
+    return row[0], provider, creds, meta
+
+
+def _persist_outbound(db, org_id, agent_uuid, source, external_id, *,
+                      subject="", body="", recipient="", in_reply_to=None,
+                      thread=None, attachments=None) -> tuple[Optional[str], Optional[str]]:
+    """Insert a direction='outbound' interaction so the UI shows the agent's
+    own message immediately. Returns (contact_id, interaction_id). delivery_state
+    starts as {status: 'queued'}; the message.sent/delivered webhook flips it
+    to 'sent' / 'delivered'."""
+    import json as _json
+    try:
+        if source == "email":
+            contact_id = _upsert_contact_by_email(db, org_id, recipient)
+            account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "email")
+            iid = db.execute(
+                text("""
+                    INSERT INTO interactions
+                        (org_id, contact_id, agent_uuid, account_id, direction,
+                         subject, summary, raw_snippet, interaction_at, source,
+                         external_id, thread_external_id, interaction_kind,
+                         attachments, delivery_state)
+                    VALUES (:o, :c, :a, :acct, 'outbound', :subj, :sum, :raw,
+                            NOW(), 'email', :ext, :thr, 'email', CAST(:att AS jsonb),
+                            CAST(:ds AS jsonb))
+                    RETURNING id::text
+                """),
+                {"o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
+                 "subj": (subject or "")[:500], "sum": (body or "")[:2000],
+                 "raw": (body or "")[:5000], "ext": external_id or "",
+                 "thr": thread or in_reply_to,
+                 "att": _json.dumps(attachments or []),
+                 "ds": _json.dumps({"status": "queued"})},
+            ).scalar()
+        elif source == "sms":
+            contact_id = _upsert_contact_by_phone(db, org_id, recipient)
+            account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "sms")
+            iid = db.execute(
+                text("""
+                    INSERT INTO interactions
+                        (org_id, contact_id, agent_uuid, account_id, direction,
+                         summary, raw_snippet, interaction_at, source, external_id,
+                         interaction_kind, attachments, delivery_state)
+                    VALUES (:o, :c, :a, :acct, 'outbound', :sum, :raw, NOW(),
+                            'sms', :ext, 'sms', CAST(:att AS jsonb), CAST(:ds AS jsonb))
+                    RETURNING id::text
+                """),
+                {"o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
+                 "sum": (body or "")[:2000], "raw": (body or "")[:5000],
+                 "ext": external_id or "",
+                 "att": _json.dumps(attachments or []),
+                 "ds": _json.dumps({"status": "queued"})},
+            ).scalar()
+        else:
+            return None, None
+        return contact_id, iid
+    except Exception as e:
+        logger.warning(f"outbound persist failed ({source}): {e}")
+        return None, None
+
+
+@router.post("/v1/send/email", status_code=202)
+async def send_email_route(req: SendEmailRequest,
+                            db: Session = Depends(get_db),
+                            auth: AuthCtx = Depends(get_auth_ctx)):
+    if not auth.org_id:
+        raise HTTPException(status_code=401, detail={"error": "AUTH_REQUIRED"})
+    if not req.to:
+        raise HTTPException(status_code=400, detail={"error": "INVALID_PAYLOAD", "message": "at least one recipient required"})
+    if not (req.body_text or req.body_html):
+        raise HTTPException(status_code=400, detail={"error": "INVALID_PAYLOAD", "message": "body_text or body_html required"})
+
+    conn = _load_send_connector(db, auth.org_id, auth.agent_uuid, "email")
+    if not conn:
+        raise HTTPException(status_code=400, detail={"error": "NO_EMAIL_CONNECTOR", "message": "no active email connector for this org"})
+    connector_id, provider, creds, _meta = conn
+
+    from app.ingestion import adapters
+    ops = adapters.get(provider) or {}
+    send_fn = ops.get("send_email")
+    if not send_fn:
+        raise HTTPException(status_code=501, detail={"error": "PROVIDER_NO_SEND", "message": f"provider '{provider}' does not support outbound send"})
+
+    result = send_fn(
+        creds, to=req.to, subject=req.subject or "", body_text=req.body_text or "",
+        body_html=req.body_html, in_reply_to_external_id=req.in_reply_to_external_id,
+        thread_external_id=req.thread_external_id, cc=req.cc, bcc=req.bcc,
+    )
+
+    # Persist the outbound interaction regardless of send result so the agent's
+    # action appears in the timeline. delivery_state.status reflects outcome.
+    contact_id, iid = _persist_outbound(
+        db, auth.org_id, auth.agent_uuid, "email",
+        external_id=result.get("external_id") or "",
+        subject=req.subject or "", body=req.body_text or req.body_html or "",
+        recipient=req.to[0], in_reply_to=req.in_reply_to_external_id,
+        thread=req.thread_external_id,
+    )
+    if iid:
+        import json as _json
+        final_state = {"status": "sent" if result.get("ok") else "send_failed",
+                       "queued_at": datetime.now(timezone.utc).isoformat()}
+        if not result.get("ok"):
+            final_state["error"] = result.get("error") or "unknown"
+        db.execute(
+            text("UPDATE interactions SET delivery_state = CAST(:ds AS jsonb) WHERE id = :id"),
+            {"id": iid, "ds": _json.dumps(final_state)},
+        )
+        db.commit()
+
+    if not result.get("ok"):
+        raise HTTPException(status_code=502, detail={"error": "SEND_FAILED", "message": result.get("error") or "unknown",
+                                                       "provider": provider, "interaction_id": iid})
+    return {"interaction_id": iid, "contact_id": contact_id,
+            "external_id": result.get("external_id"), "provider": provider}
+
+
+@router.post("/v1/send/sms", status_code=202)
+async def send_sms_route(req: SendSmsRequest,
+                          db: Session = Depends(get_db),
+                          auth: AuthCtx = Depends(get_auth_ctx)):
+    if not auth.org_id:
+        raise HTTPException(status_code=401, detail={"error": "AUTH_REQUIRED"})
+    if not (req.to_number and req.body):
+        raise HTTPException(status_code=400, detail={"error": "INVALID_PAYLOAD", "message": "to_number and body required"})
+
+    conn = _load_send_connector(db, auth.org_id, auth.agent_uuid, "sms")
+    if not conn:
+        raise HTTPException(status_code=400, detail={"error": "NO_SMS_CONNECTOR", "message": "no active SMS connector for this org"})
+    connector_id, provider, creds, _meta = conn
+
+    from app.ingestion import adapters
+    ops = adapters.get(provider) or {}
+    send_fn = ops.get("send_sms")
+    if not send_fn:
+        raise HTTPException(status_code=501, detail={"error": "PROVIDER_NO_SEND", "message": f"provider '{provider}' does not support outbound SMS"})
+
+    result = send_fn(creds, to_number=req.to_number, body=req.body, media_urls=req.media_urls)
+
+    attachments = [{"url": u, "content_type": "unknown"} for u in (req.media_urls or [])]
+    contact_id, iid = _persist_outbound(
+        db, auth.org_id, auth.agent_uuid, "sms",
+        external_id=result.get("external_id") or "",
+        body=req.body, recipient=req.to_number, attachments=attachments,
+    )
+    if iid:
+        import json as _json
+        final_state = {"status": "sent" if result.get("ok") else "send_failed",
+                       "queued_at": datetime.now(timezone.utc).isoformat()}
+        if not result.get("ok"):
+            final_state["error"] = result.get("error") or "unknown"
+        db.execute(
+            text("UPDATE interactions SET delivery_state = CAST(:ds AS jsonb) WHERE id = :id"),
+            {"id": iid, "ds": _json.dumps(final_state)},
+        )
+        db.commit()
+
+    if not result.get("ok"):
+        raise HTTPException(status_code=502, detail={"error": "SEND_FAILED", "message": result.get("error") or "unknown",
+                                                       "provider": provider, "interaction_id": iid})
+    return {"interaction_id": iid, "contact_id": contact_id,
+            "external_id": result.get("external_id"), "provider": provider}

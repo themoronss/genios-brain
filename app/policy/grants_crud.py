@@ -130,9 +130,12 @@ def remove_grant(db: Session, org_id: str, agent_uuid: str,
 def list_workspace_accounts(db: Session, org_id: str):
     """All connected accounts at workspace level. Returns rows with
     (id, kind, tool, channel, label, last_event_at, sync_status, sync_error,
-    last_sync_at, consecutive_failures) — UI uses status fields to render
-    badges (green Synced / red Auth failed / yellow Syncing / gray Stale)
-    and `channel` to render the right icon (📧 email / 💬 sms / 📞 voice)."""
+    last_sync_at, consecutive_failures, webhook_registered_at, call_mode) —
+    UI uses status fields to render badges (green Synced / red Auth failed /
+    yellow Syncing / gray Stale) and `channel` to render the right icon
+    (📧 email / 💬 sms / 📞 voice). `webhook_registered_at` lets the UI show
+    push-mode vs poll-mode; `call_mode` ('voicemail' | 'webhook') tells the
+    user how incoming calls are handled."""
     return db.execute(
         text("""
             SELECT id::text,
@@ -150,7 +153,9 @@ def list_workspace_accounts(db: Session, org_id: str):
                    sync_status                          AS sync_status,
                    NULL                                 AS sync_error,
                    last_synced_at                       AS last_sync_at,
-                   0                                    AS consecutive_failures
+                   0                                    AS consecutive_failures,
+                   NULL::text                           AS webhook_registered_at,
+                   NULL::text                           AS call_mode
             FROM oauth_tokens
             WHERE org_id = :o
             UNION ALL
@@ -165,7 +170,9 @@ def list_workspace_accounts(db: Session, org_id: str):
                    last_sync_status,
                    last_sync_error,
                    last_sync_at,
-                   COALESCE(consecutive_failures, 0)
+                   COALESCE(consecutive_failures, 0),
+                   metadata->>'webhook_registered_at'   AS webhook_registered_at,
+                   metadata->>'call_mode'               AS call_mode
             FROM connector_credentials
             WHERE org_id = :o AND is_active = TRUE AND agent_uuid IS NULL
             ORDER BY tool, channel, label
