@@ -535,15 +535,15 @@ def register_phone_webhook(api_key: str, phone_number_id: str,
 
     SMS: setting `sms_webhook_url` enables real-time inbound text delivery.
 
-    Incoming calls: we DO NOT set `incoming_call_webhook_url` by default
-    because `phone.incoming_call` is a SYNCHRONOUS handshake — our endpoint
-    must answer the call (bridge audio over WebSocket) or reject it.
-    Rejecting drops the call entirely (caller hears dead air). Until the AI
-    voice-agent stack is in place we keep `incoming_call_action='voicemail'`
-    so callers leave a message that Inkbox auto-transcribes; we pull those
-    transcripts via the existing calls poll. This is graceful degradation
-    rather than dropped calls. When a voice agent is ready, pass
-    `call_webhook_url=...` and we'll PATCH it on + flip the action.
+    Incoming calls: Inkbox's `incoming_call_action` only accepts the enum
+    `auto_accept | auto_reject | webhook` (we hit a 422 PATCH error trying
+    'voicemail'). `webhook` requires a synchronous handshake — our endpoint
+    must answer the call (bridge audio over WebSocket) or reject; rejecting
+    drops the call (dead air). Until the AI voice-agent stack lands we use
+    `auto_accept` so the call connects to Inkbox's default handling (greeting
+    / voicemail) instead of dying — we then pick up the resulting call record
+    + transcript via the existing calls poll. When a voice agent is ready,
+    pass `call_webhook_url=...` and we'll switch the action to `webhook`.
 
     Returns True if at least one URL was successfully installed."""
     key = _clean_key(api_key)
@@ -558,8 +558,9 @@ def register_phone_webhook(api_key: str, phone_number_id: str,
         body["incoming_call_webhook_url"] = call_webhook_url
         body["incoming_call_action"] = "webhook"
     else:
-        # Explicitly keep voicemail as the default so callers never hit dead air.
-        body["incoming_call_action"] = "voicemail"
+        # Default: auto_accept lets Inkbox handle the call (greeting +
+        # voicemail) so callers don't hit dead air. Valid enum per Inkbox API.
+        body["incoming_call_action"] = "auto_accept"
     url = f"{INKBOX_BASE}/api/v1/phone/numbers/{pnid}"
     status, _ = _request_json("PATCH", url, key, body=body)
     return 200 <= status < 300

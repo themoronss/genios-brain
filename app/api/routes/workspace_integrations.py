@@ -80,16 +80,20 @@ def _merge_connector_metadata(db: Session, connector_id: str, updates: dict) -> 
 
 
 def _existing_org_signing_secret(db: Session, org_id: str) -> Optional[str]:
-    """Return the org's stored Inkbox signing secret if any active inkbox
-    connector already has one. Keeps us from minting duplicate keys (Inkbox
-    only reveals plaintext once)."""
+    """Return the org's stored INKBOX-minted signing secret if any active
+    inkbox connector already has one. Stored under `inkbox_signing_key` —
+    deliberately a separate field from the Genios-native `whk_*` HMAC
+    secret that connector_crud.upsert() auto-mints into `signing_secret`.
+    Mixing the two caused webhooks to be rejected because we were verifying
+    Inkbox payloads against our own internal `whk_*` key (the one Inkbox
+    has no knowledge of)."""
     row = db.execute(
         text("""
-            SELECT metadata->>'signing_secret'
+            SELECT metadata->>'inkbox_signing_key'
             FROM connector_credentials
             WHERE org_id = :o AND is_active = TRUE
               AND metadata->>'provider' = 'inkbox'
-              AND metadata ? 'signing_secret'
+              AND metadata ? 'inkbox_signing_key'
             LIMIT 1
         """),
         {"o": org_id},
@@ -140,7 +144,7 @@ def _register_inkbox_webhooks(
             ok = False
         if ok:
             _merge_connector_metadata(db, email_connector_id, {
-                "signing_secret": secret,
+                "inkbox_signing_key": secret,
                 "webhook_url": webhook_url,
                 "webhook_registered_at": now_iso,
             })
@@ -188,14 +192,14 @@ def _register_inkbox_webhooks(
         if ok:
             if sms_cid:
                 _merge_connector_metadata(db, sms_cid, {
-                    "signing_secret": secret,
+                    "inkbox_signing_key": secret,
                     "webhook_url": sms_url,
                     "webhook_registered_at": now_iso,
                 })
             if call_cid:
                 _merge_connector_metadata(db, call_cid, {
-                    "signing_secret": secret,
-                    "call_mode": "voicemail",
+                    "inkbox_signing_key": secret,
+                    "call_mode": "auto_accept",
                     "webhook_registered_at": now_iso,
                 })
     db.commit()

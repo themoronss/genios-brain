@@ -565,7 +565,12 @@ def _mark_contact_bounced(db: Session, org_id: str, email: str, reason: str) -> 
 
 def _load_connector_for_webhook(db: Session, account_id: str):
     """Look up the active connector by id. Returns
-    (org_id, agent_uuid, source, signing_secret, api_key_meta) or None."""
+    (org_id, agent_uuid, source, inkbox_signing_key, api_key_meta) or None.
+
+    Note we read `inkbox_signing_key` here, NOT `signing_secret`. The latter
+    is an internal Genios-native HMAC secret minted by connector_crud.upsert
+    that has nothing to do with Inkbox — verifying Inkbox payloads against
+    it caused every webhook to be rejected as 'BAD_SIGNATURE'."""
     row = db.execute(
         text("""
             SELECT org_id::text, agent_uuid::text, source, metadata
@@ -579,7 +584,7 @@ def _load_connector_for_webhook(db: Session, account_id: str):
     if not row:
         return None
     meta = row[3] or {}
-    return row[0], row[1], row[2], meta.get("signing_secret"), meta
+    return row[0], row[1], row[2], meta.get("inkbox_signing_key"), meta
 
 
 @router.post("/v1/webhooks/inkbox/{account_id}")
