@@ -31,8 +31,13 @@ PLAN_CONFIG: dict = {
         "max_chain_depth": 2,
         "max_agent_ids": 1,
         "max_api_keys": 1,
-        "rpm_per_agent": 10,
-        "rph_org": 50,
+        # Trial limits previously throttled real evaluation usage (10 rpm /
+        # 50 rph is hit by just opening the dashboard a few times because
+        # graph + side-panel each fire a context call). Bumped to match the
+        # 100-calls/day quota: 20 rpm / 200 rph is enough headroom for a
+        # full trial session without crippling abuse protection.
+        "rpm_per_agent": 20,
+        "rph_org": 200,
         "context_depth": "full",           # ship real product on every tier
         "overage_allowed": False,
         "integrations_allowed": {"gmail"},
