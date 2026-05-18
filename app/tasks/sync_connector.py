@@ -112,6 +112,12 @@ def _insert_canonical_email(db, org_id: str, agent_uuid: Optional[str],
             "thr": ev.get("thread_external_id") or ev.get("in_reply_to_external_id"),
         },
     ).scalar()
+    from app.ingestion.graph_builder import bump_contact_on_new_interaction
+    bump_contact_on_new_interaction(
+        db, org_id, contact_id, sent_dt,
+        source="email", subject=ev.get("subject") or "",
+        counterparty=sender, interaction_id=iid,
+    )
     return iid
 
 
@@ -182,6 +188,12 @@ def _insert_calendar_event(db, org_id: str, agent_uuid: str, ev: dict) -> Option
                 "ext":  ext,
             },
         ).scalar()
+        from app.ingestion.graph_builder import bump_contact_on_new_interaction
+        bump_contact_on_new_interaction(
+            db, org_id, contact_id, sent_dt,
+            source="calendar", subject=ev.get("summary") or "",
+            counterparty=email, interaction_id=last_iid,
+        )
     return last_iid
 
 
@@ -202,10 +214,11 @@ def _insert_canonical_sms(db, org_id: str, agent_uuid: Optional[str],
     if not contact_id:
         return None
     body = (ev.get("body") or ev.get("text") or "")
+    sent_dt = _parse_ts(ev.get("sent_at"))
     # Item #6: explicitly set interaction_type='sms' so channel recommendation
     # can recognize the channel. Without this, default ('other') was set and
     # the SMS channel was invisible to get_contact_channel_profile().
-    return db.execute(
+    iid = db.execute(
         text("""
             INSERT INTO interactions
                 (org_id, contact_id, agent_uuid, account_id, direction, summary,
@@ -219,9 +232,15 @@ def _insert_canonical_sms(db, org_id: str, agent_uuid: Optional[str],
             "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
             "dir": ev.get("direction") or "inbound",
             "sum": body[:2000], "raw": body[:5000],
-            "at": _parse_ts(ev.get("sent_at")), "ext": ext,
+            "at": sent_dt, "ext": ext,
         },
     ).scalar()
+    from app.ingestion.graph_builder import bump_contact_on_new_interaction
+    bump_contact_on_new_interaction(
+        db, org_id, contact_id, sent_dt,
+        source="sms", subject=body[:100], counterparty=number, interaction_id=iid,
+    )
+    return iid
 
 
 def _insert_canonical_call(db, org_id: str, agent_uuid: Optional[str],
@@ -246,9 +265,10 @@ def _insert_canonical_call(db, org_id: str, agent_uuid: Optional[str],
         dur = 0
     transcript = ev.get("transcript") or ""
     summary = transcript if transcript else f"Call ({dur}s)"
+    started_dt = _parse_ts(ev.get("started_at"))
     # Item #6: set interaction_type='call' explicitly so channel
     # recommendation can score the call channel correctly.
-    return db.execute(
+    iid = db.execute(
         text("""
             INSERT INTO interactions
                 (org_id, contact_id, agent_uuid, account_id, direction, summary,
@@ -262,10 +282,16 @@ def _insert_canonical_call(db, org_id: str, agent_uuid: Optional[str],
             "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
             "dir": ev.get("direction") or "inbound",
             "sum": summary[:2000], "raw": transcript[:5000],
-            "at": _parse_ts(ev.get("started_at")), "ext": ext,
+            "at": started_dt, "ext": ext,
             "dur": dur, "tr": transcript or None,
         },
     ).scalar()
+    from app.ingestion.graph_builder import bump_contact_on_new_interaction
+    bump_contact_on_new_interaction(
+        db, org_id, contact_id, started_dt,
+        source="phone", subject=summary[:100], counterparty=number, interaction_id=iid,
+    )
+    return iid
 
 
 def _set_sync_status(db, connector_id: str, status: str,

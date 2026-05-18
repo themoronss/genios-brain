@@ -358,6 +358,7 @@ def _insert_email(db, org_id, agent_uuid, b: EmailIngest):
     trusted = trust_crud.is_trusted(
         db, agent_uuid, sender_email=counterparty, contact_id=contact_id,
     ) if agent_uuid else False
+    sent_at = _parse_ts(b.sent_at)
     iid = db.execute(
         text("""
             INSERT INTO interactions
@@ -372,12 +373,20 @@ def _insert_email(db, org_id, agent_uuid, b: EmailIngest):
             "dir": b.direction, "subj": (b.subject or "")[:500],
             "sum": (b.body_text or b.body_html or "")[:2000],
             "raw": (b.body_text or b.body_html or "")[:5000],
-            "at": _parse_ts(b.sent_at),
+            "at": sent_at,
             "src": "email", "ext": b.external_id,
             "thr": b.thread_external_id or b.in_reply_to_external_id,
             "trust": trusted,
         },
     ).scalar()
+    # Refresh aggregates + log activity so existing contacts also surface
+    # in the dashboard's "Brain activity" feed when a new email arrives.
+    from app.ingestion.graph_builder import bump_contact_on_new_interaction
+    bump_contact_on_new_interaction(
+        db, org_id, contact_id, sent_at,
+        source="email", subject=b.subject or "", counterparty=counterparty,
+        interaction_id=iid,
+    )
     return contact_id, iid
 
 
@@ -388,6 +397,7 @@ def _insert_call(db, org_id, agent_uuid, b: CallIngest):
     trusted = trust_crud.is_trusted(
         db, agent_uuid, sender_phone=counterparty, contact_id=contact_id,
     ) if agent_uuid else False
+    started_at = _parse_ts(b.started_at)
     iid = db.execute(
         text("""
             INSERT INTO interactions
@@ -402,12 +412,18 @@ def _insert_call(db, org_id, agent_uuid, b: CallIngest):
             "dir": b.direction,
             "sum": (b.transcript or f"Call {b.duration_sec}s")[:2000],
             "raw": (b.transcript or "")[:5000],
-            "at": _parse_ts(b.started_at),
+            "at": started_at,
             "src": "phone", "ext": b.external_id,
             "dur": b.duration_sec, "tr": b.transcript,
             "trust": trusted,
         },
     ).scalar()
+    from app.ingestion.graph_builder import bump_contact_on_new_interaction
+    bump_contact_on_new_interaction(
+        db, org_id, contact_id, started_at,
+        source="phone", subject=f"Call {b.duration_sec}s",
+        counterparty=counterparty, interaction_id=iid,
+    )
     return contact_id, iid
 
 
@@ -418,6 +434,7 @@ def _insert_sms(db, org_id, agent_uuid, b: SmsIngest):
     trusted = trust_crud.is_trusted(
         db, agent_uuid, sender_phone=counterparty, contact_id=contact_id,
     ) if agent_uuid else False
+    sent_at = _parse_ts(b.sent_at)
     iid = db.execute(
         text("""
             INSERT INTO interactions
@@ -432,11 +449,17 @@ def _insert_sms(db, org_id, agent_uuid, b: SmsIngest):
             "dir": b.direction,
             "sum": (b.body or "")[:2000],
             "raw": (b.body or "")[:5000],
-            "at": _parse_ts(b.sent_at),
+            "at": sent_at,
             "src": "sms", "ext": b.external_id,
             "trust": trusted,
         },
     ).scalar()
+    from app.ingestion.graph_builder import bump_contact_on_new_interaction
+    bump_contact_on_new_interaction(
+        db, org_id, contact_id, sent_at,
+        source="sms", subject=(b.body or "")[:100],
+        counterparty=counterparty, interaction_id=iid,
+    )
     return contact_id, iid
 
 

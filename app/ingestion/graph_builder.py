@@ -1095,7 +1095,8 @@ def update_relationship_stats_only(db, org_id: str, contact_id: str, interaction
                 """
                 UPDATE contacts
                 SET interaction_count = interaction_count + 1,
-                    last_interaction_at = GREATEST(last_interaction_at, :interaction_date)
+                    last_interaction_at = GREATEST(last_interaction_at, :interaction_date),
+                    updated_at = NOW()
                 WHERE id = :contact_id AND org_id = :org_id
                 """
             ),
@@ -1108,4 +1109,57 @@ def update_relationship_stats_only(db, org_id: str, contact_id: str, interaction
         db.commit()
     except Exception as e:
         print(f"⚠️ Error updating relationship stats: {e}")
+        db.rollback()
+
+
+def bump_contact_on_new_interaction(
+    db, org_id: str, contact_id: str, interaction_date,
+    source: str,
+    subject: str = "",
+    counterparty: str = "",
+    interaction_id: str = None,
+) -> None:
+    """Single chokepoint called by EVERY ingest path (Gmail, Inkbox webhook,
+    Inkbox polling, IMAP, SMS, calls, calendar) after an interaction row is
+    inserted. Two things in one call:
+
+      1. Bump contacts.interaction_count + last_interaction_at + updated_at
+         — so dashboard/graph/context bundle reflect 'just synced' state
+         instead of showing stale aggregates.
+
+      2. Insert one activity_log row of event_type='new_interaction' with
+         channel + subject + counterparty in event_data — so the Brain
+         Activity panel can render 'New email from X · 2m ago' for EXISTING
+         contacts (previously only contact_created events were logged,
+         making every email after the first invisible in that feed).
+
+    Safe to call without contact_id (no-op). Errors swallowed — never block
+    the ingest path."""
+    if not contact_id:
+        return
+    from sqlalchemy import text
+    import json as _json
+    try:
+        # Step 1: aggregate refresh
+        update_relationship_stats_only(db, org_id, contact_id, interaction_date)
+        # Step 2: activity feed entry
+        db.execute(
+            text("""
+                INSERT INTO activity_log (org_id, event_type, event_data)
+                VALUES (:o, 'new_interaction', CAST(:d AS jsonb))
+            """),
+            {
+                "o": org_id,
+                "d": _json.dumps({
+                    "contact_id": str(contact_id),
+                    "counterparty": (counterparty or "")[:200],
+                    "source": source,
+                    "subject": (subject or "")[:200],
+                    "interaction_id": str(interaction_id) if interaction_id else None,
+                }),
+            },
+        )
+        db.commit()
+    except Exception as e:
+        print(f"⚠️ bump_contact_on_new_interaction failed: {e}")
         db.rollback()
