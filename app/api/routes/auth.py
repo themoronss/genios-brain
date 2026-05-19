@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 import bcrypt
 import jwt
 import os
+import time
+import logging
 from datetime import datetime, timedelta
 import secrets
 
@@ -12,8 +14,57 @@ from app.api.deps import get_db
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
+
+# Anti-abuse: IP-based signup rate limit so an attacker cannot mint hundreds
+# of trial accounts in a loop. Sliding 24h window backed by Redis. Defaults
+# are conservative — operators tune via env without code changes.
+SIGNUP_PER_IP_DAILY = int(os.getenv("GENIOS_SIGNUP_PER_IP_DAILY", "3"))
+SIGNUP_PER_IP_WEEKLY = int(os.getenv("GENIOS_SIGNUP_PER_IP_WEEKLY", "10"))
+
+
+def _client_ip(request: Request) -> str:
+    """Best-effort source IP. Trusts X-Forwarded-For when behind a known
+    proxy; falls back to the socket peer otherwise."""
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+def _enforce_signup_rate_limit(ip: str) -> None:
+    """Block IPs that exceed the daily/weekly signup ceiling.
+
+    Fail-open on Redis errors so a cache outage doesn't lock out new users
+    on a legitimate launch day. The check is a defense-in-depth layer; a
+    determined attacker rotating IPs will need an additional captcha at
+    the gateway, which is configured separately.
+    """
+    try:
+        from app.redis_client import redis_client
+        now = int(time.time())
+        for window, limit in [(86400, SIGNUP_PER_IP_DAILY),
+                              (604800, SIGNUP_PER_IP_WEEKLY)]:
+            key = f"signup_rl:{window}:{ip}"
+            count = redis_client.incr(key)
+            if count == 1:
+                redis_client.expire(key, window)
+            if count > limit:
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "SIGNUP_RATE_LIMITED",
+                        "message": "Too many signups from this network. Try again later or contact support.",
+                    },
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"signup rate limit check failed (fail-open): {e}")
 
 
 # Pydantic models for auth
@@ -88,8 +139,16 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/auth/register", response_model=AuthResponse, status_code=201)
-def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    """Register new user."""
+def register(request: RegisterRequest, http_request: Request, db: Session = Depends(get_db)):
+    """Register new user.
+
+    Anti-abuse: IP-based signup rate limit (configurable via env) blocks
+    bots from minting trial accounts in a loop. Trial credits are granted
+    immediately so the user can ship code on day-zero without payment.
+    """
+    # IP rate limit — blocks at 3/day, 10/week per IP by default.
+    _enforce_signup_rate_limit(_client_ip(http_request))
+
     # Check if email exists
     existing = db.execute(
         text("SELECT id FROM orgs WHERE email = :email"), {"email": request.email}
@@ -106,7 +165,10 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     # Generate API key
     api_key = f"gn_live_{secrets.token_urlsafe(32)}"
 
-    # Insert user — auto-assign trial plan (5-day period)
+    # Insert user — auto-assign trial plan with single-pool credit grant.
+    # 7-day trial: 500 credits (see PLAN_CONFIG["trial"]).
+    from app.plan_enforcer import PLAN_CONFIG
+    trial_cfg = PLAN_CONFIG["trial"]
     result = db.execute(
         text(
             """
@@ -114,13 +176,18 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
                 name, email, password_hash, api_key,
                 subscription_tier, plan_status,
                 plan_started_at, plan_expires_at, period_reset_at,
-                period_context_count
+                period_context_count,
+                credits,
+                credit_period_start, credit_period_end
             )
             VALUES (
                 :name, :email, :password_hash, :api_key,
                 'trial', 'active',
-                NOW(), NOW() + INTERVAL '5 days', NOW() + INTERVAL '5 days',
-                0
+                NOW(), NOW() + (:days || ' days')::INTERVAL,
+                NOW() + (:days || ' days')::INTERVAL,
+                0,
+                :credits,
+                NOW(), NOW() + (:days || ' days')::INTERVAL
             )
             RETURNING id
         """
@@ -130,10 +197,34 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
             "email": request.email,
             "password_hash": password_hash,
             "api_key": api_key,
+            "days":    trial_cfg["period_days"],
+            "credits": trial_cfg["credits"],
         },
     )
     org_id = result.fetchone()[0]
     db.commit()
+
+    # Audit ledger row so trial grants show up in reconciliation.
+    try:
+        db.execute(
+            text("""
+                INSERT INTO credit_ledger
+                    (org_id, bucket, kind, amount, balance_after, reason, idempotency_key)
+                VALUES (:org, 'credits', 'grant', :amt, :amt,
+                        'signup_trial_grant', :key)
+                ON CONFLICT (org_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+                DO NOTHING
+            """),
+            {
+                "org": str(org_id),
+                "amt": trial_cfg["credits"],
+                "key": f"signup:{org_id}",
+            },
+        )
+        db.commit()
+    except Exception as e:
+        logger.warning(f"trial grant ledger write failed for org={org_id}: {e}")
+        db.rollback()
 
     # Auto-create default_agent + full-scope policy + bind primary key.
     # Day-0 UX stays the same — one key, integrate, ship. The Agent Registry
@@ -389,17 +480,25 @@ def get_usage_stats(org_id: str, db: Session = Depends(get_db)):
             expires_at = expires_at.replace(tzinfo=tz.utc)
         days_remaining = max(0, (expires_at - now).days)
 
+    # Post-099: single-pool credit model. Legacy `today`/`period_used`
+    # counts from context_calls are returned for analytics-only displays;
+    # the user-visible meter should read `credits.balance`.
+    credits_total = plan_info.get("credits", 0) + plan_info.get("topup_credits", 0)
     return {
         "today": today,
-        "today_limit": config["daily_contexts"],
-        "today_warn": int(config["daily_contexts"] * config["daily_warn_pct"]),
         "period_used": period_used,
-        "period_limit": config["period_contexts"],
         "plan": tier,
         "plan_status": plan_info.get("plan_status", "active"),
         "expires_at": expires_at.isoformat() if expires_at else None,
         "days_remaining": days_remaining,
-        "overage_allowed": config.get("overage_allowed", False),
+        # New single-pool meter
+        "credits": {
+            "balance": credits_total,
+            "plan":    plan_info.get("credits", 0),
+            "topup":   plan_info.get("topup_credits", 0),
+            "period_limit": config["credits"],
+        },
+        "sonnet_daily_limit": config.get("sonnet_daily_limit", 0),
     }
 
 

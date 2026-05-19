@@ -156,13 +156,21 @@ def _send_trial_expired(org_id: str, email: str, name: str):
 # ── Overage invoice creation ──────────────────────────────────────────────────
 
 def run_overage_invoices(db: Session):
-    """
-    For orgs whose billing period just ended (period_reset_at within last 24h),
-    calculate overage and create a pending subscription record.
-    Only for Hustler/Startup with overage_allowed = True.
-    """
-    from app.plan_enforcer import PLAN_CONFIG
+    """No-op since v099.
 
+    Post-099 model: customers who exhaust credits buy top-up packs
+    (see TOPUP_PACKS in billing.py) — there is no automatic overage
+    invoice. This function is kept as a safe stub so the Celery beat
+    schedule (`task_billing_jobs`) doesn't break, and so external
+    callers that imported it continue to work.
+
+    To restore overage billing, query orgs whose recent activity exceeds
+    plan credits and create overage `subscriptions` rows here. See git
+    history before commit-of-this-change for the original implementation.
+    """
+    return 0
+    # Legacy code retained below for reference only — never reached.
+    from app.plan_enforcer import PLAN_CONFIG
     rows = db.execute(
         text("""
             SELECT id, email, name, subscription_tier, period_reset_at

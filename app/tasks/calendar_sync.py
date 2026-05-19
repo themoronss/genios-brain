@@ -268,6 +268,8 @@ def _sync_calendar(db, service, org_id, calendar_id, org_domain, max_results=Non
                 page_token=page_token, max_results=max_results
             )
 
+            from app.credits import try_deduct as _try_deduct
+            credit_exhausted = False
             for event in events:
                 classification = classify_event(event, org_domain)
                 if classification is None:
@@ -280,12 +282,33 @@ def _sync_calendar(db, service, org_id, calendar_id, org_domain, max_results=Non
                     )
                     continue  # Quality gate: drop this event
 
+                # Per-event sync credit. Idempotent on (org_id, calendar event id)
+                # so a re-sync of the same event short-circuits and stays free.
+                ev_id = event.get("id") or ""
+                ok, reason_code = _try_deduct(
+                    db, org_id=org_id, bucket="sync",
+                    reason="sync:calendar_record",
+                    idempotency_key=f"sync:calendar:{calendar_id}:{ev_id}",
+                    related_kind="interaction",
+                )
+                if not ok and reason_code == "exhausted":
+                    logger.info(
+                        f"Calendar sync paused: out of sync credits "
+                        f"(org={org_id} cal={calendar_id}, added={events_added})"
+                    )
+                    credit_exhausted = True
+                    db.rollback()
+                    break
+
                 _upsert_calendar_event(db, org_id, calendar_id, event, classification, org_domain)
                 events_added += 1
 
                 # Commit in batches to avoid Supabase pooler statement timeout
                 if events_added % 25 == 0:
                     db.commit()
+
+            if credit_exhausted:
+                break
 
             if not next_page_token:
                 break

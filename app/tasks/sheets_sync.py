@@ -201,6 +201,7 @@ def _sync_tab(db, sheets_service, org_id, spreadsheet_id, tab_name, tab_gid, row
 
     data_rows = all_rows[1:]  # Skip header
 
+    from app.credits import try_deduct as _try_deduct
     for idx, row in enumerate(data_rows, start=1):
         row_hash = hash_row(row)
 
@@ -212,6 +213,20 @@ def _sync_tab(db, sheets_service, org_id, spreadsheet_id, tab_name, tab_gid, row
 
         if existing and existing.row_hash == row_hash:
             continue  # No change
+
+        # Per-row sync credit. Hash in key means "same row, same hash, same
+        # idempotency" — re-syncing an unchanged row is free anyway because
+        # we short-circuit above, but changed rows pay once per change.
+        ok, code = _try_deduct(
+            db, org_id=org_id, bucket="sync",
+            reason="sync:sheets_record",
+            idempotency_key=f"sync:sheets:{spreadsheet_id}:{tab_name}:{idx}:{row_hash}",
+            related_kind="interaction",
+        )
+        if not ok and code == "exhausted":
+            logger.info(f"Sheets sync paused: out of sync credits (org={org_id})")
+            db.rollback()
+            return
 
         extracted = _extract_row_data(headers, row, tab_type)
 

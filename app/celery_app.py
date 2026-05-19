@@ -104,9 +104,51 @@ celery.conf.update(
 # The actual sync logic stays in app/tasks/*.py — unchanged.
 
 
+def _plan_blocks_sync(org_id: str) -> tuple[bool, str]:
+    """Re-check plan status at task EXECUTION time.
+
+    Beat queues tasks based on a 30s plan cache, so a plan that expired
+    between queue-time and execution-time would still run and burn credits.
+    This helper re-reads the org row directly (cache-bypassing) and reports
+    whether the task should bail.
+
+    Returns (blocked: bool, reason: str).
+    """
+    try:
+        from app.database import SessionLocal
+        from app.plan_enforcer import (
+            _plan_cache_invalidate, get_org_plan,
+            is_plan_expired, is_in_grace,
+        )
+        _plan_cache_invalidate(org_id)
+        db = SessionLocal()
+        try:
+            plan = get_org_plan(db, org_id)
+        finally:
+            db.close()
+        if is_plan_expired(plan):
+            return True, "plan_expired"
+        if is_in_grace(plan):
+            # Grace = read-only. Sync writes new data, so block.
+            return True, "plan_grace_readonly"
+        return False, ""
+    except Exception as e:
+        # Fail-open on infra issues so a DB blip doesn't halt all sync work.
+        import logging
+        logging.getLogger(__name__).warning(f"_plan_blocks_sync errored, fail-open: {e}")
+        return False, ""
+
+
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_gmail_sync(self, org_id: str, max_emails: int = None, account_email: str = None):
     """Gmail sync — high priority (user-triggered)."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        import logging
+        logging.getLogger(__name__).info(
+            f"Skipping gmail sync for org={org_id}: {reason}"
+        )
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.gmail_sync import run_gmail_sync
         run_gmail_sync(org_id, max_emails=max_emails, account_email=account_email)
@@ -118,6 +160,9 @@ def task_gmail_sync(self, org_id: str, max_emails: int = None, account_email: st
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_calendar_sync(self, org_id: str, max_results: int = None):
     """Calendar sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.calendar_sync import run_calendar_sync
         run_calendar_sync(org_id, max_results=max_results)
@@ -128,6 +173,9 @@ def task_calendar_sync(self, org_id: str, max_results: int = None):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_slack_sync(self, org_id: str):
     """Slack sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.slack_sync import run_slack_backfill
         run_slack_backfill(org_id)
@@ -138,6 +186,9 @@ def task_slack_sync(self, org_id: str):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_jira_sync(self, org_id: str):
     """Jira sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.jira_sync import run_jira_sync
         run_jira_sync(org_id)
@@ -148,6 +199,9 @@ def task_jira_sync(self, org_id: str):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_notion_sync(self, org_id: str):
     """Notion sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.notion_sync import run_notion_sync
         run_notion_sync(org_id)
@@ -158,6 +212,9 @@ def task_notion_sync(self, org_id: str):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_sheets_sync(self, org_id: str):
     """Google Sheets sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.sheets_sync import run_sheets_sync
         run_sheets_sync(org_id)
@@ -168,6 +225,9 @@ def task_sheets_sync(self, org_id: str):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_drive_sync(self, org_id: str):
     """Google Drive sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.drive_sync import run_drive_sync
         run_drive_sync(org_id)
@@ -178,6 +238,9 @@ def task_drive_sync(self, org_id: str):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_docs_sync(self, org_id: str):
     """Google Docs sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.docs_sync import run_docs_sync
         run_docs_sync(org_id)
@@ -188,6 +251,9 @@ def task_docs_sync(self, org_id: str):
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_hubspot_sync(self, org_id: str):
     """HubSpot sync — high priority."""
+    blocked, reason = _plan_blocks_sync(org_id)
+    if blocked:
+        return {"skipped": True, "reason": reason}
     try:
         from app.tasks.hubspot_sync import run_hubspot_sync
         run_hubspot_sync(org_id)

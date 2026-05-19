@@ -618,10 +618,43 @@ def _sync_single_account(
         system_emails = 0
         discarded_emails = 0
         weak_emails = 0
+        credit_skipped = 0   # messages stopped because we ran out of sync credits
+
+        # Lazy imports to avoid circular: credits → plan_enforcer → db.
+        from app.credits import deduct as _credit_deduct, InsufficientCredits as _InsCred
 
         for i, parsed_msg in enumerate(all_parsed, 1):
             if i % 10 == 0:
                 print(f"Processing message {i}/{len(all_parsed)}...")
+
+            # ── Per-record credit deduct (sync bucket) ───────────────────
+            # Charge ONE sync credit per email we actually process. Retry-safe
+            # via gmail_id idempotency key — a re-sync of the same message
+            # short-circuits and returns the original ledger row (free).
+            # If the org runs out mid-sync we stop the loop and let the next
+            # cycle pick up where we left off after they top up.
+            gmail_id = parsed_msg.get("gmail_id")
+            if gmail_id:
+                try:
+                    _credit_deduct(
+                        db, org_id=org_id, bucket="sync",
+                        reason="sync:gmail_record",
+                        idempotency_key=f"sync:gmail:{gmail_id}",
+                        related_kind="interaction",
+                    )
+                    db.commit()
+                except _InsCred:
+                    db.rollback()
+                    credit_skipped = len(all_parsed) - i + 1
+                    print(f"⏸️  Out of sync credits — stopping after {i - 1} messages "
+                          f"({credit_skipped} skipped). Top up to resume.")
+                    break
+                except Exception as _ce:
+                    # DB / credit-system failure: fail-open so a credit
+                    # outage doesn't break ingestion entirely. Logged for
+                    # later reconciliation.
+                    db.rollback()
+                    print(f"⚠️ credit deduct failed for gmail:{gmail_id[:8]}: {_ce}")
 
             thread_id = parsed_msg["thread_id"]
             contact_email = parsed_msg["contact_email"]

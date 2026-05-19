@@ -183,6 +183,21 @@ def get_context(
         # Determine call source: dashboard UI vs external agent
         source = "dashboard" if x_genios_source == "dashboard" else "api"
 
+        # ── Dashboard-passive billing toggle ──────────────────────────────
+        # Dashboard renders (open contact page, click node) MUST NOT
+        # decrement the user-visible credit meter, even if the internal
+        # bundle build path lazily calls an LLM for narrative/reasoner/
+        # response-shape. API integrators DO consume credits — they're
+        # using GeniOS as a paid service.
+        #
+        # We flip a request-scoped contextvar; llm_client.call reads it
+        # and skips deduct when False. Token is reset in the outer
+        # finally below regardless of which return-path the handler takes.
+        from app.credits.billing_context import (
+            disable_billing_for_request, restore_billing,
+        )
+        _billing_token = disable_billing_for_request() if source == "dashboard" else None
+
         # Phase 2: bitemporal short-circuit. When as_of is set we bypass the
         # normal cache/build pipeline and return a historical snapshot from
         # event_log + versioned rows.
@@ -797,6 +812,14 @@ def get_context(
     except Exception as e:
         logger.error(f"Unexpected error in get_context: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Always restore the billing flag, no matter which path the
+        # handler took. restore_billing(None) is a no-op so this is safe
+        # even on the api/integrator path where billing stayed enabled.
+        try:
+            restore_billing(_billing_token)
+        except Exception:
+            pass
 
 
 class DashboardContextRequest(BaseModel):
@@ -805,11 +828,19 @@ class DashboardContextRequest(BaseModel):
 
 @router.post("/api/org/{org_id}/context")
 def get_dashboard_context(org_id: str, request: DashboardContextRequest, db: Session = Depends(get_db)):
-    """Internal endpoint for testing context without API key."""
+    """Internal endpoint for dashboard testing — never bills credits.
+
+    Hits the same bundle pipeline as `/v1/context` but bypasses the API
+    key path. Always treated as dashboard-passive: opening this from the
+    UI must not decrement user credits even if narrative/reasoner LLM
+    calls fire under the hood.
+    """
+    from app.credits.billing_context import billing_disabled
     try:
-        context_bundle = build_context_bundle(
-            db, org_id, request.entity_name, request.situation
-        )
+        with billing_disabled():
+            context_bundle = build_context_bundle(
+                db, org_id, request.entity_name, request.situation
+            )
         if context_bundle.get("error"):
             raise HTTPException(
                 status_code=404,
@@ -1095,9 +1126,15 @@ def get_entity_context(
     entity_id: str,
     db: Session = Depends(get_db),
     auth: AuthCtx = Depends(get_auth_ctx),
+    x_genios_source: str = Header(None, alias="X-GeniOS-Source"),
 ):
-    """Pull full context for a specific entity by ID (contact UUID, scope-aware)."""
+    """Pull full context for a specific entity by ID (contact UUID, scope-aware).
+
+    Dashboard clicks send `X-GeniOS-Source: dashboard` → bills as
+    passive view (no credit deduct). API integrators get charged.
+    """
     import uuid as _uuid
+    from app.credits.billing_context import billing_disabled
     org_id = auth.org_id
     try:
         _uuid.UUID(entity_id)
@@ -1106,6 +1143,8 @@ def get_entity_context(
             status_code=404,
             detail={"error_code": "entity_not_found", "message": f"Entity {entity_id} not found"},
         )
+
+    is_dashboard = x_genios_source == "dashboard"
     try:
         # Pull contact with scope filter applied — out-of-scope = 404.
         _frag, _binds = scope_filter.contact_clauses(auth.policy, contact_alias="c")
@@ -1127,11 +1166,20 @@ def get_entity_context(
             )
 
         _dv = (auth.policy or {}).get("data_visibility", "all") if auth.policy else "all"
-        context_bundle = build_context_bundle(
-            db, org_id, contact[0],
-            requesting_agent_uuid=auth.agent_uuid,
-            data_visibility=_dv,
-        )
+        # Wrap bundle build in billing_disabled when dashboard-sourced.
+        if is_dashboard:
+            with billing_disabled():
+                context_bundle = build_context_bundle(
+                    db, org_id, contact[0],
+                    requesting_agent_uuid=auth.agent_uuid,
+                    data_visibility=_dv,
+                )
+        else:
+            context_bundle = build_context_bundle(
+                db, org_id, contact[0],
+                requesting_agent_uuid=auth.agent_uuid,
+                data_visibility=_dv,
+            )
 
         if context_bundle.get("error"):
             raise HTTPException(status_code=404, detail={"error_code": "entity_not_found"})

@@ -67,6 +67,8 @@ def run_notion_sync(org_id: str):
         cursor = None
         pages_processed = 0
 
+        from app.credits import try_deduct as _try_deduct
+        credit_exhausted = False
         while True:
             pages, next_cursor = fetch_pages_since(
                 conn.access_token,
@@ -80,11 +82,24 @@ def run_notion_sync(org_id: str):
                 if classification is None:
                     continue
 
+                page_id = page.get("id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=org_id, bucket="sync",
+                    reason="sync:notion_record",
+                    idempotency_key=f"sync:notion:{page_id}",
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    logger.info(f"Notion sync paused: out of sync credits (org={org_id})")
+                    credit_exhausted = True
+                    db.rollback()
+                    break
+
                 processed = _process_page(db, org_id, conn.access_token, page, classification)
                 if processed:
                     pages_processed += 1
 
-            if not next_cursor:
+            if credit_exhausted or not next_cursor:
                 break
             cursor = next_cursor
 

@@ -85,6 +85,8 @@ def run_docs_sync(org_id: str):
         docs_fetched = _get_docs_from_drive(drive_service, since=last_cursor)
 
         docs_processed = 0
+        from app.credits import try_deduct as _try_deduct
+        credit_exhausted = False
         for doc_file in docs_fetched:
             try:
                 # Quality gate: classify based on Drive metadata first
@@ -92,12 +94,27 @@ def run_docs_sync(org_id: str):
                 if classification is None:
                     continue
 
+                doc_id = doc_file.get("id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=org_id, bucket="sync",
+                    reason="sync:docs_record",
+                    idempotency_key=f"sync:docs:{doc_id}",
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    logger.info(f"Docs sync paused: out of sync credits (org={org_id})")
+                    credit_exhausted = True
+                    db.rollback()
+                    break
+
                 processed = _process_document(db, docs_service, drive_service, org_id, doc_file, classification)
                 if processed:
                     docs_processed += 1
 
             except Exception as e:
                 logger.error(f"Docs: failed to process doc {doc_file.get('id')}: {e}")
+        if credit_exhausted:
+            pass  # cursor update below still runs so we resume at the right place
 
         # Update cursor
         db.execute(

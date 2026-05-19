@@ -148,13 +148,35 @@ def _backfill_channel(db, bot_token, org_id, workspace_id, channel):
             logger.error(f"Failed to fetch history for channel {channel.channel_id}: {e}")
             break
 
+        from app.credits import try_deduct as _try_deduct
+        credit_exhausted = False
         for message in messages:
             tier, reason = classify_message(message, channel_name=channel.channel_name)
             if tier == 3:
                 continue  # Drop
 
+            # Per-message sync credit. ts (timestamp) is Slack's stable id.
+            ts = message.get("ts") or ""
+            ok, code = _try_deduct(
+                db, org_id=org_id, bucket="sync",
+                reason="sync:slack_record",
+                idempotency_key=f"sync:slack:{channel.channel_id}:{ts}",
+                related_kind="interaction",
+            )
+            if not ok and code == "exhausted":
+                logger.info(
+                    f"Slack sync paused: out of sync credits "
+                    f"(org={org_id} channel={channel.channel_name})"
+                )
+                credit_exhausted = True
+                db.rollback()
+                break
+
             _upsert_message(db, org_id, workspace_id, channel.channel_id, message, tier)
             messages_processed += 1
+
+        if credit_exhausted:
+            break
 
         # Save cursor progress
         if next_cursor:

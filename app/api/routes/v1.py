@@ -165,7 +165,7 @@ def v1_org_info(
             {"org_id": org_id, "reset_at": period_reset_at},
         ).scalar() or 0
     else:
-        period_used = plan_info["period_context_count"]
+        period_used = plan_info.get("period_context_count", 0)
 
     expires_at = plan_info.get("expires_at")
     days_remaining = None
@@ -175,6 +175,8 @@ def v1_org_info(
             expires_at = expires_at.replace(tzinfo=timezone.utc)
         days_remaining = max(0, (expires_at - now).days)
 
+    # Post-099: single-pool credit balance is the user-visible meter.
+    credits_total = plan_info.get("credits", 0) + plan_info.get("topup_credits", 0)
     return {
         "org_id": org_id,
         "name": row.name,
@@ -184,19 +186,24 @@ def v1_org_info(
             "status": plan_info["plan_status"],
             "expires_at": expires_at.isoformat() if expires_at else None,
             "days_remaining": days_remaining,
-            "period_context_limit": config["period_contexts"],
-            "period_context_used": period_used,
-            "daily_context_limit": config["daily_contexts"],
+            "credits": {
+                "balance":      credits_total,
+                "plan":         plan_info.get("credits", 0),
+                "topup":        plan_info.get("topup_credits", 0),
+                "period_limit": config["credits"],
+            },
+            "period_context_used": period_used,  # legacy analytics field
             "max_contacts": config["max_contacts"],
             "max_agent_ids": config["max_agent_ids"],
             "max_api_keys": config["max_api_keys"],
             "context_depth": config["context_depth"],
+            "sonnet_daily_limit": config.get("sonnet_daily_limit", 0),
         },
         "graph": {
             "contact_count": contact_count,
             "cluster_count": cluster_count,
             "max_contacts": config["max_contacts"],
-            "max_clusters": config["max_clusters"],
+            "max_clusters": config.get("max_clusters", 1),
         },
     }
 

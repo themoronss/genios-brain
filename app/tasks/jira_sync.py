@@ -228,15 +228,32 @@ def _backfill_issues(db, org_id, cloud_id, access_token):
         )
 
         start_at = 0
+        credit_exhausted = False
+        from app.credits import try_deduct as _try_deduct
         while True:
             issues, total, is_last = search_issues_jql(cloud_id, access_token, jql, start_at=start_at)
             for issue in issues:
+                issue_key = issue.get("key") or issue.get("id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=org_id, bucket="sync",
+                    reason="sync:jira_record",
+                    idempotency_key=f"sync:jira:{issue_key}",
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    logger.info(f"Jira sync paused: out of sync credits (org={org_id})")
+                    credit_exhausted = True
+                    db.rollback()
+                    break
                 _upsert_jira_issue(db, org_id, issue)
 
             db.commit()
-            if is_last:
+            if credit_exhausted or is_last:
                 break
             start_at += len(issues)
+
+        if credit_exhausted:
+            break
 
         # Update cursor
         db.execute(

@@ -35,6 +35,25 @@ class TenantCostGuardrailExceeded(Exception):
     """Raised when an org has hit GENIOS_LLM_DAILY_CAP_USD for today."""
 
 
+# Purposes that count as "proactive" — billed to the proactive bucket so they
+# don't drain user-visible context credits. Background scanners, nightly
+# refreshers, and entity extractors during ingest fall here.
+_PROACTIVE_PURPOSES = {
+    "classify_email",       # ingest pipeline (system-driven)
+    "extract_entities",     # ingest pipeline
+    "calendar_extract",     # sync pipeline
+    "judge_insight",        # proactive scanner
+    "compose_retention_offer",  # automated retention nudges
+}
+
+
+def _bucket_for_purpose(purpose: str) -> str:
+    """Reactive (user-triggered) calls bill the CONTEXT bucket; background
+    ingest/scan calls bill PROACTIVE."""
+    from app.credits import CONTEXT, PROACTIVE
+    return PROACTIVE if purpose in _PROACTIVE_PURPOSES else CONTEXT
+
+
 # purpose → (provider, model). Anthropic-primary for reasoning + extraction.
 # Override any purpose via env: LLM_ROUTE_<UPPER_PURPOSE>="provider:model"
 #   e.g. LLM_ROUTE_REASON_HAIKU="anthropic:claude-haiku-4-5-20251001"
@@ -145,42 +164,70 @@ class LLMClient:
         if org_id:
             self._check_cost_guardrail(org_id)
 
+        # ── Sonnet daily cap (anti-abuse, only for Sonnet) ────────────────
+        # Sonnet is ~3x more expensive than Haiku per call. Power users
+        # spamming reason_sonnet would blow up unit economics. The cap is
+        # plan-tier driven (see PLAN_CONFIG.sonnet_daily_limit) and resets
+        # daily at UTC midnight. Atomic UPDATE in
+        # check_and_increment_sonnet_quota — no race possible.
+        if org_id and purpose == "reason_sonnet":
+            self._check_sonnet_cap(org_id)
+
+        # ── Atomic credit pre-deduct ──────────────────────────────────────
+        # Charge before the call so a credit-exhausted org fails fast (402)
+        # without hitting the provider. Refund on call failure. Dashboard-
+        # passive renders set the request-scoped billing flag False (see
+        # app.credits.billing_context) — those skip the deduct entirely so
+        # opening a UI page doesn't drain user credits.
+        from app.credits import is_billing_enabled
+        ledger_id = self._prededuct_credits(
+            org_id=org_id, purpose=purpose, trace_id=trace_id,
+        ) if (org_id and is_billing_enabled()) else None
+
         t0 = time.monotonic()
         try:
-            if provider == "groq":
-                text_out, in_tok, out_tok = self._call_groq(model, messages, temperature, max_tokens)
-            elif provider == "gemini":
-                text_out, in_tok, out_tok = self._call_gemini(model, messages, temperature, max_tokens)
-            elif provider == "anthropic":
-                text_out, in_tok, out_tok = self._call_anthropic(model, messages, temperature, max_tokens)
-            elif provider == "openai":
-                text_out, in_tok, out_tok = self._call_openai(model, messages, temperature, max_tokens)
-            else:
-                raise ValueError(f"Unknown provider: {provider}")
-        except Exception as primary_err:
-            # Provider fallback chain: Anthropic → Groq → Gemini.
-            # Keeps the pipeline alive when a provider has quota/auth/transient errors.
-            if provider == "anthropic":
-                logger.warning(f"Anthropic failed for {purpose}, falling back to Groq: {primary_err}")
-                try:
-                    text_out, in_tok, out_tok = self._call_groq(
-                        "llama-3.3-70b-versatile", messages, temperature, max_tokens
-                    )
-                    provider, model = "groq", "llama-3.3-70b-versatile"
-                except Exception as groq_err:
-                    logger.warning(f"Groq fallback also failed for {purpose}, falling back to Gemini: {groq_err}")
+            try:
+                if provider == "groq":
+                    text_out, in_tok, out_tok = self._call_groq(model, messages, temperature, max_tokens)
+                elif provider == "gemini":
+                    text_out, in_tok, out_tok = self._call_gemini(model, messages, temperature, max_tokens)
+                elif provider == "anthropic":
+                    text_out, in_tok, out_tok = self._call_anthropic(model, messages, temperature, max_tokens)
+                elif provider == "openai":
+                    text_out, in_tok, out_tok = self._call_openai(model, messages, temperature, max_tokens)
+                else:
+                    raise ValueError(f"Unknown provider: {provider}")
+            except Exception as primary_err:
+                # Provider fallback chain: Anthropic → Groq → Gemini.
+                # Keeps the pipeline alive when a provider has quota/auth/transient errors.
+                if provider == "anthropic":
+                    logger.warning(f"Anthropic failed for {purpose}, falling back to Groq: {primary_err}")
+                    try:
+                        text_out, in_tok, out_tok = self._call_groq(
+                            "llama-3.3-70b-versatile", messages, temperature, max_tokens
+                        )
+                        provider, model = "groq", "llama-3.3-70b-versatile"
+                    except Exception as groq_err:
+                        logger.warning(f"Groq fallback also failed for {purpose}, falling back to Gemini: {groq_err}")
+                        text_out, in_tok, out_tok = self._call_gemini(
+                            "gemini-2.5-flash", messages, temperature, max_tokens
+                        )
+                        provider, model = "gemini", "gemini-2.5-flash"
+                elif provider == "groq":
+                    logger.warning(f"Groq failed for {purpose}, falling back to Gemini: {primary_err}")
                     text_out, in_tok, out_tok = self._call_gemini(
                         "gemini-2.5-flash", messages, temperature, max_tokens
                     )
                     provider, model = "gemini", "gemini-2.5-flash"
-            elif provider == "groq":
-                logger.warning(f"Groq failed for {purpose}, falling back to Gemini: {primary_err}")
-                text_out, in_tok, out_tok = self._call_gemini(
-                    "gemini-2.5-flash", messages, temperature, max_tokens
-                )
-                provider, model = "gemini", "gemini-2.5-flash"
-            else:
-                raise
+                else:
+                    raise
+        except Exception:
+            # All fallbacks failed — refund the pre-deduct so the user isn't
+            # billed for work that produced no output.
+            if ledger_id:
+                self._refund_credits(org_id=org_id, ledger_id=ledger_id,
+                                     reason=f"llm_call_failed:{purpose}")
+            raise
 
         latency_ms = int((time.monotonic() - t0) * 1000)
         cost_usd = calc_cost_usd(provider, model, in_tok, out_tok)
@@ -210,20 +257,35 @@ class LLMClient:
         cache_key = _embed_cache_key(model, dim, text_in)
         cached = _embed_cache_get(cache_key)
         if cached is not None:
-            # Cache hit: skip Gemini + skip llm_usage write (no cost incurred).
+            # Cache hit: skip Gemini + skip llm_usage write + skip credit
+            # deduction. Cached embeddings cost nothing.
             return cached
 
         if org_id:
             self._check_cost_guardrail(org_id)
 
+        # Embed misses bill the proactive bucket (called from ingest /
+        # retrieval). Dashboard-passive paths skip billing — see
+        # app.credits.billing_context.
+        from app.credits import is_billing_enabled
+        ledger_id = self._prededuct_credits(
+            org_id=org_id, purpose="embed", trace_id=trace_id,
+        ) if (org_id and is_billing_enabled()) else None
+
         t0 = time.monotonic()
-        self._configure_gemini()
-        import google.generativeai as genai
-        result = genai.embed_content(
-            model=f"models/{model}",
-            content=text_in,
-            output_dimensionality=dim,
-        )
+        try:
+            self._configure_gemini()
+            import google.generativeai as genai
+            result = genai.embed_content(
+                model=f"models/{model}",
+                content=text_in,
+                output_dimensionality=dim,
+            )
+        except Exception:
+            if ledger_id:
+                self._refund_credits(org_id=org_id, ledger_id=ledger_id,
+                                     reason="embed_failed")
+            raise
         latency_ms = int((time.monotonic() - t0) * 1000)
         embedding = result["embedding"]
         _embed_cache_set(cache_key, embedding)
@@ -331,7 +393,120 @@ class LLMClient:
         self._gemini_configured = True
 
     # ──────────────────────────────────────────────────────────────
-    # Bookkeeping
+    # Credit bookkeeping
+    # ──────────────────────────────────────────────────────────────
+    def _prededuct_credits(
+        self, *, org_id: str, purpose: str, trace_id: Optional[str],
+    ) -> Optional[int]:
+        """Atomic credit deduct before calling the provider.
+
+        Returns ledger_id on success so a failed call can be refunded.
+        Returns None on infra error (e.g. DB unavailable) — we fail-open
+        in that case rather than block legitimate traffic on a DB blip.
+
+        Raises HTTP 402 (via InsufficientCredits) if the org is out of
+        credits in the relevant bucket.
+        """
+        from app.credits import deduct, InsufficientCredits
+        from fastapi import HTTPException
+
+        bucket = _bucket_for_purpose(purpose)
+        reason = (
+            f"proactive:llm_call:{purpose}"
+            if bucket == "proactive"
+            else f"llm_call:{purpose}"
+        )
+
+        db = SessionLocal()
+        try:
+            try:
+                res = deduct(
+                    db,
+                    org_id=org_id,
+                    bucket=bucket,
+                    reason=reason,
+                    idempotency_key=trace_id,  # trace_id makes Celery retries safe
+                    related_kind="llm_usage",
+                )
+                db.commit()
+                return res.ledger_id
+            except InsufficientCredits as e:
+                db.rollback()
+                # 402 Payment Required — surfaced through HTTPException so
+                # FastAPI routes that don't catch it produce a clean error.
+                raise HTTPException(
+                    status_code=402,
+                    detail={
+                        "error": "INSUFFICIENT_CREDITS",
+                        "bucket": e.bucket,
+                        "requested": e.requested,
+                        "available": e.available,
+                        "message": f"Out of {e.bucket} credits. Top up or upgrade to continue.",
+                    },
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"credit pre-deduct failed (fail-open): {e}")
+            db.rollback()
+            return None
+        finally:
+            db.close()
+
+    def _check_sonnet_cap(self, org_id: str) -> None:
+        """Enforce per-tier daily Sonnet call limit.
+
+        Reads `sonnet_daily_limit` from the org's plan config and asks
+        `check_and_increment_sonnet_quota` to atomically test+increment
+        the daily counter. Raises 429 when exhausted so the caller's
+        retry/fallback chain can downgrade to Haiku transparently.
+        """
+        from app.credits import check_and_increment_sonnet_quota
+        from app.plan_enforcer import get_org_plan
+        from fastapi import HTTPException
+
+        db = SessionLocal()
+        try:
+            plan = get_org_plan(db, org_id)
+            limit = plan["config"].get("sonnet_daily_limit", 0)
+            if limit <= 0:
+                return  # unlimited (Enterprise)
+            allowed = check_and_increment_sonnet_quota(db, org_id, limit)
+            if not allowed:
+                db.commit()  # commit any partial state cleanly
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "SONNET_DAILY_LIMIT",
+                        "message": f"Daily Sonnet call limit ({limit}) reached. "
+                                   f"Resets at UTC midnight. Use Haiku reasoning or wait.",
+                        "limit": limit,
+                    },
+                )
+            db.commit()
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"sonnet cap check failed (fail-open): {e}")
+            db.rollback()
+        finally:
+            db.close()
+
+    def _refund_credits(self, *, org_id: str, ledger_id: int, reason: str) -> None:
+        """Reverse a previous deduct. Best-effort — never raises."""
+        from app.credits import refund
+        db = SessionLocal()
+        try:
+            refund(db, org_id=org_id, ledger_id=ledger_id, reason=reason)
+            db.commit()
+        except Exception as e:
+            logger.warning(f"credit refund failed for ledger={ledger_id}: {e}")
+            db.rollback()
+        finally:
+            db.close()
+
+    # ──────────────────────────────────────────────────────────────
+    # Cost guardrail + usage logging
     # ──────────────────────────────────────────────────────────────
     def _check_cost_guardrail(self, org_id: str) -> None:
         cap = config.GENIOS_LLM_DAILY_CAP_USD

@@ -322,10 +322,49 @@ async def _common_ingest(
                interaction_id=dup[0], contact_id=dup[1], payload_bytes=len(raw))
         return {"deduped": True, "interaction_id": dup[0], "contact_id": dup[1]}
 
+    # ── Per-item credit deduction ────────────────────────────────────────
+    # IMPORTANT: bills per accepted item, NOT per webhook call. A vendor
+    # that batches 1000 emails into one POST gets charged 1000 sync
+    # credits. external_id is the idempotency key so a webhook replay of
+    # the same Inkbox message_id doesn't double-charge.
+    from app.credits import deduct, InsufficientCredits
+    reason_map = {"email": "ingest:email", "sms": "ingest:sms", "phone": "ingest:call"}
+    credit_reason = reason_map.get(source, "ingest:email")
+    credit_ledger_id: Optional[int] = None
+    try:
+        credit_res = deduct(
+            db,
+            org_id=org_id,
+            bucket="sync",
+            reason=credit_reason,
+            idempotency_key=f"ingest:{source}:{body.external_id}",
+            related_kind="interaction",
+            agent_uuid=agent_uuid,
+        )
+        credit_ledger_id = credit_res.ledger_id
+        # Don't commit yet — keep the deduct + interaction insert in one txn
+        # so a failed insert rolls back the deduct automatically.
+    except InsufficientCredits as e:
+        db.rollback()
+        _audit(db, org_id, agent_uuid, source, body.external_id, "rejected_quota",
+               error="insufficient sync credits", payload_bytes=len(raw))
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "INSUFFICIENT_CREDITS",
+                "bucket": "sync",
+                "requested": e.requested,
+                "available": e.available,
+                "message": "Out of sync credits. Top up or upgrade to keep accepting data.",
+            },
+        )
+
     try:
         contact_id, interaction_id = insert_fn(db, org_id, agent_uuid, body)
         db.commit()
     except Exception as e:
+        # Atomic rollback handles the deduct too. ledger row was never
+        # committed so balance is unchanged — no manual refund needed.
         db.rollback()
         _audit(db, org_id, agent_uuid, source, body.external_id, "rejected_format",
                error=f"insert failed: {e}"[:200], payload_bytes=len(raw))
@@ -961,11 +1000,39 @@ async def send_email_route(req: SendEmailRequest,
     if not send_fn:
         raise HTTPException(status_code=501, detail={"error": "PROVIDER_NO_SEND", "message": f"provider '{provider}' does not support outbound send"})
 
+    # ── Pre-deduct credits before invoking provider ──────────────────────
+    # Outbound sends cost real money (Inkbox / Twilio fees), so we charge
+    # up-front. On provider failure we refund below.
+    from app.credits import deduct, refund, InsufficientCredits
+    try:
+        send_ledger = deduct(
+            db, org_id=auth.org_id, bucket="sync", reason="send:email",
+            related_kind="interaction", agent_uuid=auth.agent_uuid,
+        )
+        db.commit()
+    except InsufficientCredits as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=402,
+            detail={"error": "INSUFFICIENT_CREDITS", "bucket": "sync",
+                    "requested": e.requested, "available": e.available,
+                    "message": "Out of sync credits. Top up to send."},
+        )
+
     result = send_fn(
         creds, to=req.to, subject=req.subject or "", body_text=req.body_text or "",
         body_html=req.body_html, in_reply_to_external_id=req.in_reply_to_external_id,
         thread_external_id=req.thread_external_id, cc=req.cc, bcc=req.bcc,
     )
+
+    # Refund if the provider rejected the message — we did no work.
+    if not result.get("ok"):
+        try:
+            refund(db, org_id=auth.org_id, ledger_id=send_ledger.ledger_id,
+                   reason="send_email_failed")
+            db.commit()
+        except Exception:
+            db.rollback()
 
     # Persist the outbound interaction regardless of send result so the agent's
     # action appears in the timeline. delivery_state.status reflects outcome.
@@ -1015,7 +1082,30 @@ async def send_sms_route(req: SendSmsRequest,
     if not send_fn:
         raise HTTPException(status_code=501, detail={"error": "PROVIDER_NO_SEND", "message": f"provider '{provider}' does not support outbound SMS"})
 
+    from app.credits import deduct, refund, InsufficientCredits
+    try:
+        send_ledger = deduct(
+            db, org_id=auth.org_id, bucket="sync", reason="send:sms",
+            related_kind="interaction", agent_uuid=auth.agent_uuid,
+        )
+        db.commit()
+    except InsufficientCredits as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=402,
+            detail={"error": "INSUFFICIENT_CREDITS", "bucket": "sync",
+                    "requested": e.requested, "available": e.available,
+                    "message": "Out of sync credits. Top up to send."},
+        )
+
     result = send_fn(creds, to_number=req.to_number, body=req.body, media_urls=req.media_urls)
+    if not result.get("ok"):
+        try:
+            refund(db, org_id=auth.org_id, ledger_id=send_ledger.ledger_id,
+                   reason="send_sms_failed")
+            db.commit()
+        except Exception:
+            db.rollback()
 
     attachments = [{"url": u, "content_type": "unknown"} for u in (req.media_urls or [])]
     contact_id, iid = _persist_outbound(

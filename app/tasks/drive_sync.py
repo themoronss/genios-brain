@@ -151,7 +151,22 @@ def _process_changes(db, service, org_id, page_token):
 
         # Phase 2: Process each change log entry
         all_processed = True
+        from app.credits import try_deduct as _try_deduct
         for log_id, change, action, route in change_log_ids:
+            file_id = change.get("fileId") or ""
+            ok, code = _try_deduct(
+                db, org_id=org_id, bucket="sync",
+                reason="sync:drive_record",
+                idempotency_key=f"sync:drive:{file_id}:{log_id}",
+                related_kind="interaction",
+            )
+            if not ok and code == "exhausted":
+                logger.info(f"Drive sync paused: out of sync credits (org={org_id})")
+                # Leave remaining change_log rows as 'pending' so next sync
+                # picks them up after a top-up — no token advance below.
+                all_processed = False
+                db.rollback()
+                break
             try:
                 _process_single_change(db, org_id, change, action, route)
                 db.execute(

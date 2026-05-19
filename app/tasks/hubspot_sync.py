@@ -115,6 +115,50 @@ def run_hubspot_sync(org_id: str):
             logger.info(f"[HubSpot] Fetching deals for org {org_id}")
             deals = fetch_all_deals(access_token)
 
+            # ── Bulk sync credit deduct (HubSpot is batched, not streamed) ──
+            # Charge per record fetched. If the org doesn't have enough sync
+            # credits for the full batch, we truncate to what they can afford
+            # rather than fail the whole sync — partial sync is more useful
+            # than zero sync. The bridge upserts in deterministic order so
+            # truncation is stable across retries.
+            from app.credits import deduct as _credit_deduct, InsufficientCredits as _Ins
+            total_records = len(contacts) + len(deals)
+            if total_records > 0:
+                try:
+                    _credit_deduct(
+                        db, org_id=org_id, bucket="sync",
+                        reason="sync:hubspot_record",
+                        units=total_records,
+                        idempotency_key=f"sync:hubspot:{org_id}:{int(datetime.now(timezone.utc).timestamp())}",
+                        related_kind="interaction",
+                    )
+                    db.commit()
+                except _Ins as e:
+                    # Truncate to affordable. e.available is remaining credits.
+                    db.rollback()
+                    affordable = max(0, e.available)
+                    logger.warning(
+                        f"[HubSpot] Sync credits short: have {e.available}, need {total_records}. "
+                        f"Truncating to {affordable} records."
+                    )
+                    # Split: prioritise contacts (more useful), then deals.
+                    if affordable >= len(contacts):
+                        deals = deals[: affordable - len(contacts)]
+                    else:
+                        contacts = contacts[:affordable]
+                        deals = []
+                    if affordable > 0:
+                        try:
+                            _credit_deduct(
+                                db, org_id=org_id, bucket="sync",
+                                reason="sync:hubspot_record",
+                                units=affordable,
+                                idempotency_key=f"sync:hubspot:{org_id}:trunc:{int(datetime.now(timezone.utc).timestamp())}",
+                            )
+                            db.commit()
+                        except Exception:
+                            db.rollback()
+
             logger.info(
                 f"[HubSpot] Running bridge: {len(contacts)} contacts, {len(deals)} deals for org {org_id}"
             )

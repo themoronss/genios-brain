@@ -400,7 +400,30 @@ def task_sync_connector(self, connector_id: str):
                 _set_sync_status(db, connector_id, "failed", error=str(e))
                 return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
 
+            # Per-pulled-event sync credit. Provider determines which reason
+            # we attribute (inkbox vs imap vs generic). Idempotency keyed off
+            # provider external_id so re-pulls of the same event are free.
+            from app.credits import try_deduct as _try_deduct
+            _reason = {
+                "inkbox": "sync:inkbox_record",
+                "imap":   "sync:imap_record",
+            }.get(provider, "sync:generic_record")
+            credit_exhausted = False
             for ev in events:
+                ev_ext = ev.get("external_id") or ev.get("id") or ev.get("message_id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=row.org_id, bucket="sync",
+                    reason=_reason,
+                    idempotency_key=f"sync:{provider}:email:{ev_ext}",
+                    agent_uuid=row.agent_uuid,
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    logger.info(f"Connector sync paused: out of sync credits "
+                                f"(connector={connector_id} provider={provider})")
+                    credit_exhausted = True
+                    db.rollback()
+                    break
                 iid = _insert_canonical_email(db, row.org_id, row.agent_uuid, connector_id, ev)
                 if iid:
                     accepted += 1
@@ -419,7 +442,11 @@ def task_sync_connector(self, connector_id: str):
                     {"id": connector_id},
                 )
             db.commit()
-            _set_sync_status(db, connector_id, "success", accepted=accepted)
+            _set_sync_status(
+                db, connector_id,
+                "credit_exhausted" if credit_exhausted else "success",
+                accepted=accepted,
+            )
 
         # Calendar path — events become interactions of kind='meeting'
         elif row.source == "calendar" and "fetch_calendar" in ops:
@@ -432,7 +459,21 @@ def task_sync_connector(self, connector_id: str):
                 _set_sync_status(db, connector_id, "failed", error=str(e))
                 return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
 
+            from app.credits import try_deduct as _try_deduct
+            credit_exhausted = False
             for ev in events:
+                ev_ext = ev.get("external_id") or ev.get("id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=row.org_id, bucket="sync",
+                    reason="sync:calendar_record",
+                    idempotency_key=f"sync:{provider}:calendar:{ev_ext}",
+                    agent_uuid=row.agent_uuid,
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    credit_exhausted = True
+                    db.rollback()
+                    break
                 iid = _insert_calendar_event(db, row.org_id, row.agent_uuid, ev)
                 if iid:
                     accepted += 1
@@ -445,7 +486,11 @@ def task_sync_connector(self, connector_id: str):
                     {"id": connector_id},
                 )
             db.commit()
-            _set_sync_status(db, connector_id, "success", accepted=accepted)
+            _set_sync_status(
+                db, connector_id,
+                "credit_exhausted" if credit_exhausted else "success",
+                accepted=accepted,
+            )
 
         # SMS path — Inkbox texts become interactions of kind='sms'
         elif row.source == "sms" and "fetch_sms" in ops:
@@ -457,14 +502,32 @@ def task_sync_connector(self, connector_id: str):
             except Exception as e:
                 _set_sync_status(db, connector_id, "failed", error=str(e))
                 return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
+            from app.credits import try_deduct as _try_deduct
+            credit_exhausted = False
             for ev in events:
+                ev_ext = ev.get("external_id") or ev.get("id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=row.org_id, bucket="sync",
+                    reason="sync:inkbox_record",
+                    idempotency_key=f"sync:{provider}:sms:{ev_ext}",
+                    agent_uuid=row.agent_uuid,
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    credit_exhausted = True
+                    db.rollback()
+                    break
                 iid = _insert_canonical_sms(db, row.org_id, row.agent_uuid, connector_id, ev)
                 if iid: accepted += 1
                 else: duplicates += 1
             if accepted > 0:
                 db.execute(text("UPDATE connector_credentials SET last_event_at = NOW() WHERE id = :id"), {"id": connector_id})
             db.commit()
-            _set_sync_status(db, connector_id, "success", accepted=accepted)
+            _set_sync_status(
+                db, connector_id,
+                "credit_exhausted" if credit_exhausted else "success",
+                accepted=accepted,
+            )
 
         # Voice-call path — Inkbox calls (+ transcripts) become kind='call'
         elif row.source == "phone" and "fetch_calls" in ops:
@@ -476,14 +539,32 @@ def task_sync_connector(self, connector_id: str):
             except Exception as e:
                 _set_sync_status(db, connector_id, "failed", error=str(e))
                 return {"connector_id": connector_id, "status": "fetch_failed", "error": str(e)[:200]}
+            from app.credits import try_deduct as _try_deduct
+            credit_exhausted = False
             for ev in events:
+                ev_ext = ev.get("external_id") or ev.get("id") or ""
+                ok, code = _try_deduct(
+                    db, org_id=row.org_id, bucket="sync",
+                    reason="ingest:call",   # call = 2 credits (transcript work)
+                    idempotency_key=f"sync:{provider}:call:{ev_ext}",
+                    agent_uuid=row.agent_uuid,
+                    related_kind="interaction",
+                )
+                if not ok and code == "exhausted":
+                    credit_exhausted = True
+                    db.rollback()
+                    break
                 iid = _insert_canonical_call(db, row.org_id, row.agent_uuid, connector_id, ev)
                 if iid: accepted += 1
                 else: duplicates += 1
             if accepted > 0:
                 db.execute(text("UPDATE connector_credentials SET last_event_at = NOW() WHERE id = :id"), {"id": connector_id})
             db.commit()
-            _set_sync_status(db, connector_id, "success", accepted=accepted)
+            _set_sync_status(
+                db, connector_id,
+                "credit_exhausted" if credit_exhausted else "success",
+                accepted=accepted,
+            )
 
         else:
             _set_sync_status(db, connector_id, "failed", error=f"No fetch handler for source '{row.source}'")
