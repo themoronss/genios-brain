@@ -53,22 +53,25 @@ PLAN_CONFIG: dict = {
         "period_days":         7,
         "credits":             500,
         "sonnet_daily_limit":  5,
-        "max_contacts":        100,
-        "max_contacts_warn":   80,
-        "max_interactions_per_entity": 20,
-        "max_agent_ids":       1,
-        "max_api_keys":        1,
+        # Resource caps (real per-tenant cost — kept small)
+        "max_contacts":        500,
+        "max_contacts_warn":   400,
+        "max_interactions_per_entity": 50,
+        "max_agent_ids":       2,    # so they can test multi-agent setup
+        "max_api_keys":        2,
         "rpm_per_agent":       30,
         "rph_org":             300,
         "context_depth":       "full",
-        "integrations_allowed": {"gmail"},
-        "operations_allowed":   set(),
-        "mr_elite_modes":      {"entity"},
+        # Feature access: OPEN — trial me sab kuch chalna chahiye taaki
+        # customer poora evaluation kar sake. Credit balance hi real
+        # limit hai (500 credits / 7 din). If they hit it, they upgrade.
+        "integrations_allowed": {"gmail", "calendar", "documents", "custom"},
+        "operations_allowed":   {"manual_context", "correct_context", "merge", "override_stage"},
+        "mr_elite_modes":      {"entity", "temporal"},
         "sync_method":         "manual",
-        "louvain":             False,
-        # Feature gates (not usage caps — kept after v099)
-        "max_clusters":          1,    # segments feature
-        "live_fetch_daily_cap":  10,   # anti-abuse on web fetch
+        "louvain":             True,
+        "max_clusters":          3,
+        "live_fetch_daily_cap":  100,
     },
     "early": {
         "period_days":         30,
