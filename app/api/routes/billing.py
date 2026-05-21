@@ -248,8 +248,12 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
     _plan_cache_invalidate(org_id)
     logger.info(f"Plan activated atomically: org={org_id} plan={plan} payment={payment_id}")
     try:
-        from app.core.analytics import capture
-        capture(org_id, "plan_upgraded", {"plan": plan, "payment_id": payment_id})
+        from app.core.analytics import capture, org_properties
+        capture(org_id, "plan_upgraded", {
+            "plan": plan,
+            "payment_id": payment_id,
+            "$set": org_properties(plan=plan),
+        })
     except Exception:
         pass
 

@@ -564,5 +564,22 @@ class LLMClient:
         finally:
             db.close()
 
+        # ── Analytics — feed cost into the request accumulator + PostHog ──────
+        try:
+            from app.core.analytics import record_llm_cost, capture
+            record_llm_cost(cost_usd, (in_tok or 0) + (out_tok or 0))
+            if purpose != "embed":  # embeds are high-volume + zero-cost — skip event
+                capture(org_id, "llm_call", {
+                    "purpose": purpose,
+                    "provider": provider,
+                    "model": model,
+                    "tokens_in": in_tok,
+                    "tokens_out": out_tok,
+                    "cost_usd": cost_usd,
+                    "latency_ms": latency_ms,
+                })
+        except Exception:
+            pass
+
 
 llm_client = LLMClient()

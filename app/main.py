@@ -18,6 +18,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from contextlib import asynccontextmanager
 import asyncio
+import time
 import logging
 import jwt as pyjwt
 
@@ -186,6 +187,9 @@ async def lifespan(app: FastAPI):
     logger.info("✓ App started. Sync scheduling handled by Celery Beat.")
     yield
     logger.info("App shutting down.")
+    # Flush queued analytics events so the last batch isn't lost on restart.
+    from app.core.analytics import flush
+    flush()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -251,6 +255,48 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(JWTAuthMiddleware)
+
+
+# ── API Analytics Middleware — one `api_call` PostHog event per /v1 request ───
+# Captures per-agent API hits, latency, status, and the LLM cost incurred
+# during the request (via the llm_cost_var accumulator). distinct_id = org_id.
+class ApiAnalyticsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if request.method == "OPTIONS" or not path.startswith("/v1/"):
+            return await call_next(request)
+
+        from app.core.analytics import llm_cost_var, capture
+
+        acc = {"cost_usd": 0.0, "tokens": 0}
+        cv_token = llm_cost_var.set(acc)
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        finally:
+            llm_cost_var.reset(cv_token)
+
+        try:
+            auth = getattr(request.state, "auth", None)
+            org_id = getattr(auth, "org_id", None)
+            if org_id:
+                route = request.scope.get("route")
+                capture(org_id, "api_call", {
+                    "agent_id": getattr(auth, "agent_id", None) or "default",
+                    "endpoint": getattr(route, "path", path),
+                    "method": request.method,
+                    "status": response.status_code,
+                    "ok": response.status_code < 400,
+                    "latency_ms": int((time.perf_counter() - start) * 1000),
+                    "cost_usd": round(acc["cost_usd"], 6),
+                    "tokens": acc["tokens"],
+                })
+        except Exception:
+            pass  # analytics must never break the response
+        return response
+
+
+app.add_middleware(ApiAnalyticsMiddleware)
 
 app.include_router(health.router)
 app.include_router(auth.router)

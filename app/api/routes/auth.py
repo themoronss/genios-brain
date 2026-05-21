@@ -91,7 +91,11 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     """Login with email/password."""
     # Query user from orgs table
     result = db.execute(
-        text("SELECT id, name, email, password_hash FROM orgs WHERE email = :email"),
+        text("""
+            SELECT id, name, email, password_hash,
+                   subscription_tier, credits, topup_credits, created_at
+            FROM orgs WHERE email = :email
+        """),
         {"email": request.email},
     ).fetchone()
 
@@ -115,8 +119,15 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         algorithm="HS256",
     )
 
-    from app.core.analytics import capture
-    capture(str(result.id), "user_logged_in", {"email": result.email})
+    from app.core.analytics import capture, org_properties
+    capture(str(result.id), "user_logged_in", {
+        "email": result.email,
+        "$set": org_properties(
+            plan=result.subscription_tier,
+            credits=(result.credits or 0) + (result.topup_credits or 0),
+            created_at=result.created_at,
+        ),
+    })
 
     from fastapi.responses import JSONResponse
     response = JSONResponse(content={
@@ -287,8 +298,12 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
         algorithm="HS256",
     )
 
-    from app.core.analytics import capture
-    capture(str(org_id), "user_signed_up", {"plan": "trial", "email": request.email})
+    from app.core.analytics import capture, org_properties
+    capture(str(org_id), "user_signed_up", {
+        "plan": "trial",
+        "email": request.email,
+        "$set": org_properties(plan="trial", created_at=datetime.utcnow()),
+    })
 
     from fastapi.responses import JSONResponse
     response = JSONResponse(content={
