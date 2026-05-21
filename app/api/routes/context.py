@@ -443,7 +443,9 @@ def get_context(
         scope_hash = scope_filter.policy_hash(auth.policy)
         if not scope_filter.is_unrestricted(auth.policy):
             try:
-                in_scope = scope_filter.is_entity_in_scope(db, org_id, request.entity, auth.policy)
+                in_scope = scope_filter.is_entity_in_scope(
+                    db, org_id, request.entity, auth.policy, agent_uuid=auth.agent_uuid
+                )
             except Exception as _se:
                 logger.warning(f"scope pre-check failed (failing open): {_se}")
                 in_scope = True

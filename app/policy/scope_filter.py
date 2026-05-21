@@ -159,21 +159,19 @@ def interaction_clauses(
     bind_prefix: str = "siv",
 ) -> tuple[str, dict[str, Any]]:
     """
-    Phase 12: scoped agents see ONLY interactions whose source-account is in
-    the agent's grant list. Master agents (`data_visibility='all'`) see
-    everything.
+    Read-time interaction isolation between agents.
 
-    Behaviour:
-      - master (data_visibility='all') → no filter
-      - scoped (own) without agent_uuid → block all (defensive)
-      - scoped with agent_uuid →
-          interactions.account_id IN (SELECT … FROM agent_account_grants WHERE agent_uuid = :me)
+      - master (data_visibility='all')   → no filter (sees everything)
+      - scoped (own) without agent_uuid  → no filter (defensive fail-open)
+      - scoped (own) with agent_uuid     → an interaction is visible when ANY of:
+          1. genuine workspace data — account_id IS NULL AND agent_uuid IS NULL
+             (legacy rows / Gmail-OAuth-at-workspace);
+          2. the agent itself ingested it — interactions.agent_uuid = me;
+          3. the interaction's source-account is granted to the agent.
 
-    Note: workspace-level untagged rows (no account_id) are visible to scoped
-    agents only when they have AT LEAST ONE grant (otherwise the agent is
-    fully sandboxed). This preserves the "Gmail at workspace, agents pick
-    accounts" model — pre-grant-system rows behave as universally visible
-    until the customer migrates them.
+    Returns (sql_fragment, binds); fragment starts with ' AND ' so it can be
+    concatenated onto an existing WHERE clause. Empty string when no filter
+    applies.
     """
     if not agent_uuid:
         return "", {}
@@ -183,9 +181,14 @@ def interaction_clauses(
     a = interaction_alias
     bp = bind_prefix
     binds = {f"{bp}_agent": agent_uuid}
-    # account_id grant join + back-compat for legacy rows without account_id.
+    # Rule 1 deliberately requires agent_uuid IS NULL too. Without that,
+    # bootstrap-ingested rows (account_id NULL but agent_uuid set) would leak
+    # to every agent — that was the isolation bug this clause now closes.
     return (
-        f" AND ({a}.account_id IS NULL OR EXISTS ("
+        f" AND ("
+        f"({a}.account_id IS NULL AND {a}.agent_uuid IS NULL)"
+        f" OR {a}.agent_uuid = :{bp}_agent"
+        f" OR EXISTS ("
         f"  SELECT 1 FROM agent_account_grants g "
         f"  WHERE g.agent_uuid = :{bp}_agent AND g.account_id = {a}.account_id"
         f"))"
@@ -247,11 +250,18 @@ def is_entity_in_scope(
     org_id: str,
     entity_email_or_name: str,
     policy: Optional[dict],
+    agent_uuid: Optional[str] = None,
 ) -> bool:
     """
-    Cheap pre-check: would the scope policy permit any contact matching
-    this entity? Used by /v1/context to return 404 not_in_scope without
-    materialising the full bundle.
+    Pre-check: may the calling agent see any contact matching this entity?
+    Used by /v1/context to return 404 not_in_scope without materialising the
+    full bundle.
+
+    Two gates:
+      1. contact-level   — segment / exclude-tag scope (contact_clauses);
+      2. interaction-level — the contact must have AT LEAST ONE interaction
+         visible to the agent (interaction_clauses). This is what stops one
+         agent from reading another agent's ingested contacts.
     """
     if is_unrestricted(policy):
         return True
@@ -259,14 +269,27 @@ def is_entity_in_scope(
 
     frag, binds = contact_clauses(policy, contact_alias="c", bind_prefix="sfp")
     sql = (
-        "SELECT 1 FROM contacts c WHERE c.org_id = :org_id "
+        "SELECT c.id FROM contacts c WHERE c.org_id = :org_id "
         "AND (LOWER(TRIM(c.name)) = LOWER(TRIM(:ent)) OR LOWER(c.email) = LOWER(:ent))"
         + frag
         + " LIMIT 1"
     )
     binds = {**binds, "org_id": org_id, "ent": entity_email_or_name.strip()}
     row = db.execute(text(sql), binds).fetchone()
-    return row is not None
+    if row is None:
+        return False
+
+    # Interaction-level gate. interaction_clauses returns '' for master agents
+    # (data_visibility='all') and when agent_uuid is absent — in both cases the
+    # contact-level check above is authoritative.
+    ifrag, ibinds = interaction_clauses(policy, agent_uuid, interaction_alias="i")
+    if not ifrag:
+        return True
+    irow = db.execute(
+        text("SELECT 1 FROM interactions i WHERE i.contact_id = :cid" + ifrag + " LIMIT 1"),
+        {**ibinds, "cid": row[0]},
+    ).fetchone()
+    return irow is not None
 
 
 def filter_facts(

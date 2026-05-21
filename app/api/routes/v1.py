@@ -246,6 +246,19 @@ def v1_search_contacts(
         where.append(_scope_frag.strip().removeprefix("AND "))
         params.update(_scope_binds)
 
+    # Interaction-level isolation: a scoped agent only lists contacts it has at
+    # least one visible interaction with. interaction_clauses returns '' for
+    # master agents (data_visibility='all'), so this is a no-op for the org-wide
+    # key. Closes the cross-agent contact-directory leak.
+    _iscope_frag, _iscope_binds = scope_filter.interaction_clauses(
+        auth.policy, auth.agent_uuid, interaction_alias="iv"
+    )
+    if _iscope_frag:
+        where.append(
+            f"EXISTS (SELECT 1 FROM interactions iv WHERE iv.contact_id = c.id{_iscope_frag})"
+        )
+        params.update(_iscope_binds)
+
     if q:
         q_clean = q.strip()
         params["q_exact"] = q_clean.lower()
