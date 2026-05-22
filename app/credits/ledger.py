@@ -318,6 +318,20 @@ def deduct(
                 )
         raise
 
+    # ── Analytics — credit consumption by bucket (sync / context / proactive) ──
+    # Fires only on a real deduction (idempotent hits returned earlier), so
+    # PostHog can show "credits used / day" and where they go.
+    try:
+        from app.core.analytics import capture
+        capture(org_id, "credits_used", {
+            "credits": cost,
+            "bucket": bucket,
+            "reason": reason,
+            "balance_after": new_balance,
+        })
+    except Exception:
+        pass
+
     return DeductResult(
         ledger_id=int(ledger_row.id),
         balance_after=new_balance,
