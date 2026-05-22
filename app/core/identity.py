@@ -95,10 +95,13 @@ def resolve_or_create_person(
     email = next((v for k, v in ids if k == EMAIL), None)
     name = next((v for k, v in ids if k == NAME), None)
     contact_id = str(uuid.uuid4())
+    # relationship_stage='COLD' (same as the Gmail ingestion path) — the graph
+    # endpoint hides contacts whose stage is still the 'unknown' default.
     db.execute(
         text("""
-            INSERT INTO contacts (id, org_id, name, email, entity_type, authority_score)
-            VALUES (:id, :o, :n, :e, :et, 1.0)
+            INSERT INTO contacts
+                (id, org_id, name, email, entity_type, authority_score, relationship_stage)
+            VALUES (:id, :o, :n, :e, :et, 1.0, 'COLD')
         """),
         {"id": contact_id, "o": org_id, "n": name, "e": email, "et": entity_type},
     )
