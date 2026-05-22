@@ -2,15 +2,30 @@ import os
 import logging
 from contextvars import ContextVar
 
-import posthog as _posthog
-
 logger = logging.getLogger(__name__)
 
-_posthog.project_api_key = os.getenv("POSTHOG_API_KEY", "")
-_posthog.host = "https://eu.i.posthog.com"
-# DIAGNOSTIC: make posthog-python log its own HTTP send activity + errors,
-# so backend delivery failures are visible in the DigitalOcean logs.
-_posthog.debug = True
+# ── PostHog client ───────────────────────────────────────────────────────────
+# An explicit Posthog instance with the key passed straight to the constructor.
+# Robust across posthog-python versions — the module-level config attribute
+# names changed between releases, which silently broke backend events
+# ("API key is required"). sync_mode sends events inline, so they also survive
+# Celery's prefork model (no background thread to lose on fork).
+_POSTHOG_KEY = os.getenv("POSTHOG_API_KEY", "")
+_POSTHOG_HOST = "https://eu.i.posthog.com"
+
+_client = None
+if _POSTHOG_KEY:
+    try:
+        from posthog import Posthog
+        try:
+            _client = Posthog(_POSTHOG_KEY, host=_POSTHOG_HOST, sync_mode=True)
+        except TypeError:
+            _client = Posthog(_POSTHOG_KEY, host=_POSTHOG_HOST)
+        logger.info("analytics: PostHog client ready")
+    except Exception as e:
+        logger.warning("analytics: PostHog client init failed — %s", e)
+else:
+    logger.warning("analytics: POSTHOG_API_KEY not set — analytics disabled")
 
 # Per-request LLM-cost accumulator. ApiAnalyticsMiddleware sets a fresh dict
 # before the route runs; llm_client._log_usage adds to it; the middleware
@@ -25,21 +40,14 @@ _PLAN_MRR_INR = {"early": 4500, "hustler": 4500, "startup": 25000}
 def capture(org_id: str, event: str, properties: dict = None):
     """Fire a PostHog event. Non-blocking — never raises.
 
-    Logs loudly (INFO / WARNING) so backend delivery can actually be
-    verified in the DigitalOcean logs — `logger.debug` was invisible there.
+    Logs loudly (INFO / WARNING) so backend delivery can be verified in the
+    DigitalOcean logs.
     """
+    if _client is None:
+        logger.warning("analytics: PostHog not configured — '%s' skipped", event)
+        return
     try:
-        if not _posthog.project_api_key:
-            logger.warning("analytics: POSTHOG_API_KEY is empty — '%s' skipped", event)
-            return
-        props = properties or {}
-        try:
-            # posthog-python 3+: capture(event, distinct_id=..., properties=...)
-            _posthog.capture(event, distinct_id=org_id, properties=props)
-        except TypeError:
-            # older posthog-python: capture(distinct_id, event, properties)
-            _posthog.capture(org_id, event, props)
-        _posthog.flush()
+        _client.capture(event, distinct_id=org_id, properties=properties or {})
         logger.info("analytics: sent '%s' (distinct_id=%s)", event, org_id)
     except Exception as e:
         logger.warning(
@@ -73,9 +81,10 @@ def org_properties(plan: str, credits: int = None, created_at=None) -> dict:
 
 
 def flush():
-    """Send any queued events. Call on app shutdown so the last batch isn't lost."""
+    """Flush any queued events (no-op in sync_mode). Safe to call on shutdown."""
+    if _client is None:
+        return
     try:
-        if _posthog.project_api_key:
-            _posthog.flush()
+        _client.flush()
     except Exception as e:
         logger.debug(f"Analytics flush failed (non-critical): {e}")
