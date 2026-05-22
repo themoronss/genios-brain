@@ -298,33 +298,35 @@ async def upload_context_file(
                 entities_found = len(people)
                 commitments_found = len(intelligence.get("commitments", []))
 
-                # Create interactions for each detected person
+                # Resolve or create a contact for each detected person.
+                # Documents identify people by name — no email needed
+                # (source-agnostic model — see app/core/identity.py).
+                from app.core.identity import resolve_or_create_person, NAME
                 for entity_info in people:
                     entity_name = entity_info if isinstance(entity_info, str) else entity_info.get("name", "")
                     if not entity_name:
                         continue
 
-                    # Find existing contact or skip
-                    existing = db.execute(
-                        text("SELECT id FROM contacts WHERE org_id = :org_id AND LOWER(name) = LOWER(:name) LIMIT 1"),
-                        {"org_id": org_id, "name": entity_name},
-                    ).fetchone()
+                    contact_id = resolve_or_create_person(
+                        db, org_id, identifiers=[(NAME, entity_name)],
+                    )
+                    if not contact_id:
+                        continue
 
-                    if existing:
-                        db.execute(
-                            text("""
-                                INSERT INTO interactions (id, org_id, contact_id, direction, subject, summary, sentiment, interaction_at, weight_score, signal_score)
-                                VALUES (:id, :org_id, :contact_id, 'inbound', :subject, :summary, 0.5, NOW(), 0.7, 0.5)
-                            """),
-                            {
-                                "id": str(uuid.uuid4()),
-                                "org_id": org_id,
-                                "contact_id": str(existing[0]),
-                                "subject": f"Upload: {file.filename}",
-                                "summary": intelligence.get("summary", text_content[:200]),
-                            },
-                        )
-                        db.commit()
+                    db.execute(
+                        text("""
+                            INSERT INTO interactions (id, org_id, contact_id, direction, subject, summary, sentiment, interaction_at, weight_score, signal_score)
+                            VALUES (:id, :org_id, :contact_id, 'inbound', :subject, :summary, 0.5, NOW(), 0.7, 0.5)
+                        """),
+                        {
+                            "id": str(uuid.uuid4()),
+                            "org_id": org_id,
+                            "contact_id": contact_id,
+                            "subject": f"Upload: {file.filename}",
+                            "summary": intelligence.get("summary", text_content[:200]),
+                        },
+                    )
+                    db.commit()
 
             except Exception as extract_err:
                 logger.warning(f"Entity extraction from uploaded file failed: {extract_err}")
