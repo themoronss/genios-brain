@@ -23,8 +23,29 @@ import os
 import ssl
 from celery import Celery
 from celery.schedules import crontab
+from celery.signals import worker_process_init
 
 logger = logging.getLogger(__name__)
+
+
+# ── PostHog analytics in forked worker processes ─────────────────────────────
+# Celery prefork forks child workers, and threads — including PostHog's
+# background event-sender — do NOT survive fork. Events captured inside a task
+# would otherwise queue into a dead consumer and never ship (this is why
+# `llm_call` never reached PostHog while `user_logged_in` from the web service
+# did). Switching PostHog to sync_mode in each child sends events inline:
+# delivery is guaranteed and the extra latency is irrelevant for background work.
+@worker_process_init.connect
+def _posthog_worker_sync_mode(**_kwargs):
+    try:
+        import posthog
+        posthog.sync_mode = True
+        # Drop any client inherited from the pre-fork parent so the next
+        # capture rebuilds it in sync mode.
+        if getattr(posthog, "default_client", None) is not None:
+            posthog.default_client = None
+    except Exception as e:
+        logger.warning(f"PostHog worker sync_mode init failed (non-critical): {e}")
 
 # Single-DB Redis: managed providers like Upstash only expose DB 0.
 # Celery namespaces its broker keys via `global_keyprefix` so they don't
