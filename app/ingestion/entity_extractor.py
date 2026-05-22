@@ -341,7 +341,7 @@ Return ONLY this JSON — no markdown, no explanation:
                         {"role": "system", "content": _system},
                         {"role": "user",   "content": prompt},
                     ],
-                    temperature=0.1, max_tokens=700,
+                    temperature=0.1, max_tokens=2500,  # 700 truncated rich docs → invalid JSON
                 ).strip()
 
                 # Strip markdown fences + preamble. Haiku occasionally adds
