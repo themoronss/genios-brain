@@ -32,7 +32,13 @@ def capture(org_id: str, event: str, properties: dict = None):
         if not _posthog.project_api_key:
             logger.warning("analytics: POSTHOG_API_KEY is empty — '%s' skipped", event)
             return
-        _posthog.capture(org_id, event, properties or {})
+        props = properties or {}
+        try:
+            # posthog-python 3+: capture(event, distinct_id=..., properties=...)
+            _posthog.capture(event, distinct_id=org_id, properties=props)
+        except TypeError:
+            # older posthog-python: capture(distinct_id, event, properties)
+            _posthog.capture(org_id, event, props)
         _posthog.flush()
         logger.info("analytics: sent '%s' (distinct_id=%s)", event, org_id)
     except Exception as e:
