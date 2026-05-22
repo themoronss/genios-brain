@@ -1,36 +1,24 @@
 import os
+import json
 import logging
+import urllib.request
+import urllib.error
 from contextvars import ContextVar
 
 logger = logging.getLogger(__name__)
 
-# ── PostHog client ───────────────────────────────────────────────────────────
-# An explicit Posthog instance with the key passed straight to the constructor.
-# Robust across posthog-python versions — the module-level config attribute
-# names changed between releases, which silently broke backend events
-# ("API key is required"). sync_mode sends events inline, so they also survive
-# Celery's prefork model (no background thread to lose on fork).
+# ── PostHog ──────────────────────────────────────────────────────────────────
+# Events are sent with a direct HTTP POST to PostHog's /capture/ endpoint.
+# The posthog-python library changed its capture() signature AND its key
+# handling between releases and silently broke backend delivery twice — a plain
+# POST is version-proof, works inside forked Celery workers, and lets us log the
+# exact HTTP status so delivery is actually verifiable in the logs.
 _POSTHOG_KEY = os.getenv("POSTHOG_API_KEY", "")
 _POSTHOG_HOST = "https://eu.i.posthog.com"
 
-_client = None
-if _POSTHOG_KEY:
-    try:
-        from posthog import Posthog
-        try:
-            _client = Posthog(_POSTHOG_KEY, host=_POSTHOG_HOST, sync_mode=True)
-        except TypeError:
-            _client = Posthog(_POSTHOG_KEY, host=_POSTHOG_HOST)
-        logger.info("analytics: PostHog client ready")
-    except Exception as e:
-        logger.warning("analytics: PostHog client init failed — %s", e)
-else:
-    logger.warning("analytics: POSTHOG_API_KEY not set — analytics disabled")
-
 # Per-request LLM-cost accumulator. ApiAnalyticsMiddleware sets a fresh dict
-# before the route runs; llm_client._log_usage adds to it; the middleware
-# reads it back so the `api_call` event carries cost/tokens per agent.
-# default=None means background (Celery) work simply skips accumulation.
+# before the route runs; llm_client._log_usage adds to it; the middleware reads
+# it back so the `api_call` event carries cost/tokens per agent.
 llm_cost_var: ContextVar = ContextVar("genios_llm_cost", default=None)
 
 # MRR (INR / month) per plan — keep in sync with billing.PLAN_PRICES_PAISE.
@@ -38,22 +26,34 @@ _PLAN_MRR_INR = {"early": 4500, "hustler": 4500, "startup": 25000}
 
 
 def capture(org_id: str, event: str, properties: dict = None):
-    """Fire a PostHog event. Non-blocking — never raises.
+    """Send one event to PostHog via a direct HTTP POST. Never raises.
 
-    Logs loudly (INFO / WARNING) so backend delivery can be verified in the
-    DigitalOcean logs.
+    Logs the exact HTTP status so backend delivery is verifiable in the logs.
     """
-    if _client is None:
-        logger.warning("analytics: PostHog not configured — '%s' skipped", event)
+    if not _POSTHOG_KEY:
+        logger.warning("analytics: POSTHOG_API_KEY not set — '%s' skipped", event)
         return
     try:
-        _client.capture(event, distinct_id=org_id, properties=properties or {})
-        logger.info("analytics: sent '%s' (distinct_id=%s)", event, org_id)
-    except Exception as e:
-        logger.warning(
-            "analytics: capture FAILED for '%s' — %s: %s",
-            event, type(e).__name__, e,
+        body = json.dumps({
+            "api_key": _POSTHOG_KEY,
+            "event": event,
+            "distinct_id": str(org_id),
+            "properties": properties or {},
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"{_POSTHOG_HOST}/capture/",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            logger.info("analytics: '%s' → PostHog HTTP %s", event, resp.status)
+    except urllib.error.HTTPError as e:
+        logger.warning("analytics: '%s' REJECTED — HTTP %s: %s",
+                       event, e.code, e.read()[:200])
+    except Exception as e:
+        logger.warning("analytics: capture FAILED for '%s' — %s: %s",
+                       event, type(e).__name__, e)
 
 
 def record_llm_cost(cost_usd: float, tokens: int):
@@ -81,10 +81,5 @@ def org_properties(plan: str, credits: int = None, created_at=None) -> dict:
 
 
 def flush():
-    """Flush any queued events (no-op in sync_mode). Safe to call on shutdown."""
-    if _client is None:
-        return
-    try:
-        _client.flush()
-    except Exception as e:
-        logger.debug(f"Analytics flush failed (non-critical): {e}")
+    """No-op — events are sent synchronously via direct POST."""
+    return
