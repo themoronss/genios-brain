@@ -291,8 +291,15 @@ async def upload_context_file(
         if text_content and len(text_content) > 20:
             try:
                 from app.ingestion.entity_extractor import extract_email_intelligence
-                # Use LLM to extract intelligence from the document
-                intelligence = extract_email_intelligence(text_content[:3000], f"Document: {file.filename}")
+                # Use LLM to extract intelligence from the document.
+                # NOTE: signature is (subject, body, ..., org_id) — the doc
+                # text must go in `body`, and org_id is required or _log_usage
+                # (and the llm_call analytics event) silently skips.
+                intelligence = extract_email_intelligence(
+                    subject=f"Document: {file.filename}",
+                    body=text_content[:3000],
+                    org_id=org_id,
+                )
                 # extract_email_intelligence returns `mentioned_people` (not `entities`)
                 people = intelligence.get("mentioned_people", [])
                 entities_found = len(people)
