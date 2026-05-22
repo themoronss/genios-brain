@@ -8,6 +8,9 @@ logger = logging.getLogger(__name__)
 
 _posthog.project_api_key = os.getenv("POSTHOG_API_KEY", "")
 _posthog.host = "https://eu.i.posthog.com"
+# DIAGNOSTIC: make posthog-python log its own HTTP send activity + errors,
+# so backend delivery failures are visible in the DigitalOcean logs.
+_posthog.debug = True
 
 # Per-request LLM-cost accumulator. ApiAnalyticsMiddleware sets a fresh dict
 # before the route runs; llm_client._log_usage adds to it; the middleware
@@ -20,12 +23,23 @@ _PLAN_MRR_INR = {"early": 4500, "hustler": 4500, "startup": 25000}
 
 
 def capture(org_id: str, event: str, properties: dict = None):
-    """Fire a PostHog event. Non-blocking — never raises."""
+    """Fire a PostHog event. Non-blocking — never raises.
+
+    Logs loudly (INFO / WARNING) so backend delivery can actually be
+    verified in the DigitalOcean logs — `logger.debug` was invisible there.
+    """
     try:
-        if _posthog.project_api_key:
-            _posthog.capture(org_id, event, properties or {})
+        if not _posthog.project_api_key:
+            logger.warning("analytics: POSTHOG_API_KEY is empty — '%s' skipped", event)
+            return
+        _posthog.capture(org_id, event, properties or {})
+        _posthog.flush()
+        logger.info("analytics: sent '%s' (distinct_id=%s)", event, org_id)
     except Exception as e:
-        logger.debug(f"Analytics capture failed (non-critical): {e}")
+        logger.warning(
+            "analytics: capture FAILED for '%s' — %s: %s",
+            event, type(e).__name__, e,
+        )
 
 
 def record_llm_cost(cost_usd: float, tokens: int):
