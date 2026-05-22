@@ -287,15 +287,19 @@ async def upload_context_file(
 
         # Extract entities via LLM if content available
         entities_found = 0
+        commitments_found = 0
         if text_content and len(text_content) > 20:
             try:
                 from app.ingestion.entity_extractor import extract_email_intelligence
-                # Use LLM to extract entities from the document
+                # Use LLM to extract intelligence from the document
                 intelligence = extract_email_intelligence(text_content[:3000], f"Document: {file.filename}")
-                entities_found = len(intelligence.get("entities", []))
+                # extract_email_intelligence returns `mentioned_people` (not `entities`)
+                people = intelligence.get("mentioned_people", [])
+                entities_found = len(people)
+                commitments_found = len(intelligence.get("commitments", []))
 
-                # Create interactions for each detected entity
-                for entity_info in intelligence.get("entities", []):
+                # Create interactions for each detected person
+                for entity_info in people:
                     entity_name = entity_info if isinstance(entity_info, str) else entity_info.get("name", "")
                     if not entity_name:
                         continue
@@ -325,6 +329,30 @@ async def upload_context_file(
             except Exception as extract_err:
                 logger.warning(f"Entity extraction from uploaded file failed: {extract_err}")
 
+        # Persist real status + extraction counts onto the upload record so the
+        # Resources page shows per-file results instead of a hardcoded badge.
+        upload_status = "indexed" if text_content else "failed"
+        try:
+            db.execute(
+                text("""
+                    UPDATE activity_log
+                    SET event_data = event_data || CAST(:stats AS jsonb)
+                    WHERE id = :id AND org_id = :org_id
+                """),
+                {
+                    "id": file_id, "org_id": org_id,
+                    "stats": json.dumps({
+                        "status": upload_status,
+                        "contacts_count": entities_found,
+                        "commitments_count": commitments_found,
+                    }),
+                },
+            )
+            db.commit()
+        except Exception as _stat_err:
+            logger.warning(f"Could not persist upload stats: {_stat_err}")
+            db.rollback()
+
         return {
             "success": True,
             "file_id": file_id,
@@ -334,7 +362,8 @@ async def upload_context_file(
             "size_bytes": len(content),
             "text_extracted": len(text_content) > 0,
             "entities_found": entities_found,
-            "status": "indexed" if text_content else "queued",
+            "commitments_found": commitments_found,
+            "status": upload_status,
         }
     except HTTPException:
         raise
@@ -378,7 +407,9 @@ def list_uploads(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
                 "size": size_str,
                 "size_bytes": size_bytes,
                 "tag": data.get("tag", "Other"),
-                "status": "indexed",
+                "status": data.get("status", "indexed"),
+                "contacts_count": data.get("contacts_count"),
+                "commitments_count": data.get("commitments_count"),
                 "uploaded_at": str(r[2]) if r[2] else None,
                 "authority": 1.0,
             })
