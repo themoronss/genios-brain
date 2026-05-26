@@ -543,6 +543,16 @@ def run_proactive_scan(org_id: str = None):
             f"{dismissed_by_judge} dismissed by judge, "
             f"from {len(anomalies)} candidate anomalies"
         )
+        try:
+            from app.core.analytics import capture
+            capture(str(org_id) if org_id else "system", "proactive_scan_completed", {
+                "insights_generated": insights_created,
+                "dismissed_by_judge": dismissed_by_judge,
+                "candidates": len(anomalies),
+                "anomalies_flagged": anomaly_result.get("flagged", 0) if isinstance(anomaly_result, dict) else 0,
+            })
+        except Exception:
+            pass
         return {
             "anomalies": anomaly_result,
             "insights_generated": insights_created,

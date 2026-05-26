@@ -329,6 +329,16 @@ def deliver_due(org_id: str | None = None) -> dict:
                     )
                     db.commit()  # Bug 3.2
                     delivered += 1
+                    try:
+                        from app.core.analytics import capture
+                        capture(str(row.org_id), "webhook_delivered", {
+                            "insight_id": str(row.i_id),
+                            "attempt_number": row.attempt_number,
+                            "priority": row.priority,
+                            "category": row.category,
+                        })
+                    except Exception:
+                        pass
                     continue
 
                 # Failure path — close this attempt, schedule next or mark dead
