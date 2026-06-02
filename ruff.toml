@@ -1,0 +1,25 @@
+target-version = "py311"
+line-length = 100
+extend-exclude = ["_legacy", "venv", "migrations_v2/versions"]
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # bugbear
+    "UP",   # pyupgrade
+    "S",    # bandit (security)
+    "ASYNC",
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",  # line length handled by formatter
+    "S101",  # assert allowed in tests
+    "B008",  # FastAPI Depends in defaults is idiomatic
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+"core/foundations/config.py" = ["S105"]  # config constants OK
