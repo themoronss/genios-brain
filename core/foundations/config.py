@@ -44,6 +44,13 @@ class Settings(BaseSettings):
         description="32-byte url-safe base64 Fernet key — encrypts customer tokens at rest",
     )
 
+    # JWT (human-user auth — signup/login → JWT in HttpOnly cookie + Bearer)
+    JWT_SECRET: str = Field(
+        default="",
+        description="HMAC secret for signing JWT session tokens. Required for /auth/*.",
+    )
+    JWT_TTL_HOURS: int = Field(default=24 * 7, description="Session lifetime")
+
     # LLM keys (platform-level, our spend)
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_HAIKU_MODEL: str = "claude-haiku-4-5-20251001"

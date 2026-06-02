@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core import __version__
 from core.api import audit as audit_router
+from core.api import auth as auth_router
 from core.api import health as health_router
 from core.api import (
     ingestion,
@@ -65,6 +66,7 @@ app.add_middleware(
 )
 
 # Routers
+app.include_router(auth_router.router)
 app.include_router(intelligence.router)
 app.include_router(metrics.router)
 app.include_router(usermodel.router)
