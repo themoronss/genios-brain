@@ -121,6 +121,8 @@ USER_MODEL_WINDOW_K: int = 20
 USER_MODEL_VOLUME_GATE_N: int = 5
 
 
-# Per-org override resolver (`get_tunable`) lands with g-i-8 when the
-# `org_tunables` table exists. Until then, import constants directly:
+# Per-org override resolver: use `core.foundations.org_tunables.get_tunable()`
+# when you need a per-org-overridable value (engine code that reads tunables
+# from a request context). For pure constants (no per-org variance), import
+# directly:
 #     from core.foundations.config import N_MIN_EVIDENCE

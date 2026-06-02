@@ -16,4 +16,5 @@ Modules:
 - scope_check    end-to-end scope audit (decisions -> facts)
 - health_check   DB/Redis/LLM probes
 - worker_invariant  AST-walk catching module-level mutables (CI test)
+- org_tunables   per-org override store + get_tunable() resolver
 """
