@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "module": "sales",
+  "comment": "Asserted relationships ONLY (per g-i-3 §3.2.2). Status field MUST be 'asserted' or absent. Causal links here are claims by us — not inferred.",
+  "nodes": [
+    {
+      "id": "node:account",
+      "type": "entity",
+      "canonical_name": "Account",
+      "description": "A customer organization in the pipeline"
+    },
+    {
+      "id": "node:contact",
+      "type": "entity",
+      "canonical_name": "Contact",
+      "description": "A person at an account"
+    },
+    {
+      "id": "node:deal",
+      "type": "entity",
+      "canonical_name": "Deal",
+      "description": "An open opportunity"
+    },
+    {
+      "id": "node:close_won",
+      "type": "goal",
+      "canonical_name": "Close Won",
+      "description": "Target end-state of a deal"
+    },
+    {
+      "id": "node:churn",
+      "type": "risk",
+      "canonical_name": "Customer Churn",
+      "description": "Account leaves before renewal"
+    }
+  ],
+  "edges": [
+    {
+      "from": "node:contact",
+      "to": "node:account",
+      "type": "dependency",
+      "status": "asserted",
+      "asserted_by_type": "human",
+      "asserted_by_id": "module:sales:v1",
+      "weight": 1.0,
+      "weight_source": "human",
+      "reason": "A contact belongs to an account by definition"
+    },
+    {
+      "from": "node:deal",
+      "to": "node:account",
+      "type": "dependency",
+      "status": "asserted",
+      "asserted_by_type": "human",
+      "asserted_by_id": "module:sales:v1",
+      "weight": 1.0,
+      "weight_source": "human",
+      "reason": "A deal belongs to an account by definition"
+    }
+  ]
+}

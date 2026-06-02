@@ -1,0 +1,21 @@
+# Domain reference numbers — used by the engine when comparing facts.
+# These are SaaS-sales medians; per-org override via org_tunables when g-i-8 lands.
+
+deal_cycle:
+  median_days_smb: 30
+  median_days_midmarket: 60
+  median_days_enterprise: 120
+
+discount:
+  typical_pct_smb: 5
+  typical_pct_midmarket: 10
+  typical_pct_enterprise: 15
+  max_without_approval_pct: 20
+
+renewal:
+  outreach_window_days: 60
+  champion_check_in_cadence_days: 21
+
+churn_signals:
+  high_risk_usage_drop_pct: 40
+  high_risk_silence_days: 14

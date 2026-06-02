@@ -1,0 +1,15 @@
+# What-if template: outreach cadence change.
+
+name: sequence_change
+description: Project effect of changing outreach cadence on stalled deals
+intervention_facts:
+  - days_since_last_contact
+preserve_facts:
+  - usage_drop_pct_30d
+  - days_to_renewal
+  - nps_score
+candidate_values:
+  days_since_last_contact: [3, 7, 14, 21, 30]
+report_fields:
+  - churn_risk_high
+  - buyer_disengagement_signal

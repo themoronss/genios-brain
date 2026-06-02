@@ -1,0 +1,17 @@
+# What-if template: "what if we change discount_pct on a deal?"
+# Used by core.reasoning.what_if.whatif() to construct interventions.
+
+name: pricing_change
+description: Project deal outcomes under different discount levels
+intervention_facts:
+  - discount_pct
+preserve_facts:
+  - deal_value
+  - gross_margin_pct
+  - stage
+  - days_to_renewal
+candidate_values:
+  discount_pct: [5, 10, 15, 20, 25, 30, 40]
+report_fields:
+  - block_or_escalate
+  - volume_discount_approved
