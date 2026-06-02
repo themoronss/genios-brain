@@ -163,7 +163,9 @@ class ReadScope(BaseModel):
 
     level: ScopeLevel
     include: list[str] = Field(default_factory=list, description="Inclusive matchers")
-    exclude: list[str] = Field(default_factory=list, description="Exclusive matchers (override include)")
+    exclude: list[str] = Field(
+        default_factory=list, description="Exclusive matchers (override include)"
+    )
     since: datetime | None = Field(default=None, description="For TIME level — only items >= this")
 
     @field_validator("include", "exclude")

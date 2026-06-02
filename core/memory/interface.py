@@ -45,8 +45,9 @@ class MemoryAdapter(ABC):
         register_webhook, parse_webhook
     """
 
-    source_type: str
-    source_id: str
+    # Subclasses set these — can be ClassVar (known adapters) OR instance attr (custom runtime)
+    source_type: str = ""
+    source_id: str = ""
 
     # ── lifecycle ──────────────────────────────────────────────────────────
 

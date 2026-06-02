@@ -80,9 +80,7 @@ class Connection(Base):
         back_populates="connection", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (
-        Index("ix_connections_org_source", "org_id", "source_type"),
-    )
+    __table_args__ = (Index("ix_connections_org_source", "org_id", "source_type"),)
 
 
 class SecretRef(Base):
