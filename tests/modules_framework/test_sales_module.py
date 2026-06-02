@@ -95,14 +95,16 @@ def test_sales_real_hard_pricing_rule_fires() -> None:
 
 
 @pytest.mark.unit
-def test_sales_evaluator_runs_in_smoke_mode() -> None:
-    """Evaluator.evaluate() runs without args (smoke mode) and returns valid GoldenResult."""
+def test_sales_evaluator_runs_against_real_dataset() -> None:
+    """Evaluator runs §7 against the labeled golden dataset (no smoke mode anymore)."""
     evaluator_path = SALES_ROOT / "evaluator.py"
     result = run_golden_test(
         evaluator_path,
         module_id="sales",
         threshold_key="sales_initial",
     )
-    assert result.passed is True  # smoke returns 1.0
-    assert result.score == 1.0
-    assert "mode" in result.metrics
+    assert result.passed is True
+    assert result.score >= 0.70
+    assert "n_cases" in result.metrics
+    assert "per_rule_firings" in result.metrics
+    assert result.metrics["n_cases"] >= 25
