@@ -1,0 +1,166 @@
+"""Custom-source mapping routes — propose + confirm + freeze.
+
+POST /v1/mapping/introspect       given sample records → introspection
+POST /v1/mapping/propose          run inspector → templates → LLM → proposal
+POST /v1/mapping/confirm          apply human edits + freeze
+GET  /v1/mapping/active           load the currently active mapping for a connection
+
+The frontend flow (custom integration confirm UI):
+    1. Customer admin uploads/syncs sample records via the connection.
+    2. Dashboard calls /propose with the samples to get a proposal view.
+    3. Admin edits dropdowns + submits to /confirm.
+    4. Mapping is frozen + drift_check runs nightly thereafter.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+from core.api.deps import db_session, require_org
+from core.foundations.telemetry import get_logger
+from core.memory.adapters.custom.confirmer import (
+    ConfirmationError,
+    HumanEdit,
+    apply_human_edits,
+    to_confirmation_view,
+)
+from core.memory.adapters.custom.freezer import freeze, load_active
+from core.memory.adapters.custom.inspector import introspect_samples, introspect_sql_schema
+from core.memory.adapters.custom.proposer import ProposerError, propose
+
+router = APIRouter(prefix="/v1/mapping", tags=["mapping"])
+log = get_logger(__name__)
+
+
+class IntrospectRequest(BaseModel):
+    source_type: str = Field(..., min_length=1)
+    samples: list[dict[str, Any]] = Field(default_factory=list)
+    sql_schema_rows: list[dict[str, Any]] | None = None
+
+
+class ProposeRequest(BaseModel):
+    source_type: str = Field(..., min_length=1)
+    samples: list[dict[str, Any]] = Field(default_factory=list)
+    sql_schema_rows: list[dict[str, Any]] | None = None
+
+
+class ConfirmEdit(BaseModel):
+    canonical_field: str
+    source_field: str | None = None
+    transform: str | None = None
+    confidence_override: float | None = None
+
+
+class ConfirmRequest(BaseModel):
+    connection_id: str = Field(..., min_length=1)
+    source_type: str = Field(..., min_length=1)
+    confirmed_by: str = Field(..., min_length=1)
+    samples: list[dict[str, Any]] = Field(default_factory=list)
+    sql_schema_rows: list[dict[str, Any]] | None = None
+    edits: list[ConfirmEdit]
+
+
+@router.post("/introspect")
+def introspect(
+    body: IntrospectRequest,
+    _org_id: str = Depends(require_org),
+) -> dict[str, Any]:
+    introspection = (
+        introspect_sql_schema(body.source_type, body.sql_schema_rows)
+        if body.sql_schema_rows
+        else introspect_samples(body.source_type, body.samples)
+    )
+    return introspection.model_dump(mode="json")
+
+
+@router.post("/propose")
+def propose_mapping(
+    body: ProposeRequest,
+    _org_id: str = Depends(require_org),
+) -> dict[str, Any]:
+    introspection = (
+        introspect_sql_schema(body.source_type, body.sql_schema_rows)
+        if body.sql_schema_rows
+        else introspect_samples(body.source_type, body.samples)
+    )
+    try:
+        proposal = propose(introspection)
+    except ProposerError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        ) from e
+
+    view = to_confirmation_view(proposal, introspection)
+    return {
+        "source_type": body.source_type,
+        "introspection": introspection.model_dump(mode="json"),
+        "rows": [
+            {
+                "canonical_field": r.canonical_field,
+                "proposed_source_field": r.proposed_source_field,
+                "proposed_transform": r.proposed_transform,
+                "proposed_confidence": r.proposed_confidence,
+                "available_source_fields": r.available_source_fields,
+                "is_required": r.is_required,
+            }
+            for r in view
+        ],
+    }
+
+
+@router.post("/confirm", status_code=status.HTTP_201_CREATED)
+def confirm_mapping(
+    body: ConfirmRequest,
+    org_id: str = Depends(require_org),
+    session: Session = Depends(db_session),
+) -> dict[str, Any]:
+    introspection = (
+        introspect_sql_schema(body.source_type, body.sql_schema_rows)
+        if body.sql_schema_rows
+        else introspect_samples(body.source_type, body.samples)
+    )
+    human_edits = [
+        HumanEdit(
+            canonical_field=e.canonical_field,
+            source_field=e.source_field,
+            transform=e.transform,
+            confidence_override=e.confidence_override,
+        )
+        for e in body.edits
+    ]
+    try:
+        field_map = apply_human_edits(human_edits, introspection)
+    except ConfirmationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        ) from e
+    frozen = freeze(
+        session,
+        connection_id=body.connection_id,
+        org_id=org_id,
+        source_type=body.source_type,
+        field_map=field_map,
+        confirmed_by=body.confirmed_by,
+    )
+    session.commit()
+    return frozen.model_dump(mode="json")
+
+
+@router.get("/active")
+def get_active_mapping(
+    connection_id: str,
+    source_type: str,
+    _org_id: str = Depends(require_org),
+    session: Session = Depends(db_session),
+) -> dict[str, Any]:
+    mapping = load_active(session, connection_id, source_type)
+    if mapping is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="no frozen mapping for this connection",
+        )
+    return mapping.model_dump(mode="json")
