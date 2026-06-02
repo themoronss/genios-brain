@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -16,7 +16,7 @@ def _item(item_id: str = "abc") -> MemoryItem:
         source_id="conn",
         source_type="gmail",
         content="hi",
-        metadata=MemoryItemMetadata(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc)),
+        metadata=MemoryItemMetadata(timestamp=datetime(2026, 1, 1, tzinfo=UTC)),
     )
 
 

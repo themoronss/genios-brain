@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -24,7 +24,7 @@ def _mapping() -> SourceMapping:
             "tags": FieldMapping(source_field="labels", confidence=0.9),
         },
         confirmed_by="alice@org",
-        confirmed_at=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        confirmed_at=datetime(2026, 6, 1, tzinfo=UTC),
         version=1,
     )
 
@@ -60,10 +60,12 @@ def test_normalize_stable_id() -> None:
         source_type="t",
         field_map={
             "content": FieldMapping(source_field="body", confidence=1.0),
-            "timestamp": FieldMapping(source_field="ts_ms", transform="epoch_ms_to_iso8601", confidence=1.0),
+            "timestamp": FieldMapping(
+                source_field="ts_ms", transform="epoch_ms_to_iso8601", confidence=1.0
+            ),
         },
         confirmed_by="a",
-        confirmed_at=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        confirmed_at=datetime(2026, 6, 1, tzinfo=UTC),
         version=1,
     )
     a = normalize(record, m, source_id="conn")
@@ -89,7 +91,7 @@ def test_normalize_handles_iso_string_timestamp() -> None:
             "timestamp": FieldMapping(source_field="iso_ts", confidence=1.0),
         },
         confirmed_by="a",
-        confirmed_at=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        confirmed_at=datetime(2026, 6, 1, tzinfo=UTC),
         version=1,
     )
     record = RawRecord(native_id="x", fields={"body": "hi", "iso_ts": "2026-06-01T12:00:00Z"})

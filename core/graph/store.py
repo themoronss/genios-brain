@@ -19,7 +19,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Float, ForeignKey, Identity, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.foundations.db import Base
@@ -157,7 +157,11 @@ class GraphEventRow(Base):
 
     __tablename__ = "graph_events"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        Identity(always=False),
+        primary_key=True,
+    )
     org_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     version: Mapped[int] = mapped_column(
         BigInteger,

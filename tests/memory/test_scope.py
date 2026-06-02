@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -49,9 +49,7 @@ def test_attribute_exclude_wins() -> None:
         org_id="o",
     )
     # has BOTH shareable AND pii -> exclude wins, dropped
-    assert not enf.is_allowed(
-        RawRecord(native_id="x", fields={"tags": ["shareable", "pii"]})
-    )
+    assert not enf.is_allowed(RawRecord(native_id="x", fields={"tags": ["shareable", "pii"]}))
     # only shareable -> allowed
     assert enf.is_allowed(RawRecord(native_id="y", fields={"tags": ["shareable"]}))
 
@@ -59,7 +57,7 @@ def test_attribute_exclude_wins() -> None:
 @pytest.mark.unit
 def test_time_scope_drops_old_records() -> None:
     """TIME scope: anything older than since is dropped."""
-    since = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    since = datetime(2026, 1, 1, tzinfo=UTC)
     enf = ScopeEnforcer(
         [ReadScope(level=ScopeLevel.TIME, since=since)],
         connection_id="c",
@@ -75,7 +73,7 @@ def test_time_scope_drops_old_records() -> None:
 def test_missing_timestamp_with_time_scope_drops() -> None:
     """Defensive: time-scoped record with no timestamp -> drop (never silent allow)."""
     enf = ScopeEnforcer(
-        [ReadScope(level=ScopeLevel.TIME, since=datetime(2026, 1, 1, tzinfo=timezone.utc))],
+        [ReadScope(level=ScopeLevel.TIME, since=datetime(2026, 1, 1, tzinfo=UTC))],
         connection_id="c",
         org_id="o",
     )

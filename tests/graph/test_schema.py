@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -21,7 +21,7 @@ from core.graph.schema import (
 
 
 def _now() -> datetime:
-    return datetime(2026, 6, 1, tzinfo=timezone.utc)
+    return datetime(2026, 6, 1, tzinfo=UTC)
 
 
 @pytest.mark.unit
@@ -109,7 +109,10 @@ def test_influence_edge_rejects_source_assertion() -> None:
             asserted_by_id="some_event",
             asserted_at=_now(),
         )
-    assert "post-hoc fallacy" in str(excinfo.value).lower() or "influence" in str(excinfo.value).lower()
+    assert (
+        "post-hoc fallacy" in str(excinfo.value).lower()
+        or "influence" in str(excinfo.value).lower()
+    )
 
 
 @pytest.mark.unit

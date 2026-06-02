@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from core.foundations.db import Base
 from core.memory.secrets import delete_secret, get_secret, put_secret, rotate_secret
-from core.memory.store import Connection  # noqa: F401  -- ensures FK target table is created
+from core.memory.store import Connection
 
 
 @pytest.fixture

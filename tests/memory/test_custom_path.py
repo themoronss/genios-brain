@@ -98,9 +98,7 @@ def test_template_returns_none_on_weird_schema() -> None:
 
 @pytest.mark.unit
 def test_confirmer_view_lists_all_canonical_fields() -> None:
-    intro = introspect_samples(
-        "custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}]
-    )
+    intro = introspect_samples("custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}])
     proposal = MappingProposal(
         field_map={
             "content": guess_from_introspection(intro).field_map["content"],  # type: ignore[union-attr]
@@ -117,9 +115,7 @@ def test_confirmer_view_lists_all_canonical_fields() -> None:
 
 @pytest.mark.unit
 def test_confirmer_rejects_missing_required_field() -> None:
-    intro = introspect_samples(
-        "custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}]
-    )
+    intro = introspect_samples("custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}])
     with pytest.raises(ConfirmationError):
         apply_human_edits(
             [
@@ -132,9 +128,7 @@ def test_confirmer_rejects_missing_required_field() -> None:
 
 @pytest.mark.unit
 def test_confirmer_applies_edits_and_boosts_confidence() -> None:
-    intro = introspect_samples(
-        "custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}]
-    )
+    intro = introspect_samples("custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}])
     final = apply_human_edits(
         [
             HumanEdit(canonical_field="content", source_field="body", transform=None),
@@ -152,9 +146,7 @@ def test_confirmer_applies_edits_and_boosts_confidence() -> None:
 def test_freeze_persists_and_load_active_returns_latest(
     session: Session, connection_row: Connection
 ) -> None:
-    intro = introspect_samples(
-        "custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}]
-    )
+    intro = introspect_samples("custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}])
     final = apply_human_edits(
         [
             HumanEdit(canonical_field="content", source_field="body", transform=None),
@@ -199,13 +191,9 @@ def test_freeze_persists_and_load_active_returns_latest(
 
 
 @pytest.mark.unit
-def test_drift_detects_new_field(
-    session: Session, connection_row: Connection
-) -> None:
+def test_drift_detects_new_field(session: Session, connection_row: Connection) -> None:
     """A new field appearing in >50% records flags for re-confirmation."""
-    intro = introspect_samples(
-        "custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}]
-    )
+    intro = introspect_samples("custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}])
     final = apply_human_edits(
         [
             HumanEdit(canonical_field="content", source_field="body", transform=None),
@@ -225,7 +213,9 @@ def test_drift_detects_new_field(
 
     # New batch suddenly has 'priority' field on every record
     new_batch = [
-        RawRecord(native_id=str(i), fields={"body": "x", "created_at": "2026-01-01", "priority": "high"})
+        RawRecord(
+            native_id=str(i), fields={"body": "x", "created_at": "2026-01-01", "priority": "high"}
+        )
         for i in range(10)
     ]
     report = drift_check(new_batch, mapping, connection_id=connection_row.id, org_id="org_x")
@@ -234,12 +224,8 @@ def test_drift_detects_new_field(
 
 
 @pytest.mark.unit
-def test_no_drift_when_schema_unchanged(
-    session: Session, connection_row: Connection
-) -> None:
-    intro = introspect_samples(
-        "custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}]
-    )
+def test_no_drift_when_schema_unchanged(session: Session, connection_row: Connection) -> None:
+    intro = introspect_samples("custom:test", [{"body": "x", "created_at": "2026-01-01T00:00:00Z"}])
     final = apply_human_edits(
         [
             HumanEdit(canonical_field="content", source_field="body", transform=None),
