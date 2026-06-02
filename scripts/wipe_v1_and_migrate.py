@@ -62,15 +62,59 @@ def _row_counts(table_names: list[str]) -> dict[str, int | str]:
     return out
 
 
-def _execute_drop_sql() -> None:
+def _execute_drop_sql(*, lock_timeout_ms: int = 5000, max_retries: int = 5) -> None:
+    """Drop each table in its own short transaction so production writes can't
+    deadlock the whole wipe. On deadlock/lock-timeout we re-queue the table and
+    try again after a short backoff. Each table gets up to `max_retries`.
+    """
+    import time
+
     sql = SQL_PATH.read_text()
+    stmts: list[str] = []
+    for raw in sql.split(";"):
+        s = raw.strip()
+        if not s or s.startswith("--") or s in ("BEGIN", "COMMIT"):
+            continue
+        stmts.append(s)
+
     engine = get_engine()
-    with engine.begin() as conn:
-        for stmt in sql.split(";"):
-            s = stmt.strip()
-            if not s or s.startswith("--") or s in ("BEGIN", "COMMIT"):
-                continue
-            conn.execute(text(s))
+    failed: list[tuple[str, str]] = []  # (statement, last error)
+
+    for stmt in stmts:
+        for attempt in range(1, max_retries + 1):
+            try:
+                with engine.begin() as conn:
+                    # Per-tx lock timeout — DROP either grabs the lock fast or
+                    # bails (no indefinite wait for the prod app's writes).
+                    conn.execute(text(f"SET LOCAL lock_timeout = {lock_timeout_ms}"))
+                    conn.execute(text(stmt))
+                break
+            except Exception as e:
+                msg = str(e).lower()
+                retryable = "deadlock" in msg or "lock timeout" in msg or "lock_timeout" in msg
+                if attempt >= max_retries or not retryable:
+                    failed.append((stmt, str(e).splitlines()[0]))
+                    print(
+                        f"  FAILED ({attempt}x): {stmt[:60]}…  -> {str(e).splitlines()[0]}",
+                        file=sys.stderr,
+                    )
+                    break
+                wait = 1.5 * attempt
+                print(
+                    f"  retry {attempt}/{max_retries} after {wait:.1f}s: {stmt[:60]}…",
+                    file=sys.stderr,
+                )
+                time.sleep(wait)
+
+    if failed:
+        print(f"\n{len(failed)} drop statement(s) could not complete:", file=sys.stderr)
+        for stmt, err in failed:
+            print(f"  - {stmt}", file=sys.stderr)
+            print(f"    reason: {err}", file=sys.stderr)
+        raise SystemExit(
+            "Some tables remain — pause the production app (Celery + FastAPI) "
+            "and re-run, or DROP them by hand."
+        )
 
 
 def _run_alembic_upgrade() -> int:
