@@ -68,12 +68,21 @@ class EntityDetails(BaseModel):
     interaction_count: int = 0
 
 
+class NodeScores(BaseModel):
+    """Computed health metrics surfaced in the right-side detail panel."""
+    relationship_health: float = 0.0   # 0..1 — freshness * edge density
+    confidence: float = 0.0            # 0..1 — mean fact confidence
+    freshness: float = 0.0             # 0..1 — recency of latest fact
+    sentiment: str = "neutral"
+
+
 class ContextResponse(BaseModel):
     entity: EntityDetails | None = None
     match_confidence: float = 1.0
     matched_from: str | None = None
     context_for_agent: str
     confidence: float
+    scores: NodeScores | None = None
     error: str | None = None
 
 
@@ -164,6 +173,36 @@ def _entity_details(db: Session, org_id: str, node: dict) -> EntityDetails:
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
+def _node_scores(db: Session, org_id: str, name: str) -> NodeScores:
+    """Compute right-panel scores from facts + edges for any node type."""
+    row = db.execute(
+        text("""
+            SELECT
+                COUNT(*)                                                AS n_facts,
+                AVG(confidence)                                         AS avg_conf,
+                MAX(created_at)                                         AS latest,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') AS fresh
+            FROM facts
+            WHERE org_id = :oid AND (subject = :n OR object = :n)
+        """),
+        {"oid": org_id, "n": name},
+    ).fetchone()
+    n_facts = int(row[0] or 0)
+    avg_conf = float(row[1] or 0)
+    fresh = int(row[3] or 0)
+    # freshness = ratio of facts that are <30d old (1.0 if any fresh + we have ≥1 fact)
+    freshness = (fresh / n_facts) if n_facts else 0.0
+    # health = blend of confidence + freshness + saturation (more facts ⇒ more known)
+    saturation = min(1.0, n_facts / 5.0)
+    health = round(0.4 * avg_conf + 0.3 * freshness + 0.3 * saturation, 3)
+    return NodeScores(
+        relationship_health=round(health, 3),
+        confidence=round(avg_conf, 3),
+        freshness=round(freshness, 3),
+        sentiment="neutral",  # placeholder — sentiment analysis not implemented yet
+    )
+
+
 def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextResponse:
     node = _resolve_entity(db, org_id, body.entity)
     if not node:
@@ -173,6 +212,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             matched_from="none",
             context_for_agent=f"No context available for '{body.entity}' yet — connect a data source to populate the graph.",
             confidence=0.0,
+            scores=None,
             error="entity_not_found",
         )
     # Non-person nodes (event/goal/risk): show as-subject facts + connected
@@ -222,6 +262,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             matched_from="exact",
             context_for_agent="\n".join(lines),
             confidence=0.7,
+            scores=_node_scores(db, org_id, node["name"]),
         )
     details = _entity_details(db, org_id, node)
     summary_lines = [
@@ -241,6 +282,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
         matched_from="exact" if details.name.lower() == body.entity.lower() else "fuzzy",
         context_for_agent="\n".join(summary_lines),
         confidence=min(1.0, 0.4 + 0.05 * details.interaction_count),
+        scores=_node_scores(db, org_id, node["name"]),
     )
 
 
