@@ -155,22 +155,26 @@ def list_keys(db: Session, org_id: str, agent_uuid: str):
 
 
 def list_agents_with_counters(db: Session, org_id: str):
+    """List registered agents + per-agent decision counts (24h).
+
+    v1 used `context_calls`; v2 records every engine call in `decisions`.
+    We approximate calls_24h/blocked_24h from decisions joined on agent_id.
+    blocked_24h counts decisions routed to 'flag' (the engine's gate).
+    """
     return db.execute(
         text("""
             SELECT ra.agent_id, ra.name, ra.description, ra.status, ra.created_at,
                    ra.id::text AS agent_uuid,
                    asc_.policy_json, asc_.version,
-                   (SELECT COUNT(*) FROM context_calls cc
-                      WHERE cc.org_id = ra.org_id AND cc.agent_id = ra.agent_id
-                        AND cc.called_at > NOW() - INTERVAL '24 hours') AS calls_24h,
-                   (SELECT COUNT(*) FROM context_calls cc
-                      WHERE cc.org_id = ra.org_id AND cc.agent_id = ra.agent_id
-                        AND cc.scope_blocked = TRUE
-                        AND cc.called_at > NOW() - INTERVAL '24 hours') AS blocked_24h,
-                   -- Phase 11.5: at-a-glance tool list per agent.
-                   -- Returns array of {source, provider, last_event_at} for the
-                   -- list page so the customer can SEE which tools each agent
-                   -- has without opening the drawer.
+                   (SELECT COUNT(*) FROM decisions d
+                      WHERE d.org_id = ra.org_id::text AND d.agent_id = ra.agent_id
+                        AND d.created_at > NOW() - INTERVAL '24 hours') AS calls_24h,
+                   (SELECT COUNT(*) FROM decisions d
+                      WHERE d.org_id = ra.org_id::text AND d.agent_id = ra.agent_id
+                        AND d.route = 'flag'
+                        AND d.created_at > NOW() - INTERVAL '24 hours') AS blocked_24h,
+                   -- Connector list per agent (Phase 11.5). connector_credentials
+                   -- table is still alive (used by OAuth + workspace_integrations).
                    (
                      SELECT COALESCE(jsonb_agg(jsonb_build_object(
                                 'source',        cc.source,
@@ -194,13 +198,20 @@ def list_agents_with_counters(db: Session, org_id: str):
 
 
 def recent_audit(db: Session, org_id: str, slug: str, limit: int):
+    """Recent activity for an agent — reads from v2 `decisions` (v1 context_calls dropped)."""
     return db.execute(
         text("""
-            SELECT entity_name, called_at, latency_ms, scope_blocked, scope_source,
-                   tokens_used, cache_hit
-            FROM context_calls
+            SELECT
+                COALESCE(query_jsonb->>'entity', '')                       AS entity_name,
+                created_at                                                 AS called_at,
+                COALESCE((confidence_breakdown_jsonb->>'latency_ms')::int, 0) AS latency_ms,
+                (route = 'flag')                                           AS scope_blocked,
+                'engine'                                                   AS scope_source,
+                COALESCE((confidence_breakdown_jsonb->>'tokens_used')::int, 0) AS tokens_used,
+                FALSE                                                      AS cache_hit
+            FROM decisions
             WHERE org_id = :o AND agent_id = :a
-            ORDER BY called_at DESC LIMIT :l
+            ORDER BY created_at DESC LIMIT :l
         """),
         {"o": org_id, "a": slug, "l": limit},
     ).fetchall()
