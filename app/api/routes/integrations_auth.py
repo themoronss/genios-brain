@@ -1081,6 +1081,18 @@ def get_integrations_status(org_id: str):
             {"oid": org_id},
         ).scalar() or 0
 
+        # Active-sync flags written by core.memory.sync_runner while a pull
+        # is in flight. Surfaced to UI as syncStatus="syncing" so the user
+        # sees an actual progress signal instead of a frozen "idle".
+        active_now: set[str] = set()
+        try:
+            from app.redis_client import redis_client as _r
+            for src in {c.source_type for c in rows}:
+                if _r.get(f"sync_active:org:{org_id}:{src}"):
+                    active_now.add(src)
+        except Exception:
+            pass
+
         # Build the per-tool status payload
         status: dict[str, dict] = {}
         for tool in _TOOL_KEYS:
@@ -1091,10 +1103,17 @@ def get_integrations_status(org_id: str):
                 continue
             primary = conns[0]
             last_sync = primary.last_sync_at
+            if v2_src in active_now:
+                sync_status = "syncing"
+            elif primary.health_status == "red":
+                sync_status = "error"
+            elif primary.health_status == "yellow":
+                sync_status = "syncing"
+            else:
+                sync_status = "idle"
             status[tool] = {
                 "connected": primary.status == "active",
-                "syncStatus": "syncing" if primary.health_status == "yellow" else
-                              ("error" if primary.health_status == "red" else "idle"),
+                "syncStatus": sync_status,
                 "lastSyncAt": last_sync.isoformat() if last_sync else None,
                 "metadata": {
                     "accounts":          [c.source_id for c in conns],

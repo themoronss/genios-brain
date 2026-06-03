@@ -49,6 +49,23 @@ class SyncResult:
     error: str | None = None
 
 
+def _set_sync_active(connection_id: str, org_id: str, source_type: str, on: bool) -> None:
+    """Mark a connection as actively syncing in Redis so the integrations
+    status endpoint can surface 'syncing' to the UI."""
+    try:
+        from app.redis_client import redis_client as _r
+        key_conn = f"sync_active:conn:{connection_id}"
+        key_org = f"sync_active:org:{org_id}:{source_type}"
+        if on:
+            _r.setex(key_conn, 300, "1")  # 5-min safety TTL
+            _r.setex(key_org, 300, "1")
+        else:
+            _r.delete(key_conn)
+            _r.delete(key_org)
+    except Exception:
+        pass
+
+
 def run_sync_for_connection(
     session: Session,
     *,
@@ -70,6 +87,8 @@ def run_sync_for_connection(
             cursor_advanced=False,
             error="connection not found",
         )
+
+    _set_sync_active(connection_id, conn.org_id, conn.source_type, on=True)
 
     adapter = _build_adapter(session, conn)
     if adapter is None:
@@ -116,6 +135,7 @@ def run_sync_for_connection(
         records, new_cursor, more = adapter.list_changed_since(cursor, limit)
     except Exception as e:
         log.exception("sync_pull_failed", connection_id=connection_id, error=str(e))
+        _set_sync_active(connection_id, conn.org_id, conn.source_type, on=False)
         return SyncResult(
             connection_id=connection_id,
             source_type=conn.source_type,
@@ -176,6 +196,7 @@ def run_sync_for_connection(
         cursor_advanced=cursor_advanced,
         more=more,
     )
+    _set_sync_active(connection_id, conn.org_id, conn.source_type, on=False)
     return SyncResult(
         connection_id=connection_id,
         source_type=conn.source_type,
