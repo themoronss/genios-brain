@@ -1033,6 +1033,9 @@ def get_integrations_status(org_id: str):
         # v1 oauth_tokens.last_synced_at as a fallback when a Connection has
         # no cursor row yet (first sync still in flight, or the OAuth callback
         # only wrote oauth_tokens before the v2 thin pipe started recording cursors).
+        # items_pulled = cumulative records this connection has ever fetched
+        # (= count of credits ever spent on it). Surfaced so the user can see
+        # how many emails got synced vs the abstract entity count.
         rows = db.execute(
             text("""
                 SELECT c.id, c.source_type, c.source_id, c.status, c.health_status,
@@ -1043,7 +1046,11 @@ def get_integrations_status(org_id: str):
                               WHERE org_id::text = c.org_id
                                 AND (account_email = c.source_id
                                   OR account_email = c.source_type || ':' || c.source_id))
-                       ) AS last_sync_at
+                       ) AS last_sync_at,
+                       COALESCE(
+                           (SELECT items_pulled_count FROM cursors WHERE connection_id = c.id),
+                           0
+                       ) AS items_pulled
                 FROM connections c
                 WHERE c.org_id = :oid
                 ORDER BY c.source_type, c.created_at DESC
@@ -1117,6 +1124,7 @@ def get_integrations_status(org_id: str):
                 "lastSyncAt": last_sync.isoformat() if last_sync else None,
                 "metadata": {
                     "accounts":          [c.source_id for c in conns],
+                    "recordsPulled":     int(sum(getattr(c, "items_pulled", 0) or 0 for c in conns)),
                     "entitiesExtracted": nodes_by_source.get(v2_src, 0),
                     "factsExtracted":    fact_count if tool == "gmail" else None,
                     "lastError":         primary.last_error,

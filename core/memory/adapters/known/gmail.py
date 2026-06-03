@@ -195,18 +195,34 @@ class GmailAdapter(MemoryAdapter):
         history_resp = (
             svc.users()
             .history()
-            .list(userId="me", startHistoryId=history_id, maxResults=limit)
+            .list(userId="me", startHistoryId=history_id, maxResults=limit,
+                  labelId="INBOX", historyTypes=["messageAdded"])
             .execute()
         )
         message_ids: list[str] = []
         for entry in history_resp.get("history", []):
             for ma in entry.get("messagesAdded", []):
                 if "message" in ma and "id" in ma["message"]:
+                    # Skip if the message arrived with promo/social/spam labels.
+                    labels = set(ma["message"].get("labelIds", []))
+                    if labels & {"SPAM", "TRASH", "CATEGORY_PROMOTIONS",
+                                 "CATEGORY_SOCIAL", "CATEGORY_UPDATES",
+                                 "CATEGORY_FORUMS", "CHAT"}:
+                        continue
                     message_ids.append(ma["message"]["id"])
         next_history = history_resp.get("historyId", history_id)
         has_more = bool(history_resp.get("nextPageToken"))
         records = [self._fetch_metadata(svc, mid) for mid in message_ids[:limit]]
         return records, Cursor(value=str(next_history), strategy="native"), has_more
+
+    # Gmail query that excludes marketing / spam / trash / social so we don't
+    # burn LLM credits extracting entities from newsletters and shopping ads.
+    # Negative category filters keep CATEGORY_PERSONAL / CATEGORY_FORUMS /
+    # primary inbox messages. -in:chats drops Hangouts/Chat noise.
+    _NOISE_FILTER = (
+        "-category:promotions -category:social -category:updates -category:forums "
+        "-in:spam -in:trash -in:chats"
+    )
 
     def _pull_recent(
         self,
@@ -214,8 +230,14 @@ class GmailAdapter(MemoryAdapter):
         *,
         limit: int,
     ) -> tuple[list[RawRecord], Cursor, bool]:
-        """First-run fallback: list recent messages, capture starting historyId."""
-        list_resp = svc.users().messages().list(userId="me", maxResults=limit).execute()
+        """First-run fallback: list recent INBOX messages (filtering marketing/
+        spam so credits don't burn on noise). Captures starting historyId."""
+        list_resp = svc.users().messages().list(
+            userId="me",
+            maxResults=limit,
+            q=self._NOISE_FILTER,
+            labelIds=["INBOX"],
+        ).execute()
         msg_ids = [m["id"] for m in list_resp.get("messages", [])]
         records = [self._fetch_metadata(svc, mid) for mid in msg_ids]
 
