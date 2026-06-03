@@ -1029,12 +1029,21 @@ def get_integrations_status(org_id: str):
     """
     db = SessionLocal()
     try:
-        # One pass over v2 connections + cursors for this org
+        # One pass over v2 connections + cursors for this org. Also pull the
+        # v1 oauth_tokens.last_synced_at as a fallback when a Connection has
+        # no cursor row yet (first sync still in flight, or the OAuth callback
+        # only wrote oauth_tokens before the v2 thin pipe started recording cursors).
         rows = db.execute(
             text("""
                 SELECT c.id, c.source_type, c.source_id, c.status, c.health_status,
                        c.last_health_check_at, c.last_error,
-                       (SELECT MAX(last_sync_at) FROM cursors WHERE connection_id = c.id) AS last_sync_at
+                       COALESCE(
+                           (SELECT MAX(last_sync_at) FROM cursors WHERE connection_id = c.id),
+                           (SELECT MAX(last_synced_at) FROM oauth_tokens
+                              WHERE org_id::text = c.org_id
+                                AND (account_email = c.source_id
+                                  OR account_email = c.source_type || ':' || c.source_id))
+                       ) AS last_sync_at
                 FROM connections c
                 WHERE c.org_id = :oid
                 ORDER BY c.source_type, c.created_at DESC
