@@ -170,10 +170,13 @@ def list_facts(
     org_id: str,
     subject: str | None = None,
     predicate: str | None = None,
+    subject_type: str | None = None,  # filter by node type (entity/event/goal/risk)
     limit: int = 100,
     offset: int = 0,
 ) -> dict[str, Any]:
-    """List facts (S-P-O) — optionally filtered."""
+    """List facts (S-P-O) — joined to graph_nodes so each row carries the
+    subject's TYPE (entity/event/goal/risk) for UI rendering + filtering.
+    """
     q = select(FactRow).where(FactRow.org_id == org_id)
     if subject:
         q = q.where(FactRow.subject.ilike(f"%{subject}%"))
@@ -187,21 +190,39 @@ def list_facts(
         .scalars()
         .all()
     )
+
+    # Resolve subject → node type in one batch query so we can attach type
+    # + optional filtering. Falls back to "entity" if no matching node row.
+    subject_names = list({f.subject for f in rows})
+    node_types: dict[str, str] = {}
+    if subject_names:
+        type_rows = session.execute(
+            select(NodeRow.canonical_name, NodeRow.type)
+            .where(NodeRow.org_id == org_id)
+            .where(NodeRow.canonical_name.in_(subject_names))
+        ).all()
+        node_types = {name: t for name, t in type_rows}
+
+    facts_out = []
+    for f in rows:
+        st = node_types.get(f.subject, "entity")
+        if subject_type and st != subject_type:
+            continue
+        facts_out.append({
+            "id": f.id,
+            "subject": f.subject,
+            "subject_type": st,
+            "predicate": f.predicate,
+            "object": f.object,
+            "source_item_id": f.source_item_id,
+            "asserted_by_type": f.asserted_by_type,
+            "asserted_by_id": f.asserted_by_id,
+            "confidence": float(f.confidence or 0),
+            "created_at": f.created_at.isoformat() if f.created_at else None,
+        })
+
     return {
-        "facts": [
-            {
-                "id": f.id,
-                "subject": f.subject,
-                "predicate": f.predicate,
-                "object": f.object,
-                "source_item_id": f.source_item_id,
-                "asserted_by_type": f.asserted_by_type,
-                "asserted_by_id": f.asserted_by_id,
-                "confidence": float(f.confidence or 0),
-                "created_at": f.created_at.isoformat() if f.created_at else None,
-            }
-            for f in rows
-        ],
+        "facts": facts_out,
         "total": total,
         "limit": limit,
         "offset": offset,

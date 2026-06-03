@@ -80,13 +80,16 @@ class ContextResponse(BaseModel):
 # ── Shared resolver: entity name → graph_nodes row (org-scoped) ──────────────
 
 def _resolve_entity(db: Session, org_id: str, entity: str) -> dict | None:
+    """Look up a node by name across ALL typed node types
+    (entity/event/goal/risk) so the right-side context panel can drill into
+    anything the user clicks — not just people."""
     row = db.execute(
         text("""
             SELECT id, canonical_name, type, attributes, last_seen
             FROM graph_nodes
             WHERE org_id = :oid
-              AND type = 'entity'
               AND LOWER(canonical_name) = LOWER(:e)
+            ORDER BY (type = 'entity') DESC, last_seen DESC NULLS LAST
             LIMIT 1
         """),
         {"oid": org_id, "e": entity},
@@ -96,9 +99,9 @@ def _resolve_entity(db: Session, org_id: str, entity: str) -> dict | None:
             text("""
                 SELECT id, canonical_name, type, attributes, last_seen
                 FROM graph_nodes
-                WHERE org_id = :oid AND type = 'entity'
+                WHERE org_id = :oid
                   AND LOWER(canonical_name) LIKE LOWER(:p)
-                ORDER BY last_seen DESC NULLS LAST
+                ORDER BY (type = 'entity') DESC, last_seen DESC NULLS LAST
                 LIMIT 1
             """),
             {"oid": org_id, "p": f"%{entity}%"},
@@ -108,6 +111,7 @@ def _resolve_entity(db: Session, org_id: str, entity: str) -> dict | None:
     return {
         "id": str(row[0]),
         "name": row[1],
+        "type": row[2],
         "attributes": row[3] if isinstance(row[3], dict) else {},
         "last_seen_at": row[4],
     }
@@ -170,6 +174,54 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             context_for_agent=f"No context available for '{body.entity}' yet — connect a data source to populate the graph.",
             confidence=0.0,
             error="entity_not_found",
+        )
+    # Non-person nodes (event/goal/risk): show as-subject facts + connected
+    # entities. This makes "Role application" / "Job cuts" clicks useful too.
+    node_type = node.get("type") or "entity"
+    if node_type != "entity":
+        related = db.execute(
+            text("""
+                SELECT predicate, object FROM facts
+                WHERE org_id = :oid AND subject = :n
+                ORDER BY created_at DESC LIMIT 20
+            """),
+            {"oid": org_id, "n": node["name"]},
+        ).fetchall()
+        also_about = db.execute(
+            text("""
+                SELECT subject, predicate FROM facts
+                WHERE org_id = :oid AND object = :n
+                ORDER BY created_at DESC LIMIT 20
+            """),
+            {"oid": org_id, "n": node["name"]},
+        ).fetchall()
+        lines = [f"{node['name']} ({node_type})"]
+        if related:
+            lines.append("Linked forward:")
+            for p, o in related[:8]:
+                lines.append(f"  · {p} → {o}")
+        if also_about:
+            lines.append("Mentioned by:")
+            for s, p in also_about[:8]:
+                lines.append(f"  · {s} {p} {node['name']}")
+        last_seen = node.get("last_seen_at")
+        details = EntityDetails(
+            name=node["name"],
+            company=node["attributes"].get("company"),
+            relationship_stage=node_type,            # surface the type as a stage badge
+            last_interaction=last_seen.isoformat() if last_seen else None,
+            sentiment_trend="neutral",
+            communication_style="—",
+            topics_of_interest=[],
+            open_commitments=[],
+            interaction_count=len(related) + len(also_about),
+        )
+        return ContextResponse(
+            entity=details,
+            match_confidence=1.0,
+            matched_from="exact",
+            context_for_agent="\n".join(lines),
+            confidence=0.7,
         )
     details = _entity_details(db, org_id, node)
     summary_lines = [
