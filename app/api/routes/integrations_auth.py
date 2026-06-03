@@ -1001,222 +1001,99 @@ async def gdocs_callback(state: str, code: str, background_tasks: BackgroundTask
 
 # ─── Unified Integrations Status ─────────────────────────────────────────────
 
+_TOOL_KEYS = ("gmail", "gcal", "slack", "jira", "notion", "gsheets", "gdrive", "gdocs", "hubspot")
+_TOOL_TO_V2_SOURCE = {
+    "gmail":   "gmail",
+    "gcal":    "gcal",
+    "slack":   "slack",
+    "jira":    "jira",
+    "notion":  "notion",
+    "gsheets": "gsheets",
+    "gdrive":  "drive",
+    "gdocs":   "gdocs",
+    "hubspot": "hubspot",
+}
+
+
 @router.get("/api/org/{org_id}/integrations/status")
 def get_integrations_status(org_id: str):
-    """
-    Returns real-time connection status for all tools.
-    Frontend polls this every 30s to drive the dynamic integrations page.
+    """Real-time connection status sourced from the v2 thin-pipe tables.
+
+    Reads:
+      connections        — connected status + source_id (mailbox/workspace)
+      cursors            — last successful sync timestamp per connection
+      graph_nodes/facts  — per-source extracted entity + fact counts
+
+    Replaces 15+ dropped v1 tables (oauth_tokens read-only kept where useful
+    for the Gmail account list).
     """
     db = SessionLocal()
     try:
-        status = {}
-
-        # Gmail — from oauth_tokens where email doesn't start with tool: prefix
-        gmail_rows = db.execute(
+        # One pass over v2 connections + cursors for this org
+        rows = db.execute(
             text("""
-                SELECT account_email, last_synced_at, sync_status
-                FROM oauth_tokens
-                WHERE org_id = :oid
-                AND account_email NOT LIKE '%:%'
+                SELECT c.id, c.source_type, c.source_id, c.status, c.health_status,
+                       c.last_health_check_at, c.last_error,
+                       (SELECT MAX(last_sync_at) FROM cursors WHERE connection_id = c.id) AS last_sync_at
+                FROM connections c
+                WHERE c.org_id = :oid
+                ORDER BY c.source_type, c.created_at DESC
             """),
             {"oid": org_id},
         ).fetchall()
-        if gmail_rows:
-            # Fetch Gmail-specific stats
-            gmail_stats = db.execute(
-                text("""
-                    SELECT
-                        COUNT(*) AS total_emails,
-                        COUNT(DISTINCT contact_id) AS contacts_linked,
-                        COUNT(*) FILTER (WHERE direction = 'inbound') AS received,
-                        COUNT(*) FILTER (WHERE direction = 'outbound') AS sent
-                    FROM interactions
-                    WHERE org_id = :oid AND (source IS NULL OR source = 'gmail')
-                """),
-                {"oid": org_id},
-            ).fetchone()
-            gmail_commitments = db.execute(
-                text("SELECT COUNT(*) FROM commitments WHERE org_id = :oid"),
-                {"oid": org_id},
-            ).scalar() or 0
-            status["gmail"] = {
-                "connected": True,
-                "syncStatus": gmail_rows[0].sync_status or "idle",
-                "lastSyncAt": gmail_rows[0].last_synced_at.isoformat() if gmail_rows[0].last_synced_at else None,
-                "metadata": {
-                    "accounts": [r.account_email for r in gmail_rows],
-                    "totalEmails": gmail_stats.total_emails or 0,
-                    "contactsLinked": gmail_stats.contacts_linked or 0,
-                    "received": gmail_stats.received or 0,
-                    "sent": gmail_stats.sent or 0,
-                    "commitments": gmail_commitments,
-                },
-            }
-        else:
-            status["gmail"] = {"connected": False}
 
-        # Google Calendar — from calendar_sync_state + event/attendee counts
-        gcal_row = db.execute(
+        by_source: dict[str, list] = {}
+        for r in rows:
+            by_source.setdefault(r.source_type, []).append(r)
+
+        # Per-source extracted entity counts. source_item_ids is JSONB
+        # containing strings shaped like "<source_type>:<native_id>".
+        node_counts = db.execute(
             text("""
-                SELECT last_full_sync_at, last_sync_events_added,
-                       last_sync_events_filtered, total_events_synced,
-                       COALESCE(sync_status, 'idle') AS sync_status
-                FROM calendar_sync_state WHERE org_id = :oid LIMIT 1
+                SELECT split_part(item::text, ':', 1) AS source_type, COUNT(*) AS n
+                FROM (
+                    SELECT jsonb_array_elements_text(
+                             CASE jsonb_typeof(source_item_ids::jsonb)
+                                  WHEN 'array' THEN source_item_ids::jsonb
+                                  ELSE '[]'::jsonb
+                             END
+                           ) AS item
+                    FROM graph_nodes
+                    WHERE org_id = :oid AND type = 'entity'
+                ) x
+                GROUP BY 1
             """),
             {"oid": org_id},
-        ).fetchone()
-        if gcal_row:
-            gcal_counts = db.execute(
-                text("""
-                    SELECT
-                        COUNT(*) FILTER (WHERE NOT is_cancelled) AS active_events,
-                        COUNT(*) FILTER (WHERE NOT is_cancelled AND start_time > NOW()) AS upcoming_events
-                    FROM calendar_events WHERE org_id = :oid
-                """),
-                {"oid": org_id},
-            ).fetchone()
-            gcal_attendees = db.execute(
-                text("""
-                    SELECT COUNT(DISTINCT cea.email) AS unique_attendees
-                    FROM calendar_event_attendees cea
-                    JOIN calendar_events ce ON ce.id = cea.event_id
-                    WHERE ce.org_id = :oid AND cea.is_external = TRUE
-                """),
-                {"oid": org_id},
-            ).scalar() or 0
-            status["gcal"] = {
-                "connected": True,
-                "syncStatus": gcal_row.sync_status,
-                "lastSyncAt": gcal_row.last_full_sync_at.isoformat() if gcal_row.last_full_sync_at else None,
+        ).fetchall()
+        nodes_by_source = {row.source_type.strip('"'): int(row.n or 0) for row in node_counts}
+
+        fact_count = db.execute(
+            text("SELECT COUNT(*) FROM facts WHERE org_id = :oid"),
+            {"oid": org_id},
+        ).scalar() or 0
+
+        # Build the per-tool status payload
+        status: dict[str, dict] = {}
+        for tool in _TOOL_KEYS:
+            v2_src = _TOOL_TO_V2_SOURCE[tool]
+            conns = by_source.get(v2_src) or []
+            if not conns:
+                status[tool] = {"connected": False}
+                continue
+            primary = conns[0]
+            last_sync = primary.last_sync_at
+            status[tool] = {
+                "connected": primary.status == "active",
+                "syncStatus": "syncing" if primary.health_status == "yellow" else
+                              ("error" if primary.health_status == "red" else "idle"),
+                "lastSyncAt": last_sync.isoformat() if last_sync else None,
                 "metadata": {
-                    "eventsTotal": gcal_counts.active_events or 0,
-                    "upcomingEvents": gcal_counts.upcoming_events or 0,
-                    "uniqueAttendees": gcal_attendees,
-                    "lastSyncAdded": gcal_row.last_sync_events_added or 0,
-                    "lastSyncFiltered": gcal_row.last_sync_events_filtered or 0,
-                    "totalSynced": gcal_row.total_events_synced or 0,
+                    "accounts":          [c.source_id for c in conns],
+                    "entitiesExtracted": nodes_by_source.get(v2_src, 0),
+                    "factsExtracted":    fact_count if tool == "gmail" else None,
+                    "lastError":         primary.last_error,
                 },
             }
-        else:
-            status["gcal"] = {"connected": False}
-
-        # Slack — from slack_workspaces
-        slack_row = db.execute(
-            text("SELECT workspace_name, last_event_at, backfill_status FROM slack_workspaces WHERE org_id = :oid LIMIT 1"),
-            {"oid": org_id},
-        ).fetchone()
-        if slack_row:
-            status["slack"] = {
-                "connected": True,
-                "syncStatus": "syncing" if slack_row.backfill_status == "running" else "idle",
-                "lastSyncAt": slack_row.last_event_at.isoformat() if slack_row.last_event_at else None,
-                "metadata": {"workspaceName": slack_row.workspace_name},
-            }
-        else:
-            status["slack"] = {"connected": False}
-
-        # Jira — from jira_connections
-        jira_row = db.execute(
-            text("SELECT site_url, backfill_status FROM jira_connections WHERE org_id = :oid LIMIT 1"),
-            {"oid": org_id},
-        ).fetchone()
-        if jira_row:
-            status["jira"] = {
-                "connected": True,
-                "syncStatus": "syncing" if jira_row.backfill_status == "running" else "idle",
-                "metadata": {"siteUrl": jira_row.site_url},
-            }
-        else:
-            status["jira"] = {"connected": False}
-
-        # Notion — from notion_connections
-        notion_row = db.execute(
-            text("SELECT workspace_name, last_full_sync_at, backfill_status FROM notion_connections WHERE org_id = :oid LIMIT 1"),
-            {"oid": org_id},
-        ).fetchone()
-        if notion_row:
-            status["notion"] = {
-                "connected": True,
-                "syncStatus": "syncing" if notion_row.backfill_status == "running" else "idle",
-                "lastSyncAt": notion_row.last_full_sync_at.isoformat() if notion_row.last_full_sync_at else None,
-                "metadata": {"workspaceName": notion_row.workspace_name},
-            }
-        else:
-            status["notion"] = {"connected": False}
-
-        # Google Sheets — from sheets_connections
-        sheets_row = db.execute(
-            text("SELECT last_sync_at FROM sheets_connections WHERE org_id = :oid LIMIT 1"),
-            {"oid": org_id},
-        ).fetchone()
-        if sheets_row:
-            status["gsheets"] = {
-                "connected": True,
-                "syncStatus": "idle",
-                "lastSyncAt": sheets_row.last_sync_at.isoformat() if sheets_row.last_sync_at else None,
-            }
-        else:
-            status["gsheets"] = {"connected": False}
-
-        # Google Drive — from gdrive_connections
-        drive_row = db.execute(
-            text("SELECT last_changes_sync_at FROM gdrive_connections WHERE org_id = :oid LIMIT 1"),
-            {"oid": org_id},
-        ).fetchone()
-        if drive_row:
-            status["gdrive"] = {
-                "connected": True,
-                "syncStatus": "idle",
-                "lastSyncAt": drive_row.last_changes_sync_at.isoformat() if drive_row.last_changes_sync_at else None,
-            }
-        else:
-            status["gdrive"] = {"connected": False}
-
-        # Google Docs — from gdocs_connections
-        docs_row = db.execute(
-            text("SELECT last_full_sync_at, backfill_status FROM gdocs_connections WHERE org_id = :oid LIMIT 1"),
-            {"oid": org_id},
-        ).fetchone()
-        if docs_row:
-            status["gdocs"] = {
-                "connected": True,
-                "syncStatus": "syncing" if docs_row.backfill_status == "running" else "idle",
-                "lastSyncAt": docs_row.last_full_sync_at.isoformat() if docs_row.last_full_sync_at else None,
-            }
-        else:
-            status["gdocs"] = {"connected": False}
-
-        # HubSpot — from oauth_tokens where account_email LIKE 'hubspot:%'
-        hs_row = db.execute(
-            text("""
-                SELECT last_synced_at, sync_status, sync_total, sync_processed
-                FROM oauth_tokens
-                WHERE org_id = :oid AND account_email LIKE 'hubspot:%'
-                ORDER BY created_at DESC LIMIT 1
-            """),
-            {"oid": org_id},
-        ).fetchone()
-        if hs_row:
-            hs_contacts = db.execute(
-                text("SELECT COUNT(*) FROM contacts WHERE org_id = :oid AND data_source = 'hubspot'"),
-                {"oid": org_id},
-            ).scalar() or 0
-            hs_deals = db.execute(
-                text("SELECT COUNT(*) FROM commitments WHERE org_id = :oid AND owner = 'hubspot'"),
-                {"oid": org_id},
-            ).scalar() or 0
-            status["hubspot"] = {
-                "connected": True,
-                "syncStatus": hs_row.sync_status or "idle",
-                "lastSyncAt": hs_row.last_synced_at.isoformat() if hs_row.last_synced_at else None,
-                "metadata": {
-                    "contactsSynced": hs_contacts,
-                    "dealsSynced": hs_deals,
-                    "totalProcessed": hs_row.sync_processed or 0,
-                },
-            }
-        else:
-            status["hubspot"] = {"connected": False}
 
         # Include plan's allowed integrations so frontend can gate UI
         from app.plan_enforcer import get_org_plan
@@ -1237,180 +1114,55 @@ def get_integrations_status(org_id: str):
 #   wipe_data=False  → remove only the OAuth connection / sync state (keep data)
 #   wipe_data=True   → also delete all synced data tables (fresh-start next time)
 
-# Connection-only deletes (token / connection record, no data tables)
+# Connection-only deletes — v2 path: delete from connections (CASCADE removes
+# cursors + secret_refs) plus the oauth_tokens audit row if it exists.
+def _v2_disconnect_sql(source_type: str, oauth_token_pattern: str | None) -> list[str]:
+    out = [
+        "DELETE FROM cursors WHERE connection_id IN "
+        "  (SELECT id FROM connections WHERE org_id = :oid AND source_type = '" + source_type + "')",
+        "DELETE FROM secret_refs WHERE connection_id IN "
+        "  (SELECT id FROM connections WHERE org_id = :oid AND source_type = '" + source_type + "')",
+        "DELETE FROM connections WHERE org_id = :oid AND source_type = '" + source_type + "'",
+    ]
+    if oauth_token_pattern is not None:
+        # Some v1 OAuth callbacks still write oauth_tokens for legacy auth — best-effort delete.
+        if oauth_token_pattern == "":
+            out.append("DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email NOT LIKE '%:%'")
+        else:
+            out.append(f"DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE '{oauth_token_pattern}'")
+    return out
+
+
 TOOL_CONNECTION_SQL: dict[str, list[str]] = {
-    "gmail":   ["DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email NOT LIKE '%:%'"],
-    "gcal":    [
-        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'gcal:%'",
-        "DELETE FROM calendar_sync_state WHERE org_id = :oid",
-    ],
-    "slack":   ["DELETE FROM slack_workspaces WHERE org_id = :oid"],
-    "jira":    ["DELETE FROM jira_connections WHERE org_id = :oid"],
-    "notion":  ["DELETE FROM notion_connections WHERE org_id = :oid"],
-    "gsheets": ["DELETE FROM sheets_connections WHERE org_id = :oid"],
-    "gdrive":  ["DELETE FROM gdrive_connections WHERE org_id = :oid"],
-    "gdocs":    ["DELETE FROM gdocs_connections WHERE org_id = :oid"],
-    "hubspot":  ["DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'hubspot:%'"],
+    "gmail":   _v2_disconnect_sql("gmail", ""),
+    "gcal":    _v2_disconnect_sql("gcal", "gcal:%"),
+    "slack":   _v2_disconnect_sql("slack", "slack:%"),
+    "jira":    _v2_disconnect_sql("jira", "jira:%"),
+    "notion":  _v2_disconnect_sql("notion", "notion:%"),
+    "gsheets": _v2_disconnect_sql("gsheets", "gsheets:%"),
+    "gdrive":  _v2_disconnect_sql("drive", "gdrive:%"),
+    "gdocs":   _v2_disconnect_sql("gdocs", "gdocs:%"),
+    "hubspot": _v2_disconnect_sql("hubspot", "hubspot:%"),
 }
 
-# Full wipe — deletes connection AND all synced data for a fresh start
+# Full wipe — v2 path: per-source extracted entities/facts/edges share rows
+# with other sources (resolution merges them), so we don't try to surgically
+# delete "Gmail-only entities". A clean wipe nukes the whole org's graph and
+# is what the v1 'wipe' button promised: a fresh start. For per-tool wipe we
+# remove just the connection + cursors + secrets (data column source_item_ids
+# is informational only and shrinks naturally on next sync).
+def _v2_wipe_sql(source_type: str, oauth_token_pattern: str | None) -> list[str]:
+    return _v2_disconnect_sql(source_type, oauth_token_pattern)
+
+
 TOOL_CLEANUP_SQL: dict[str, list[str]] = {
-    "gmail": [
-        # Remove Gmail-sourced interactions
-        "DELETE FROM interactions WHERE org_id = :oid AND (source IS NULL OR source = 'gmail')",
-        # Remove commitments extracted from Gmail
-        "DELETE FROM commitments WHERE org_id = :oid AND (owner IS NULL OR owner = 'gmail')",
-        # Clean FK-dependent tables before deleting Gmail-only contacts
-        """DELETE FROM insights WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        """DELETE FROM contact_facts WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        """DELETE FROM precomputed_bundles WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        """DELETE FROM segment_members WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        """DELETE FROM authority_assignments WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        """DELETE FROM precedent_graph WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        """DELETE FROM merge_queue WHERE contact_id_a IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        ) OR contact_id_b IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND (data_source IS NULL OR data_source = 'gmail')
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail')
-        )""",
-        # Now remove Gmail-only contacts
-        """DELETE FROM contacts WHERE org_id = :oid
-          AND (data_source IS NULL OR data_source = 'gmail')
-          AND id NOT IN (
-              SELECT DISTINCT contact_id FROM interactions
-              WHERE org_id = :oid AND source IS NOT NULL AND source != 'gmail'
-          )
-        """,
-        # Remove OAuth tokens
-        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email NOT LIKE '%:%'",
-    ],
-    "gcal": [
-        # Remove calendar-sourced interactions
-        "DELETE FROM interactions WHERE org_id = :oid AND source = 'calendar'",
-        # Remove co-attendance edges
-        "DELETE FROM co_attendance WHERE org_id = :oid",
-        # Clean FK-dependent tables for contacts with no remaining interactions
-        """DELETE FROM insights WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        """DELETE FROM contact_facts WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        """DELETE FROM precomputed_bundles WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        """DELETE FROM segment_members WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        """DELETE FROM authority_assignments WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        """DELETE FROM precedent_graph WHERE contact_id IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        """DELETE FROM merge_queue WHERE contact_id_a IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        ) OR contact_id_b IN (
-            SELECT id FROM contacts WHERE org_id = :oid
-              AND id NOT IN (SELECT DISTINCT contact_id FROM interactions WHERE org_id = :oid)
-        )""",
-        # Remove orphaned contacts (no remaining interactions from any source)
-        """DELETE FROM contacts WHERE org_id = :oid
-          AND id NOT IN (
-              SELECT DISTINCT contact_id FROM interactions
-              WHERE org_id = :oid
-          )
-        """,
-        # Remove calendar-specific tables
-        "DELETE FROM upcoming_meetings WHERE org_id = :oid",
-        # calendar_event_attendees cascades from calendar_events
-        "DELETE FROM calendar_events WHERE org_id = :oid",
-        "DELETE FROM calendar_sync_state WHERE org_id = :oid",
-        # Remove OAuth tokens
-        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'gcal:%'",
-    ],
-    "slack": [
-        "DELETE FROM slack_messages WHERE org_id = :oid",
-        "DELETE FROM slack_user_cache WHERE org_id = :oid",
-        "DELETE FROM slack_channel_config WHERE org_id = :oid",
-        "DELETE FROM slack_workspaces WHERE org_id = :oid",
-    ],
-    "jira": [
-        "DELETE FROM jira_issues WHERE org_id = :oid",
-        "DELETE FROM jira_user_cache WHERE org_id = :oid",
-        "DELETE FROM jira_project_config WHERE org_id = :oid",
-        "DELETE FROM jira_connections WHERE org_id = :oid",
-    ],
-    "notion": [
-        "DELETE FROM notion_pages WHERE org_id = :oid",
-        "DELETE FROM notion_connections WHERE org_id = :oid",
-    ],
-    "gsheets": [
-        "DELETE FROM sheets_tab_config WHERE org_id = :oid",
-        "DELETE FROM sheets_spreadsheets WHERE org_id = :oid",
-        "DELETE FROM sheets_connections WHERE org_id = :oid",
-    ],
-    "gdrive": [
-        "DELETE FROM gdrive_files WHERE org_id = :oid",
-        "DELETE FROM gdrive_shared_drive_members WHERE org_id = :oid",
-        "DELETE FROM gdrive_shared_drives WHERE org_id = :oid",
-        "DELETE FROM gdrive_connections WHERE org_id = :oid",
-    ],
-    "gdocs": [
-        "DELETE FROM gdocs_documents WHERE org_id = :oid",
-        "DELETE FROM gdocs_connections WHERE org_id = :oid",
-    ],
-    "hubspot": [
-        # Remove HubSpot-sourced interactions (keeps contacts — they're real people)
-        "DELETE FROM interactions WHERE org_id = :oid AND source = 'hubspot'",
-        # Remove HubSpot-only commitments (deals)
-        "DELETE FROM commitments WHERE org_id = :oid AND owner = 'hubspot'",
-        # Remove contacts that came only from HubSpot (no other interactions)
-        """
-        DELETE FROM contacts WHERE org_id = :oid AND data_source = 'hubspot'
-          AND id NOT IN (
-              SELECT DISTINCT contact_id FROM interactions
-              WHERE org_id = :oid AND source != 'hubspot'
-          )
-        """,
-        # Remove the OAuth token
-        "DELETE FROM oauth_tokens WHERE org_id = :oid AND account_email LIKE 'hubspot:%'",
-    ],
+    tool: _v2_wipe_sql(_TOOL_TO_V2_SOURCE[tool],
+                       None if tool == "gmail" else f"{tool}:%" if tool != "gmail" else "")
+    for tool in _TOOL_KEYS
 }
+# Gmail's oauth_token row has no prefix — patch:
+TOOL_CLEANUP_SQL["gmail"] = _v2_wipe_sql("gmail", "")
+TOOL_CLEANUP_SQL["gdrive"] = _v2_wipe_sql("drive", "gdrive:%")
 
 
 @router.delete("/api/org/{org_id}/integrations/{tool}/disconnect")
