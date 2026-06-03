@@ -148,10 +148,39 @@ def run_sync_for_connection(
     mapping = adapter.get_mapping()
     emitted = 0
     dropped = 0
+    insufficient_credits = False
     for record in records:
         if not enforcer.is_allowed(record):
             dropped += 1
             continue
+        # v2 sync-credit deduction: 1 credit per record actually emitted.
+        # Uses the v1 ledger (single source of truth) — same `sync:gmail_record`
+        # reason string the v1 code used so the credit history stays continuous.
+        try:
+            from app.credits.ledger import InsufficientCredits, deduct
+            from app.database import SessionLocal
+            _ldb = SessionLocal()
+            try:
+                deduct(
+                    _ldb,
+                    org_id=conn.org_id,
+                    bucket="sync",
+                    reason=f"sync:{conn.source_type}_record",
+                    units=1,
+                    idempotency_key=f"sync:{conn.source_type}:{record.native_id}",
+                    related_kind="memory_item",
+                    related_id=record.native_id,
+                )
+                _ldb.commit()
+            except InsufficientCredits:
+                insufficient_credits = True
+                _ldb.rollback()
+                break  # stop pulling — out of budget
+            finally:
+                _ldb.close()
+        except Exception as e:
+            log.warning("sync_credit_deduct_failed", connection_id=connection_id, error=str(e))
+
         try:
             item = normalize(record, mapping, source_id=conn.source_id)
             emit(item, org_id=conn.org_id)
@@ -196,6 +225,7 @@ def run_sync_for_connection(
         dropped_scope=dropped,
         cursor_advanced=cursor_advanced,
         more=more,
+        insufficient_credits=insufficient_credits,
     )
     _set_sync_active(connection_id, conn.org_id, conn.source_type, on=False)
     return SyncResult(
@@ -204,6 +234,7 @@ def run_sync_for_connection(
         items_emitted=emitted,
         items_dropped_scope=dropped,
         cursor_advanced=cursor_advanced,
+        error="insufficient_credits" if insufficient_credits else None,
     )
 
 
