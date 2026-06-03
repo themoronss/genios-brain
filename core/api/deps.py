@@ -46,8 +46,9 @@ def require_org(
     jwt_token = request.cookies.get(SESSION_COOKIE)
     api_key: str | None = None
 
-    if authorization and authorization.lower().startswith("bearer "):
-        token = authorization.split(None, 1)[1].strip()
+    if authorization and authorization.lower().startswith("bearer"):
+        parts = authorization.split(None, 1)
+        token = parts[1].strip() if len(parts) > 1 else ""
         if token:
             # JWTs are 3 dot-separated segments and don't use the v1 'gn_' prefix
             if token.count(".") == 2 and not token.startswith("gn_"):

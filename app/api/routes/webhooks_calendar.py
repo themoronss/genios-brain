@@ -149,9 +149,25 @@ def _run_sync(org_id: str, event_id: str):
         return
 
     try:
-        from app.tasks.calendar_sync import run_calendar_sync
-        run_calendar_sync(org_id)
-        logger.info(f"Calendar webhook: incremental sync complete for org {org_id}")
+        # Per g-i-1 plan: webhook fires v2 sync_runner across this org's
+        # calendar connections.
+        from sqlalchemy import select as _sel
+
+        from core.foundations.db import get_session as _v2s
+        from core.memory.store import Connection
+        from core.memory.sync_runner import run_sync_for_connection
+
+        with _v2s() as _s:
+            conns = _s.execute(
+                _sel(Connection)
+                .where(Connection.org_id == org_id)
+                .where(Connection.source_type == "gcal")
+            ).scalars().all()
+            for c in conns:
+                r = run_sync_for_connection(_s, connection_id=c.id, limit=50)
+                logger.info(
+                    f"Calendar webhook v2 sync: emitted={r.items_emitted} (conn {c.id[:8]})"
+                )
         _update_event_status(event_id, "processed")
     except Exception as sync_err:
         logger.error(f"Calendar webhook: sync failed for org {org_id}: {sync_err}")

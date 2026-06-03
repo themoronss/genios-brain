@@ -1,72 +1,24 @@
-"""Brain activity — a dashboard view of what the brain is doing right now.
+"""Brain activity — v2 view derived from decisions + corrections + facts.
 
-Currently the dashboard has NO visibility into detector fires, recommendation
-push rate, feedback arrivals. Founder on a demo can't see the brain thinking.
-
-This endpoint surfaces:
- - Detector fire counters (last 24h, per insight_type) from Redis
- - Recommendation push rate (hourly buckets) from `recommendations`
- - Feedback arrival counts (acted / dismissed / ignored) from outcomes
- - Rolling 7-day AAR trend (daily points)
-
-All queries are cheap (indexed) and org-scoped. Intended to be polled every
-5-10s from the dashboard `brain/` page.
+Per g-i-1 plan: no more reads from v1 `recommendations` / `insights` tables.
+Surface what the v2 engine is actually doing right now: decisions emitted,
+which rules fired, feedback (corrections), proactive insights, and the
+intervention_rate (g-i-8 North Star).
 """
-
 from __future__ import annotations
 
-import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, verify_api_key
-from app.redis_client import redis_client
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-def _detector_counter_key(org_id: str, insight_type: str, bucket_hour: str) -> str:
-    return f"brain:detector_fires:{org_id}:{insight_type}:{bucket_hour}"
-
-
-def _activity_etag(db: Session, org_id: str, hours: int) -> str:
-    """Cheap fingerprint of brain-activity sources.
-
-    Polled every 5s from the dashboard — most ticks have no change. The fingerprint
-    rolls up the latest mutation timestamp + row count from `recommendations` (only
-    DB source — table has no `updated_at`, so we take the max of created_at and
-    outcome_at to capture both new pushes and feedback). Combined with the Redis
-    router-tick signal so a live brain bumps the ETag too. When nothing has moved
-    the endpoint short-circuits to 304 Not Modified (no aggregate queries).
-    """
-    row = db.execute(
-        text("""
-            SELECT
-                COALESCE(MAX(GREATEST(
-                    created_at,
-                    COALESCE(outcome_at, '-infinity'::timestamptz)
-                ))::text, 'epoch') AS r_max,
-                COUNT(*) AS r_n
-            FROM recommendations
-            WHERE org_id = :oid
-        """),
-        {"oid": org_id},
-    ).fetchone()
-    try:
-        last_tick = redis_client.get(f"brain:router:last_tick:{org_id}") or ""
-        last_consumed = redis_client.get(f"brain:router:last_consumed:{org_id}") or ""
-    except Exception:
-        last_tick, last_consumed = "", ""
-    r_max = row.r_max if row else "epoch"
-    r_n = row.r_n if row else 0
-    raw = f"{org_id}|{hours}|{r_max}|{r_n}|{last_tick}|{last_consumed}"
-    return 'W/"' + hashlib.md5(raw.encode()).hexdigest()[:16] + '"'
+logger = logging.getLogger(__name__)
 
 
 @router.get("/v1/admin/brain/activity")
@@ -76,45 +28,32 @@ def brain_activity(
     hours: int = 24,
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
-):
-    """Live snapshot of brain activity for the dashboard."""
-    hours = max(1, min(168, int(hours)))  # cap 7 days
+) -> dict[str, Any]:
+    """v2-native live snapshot of brain activity for the dashboard.
 
-    # ── Cheap fingerprint check — 304 when nothing changed ──────────────────
-    try:
-        etag = _activity_etag(db, org_id, hours)
-        if request.headers.get("if-none-match") == etag:
-            return Response(
-                status_code=304,
-                headers={"ETag": etag, "Cache-Control": "private, no-cache"},
-            )
-        response.headers["ETag"] = etag
-        response.headers["Cache-Control"] = "private, no-cache"
-    except Exception as e:
-        # Postgres aborts the session on any error inside a transaction — rollback
-        # so the aggregate queries below can run on a clean session.
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        logger.warning(f"brain_activity ETag failed (continuing without 304): {e}")
-
+    Counts come from `decisions` (emit + route + path), `corrections`
+    (👎/edit), `proactive_insights` (g-i-4 generated), and rolling
+    `intervention_metrics` for the 7-day trend.
+    """
+    hours = max(1, min(168, int(hours)))
     since = datetime.now(timezone.utc) - timedelta(hours=hours)
 
-    # ── Recommendations pushed, by hour ──────────────────────────────────────
-    pushed_rows = db.execute(
-        text("""
+    # ── Decisions emitted (the "push" stream in v2) ─────────────────────────
+    by_hour_rows = db.execute(
+        text(
+            """
             SELECT
                 DATE_TRUNC('hour', created_at) AS hour,
                 COUNT(*) AS n,
-                COUNT(*) FILTER (WHERE outcome = 'acted')     AS acted,
-                COUNT(*) FILTER (WHERE outcome = 'dismissed') AS dismissed,
-                COUNT(*) FILTER (WHERE outcome = 'ignored')   AS ignored
-            FROM recommendations
+                COUNT(*) FILTER (WHERE route = 'autonomous') AS acted,
+                COUNT(*) FILTER (WHERE route = 'flag')       AS dismissed,
+                COUNT(*) FILTER (WHERE route = 'notify')     AS ignored
+            FROM decisions
             WHERE org_id = :oid AND created_at >= :since
             GROUP BY DATE_TRUNC('hour', created_at)
             ORDER BY hour ASC
-        """),
+            """
+        ),
         {"oid": org_id, "since": since},
     ).fetchall()
 
@@ -126,100 +65,150 @@ def brain_activity(
             "dismissed": int(r.dismissed or 0),
             "ignored": int(r.ignored or 0),
         }
-        for r in pushed_rows
+        for r in by_hour_rows
     ]
 
-    # ── Aggregates (window totals) ──────────────────────────────────────────
-    totals = db.execute(
-        text("""
+    # ── Window totals ───────────────────────────────────────────────────────
+    totals_row = db.execute(
+        text(
+            """
             SELECT
                 COUNT(*)                                       AS total_pushed,
-                COUNT(*) FILTER (WHERE outcome = 'acted')     AS total_acted,
-                COUNT(*) FILTER (WHERE outcome = 'dismissed') AS total_dismissed,
-                COUNT(*) FILTER (WHERE outcome = 'ignored')   AS total_ignored,
-                COUNT(*) FILTER (WHERE outcome IS NULL)       AS total_pending,
-                COUNT(DISTINCT insight_type)                  AS distinct_detectors,
-                COUNT(DISTINCT subject_entity_id)             AS distinct_contacts
-            FROM recommendations
+                COUNT(*) FILTER (WHERE route = 'autonomous')  AS total_acted,
+                COUNT(*) FILTER (WHERE route = 'flag')        AS total_dismissed,
+                COUNT(*) FILTER (WHERE route = 'notify')      AS total_ignored,
+                COUNT(*) FILTER (WHERE confidence_score < 0.6) AS total_low_conf,
+                COUNT(DISTINCT module_id)                      AS distinct_modules,
+                COUNT(DISTINCT user_id)                        AS distinct_users
+            FROM decisions
             WHERE org_id = :oid AND created_at >= :since
-        """),
+            """
+        ),
         {"oid": org_id, "since": since},
     ).fetchone()
 
-    # Rolling 7-day AAR trend (daily points over window, regardless of `hours`)
+    n_corrections = db.execute(
+        text(
+            "SELECT COUNT(*) FROM corrections WHERE org_id = :oid AND timestamp >= :since"
+        ),
+        {"oid": org_id, "since": since},
+    ).scalar() or 0
+
+    totals = {
+        "pushed": int(totals_row.total_pushed or 0),
+        "acted": int(totals_row.total_acted or 0),
+        "dismissed": int(totals_row.total_dismissed or 0),
+        "ignored": int(totals_row.total_ignored or 0),
+        "pending": int(totals_row.total_low_conf or 0),
+        "corrections": int(n_corrections),
+        "distinct_detectors": int(totals_row.distinct_modules or 0),
+        "distinct_contacts": int(totals_row.distinct_users or 0),
+    }
+
+    # ── 7-day intervention-rate trend (replaces v1 AAR) ─────────────────────
     aar_trend_rows = db.execute(
-        text("""
-            SELECT
-                DATE_TRUNC('day', created_at) AS day,
-                COUNT(*) FILTER (WHERE outcome = 'acted')                                 AS acted,
-                COUNT(*) FILTER (WHERE outcome IN ('acted', 'dismissed', 'ignored'))       AS labelled
-            FROM recommendations
-            WHERE org_id = :oid AND created_at >= NOW() - INTERVAL '7 days'
-            GROUP BY DATE_TRUNC('day', created_at)
-            ORDER BY day ASC
-        """),
+        text(
+            """
+            SELECT date, intervention_rate, total_decisions
+            FROM intervention_metrics
+            WHERE org_id = :oid AND date >= CURRENT_DATE - INTERVAL '7 days'
+            ORDER BY date ASC
+            """
+        ),
         {"oid": org_id},
     ).fetchall()
     aar_trend = [
         {
-            "day": r.day.date().isoformat() if r.day else None,
-            "aar": round(float(r.acted) / float(r.labelled), 4) if r.labelled else 0.0,
-            "n": int(r.labelled or 0),
+            "day": r.date.isoformat() if hasattr(r.date, "isoformat") else str(r.date),
+            "aar": 1.0 - float(r.intervention_rate or 0),  # AAR inverse of intervention
+            "n": int(r.total_decisions or 0),
         }
         for r in aar_trend_rows
     ]
 
-    # Top insight types by volume in window
-    top_detectors = db.execute(
-        text("""
-            SELECT insight_type, COUNT(*) AS n,
-                   COUNT(*) FILTER (WHERE outcome = 'acted') AS acted,
-                   COUNT(*) FILTER (WHERE outcome IS NULL)   AS pending
-            FROM recommendations
-            WHERE org_id = :oid AND created_at >= :since
-            GROUP BY insight_type
-            ORDER BY n DESC
+    # ── Top "detectors" = which rules fire most ─────────────────────────────
+    detectors_rows = db.execute(
+        text(
+            """
+            SELECT module_id AS insight_type,
+                   COUNT(*) AS fires,
+                   COUNT(*) FILTER (WHERE route = 'autonomous') AS acted,
+                   COUNT(*) FILTER (WHERE confidence_score < 0.6) AS pending
+            FROM decisions
+            WHERE org_id = :oid AND created_at >= :since AND module_id IS NOT NULL
+            GROUP BY module_id
+            ORDER BY fires DESC
             LIMIT 10
-        """),
+            """
+        ),
         {"oid": org_id, "since": since},
     ).fetchall()
     detectors = [
         {
-            "insight_type": r.insight_type,
-            "fires": int(r.n or 0),
+            "insight_type": r.insight_type or "?",
+            "fires": int(r.fires or 0),
             "acted": int(r.acted or 0),
             "pending": int(r.pending or 0),
         }
-        for r in top_detectors
+        for r in detectors_rows
     ]
-
-    # Live signals
-    live_signals = {}
-    try:
-        # Incremented by brain/router.py when it consumes events
-        last_tick = redis_client.get(f"brain:router:last_tick:{org_id}")
-        last_tick_count = redis_client.get(f"brain:router:last_consumed:{org_id}")
-        live_signals = {
-            "last_router_tick_at": last_tick,
-            "last_tick_consumed": int(last_tick_count) if last_tick_count else 0,
-        }
-    except Exception:
-        pass
 
     return {
         "org_id": org_id,
         "window_hours": hours,
-        "totals": {
-            "pushed": int(totals.total_pushed or 0),
-            "acted": int(totals.total_acted or 0),
-            "dismissed": int(totals.total_dismissed or 0),
-            "ignored": int(totals.total_ignored or 0),
-            "pending": int(totals.total_pending or 0),
-            "distinct_detectors": int(totals.distinct_detectors or 0),
-            "distinct_contacts": int(totals.distinct_contacts or 0),
-        },
+        "totals": totals,
         "by_hour": by_hour,
         "aar_trend_7d": aar_trend,
         "top_detectors": detectors,
-        "live": live_signals,
+        "live": {"router_last_tick": None, "consumed_in_window": totals["pushed"]},
+    }
+
+
+@router.get("/api/org/{org_id}/brain/activity")
+def org_brain_activity(
+    org_id: str,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Per-org brain activity for graph header — v2 view, no API key required."""
+    fifteen = datetime.now(timezone.utc) - timedelta(minutes=15)
+    reactive = db.execute(
+        select(func.count())
+        .select_from(text("decisions"))
+        .where(text("org_id = :oid AND created_at > :ago"))
+        .params(oid=org_id, ago=fifteen)
+    ).scalar() or 0
+
+    proactive = db.execute(
+        text(
+            "SELECT COUNT(*) FROM proactive_insights "
+            "WHERE org_id = :oid AND created_at > CURRENT_DATE"
+        ),
+        {"oid": org_id},
+    ).scalar() or 0
+
+    total_nodes = db.execute(
+        text("SELECT COUNT(*) FROM graph_nodes WHERE org_id = :oid"),
+        {"oid": org_id},
+    ).scalar() or 0
+
+    total_facts = db.execute(
+        text("SELECT COUNT(*) FROM facts WHERE org_id = :oid"),
+        {"oid": org_id},
+    ).scalar() or 0
+
+    last_sync = db.execute(
+        text(
+            "SELECT MAX(last_sync_at) FROM cursors "
+            "WHERE connection_id IN (SELECT id FROM connections WHERE org_id = :oid)"
+        ),
+        {"oid": org_id},
+    ).scalar()
+
+    return {
+        "reactive_signal_count": int(reactive),
+        "proactive_insight_count": int(proactive),
+        "predictive_alert_count": 0,
+        "graph_status": "live" if last_sync else "syncing",
+        "total_contacts": int(total_nodes),
+        "total_interactions": int(total_facts),
     }

@@ -121,60 +121,8 @@ def get_contacts(
         return _v2_list_contacts(s, org_id=org_id, limit=limit, offset=offset)
 
 
-@router.get("/api/org/{org_id}/brain/activity")
-def get_brain_activity(org_id: str, db: Session = Depends(get_db)):
-    """Brain activity status for graph header — polled every 30s. Read-only, not toggles."""
-    try:
-        # Reactive: emails/interactions ingested in last 15 min
-        reactive = db.execute(
-            text("SELECT COUNT(*) FROM interactions WHERE org_id = :oid AND created_at > NOW() - INTERVAL '15 minutes'"),
-            {"oid": org_id},
-        ).scalar() or 0
-
-        # Proactive: insights generated today
-        proactive = db.execute(
-            text("SELECT COUNT(*) FROM insights WHERE org_id = :oid AND generated_at > CURRENT_DATE AND is_dismissed = FALSE"),
-            {"oid": org_id},
-        ).scalar() or 0
-
-        # Totals
-        total_contacts = db.execute(
-            text("SELECT COUNT(*) FROM contacts WHERE org_id = :oid AND relationship_stage IS NOT NULL"),
-            {"oid": org_id},
-        ).scalar() or 0
-
-        total_interactions = db.execute(
-            text("SELECT COUNT(*) FROM interactions WHERE org_id = :oid"),
-            {"oid": org_id},
-        ).scalar() or 0
-
-        # Graph sync status
-        last_sync = db.execute(
-            text("SELECT MIN(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"),
-            {"oid": org_id},
-        ).scalar()
-
-        graph_status = "live"
-        if not last_sync:
-            graph_status = "syncing"
-
-        return {
-            "reactive_signal_count": reactive,
-            "proactive_insight_count": proactive,
-            "predictive_alert_count": 0,
-            "graph_status": graph_status,
-            "total_contacts": total_contacts,
-            "total_interactions": total_interactions,
-        }
-    except Exception as e:
-        return {
-            "reactive_signal_count": 0,
-            "proactive_insight_count": 0,
-            "predictive_alert_count": 0,
-            "graph_status": "error",
-            "total_contacts": 0,
-            "total_interactions": 0,
-        }
+# brain/activity moved to app/api/routes/brain_activity.py (v2-native — derives
+# from decisions + facts + cursors instead of v1 interactions/contacts/oauth_tokens).
 
 
 @router.get("/v1/graph/stats")

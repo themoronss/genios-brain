@@ -139,9 +139,30 @@ async def gmail_push_webhook(request: Request, db: Session = Depends(get_db)):
             return
 
         try:
-            from app.tasks.gmail_sync import run_gmail_sync
-            run_gmail_sync(org_id)
-            logger.info(f"Gmail webhook: incremental sync complete for org {org_id}")
+            # Per g-i-1 plan: webhook trigger runs the v2 thin pipe sync_runner
+            # against this org's Gmail connection (resolved by mailbox address).
+            from sqlalchemy import select as _sel
+
+            from core.foundations.db import get_session as _v2s
+            from core.memory.store import Connection
+            from core.memory.sync_runner import run_sync_for_connection
+
+            with _v2s() as _s:
+                conn_row = _s.execute(
+                    _sel(Connection)
+                    .where(Connection.org_id == org_id)
+                    .where(Connection.source_type == "gmail")
+                    .where(Connection.source_id == email_address)
+                    .limit(1)
+                ).scalar_one_or_none()
+                if conn_row is None:
+                    logger.info(f"Gmail webhook: no v2 connection for {email_address} (org {org_id})")
+                else:
+                    r = run_sync_for_connection(_s, connection_id=conn_row.id, limit=50)
+                    logger.info(
+                        f"Gmail webhook v2 sync done: emitted={r.items_emitted} "
+                        f"dropped={r.items_dropped_scope} (org {org_id})"
+                    )
             if event_id:
                 _db = None
                 try:

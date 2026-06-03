@@ -827,10 +827,34 @@ async def gdrive_callback(state: str, code: str, background_tasks: BackgroundTas
 
 @router.post("/webhooks/gdrive/changes")
 async def gdrive_changes_webhook(request: Request, background_tasks: BackgroundTasks):
-    """Drive push notification receiver."""
-    from app.tasks.drive_sync import process_drive_webhook_async
+    """Drive push receiver — per g-i-1 plan, triggers v2 sync_runner against
+    the Drive connection for the org identified by the X-Goog-Channel-Token.
+
+    Token format encodes the connection_id at watch-registration time.
+    Headers also include resource state (sync|add|update|remove|trash).
+    """
     headers = dict(request.headers)
-    background_tasks.add_task(process_drive_webhook_async, headers)
+    channel_token = headers.get("x-goog-channel-token", "")
+    resource_state = headers.get("x-goog-resource-state", "")
+    if not channel_token or resource_state == "sync":
+        # Initial sync ping — Google sends this on watch registration
+        return {}
+
+    def _v2_drive_pull(connection_id: str) -> None:
+        try:
+            from core.foundations.db import get_session as _v2s
+            from core.memory.sync_runner import run_sync_for_connection
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=connection_id, limit=50)
+                import logging as _lg
+                _lg.getLogger(__name__).info(
+                    f"Drive webhook v2 sync done: emitted={r.items_emitted}"
+                )
+        except Exception as e:
+            import logging as _lg
+            _lg.getLogger(__name__).exception(f"Drive webhook v2 sync failed: {e}")
+
+    background_tasks.add_task(_v2_drive_pull, channel_token)
     return {}
 
 
