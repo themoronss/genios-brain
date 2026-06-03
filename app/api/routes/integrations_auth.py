@@ -1129,7 +1129,7 @@ def _v2_disconnect_sql(source_type: str, oauth_token_pattern: str | None) -> lis
     out = [
         "DELETE FROM cursors WHERE connection_id IN "
         "  (SELECT id FROM connections WHERE org_id = :oid AND source_type = '" + source_type + "')",
-        "DELETE FROM secret_refs WHERE connection_id IN "
+        "DELETE FROM secrets_ref WHERE connection_id IN "
         "  (SELECT id FROM connections WHERE org_id = :oid AND source_type = '" + source_type + "')",
         "DELETE FROM connections WHERE org_id = :oid AND source_type = '" + source_type + "'",
     ]

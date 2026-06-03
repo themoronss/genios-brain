@@ -317,12 +317,13 @@ def task_nightly_refresh(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_weekly_reports(self, org_id: str = None):
-    """Weekly reports — low priority."""
-    try:
-        from app.tasks.weekly_report import run_weekly_reports
-        run_weekly_reports(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — v1 weekly_report read 5 dropped tables (contacts/commitments/
+    context_calls/graph_intelligence_reports). No v2 weekly digest yet."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_weekly_reports called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_weekly_reports"}
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")

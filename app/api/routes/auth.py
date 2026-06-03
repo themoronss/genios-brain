@@ -463,18 +463,19 @@ def get_usage_stats(org_id: str, db: Session = Depends(get_db)):
     plan_info = get_org_plan(db, org_id)
     tier = plan_info["tier"]
     config = plan_info["config"]
-    api_filter = "AND (source = 'api' OR source IS NULL)"
 
+    # v2 thin-pipe: usage counted from `decisions` (engine calls) instead of
+    # v1 `context_calls` (table dropped in mig 0015). Every /v1/intelligence/query
+    # writes a decisions row, so this is the same semantic: "API calls made".
     today = db.execute(
-        text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= CURRENT_DATE {api_filter}"),
+        text("SELECT COUNT(*) FROM decisions WHERE org_id = :oid AND created_at >= CURRENT_DATE"),
         {"oid": org_id},
     ).scalar() or 0
 
-    # Period usage (since last reset)
     period_reset_at = plan_info.get("period_reset_at")
     if period_reset_at:
         period_used = db.execute(
-            text(f"SELECT COUNT(*) FROM context_calls WHERE org_id = :oid AND called_at >= :reset_at {api_filter}"),
+            text("SELECT COUNT(*) FROM decisions WHERE org_id = :oid AND created_at >= :reset_at"),
             {"oid": org_id, "reset_at": period_reset_at},
         ).scalar() or 0
     else:

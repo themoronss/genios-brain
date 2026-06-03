@@ -191,14 +191,14 @@ def run_overage_invoices(db: Session):
         if not rate:
             continue
 
-        # Count contexts in the period that just ended
+        # Count engine decisions in the period that just ended (v2 path —
+        # v1 context_calls dropped). Same semantic: 1 row per API call.
         used = db.execute(
             text("""
-                SELECT COUNT(*) FROM context_calls
+                SELECT COUNT(*) FROM decisions
                 WHERE org_id = :oid
-                  AND called_at >= :reset - INTERVAL '30 days'
-                  AND called_at < :reset
-                  AND (source = 'api' OR source IS NULL)
+                  AND created_at >= :reset - INTERVAL '30 days'
+                  AND created_at < :reset
             """),
             {"oid": str(org.id), "reset": org.period_reset_at},
         ).scalar() or 0

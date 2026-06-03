@@ -153,14 +153,13 @@ def v1_org_info(
         {"org_id": org_id},
     ).scalar() or 0
 
-    # Period context usage
+    # Period usage: count engine decisions (v2). v1 context_calls dropped in mig 0015.
     period_reset_at = plan_info.get("period_reset_at")
     if period_reset_at:
         period_used = db.execute(
             text("""
-                SELECT COUNT(*) FROM context_calls
-                WHERE org_id = :org_id AND called_at >= :reset_at
-                  AND (source = 'api' OR source IS NULL)
+                SELECT COUNT(*) FROM decisions
+                WHERE org_id = :org_id AND created_at >= :reset_at
             """),
             {"org_id": org_id, "reset_at": period_reset_at},
         ).scalar() or 0
