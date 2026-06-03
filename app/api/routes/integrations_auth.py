@@ -1173,14 +1173,48 @@ TOOL_CONNECTION_SQL: dict[str, list[str]] = {
     "hubspot": _v2_disconnect_sql("hubspot", "hubspot:%"),
 }
 
-# Full wipe — v2 path: per-source extracted entities/facts/edges share rows
-# with other sources (resolution merges them), so we don't try to surgically
-# delete "Gmail-only entities". A clean wipe nukes the whole org's graph and
-# is what the v1 'wipe' button promised: a fresh start. For per-tool wipe we
-# remove just the connection + cursors + secrets (data column source_item_ids
-# is informational only and shrinks naturally on next sync).
+# Full wipe — v2 path. Per-source extracted nodes/facts/edges carry the
+# source_type prefix in source_item_ids / source_item_id (e.g. "gmail:<id>").
+# A wipe deletes everything tagged with this source_type so the next OAuth
+# connect starts a truly fresh sync. Edges whose endpoints are deleted are
+# cleaned up first to satisfy FK constraints.
 def _v2_wipe_sql(source_type: str, oauth_token_pattern: str | None) -> list[str]:
-    return _v2_disconnect_sql(source_type, oauth_token_pattern)
+    src_pat = f"{source_type}:%"
+    pre = [
+        # 1. Drop edges that reference any node which will be wiped
+        f"""DELETE FROM graph_edges
+            WHERE org_id = :oid
+              AND (from_node IN (
+                    SELECT id FROM graph_nodes
+                    WHERE org_id = :oid
+                      AND EXISTS (
+                        SELECT 1 FROM jsonb_array_elements_text(
+                          CASE jsonb_typeof(source_item_ids::jsonb)
+                               WHEN 'array' THEN source_item_ids::jsonb
+                               ELSE '[]'::jsonb END
+                        ) AS item WHERE item LIKE '{src_pat}'))
+                OR to_node IN (
+                    SELECT id FROM graph_nodes
+                    WHERE org_id = :oid
+                      AND EXISTS (
+                        SELECT 1 FROM jsonb_array_elements_text(
+                          CASE jsonb_typeof(source_item_ids::jsonb)
+                               WHEN 'array' THEN source_item_ids::jsonb
+                               ELSE '[]'::jsonb END
+                        ) AS item WHERE item LIKE '{src_pat}')))""",
+        # 2. Drop facts that came from this source
+        f"DELETE FROM facts WHERE org_id = :oid AND source_item_id LIKE '{src_pat}'",
+        # 3. Drop nodes that came from this source (entire row, not just the source_item_ids item)
+        f"""DELETE FROM graph_nodes
+            WHERE org_id = :oid
+              AND EXISTS (
+                SELECT 1 FROM jsonb_array_elements_text(
+                  CASE jsonb_typeof(source_item_ids::jsonb)
+                       WHEN 'array' THEN source_item_ids::jsonb
+                       ELSE '[]'::jsonb END
+                ) AS item WHERE item LIKE '{src_pat}')""",
+    ]
+    return pre + _v2_disconnect_sql(source_type, oauth_token_pattern)
 
 
 TOOL_CLEANUP_SQL: dict[str, list[str]] = {

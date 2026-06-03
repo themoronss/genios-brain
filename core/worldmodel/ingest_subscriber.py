@@ -111,10 +111,14 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
     if not extraction.entities and not extraction.relations:
         return  # nothing extracted — common for trivial messages
 
+    # Prefix the stored item_id with source_type so disconnect+wipe can find
+    # everything tied to a specific source via a LIKE 'gmail:%' scan.
+    tagged_item_id = f"{item.source_type}:{item.item_id}"
+
     # Upsert nodes — resolve to existing if similar enough
     node_id_by_name: dict[str, str] = {}
     for ent in extraction.entities:
-        node = _upsert_node(session, org_id=org_id, entity=ent, item_id=item.item_id)
+        node = _upsert_node(session, org_id=org_id, entity=ent, item_id=tagged_item_id)
         node_id_by_name[ent.name.lower()] = node.id
 
     # Upsert edges (only TEMPORAL/DEPENDENCY — INFLUENCE never from source per spec)
@@ -124,7 +128,7 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
             org_id=org_id,
             relation=rel,
             node_id_by_name=node_id_by_name,
-            item_id=item.item_id,
+            item_id=tagged_item_id,
         )
 
     # Always write FactRows as the auditable grounding trail (S-P-O triples)
@@ -135,7 +139,7 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
                 subject=rel.subject,
                 predicate=rel.predicate,
                 object=rel.object,
-                source_item_id=item.item_id,
+                source_item_id=tagged_item_id,
                 asserted_by_type=AssertionSource.SOURCE.value,
                 asserted_by_id=item.source_id,
                 confidence=1.0,
@@ -145,7 +149,7 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
     session.flush()
     log.info(
         "ingest_persisted",
-        item_id=item.item_id,
+        item_id=tagged_item_id,
         org_id=org_id,
         n_entities=len(extraction.entities),
         n_relations=len(extraction.relations),
