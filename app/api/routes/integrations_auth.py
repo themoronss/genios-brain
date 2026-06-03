@@ -16,13 +16,16 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
-from app.redis_client import redis_client
 from app.api.deps import get_db
-from app.plan_enforcer import require_integration
-from app.ingestion.gmail_connector import create_oauth_flow, build_gmail_service, get_user_email
 from app.config import GOOGLE_REDIRECT_URI
-from app.tasks.gmail_sync import run_gmail_sync
+from app.database import SessionLocal
+from app.ingestion.gmail_connector import build_gmail_service, create_oauth_flow, get_user_email
+from app.plan_enforcer import require_integration
+from app.redis_client import redis_client
+
+# run_gmail_sync (v1 heavy ingestion) removed — Gmail sync now flows through
+# core.memory.sync_runner per g-i-1 plan. v1 ingestion code in app/ingestion/
+# becomes orphaned after all sources migrated (cleanup sweep follows).
 
 router = APIRouter()
 
@@ -114,49 +117,40 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gmail"})
 
-    # v2 mirror: also create a thin-pipe Connection + encrypted SecretRefs so
-    # the v2 sync_runner can pull this mailbox. Token data is duplicated for
-    # the migration window — once v2 path is the only one, the v1 oauth_tokens
-    # write goes away (deleting `app/ingestion/gmail_connector.py` + bridges).
-    try:
-        from core.memory.adapters.known.gmail import register_v2_gmail_connection
-        v2_connection_id = register_v2_gmail_connection(
-            org_id=org_id,
-            account_email=connected_email,
-            access_token=access_token,
-            refresh_token=refresh_token,
-            created_by=org_id,
-        )
-    except Exception as v2err:
-        # Never block v1 connect on v2 mirror failure during migration.
-        import logging as _logging
-        _logging.getLogger(__name__).exception(f"v2 Gmail mirror failed: {v2err}")
-        v2_connection_id = None
+    # Per g-i-1 plan: memory is a thin pipe — Connection + encrypted SecretRefs
+    # via core/memory/, sync via core.memory.sync_runner, fan-out via emit().
+    # The v1 heavy ingestion path (gmail_connector → email_parser → classifier
+    # → graph_builder + writes to interactions/contacts/event_log) is GONE.
+    from core.memory.adapters.known.gmail import register_v2_gmail_connection
+    v2_connection_id = register_v2_gmail_connection(
+        org_id=org_id,
+        account_email=connected_email,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        created_by=org_id,
+    )
 
-    from app.config import SYNC_MAX_EMAILS
-    from app.plan_enforcer import get_org_plan
+    from core.foundations.db import get_session as _v2_session
+    from core.memory.sync_runner import run_sync_for_connection
 
-    background_tasks.add_task(run_gmail_sync, org_id, SYNC_MAX_EMAILS, connected_email)
-
-    # v2 thin-pipe sync runs alongside v1 heavy sync during migration window.
-    # Once verified, the v1 add_task above will be removed.
-    if v2_connection_id:
-        from core.foundations.db import get_session as _v2_session
-        from core.memory.sync_runner import run_sync_for_connection
-        def _v2_sync():
-            try:
-                with _v2_session() as s:
-                    result = run_sync_for_connection(s, connection_id=v2_connection_id, limit=50)
-                    import logging
-                    logging.getLogger(__name__).info(
-                        f"v2 gmail sync done: emitted={result.items_emitted} dropped_scope={result.items_dropped_scope}"
-                    )
-            except Exception as e:
+    def _sync_gmail() -> None:
+        try:
+            with _v2_session() as s:
+                result = run_sync_for_connection(s, connection_id=v2_connection_id, limit=50)
                 import logging
-                logging.getLogger(__name__).exception(f"v2 gmail sync failed: {e}")
-        background_tasks.add_task(_v2_sync)
+                logging.getLogger(__name__).info(
+                    f"gmail sync done: emitted={result.items_emitted} "
+                    f"dropped_scope={result.items_dropped_scope}"
+                )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception(f"gmail sync failed: {e}")
 
-    # Startup plan: subscribe to Gmail push notifications
+    background_tasks.add_task(_sync_gmail)
+
+    # Startup plan: subscribe to Gmail push notifications (per-message delta).
+    # Push notifications still rely on v1's watch + webhook handler for now —
+    # next sweep moves that to a v2 webhook adapter wired via emit().
     plan_info = get_org_plan(db, org_id)
     if plan_info["tier"] == "startup":
         background_tasks.add_task(_setup_gmail_watch, org_id, connected_email, access_token, refresh_token)
@@ -223,8 +217,13 @@ def gcal_connect(org_id: str, db: Session = Depends(get_db)):
 
 @router.get("/auth/calendar/callback")
 async def gcal_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    from app.ingestion.calendar_connector import create_calendar_oauth_flow, get_calendar_user_email, build_calendar_service
     import warnings
+
+    from app.ingestion.calendar_connector import (
+        build_calendar_service,
+        create_calendar_oauth_flow,
+        get_calendar_user_email,
+    )
 
     state_data = _pop_oauth_state(state)
     if not state_data:
@@ -369,8 +368,8 @@ async def slack_events_webhook(request: Request, background_tasks: BackgroundTas
     Phase 1: Validate signature → push to queue → return 200 in <200ms
     Phase 2: Process event asynchronously (background task)
     """
-    from app.ingestion.slack_connector import validate_event_signature
     from app.config import SLACK_SIGNING_SECRET
+    from app.ingestion.slack_connector import validate_event_signature
 
     body = await request.body()
     timestamp = request.headers.get("X-Slack-Request-Timestamp", "")
@@ -396,8 +395,8 @@ async def slack_events_webhook(request: Request, background_tasks: BackgroundTas
 
 @router.get("/auth/jira/connect")
 def jira_connect(org_id: str):
-    from app.ingestion.jira_connector import get_jira_authorize_url
     from app.config import JIRA_CLIENT_ID, JIRA_REDIRECT_URI
+    from app.ingestion.jira_connector import get_jira_authorize_url
 
     state = secrets.token_urlsafe(32)
     auth_url, code_verifier = get_jira_authorize_url(state, JIRA_REDIRECT_URI, JIRA_CLIENT_ID)
@@ -407,8 +406,8 @@ def jira_connect(org_id: str):
 
 @router.get("/auth/jira/callback")
 async def jira_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    from app.ingestion.jira_connector import exchange_code_for_tokens, get_accessible_resources
     from app.config import JIRA_CLIENT_ID, JIRA_CLIENT_SECRET, JIRA_REDIRECT_URI
+    from app.ingestion.jira_connector import exchange_code_for_tokens, get_accessible_resources
 
     state_data = _pop_oauth_state(state)
     if not state_data:
@@ -485,8 +484,8 @@ async def jira_events_webhook(request: Request, background_tasks: BackgroundTask
 
 @router.get("/auth/notion/connect")
 def notion_connect(org_id: str):
-    from app.ingestion.notion_connector import get_notion_authorize_url
     from app.config import NOTION_CLIENT_ID, NOTION_REDIRECT_URI
+    from app.ingestion.notion_connector import get_notion_authorize_url
 
     state = secrets.token_urlsafe(32)
     _store_oauth_state(state, org_id)
@@ -496,8 +495,8 @@ def notion_connect(org_id: str):
 
 @router.get("/auth/notion/callback")
 async def notion_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    from app.ingestion.notion_connector import exchange_code_for_token
     from app.config import NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, NOTION_REDIRECT_URI
+    from app.ingestion.notion_connector import exchange_code_for_token
 
     state_data = _pop_oauth_state(state)
     if not state_data:
@@ -561,8 +560,14 @@ def gsheets_connect(org_id: str):
 
 @router.get("/auth/gsheets/callback")
 async def gsheets_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    from app.ingestion.sheets_connector import create_sheets_oauth_flow, build_drive_service, get_sheets_user_email
-    import warnings, os
+    import os
+    import warnings
+
+    from app.ingestion.sheets_connector import (
+        build_drive_service,
+        create_sheets_oauth_flow,
+        get_sheets_user_email,
+    )
 
     state_data = _pop_oauth_state(state)
     if not state_data:
@@ -582,7 +587,6 @@ async def gsheets_callback(state: str, code: str, background_tasks: BackgroundTa
     drive_service = build_drive_service(creds.token, creds.refresh_token)
     connected_email = get_sheets_user_email(drive_service)
 
-    from datetime import timedelta
     expires_at = creds.expiry
 
     db = SessionLocal()
@@ -636,8 +640,14 @@ def gdrive_connect(org_id: str):
 
 @router.get("/auth/drive/callback")
 async def gdrive_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    from app.ingestion.drive_connector import create_drive_oauth_flow, build_drive_service, get_drive_user_email, get_start_page_token
     import warnings
+
+    from app.ingestion.drive_connector import (
+        build_drive_service,
+        create_drive_oauth_flow,
+        get_drive_user_email,
+        get_start_page_token,
+    )
 
     state_data = _pop_oauth_state(state)
     if not state_data:
@@ -726,8 +736,14 @@ def gdocs_connect(org_id: str):
 
 @router.get("/auth/gdocs/callback")
 async def gdocs_callback(state: str, code: str, background_tasks: BackgroundTasks):
-    from app.ingestion.docs_connector import create_docs_oauth_flow, build_drive_service, get_docs_user_email
-    import warnings, os
+    import os
+    import warnings
+
+    from app.ingestion.docs_connector import (
+        build_drive_service,
+        create_docs_oauth_flow,
+        get_docs_user_email,
+    )
 
     state_data = _pop_oauth_state(state)
     if not state_data:

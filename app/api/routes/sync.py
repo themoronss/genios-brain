@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from app.api.deps import get_db
-from app.database import SessionLocal
-from app.config import PROCESSING_VERSION
-from datetime import datetime, timezone
 import json
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_db
+from app.config import PROCESSING_VERSION
+from app.database import SessionLocal
 
 router = APIRouter()
 
@@ -40,46 +41,54 @@ def _sync_fallback(org_id: str, max_emails=None, account_email=None):
 def trigger_sync(
     org_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
-    """Trigger manual Gmail sync for organization (syncs all connected accounts)."""
+    """Trigger a manual sync of all connected sources for this org.
 
-    # Check if at least one Gmail account is connected
-    oauth = db.execute(
-        text(
-            """SELECT id, last_synced_at, sync_status
-               FROM oauth_tokens WHERE org_id = :org_id
-               LIMIT 1"""
-        ),
-        {"org_id": org_id},
-    ).fetchone()
+    Per g-i-1 plan: walks every v2 Connection for this org and runs the thin
+    sync_runner (pull → normalize → emit → subscriber extracts to graph).
+    Replaces the v1 heavy gmail_sync path; the v1 oauth_tokens table is
+    written by OAuth callback for legacy/observability but is NOT the source
+    of truth for sync anymore.
+    """
 
-    if not oauth:
-        raise HTTPException(status_code=400, detail="Gmail not connected")
+    from core.foundations.db import get_session as _v2_session
+    from core.memory.store import Connection
+    from core.memory.sync_runner import run_sync_for_connection
 
-    # Check if a sync is already running
-    if oauth.sync_status == "running":
+    # List active v2 connections for this org
+    with _v2_session() as s:
+        rows: list[Connection] = (
+            s.query(Connection)
+            .filter(Connection.org_id == org_id)
+            .filter(Connection.status == "active")
+            .all()
+        )
+        connection_ids = [c.id for c in rows]
+
+    if not connection_ids:
         raise HTTPException(
-            status_code=429,
-            detail="A sync is already in progress. Please wait for it to complete.",
+            status_code=400,
+            detail="No active sources connected. Connect Gmail or another source first.",
         )
 
-    # Set status to running synchronously so frontend correctly sees it on immediate refetch
-    db.execute(
-        text("UPDATE oauth_tokens SET sync_status = 'running' WHERE org_id = :org_id"),
-        {"org_id": org_id},
-    )
-    db.commit()
+    def _run_all() -> None:
+        import logging
+        log = logging.getLogger(__name__)
+        for cid in connection_ids:
+            try:
+                with _v2_session() as inner:
+                    r = run_sync_for_connection(inner, connection_id=cid, limit=50)
+                    log.info(
+                        f"sync done conn={cid[:8]} emitted={r.items_emitted} dropped={r.items_dropped_scope}"
+                    )
+            except Exception as e:
+                log.exception(f"sync failed conn={cid[:8]}: {e}")
 
-    from app.celery_app import task_gmail_sync
-    from app.config import SYNC_MAX_EMAILS
-    _run_in_background(
-        background_tasks, task_gmail_sync,
-        org_id, max_emails=SYNC_MAX_EMAILS, account_email=None,
-        fallback_fn=_sync_fallback,
-    )
+    background_tasks.add_task(_run_all)
 
     return {
         "status": "sync_started",
-        "message": "Gmail sync started. This may take 2-5 minutes.",
+        "connections_count": len(connection_ids),
+        "message": "Sync started across all connected sources.",
         "org_id": org_id,
     }
 
@@ -338,13 +347,13 @@ def reset_org_data(org_id: str, db: Session = Depends(get_db)):
     try:
         # 1. Delete commitments first (foreign key to interactions)
         db.execute(text("DELETE FROM commitments WHERE org_id = :oid"), {"oid": org_id})
-        
+
         # 2. Delete interactions
         db.execute(text("DELETE FROM interactions WHERE org_id = :oid"), {"oid": org_id})
-        
+
         # 2. Delete contacts
         db.execute(text("DELETE FROM contacts WHERE org_id = :oid"), {"oid": org_id})
-        
+
         # 3. Reset sync progress in oauth_tokens
         db.execute(
             text("""
