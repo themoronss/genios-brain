@@ -162,144 +162,145 @@ def _plan_blocks_sync(org_id: str) -> tuple[bool, str]:
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_gmail_sync(self, org_id: str, max_emails: int = None, account_email: str = None):
-    """Gmail sync — high priority (user-triggered)."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        import logging
-        logging.getLogger(__name__).info(
-            f"Skipping gmail sync for org={org_id}: {reason}"
-        )
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.gmail_sync import run_gmail_sync
-        run_gmail_sync(org_id, max_emails=max_emails, account_email=account_email)
-    except Exception as exc:
-        _mark_sync_error(org_id, str(exc))
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_gmail_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_gmail_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_calendar_sync(self, org_id: str, max_results: int = None):
-    """Calendar sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.calendar_sync import run_calendar_sync
-        run_calendar_sync(org_id, max_results=max_results)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_calendar_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_calendar_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_slack_sync(self, org_id: str):
-    """Slack sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.slack_sync import run_slack_backfill
-        run_slack_backfill(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_slack_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_slack_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_jira_sync(self, org_id: str):
-    """Jira sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.jira_sync import run_jira_sync
-        run_jira_sync(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_jira_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_jira_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_notion_sync(self, org_id: str):
-    """Notion sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.notion_sync import run_notion_sync
-        run_notion_sync(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_notion_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_notion_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_sheets_sync(self, org_id: str):
-    """Google Sheets sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.sheets_sync import run_sheets_sync
-        run_sheets_sync(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_sheets_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_sheets_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_drive_sync(self, org_id: str):
-    """Google Drive sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.drive_sync import run_drive_sync
-        run_drive_sync(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_drive_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_drive_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_docs_sync(self, org_id: str):
-    """Google Docs sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.docs_sync import run_docs_sync
-        run_docs_sync(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_docs_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_docs_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_hubspot_sync(self, org_id: str):
-    """HubSpot sync — high priority."""
-    blocked, reason = _plan_blocks_sync(org_id)
-    if blocked:
-        return {"skipped": True, "reason": reason}
-    try:
-        from app.tasks.hubspot_sync import run_hubspot_sync
-        run_hubspot_sync(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_hubspot_sync called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_hubspot_sync"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_recompute(self, org_id: str):
-    """Tier 1 recompute — high priority."""
-    try:
-        from app.tasks.reextract import run_recompute
-        run_recompute(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_recompute called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_recompute"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
 def task_reextract(self, org_id: str):
-    """Tier 2 re-extract — high priority."""
-    try:
-        from app.tasks.reextract import run_reextract
-        run_reextract(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_reextract called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_reextract"}
+
+
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
@@ -354,83 +355,95 @@ def task_expire_plans():
 
 @celery.task(queue="high_priority")
 def task_sync_all_tools(org_id: str):
-    """Sync all connected tools for an org (called by scheduler)."""
-    from app.main import _sync_connected_tools
-    _sync_connected_tools(org_id, cron=True)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_sync_all_tools called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_sync_all_tools"}
+
+
 
 
 # ── Phase 3-6 background tasks ──────────────────────────────────────────────
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_morning_digest(self, org_id: str = None):
-    """Morning digest (BUILD-1). Fires hourly; each tick checks if any org's
-    local time == their digest_hour and sends a summary of top 3-5 pending
-    recommendations from the last 24h. Purely additive — doesn't mark
-    individual recs as delivered, doesn't block or replace hard-trigger
-    webhooks."""
-    try:
-        from app.tasks.morning_digest import run_morning_digest
-        return run_morning_digest(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_morning_digest called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_morning_digest"}
+
+
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
 def task_precedent_writer(self, org_id: str = None):
-    """Harvest recommendation outcomes into precedent_situations. Nightly 4am.
-    Turns the feedback loop into compounding knowledge — without this,
-    precedent_situations only grows on stage transitions (narrow)."""
-    try:
-        from app.tasks.precedent_writer import run_precedent_writer
-        return run_precedent_writer(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_precedent_writer called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_precedent_writer"}
+
+
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
 def task_hebbian_nightly(self, org_id: str = None):
-    """Hebbian edge update on contact_facts. Nightly 4:30am, after precedent
-    writer. Strengthens edges between facts that contributed to acted-on
-    recommendations; decays facts that haven't co-activated in 30 days
-    (potentiated facts are exempt). Mig 079."""
-    try:
-        from app.tasks.hebbian_nightly import run_hebbian_nightly
-        return run_hebbian_nightly(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_hebbian_nightly called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_hebbian_nightly"}
+
+
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=600, queue="low_priority")
 def task_auto_merge(self, org_id: str = None):
-    """Auto-apply merge queue candidates >= 0.95. Soft-archives loser contact;
-    undo endpoint available for 7 days. Runs every 30 minutes."""
-    try:
-        from app.tasks.auto_merge import run_auto_merge
-        return run_auto_merge(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_auto_merge called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_auto_merge"}
+
+
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_score_writer(self, org_id: str = None):
-    """Score writer: recomputes freshness/confidence/consistency/authority/
-    context_score on every contact due for refresh. Runs every 15 min.
-    Without this, scoring columns stay at DB defaults forever."""
-    try:
-        from app.tasks.score_writer import run_score_writer
-        return run_score_writer(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_score_writer called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_score_writer"}
+
+
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_classify_contacts(self, org_id: str = None):
-    """Phase 3: LLM-based contact classification (batched)."""
-    try:
-        from app.tasks.classify_contacts import run_classify_contacts
-        run_classify_contacts(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_classify_contacts called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_classify_contacts"}
+
+
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
@@ -455,14 +468,15 @@ def task_proactive_scan(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_oauth_healthcheck(self, org_id: str = None):
-    """Daily OAuth credential probe — surfaces broken tokens before they
-    silently rot the brain's input layer. Best-effort; failures here never
-    block sync, they just inform the user via /v1/sync."""
-    try:
-        from app.tasks.oauth_healthcheck import run_oauth_healthcheck
-        run_oauth_healthcheck(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_oauth_healthcheck called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_oauth_healthcheck"}
+
+
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, queue="high_priority")
@@ -477,14 +491,15 @@ def task_deliver_webhooks(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=30, queue="high_priority")
 def task_refresh_bundle(self, org_id: str, contact_id: str):
-    """Event-driven pre-compute of one contact's context bundle. Called from
-    the brain router after debounce. Keeps /v1/context Layer 1 fresh so pulls
-    stay <400ms with real data."""
-    try:
-        from app.tasks.refresh_bundle import run_refresh_bundle
-        return run_refresh_bundle(org_id, contact_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_refresh_bundle called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_refresh_bundle"}
+
+
 
 
 @celery.task(bind=True, queue="brain_router")
@@ -535,39 +550,43 @@ def task_calibration_nightly(self):
 
 @celery.task(bind=True, queue="low_priority")
 def task_baseline_writer(self, org_id: str = None):
-    """Recompute per-contact personal baselines (response_hours, email_words).
-    Detectors use these for z-score deviations instead of absolute thresholds.
-    Nightly. Read-only on contacts; writes to personal_baselines.
-    """
-    try:
-        from app.tasks.baseline_writer import run_baseline_writer
-        return run_baseline_writer(org_id)
-    except Exception as exc:
-        logger.exception("baseline_writer failed")
-        raise self.retry(exc=exc, countdown=600, max_retries=2)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_baseline_writer called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_baseline_writer"}
+
+
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=60, queue="low_priority")
 def task_extract_pending(self, org_id: str = None):
-    """Phase 1.1: Process pending LLM extractions (async batch)."""
-    try:
-        from app.tasks.extract_interactions import run_pending_extractions
-        run_pending_extractions(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_extract_pending called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_extract_pending"}
+
+
 
 
 # ── Phase 6: Churn scan + retention offer composition ──────────────────────
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_churn_scan(self, org_id: str = None):
-    """Phase 6: Daily engagement_health snapshot. Fires churn_risk detector
-    candidates on next router cycle for orgs in the actionable band."""
-    try:
-        from app.tasks.churn_scan import run_churn_scan
-        return run_churn_scan(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_churn_scan called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_churn_scan"}
+
+
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
@@ -583,12 +602,15 @@ def task_retention_offers(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")
 def task_renew_watches(self):
-    """Phase 1.3: Proactively renew Gmail + Calendar watch channels before expiry."""
-    try:
-        from app.tasks.renew_watches import run_renew_watches
-        return run_renew_watches()
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_renew_watches called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_renew_watches"}
+
+
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=60, queue="low_priority")
