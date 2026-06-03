@@ -170,7 +170,8 @@ def run_sync_for_connection(
         if cursor_row is None:
             cursor_row = CursorRow(
                 connection_id=connection_id,
-                cursor_strategy=new_cursor.strategy,
+                org_id=conn.org_id,
+                strategy=new_cursor.strategy,
                 cursor_value=new_cursor.value,
                 last_sync_at=datetime.now(UTC),
                 items_pulled_count=emitted,
