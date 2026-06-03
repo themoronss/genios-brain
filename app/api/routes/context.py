@@ -24,7 +24,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, validator
+from pydantic import AliasChoices, BaseModel, Field, validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -37,7 +37,8 @@ router = APIRouter()
 # ── Request / response shapes (preserved for frontend back-compat) ───────────
 
 class ContextRequest(BaseModel):
-    entity: str
+    # Accept either `entity` (canonical) or `entity_name` (legacy frontend payload).
+    entity: str = Field(..., validation_alias=AliasChoices("entity", "entity_name"))
     situation: str | None = None
     context_size: str = "medium"
     agent_id: str | None = None

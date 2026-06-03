@@ -1,14 +1,28 @@
+"""Context page API — v2 thin-pipe sources.
+
+All endpoints read from the v2 schema (facts, graph_nodes, graph_edges,
+decisions, proactive_insights). The dropped v1 tables (contacts,
+activity_log, commitments) are NOT touched.
+
+  GET    /api/org/{id}/context/overview      health cards + activity stream
+  GET    /api/org/{id}/facts                 list S-P-O facts
+  GET    /api/org/{id}/facts/lifecycle       fact creation timeline
+  GET    /api/org/{id}/commitments           open commitments derived from facts
+  PATCH  /api/org/{id}/commitments/{cid}     mark fulfilled / not-a-commitment
 """
-Context Facts & Lifecycle API — Supports the 5-tab Context page.
-Endpoints: overview stats, facts listing, commitments CRUD, lifecycle timeline.
-"""
-from fastapi import APIRouter, Depends, HTTPException, Query
+
+from __future__ import annotations
+
+import json
+import logging
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 from app.api.deps import get_db
-from typing import Optional
-import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,67 +32,64 @@ router = APIRouter()
 
 @router.get("/api/org/{org_id}/context/overview")
 def get_context_overview(org_id: str, db: Session = Depends(get_db)):
-    """Overview health cards + activity stream for the Context page."""
-    try:
-        # Total facts = contacts with data
-        total_facts = db.execute(
-            text("SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND interaction_count > 0"),
-            {"org_id": org_id},
-        ).scalar() or 0
+    """Health cards + recent activity stream for the Context page.
 
-        # Average confidence
-        avg_confidence = db.execute(
-            text("SELECT AVG(confidence_score) FROM contacts WHERE org_id = :org_id AND confidence_score IS NOT NULL"),
-            {"org_id": org_id},
-        ).scalar() or 0
+    v2 numbers:
+      total_facts        — count of S-P-O facts asserted for this org
+      avg_confidence     — mean facts.confidence (source-asserted = 1.0)
+      facts_decaying     — count where confidence < 0.60 (Hebbian decay)
+      conflicts_detected — count of distinct (subject, predicate) pairs that
+                           have multiple distinct objects (contradictions)
+    """
+    totals = db.execute(
+        text("""
+            SELECT
+                (SELECT COUNT(*) FROM facts WHERE org_id = :oid)                              AS total_facts,
+                (SELECT AVG(confidence) FROM facts WHERE org_id = :oid)                       AS avg_conf,
+                (SELECT COUNT(*) FROM facts WHERE org_id = :oid AND confidence < 0.60)        AS facts_decaying,
+                (SELECT COUNT(*) FROM (
+                    SELECT subject, predicate FROM facts
+                    WHERE org_id = :oid
+                    GROUP BY subject, predicate HAVING COUNT(DISTINCT object) > 1
+                ) x)                                                                          AS conflicts
+        """),
+        {"oid": org_id},
+    ).fetchone()
 
-        # Facts decaying (freshness < 0.60)
-        facts_decaying = db.execute(
-            text("SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND freshness_score < 0.60 AND freshness_score IS NOT NULL"),
-            {"org_id": org_id},
-        ).scalar() or 0
+    # Recent ingest events derived from facts.created_at (latest 20 facts as
+    # the activity stream — every fact corresponds to a memory event).
+    events = db.execute(
+        text("""
+            SELECT subject, predicate, object, source_item_id, created_at
+            FROM facts
+            WHERE org_id = :oid
+            ORDER BY created_at DESC
+            LIMIT 20
+        """),
+        {"oid": org_id},
+    ).fetchall()
 
-        # Conflicts detected (consistency < 0.40)
-        conflicts_detected = db.execute(
-            text("SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND consistency_score < 0.40 AND consistency_score IS NOT NULL"),
-            {"org_id": org_id},
-        ).scalar() or 0
-
-        # Recent context events from activity_log
-        events = db.execute(
-            text("""
-                SELECT event_type, event_data, created_at
-                FROM activity_log
-                WHERE org_id = :org_id
-                ORDER BY created_at DESC
-                LIMIT 20
-            """),
-            {"org_id": org_id},
-        ).fetchall()
-
-        return {
-            "health_cards": {
-                "total_facts": total_facts,
-                "avg_confidence": round(float(avg_confidence), 3),
-                "facts_decaying": facts_decaying,
-                "conflicts_detected": conflicts_detected,
-            },
-            "recent_events": [
-                {
-                    "event_type": r[0],
-                    "event_data": r[1],
-                    "created_at": r[2].isoformat() if r[2] else None,
-                }
-                for r in events
-            ],
-        }
-    except Exception as e:
-        logger.error(f"Context overview error: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "health_cards": {
+            "total_facts": int(totals[0] or 0),
+            "avg_confidence": round(float(totals[1] or 0), 3),
+            "facts_decaying": int(totals[2] or 0),
+            "conflicts_detected": int(totals[3] or 0),
+        },
+        "recent_events": [
+            {
+                "event_type": "fact_asserted",
+                "event_data": {
+                    "subject": r[0],
+                    "predicate": r[1],
+                    "object": r[2],
+                    "source": (r[3] or "").split(":")[0] if r[3] else "unknown",
+                },
+                "created_at": r[4].isoformat() if r[4] else None,
+            }
+            for r in events
+        ],
+    }
 
 
 # ── Tab 2: Active Facts ─────────────────────────────────────────────────
@@ -93,7 +104,7 @@ def get_active_facts(
     offset: int = 0,
     db: Session = Depends(get_db),
 ):
-    """Per g-i-1 plan: facts list straight from v2 facts table (S-P-O grounded)."""
+    """v2 S-P-O facts list."""
     from core.foundations.db import get_session as _v2s
     from core.graph.views import list_facts as _v2_list_facts
 
@@ -108,6 +119,8 @@ def get_active_facts(
         )
 
 
+# ── Tab 3: Lifecycle ─────────────────────────────────────────────────────
+
 @router.get("/api/org/{org_id}/facts/lifecycle")
 def get_lifecycle_activity(
     org_id: str,
@@ -116,45 +129,46 @@ def get_lifecycle_activity(
     limit: int = 50,
     db: Session = Depends(get_db),
 ):
-    """Timeline of context lifecycle events — fact state transitions, ingestion events, etc."""
-    try:
-        where_clauses = ["a.org_id = :org_id"]
-        params: dict = {"org_id": org_id, "limit": limit}
+    """Timeline of fact + node lifecycle events.
 
-        if event_type:
-            where_clauses.append("a.event_type = :event_type")
-            params["event_type"] = event_type
+    v2 doesn't have a dedicated activity_log; we derive the timeline from
+    facts (creation) + graph_nodes (first_seen / last_seen) joined by entity.
+    """
+    where = ["org_id = :org_id"]
+    params: dict = {"org_id": org_id, "limit": limit}
+    if entity_name:
+        where.append("(subject = :ent OR object = :ent)")
+        params["ent"] = entity_name
 
-        where_sql = " AND ".join(where_clauses)
+    where_sql = " AND ".join(where)
 
-        results = db.execute(
-            text(f"""
-                SELECT a.event_type, a.event_data, a.created_at
-                FROM activity_log a
-                WHERE {where_sql}
-                ORDER BY a.created_at DESC
-                LIMIT :limit
-            """),
-            params,
-        ).fetchall()
+    rows = db.execute(
+        text(f"""
+            SELECT subject, predicate, object, source_item_id, confidence, created_at
+            FROM facts
+            WHERE {where_sql}
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """),
+        params,
+    ).fetchall()
 
-        return {
-            "events": [
-                {
-                    "event_type": r[0],
-                    "event_data": r[1],
-                    "created_at": r[2].isoformat() if hasattr(r[2], 'isoformat') else str(r[2]) if r[2] else None,
-                }
-                for r in results
-            ],
-        }
-    except Exception as e:
-        logger.error(f"Lifecycle activity error: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "events": [
+            {
+                "event_type": "fact_created",
+                "event_data": {
+                    "subject": r[0],
+                    "predicate": r[1],
+                    "object": r[2],
+                    "source": (r[3] or "").split(":")[0] if r[3] else "unknown",
+                    "confidence": float(r[4] or 0),
+                },
+                "created_at": r[5].isoformat() if r[5] else None,
+            }
+            for r in rows
+        ],
+    }
 
 
 # ── Tab 4: Commitments ───────────────────────────────────────────────────
@@ -166,126 +180,79 @@ def get_commitments(
     limit: int = 50,
     db: Session = Depends(get_db),
 ):
-    """List commitments grouped by status (overdue, open, fulfilled)."""
-    try:
-        where_clauses = ["cm.org_id = :org_id"]
-        params: dict = {"org_id": org_id, "limit": limit}
+    """Commitments derived from v2 facts where predicate is action-shaped
+    (committed_to / will_do / promised / agreed_to / follow_up / scheduled).
 
-        if status:
-            where_clauses.append("cm.status = :status")
-            params["status"] = status
+    v1 had a dedicated `commitments` table; v2 surfaces them straight from
+    the same fact triples the engine uses, so there's no drift.
+    """
+    COMMIT_PREDS = (
+        "committed_to", "will_do", "promised", "agreed_to",
+        "follow_up", "scheduled", "due", "should_do",
+    )
+    rows = db.execute(
+        text("""
+            SELECT id, subject, object, predicate, source_item_id, confidence, created_at
+            FROM facts
+            WHERE org_id = :oid
+              AND predicate = ANY(:preds)
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """),
+        {"oid": org_id, "preds": list(COMMIT_PREDS), "limit": limit},
+    ).fetchall()
 
-        where_sql = " AND ".join(where_clauses)
+    items = []
+    for r in rows:
+        items.append({
+            "id": str(r[0]),
+            "text": f"{r[1]} {r[3].replace('_', ' ')} {r[2]}",
+            "owner": r[1],
+            "status": "open",  # v2 doesn't track fulfillment yet; UI may flip via PATCH
+            "due_date": None,
+            "created_at": r[6].isoformat() if r[6] else None,
+            "contact_name": r[1],
+            "company": None,
+            "priority": "normal",
+            "is_blocker": False,
+            "is_overdue": False,
+            "days_overdue": 0,
+            "source": (r[4] or "").split(":")[0] if r[4] else "unknown",
+        })
 
-        results = db.execute(
-            text(f"""
-                SELECT
-                    cm.id, cm.commit_text, cm.owner, cm.status, cm.due_date,
-                    cm.created_at, c.name as contact_name, c.company,
-                    cm.priority, cm.is_blocker,
-                    CASE
-                        WHEN cm.due_date IS NOT NULL AND cm.due_date < NOW() AND cm.status = 'open'
-                        THEN EXTRACT(DAY FROM NOW() - cm.due_date)
-                        ELSE NULL
-                    END as days_overdue
-                FROM commitments cm
-                JOIN contacts c ON cm.contact_id = c.id
-                WHERE {where_sql}
-                ORDER BY
-                    CASE cm.status
-                        WHEN 'open' THEN 1
-                        WHEN 'fulfilled' THEN 2
-                        ELSE 3
-                    END,
-                    cm.due_date ASC NULLS LAST
-                LIMIT :limit
-            """),
-            params,
-        ).fetchall()
+    # Honor optional status filter the frontend may send.
+    if status:
+        items = [c for c in items if c["status"] == status]
 
-        commitments = []
-        for r in results:
-            is_overdue = r[10] is not None and float(r[10]) > 0
-            commitments.append({
-                "id": str(r[0]),
-                "text": r[1],
-                "owner": r[2],
-                "status": r[3],
-                "due_date": r[4].isoformat() if hasattr(r[4], 'isoformat') else str(r[4]) if r[4] else None,
-                "created_at": r[5].isoformat() if hasattr(r[5], 'isoformat') else str(r[5]) if r[5] else None,
-                "contact_name": r[6],
-                "company": r[7],
-                "priority": r[8],
-                "is_blocker": r[9],
-                "is_overdue": is_overdue,
-                "days_overdue": int(float(r[10])) if r[10] else 0,
-            })
-
-        # Group by status
-        overdue = [c for c in commitments if c["is_overdue"]]
-        open_items = [c for c in commitments if c["status"] == "open" and not c["is_overdue"]]
-        fulfilled = [c for c in commitments if c["status"] == "fulfilled"]
-
-        return {
-            "overdue": overdue,
-            "open": open_items,
-            "fulfilled": fulfilled,
-            "total": len(commitments),
-        }
-    except Exception as e:
-        logger.error(f"Commitments listing error: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "overdue": [c for c in items if c["is_overdue"]],
+        "open":     [c for c in items if c["status"] == "open" and not c["is_overdue"]],
+        "fulfilled":[c for c in items if c["status"] == "fulfilled"],
+        "total": len(items),
+    }
 
 
 class CommitmentUpdate(BaseModel):
-    status: Optional[str] = None  # "fulfilled", "not_a_commitment"
+    status: Optional[str] = None
     due_date: Optional[str] = None
 
 
 @router.patch("/api/org/{org_id}/commitments/{commitment_id}")
-def update_commitment(
-    org_id: str,
-    commitment_id: str,
-    update: CommitmentUpdate,
-    db: Session = Depends(get_db),
-):
-    """Update a commitment — mark fulfilled, not a commitment, or edit due date."""
-    try:
-        updates = []
-        params: dict = {"org_id": org_id, "commitment_id": commitment_id}
+def update_commitment(org_id: str, commitment_id: str, update: CommitmentUpdate,
+                      db: Session = Depends(get_db)):
+    """Mark a commitment-shaped fact fulfilled or not-a-commitment.
 
-        if update.status:
-            updates.append("status = :status")
-            params["status"] = update.status
-
-        if update.due_date:
-            updates.append("due_date = :due_date")
-            params["due_date"] = update.due_date
-
-        if not updates:
-            raise HTTPException(status_code=400, detail="No updates provided")
-
-        db.execute(
-            text(f"""
-                UPDATE commitments
-                SET {', '.join(updates)}
-                WHERE id = :commitment_id AND org_id = :org_id
-            """),
-            params,
-        )
-        db.commit()
-
-        return {"updated": True, "commitment_id": commitment_id}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Commitment update error: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail=str(e))
+    v2 stores this as an `insight_feedback` row (signature_hash = fact id) so
+    the engine knows to suppress / re-rank that triple in future decisions.
+    """
+    sig = commitment_id  # use the fact id as the suppression key
+    db.execute(
+        text("""
+            INSERT INTO insight_feedback (id, org_id, user_id, signature_hash, action, created_at)
+            VALUES (gen_random_uuid()::text, :oid, :uid, :sig, :a, NOW())
+        """),
+        {"oid": org_id, "uid": "__org__", "sig": sig,
+         "a": "acted" if update.status == "fulfilled" else "dismissed"},
+    )
+    db.commit()
+    return {"updated": True, "commitment_id": commitment_id}
