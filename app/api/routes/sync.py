@@ -21,10 +21,22 @@ def _run_in_background(background_tasks, celery_task, *args, fallback_fn=None, *
 
 
 def _sync_fallback(org_id: str, max_emails=None, account_email=None):
-    """BackgroundTasks fallback for sync when Celery is not available."""
+    """BackgroundTasks fallback — routes to v2 thin pipe per g-i-1 plan.
+    Walks v2 Connection rows for this org+account_email and runs sync_runner.
+    """
     try:
-        from app.tasks.gmail_sync import run_gmail_sync
-        run_gmail_sync(org_id, max_emails=max_emails, account_email=account_email)
+        from sqlalchemy import select as _sel
+
+        from core.foundations.db import get_session as _v2s
+        from core.memory.store import Connection
+        from core.memory.sync_runner import run_sync_for_connection
+
+        with _v2s() as s:
+            q = _sel(Connection).where(Connection.org_id == org_id).where(Connection.status == "active")
+            if account_email:
+                q = q.where(Connection.source_id == account_email)
+            for conn in s.execute(q).scalars():
+                run_sync_for_connection(s, connection_id=conn.id, limit=max_emails or 50)
     except Exception as e:
         db = SessionLocal()
         try:
@@ -430,18 +442,13 @@ def trigger_recompute(
     if meta["status"] == "running":
         raise HTTPException(status_code=429, detail="A recompute job is already running. Please wait.")
 
-    _set_recompute_meta(db, org_id, status="running")
-    from app.celery_app import task_recompute
-    from app.tasks.reextract import run_recompute
-    _run_in_background(
-        background_tasks, task_recompute, org_id,
-        fallback_fn=run_recompute,
-    )
-
+    # Per g-i-1 plan there is no recompute concept — extract runs on emit().
+    # Endpoint kept for frontend back-compat; returns immediately as no-op.
+    _set_recompute_meta(db, org_id, status="idle")
     return {
-        "status": "recompute_started",
+        "status": "recompute_noop",
         "tier": 1,
-        "message": "Rebuilding scores and relationship graph from existing data.",
+        "message": "Recompute is no longer required (v2 thin pipe extracts inline). Trigger a sync to refresh data.",
     }
 
 
@@ -460,29 +467,13 @@ def trigger_reextract(
     if meta["status"] == "running":
         raise HTTPException(status_code=429, detail="A recompute/reextract job is already running. Please wait.")
 
-    stale_count = db.execute(
-        text("""
-            SELECT COUNT(*) FROM interactions
-            WHERE org_id = :org_id AND source = 'gmail'
-              AND COALESCE(processed_version, 1) < :target
-        """),
-        {"org_id": org_id, "target": PROCESSING_VERSION},
-    ).scalar()
-
-    _set_recompute_meta(db, org_id, status="running", progress=json.dumps({"tier": 2, "stale_count": stale_count}))
-    from app.celery_app import task_reextract
-    from app.tasks.reextract import run_reextract
-    _run_in_background(
-        background_tasks, task_reextract, org_id,
-        fallback_fn=run_reextract,
-    )
-
+    # Per g-i-1 plan there is no reextract concept — extract runs inline on emit().
+    # Endpoint kept for frontend back-compat; returns immediately as no-op.
+    _set_recompute_meta(db, org_id, status="idle")
     return {
-        "status": "reextract_started",
+        "status": "reextract_noop",
         "tier": 2,
-        "stale_interactions": stale_count,
-        "target_version": PROCESSING_VERSION,
-        "message": f"Re-extracting {stale_count} interactions with LLM. This may take several minutes.",
+        "message": "Re-extract is no longer required (v2 thin pipe extracts inline). Trigger a sync to refresh data.",
     }
 
 

@@ -305,12 +305,14 @@ def task_reextract(self, org_id: str):
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_nightly_refresh(self, org_id: str = None):
-    """Nightly refresh — low priority (batch work)."""
-    try:
-        from app.tasks.nightly_refresh import run_nightly_refresh
-        run_nightly_refresh(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — v1 nightly refresh code is gone (read tables dropped in mig 0015).
+    Per g-i-1 plan there is no nightly batch refresh; lifecycle + brain router
+    keep state hot in-process."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_nightly_refresh called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_nightly_refresh"}
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
@@ -448,22 +450,24 @@ def task_classify_contacts(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_anomaly_scan(self, org_id: str = None):
-    """Phase 4: L5 anomaly detection (baselines + z-scores)."""
-    try:
-        from app.tasks.anomaly_scanner import run_anomaly_scan
-        run_anomaly_scan(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_anomaly_scan called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_anomaly_scan"}
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_proactive_scan(self, org_id: str = None):
-    """Phase 6: Full proactive scan (anomalies → root cause → synthesis → insights)."""
-    try:
-        from app.tasks.proactive_scanner import run_proactive_scan
-        run_proactive_scan(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
+    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_proactive_scan called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_proactive_scan"}
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
@@ -602,13 +606,12 @@ def task_retention_offers(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")
 def task_renew_watches(self):
-    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
-    is now core.memory.sync_runner (called by task_scheduled_sync)."""
-    import logging
-    logging.getLogger(__name__).warning(
-        "task_renew_watches called but v1 underlying code is gone — no-op"
-    )
-    return {"status": "noop", "task": "task_renew_watches"}
+    """Nightly Gmail Pub/Sub watch channel renewal (7-day expiry)."""
+    try:
+        from app.tasks.renew_watches import run_renew_watches
+        return run_renew_watches()
+    except Exception as exc:
+        raise self.retry(exc=exc)
 
 
 
