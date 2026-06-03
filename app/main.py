@@ -208,6 +208,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception(f"v2 module bootstrap failed (non-fatal): {e}")
 
+    # v2 brain — register the g-i-3 worldmodel-ingest subscriber on emit() bus.
+    # After this, every MemoryItem from core/memory/sync_runner.py flows through
+    # extract → resolve → upsert FactRow/NodeRow/EdgeRow.
+    try:
+        from core.worldmodel.ingest_subscriber import register_ingest_subscriber
+        register_ingest_subscriber()
+        logger.info("✓ v2 ingest subscriber registered on emit() bus")
+    except Exception as e:
+        logger.exception(f"v2 ingest subscriber registration failed (non-fatal): {e}")
+
     yield
     logger.info("App shutting down.")
     # Flush queued analytics events so the last batch isn't lost on restart.

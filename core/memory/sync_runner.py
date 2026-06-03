@@ -88,8 +88,10 @@ def run_sync_for_connection(
     ).scalar_one_or_none()
     cursor: Cursor | None = None
     if cursor_row and cursor_row.cursor_value:
+        # CursorRow.strategy is a free-form str; Cursor.strategy is a Literal
+        # subset. Trust the producer (only adapters write here).
         cursor = Cursor(
-            strategy=cursor_row.cursor_strategy or "native",
+            strategy=cursor_row.strategy or "native",  # type: ignore[arg-type]
             value=cursor_row.cursor_value,
         )
 
@@ -105,8 +107,7 @@ def run_sync_for_connection(
     for g in grants:
         try:
             scopes.append(g.to_read_scope())  # type: ignore[attr-defined]
-        except Exception:
-            # ScopeGrant.scope_json may be raw — caller wires it; skip if shape unknown
+        except Exception:  # noqa: S112 — scope_json may be raw; skip if shape unknown
             continue
     enforcer = ScopeEnforcer(scopes, connection_id=connection_id, org_id=conn.org_id)
 
@@ -156,7 +157,7 @@ def run_sync_for_connection(
             )
             session.add(cursor_row)
         else:
-            cursor_row.cursor_strategy = new_cursor.strategy
+            cursor_row.strategy = new_cursor.strategy
             cursor_row.cursor_value = new_cursor.value
             cursor_row.last_sync_at = datetime.now(UTC)
             cursor_row.items_pulled_count = (cursor_row.items_pulled_count or 0) + emitted
@@ -198,14 +199,14 @@ def _build_adapter(session: Session, conn: Connection) -> MemoryAdapter | None:
     access_ref = session.execute(
         select(SecretRef)
         .where(SecretRef.connection_id == conn.id)
-        .where(SecretRef.secret_type == "oauth_access")
+        .where(SecretRef.secret_type == "oauth_access")  # noqa: S105 — enum label, not a credential
         .order_by(SecretRef.created_at.desc())
         .limit(1)
     ).scalar_one_or_none()
     refresh_ref = session.execute(
         select(SecretRef)
         .where(SecretRef.connection_id == conn.id)
-        .where(SecretRef.secret_type == "oauth_refresh")
+        .where(SecretRef.secret_type == "oauth_refresh")  # noqa: S105 — enum label, not a credential
         .order_by(SecretRef.created_at.desc())
         .limit(1)
     ).scalar_one_or_none()

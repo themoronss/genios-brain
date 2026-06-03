@@ -296,3 +296,76 @@ def _factory(
 
 
 register_adapter(SOURCE_TYPE, _factory)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Migration helper — used by v1 OAuth callback to mirror token into v2 store
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def register_v2_gmail_connection(
+    *,
+    org_id: str,
+    account_email: str,
+    access_token: str,
+    refresh_token: str,
+    created_by: str,
+) -> str:
+    """Create the v2 thin-pipe row set for a Gmail mailbox.
+
+    Idempotent on (org_id, source_id=email) — re-running OAuth for the same
+    mailbox UPDATES the secret refs instead of duplicating connections.
+
+    Returns the v2 connection_id (UUID string).
+    """
+    from sqlalchemy import select
+
+    from core.foundations.db import get_session
+    from core.memory.secrets import put_secret
+    from core.memory.store import Connection
+
+    with get_session() as session:
+        existing = session.execute(
+            select(Connection)
+            .where(Connection.org_id == org_id)
+            .where(Connection.source_type == SOURCE_TYPE)
+            .where(Connection.source_id == account_email)
+            .limit(1)
+        ).scalar_one_or_none()
+
+        if existing is None:
+            conn = Connection(
+                org_id=org_id,
+                source_type=SOURCE_TYPE,
+                source_id=account_email,
+                status="active",
+                health_status="green",
+                created_by=created_by,
+            )
+            session.add(conn)
+            session.flush()
+        else:
+            conn = existing
+            conn.status = "active"
+            conn.health_status = "green"
+            session.flush()
+
+        # Always insert fresh secret refs (latest wins via created_at desc lookup).
+        put_secret(
+            session,
+            org_id=org_id,
+            connection_id=conn.id,
+            secret_type="oauth_access",  # noqa: S106 — enum label, not a password
+            plaintext=access_token,
+            actor_id=created_by,
+        )
+        if refresh_token:
+            put_secret(
+                session,
+                org_id=org_id,
+                connection_id=conn.id,
+                secret_type="oauth_refresh",  # noqa: S106 — enum label, not a password
+                plaintext=refresh_token,
+                actor_id=created_by,
+            )
+        return conn.id

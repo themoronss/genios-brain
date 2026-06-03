@@ -154,4 +154,4 @@ def _to_envelope_route(route: Any) -> EnvelopeRoute:
 
 
 # AsOfPin import retained for callers that import from this module
-__all__ = ["bootstrap_modules", "AsOfPin", "build_envelope"]
+__all__ = ["AsOfPin", "bootstrap_modules", "build_envelope"]

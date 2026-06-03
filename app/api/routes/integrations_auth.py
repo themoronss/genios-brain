@@ -114,10 +114,47 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gmail"})
 
+    # v2 mirror: also create a thin-pipe Connection + encrypted SecretRefs so
+    # the v2 sync_runner can pull this mailbox. Token data is duplicated for
+    # the migration window — once v2 path is the only one, the v1 oauth_tokens
+    # write goes away (deleting `app/ingestion/gmail_connector.py` + bridges).
+    try:
+        from core.memory.adapters.known.gmail import register_v2_gmail_connection
+        v2_connection_id = register_v2_gmail_connection(
+            org_id=org_id,
+            account_email=connected_email,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            created_by=org_id,
+        )
+    except Exception as v2err:
+        # Never block v1 connect on v2 mirror failure during migration.
+        import logging as _logging
+        _logging.getLogger(__name__).exception(f"v2 Gmail mirror failed: {v2err}")
+        v2_connection_id = None
+
     from app.config import SYNC_MAX_EMAILS
     from app.plan_enforcer import get_org_plan
 
     background_tasks.add_task(run_gmail_sync, org_id, SYNC_MAX_EMAILS, connected_email)
+
+    # v2 thin-pipe sync runs alongside v1 heavy sync during migration window.
+    # Once verified, the v1 add_task above will be removed.
+    if v2_connection_id:
+        from core.foundations.db import get_session as _v2_session
+        from core.memory.sync_runner import run_sync_for_connection
+        def _v2_sync():
+            try:
+                with _v2_session() as s:
+                    result = run_sync_for_connection(s, connection_id=v2_connection_id, limit=50)
+                    import logging
+                    logging.getLogger(__name__).info(
+                        f"v2 gmail sync done: emitted={result.items_emitted} dropped_scope={result.items_dropped_scope}"
+                    )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).exception(f"v2 gmail sync failed: {e}")
+        background_tasks.add_task(_v2_sync)
 
     # Startup plan: subscribe to Gmail push notifications
     plan_info = get_org_plan(db, org_id)
