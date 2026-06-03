@@ -743,136 +743,33 @@ async def v1_document_upload(
         except ImportError:
             pass
 
-    # Entity enrichment + Precedent Graph embedding
-    # Upgraded: documents now CREATE contacts (not just enrich existing ones)
-    # and add lightweight 'document_mention' interactions so the graph builds.
+    # v2 thin-pipe: emit the document content to the bus. The g-i-3 ingest
+    # subscriber will run extract → upsert graph_nodes/facts/edges.
     entities_found = 0
     contacts_created = 0
     chunks_stored = 0
     if text_content and len(text_content) > 20:
-        # 1. Entity extraction — create OR enrich contacts + add document interaction
         try:
-            from app.ingestion.entity_extractor import extract_email_intelligence
-            from app.ingestion.graph_builder import upsert_contact
+            from datetime import datetime, timezone
 
-            intelligence = extract_email_intelligence(text_content[:3000], f"Document: {file.filename}")
-            doc_topics = intelligence.get("topics", [])
-            doc_summary = intelligence.get("summary", f"Mentioned in document: {file.filename}")
-
-            for entity_info in intelligence.get("entities", []):
-                entity_name = entity_info if isinstance(entity_info, str) else entity_info.get("name", "")
-                if not entity_name or len(entity_name) < 2:
-                    continue
-
-                # Check if contact exists
-                existing = db.execute(
-                    text("SELECT id FROM contacts WHERE org_id = :org_id AND LOWER(name) = LOWER(:name) LIMIT 1"),
-                    {"org_id": org_id, "name": entity_name},
-                ).fetchone()
-
-                if existing:
-                    contact_id = str(existing[0])
-                    # Enrich existing: add 'docs' source + merge topics
-                    db.execute(
-                        text("""
-                            UPDATE contacts SET
-                                sources = array_cat(
-                                    COALESCE(sources, '{}'),
-                                    CASE WHEN NOT ('docs' = ANY(COALESCE(sources, '{}'))) THEN ARRAY['docs'] ELSE '{}' END
-                                ),
-                                topics_aggregate = (
-                                    SELECT ARRAY(SELECT DISTINCT unnest(
-                                        array_cat(COALESCE(topics_aggregate, '{}'), :topics)
-                                    ) LIMIT 10)
-                                )
-                            WHERE id = :cid AND org_id = :org_id
-                        """),
-                        {"cid": contact_id, "org_id": org_id, "topics": doc_topics[:5]},
-                    )
-                    entities_found += 1
-                else:
-                    # CREATE new contact from document mention
-                    contact_id = upsert_contact(
-                        db, org_id,
-                        email=None,  # no email from document — name only
-                        name=entity_name,
-                        entity_type=intelligence.get("contact_role"),
-                    )
-                    if contact_id:
-                        # Add topics + source
-                        db.execute(
-                            text("""
-                                UPDATE contacts SET
-                                    sources = ARRAY['docs'],
-                                    topics_aggregate = :topics
-                                WHERE id = :cid AND org_id = :org_id
-                            """),
-                            {"cid": str(contact_id), "org_id": org_id, "topics": doc_topics[:5]},
-                        )
-                        contacts_created += 1
-                        entities_found += 1
-
-                # Create a lightweight interaction so the contact shows in the graph
-                if contact_id:
-                    try:
-                        interaction_id = str(uuid.uuid4())
-                        db.execute(
-                            text("""
-                                INSERT INTO interactions (
-                                    id, org_id, contact_id, direction, subject,
-                                    summary, interaction_at, sentiment, intent,
-                                    source, topics, interaction_type
-                                )
-                                VALUES (
-                                    :id, :org_id, :cid, 'inbound', :subject,
-                                    :summary, NOW(), 0.0, 'reference',
-                                    'document', :topics, 'document_mention'
-                                )
-                                ON CONFLICT DO NOTHING
-                            """),
-                            {
-                                "id": interaction_id,
-                                "org_id": org_id,
-                                "cid": str(contact_id),
-                                "subject": f"Document: {file.filename}",
-                                "summary": f"Mentioned in {file.filename}: {doc_summary[:200]}",
-                                "topics": doc_topics[:5],
-                            },
-                        )
-                    except Exception:
-                        pass  # duplicate or constraint — safe to skip
-
-            db.commit()
-        except Exception as e:
-            logger.warning(f"v1 document entity extraction failed: {e}")
-            try:
-                db.rollback()
-            except Exception:
-                pass
-
-        # 2. Precedent Graph — chunk and embed document for vector search
-        try:
-            from app.context.precedent_search import store_document_chunks
-            # Simple chunking: split by paragraphs, target ~400-600 tokens
-            paragraphs = [p.strip() for p in text_content.split("\n\n") if len(p.strip()) > 50]
-            chunks = []
-            current_chunk = ""
-            for para in paragraphs:
-                if len(current_chunk) + len(para) > 2000:
-                    if current_chunk:
-                        chunks.append(current_chunk)
-                    current_chunk = para
-                else:
-                    current_chunk = current_chunk + "\n\n" + para if current_chunk else para
-            if current_chunk:
-                chunks.append(current_chunk)
-
-            chunks_stored = store_document_chunks(
-                db, org_id, file_id, file.filename or "Untitled",
-                chunks, doc_type="upload", metadata={"tag": tag},
+            from core.memory.emit import emit
+            from core.memory.types import MemoryItem, MemoryItemMetadata
+            item = MemoryItem(
+                item_id=f"document:{file_id}",
+                source_id=f"org:{org_id}",
+                source_type="document",
+                content=text_content[:20000],
+                content_ref=str(file_id),
+                metadata=MemoryItemMetadata(
+                    timestamp=datetime.now(timezone.utc),
+                    owner=None,
+                    source_confidence=1.0,
+                    tags=[tag] if tag else ["upload"],
+                ),
             )
+            emit(item, org_id=org_id)
         except Exception as e:
-            logger.warning(f"v1 document chunk embedding failed: {e}")
+            logger.warning(f"document emit failed: {e}")
 
     from app.core.analytics import capture
     capture(org_id, "document_uploaded", {
@@ -903,28 +800,11 @@ def v1_retention_check(
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
-    """Manually trigger a churn snapshot + offer composition for THIS org.
-    Useful for testing and dashboard 'check now' buttons. Returns the
-    computed snapshot + the composed offer (if any)."""
-    from app.tasks.churn_scan import _compute_for_org
-    from app.tasks.retention_offer import compose_offer
-
-    try:
-        snapshot = _compute_for_org(db, org_id)
-    except Exception as e:
-        raise HTTPException(status_code=500,
-                            detail=f"churn_scan failed: {str(e)[:200]}")
-
-    offer = None
-    if snapshot.get("churn_score", 0) >= 0.30:
-        try:
-            offer = compose_offer(org_id)
-        except Exception as e:
-            logger.warning(f"retention offer compose failed: {e}")
-
+    """v1 churn/retention modules deleted in v2 refactor. Endpoint kept for
+    back-compat; returns an empty actionable=False payload."""
     return {
         "org_id": org_id,
-        "snapshot": snapshot,
-        "offer": offer,
-        "actionable": snapshot.get("churn_score", 0) >= 0.30,
+        "snapshot": {"churn_score": 0.0, "note": "v2 has no churn module"},
+        "offer": None,
+        "actionable": False,
     }

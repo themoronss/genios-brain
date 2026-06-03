@@ -595,13 +595,13 @@ def task_churn_scan(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_retention_offers(self, org_id: str = None):
-    """Phase 6: Compose personalised offers for high-risk orgs and push
-    them into pending_alerts so they surface in next Claude reply."""
-    try:
-        from app.tasks.retention_offer import run_retention_offers
-        return run_retention_offers(org_id)
-    except Exception as exc:
-        raise self.retry(exc=exc)
+    """Stub — v1 retention/churn modules deleted; pending_alerts table dropped.
+    v2 has no in-engine retention loop."""
+    import logging
+    logging.getLogger(__name__).warning(
+        "task_retention_offers called but v1 underlying code is gone — no-op"
+    )
+    return {"status": "noop", "task": "task_retention_offers"}
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")

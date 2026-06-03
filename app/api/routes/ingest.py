@@ -112,21 +112,14 @@ def _resolve_account_id_for_ingest(db, org_id: str, agent_uuid: Optional[str], s
 
 def _audit(db, org_id, agent_uuid, source, external_id, outcome,
            interaction_id=None, contact_id=None, error=None, payload_bytes=0):
-    try:
-        db.execute(
-            text("""
-                INSERT INTO ingest_events
-                    (org_id, agent_uuid, source, external_id, outcome,
-                     interaction_id, contact_id, error_detail, payload_bytes)
-                VALUES (:o, :a, :s, :e, :out, :iid, :cid, :err, :bytes)
-            """),
-            {"o": org_id, "a": agent_uuid, "s": source, "e": external_id,
-             "out": outcome, "iid": interaction_id, "cid": contact_id,
-             "err": error, "bytes": payload_bytes},
-        )
-        db.commit()
-    except Exception as e:
-        logger.warning(f"ingest_events log failed: {e}")
+    """v1 ingest_events table dropped in mig 0015 — log-only audit now."""
+    logger.info(
+        "ingest_audit",
+        extra={"org_id": org_id, "agent": agent_uuid, "source": source,
+               "external_id": external_id, "outcome": outcome,
+               "interaction_id": interaction_id, "contact_id": contact_id,
+               "error": error, "bytes": payload_bytes},
+    )
 
 
 def _verify_inkbox_signature(raw_body, request_id, timestamp, signature, signing_key, tolerance_sec=300):
@@ -176,70 +169,48 @@ def _verify_hmac_or_bootstrap(db, agent_uuid, source, raw_body, signature,
 
 
 def _find_dup(db, org_id, source, external_id):
-    return db.execute(
-        text("""
-            SELECT id::text, contact_id::text FROM interactions
-            WHERE org_id = :o AND source = :s AND external_id = :e
-            LIMIT 1
-        """),
-        {"o": org_id, "s": source, "e": external_id},
-    ).fetchone()
-
-
-def _upsert_contact_by_email(db, org_id, email, name=None) -> str:
-    e = (email or "").strip().lower()
-    if not e:
-        raise ValueError("empty email")
-    row = db.execute(
-        text("SELECT id::text FROM contacts WHERE org_id=:o AND LOWER(email)=:e"),
-        {"o": org_id, "e": e},
-    ).fetchone()
-    if row:
-        return row[0]
-    return db.execute(
-        text("""
-            INSERT INTO contacts (org_id, email, name, segment_source)
-            VALUES (:o, :e, :n, 'auto')
-            RETURNING id::text
-        """),
-        {"o": org_id, "e": e, "n": name or e.split("@")[0]},
-    ).scalar()
-
-
-def _upsert_contact_by_phone(db, org_id, phone) -> str:
-    p = (phone or "").strip()
-    if not p:
-        raise ValueError("empty phone")
-    row = db.execute(
-        text("""
-            SELECT id::text FROM contacts
-            WHERE org_id = :o AND metadata @> CAST(:m AS jsonb) LIMIT 1
-        """),
-        {"o": org_id, "m": json.dumps({"phone": p})},
-    ).fetchone()
-    if row:
-        return row[0]
-    return db.execute(
-        text("""
-            INSERT INTO contacts (org_id, email, name, metadata, segment_source)
-            VALUES (:o, '', :n, CAST(:m AS jsonb), 'auto')
-            RETURNING id::text
-        """),
-        {"o": org_id, "n": p, "m": json.dumps({"phone": p})},
-    ).scalar()
+    """v2 dedup via Redis SETNX — interactions table is dropped."""
+    try:
+        from app.redis_client import redis_client as _r
+        key = f"ingest:dedup:{org_id}:{source}:{external_id}"
+        # If already seen, return a synthetic (id, contact_id) pair
+        if _r.get(key):
+            return (key, key)
+        # Mark as seen for 30 days
+        _r.setex(key, 30 * 86400, "1")
+    except Exception:
+        pass
+    return None
 
 
 def _enqueue_extraction(interaction_id: str) -> None:
-    """Best-effort enqueue. Fails open if extractor task not registered yet."""
+    """v2 extraction is inline via emit() bus subscriber — no-op."""
+    return None
+
+
+def _emit_memory_item(*, org_id: str, source_type: str, external_id: str,
+                      content: str, timestamp: datetime, owner: str | None,
+                      tags: list[str], source_id: str) -> None:
+    """Push to the v2 emit() bus so the ingest subscriber extracts → graph."""
     try:
-        from app.celery_app import celery
-        celery.send_task(
-            "app.celery_app.task_extract_interaction",
-            args=[interaction_id],
-            queue="high_priority",
+        from core.memory.emit import emit
+        from core.memory.types import MemoryItem, MemoryItemMetadata
+        item = MemoryItem(
+            item_id=f"{source_type}:{external_id}",
+            source_id=source_id,
+            source_type=source_type,
+            content=content,
+            content_ref=None,
+            metadata=MemoryItemMetadata(
+                timestamp=timestamp,
+                owner=owner,
+                source_confidence=1.0,
+                tags=tags,
+            ),
         )
+        emit(item, org_id=org_id)
     except Exception as e:
-        logger.debug(f"extraction enqueue skipped: {e}")
+        logger.warning(f"ingest emit failed (org={org_id} src={source_type}): {e}")
 
 
 def _maybe_normalise_vendor_payload(raw: bytes, source: str) -> bytes:
@@ -263,14 +234,52 @@ def _maybe_normalise_vendor_payload(raw: bytes, source: str) -> bytes:
         (source == "phone" and et == "phone.incoming_call")
     )
     if inkbox_event_for_source and isinstance(body.get("data"), dict):
-        try:
-            from app.ingestion.adapters.inkbox import normalise_webhook
-            canonical = normalise_webhook(body)
-            if canonical:
-                return json.dumps(canonical).encode()
-        except Exception as e:
-            logger.debug(f"inkbox webhook normalise failed: {e}")
+        canonical = _inline_inkbox_normalise(body, source)
+        if canonical:
+            return json.dumps(canonical).encode()
     return raw
+
+
+def _inline_inkbox_normalise(body: dict, source: str) -> dict | None:
+    """Map Inkbox-shaped webhook to our canonical EmailIngest/SmsIngest/CallIngest.
+    Replaces the deleted app.ingestion.adapters.inkbox module.
+    """
+    data = body.get("data") or {}
+    et = body.get("event_type") or ""
+    ts = body.get("timestamp") or datetime.now(timezone.utc).isoformat()
+    if source == "email" and et.startswith("message."):
+        return {
+            "external_id": data.get("message_id") or data.get("id") or "",
+            "from_address": data.get("from") or data.get("sender") or "",
+            "to": data.get("to") if isinstance(data.get("to"), list) else [data.get("to") or ""],
+            "subject": data.get("subject"),
+            "body_text": data.get("body_text") or data.get("text"),
+            "body_html": data.get("body_html") or data.get("html"),
+            "sent_at": data.get("sent_at") or ts,
+            "direction": "inbound" if et == "message.received" else "outbound",
+            "thread_external_id": data.get("thread_id"),
+            "in_reply_to_external_id": data.get("in_reply_to"),
+        }
+    if source == "sms" and et == "text.received":
+        return {
+            "external_id": data.get("sms_id") or data.get("id") or "",
+            "from_number": data.get("from") or "",
+            "to_number":   data.get("to") or "",
+            "body":        data.get("body") or data.get("text") or "",
+            "sent_at":     data.get("sent_at") or ts,
+            "direction":   "inbound",
+        }
+    if source == "phone" and et == "phone.incoming_call":
+        return {
+            "external_id": data.get("call_id") or data.get("id") or "",
+            "from_number": data.get("from") or "",
+            "to_number":   data.get("to") or "",
+            "duration_sec": int(data.get("duration_sec") or 0),
+            "transcript":  data.get("transcript") or "",
+            "started_at":  data.get("started_at") or ts,
+            "direction":   "inbound",
+        }
+    return None
 
 
 async def _common_ingest(
@@ -391,114 +400,65 @@ async def _common_ingest(
 # — at ingest we still tag the inserting-agent if known (for audit only).
 
 def _insert_email(db, org_id, agent_uuid, b: EmailIngest):
+    """v2 thin-pipe: emit a MemoryItem to the bus; subscribers extract → graph."""
     counterparty = b.from_address if b.direction == "inbound" else (b.to[0] if b.to else "")
-    contact_id = _upsert_contact_by_email(db, org_id, counterparty)
-    account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "email")
-    trusted = trust_crud.is_trusted(
-        db, agent_uuid, sender_email=counterparty, contact_id=contact_id,
-    ) if agent_uuid else False
     sent_at = _parse_ts(b.sent_at)
-    iid = db.execute(
-        text("""
-            INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, account_id, direction,
-                 subject, summary, raw_snippet, interaction_at, source,
-                 external_id, thread_external_id, interaction_kind, trusted_sender)
-            VALUES (:o, :c, :a, :acct, :dir, :subj, :sum, :raw, :at, :src, :ext, :thr, 'email', :trust)
-            RETURNING id::text
-        """),
-        {
-            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
-            "dir": b.direction, "subj": (b.subject or "")[:500],
-            "sum": (b.body_text or b.body_html or "")[:2000],
-            "raw": (b.body_text or b.body_html or "")[:5000],
-            "at": sent_at,
-            "src": "email", "ext": b.external_id,
-            "thr": b.thread_external_id or b.in_reply_to_external_id,
-            "trust": trusted,
-        },
-    ).scalar()
-    # Refresh aggregates + log activity so existing contacts also surface
-    # in the dashboard's "Brain activity" feed when a new email arrives.
-    from app.ingestion.graph_builder import bump_contact_on_new_interaction
-    bump_contact_on_new_interaction(
-        db, org_id, contact_id, sent_at,
-        source="email", subject=b.subject or "", counterparty=counterparty,
-        interaction_id=iid,
+    content = "\n".join([
+        f"Subject: {b.subject or ''}",
+        f"From: {b.from_address}",
+        f"To: {', '.join(b.to or [])}",
+        f"Direction: {b.direction}",
+        "",
+        (b.body_text or b.body_html or "")[:5000],
+    ])
+    source_id = f"agent:{agent_uuid}" if agent_uuid else f"org:{org_id}"
+    _emit_memory_item(
+        org_id=org_id, source_type="email", external_id=b.external_id,
+        content=content, timestamp=sent_at, owner=counterparty,
+        tags=[b.direction, "email"], source_id=source_id,
     )
+    # Synthetic IDs (response back-compat). v2 doesn't write interactions/contacts.
+    iid = f"email:{b.external_id}"
+    contact_id = f"contact:email:{(counterparty or '').lower()}"
     return contact_id, iid
 
 
 def _insert_call(db, org_id, agent_uuid, b: CallIngest):
     counterparty = b.from_number if b.direction == "inbound" else b.to_number
-    contact_id = _upsert_contact_by_phone(db, org_id, counterparty)
-    account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "phone")
-    trusted = trust_crud.is_trusted(
-        db, agent_uuid, sender_phone=counterparty, contact_id=contact_id,
-    ) if agent_uuid else False
     started_at = _parse_ts(b.started_at)
-    iid = db.execute(
-        text("""
-            INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, account_id, direction,
-                 summary, raw_snippet, interaction_at, source, external_id,
-                 interaction_kind, duration_sec, transcript, trusted_sender)
-            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, :src, :ext, 'call', :dur, :tr, :trust)
-            RETURNING id::text
-        """),
-        {
-            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
-            "dir": b.direction,
-            "sum": (b.transcript or f"Call {b.duration_sec}s")[:2000],
-            "raw": (b.transcript or "")[:5000],
-            "at": started_at,
-            "src": "phone", "ext": b.external_id,
-            "dur": b.duration_sec, "tr": b.transcript,
-            "trust": trusted,
-        },
-    ).scalar()
-    from app.ingestion.graph_builder import bump_contact_on_new_interaction
-    bump_contact_on_new_interaction(
-        db, org_id, contact_id, started_at,
-        source="phone", subject=f"Call {b.duration_sec}s",
-        counterparty=counterparty, interaction_id=iid,
+    content = "\n".join([
+        f"Call ({b.direction})  duration={b.duration_sec}s",
+        f"From: {b.from_number}  To: {b.to_number}",
+        "",
+        (b.transcript or "")[:5000],
+    ])
+    source_id = f"agent:{agent_uuid}" if agent_uuid else f"org:{org_id}"
+    _emit_memory_item(
+        org_id=org_id, source_type="phone", external_id=b.external_id,
+        content=content, timestamp=started_at, owner=counterparty,
+        tags=[b.direction, "call"], source_id=source_id,
     )
+    iid = f"call:{b.external_id}"
+    contact_id = f"contact:phone:{counterparty}"
     return contact_id, iid
 
 
 def _insert_sms(db, org_id, agent_uuid, b: SmsIngest):
     counterparty = b.from_number if b.direction == "inbound" else b.to_number
-    contact_id = _upsert_contact_by_phone(db, org_id, counterparty)
-    account_id = _resolve_account_id_for_ingest(db, org_id, agent_uuid, "sms")
-    trusted = trust_crud.is_trusted(
-        db, agent_uuid, sender_phone=counterparty, contact_id=contact_id,
-    ) if agent_uuid else False
     sent_at = _parse_ts(b.sent_at)
-    iid = db.execute(
-        text("""
-            INSERT INTO interactions
-                (org_id, contact_id, agent_uuid, account_id, direction,
-                 summary, raw_snippet, interaction_at, source, external_id,
-                 interaction_kind, trusted_sender)
-            VALUES (:o, :c, :a, :acct, :dir, :sum, :raw, :at, :src, :ext, 'sms', :trust)
-            RETURNING id::text
-        """),
-        {
-            "o": org_id, "c": contact_id, "a": agent_uuid, "acct": account_id,
-            "dir": b.direction,
-            "sum": (b.body or "")[:2000],
-            "raw": (b.body or "")[:5000],
-            "at": sent_at,
-            "src": "sms", "ext": b.external_id,
-            "trust": trusted,
-        },
-    ).scalar()
-    from app.ingestion.graph_builder import bump_contact_on_new_interaction
-    bump_contact_on_new_interaction(
-        db, org_id, contact_id, sent_at,
-        source="sms", subject=(b.body or "")[:100],
-        counterparty=counterparty, interaction_id=iid,
+    content = "\n".join([
+        f"SMS ({b.direction})  From: {b.from_number}  To: {b.to_number}",
+        "",
+        (b.body or "")[:5000],
+    ])
+    source_id = f"agent:{agent_uuid}" if agent_uuid else f"org:{org_id}"
+    _emit_memory_item(
+        org_id=org_id, source_type="sms", external_id=b.external_id,
+        content=content, timestamp=sent_at, owner=counterparty,
+        tags=[b.direction, "sms"], source_id=source_id,
     )
+    iid = f"sms:{b.external_id}"
+    contact_id = f"contact:phone:{counterparty}"
     return contact_id, iid
 
 
@@ -725,12 +685,14 @@ async def ingest_inkbox_webhook(account_id: str, request: Request, db: Session =
         return {"accepted": True, "event": event_type, "interaction_id": iid}
 
     # New-message events (received / text / call) → normalise to canonical dict
-    try:
-        from app.ingestion.adapters.inkbox import normalise_webhook
-        canonical = normalise_webhook(body)
-    except Exception as e:
-        logger.warning(f"inkbox normalise_webhook failed: {e}")
-        canonical = None
+    # via the inline mapper (v1 inkbox adapter module deleted).
+    src_for_event = (
+        "email" if event_type.startswith("message.")
+        else "sms" if event_type == "text.received"
+        else "phone" if event_type == "phone.incoming_call"
+        else None
+    )
+    canonical = _inline_inkbox_normalise(body, src_for_event) if src_for_event else None
 
     if not canonical:
         _audit(db, org_id, agent_uuid, source, None, "rejected_format",

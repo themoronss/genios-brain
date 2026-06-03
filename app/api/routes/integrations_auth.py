@@ -432,9 +432,31 @@ async def slack_events_webhook(request: Request, background_tasks: BackgroundTas
     if payload.get("type") == "url_verification":
         return {"challenge": payload.get("challenge")}
 
-    # Enqueue for async processing — never block
-    from app.tasks.slack_sync import process_slack_event_async
-    background_tasks.add_task(process_slack_event_async, payload)
+    # Per g-i-1 plan: webhook → run v2 sync_runner for this workspace's Slack
+    # connection. Skips the deleted v1 process_slack_event_async path.
+    team_id = (payload.get("team_id") or "").strip()
+    if team_id:
+        def _run_slack_sync():
+            try:
+                from sqlalchemy import select as _sel
+
+                from core.foundations.db import get_session as _v2s
+                from core.memory.store import Connection
+                from core.memory.sync_runner import run_sync_for_connection
+
+                with _v2s() as _s:
+                    conn = _s.execute(
+                        _sel(Connection)
+                        .where(Connection.source_type == "slack")
+                        .where(Connection.source_id == team_id)
+                        .where(Connection.status == "active")
+                        .limit(1)
+                    ).scalar_one_or_none()
+                    if conn is not None:
+                        run_sync_for_connection(_s, connection_id=conn.id, limit=50)
+            except Exception as e:
+                logger.warning(f"slack webhook v2 sync failed: {e}")
+        background_tasks.add_task(_run_slack_sync)
 
     return {"ok": True}
 
@@ -536,10 +558,37 @@ async def jira_callback(state: str, code: str, background_tasks: BackgroundTasks
 
 @router.post("/webhooks/jira/events")
 async def jira_events_webhook(request: Request, background_tasks: BackgroundTasks):
-    """Jira webhook receiver — validate then process async."""
+    """Jira webhook receiver — fan out to v2 sync_runner for the cloud_id's
+    Jira connection (replaces deleted v1 process_jira_event_async path)."""
     payload = await request.json()
-    from app.tasks.jira_sync import process_jira_event_async
-    background_tasks.add_task(process_jira_event_async, payload)
+    cloud_id = (
+        payload.get("cloud_id")
+        or payload.get("cloudId")
+        or (payload.get("matchedWebhookIds") and payload.get("matchedWebhookIds")[0])
+        or ""
+    )
+    if cloud_id:
+        def _run_jira_sync():
+            try:
+                from sqlalchemy import select as _sel
+
+                from core.foundations.db import get_session as _v2s
+                from core.memory.store import Connection
+                from core.memory.sync_runner import run_sync_for_connection
+
+                with _v2s() as _s:
+                    conn = _s.execute(
+                        _sel(Connection)
+                        .where(Connection.source_type == "jira")
+                        .where(Connection.source_id == cloud_id)
+                        .where(Connection.status == "active")
+                        .limit(1)
+                    ).scalar_one_or_none()
+                    if conn is not None:
+                        run_sync_for_connection(_s, connection_id=conn.id, limit=50)
+            except Exception as e:
+                logger.warning(f"jira webhook v2 sync failed: {e}")
+        background_tasks.add_task(_run_jira_sync)
     return {"ok": True}
 
 

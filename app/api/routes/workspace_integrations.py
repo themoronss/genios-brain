@@ -52,11 +52,12 @@ def _run_connector_sync(connector_id: str) -> None:
     idempotent (duplicate emails skipped via the external_id unique index),
     so this is safe even if the 5-min Celery beat also picks it up later.
     """
-    try:
-        from app.tasks.sync_connector import task_sync_connector
-        task_sync_connector.apply(args=[connector_id])  # eager, no broker needed
-    except Exception as e:  # never let a background pull crash anything
-        logger.warning(f"inline connector sync {connector_id} failed: {e}")
+    # v1 task_sync_connector deleted in g-i-1 migration. The v2 generic
+    # task_scheduled_sync (Celery beat, 5-min cadence) walks every v2
+    # Connection row and pulls. So this inline-sync is now a no-op: the next
+    # beat tick (≤5 min) will pull. The connect-time response message tells
+    # the user that data populates within a few minutes.
+    logger.info(f"inline connector sync {connector_id}: deferred to beat tick")
 
 
 # Cap how many phone numbers we auto-provision pull connectors for (an

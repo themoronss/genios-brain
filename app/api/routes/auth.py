@@ -278,14 +278,8 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
         _log.getLogger(__name__).warning(f"default_agent provision failed: {_agent_err}")
         db.rollback()
 
-    # Seed Precedent graph so Op.04 pattern matching is alive from Day 1.
-    # Fail-soft: never block signup on seed failure.
-    try:
-        from app.tasks.seed_precedents import seed_for_org
-        seed_for_org(str(org_id))
-    except Exception as _seed_err:
-        import logging as _log
-        _log.getLogger(__name__).warning(f"precedent seed skipped: {_seed_err}")
+    # v1 precedent graph is gone (precedent_graph table dropped in mig 0015).
+    # v2 modules ship their own bootstrap data via core/modules_framework.
 
     # Generate token
     token = jwt.encode(

@@ -26,42 +26,29 @@ from app.api.routes import health
 from app.api.routes import auth
 from app.api.routes import context
 from app.api.routes import status
-from app.api.routes import draft
 from app.api.routes import sync
 from app.api.routes import agents
 from app.api.routes import agent_registry
 from app.api.routes import workspace_integrations
 from app.api.routes import ingest as ingest_routes
 from app.api.routes import events
-from app.api.routes import chat
-from app.api.routes import authority
-from app.api.routes import precedent
-from app.api.routes import merge
 from app.api.routes import facts
-from app.api.routes import manual_context
 from app.api.routes import integrations_auth
 from app.api.routes import insights
 from app.api.routes import v1 as v1_routes
-from app.api.routes import segments as segments_routes
 from app.api.routes import webhooks as webhooks_routes
 from app.api.routes import webhooks_calendar as webhooks_calendar_routes
 from app.api.routes import policies as policies_routes
 from app.api.routes import approvals as approvals_routes
-from app.api.routes import retrieval as retrieval_routes
-from app.api.routes import explain as explain_routes
 from app.api.routes import live as live_routes
 from app.api.routes import billing as billing_routes
 from app.api.routes import seats as seats_routes
-from app.api.routes import tags_disclosure as tags_disclosure_routes
-from app.api.routes import proactive as proactive_routes
-from app.api.routes import writeback as writeback_routes
 from app.api.routes import feedback as feedback_routes
 from app.api.routes import admin as admin_routes
 from app.api.routes import stream as stream_routes
 from app.api.routes import brain_activity as brain_activity_routes
 from app.api.routes import mcp as mcp_routes
 from app.api.routes import mcp_oauth as mcp_oauth_routes
-from app.api.routes import messages as messages_routes
 from app.api.routes import benchmarks as benchmarks_routes
 from app.api.routes import activity as activity_routes  # Phase 9
 
@@ -227,42 +214,29 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(context.router)
 app.include_router(status.router)
-app.include_router(draft.router)
 app.include_router(sync.router)
 app.include_router(agents.router)
 app.include_router(agent_registry.router)
 app.include_router(workspace_integrations.router)
 app.include_router(ingest_routes.router)
 app.include_router(events.router)
-app.include_router(chat.router)
-app.include_router(authority.router)
-app.include_router(precedent.router)
-app.include_router(merge.router)
 app.include_router(facts.router)
-app.include_router(manual_context.router)
 app.include_router(integrations_auth.router)
 app.include_router(insights.router)
 app.include_router(v1_routes.router)
-app.include_router(segments_routes.router)
 app.include_router(webhooks_routes.router)
 app.include_router(webhooks_calendar_routes.router)
 app.include_router(policies_routes.router)
 app.include_router(approvals_routes.router)
-app.include_router(retrieval_routes.router)
-app.include_router(explain_routes.router)
 app.include_router(live_routes.router)
 app.include_router(billing_routes.router)
 app.include_router(seats_routes.router)
-app.include_router(tags_disclosure_routes.router)
-app.include_router(proactive_routes.router)
-app.include_router(writeback_routes.router)
 app.include_router(feedback_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(stream_routes.router)
 app.include_router(brain_activity_routes.router)
 app.include_router(mcp_routes.router)
 app.include_router(mcp_oauth_routes.router)
-app.include_router(messages_routes.router)
 app.include_router(benchmarks_routes.router)
 app.include_router(activity_routes.router)  # Phase 9 — live SSE feed
 
