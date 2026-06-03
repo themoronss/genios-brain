@@ -769,49 +769,80 @@ celery.conf.beat_schedule = {
 
 @celery.task(queue="low_priority")
 def task_scheduled_sync():
+    """Periodic refresh per g-i-1 plan: walk every active v2 Connection and run
+    the thin sync_runner (pull → normalize → emit → subscriber → graph).
+
+    Replaces v1's per-source task_sync_all_tools (gmail/calendar/slack/jira/
+    notion/sheets/drive/docs/hubspot dispatch). One generic path now drives
+    all sources via the v2 adapter registry.
+
+    Trial orgs are skipped (manual sync only) — matches v1 behavior. Hustler
+    tier honors a 6h cap; otherwise the per-org `sync_interval_hours` applies.
     """
-    Hourly scheduler: check each org's sync interval and trigger sync + refresh
-    if overdue. Replaces the sync_scheduler_loop from main.py.
-    """
-    from app.database import SessionLocal
-    from sqlalchemy import text as sa_text
-    from datetime import datetime, timezone
     import logging
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+    from sqlalchemy import text as sa_text
+
+    from app.database import SessionLocal
+    from app.plan_enforcer import get_org_plan
+    from core.foundations.db import get_session as v2_session
+    from core.memory.store import Connection, CursorRow
+    from core.memory.sync_runner import run_sync_for_connection
 
     logger = logging.getLogger(__name__)
     db = SessionLocal()
-
     try:
         orgs = db.execute(sa_text(
             "SELECT id, COALESCE(sync_interval_hours, 24) AS interval_hours FROM orgs"
         )).fetchall()
 
         for org in orgs:
-            from app.plan_enforcer import get_org_plan
-            plan = get_org_plan(db, str(org.id))
+            org_id = str(org.id)
+            plan = get_org_plan(db, org_id)
             plan_tier = plan.get("tier", "trial")
             if plan_tier == "trial":
-                continue  # Trial orgs: manual sync only
-
-            last_sync = db.execute(sa_text(
-                "SELECT MIN(last_synced_at) FROM oauth_tokens WHERE org_id = :oid"
-            ), {"oid": str(org.id)}).scalar()
+                continue
 
             effective_interval = org.interval_hours
             if plan_tier == "hustler":
                 effective_interval = min(org.interval_hours, 6)
             interval_seconds = effective_interval * 3600
 
-            should_run = (
-                not last_sync or
-                (datetime.now(timezone.utc) - last_sync.replace(tzinfo=timezone.utc)).total_seconds() >= interval_seconds
-            )
+            with v2_session() as s:
+                conns = s.execute(
+                    select(Connection)
+                    .where(Connection.org_id == org_id)
+                    .where(Connection.status == "active")
+                ).scalars().all()
 
-            if should_run:
-                logger.info(f"Queuing scheduled sync + refresh for org {org.id} (tier: {plan_tier})")
-                # Queue sync + refresh as separate tasks
-                task_sync_all_tools.delay(str(org.id))
-                task_nightly_refresh.delay(str(org.id))
+                for conn in conns:
+                    last_sync_row = s.execute(
+                        select(CursorRow).where(CursorRow.connection_id == conn.id)
+                    ).scalar_one_or_none()
+                    last_sync = last_sync_row.last_sync_at if last_sync_row else None
+
+                    should_run = (
+                        not last_sync
+                        or (datetime.now(timezone.utc) - last_sync.replace(tzinfo=timezone.utc)).total_seconds()
+                        >= interval_seconds
+                    )
+                    if not should_run:
+                        continue
+                    logger.info(
+                        f"v2 scheduled sync: org={org_id[:8]} source={conn.source_type} "
+                        f"connection={conn.id[:8]} tier={plan_tier}"
+                    )
+                    try:
+                        result = run_sync_for_connection(s, connection_id=conn.id, limit=50)
+                        logger.info(
+                            f"  → emitted={result.items_emitted} dropped={result.items_dropped_scope}"
+                        )
+                    except Exception as e:
+                        logger.exception(
+                            f"  → sync failed for {conn.source_type}/{conn.id[:8]}: {e}"
+                        )
     finally:
         db.close()
 
