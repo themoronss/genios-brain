@@ -23,32 +23,23 @@ def get_org_status(org_id: str, db: Session = Depends(get_db)):
         {"org_id": org_id},
     ).fetchone()
 
-    # Count contacts and interactions
+    # v2 thin-pipe: counts from graph_nodes + facts (v1 contacts/interactions dropped).
     stats = db.execute(
         text(
             """
-            SELECT 
-                COUNT(DISTINCT c.id) as contacts_count,
-                COUNT(i.id) as interactions_count
-            FROM contacts c
-            LEFT JOIN interactions i ON i.contact_id = c.id
-            WHERE c.org_id = :org_id
-        """
+            SELECT
+                (SELECT COUNT(*) FROM graph_nodes
+                   WHERE org_id = :org_id AND type = 'entity') AS contacts_count,
+                (SELECT COUNT(*) FROM facts
+                   WHERE org_id = :org_id)                     AS interactions_count
+            """
         ),
         {"org_id": org_id},
     ).fetchone()
 
-    # Count unstaged contacts (ingestion in progress)
-    unstaged = db.execute(
-        text(
-            """
-            SELECT COUNT(*) FROM contacts 
-            WHERE org_id = :org_id 
-            AND (relationship_stage IS NULL OR relationship_stage = 'unknown')
-        """
-        ),
-        {"org_id": org_id},
-    ).fetchone()[0]
+    # 'Unstaged' was a v1 relationship-stage concept that doesn't exist in v2.
+    # Entities are 'staged' as soon as they're emitted; treat unstaged as 0.
+    unstaged = 0
 
     contacts_count = stats.contacts_count or 0
     interactions_count = stats.interactions_count or 0
@@ -182,20 +173,20 @@ def get_dashboard_metrics(org_id: str, db: Session = Depends(get_db)):
 
 @router.get("/api/org/{org_id}/graph/export")
 def export_graph_csv(org_id: str, db: Session = Depends(get_db)):
-    """Export all contacts and relationship data as CSV."""
-    contacts = db.execute(
+    """Export entities + edges as CSV (v2 thin-pipe schema)."""
+    rows = db.execute(
         text("""
-            SELECT
-                id, name, email, company, entity_type,
-                relationship_stage, last_interaction_at,
-                interaction_count, sentiment_avg,
-                freshness_score, confidence_score, consistency_score,
-                authority_score, context_score, response_rate,
-                avg_response_time_hours, is_bidirectional, community_id
-            FROM contacts
-            WHERE org_id = :org_id
-              AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown'
-            ORDER BY interaction_count DESC
+            SELECT n.id, n.canonical_name, n.type,
+                   COALESCE(n.attributes->>'company', '')        AS company,
+                   COALESCE(n.attributes->>'relationship_stage', 'active') AS stage,
+                   n.last_seen,
+                   (SELECT COUNT(*) FROM graph_edges e
+                      WHERE e.org_id = n.org_id AND (e.from_node = n.id OR e.to_node = n.id)) AS edge_count,
+                   (SELECT COUNT(*) FROM facts f
+                      WHERE f.org_id = n.org_id AND f.subject = n.canonical_name) AS fact_count
+            FROM graph_nodes n
+            WHERE n.org_id = :org_id AND n.type = 'entity'
+            ORDER BY edge_count DESC
         """),
         {"org_id": org_id},
     ).fetchall()
@@ -203,25 +194,14 @@ def export_graph_csv(org_id: str, db: Session = Depends(get_db)):
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "id", "name", "email", "company", "entity_type",
-        "relationship_stage", "last_interaction_at",
-        "interaction_count", "sentiment_avg",
-        "freshness_score", "confidence_score", "consistency_score",
-        "authority_score", "context_score", "response_rate",
-        "avg_response_time_hours", "is_bidirectional", "community_id",
+        "id", "name", "type", "company", "relationship_stage",
+        "last_seen", "edge_count", "fact_count",
     ])
-    for c in contacts:
+    for r in rows:
         writer.writerow([
-            str(c[0]), c[1] or "", c[2] or "", c[3] or "", c[4] or "",
-            c[5] or "", c[6].isoformat() if c[6] else "",
-            c[7] or 0, round(float(c[8] or 0), 3),
-            round(float(c[9] or 0), 3), round(float(c[10] or 0), 3),
-            round(float(c[11] or 0), 3), round(float(c[12] or 0), 3),
-            round(float(c[13] or 0), 3),
-            round(float(c[14] or 0), 3) if c[14] else "",
-            round(float(c[15] or 0), 1) if c[15] else "",
-            str(c[16]).lower() if c[16] is not None else "false",
-            c[17] or "",
+            str(r[0]), r[1] or "", r[2] or "", r[3] or "", r[4] or "",
+            r[5].isoformat() if r[5] else "",
+            int(r[6] or 0), int(r[7] or 0),
         ])
 
     output.seek(0)
@@ -244,201 +224,138 @@ def get_network_health(org_id: str, db: Session = Depends(get_db)):
 
 @router.get("/api/org/{org_id}/edge/{contact_id}")
 def get_edge_detail(org_id: str, contact_id: str, db: Session = Depends(get_db)):
+    """Entity detail panel — facts + edges from v2 graph schema.
+
+    v1 returned thread-level email metadata (sentiment trajectory, reply-time
+    bins, last-3-threads). v2 doesn't store per-message data (thin pipe by
+    design), so we return the structurally-equivalent shape sourced from
+    facts + edges instead.
     """
-    Edge click detail — per PDF spec §6.
-    When you click an edge between your org and a person, shows:
-    - All email threads in that relationship, sorted by date
-    - Sentiment trajectory
-    - Topic clustering
-    - Response time analysis
-    - Last 3 thread summaries
-    """
-    # All interactions for this contact
-    interactions = db.execute(
+    node = db.execute(
         text("""
-            SELECT subject, summary, sentiment, intent, topics,
-                interaction_at, direction, interaction_type, weight_score,
-                signal_score, reply_time_hours, mentioned_people
-            FROM interactions
-            WHERE contact_id = :contact_id AND org_id = :org_id
-            ORDER BY interaction_at DESC
-            LIMIT 50
+            SELECT id, canonical_name, type, attributes, last_seen
+            FROM graph_nodes WHERE id = :id AND org_id = :org_id
         """),
-        {"contact_id": contact_id, "org_id": org_id}
+        {"id": contact_id, "org_id": org_id},
+    ).fetchone()
+    if not node:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    attrs = node[3] if isinstance(node[3], dict) else {}
+    name = node[1]
+    company = attrs.get("company")
+
+    facts = db.execute(
+        text("""
+            SELECT predicate, object, confidence, created_at
+            FROM facts WHERE org_id = :org_id AND subject = :name
+            ORDER BY created_at DESC LIMIT 50
+        """),
+        {"org_id": org_id, "name": name},
     ).fetchall()
 
-    # Sentiment trajectory
-    sentiment_trajectory = [
-        {
-            "date": r[5].isoformat() if r[5] else None,
-            "sentiment": float(r[2] or 0),
-            "direction": r[6],
-        } for r in interactions
-    ]
+    edges = db.execute(
+        text("""
+            SELECT type, weight, asserted_at,
+                   CASE WHEN from_node = :nid THEN to_node ELSE from_node END AS other_id
+            FROM graph_edges
+            WHERE org_id = :org_id AND (from_node = :nid OR to_node = :nid)
+            ORDER BY asserted_at DESC LIMIT 50
+        """),
+        {"org_id": org_id, "nid": contact_id},
+    ).fetchall()
 
-    # Topic clustering
-    topic_counts = {}
-    for r in interactions:
-        for t in (r[4] or []):
-            topic_counts[t] = topic_counts.get(t, 0) + 1
+    topic_counts: dict[str, int] = {}
+    last_threads = []
+    for predicate, obj, conf, ts in facts:
+        if predicate == "interested_in":
+            topic_counts[obj] = topic_counts.get(obj, 0) + 1
+        if len(last_threads) < 3:
+            last_threads.append({
+                "subject": predicate,
+                "summary": str(obj)[:200],
+                "sentiment": float(conf or 0),
+                "direction": "fact",
+                "date": ts.isoformat() if ts else None,
+            })
     top_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-
-    # Response time analysis
-    reply_times = [float(r[10]) for r in interactions if r[10] and r[10] > 0]
-    avg_reply_time = round(sum(reply_times) / len(reply_times), 1) if reply_times else None
-    reply_speed = "fast" if avg_reply_time and avg_reply_time < 4 else "moderate" if avg_reply_time and avg_reply_time < 24 else "slow" if avg_reply_time else "unknown"
-
-    # Last 3 thread summaries
-    last_threads = [
-        {
-            "subject": r[0], "summary": r[1],
-            "sentiment": float(r[2] or 0), "direction": r[6],
-            "date": r[5].isoformat() if r[5] else None,
-        } for r in interactions[:3]
-    ]
-
-    # PDF spec §6: company-level aggregation — who else at that company
-    contact_row = db.execute(
-        text("SELECT company, company_domain FROM contacts WHERE id = :id AND org_id = :org_id"),
-        {"id": contact_id, "org_id": org_id}
-    ).fetchone()
-
-    company_name = contact_row[0] if contact_row else None
-    company_domain = contact_row[1] if contact_row else None
-
-    company_contacts = []
-    if company_domain:
-        cc_rows = db.execute(
-            text("""
-                SELECT name, email, entity_type, sentiment_avg, interaction_count
-                FROM contacts
-                WHERE org_id = :org_id AND company_domain = :domain
-                AND id != :contact_id
-                AND entity_type != 'self'
-                AND (is_archived = FALSE OR is_archived IS NULL)
-                ORDER BY interaction_count DESC
-                LIMIT 5
-            """),
-            {"org_id": org_id, "domain": company_domain, "contact_id": contact_id}
-        ).fetchall()
-        company_contacts = [
-            {
-                "name": r[0], "email": r[1], "entity_type": r[2],
-                "sentiment_avg": float(r[3] or 0), "interaction_count": r[4] or 0,
-            } for r in cc_rows
-        ]
-
-    # Response time breakdown
-    fast_count = sum(1 for t in reply_times if t < 4)
-    moderate_count = sum(1 for t in reply_times if 4 <= t < 24)
-    slow_count = sum(1 for t in reply_times if t >= 24)
 
     return {
         "contact_id": contact_id,
-        "contact_name": contact_row[0] if contact_row else None,
-        "company": company_name,
-        "total_interactions": len(interactions),
-        "sentiment_trajectory": sentiment_trajectory,
+        "contact_name": name,
+        "company": company,
+        "total_interactions": len(edges),
+        "sentiment_trajectory": [],
         "topic_clusters": [{"topic": t[0], "count": t[1]} for t in top_topics],
-        "response_time": {
-            "avg_hours": avg_reply_time,
-            "fast": fast_count,
-            "moderate": moderate_count,
-            "slow": slow_count,
-        },
+        "response_time": {"avg_hours": None, "fast": 0, "moderate": 0, "slow": 0},
         "last_3_threads": last_threads,
-        "company_contacts": company_contacts,
+        "company_contacts": [],
     }
 
 
 @router.get("/api/org/{org_id}/company/{domain}")
 def get_company_aggregate(org_id: str, domain: str, db: Session = Depends(get_db)):
-    """
-    Company node view — per PDF spec §6.
-    When you click a company node edge, shows:
-    - Who else at that company is in your graph
-    - Aggregate sentiment across all contacts at that company
-    - Whether you have multiple open commitments with same org
-    """
-    contacts = db.execute(
+    """Company aggregate — entities whose company attribute matches the domain."""
+    rows = db.execute(
         text("""
-            SELECT id, name, email, entity_type, relationship_stage,
-                sentiment_avg, interaction_count, last_interaction_at,
-                is_bidirectional, confidence_score
-            FROM contacts
-            WHERE org_id = :org_id AND company_domain = :domain
-            AND relationship_stage IS NOT NULL AND relationship_stage != 'unknown'
-            ORDER BY interaction_count DESC
+            SELECT n.id, n.canonical_name, n.attributes, n.last_seen,
+                   (SELECT COUNT(*) FROM graph_edges e
+                      WHERE e.org_id = n.org_id AND (e.from_node = n.id OR e.to_node = n.id)) AS edge_count
+            FROM graph_nodes n
+            WHERE n.org_id = :org_id
+              AND n.type = 'entity'
+              AND (LOWER(COALESCE(n.attributes->>'company', '')) LIKE :pat
+                OR LOWER(COALESCE(n.attributes->>'company_domain', '')) = :dom)
+            ORDER BY edge_count DESC
         """),
-        {"org_id": org_id, "domain": domain.lower()}
+        {"org_id": org_id, "pat": f"%{domain.lower()}%", "dom": domain.lower()},
     ).fetchall()
 
-    if not contacts:
+    if not rows:
         raise HTTPException(status_code=404, detail=f"No contacts found at domain {domain}")
-
-    # Aggregate sentiment
-    sentiments = [float(c[5] or 0) for c in contacts]
-    avg_sentiment = round(sum(sentiments) / len(sentiments), 2) if sentiments else 0
-
-    # Open commitments across all contacts at this company
-    contact_ids = [str(c[0]) for c in contacts]
-    commitments = db.execute(
-        text("""
-            SELECT cm.commit_text, cm.owner, cm.due_date, cm.status, c.name
-            FROM commitments cm
-            JOIN contacts c ON cm.contact_id = c.id
-            WHERE cm.contact_id = ANY(:contact_ids)
-            AND cm.status IN ('OPEN', 'OVERDUE', 'SOFT')
-            ORDER BY cm.due_date ASC NULLS LAST
-        """),
-        {"contact_ids": contact_ids}
-    ).fetchall()
 
     return {
         "domain": domain,
-        "company_name": contacts[0][2].split("@")[1].split(".")[0].title() if contacts else domain,
-        "total_contacts": len(contacts),
-        "aggregate_sentiment": avg_sentiment,
+        "company_name": rows[0][2].get("company") if isinstance(rows[0][2], dict) else domain,
+        "total_contacts": len(rows),
+        "aggregate_sentiment": 0.0,
         "contacts": [
             {
-                "id": str(c[0]), "name": c[1], "email": c[2],
-                "entity_type": c[3], "relationship_stage": c[4],
-                "sentiment_avg": float(c[5] or 0),
-                "interaction_count": c[6],
-                "last_interaction_at": c[7].isoformat() if c[7] else None,
-                "is_bidirectional": bool(c[8]),
-            } for c in contacts
+                "id": str(r[0]),
+                "name": r[1],
+                "email": (r[2] or {}).get("email") if isinstance(r[2], dict) else None,
+                "entity_type": "person",
+                "relationship_stage": (r[2] or {}).get("relationship_stage") if isinstance(r[2], dict) else "active",
+                "sentiment_avg": 0.0,
+                "interaction_count": int(r[4] or 0),
+                "last_interaction_at": r[3].isoformat() if r[3] else None,
+                "is_bidirectional": False,
+            } for r in rows
         ],
-        "open_commitments": [
-            {
-                "text": r[0], "owner": r[1],
-                "due_date": r[2].strftime("%Y-%m-%d") if r[2] else None,
-                "status": r[3], "contact_name": r[4],
-            } for r in commitments
-        ],
+        "open_commitments": [],
     }
 
 
 @router.get("/api/org/{org_id}/graph/filter/topic")
 def filter_graph_by_topic(org_id: str, topic: str, db: Session = Depends(get_db)):
-    """
-    Topic-based graph filtering — per PDF spec §10.
-    Type a topic → filter graph to show only nodes where that topic appeared.
-    """
-    contacts = db.execute(
+    """Entities whose facts include this topic (object match on 'interested_in')."""
+    rows = db.execute(
         text("""
-            SELECT DISTINCT c.id, c.name, c.email, c.company,
-                c.relationship_stage, c.entity_type, c.interaction_count,
-                c.sentiment_avg, c.last_interaction_at
-            FROM contacts c
-            JOIN interactions i ON i.contact_id = c.id AND i.org_id = c.org_id
-            WHERE c.org_id = :org_id
-            AND :topic = ANY(i.topics)
-            AND c.relationship_stage IS NOT NULL AND c.relationship_stage != 'unknown'
-            ORDER BY c.interaction_count DESC
+            SELECT DISTINCT n.id, n.canonical_name, n.attributes, n.last_seen
+            FROM graph_nodes n
+            JOIN facts f ON f.org_id = n.org_id AND f.subject = n.canonical_name
+            WHERE n.org_id = :org_id
+              AND n.type = 'entity'
+              AND (LOWER(f.object) LIKE :topic OR f.predicate = :topic_raw)
         """),
-        {"org_id": org_id, "topic": topic}
+        {"org_id": org_id, "topic": f"%{topic.lower()}%", "topic_raw": topic},
     ).fetchall()
+
+    contacts = [
+        (r[0], r[1], (r[2] or {}).get("email"), (r[2] or {}).get("company"),
+         (r[2] or {}).get("relationship_stage", "active"), "person", 0, 0.0, r[3])
+        for r in rows
+    ]
 
     return {
         "topic": topic,

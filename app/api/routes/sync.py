@@ -126,17 +126,17 @@ def get_sync_status(org_id: str, db: Session = Depends(get_db)):
     if not all_tokens:
         return {"synced": False, "last_sync": None, "accounts": []}
 
-    # Aggregate stats across all accounts
+    # v2 thin-pipe: count entities + facts from graph_nodes/facts (v1
+    # contacts/interactions tables dropped in mig 0015).
     stats = db.execute(
         text(
             """
             SELECT
-                COUNT(DISTINCT c.id) as contacts_count,
-                COUNT(i.id) as interactions_count
-            FROM contacts c
-            LEFT JOIN interactions i ON i.contact_id = c.id
-            WHERE c.org_id = :org_id
-        """
+                (SELECT COUNT(*) FROM graph_nodes
+                   WHERE org_id = :org_id AND type = 'entity') AS contacts_count,
+                (SELECT COUNT(*) FROM facts
+                   WHERE org_id = :org_id)                     AS interactions_count
+            """
         ),
         {"org_id": org_id},
     ).fetchone()
