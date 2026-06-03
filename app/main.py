@@ -65,20 +65,17 @@ from app.api.routes import messages as messages_routes
 from app.api.routes import benchmarks as benchmarks_routes
 from app.api.routes import activity as activity_routes  # Phase 9
 
-# v2 brain routers — single backend, same process. Routes mounted at /v1/*
+# v2 brain routers — single backend, single process. Routes mounted at /v1/*
 # (intelligence, metrics, persona, mapping, audit, ingest). Auth is shared
-# via the v1 JWT cookie/Bearer + api_keys table (see core/api/deps.py).
-import sys as _sys, pathlib as _pathlib
-_PROJECT_ROOT = _pathlib.Path(__file__).resolve().parents[2]  # genios-brain/
-if str(_PROJECT_ROOT) not in _sys.path:
-    _sys.path.insert(0, str(_PROJECT_ROOT))
-from core.api import audit as v2_audit_router  # noqa: E402
-from core.api import health as v2_health_router  # noqa: E402
-from core.api import ingestion as v2_ingestion_router  # noqa: E402
-from core.api import intelligence as v2_intelligence_router  # noqa: E402
-from core.api import mapping as v2_mapping_router  # noqa: E402
-from core.api import metrics as v2_metrics_router  # noqa: E402
-from core.api import usermodel as v2_usermodel_router  # noqa: E402
+# via the JWT cookie/Bearer + api_keys table (see core/api/deps.py).
+# `core` and `app` are sibling top-level packages at the brain repo root.
+from core.api import audit as v2_audit_router
+from core.api import health as v2_health_router
+from core.api import ingestion as v2_ingestion_router
+from core.api import intelligence as v2_intelligence_router
+from core.api import mapping as v2_mapping_router
+from core.api import metrics as v2_metrics_router
+from core.api import usermodel as v2_usermodel_router
 
 logger = logging.getLogger(__name__)
 
