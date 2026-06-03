@@ -1,13 +1,17 @@
 import hashlib
 import json
+import os
 import time
 import logging
+import jwt
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.policy.scope_loader import AuthCtx, resolve as resolve_scope
+
+JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -81,24 +85,60 @@ def _api_key_cache_invalidate(hashed: str) -> None:
         pass
 
 
+def _verify_jwt_and_stash_ctx(token: str, request: Request) -> str | None:
+    """Decode dashboard-session JWT (issued by /auth/login) and return org_id.
+
+    Stateless — no DB or Redis hit. JWT shape: {org_id, email, exp}. Returns
+    None on any decode failure (caller treats as auth miss). On success,
+    stashes a legacy-scope AuthCtx onto `request.state.auth` so scope-aware
+    endpoints (`Depends(get_auth_ctx)`) continue to work for browser users
+    with the owner's full scope.
+    """
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        return None
+    org_id = payload.get("org_id") or payload.get("org") or payload.get("sub")
+    if not org_id:
+        return None
+    org_id = str(org_id)
+    request.state.auth = AuthCtx(org_id=org_id, scope_source="jwt")
+    return org_id
+
+
 def verify_api_key(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
     """
-    Verify API key and return org_id (signature preserved — 16+ callers).
+    Resolve org_id from either a dashboard JWT or a `gn_live_...` API key.
 
-    On success this also stashes an `AuthCtx` (org_id, agent, scope policy,
-    scope_source) onto `request.state.auth`. Endpoints that want scope
-    enforcement use `Depends(get_auth_ctx)` to read it; other endpoints
-    keep working unchanged.
+    Two credential shapes accepted on the same `Authorization: Bearer ...` header:
 
-    Cached in Redis 60s. Cache invalidates on key rotation / scope edit
-    via `_api_key_cache_invalidate` and `scope_loader.invalidate`.
+      • JWT (browser/dashboard) — 3 dot-separated segments, no `gn_` prefix.
+        Stateless verify, no Redis/DB hit. Used by the dashboard UI.
+
+      • API key `gn_live_...` (customer agents / integrations) — hashed lookup
+        against `orgs.api_key_hash` or `api_keys.key_hash`. Cached in Redis 60s.
+        Carries per-agent scope/policy via `AuthCtx`. This is the product
+        credential — customer mints multiple keys, each with its own scope.
+
+    Both paths stash an `AuthCtx` on `request.state.auth` for `get_auth_ctx`.
+    Signature preserved (returns org_id string) — all 57 existing callers
+    work unchanged.
     """
     check_kill_switch()
 
     token = credentials.credentials
+
+    # ── Path 1: JWT (dashboard session) — stateless, no Redis ─────────────
+    if token.count(".") == 2 and not token.startswith("gn_"):
+        org_id = _verify_jwt_and_stash_ctx(token, request)
+        if org_id is not None:
+            return org_id
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+
+    # ── Path 2: API key (programmatic / customer agents) ──────────────────
     if not token.startswith("gn_live_"):
         raise HTTPException(status_code=401, detail="Invalid API Key format")
 

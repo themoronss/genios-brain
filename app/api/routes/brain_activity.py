@@ -15,10 +15,11 @@ All queries are cheap (indexed) and org-scoped. Intended to be polled every
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -34,14 +35,70 @@ def _detector_counter_key(org_id: str, insight_type: str, bucket_hour: str) -> s
     return f"brain:detector_fires:{org_id}:{insight_type}:{bucket_hour}"
 
 
+def _activity_etag(db: Session, org_id: str, hours: int) -> str:
+    """Cheap fingerprint of brain-activity sources.
+
+    Polled every 5s from the dashboard — most ticks have no change. The fingerprint
+    rolls up the latest mutation timestamp + row count from `recommendations` (only
+    DB source — table has no `updated_at`, so we take the max of created_at and
+    outcome_at to capture both new pushes and feedback). Combined with the Redis
+    router-tick signal so a live brain bumps the ETag too. When nothing has moved
+    the endpoint short-circuits to 304 Not Modified (no aggregate queries).
+    """
+    row = db.execute(
+        text("""
+            SELECT
+                COALESCE(MAX(GREATEST(
+                    created_at,
+                    COALESCE(outcome_at, '-infinity'::timestamptz)
+                ))::text, 'epoch') AS r_max,
+                COUNT(*) AS r_n
+            FROM recommendations
+            WHERE org_id = :oid
+        """),
+        {"oid": org_id},
+    ).fetchone()
+    try:
+        last_tick = redis_client.get(f"brain:router:last_tick:{org_id}") or ""
+        last_consumed = redis_client.get(f"brain:router:last_consumed:{org_id}") or ""
+    except Exception:
+        last_tick, last_consumed = "", ""
+    r_max = row.r_max if row else "epoch"
+    r_n = row.r_n if row else 0
+    raw = f"{org_id}|{hours}|{r_max}|{r_n}|{last_tick}|{last_consumed}"
+    return 'W/"' + hashlib.md5(raw.encode()).hexdigest()[:16] + '"'
+
+
 @router.get("/v1/admin/brain/activity")
 def brain_activity(
+    request: Request,
+    response: Response,
     hours: int = 24,
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
     """Live snapshot of brain activity for the dashboard."""
     hours = max(1, min(168, int(hours)))  # cap 7 days
+
+    # ── Cheap fingerprint check — 304 when nothing changed ──────────────────
+    try:
+        etag = _activity_etag(db, org_id, hours)
+        if request.headers.get("if-none-match") == etag:
+            return Response(
+                status_code=304,
+                headers={"ETag": etag, "Cache-Control": "private, no-cache"},
+            )
+        response.headers["ETag"] = etag
+        response.headers["Cache-Control"] = "private, no-cache"
+    except Exception as e:
+        # Postgres aborts the session on any error inside a transaction — rollback
+        # so the aggregate queries below can run on a clean session.
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        logger.warning(f"brain_activity ETag failed (continuing without 304): {e}")
+
     since = datetime.now(timezone.utc) - timedelta(hours=hours)
 
     # ── Recommendations pushed, by hour ──────────────────────────────────────

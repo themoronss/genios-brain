@@ -197,6 +197,17 @@ async def lifespan(app: FastAPI):
     work now runs in separate Celery worker processes.
     """
     logger.info("✓ App started. Sync scheduling handled by Celery Beat.")
+
+    # v2 brain — load every installed module and register its query +
+    # graph_view handlers with the intelligence router. Without this,
+    # POST /v1/intelligence/query returns 503 ("module ... has no handler").
+    try:
+        from core.modules_framework.bootstrap import bootstrap_modules
+        loaded = bootstrap_modules()
+        logger.info(f"✓ Loaded {len(loaded)} v2 module(s): {sorted(loaded.keys())}")
+    except Exception as e:
+        logger.exception(f"v2 module bootstrap failed (non-fatal): {e}")
+
     yield
     logger.info("App shutting down.")
     # Flush queued analytics events so the last batch isn't lost on restart.
