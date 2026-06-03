@@ -28,9 +28,13 @@ def _utcnow() -> datetime:
 
 
 class InsightRow(Base):
-    """Generated insight. One row per fired insight (before dedupe suppression)."""
+    """Generated insight. One row per fired insight (before dedupe suppression).
 
-    __tablename__ = "insights"
+    Table is named `proactive_insights` (not `insights`) so v1's legacy
+    `insights` recommendations table can coexist in the same DB.
+    """
+
+    __tablename__ = "proactive_insights"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     org_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)

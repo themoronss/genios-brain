@@ -21,7 +21,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core import __version__
 from core.api import audit as audit_router
-from core.api import auth as auth_router
 from core.api import health as health_router
 from core.api import (
     ingestion,
@@ -65,8 +64,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
-app.include_router(auth_router.router)
+# Routers — auth lives on v1 backend (POST /auth/* against legacy stack).
+# v2 brain validates requests via Bearer api_key OR JWT (shared secret) OR
+# X-Dev-Org header (dev only) — see core/api/deps.py.
 app.include_router(intelligence.router)
 app.include_router(metrics.router)
 app.include_router(usermodel.router)

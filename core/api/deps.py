@@ -1,28 +1,30 @@
 """Shared FastAPI dependencies — DB session + auth.
 
-Auth resolution order for `require_org`:
+v1 stack owns human auth (signup/login/JWT). v2 brain validates inbound
+requests using the SAME orgs/api_keys tables v1 created. No second auth
+system; one source of truth.
 
-1. JWT (browser flow)        — cookie `genios_session` OR Bearer <jwt>
-2. API key (integration)     — Bearer <api_key>; resolves via SecretRef → AgentRegistry
-3. X-Dev-Org (dev only)      — convenience header, refused when GENIOS_ENV=production
-
-Returns the org_id (string) on success; raises 401 on failure.
+`require_org` resolution order:
+  1. JWT (cookie 'genios_session' OR 'Authorization: Bearer <jwt>') —
+     decoded with shared JWT_SECRET; reads org_id claim (v1 shape).
+  2. Bearer API key — sha256(key) looked up in v1's `api_keys` table
+     (or hash_api_key column on `orgs` row for legacy 1-key-per-org accounts).
+  3. X-Dev-Org — dev convenience header, refused when GENIOS_ENV=production.
 """
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Iterator
 
+import jwt
 from fastapi import Depends, Header, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from core.delivery.store import AgentRegistryRow
 from core.foundations.config import settings
 from core.foundations.db import get_session
-from core.foundations.jwt_session import JWTError, decode_session
 from core.foundations.telemetry import get_logger
-from core.memory.store import SecretRef
 
 log = get_logger(__name__)
 SESSION_COOKIE = "genios_session"
@@ -41,30 +43,25 @@ def require_org(
     x_dev_org: str | None = Header(default=None, alias="X-Dev-Org"),
 ) -> str:
     """Resolve org_id from JWT cookie, JWT bearer, API-key bearer, or X-Dev-Org."""
-    # 1. JWT cookie
     jwt_token = request.cookies.get(SESSION_COOKIE)
-
-    # 2. Bearer can be JWT or API key — disambiguate by shape
     api_key: str | None = None
+
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization.split(None, 1)[1].strip()
         if token:
-            # JWTs are 3 dot-separated segments and don't use our gn_ prefix
+            # JWTs are 3 dot-separated segments and don't use the v1 'gn_' prefix
             if token.count(".") == 2 and not token.startswith("gn_"):
                 jwt_token = jwt_token or token
             else:
                 api_key = token
 
     if jwt_token:
-        try:
-            claims = decode_session(jwt_token)
-            return str(claims["org"])
-        except (JWTError, KeyError):
-            # Fall through — maybe the request also has an API key or dev header
-            pass
+        org_id = _org_from_jwt(jwt_token)
+        if org_id is not None:
+            return org_id
 
     if api_key:
-        org_id = _lookup_org_for_api_key(session, api_key)
+        org_id = _org_from_api_key(session, api_key)
         if org_id is not None:
             return org_id
         raise HTTPException(
@@ -80,31 +77,48 @@ def require_org(
     )
 
 
-def _lookup_org_for_api_key(session: Session, api_key: str) -> str | None:
-    """Resolve api_key → org_id via SecretRef → AgentRegistry chain.
+def _org_from_jwt(token: str) -> str | None:
+    """Decode a v1-shape JWT ({org_id, email, exp}) and return org_id."""
+    if not settings.JWT_SECRET:
+        return None
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        return None
+    org_id = payload.get("org_id") or payload.get("org") or payload.get("sub")
+    return str(org_id) if org_id else None
 
-    Each agent's ciphertext is decrypted + compared. Small N (handful of
-    agents per org) keeps this acceptable for v1; a hash-prefix index can
-    land when N grows.
+
+def _org_from_api_key(session: Session, raw_key: str) -> str | None:
+    """Look up `raw_key` against v1's auth tables.
+
+    Two storage paths exist (v1 evolved):
+      (a) `orgs.api_key` — legacy 1-key-per-org accounts (column is plaintext OR
+          its sha256 hash, depending on age — try both)
+      (b) `api_keys.key_hash` — multi-key-per-org (added in v1 migration 034)
+
+    Returns the resolved org_id (UUID string) or None on no match.
     """
-    from core.foundations.encryption import decrypt
+    hashed = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
-    agents = (
-        session.execute(
-            select(AgentRegistryRow).where(AgentRegistryRow.api_key_ref.is_not(None))
-        )
-        .scalars()
-        .all()
-    )
-    for agent in agents:
-        if agent.api_key_ref is None:
-            continue
-        secret = session.get(SecretRef, agent.api_key_ref)
-        if secret is None:
-            continue
-        try:
-            if decrypt(secret.encrypted_value) == api_key:
-                return agent.org_id
-        except Exception:  # noqa: S112 — one bad cipher must not block other matches
-            continue
+    # Path (b): api_keys.key_hash. Most recent + supports rotation.
+    row = session.execute(
+        text(
+            "SELECT org_id FROM api_keys "
+            "WHERE key_hash = :h AND is_active = TRUE "
+            "LIMIT 1"
+        ),
+        {"h": hashed},
+    ).fetchone()
+    if row is not None:
+        return str(row[0])
+
+    # Path (a): legacy `orgs.api_key`. Plaintext match OR sha256 match.
+    row = session.execute(
+        text("SELECT id FROM orgs WHERE api_key = :raw OR api_key = :h LIMIT 1"),
+        {"raw": raw_key, "h": hashed},
+    ).fetchone()
+    if row is not None:
+        return str(row[0])
+
     return None

@@ -18,7 +18,17 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, verify_api_key
-from scripts.gdpr_delete import run as gdpr_run
+
+# gdpr_delete script is not in this repo (lived in deploy infra). Stub so the
+# v1 backend can boot — POST /v1/admin/delete just returns 501 until restored.
+try:
+    from scripts.gdpr_delete import run as gdpr_run  # type: ignore
+except ImportError:
+    def gdpr_run(org_id, entity_id, dry_run=True):  # type: ignore
+        raise NotImplementedError(
+            "gdpr_delete script not present in this checkout. "
+            "Restore scripts/gdpr_delete.py from deploy infra to enable."
+        )
 
 logger = logging.getLogger(__name__)
 
