@@ -513,9 +513,24 @@ async def jira_callback(state: str, code: str, background_tasks: BackgroundTasks
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "jira"})
 
-    from app.tasks.jira_sync import run_jira_sync
-    background_tasks.add_task(run_jira_sync, org_id)
+    from core.memory.adapters.known.jira import register_v2_jira_connection
+    v2_cid = register_v2_jira_connection(
+        org_id=org_id, cloud_id=cloud_id, access_token=access_token,
+        refresh_token=refresh_token, created_by=org_id,
+    )
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
 
+    def _sync_jira() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=50)
+                logging.getLogger(__name__).info(f"jira sync done: emitted={r.items_emitted}")
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"jira sync failed: {e}")
+
+    background_tasks.add_task(_sync_jira)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
@@ -687,9 +702,24 @@ async def gsheets_callback(state: str, code: str, background_tasks: BackgroundTa
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gsheets"})
 
-    from app.tasks.sheets_sync import run_sheets_sync
-    background_tasks.add_task(run_sheets_sync, org_id)
+    from core.memory.adapters.known.gsheets import register_v2_gsheets_connection
+    v2_cid = register_v2_gsheets_connection(
+        org_id=org_id, account_email=connected_email, access_token=creds.token,
+        refresh_token=creds.refresh_token, created_by=org_id,
+    )
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
 
+    def _sync_sh() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=20)
+                logging.getLogger(__name__).info(f"gsheets sync done: emitted={r.items_emitted}")
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"gsheets sync failed: {e}")
+
+    background_tasks.add_task(_sync_sh)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
@@ -774,9 +804,24 @@ async def gdrive_callback(state: str, code: str, background_tasks: BackgroundTas
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gdrive"})
 
-    from app.tasks.drive_sync import run_drive_sync
-    background_tasks.add_task(run_drive_sync, org_id)
+    from core.memory.adapters.known.drive import register_v2_drive_connection
+    v2_cid = register_v2_drive_connection(
+        org_id=org_id, account_email=connected_email, access_token=creds.token,
+        refresh_token=creds.refresh_token, created_by=org_id,
+    )
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
 
+    def _sync_drv() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=50)
+                logging.getLogger(__name__).info(f"drive sync done: emitted={r.items_emitted}")
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"drive sync failed: {e}")
+
+    background_tasks.add_task(_sync_drv)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
@@ -860,9 +905,24 @@ async def gdocs_callback(state: str, code: str, background_tasks: BackgroundTask
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gdocs"})
 
-    from app.tasks.docs_sync import run_docs_sync
-    background_tasks.add_task(run_docs_sync, org_id)
+    from core.memory.adapters.known.gdocs import register_v2_gdocs_connection
+    v2_cid = register_v2_gdocs_connection(
+        org_id=org_id, account_email=connected_email, access_token=creds.token,
+        refresh_token=creds.refresh_token, created_by=org_id,
+    )
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
 
+    def _sync_docs() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=20)
+                logging.getLogger(__name__).info(f"gdocs sync done: emitted={r.items_emitted}")
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"gdocs sync failed: {e}")
+
+    background_tasks.add_task(_sync_docs)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
@@ -1495,8 +1555,25 @@ async def hubspot_callback(state: str, code: str, background_tasks: BackgroundTa
     finally:
         db.close()
 
-    # Kick off initial sync in background
-    from app.tasks.hubspot_sync import run_hubspot_sync
-    background_tasks.add_task(run_hubspot_sync, org_id)
+    # Per g-i-1 plan: thin pipe via core.memory.adapters.known.hubspot.
+    from core.memory.adapters.known.hubspot import register_v2_hubspot_connection
+    v2_cid = register_v2_hubspot_connection(
+        org_id=org_id, portal_id=str(hub_id),
+        access_token=token_data["access_token"],
+        refresh_token=token_data.get("refresh_token", ""),
+        created_by=org_id,
+    )
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
 
+    def _sync_hs() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=50)
+                logging.getLogger(__name__).info(f"hubspot sync done: emitted={r.items_emitted}")
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"hubspot sync failed: {e}")
+
+    background_tasks.add_task(_sync_hs)
     return RedirectResponse(f"{INTEGRATIONS_REDIRECT}?connected=hubspot")

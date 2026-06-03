@@ -48,6 +48,11 @@ def known_source_types() -> list[str]:
 # Each adapter module ends with `register_adapter("<name>", <factory>)`.
 from core.memory.adapters.custom import runtime as _custom_runtime  # noqa: E402, F401
 from core.memory.adapters.known import calendar as _calendar  # noqa: E402, F401
+from core.memory.adapters.known import drive as _drive  # noqa: E402, F401
+from core.memory.adapters.known import gdocs as _gdocs  # noqa: E402, F401
 from core.memory.adapters.known import gmail as _gmail  # noqa: E402, F401
+from core.memory.adapters.known import gsheets as _gsheets  # noqa: E402, F401
+from core.memory.adapters.known import hubspot as _hubspot  # noqa: E402, F401
+from core.memory.adapters.known import jira as _jira  # noqa: E402, F401
 from core.memory.adapters.known import notion as _notion  # noqa: E402, F401
 from core.memory.adapters.known import slack as _slack  # noqa: E402, F401
