@@ -86,88 +86,27 @@ def get_context_overview(org_id: str, db: Session = Depends(get_db)):
 @router.get("/api/org/{org_id}/facts")
 def get_active_facts(
     org_id: str,
-    fact_type: Optional[str] = None,
-    min_score: float = 0.0,
-    entity_name: Optional[str] = None,
+    fact_type: str | None = None,
+    min_score: float = 0.0,  # accepted for back-compat; v2 facts don't carry composite score
+    entity_name: str | None = None,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
 ):
-    """List all active facts (contacts with scored data) for the facts table."""
-    try:
-        where_clauses = ["c.org_id = :org_id", "c.interaction_count > 0"]
-        params: dict = {"org_id": org_id, "limit": limit, "offset": offset}
+    """Per g-i-1 plan: facts list straight from v2 facts table (S-P-O grounded)."""
+    from core.foundations.db import get_session as _v2s
+    from core.graph.views import list_facts as _v2_list_facts
 
-        if min_score > 0:
-            where_clauses.append("c.context_score >= :min_score")
-            params["min_score"] = min_score
+    with _v2s() as s:
+        return _v2_list_facts(
+            s,
+            org_id=org_id,
+            subject=entity_name,
+            predicate=fact_type,
+            limit=limit,
+            offset=offset,
+        )
 
-        if entity_name:
-            where_clauses.append("c.name ILIKE :entity_name")
-            params["entity_name"] = f"%{entity_name}%"
-
-        if fact_type:
-            where_clauses.append("c.entity_type = :fact_type")
-            params["fact_type"] = fact_type
-
-        where_sql = " AND ".join(where_clauses)
-
-        results = db.execute(
-            text(f"""
-                SELECT
-                    c.id, c.name, c.email, c.company, c.entity_type,
-                    c.relationship_stage, c.freshness_score, c.confidence_score,
-                    c.consistency_score, c.authority_score, c.context_score,
-                    c.last_interaction_at, c.interaction_count, c.sentiment_avg,
-                    c.topics_aggregate
-                FROM contacts c
-                WHERE {where_sql}
-                ORDER BY c.context_score DESC NULLS LAST
-                LIMIT :limit OFFSET :offset
-            """),
-            params,
-        ).fetchall()
-
-        total = db.execute(
-            text(f"SELECT COUNT(*) FROM contacts c WHERE {where_sql}"),
-            {k: v for k, v in params.items() if k not in ('limit', 'offset')},
-        ).scalar() or 0
-
-        return {
-            "facts": [
-                {
-                    "id": str(r[0]),
-                    "entity": r[1],
-                    "email": r[2],
-                    "company": r[3],
-                    "entity_type": r[4],
-                    "relationship_stage": r[5],
-                    "freshness": round(float(r[6] or 0), 3),
-                    "confidence": round(float(r[7] or 0), 3),
-                    "consistency": round(float(r[8] or 0), 3),
-                    "authority": round(float(r[9] or 0), 3),
-                    "composite": round(float(r[10] or 0), 3),
-                    "last_confirmed": r[11].isoformat() if hasattr(r[11], 'isoformat') else str(r[11]) if r[11] else None,
-                    "interaction_count": r[12] or 0,
-                    "sentiment_avg": round(float(r[13] or 0), 3),
-                    "topics": r[14] if r[14] else [],
-                }
-                for r in results
-            ],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
-    except Exception as e:
-        logger.error(f"Facts listing error: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ── Tab 3: Lifecycle Activity ────────────────────────────────────────────
 
 @router.get("/api/org/{org_id}/facts/lifecycle")
 def get_lifecycle_activity(
