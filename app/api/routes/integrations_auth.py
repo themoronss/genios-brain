@@ -151,9 +151,14 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
     # Startup plan: subscribe to Gmail push notifications (per-message delta).
     # Push notifications still rely on v1's watch + webhook handler for now —
     # next sweep moves that to a v2 webhook adapter wired via emit().
-    plan_info = get_org_plan(db, org_id)
-    if plan_info["tier"] == "startup":
-        background_tasks.add_task(_setup_gmail_watch, org_id, connected_email, access_token, refresh_token)
+    from app.plan_enforcer import get_org_plan
+    plan_db = SessionLocal()
+    try:
+        plan_info = get_org_plan(plan_db, org_id)
+        if plan_info["tier"] == "startup":
+            background_tasks.add_task(_setup_gmail_watch, org_id, connected_email, access_token, refresh_token)
+    finally:
+        plan_db.close()
 
     return RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
 
@@ -286,9 +291,31 @@ async def gcal_callback(state: str, code: str, background_tasks: BackgroundTasks
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gcal"})
 
-    from app.tasks.calendar_sync import run_calendar_sync
-    background_tasks.add_task(run_calendar_sync, org_id)
+    # Per g-i-1 plan: thin pipe via core.memory.adapters.known.calendar.
+    from core.memory.adapters.known.calendar import register_v2_calendar_connection
+    v2_cid = register_v2_calendar_connection(
+        org_id=org_id,
+        account_email=connected_email,
+        access_token=creds.token,
+        refresh_token=creds.refresh_token,
+        created_by=org_id,
+    )
 
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
+
+    def _sync_cal() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=50)
+                logging.getLogger(__name__).info(
+                    f"calendar sync done: emitted={r.items_emitted} dropped={r.items_dropped_scope}"
+                )
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"calendar sync failed: {e}")
+
+    background_tasks.add_task(_sync_cal)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
@@ -355,9 +382,30 @@ async def slack_callback(state: str, code: str, background_tasks: BackgroundTask
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "slack"})
 
-    from app.tasks.slack_sync import run_slack_backfill
-    background_tasks.add_task(run_slack_backfill, org_id)
+    # Per g-i-1 plan: thin pipe via core.memory.adapters.known.slack.
+    from core.memory.adapters.known.slack import register_v2_slack_connection
+    v2_cid = register_v2_slack_connection(
+        org_id=org_id,
+        workspace_id=workspace_id or "default",
+        access_token=bot_token or authed_user_token or "",
+        created_by=org_id,
+    )
 
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
+
+    def _sync_slack() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=50)
+                logging.getLogger(__name__).info(
+                    f"slack sync done: emitted={r.items_emitted} dropped={r.items_dropped_scope}"
+                )
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"slack sync failed: {e}")
+
+    background_tasks.add_task(_sync_slack)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
@@ -538,9 +586,30 @@ async def notion_callback(state: str, code: str, background_tasks: BackgroundTas
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "notion"})
 
-    from app.tasks.notion_sync import run_notion_sync
-    background_tasks.add_task(run_notion_sync, org_id)
+    # Per g-i-1 plan: thin pipe via core.memory.adapters.known.notion.
+    from core.memory.adapters.known.notion import register_v2_notion_connection
+    v2_cid = register_v2_notion_connection(
+        org_id=org_id,
+        workspace_id=workspace_id or "default",
+        access_token=access_token or "",
+        created_by=org_id,
+    )
 
+    from core.foundations.db import get_session as _v2s
+    from core.memory.sync_runner import run_sync_for_connection
+
+    def _sync_notion() -> None:
+        import logging
+        try:
+            with _v2s() as s:
+                r = run_sync_for_connection(s, connection_id=v2_cid, limit=50)
+                logging.getLogger(__name__).info(
+                    f"notion sync done: emitted={r.items_emitted} dropped={r.items_dropped_scope}"
+                )
+        except Exception as e:
+            logging.getLogger(__name__).exception(f"notion sync failed: {e}")
+
+    background_tasks.add_task(_sync_notion)
     return RedirectResponse(url=INTEGRATIONS_REDIRECT)
 
 
