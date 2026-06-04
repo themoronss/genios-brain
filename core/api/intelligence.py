@@ -115,6 +115,12 @@ def query(
     The actual decide() call is dispatched to the module-registered handler so
     each module can wire its own Gateway/RuleSet without the HTTP layer
     knowing module internals.
+
+    Credit billing per MD §8.2 (context bucket):
+      symbolic    → 0 credits  (rule_engine only, no LLM)
+      neural      → 1 credit   (Haiku fusion)
+      hybrid      → 1 credit   (Haiku-fused; Sonnet escalations bill 3)
+    Insufficient credits → 402 with structured error so UI can prompt upgrade.
     """
     handler = _QUERY_HANDLERS.get(body.module_id)
     if handler is None:
@@ -123,6 +129,63 @@ def query(
             detail=f"module '{body.module_id}' has no query handler registered",
         )
     envelope = handler(session, org_id, body.query, body.facts, body.user_id)
+
+    # Per-query credit deduction. Cost derived from the persisted Decision row
+    # (path = symbolic | neural | hybrid). Done AFTER engine returns so partial
+    # work doesn't burn credits; idempotency_key = decision_id so a retry/replay
+    # of the same decision never double-charges.
+    try:
+        from app.credits.ledger import InsufficientCredits, deduct
+        from app.database import SessionLocal
+        from core.decision_store import DecisionRow
+
+        decision = session.get(DecisionRow, envelope.decision_id)
+        path = (decision.path if decision else "symbolic") or "symbolic"
+        breakdown = (decision.confidence_breakdown_jsonb or {}) if decision else {}
+        model = (breakdown.get("model") or "haiku").lower() if isinstance(breakdown, dict) else "haiku"
+
+        if path == "symbolic":
+            cost = 0  # rule-only, no LLM
+        elif "sonnet" in model:
+            cost = 3
+        else:
+            cost = 1  # haiku / hybrid default
+
+        if cost > 0:
+            _ldb = SessionLocal()
+            try:
+                deduct(
+                    _ldb,
+                    org_id=org_id,
+                    bucket="context",
+                    reason=f"intelligence:{body.module_id}:{path}",
+                    units=cost,
+                    idempotency_key=f"intel:{envelope.decision_id}",
+                    related_kind="decision",
+                    related_id=envelope.decision_id,
+                )
+                _ldb.commit()
+            except InsufficientCredits as e:
+                _ldb.rollback()
+                raise HTTPException(
+                    status_code=402,
+                    detail={
+                        "error": "insufficient_credits",
+                        "bucket": "context",
+                        "requested": e.requested,
+                        "available": e.available,
+                        "message": "Out of context credits — top up or upgrade plan to continue.",
+                        "decision_id": envelope.decision_id,
+                    },
+                )
+            finally:
+                _ldb.close()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # Never fail the request because billing infra hiccuped — log and continue.
+        log.warning("credit_deduct_failed", error=str(exc), decision_id=envelope.decision_id)
+
     log.info(
         "intelligence_query",
         org_id=org_id,
