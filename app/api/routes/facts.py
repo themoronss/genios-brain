@@ -17,7 +17,7 @@ import json
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -103,10 +103,21 @@ def get_active_facts(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
+    request: Request = None,
 ):
-    """v2 S-P-O facts list."""
+    """v2 S-P-O facts list — scope-enforced if a per-agent policy is attached
+    to the caller's API key (via `agent_scopes.policy_json`)."""
+    from core.api.deps import require_org_and_policy
     from core.foundations.db import get_session as _v2s
     from core.graph.views import list_facts as _v2_list_facts
+
+    # Resolve scope via core.api.deps so this endpoint honors both v1 dashboard
+    # JWT (unrestricted) AND scoped Bearer api_keys.
+    ctx = require_org_and_policy(request=request, session=db,
+                                  authorization=request.headers.get("authorization"),
+                                  x_dev_org=request.headers.get("X-Dev-Org"))
+    if ctx["org_id"] != org_id:
+        raise HTTPException(status_code=403, detail="cross-org access denied")
 
     with _v2s() as s:
         return _v2_list_facts(
@@ -114,6 +125,7 @@ def get_active_facts(
             org_id=org_id,
             subject=entity_name,
             predicate=fact_type,
+            policy=ctx.get("policy"),
             limit=limit,
             offset=offset,
         )

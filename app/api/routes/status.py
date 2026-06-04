@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -81,16 +81,24 @@ def get_graph_data(
     org_id: str,
     entity_type: str = None,
     db: Session = Depends(get_db),
+    request: Request = None,
 ):
-    """Per g-i-1 plan: graph view rendered from v2 graph_nodes + graph_edges.
-
-    No more v1 contacts/interactions joins. Wired through core.graph.views.
-    """
+    """Graph view rendered from v2 graph_nodes + graph_edges, scope-enforced
+    by the caller's API-key agent policy (if any)."""
+    from core.api.deps import require_org_and_policy
     from core.foundations.db import get_session as _v2s
     from core.graph.views import graph_d3 as _v2_graph_d3
 
+    ctx = require_org_and_policy(
+        request=request, session=db,
+        authorization=request.headers.get("authorization"),
+        x_dev_org=request.headers.get("X-Dev-Org"),
+    )
+    if ctx["org_id"] != org_id:
+        raise HTTPException(status_code=403, detail="cross-org access denied")
+
     with _v2s() as s:
-        return _v2_graph_d3(s, org_id=org_id, entity_type=entity_type)
+        return _v2_graph_d3(s, org_id=org_id, entity_type=entity_type, policy=ctx.get("policy"))
 
 
 @router.get("/api/org/{org_id}/contacts")

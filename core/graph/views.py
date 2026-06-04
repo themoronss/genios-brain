@@ -122,21 +122,75 @@ def _segment_for(node_type: str, attrs: dict) -> str:
     return "operations"
 
 
-def graph_d3(session: Session, *, org_id: str, entity_type: str | None = None) -> dict[str, Any]:
+def graph_d3(
+    session: Session,
+    *,
+    org_id: str,
+    entity_type: str | None = None,
+    policy: dict | None = None,
+) -> dict[str, Any]:
     """Build a D3-friendly {nodes, links} payload from v2 graph_nodes + graph_edges.
 
     Each node carries `segment_type` (CRM continent — customers/partners/
     investors/vendors/operations/team) derived from its v2 node type +
     attributes, so the dashboard force-layout can place it inside the
     correct visual cluster.
-    """
-    nq = select(NodeRow).where(NodeRow.org_id == org_id)
-    if entity_type and entity_type != "all":
-        nq = nq.where(NodeRow.type == entity_type)
-    nodes = session.execute(nq.limit(500)).scalars().all()
 
-    eq = select(EdgeRow).where(EdgeRow.org_id == org_id)
-    edges = session.execute(eq.limit(2000)).scalars().all()
+    `policy` (when set) restricts both nodes (connector/segment/age/
+    exclude_tags) and edges (age/min_confidence), and drops edges whose
+    endpoints aren't visible — preserving the graph as a coherent subgraph.
+    """
+    from core.policy.v2_scope import edge_clauses_v2, is_unrestricted, node_clauses_v2
+
+    if policy and not is_unrestricted(policy):
+        from sqlalchemy import text as _text
+
+        nfrag, nbinds = node_clauses_v2(policy, node_alias="n", bind_prefix="gn")
+        n_where = "WHERE n.org_id = :_gn_org" + nfrag
+        nbinds["_gn_org"] = org_id
+        if entity_type and entity_type != "all":
+            n_where += " AND n.type = :_gn_type"
+            nbinds["_gn_type"] = entity_type
+        node_rows = session.execute(
+            _text(
+                "SELECT id, type, canonical_name, attributes, source_item_ids, "
+                "first_seen, last_seen FROM graph_nodes n " + n_where + " LIMIT 500"
+            ),
+            nbinds,
+        ).fetchall()
+
+        class _N:
+            def __init__(self, r):
+                (self.id, self.type, self.canonical_name, self.attributes,
+                 self.source_item_ids, self.first_seen, self.last_seen) = r
+        nodes = [_N(r) for r in node_rows]
+        visible_ids = {n.id for n in nodes}
+
+        efrag, ebinds = edge_clauses_v2(policy, edge_alias="e", bind_prefix="ge")
+        ebinds["_ge_org"] = org_id
+        edge_rows = session.execute(
+            _text(
+                "SELECT id, from_node, to_node, type, weight, asserted_by_type, "
+                "status FROM graph_edges e WHERE e.org_id = :_ge_org" + efrag + " LIMIT 2000"
+            ),
+            ebinds,
+        ).fetchall()
+
+        class _E:
+            def __init__(self, r):
+                (self.id, self.from_node, self.to_node, self.type, self.weight,
+                 self.asserted_by_type, self.status) = r
+        # Drop edges whose endpoint nodes are filtered out of scope so we
+        # never return a dangling line.
+        edges = [_E(r) for r in edge_rows if r[1] in visible_ids and r[2] in visible_ids]
+    else:
+        nq = select(NodeRow).where(NodeRow.org_id == org_id)
+        if entity_type and entity_type != "all":
+            nq = nq.where(NodeRow.type == entity_type)
+        nodes = session.execute(nq.limit(500)).scalars().all()
+
+        eq = select(EdgeRow).where(EdgeRow.org_id == org_id)
+        edges = session.execute(eq.limit(2000)).scalars().all()
 
     type_counts = Counter(n.type for n in nodes)
 
@@ -199,25 +253,66 @@ def list_facts(
     subject: str | None = None,
     predicate: str | None = None,
     subject_type: str | None = None,  # filter by node type (entity/event/goal/risk)
+    policy: dict | None = None,        # per-agent scope policy (None = unrestricted)
     limit: int = 100,
     offset: int = 0,
 ) -> dict[str, Any]:
     """List facts (S-P-O) — joined to graph_nodes so each row carries the
     subject's TYPE (entity/event/goal/risk) for UI rendering + filtering.
+
+    `policy` (when set) constrains the result by connector, fact_type
+    (predicate group), age, and confidence per Agent Registry PRD §05.
     """
-    q = select(FactRow).where(FactRow.org_id == org_id)
-    if subject:
-        q = q.where(FactRow.subject.ilike(f"%{subject}%"))
-    if predicate:
-        q = q.where(FactRow.predicate == predicate)
-    total = session.execute(
-        select(func.count()).select_from(q.subquery())
-    ).scalar_one()
-    rows = (
-        session.execute(q.order_by(FactRow.created_at.desc()).offset(offset).limit(limit))
-        .scalars()
-        .all()
-    )
+    # Apply policy at SQL level when set. Unrestricted = no extra clauses.
+    from core.policy.v2_scope import fact_clauses_v2, is_unrestricted
+
+    if policy and not is_unrestricted(policy):
+        from sqlalchemy import text as _text
+
+        frag, binds = fact_clauses_v2(policy, fact_alias="f", bind_prefix="lf")
+        base_where = ["f.org_id = :_lf_org"]
+        binds["_lf_org"] = org_id
+        if subject:
+            base_where.append("f.subject ILIKE :_lf_subj")
+            binds["_lf_subj"] = f"%{subject}%"
+        if predicate:
+            base_where.append("f.predicate = :_lf_pred")
+            binds["_lf_pred"] = predicate
+
+        where_sql = " WHERE " + " AND ".join(base_where) + frag
+        total = session.execute(
+            _text(f"SELECT COUNT(*) FROM facts f{where_sql}"), binds
+        ).scalar_one()
+        raw_rows = session.execute(
+            _text(
+                f"SELECT id, subject, predicate, object, source_item_id, "
+                f"asserted_by_type, asserted_by_id, confidence, created_at "
+                f"FROM facts f{where_sql} "
+                f"ORDER BY f.created_at DESC OFFSET :_lf_off LIMIT :_lf_lim"
+            ),
+            {**binds, "_lf_off": offset, "_lf_lim": limit},
+        ).fetchall()
+
+        class _Row:
+            def __init__(self, r):
+                (self.id, self.subject, self.predicate, self.object,
+                 self.source_item_id, self.asserted_by_type,
+                 self.asserted_by_id, self.confidence, self.created_at) = r
+        rows = [_Row(r) for r in raw_rows]
+    else:
+        q = select(FactRow).where(FactRow.org_id == org_id)
+        if subject:
+            q = q.where(FactRow.subject.ilike(f"%{subject}%"))
+        if predicate:
+            q = q.where(FactRow.predicate == predicate)
+        total = session.execute(
+            select(func.count()).select_from(q.subquery())
+        ).scalar_one()
+        rows = (
+            session.execute(q.order_by(FactRow.created_at.desc()).offset(offset).limit(limit))
+            .scalars()
+            .all()
+        )
 
     # Resolve subject → node type in one batch query so we can attach type
     # + optional filtering. Falls back to "entity" if no matching node row.

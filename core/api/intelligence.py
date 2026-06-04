@@ -20,7 +20,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -107,14 +107,15 @@ class GraphViewRequest(BaseModel):
 @router.post("/query", response_model=Envelope)
 def query(
     body: QueryRequest,
-    org_id: str = Depends(require_org),
+    request: Request,
     session: Session = Depends(db_session),
 ) -> Envelope:
     """Run the engine for a module + return the Envelope.
 
-    The actual decide() call is dispatched to the module-registered handler so
-    each module can wire its own Gateway/RuleSet without the HTTP layer
-    knowing module internals.
+    Per-agent scope enforcement: when the caller's API key is bound to a
+    restricted agent, `body.facts` is filtered through `filter_facts_v2`
+    BEFORE the engine sees it. The engine then reasons only over the
+    facts this agent is allowed to read.
 
     Credit billing per MD §8.2 (context bucket):
       symbolic    → 0 credits  (rule_engine only, no LLM)
@@ -122,13 +123,36 @@ def query(
       hybrid      → 1 credit   (Haiku-fused; Sonnet escalations bill 3)
     Insufficient credits → 402 with structured error so UI can prompt upgrade.
     """
+    from core.api.deps import require_org_and_policy
+    from core.policy.v2_scope import filter_facts_v2, is_unrestricted
+
+    ctx = require_org_and_policy(
+        request=request, session=session,
+        authorization=request.headers.get("authorization"),
+        x_dev_org=request.headers.get("X-Dev-Org"),
+    )
+    org_id = ctx["org_id"]
+    policy = ctx.get("policy")
+
     handler = _QUERY_HANDLERS.get(body.module_id)
     if handler is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"module '{body.module_id}' has no query handler registered",
         )
-    envelope = handler(session, org_id, body.query, body.facts, body.user_id)
+
+    # If caller passed a list-of-fact-dicts in body.facts, scope-filter before
+    # reasoning. Engine modules pass these to rule_engine — filtering at the
+    # boundary keeps modules unaware of per-tenant policy.
+    facts_for_engine: Any = body.facts
+    if policy and not is_unrestricted(policy):
+        if isinstance(body.facts, list):
+            facts_for_engine = filter_facts_v2(body.facts, policy)
+        elif isinstance(body.facts, dict) and isinstance(body.facts.get("facts"), list):
+            filtered = filter_facts_v2(body.facts["facts"], policy)
+            facts_for_engine = {**body.facts, "facts": filtered}
+
+    envelope = handler(session, org_id, body.query, facts_for_engine, body.user_id)
 
     # Per-query credit deduction. Cost derived from the persisted Decision row
     # (path = symbolic | neural | hybrid). Done AFTER engine returns so partial

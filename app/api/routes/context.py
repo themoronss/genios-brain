@@ -207,18 +207,35 @@ def _node_scores(db: Session, org_id: str, name: str) -> NodeScores:
     )
 
 
-def _facts_as_interactions(db: Session, org_id: str, name: str, limit: int = 20) -> list[dict[str, Any]]:
-    """Surface facts about / mentioning this entity as 'recent_interactions' for
-    the agent bundle. Most-recent first, capped at `limit`."""
+def _facts_as_interactions(
+    db: Session,
+    org_id: str,
+    name: str,
+    limit: int = 20,
+    policy: dict | None = None,
+) -> list[dict[str, Any]]:
+    """Surface facts about / mentioning this entity as 'recent_interactions'
+    for the agent bundle. Most-recent first, capped at `limit`. When `policy`
+    is set, applies fact_clauses_v2 so the bundle never contains rows the
+    agent isn't allowed to see."""
+    from core.policy.v2_scope import fact_clauses_v2, is_unrestricted
+
+    binds: dict[str, Any] = {"oid": org_id, "n": name, "limit": limit}
+    extra = ""
+    if policy and not is_unrestricted(policy):
+        frag, fbinds = fact_clauses_v2(policy, fact_alias="facts", bind_prefix="fai")
+        extra = frag
+        binds.update(fbinds)
+
     rows = db.execute(
-        text("""
+        text(f"""
             SELECT predicate, object, subject, confidence, created_at, source_item_id
             FROM facts
-            WHERE org_id = :oid AND (subject = :n OR object = :n)
+            WHERE org_id = :oid AND (subject = :n OR object = :n){extra}
             ORDER BY created_at DESC
             LIMIT :limit
         """),
-        {"oid": org_id, "n": name, "limit": limit},
+        binds,
     ).fetchall()
     out = []
     for predicate, obj, subj, conf, ts, src in rows:
@@ -233,7 +250,7 @@ def _facts_as_interactions(db: Session, org_id: str, name: str, limit: int = 20)
     return out
 
 
-def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextResponse:
+def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict | None = None) -> ContextResponse:
     import time as _t
     _start = _t.perf_counter()
 
@@ -293,7 +310,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             open_commitments=[],
             interaction_count=len(related) + len(also_about),
         )
-        interactions = _facts_as_interactions(db, org_id, node["name"])
+        interactions = _facts_as_interactions(db, org_id, node["name"], policy=policy)
         high_conf = sum(1 for i in interactions if (i.get("sentiment") or 0) >= 0.45)
         coverage = (high_conf / max(len(interactions), 1)) if interactions else 0.0
         return ContextResponse(
@@ -320,7 +337,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
     if body.situation:
         summary_lines.append(f"Situation: {body.situation}")
 
-    interactions = _facts_as_interactions(db, org_id, node["name"])
+    interactions = _facts_as_interactions(db, org_id, node["name"], policy=policy)
     high_conf = sum(1 for i in interactions if (i.get("sentiment") or 0) >= 0.45)
     coverage = (high_conf / max(len(interactions), 1)) if interactions else 0.0
     return ContextResponse(
@@ -339,14 +356,58 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
 
 @router.post("/v1/context", response_model=ContextResponse)
 def post_context_v1(body: ContextRequest, db: Session = Depends(get_db),
-                    org_id: str = Depends(verify_api_key)) -> ContextResponse:
-    return _build_context(db, org_id, body)
+                    request: Request = None) -> ContextResponse:
+    """Scope-enforced single-entity context bundle.
+
+    API key tied to a restricted agent → bundle limited to the agent's
+    allowed connectors/segments/fact-types/age/confidence. Dashboard JWT
+    or master key → unrestricted (full graph)."""
+    from core.api.deps import require_org_and_policy
+    from core.policy.v2_scope import is_node_in_scope_v2
+
+    ctx = require_org_and_policy(
+        request=request, session=db,
+        authorization=request.headers.get("authorization"),
+        x_dev_org=request.headers.get("X-Dev-Org"),
+    )
+    policy = ctx.get("policy")
+    if policy and not is_node_in_scope_v2(db, ctx["org_id"], body.entity, policy):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "entity_not_in_scope",
+                "entity": body.entity,
+                "message": "Entity not visible under this agent's scope policy.",
+            },
+        )
+    return _build_context(db, ctx["org_id"], body, policy=policy)
 
 
 @router.post("/api/org/{org_id}/context", response_model=ContextResponse)
 def post_context_orgscoped(org_id: str, body: ContextRequest,
-                           db: Session = Depends(get_db)) -> ContextResponse:
-    return _build_context(db, org_id, body)
+                           db: Session = Depends(get_db),
+                           request: Request = None) -> ContextResponse:
+    from core.api.deps import require_org_and_policy
+    from core.policy.v2_scope import is_node_in_scope_v2
+
+    ctx = require_org_and_policy(
+        request=request, session=db,
+        authorization=request.headers.get("authorization"),
+        x_dev_org=request.headers.get("X-Dev-Org"),
+    )
+    if ctx["org_id"] != org_id:
+        raise HTTPException(status_code=403, detail="cross-org access denied")
+    policy = ctx.get("policy")
+    if policy and not is_node_in_scope_v2(db, org_id, body.entity, policy):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "entity_not_in_scope",
+                "entity": body.entity,
+                "message": "Entity not visible under this agent's scope policy.",
+            },
+        )
+    return _build_context(db, org_id, body, policy=policy)
 
 
 class OutcomeBody(BaseModel):
