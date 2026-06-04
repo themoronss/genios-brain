@@ -99,10 +99,36 @@ def list_contacts(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+# v2 node type → graph component's continent ID (matches CONTINENT_DEFS in
+# the frontend). Person/company entities default to customers; everything
+# else maps by intuition: events/risks → operations, goals → team.
+def _segment_for(node_type: str, attrs: dict) -> str:
+    if node_type == "entity":
+        if (attrs.get("kind") or "").lower() == "company":
+            return "partners"
+        if (attrs.get("relation_label") or "").lower() in {"investor", "vc"}:
+            return "investors"
+        if (attrs.get("relation_label") or "").lower() in {"vendor", "supplier"}:
+            return "vendors"
+        if (attrs.get("relation_label") or "").lower() in {"team", "colleague", "employee"}:
+            return "team"
+        return "customers"  # default bucket for person/company entities
+    if node_type == "event":
+        return "operations"
+    if node_type == "goal":
+        return "team"
+    if node_type == "risk":
+        return "operations"
+    return "operations"
+
+
 def graph_d3(session: Session, *, org_id: str, entity_type: str | None = None) -> dict[str, Any]:
     """Build a D3-friendly {nodes, links} payload from v2 graph_nodes + graph_edges.
 
-    Replaces v1's heavy contacts+interactions query.
+    Each node carries `segment_type` (CRM continent — customers/partners/
+    investors/vendors/operations/team) derived from its v2 node type +
+    attributes, so the dashboard force-layout can place it inside the
+    correct visual cluster.
     """
     nq = select(NodeRow).where(NodeRow.org_id == org_id)
     if entity_type and entity_type != "all":
@@ -120,6 +146,8 @@ def graph_d3(session: Session, *, org_id: str, entity_type: str | None = None) -
                 "id": n.id,
                 "name": n.canonical_name,
                 "type": n.type,
+                # CRM continent the visual layout buckets this node into.
+                "segment_type": _segment_for(n.type, n.attributes or {}),
                 "size": min(40, 8 + len(n.source_item_ids or [])),
                 "company": _attr(n, "company", ""),
                 "first_seen": n.first_seen.isoformat() if n.first_seen else None,
