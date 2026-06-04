@@ -12,7 +12,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, Index, String, Text
+from sqlalchemy import JSON, Boolean, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.foundations.db import Base
@@ -27,12 +27,17 @@ def _utcnow() -> datetime:
 
 
 class UserModelRow(Base):
-    """One row per user. Body fields stored as JSONB for cheap evolution."""
+    """One row per (user, org). Body fields stored as JSONB for cheap evolution.
+
+    Multi-tenant: the same email can be a member of multiple orgs and carry
+    a separate persona per org. Uniqueness is enforced on the composite
+    (user_id, org_unit) by mig 0016_user_model_org_scoped.
+    """
 
     __tablename__ = "user_models"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    user_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     org_unit: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     voice_jsonb: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     decision_policy_jsonb: Mapped[dict[str, Any]] = mapped_column(
@@ -45,6 +50,10 @@ class UserModelRow(Base):
     field_meta_jsonb: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=_utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "org_unit", name="user_models_user_id_org_unit_key"),
+    )
 
 
 class UserModelEditRow(Base):

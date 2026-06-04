@@ -56,10 +56,18 @@ def seed_profile(session: Session, *, seed: SeedInput) -> UserModel:
     Raises SeedingError if the user already has a profile (use control.update_field
     to edit instead).
     """
-    existing = session.query(UserModelRow).filter_by(user_id=seed.user_id).one_or_none()
+    # Multi-tenant: same email can carry a separate persona per org. Scope
+    # the existence check by both (user_id, org_unit) so a user creating
+    # their profile in a new org doesn't get blocked by an unrelated row
+    # in another org.
+    existing = (
+        session.query(UserModelRow)
+        .filter_by(user_id=seed.user_id, org_unit=seed.org_unit)
+        .one_or_none()
+    )
     if existing is not None:
         raise SeedingError(
-            f"User {seed.user_id} already has a profile — use control.update_field to edit"
+            f"User {seed.user_id} already has a profile in this org — use control.update_field to edit"
         )
 
     now = datetime.now(UTC)

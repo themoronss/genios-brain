@@ -38,9 +38,18 @@ class ProfileNotFound(Exception):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def view_profile(session: Session, *, user_id: str) -> UserModel:
-    """Return the full profile for the user. Reads only — no writes."""
-    row = session.query(UserModelRow).filter_by(user_id=user_id).one_or_none()
+def view_profile(session: Session, *, user_id: str, org_unit: str | None = None) -> UserModel:
+    """Return the full profile for the user. Reads only — no writes.
+
+    Multi-tenant: the same email can be a member of multiple orgs and
+    carry a separate persona per org. When `org_unit` is provided we
+    scope the lookup so cross-org isolation is enforced at the query
+    level — no second `_require_org_match` step needed.
+    """
+    q = session.query(UserModelRow).filter_by(user_id=user_id)
+    if org_unit is not None:
+        q = q.filter_by(org_unit=org_unit)
+    row = q.one_or_none()
     if row is None:
         raise ProfileNotFound(f"No profile for user {user_id}")
     return _row_to_model(row)
@@ -58,9 +67,13 @@ def update_field(
     field: str,
     new_value: Any,
     actor: str | None = None,
+    org_unit: str | None = None,
 ) -> UserModel:
     """Replace a profile field. Sets source='seeded' confidence=1.0 (user authored)."""
-    row = session.query(UserModelRow).filter_by(user_id=user_id).one_or_none()
+    q = session.query(UserModelRow).filter_by(user_id=user_id)
+    if org_unit is not None:
+        q = q.filter_by(org_unit=org_unit)
+    row = q.one_or_none()
     if row is None:
         raise ProfileNotFound(f"No profile for user {user_id}")
 
@@ -96,26 +109,40 @@ def update_field(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def delete_profile(session: Session, *, user_id: str, actor: str | None = None) -> bool:
+def delete_profile(session: Session, *, user_id: str, actor: str | None = None,
+                   org_unit: str | None = None) -> bool:
     """Full wipe: profile + raw edit window + pending proposals all deleted.
 
     Per MD: user can delete EVERYTHING. Cascading delete across the 3 tables.
     Returns True if anything was deleted, False if no profile existed.
+
+    Multi-tenant: when `org_unit` is provided, only the persona in THAT
+    org is wiped; other orgs' personas for the same email stay intact.
     """
-    row = session.query(UserModelRow).filter_by(user_id=user_id).one_or_none()
+    q = session.query(UserModelRow).filter_by(user_id=user_id)
+    if org_unit is not None:
+        q = q.filter_by(org_unit=org_unit)
+    row = q.one_or_none()
     if row is None:
         return False
 
-    org_unit = row.org_unit
+    org_unit_final = row.org_unit
     actor = actor or user_id
 
-    session.query(UserModelEditRow).filter_by(user_id=user_id).delete()
-    session.query(UserModelProposalRow).filter_by(user_id=user_id).delete()
+    # Cascade only the rows in the same org for proposals/edits.
+    edits = session.query(UserModelEditRow).filter_by(user_id=user_id)
+    props = session.query(UserModelProposalRow).filter_by(user_id=user_id)
+    if hasattr(UserModelEditRow, "org_unit"):
+        edits = edits.filter_by(org_unit=org_unit_final)
+    if hasattr(UserModelProposalRow, "org_unit"):
+        props = props.filter_by(org_unit=org_unit_final)
+    edits.delete()
+    props.delete()
     session.delete(row)
     session.flush()
 
     audit.record(
-        org_id=org_unit,
+        org_id=org_unit_final,
         actor_type="user",
         actor_id=actor,
         action="config_changed",

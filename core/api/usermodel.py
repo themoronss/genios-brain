@@ -82,10 +82,11 @@ def get_profile(
     session: Session = Depends(db_session),
 ) -> dict[str, Any]:
     try:
-        profile = view_profile(session, user_id=user_id)
+        # Scope lookup by (user_id, org_unit). Cross-org isolation is enforced
+        # at the query layer — no second org-match check needed.
+        profile = view_profile(session, user_id=user_id, org_unit=org_id)
     except ProfileNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    _require_org_match(profile.org_unit, org_id)
     return profile.model_dump(mode="json")
 
 
@@ -123,11 +124,11 @@ def patch_field(
     session: Session = Depends(db_session),
 ) -> dict[str, Any]:
     try:
-        existing = view_profile(session, user_id=user_id)
+        view_profile(session, user_id=user_id, org_unit=org_id)
     except ProfileNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    _require_org_match(existing.org_unit, org_id)
-    updated = update_field(session, user_id=user_id, field=body.field, new_value=body.new_value)
+    updated = update_field(session, user_id=user_id, field=body.field,
+                            new_value=body.new_value, org_unit=org_id)
     session.commit()
     return updated.model_dump(mode="json")
 
@@ -139,11 +140,10 @@ def delete(
     session: Session = Depends(db_session),
 ) -> None:
     try:
-        existing = view_profile(session, user_id=user_id)
+        view_profile(session, user_id=user_id, org_unit=org_id)
     except ProfileNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    _require_org_match(existing.org_unit, org_id)
-    delete_profile(session, user_id=user_id, actor=org_id)
+    delete_profile(session, user_id=user_id, actor=org_id, org_unit=org_id)
     session.commit()
 
 
@@ -154,10 +154,9 @@ def list_proposals(
     session: Session = Depends(db_session),
 ) -> list[dict[str, Any]]:
     try:
-        existing = view_profile(session, user_id=user_id)
+        view_profile(session, user_id=user_id, org_unit=org_id)
     except ProfileNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    _require_org_match(existing.org_unit, org_id)
     proposals = (
         session.query(UserModelProposalRow)
         .filter_by(user_id=user_id, status="pending")
