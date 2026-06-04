@@ -61,7 +61,20 @@ def record(
     target_id: str,
     metadata: dict[str, Any] | None = None,
 ) -> None:
-    """Log-only audit (no DB write). Use when no session is available."""
+    """Persist an immutable audit row + emit a log line.
+
+    Opens its own short-lived session so callers without a session in scope
+    (background jobs, sync workers, persona seeders) still get a DB row.
+    Failing to persist must NEVER raise into the caller — audit is a side
+    effect of the business operation, not a precondition. The log line still
+    fires so the event is observable in stderr/journald even if the DB
+    write fails.
+
+    For callers that already hold a session and want the audit row to
+    commit atomically with their business mutation, use `record_db(session)`
+    instead.
+    """
+    ts = datetime.now(UTC)
     log.info(
         "audit",
         org_id=org_id,
@@ -71,8 +84,37 @@ def record(
         target_type=target_type,
         target_id=target_id,
         metadata=metadata or {},
-        ts=datetime.now(UTC).isoformat(),
+        ts=ts.isoformat(),
     )
+    try:
+        # Lazy import — avoids a circular at module load (audit is imported
+        # by code that runs during db.py initialisation).
+        from core.foundations.db import get_session
+
+        with get_session() as s:
+            s.add(
+                AuditLogRow(
+                    org_id=org_id,
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                    action=action,
+                    target_type=target_type,
+                    target_id=target_id,
+                    metadata_jsonb=dict(metadata or {}),
+                    timestamp=ts,
+                )
+            )
+            s.commit()
+    except Exception as exc:
+        # Audit write must not break the calling business op. Surface in
+        # logs so a stderr/journald grep still shows the failure.
+        log.warning(
+            "audit_persist_failed",
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            error=str(exc),
+        )
 
 
 def record_db(
