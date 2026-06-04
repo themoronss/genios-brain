@@ -207,6 +207,7 @@ def list_org_mappings(
         )
         .join(Connection, Connection.id == SourceMappingRow.connection_id)
         .where(SourceMappingRow.org_id == org_id)
+        .where(Connection.source_type.notin_(_INTERNAL_SOURCE_TYPES))
         .order_by(SourceMappingRow.confirmed_at.desc())
     ).fetchall()
 
@@ -233,18 +234,28 @@ def list_org_mappings(
     return {"mappings": mappings, "count": len(mappings)}
 
 
+# System / bootstrap source types that exist for internal plumbing and
+# should NEVER appear in customer-facing dropdowns.
+_INTERNAL_SOURCE_TYPES = {"admin_console", "system", "internal", "self"}
+
+
 @router.get("/connections")
 def list_connections_for_mapping(
     org_id: str = Depends(require_org),
     session: Session = Depends(db_session),
 ) -> dict[str, Any]:
     """Return the active Connection rows for this org so the custom-integration
-    page can offer a dropdown (no need to look up UUIDs in the DB)."""
+    page can offer a dropdown (no need to look up UUIDs in the DB).
+
+    System/admin connections (admin_console, internal, system, self) are
+    hidden so the customer sees only their real data sources.
+    """
     from core.memory.store import Connection
 
     rows = session.execute(
         select(Connection.id, Connection.source_type, Connection.source_id, Connection.status)
         .where(Connection.org_id == org_id)
+        .where(Connection.source_type.notin_(_INTERNAL_SOURCE_TYPES))
         .order_by(Connection.created_at.desc())
     ).fetchall()
     return {
