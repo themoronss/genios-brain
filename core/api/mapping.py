@@ -138,6 +138,22 @@ def confirm_mapping(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         ) from e
+
+    # Production guard: confirm-mapping requires a real Connection row first.
+    # Without it the freeze() FK insert into source_mappings raises a 500.
+    # Return a clean 400 so the UI can prompt "Create a connection first".
+    from core.memory.store import Connection
+    exists = session.get(Connection, body.connection_id)
+    if exists is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "connection_not_found",
+                "connection_id": body.connection_id,
+                "message": "No connection exists with this ID. Create the connection (e.g. via OAuth or POST /v1/connections) before freezing a mapping.",
+            },
+        )
+
     frozen = freeze(
         session,
         connection_id=body.connection_id,
