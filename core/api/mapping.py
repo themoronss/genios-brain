@@ -18,6 +18,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from core.api.deps import db_session, require_org
@@ -180,3 +181,81 @@ def get_active_mapping(
             detail="no frozen mapping for this connection",
         )
     return mapping.model_dump(mode="json")
+
+
+@router.get("/list")
+def list_org_mappings(
+    org_id: str = Depends(require_org),
+    session: Session = Depends(db_session),
+) -> dict[str, Any]:
+    """List all active frozen mappings for an org + their owning connections.
+
+    Powers the custom integration page UI so the user can see what they've
+    configured without poking the DB.
+    """
+    from core.memory.store import Connection, SourceMappingRow
+
+    rows = session.execute(
+        select(
+            SourceMappingRow.connection_id,
+            SourceMappingRow.version,
+            SourceMappingRow.mapping_json,
+            SourceMappingRow.confirmed_at,
+            SourceMappingRow.confirmed_by,
+            Connection.source_id,
+            Connection.source_type,
+        )
+        .join(Connection, Connection.id == SourceMappingRow.connection_id)
+        .where(SourceMappingRow.org_id == org_id)
+        .order_by(SourceMappingRow.confirmed_at.desc())
+    ).fetchall()
+
+    mappings = []
+    for r in rows:
+        mapping_json = r.mapping_json if isinstance(r.mapping_json, dict) else {}
+        field_map = mapping_json.get("field_map") or mapping_json
+        if not isinstance(field_map, dict):
+            field_map = {}
+        avg_conf = (
+            sum(float((v or {}).get("confidence") or 0) for v in field_map.values())
+            / max(1, len(field_map))
+        )
+        mappings.append({
+            "connection_id":   r.connection_id,
+            "source_type":     mapping_json.get("source_type", r.source_type),
+            "version":         r.version,
+            "connection_label": f"{r.source_type} · {r.source_id}",
+            "fields":          list(field_map.keys()),
+            "avg_confidence":  round(avg_conf, 2),
+            "confirmed_at":    r.confirmed_at.isoformat() if r.confirmed_at else None,
+            "confirmed_by":    r.confirmed_by,
+        })
+    return {"mappings": mappings, "count": len(mappings)}
+
+
+@router.get("/connections")
+def list_connections_for_mapping(
+    org_id: str = Depends(require_org),
+    session: Session = Depends(db_session),
+) -> dict[str, Any]:
+    """Return the active Connection rows for this org so the custom-integration
+    page can offer a dropdown (no need to look up UUIDs in the DB)."""
+    from core.memory.store import Connection
+
+    rows = session.execute(
+        select(Connection.id, Connection.source_type, Connection.source_id, Connection.status)
+        .where(Connection.org_id == org_id)
+        .order_by(Connection.created_at.desc())
+    ).fetchall()
+    return {
+        "connections": [
+            {
+                "id": r.id,
+                "source_type": r.source_type,
+                "source_id": r.source_id,
+                "status": r.status,
+                "label": f"{r.source_type} · {r.source_id}",
+            }
+            for r in rows
+        ],
+    }
