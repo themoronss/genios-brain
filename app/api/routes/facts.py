@@ -97,13 +97,13 @@ def get_context_overview(org_id: str, db: Session = Depends(get_db)):
 @router.get("/api/org/{org_id}/facts")
 def get_active_facts(
     org_id: str,
+    request: Request,
     fact_type: str | None = None,
     min_score: float = 0.0,  # accepted for back-compat; v2 facts don't carry composite score
     entity_name: str | None = None,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
-    request: Request = None,
 ):
     """v2 S-P-O facts list — scope-enforced if a per-agent policy is attached
     to the caller's API key (via `agent_scopes.policy_json`)."""

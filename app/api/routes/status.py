@@ -79,9 +79,9 @@ def get_org_status(org_id: str, db: Session = Depends(get_db)):
 @router.get("/api/org/{org_id}/graph")
 def get_graph_data(
     org_id: str,
+    request: Request,
     entity_type: str = None,
     db: Session = Depends(get_db),
-    request: Request = None,
 ):
     """Graph view rendered from v2 graph_nodes + graph_edges, scope-enforced
     by the caller's API-key agent policy (if any)."""

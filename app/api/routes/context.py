@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import AliasChoices, BaseModel, Field, validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -355,8 +355,8 @@ def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict 
 
 
 @router.post("/v1/context", response_model=ContextResponse)
-def post_context_v1(body: ContextRequest, db: Session = Depends(get_db),
-                    request: Request = None) -> ContextResponse:
+def post_context_v1(body: ContextRequest, request: Request,
+                    db: Session = Depends(get_db)) -> ContextResponse:
     """Scope-enforced single-entity context bundle.
 
     API key tied to a restricted agent → bundle limited to the agent's
@@ -384,9 +384,8 @@ def post_context_v1(body: ContextRequest, db: Session = Depends(get_db),
 
 
 @router.post("/api/org/{org_id}/context", response_model=ContextResponse)
-def post_context_orgscoped(org_id: str, body: ContextRequest,
-                           db: Session = Depends(get_db),
-                           request: Request = None) -> ContextResponse:
+def post_context_orgscoped(org_id: str, body: ContextRequest, request: Request,
+                           db: Session = Depends(get_db)) -> ContextResponse:
     from core.api.deps import require_org_and_policy
     from core.policy.v2_scope import is_node_in_scope_v2
 

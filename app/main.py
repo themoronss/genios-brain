@@ -153,10 +153,17 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or not any(path.startswith(p) for p in _PROTECTED_PREFIXES):
             return await call_next(request)
 
-        # Try Authorization header first (backward compat), then HttpOnly cookie
-        token = None
+        # API-key Bearer (gn_live_*) is handled downstream by
+        # core.api.deps.require_org_and_policy which resolves the agent's
+        # scope policy from api_keys → agent_scopes. This middleware ONLY
+        # gates dashboard JWT users; let API-key calls pass through.
         auth_header = request.headers.get("authorization", "")
-        if auth_header.startswith("Bearer ") and not auth_header.startswith("Bearer gn_live_"):
+        if auth_header.startswith("Bearer gn_live_") or auth_header.startswith("Bearer gn_test_"):
+            return await call_next(request)
+
+        # Dashboard JWT path — header first, then HttpOnly cookie.
+        token = None
+        if auth_header.startswith("Bearer "):
             token = auth_header[7:]
         elif request.cookies.get("genios_token"):
             token = request.cookies["genios_token"]
