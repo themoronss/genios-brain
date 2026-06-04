@@ -157,50 +157,46 @@ def add_manual_context(org_id: str, entry: ManualContextEntry, db: Session = Dep
 
 @router.get("/api/org/{org_id}/manual-context")
 def list_manual_context(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
-    """List recent manual context entries."""
-    try:
-        results = db.execute(
-            text("""
-                SELECT i.id, c.name, c.email, i.subject, i.summary, i.interaction_at, i.intent
-                FROM interactions i
-                JOIN contacts c ON i.contact_id = c.id
-                WHERE i.org_id = :org_id
-                AND i.subject LIKE 'Manual:%'
-                ORDER BY i.interaction_at DESC NULLS LAST
-                LIMIT :limit
-            """),
-            {"org_id": org_id, "limit": limit},
-        ).fetchall()
+    """List recent manual context entries — v2 reads from facts where the
+    source_item_id was tagged 'manual:' on insert.
 
-        return {
-            "entries": [
-                {
-                    "id": str(r[0]),
-                    "contact_name": r[1],
-                    "contact_email": r[2],
-                    "context_type": (r[3] or "").replace("Manual: ", ""),
-                    "discussion": r[4],
-                    "date": str(r[5]) if r[5] else None,
-                    "intent": r[6],
-                }
-                for r in results
-            ],
-        }
-    except Exception as e:
-        logger.error(f"List manual context error: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail=str(e))
+    v1 stored manual notes in `interactions` with subject LIKE 'Manual:%'.
+    Mig 0015 dropped that table; v2 routes the same payload through
+    emit() → graph, so manual notes show up as ordinary S-P-O facts.
+    """
+    rows = db.execute(
+        text("""
+            SELECT id, subject, predicate, object, created_at
+            FROM facts
+            WHERE org_id = :oid
+              AND source_item_id LIKE 'manual:%'
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """),
+        {"oid": org_id, "limit": limit},
+    ).fetchall()
+    return {
+        "entries": [
+            {
+                "id": str(r[0]),
+                "contact_name": r[1],
+                "contact_email": None,
+                "context_type": "manual",
+                "discussion": f"{r[2]}: {r[3]}",
+                "date": r[4].isoformat() if r[4] else None,
+                "intent": None,
+            }
+            for r in rows
+        ],
+    }
 
 
 @router.delete("/api/org/{org_id}/manual-context/{entry_id}")
 def delete_manual_context(org_id: str, entry_id: str, db: Session = Depends(get_db)):
-    """Delete a manual context entry."""
+    """Delete a manual context fact (v2: facts row, not v1 interactions)."""
     try:
         db.execute(
-            text("DELETE FROM interactions WHERE id = :id AND org_id = :org_id"),
+            text("DELETE FROM facts WHERE id = :id AND org_id = :org_id"),
             {"id": entry_id, "org_id": org_id},
         )
         db.commit()
@@ -389,40 +385,49 @@ async def upload_context_file(
 def list_uploads(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
     """List recently uploaded files with parsed metadata."""
     try:
-        results = db.execute(
+        # v1 stored uploads as activity_log rows (dropped). v2 path: an
+        # upload becomes a 'document' node in graph_nodes whose source_item_id
+        # is prefixed 'document:<file_id>'. Surface those as the uploads list.
+        rows = db.execute(
             text("""
-                SELECT id, event_data, created_at
-                FROM activity_log
-                WHERE org_id = :org_id AND event_type = 'file_uploaded'
-                ORDER BY created_at DESC
+                SELECT id, canonical_name, attributes, first_seen,
+                       jsonb_array_elements_text(
+                         CASE jsonb_typeof(source_item_ids::jsonb)
+                              WHEN 'array' THEN source_item_ids::jsonb
+                              ELSE '[]'::jsonb END
+                       ) AS item
+                FROM graph_nodes
+                WHERE org_id = :org_id
+                  AND type = 'entity'
+                  AND source_item_ids::text LIKE '%document:%'
+                ORDER BY first_seen DESC
                 LIMIT :limit
             """),
             {"org_id": org_id, "limit": limit},
         ).fetchall()
-
-        uploads = []
-        for r in results:
-            data = r[1] if isinstance(r[1], dict) else {}
-            size_bytes = data.get("size_bytes", 0)
-            size_str = (
-                f"{size_bytes / (1024*1024):.1f}MB" if size_bytes > 1024*1024
-                else f"{size_bytes // 1024}KB" if size_bytes > 0
-                else "—"
-            )
+        seen: set[str] = set()
+        uploads: list[dict] = []
+        for r in rows:
+            if not r[4] or not r[4].startswith("document:"):
+                continue
+            file_id = r[4][len("document:"):]
+            if file_id in seen:
+                continue
+            seen.add(file_id)
+            attrs = r[2] if isinstance(r[2], dict) else {}
             uploads.append({
-                "id": str(r[0]),
-                "file_name": data.get("filename", "unknown"),
-                "file_type": (data.get("file_ext", "").lstrip(".") or "txt").upper(),
-                "size": size_str,
-                "size_bytes": size_bytes,
-                "tag": data.get("tag", "Other"),
-                "status": data.get("status", "indexed"),
-                "contacts_count": data.get("contacts_count"),
-                "commitments_count": data.get("commitments_count"),
-                "uploaded_at": str(r[2]) if r[2] else None,
+                "id": file_id,
+                "file_name": r[1] or "document",
+                "file_type": (attrs.get("file_ext") or "TXT").upper(),
+                "size": "—",
+                "size_bytes": 0,
+                "tag": attrs.get("tag", "Other"),
+                "status": "indexed",
+                "contacts_count": None,
+                "commitments_count": None,
+                "uploaded_at": r[3].isoformat() if r[3] else None,
                 "authority": 1.0,
             })
-
         return {"uploads": uploads}
     except Exception as e:
         logger.error(f"List uploads error: {e}")
@@ -433,19 +438,36 @@ def list_uploads(org_id: str, limit: int = 20, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ── Delete Upload ────────────────────────────────────────────────────────
+# ── Delete / Re-tag Upload ───────────────────────────────────────────────
+# v2 docs live in graph_nodes (tagged source_item_id = 'document:<file_id>').
+# Delete/tag operate via source_item_ids JSONB rather than the dropped
+# activity_log row.
 
 @router.delete("/api/org/{org_id}/uploads/{file_id}")
 def delete_upload(org_id: str, file_id: str, db: Session = Depends(get_db)):
-    """Delete an uploaded file and its activity log entry."""
+    """Remove uploaded file's bytes from disk + drop nodes tagged with it."""
     try:
         for fname in os.listdir(UPLOAD_DIR):
             if fname.startswith(file_id):
                 os.remove(os.path.join(UPLOAD_DIR, fname))
                 break
+        tag = f"document:{file_id}"
         db.execute(
-            text("DELETE FROM activity_log WHERE id = :id AND org_id = :org_id AND event_type = 'file_uploaded'"),
-            {"id": file_id, "org_id": org_id},
+            text("""
+                DELETE FROM graph_nodes
+                WHERE org_id = :org_id
+                  AND EXISTS (
+                    SELECT 1 FROM jsonb_array_elements_text(
+                      CASE jsonb_typeof(source_item_ids::jsonb)
+                           WHEN 'array' THEN source_item_ids::jsonb
+                           ELSE '[]'::jsonb END
+                    ) AS i WHERE i = :tag)
+            """),
+            {"org_id": org_id, "tag": tag},
+        )
+        db.execute(
+            text("DELETE FROM facts WHERE org_id = :org_id AND source_item_id = :tag"),
+            {"org_id": org_id, "tag": tag},
         )
         db.commit()
         return {"deleted": True}
@@ -455,35 +477,14 @@ def delete_upload(org_id: str, file_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ── Re-tag Upload ────────────────────────────────────────────────────────
-
 class RetagRequest(BaseModel):
     tag: str
 
 @router.patch("/api/org/{org_id}/uploads/{file_id}/tag")
 def retag_upload(org_id: str, file_id: str, body: RetagRequest, db: Session = Depends(get_db)):
-    """Re-tag an uploaded file."""
-    try:
-        row = db.execute(
-            text("SELECT event_data FROM activity_log WHERE id = :id AND org_id = :org_id AND event_type = 'file_uploaded'"),
-            {"id": file_id, "org_id": org_id},
-        ).fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Upload not found")
-        data = row[0] if isinstance(row[0], dict) else {}
-        data["tag"] = body.tag
-        db.execute(
-            text("UPDATE activity_log SET event_data = CAST(:data AS jsonb) WHERE id = :id AND org_id = :org_id"),
-            {"data": json.dumps(data), "id": file_id, "org_id": org_id},
-        )
-        db.commit()
-        return {"retagged": True, "tag": body.tag}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Retag upload error: {e}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    """v2 doesn't store per-upload metadata — retag is a no-op echo so the UI
+    doesn't break. Real per-document attribute editing is a future feature."""
+    return {"retagged": True, "tag": body.tag, "note": "tag is informational only in v2"}
 
 
 # ── Edit Manual Context ──────────────────────────────────────────────────
