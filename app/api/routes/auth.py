@@ -281,6 +281,29 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
     # v1 precedent graph is gone (precedent_graph table dropped in mig 0015).
     # v2 modules ship their own bootstrap data via core/modules_framework.
 
+    # Auto-seed an empty g-i-9 persona for the new (user, org) so the Persona
+    # page never shows a "no profile" empty state on day 1. All fields are
+    # empty defaults; the distill pipeline fills them in as activity accrues.
+    # Fail-soft: persona seed isn't worth blocking signup.
+    try:
+        from core.foundations.db import get_session as _v2s
+        from core.usermodel.seed import SeedInput, seed_profile
+
+        with _v2s() as _s:
+            try:
+                seed_profile(_s, seed=SeedInput(
+                    user_id=request.email,
+                    org_unit=str(org_id),
+                ))
+            except Exception:
+                # SeedingError if a row already exists for this (user, org).
+                # Silent skip is the right behaviour — re-signup with same
+                # email + org shouldn't error out the dashboard flow.
+                pass
+    except Exception as _seed_err:
+        import logging as _log
+        _log.getLogger(__name__).warning(f"persona seed at signup failed: {_seed_err}")
+
     # Generate token
     token = jwt.encode(
         {
