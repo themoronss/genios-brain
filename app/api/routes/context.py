@@ -83,6 +83,10 @@ class ContextResponse(BaseModel):
     context_for_agent: str
     confidence: float
     scores: NodeScores | None = None
+    coverage_score: float = 0.0          # 0..1 — fraction of high-conf facts
+    recent_interactions: list[dict[str, Any]] = []   # facts shaped as interactions
+    facts_included: int = 0              # count surfaced in bundle
+    latency_ms: int = 0
     error: str | None = None
 
 
@@ -203,7 +207,36 @@ def _node_scores(db: Session, org_id: str, name: str) -> NodeScores:
     )
 
 
+def _facts_as_interactions(db: Session, org_id: str, name: str, limit: int = 20) -> list[dict[str, Any]]:
+    """Surface facts about / mentioning this entity as 'recent_interactions' for
+    the agent bundle. Most-recent first, capped at `limit`."""
+    rows = db.execute(
+        text("""
+            SELECT predicate, object, subject, confidence, created_at, source_item_id
+            FROM facts
+            WHERE org_id = :oid AND (subject = :n OR object = :n)
+            ORDER BY created_at DESC
+            LIMIT :limit
+        """),
+        {"oid": org_id, "n": name, "limit": limit},
+    ).fetchall()
+    out = []
+    for predicate, obj, subj, conf, ts, src in rows:
+        out.append({
+            "date": ts.isoformat() if ts else None,
+            "sentiment": float(conf or 0),
+            "direction": "fact",
+            "summary": f"{subj} {predicate} {obj}",
+            "source": (src or "").split(":")[0] if src else "unknown",
+            "predicate": predicate,
+        })
+    return out
+
+
 def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextResponse:
+    import time as _t
+    _start = _t.perf_counter()
+
     node = _resolve_entity(db, org_id, body.entity)
     if not node:
         return ContextResponse(
@@ -213,6 +246,10 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             context_for_agent=f"No context available for '{body.entity}' yet — connect a data source to populate the graph.",
             confidence=0.0,
             scores=None,
+            coverage_score=0.0,
+            recent_interactions=[],
+            facts_included=0,
+            latency_ms=int((_t.perf_counter() - _start) * 1000),
             error="entity_not_found",
         )
     # Non-person nodes (event/goal/risk): show as-subject facts + connected
@@ -256,6 +293,9 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             open_commitments=[],
             interaction_count=len(related) + len(also_about),
         )
+        interactions = _facts_as_interactions(db, org_id, node["name"])
+        high_conf = sum(1 for i in interactions if (i.get("sentiment") or 0) >= 0.45)
+        coverage = (high_conf / max(len(interactions), 1)) if interactions else 0.0
         return ContextResponse(
             entity=details,
             match_confidence=1.0,
@@ -263,6 +303,10 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
             context_for_agent="\n".join(lines),
             confidence=0.7,
             scores=_node_scores(db, org_id, node["name"]),
+            coverage_score=round(coverage, 3),
+            recent_interactions=interactions,
+            facts_included=len(interactions),
+            latency_ms=int((_t.perf_counter() - _start) * 1000),
         )
     details = _entity_details(db, org_id, node)
     summary_lines = [
@@ -276,6 +320,9 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
     if body.situation:
         summary_lines.append(f"Situation: {body.situation}")
 
+    interactions = _facts_as_interactions(db, org_id, node["name"])
+    high_conf = sum(1 for i in interactions if (i.get("sentiment") or 0) >= 0.45)
+    coverage = (high_conf / max(len(interactions), 1)) if interactions else 0.0
     return ContextResponse(
         entity=details,
         match_confidence=1.0 if details.name.lower() == body.entity.lower() else 0.7,
@@ -283,6 +330,10 @@ def _build_context(db: Session, org_id: str, body: ContextRequest) -> ContextRes
         context_for_agent="\n".join(summary_lines),
         confidence=min(1.0, 0.4 + 0.05 * details.interaction_count),
         scores=_node_scores(db, org_id, node["name"]),
+        coverage_score=round(coverage, 3),
+        recent_interactions=interactions,
+        facts_included=len(interactions),
+        latency_ms=int((_t.perf_counter() - _start) * 1000),
     )
 
 
