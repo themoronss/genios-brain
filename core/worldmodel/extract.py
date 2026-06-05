@@ -88,6 +88,8 @@ Rules:
 3. Allowed entity types: entity, event, goal, risk, dependency
 4. Allowed relationship types: temporal (A before B), dependency (A needs B)
 5. Output JSON ONLY. No prose.
+6. CAP: at most 25 entities and 25 relations per call. Pick the most central
+   ones if the text mentions more — partial coverage is better than truncated JSON.
 
 Format:
 {{
@@ -122,21 +124,113 @@ def extract(item: MemoryItem) -> Extraction:
     client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     prompt = _PROMPT.format(content=item.content[:8000])  # cap input
 
+    # 4096 is the safe headroom for the 25-entity cap above. The old 1024
+    # ceiling silently truncated mid-JSON on dense inputs (a resume could
+    # easily list 10+ orgs + 15+ skills) and the whole extract was lost.
     resp = client.messages.create(
         model=settings.ANTHROPIC_HAIKU_MODEL,
-        max_tokens=1024,
+        max_tokens=4096,
         messages=[{"role": "user", "content": prompt}],
     )
 
     raw = "".join(block.text for block in resp.content if block.type == "text").strip()
     raw = _strip_code_fence(raw)
 
-    try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError as e:
-        raise ExtractionError(f"LLM returned unparseable JSON: {raw[:200]}") from e
+    parsed = _parse_json_lenient(raw)
+    if parsed is None:
+        # Capture the full payload — truncated `raw[:200]` from before hid
+        # exactly the part we need (the unterminated tail) and made every
+        # failure look the same.
+        raise ExtractionError(
+            f"LLM returned unparseable JSON (len={len(raw)}): {raw}"
+        )
 
     return _build_extraction(parsed, item.item_id)
+
+
+def _parse_json_lenient(raw: str) -> dict | None:
+    """Try strict json.loads, then a minimal repair for Haiku's two real
+    failure modes here: trailing commas, and mid-array truncation when
+    max_tokens is hit. Returns the parsed dict or None.
+
+    Strategy on truncation: rewind to the last position where the JSON was
+    in a consistent state (depth>0, not inside a string, immediately after
+    a `}`, `]`, or numeric/bool/null literal), then close the remaining
+    open brackets. This drops the half-written tail entry but keeps every
+    completed one — better than losing the whole extract.
+    """
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    import re as _re
+    cleaned = _re.sub(r",\s*([\]}])", r"\1", raw)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Walk char-by-char tracking opens + the last "safe stop" index.
+    # Safe stop = depth > 0, NOT inside a string, and the previous non-
+    # whitespace char closed a value (`}`, `]`, digit, quote, or letter
+    # like the end of `true`/`false`/`null`).
+    opens: list[str] = []
+    in_string = False
+    escape = False
+    last_safe_idx = -1
+    last_safe_opens: list[str] = []
+    prev_value_close = False
+    for i, ch in enumerate(cleaned):
+        if escape:
+            escape = False
+            prev_value_close = False
+            continue
+        if ch == "\\" and in_string:
+            escape = True
+            continue
+        if ch == '"':
+            if in_string:
+                in_string = False
+                prev_value_close = True
+                if opens:
+                    last_safe_idx = i
+                    last_safe_opens = list(opens)
+            else:
+                in_string = True
+                prev_value_close = False
+            continue
+        if in_string:
+            continue
+        if ch in "[{":
+            opens.append(ch)
+            prev_value_close = False
+        elif ch in "]}":
+            if opens and ((opens[-1] == "[" and ch == "]") or (opens[-1] == "{" and ch == "}")):
+                opens.pop()
+            prev_value_close = True
+            if opens:
+                last_safe_idx = i
+                last_safe_opens = list(opens)
+        elif ch.isalnum() and prev_value_close is False:
+            # value char — track end of literal (digits / true / false / null)
+            prev_value_close = True
+        elif ch in ", \n\r\t:":
+            # neutral separators don't change "safe" state
+            pass
+
+    if last_safe_idx < 0:
+        return None
+    # Build the suffix that closes everything still open at the safe stop.
+    suffix = ""
+    for opener in reversed(last_safe_opens):
+        suffix += "}" if opener == "{" else "]"
+    try:
+        return json.loads(cleaned[: last_safe_idx + 1] + suffix)
+    except json.JSONDecodeError:
+        return None
 
 
 def _build_extraction(parsed: dict[str, object], item_id: str) -> Extraction:
