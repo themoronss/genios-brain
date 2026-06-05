@@ -1,6 +1,7 @@
 """Audit log read-side route.
 
 GET /v1/audit/events    paginated audit query with filters
+GET /v1/audit/actions   list of action types the backend currently emits
 
 Audit rows are immutable + always org-scoped. The trigger blocks UPDATE/DELETE
 at the DB layer; this route only reads.
@@ -8,6 +9,7 @@ at the DB layer; this route only reads.
 
 from __future__ import annotations
 
+import typing
 from datetime import datetime
 from typing import Any
 
@@ -18,6 +20,17 @@ from core.api.deps import db_session, require_org
 from core.foundations import audit
 
 router = APIRouter(prefix="/v1/audit", tags=["audit"])
+
+
+@router.get("/actions")
+def list_action_types() -> list[str]:
+    """Return every action string the backend may emit (the Action Literal).
+
+    The dashboard's filter dropdown reads this so it stays in sync with the
+    backend: add a new action to core.foundations.audit.Action and it shows
+    up in the UI on the next page load — no frontend deploy needed.
+    """
+    return list(typing.get_args(audit.Action))
 
 
 @router.get("/events")
