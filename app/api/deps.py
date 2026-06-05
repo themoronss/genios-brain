@@ -102,6 +102,27 @@ def _verify_jwt_and_stash_ctx(token: str, request: Request) -> str | None:
     if not org_id:
         return None
     org_id = str(org_id)
+    # Reject orphan tokens — JWT signed for an org that no longer exists
+    # (test wipes, manual deletion, GDPR erasure). Without this, the token
+    # decodes cleanly forever and the user lands on a ghost session that
+    # only DevTools can recover. Frontend turns the 401 detail.code into
+    # an auto-logout + redirect.
+    db = SessionLocal()
+    try:
+        exists = db.execute(
+            text("SELECT 1 FROM orgs WHERE id = :oid LIMIT 1"),
+            {"oid": org_id},
+        ).fetchone()
+    finally:
+        db.close()
+    if exists is None:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "TOKEN_REVOKED",
+                "message": "Your session has expired. Please log in again.",
+            },
+        )
     request.state.auth = AuthCtx(org_id=org_id, scope_source="jwt")
     return org_id
 

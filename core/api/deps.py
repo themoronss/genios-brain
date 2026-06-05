@@ -59,6 +59,11 @@ def require_org(
     if jwt_token:
         org_id = _org_from_jwt(jwt_token)
         if org_id is not None:
+            if not _org_exists(session, org_id):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=_TOKEN_REVOKED_DETAIL,
+                )
             return org_id
 
     if api_key:
@@ -111,6 +116,11 @@ def require_org_and_policy(
     if jwt_token:
         org_id = _org_from_jwt(jwt_token)
         if org_id is not None:
+            if not _org_exists(session, org_id):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=_TOKEN_REVOKED_DETAIL,
+                )
             return {"org_id": org_id, "policy": None, "agent_uuid": None, "scope_source": "jwt"}
 
     if api_key:
@@ -182,6 +192,28 @@ def _org_from_jwt(token: str) -> str | None:
         return None
     org_id = payload.get("org_id") or payload.get("org") or payload.get("sub")
     return str(org_id) if org_id else None
+
+
+def _org_exists(session: Session, org_id: str) -> bool:
+    """Cheap existence check used to reject orphan JWTs whose org was deleted.
+
+    Without this, a token signed for a deleted org keeps decoding fine and
+    every org-scoped query returns either empty or wrong-tenant rows — the
+    user sees ghost data and has no way to recover without DevTools.
+    """
+    return session.execute(
+        text("SELECT 1 FROM orgs WHERE id = :oid LIMIT 1"),
+        {"oid": org_id},
+    ).fetchone() is not None
+
+
+# Surfaced verbatim in the 401 body so the frontend can detect this exact
+# case and auto-clear localStorage / redirect to /login instead of asking
+# the user to know what DevTools is.
+_TOKEN_REVOKED_DETAIL = {
+    "code": "TOKEN_REVOKED",
+    "message": "Your session has expired. Please log in again.",
+}
 
 
 def _org_from_api_key(session: Session, raw_key: str) -> str | None:
