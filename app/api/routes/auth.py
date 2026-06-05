@@ -30,6 +30,13 @@ def _ip_hash(ip: str) -> str:
 
 JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
 
+# In production we serve over HTTPS so the auth cookie must be Secure. In
+# local dev (HTTP localhost) Secure cookies are silently rejected by the
+# browser — login appears to succeed but the next request has no cookie, the
+# user ends up running on a stale/zombie cookie, and every org-scoped check
+# sees the wrong tenant. ENV=production gates this so dev just works.
+_COOKIE_SECURE = os.getenv("GENIOS_ENV", "dev").lower() in ("prod", "production")
+
 # Anti-abuse: IP-based signup rate limit so an attacker cannot mint hundreds
 # of trial accounts in a loop. Sliding 24h window backed by Redis. Defaults
 # are conservative — operators tune via env without code changes.
@@ -184,7 +191,7 @@ def login(request: LoginRequest, http_request: Request, db: Session = Depends(ge
         key="genios_token",
         value=token,
         httponly=True,
-        secure=True,           # HTTPS only
+        secure=_COOKIE_SECURE,  # HTTPS only in prod; dev=False so localhost works
         samesite="lax",        # protects against CSRF
         max_age=7 * 24 * 3600, # 7 days (matches JWT expiry)
         path="/",
@@ -390,7 +397,7 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
         key="genios_token",
         value=token,
         httponly=True,
-        secure=True,
+        secure=_COOKIE_SECURE,
         samesite="lax",
         max_age=7 * 24 * 3600,
         path="/",
