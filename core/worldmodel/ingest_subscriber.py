@@ -146,6 +146,16 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
             )
         )
 
+    # Predicate registry: count distinct verbs the LLM emits, per org. Plan
+    # keeps predicates open-vocabulary, so this is the feedback loop ops +
+    # module authors use to standardize rules against the real distribution
+    # (e.g. "we have 4 variants of works_at — pick a canonical one").
+    if extraction.relations:
+        _bump_predicate_registry(
+            session, org_id=org_id,
+            predicates=[r.predicate for r in extraction.relations],
+        )
+
     session.flush()
     log.info(
         "ingest_persisted",
@@ -187,7 +197,7 @@ def _upsert_node(
         type=entity.type.value,
         canonical_name=entity.name,
         aliases=list(entity.aliases),
-        attributes={},
+        attributes=dict(entity.attributes or {}),
         source_item_ids=[item_id],
     )
     for cand in candidates:
@@ -199,7 +209,9 @@ def _upsert_node(
             best = cand
 
     if best is not None and best_score >= SIMILARITY_THRESHOLD:
-        # Merge: extend source_item_ids + aliases, bump last_seen
+        # Merge: extend source_item_ids + aliases + attributes, bump last_seen.
+        # Attributes merge is non-destructive: existing keys stay; new keys
+        # the latest extraction surfaced get added. A correction can override.
         if item_id not in (best.source_item_ids or []):
             best.source_item_ids = [*(best.source_item_ids or []), item_id]
         existing_aliases = set(best.aliases or [])
@@ -209,6 +221,12 @@ def _upsert_node(
         if entity.name and entity.name != best.canonical_name and entity.name not in existing_aliases:
             existing_aliases.add(entity.name)
         best.aliases = sorted(existing_aliases)
+        if entity.attributes:
+            merged = dict(best.attributes or {})
+            for k, v in entity.attributes.items():
+                if k not in merged and v not in (None, ""):
+                    merged[k] = v
+            best.attributes = merged
         best.last_seen = datetime.now(UTC)
         return best
 
@@ -259,6 +277,40 @@ def _upsert_edge(
             status=EdgeStatus.ASSERTED.value,
         )
     )
+
+
+def _bump_predicate_registry(
+    session: Session, *, org_id: str, predicates: list[str]
+) -> None:
+    """UPSERT into predicate_registry, counting occurrences.
+
+    Single batched INSERT ... ON CONFLICT keeps this cheap; we don't care
+    about per-relation timing inside one item. Fail-soft: the registry is
+    advisory, not on the critical path — extraction must not die if it's
+    missing (e.g. migration not yet applied in some env).
+    """
+    if not predicates:
+        return
+    from collections import Counter as _Counter
+    from sqlalchemy import text as _text
+    counts = _Counter(p.strip() for p in predicates if p and p.strip())
+    try:
+        for pred, n in counts.items():
+            session.execute(
+                _text(
+                    """
+                    INSERT INTO predicate_registry
+                        (org_id, predicate, occurrences, first_seen, last_seen)
+                    VALUES (:org, :pred, :n, NOW(), NOW())
+                    ON CONFLICT (org_id, predicate) DO UPDATE
+                        SET occurrences = predicate_registry.occurrences + EXCLUDED.occurrences,
+                            last_seen   = NOW()
+                    """
+                ),
+                {"org": org_id, "pred": pred, "n": n},
+            )
+    except Exception as e:
+        log.warning("predicate_registry_bump_failed", error=str(e))
 
 
 # Re-exports for callers

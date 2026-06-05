@@ -53,6 +53,17 @@ class Manifest(BaseModel):
     engineVersion: str = Field(..., description="Core engine version requirement (semver range)")
     provides: ModuleProvides
     goldenSet: str = Field(..., description="Path within module to evaluator.py")
+    # Plan keeps predicates open-vocabulary, but each module must declare
+    # the verbs its rules reference. SDK then validates every fact: in
+    # every rule YAML is present here — catches typos + drift at load
+    # time instead of at first decision when the rule silently never
+    # fires. Empty list = module doesn't reference predicates yet (e.g.
+    # a pure benchmarks-only module).
+    consumed_predicates: list[str] = Field(
+        default_factory=list,
+        description="Closed set of predicates this module's rules expect; "
+                    "validated at module load against rule YAML `fact:` keys.",
+    )
 
     @field_validator("version")
     @classmethod
@@ -177,12 +188,20 @@ def validate_module(
                 "Per MD g-i-3 §3.2.2, only 'asserted' status allowed in module data."
             )
 
-    # 6. Rule YAML files must parse + (optional) reference only known fact types
+    # 6. Rule YAML files must parse + reference only known fact types.
+    #    Whitelist precedence: caller-supplied known_fact_types > manifest's
+    #    consumed_predicates. Either is a closed set the rules must stay
+    #    inside; a module that declares neither gets the legacy lenient
+    #    behaviour (rules parse but predicates aren't checked).
     rules_dir = module_root / "reasoning" / "rules"
     if rules_dir.exists():
+        effective_known = (
+            set(known_fact_types) if known_fact_types
+            else (set(manifest.consumed_predicates) if manifest.consumed_predicates else None)
+        )
         rule_errors = _validate_rule_files(
             rules_dir,
-            known_fact_types=set(known_fact_types) if known_fact_types else None,
+            known_fact_types=effective_known,
         )
         errors.extend(rule_errors)
 

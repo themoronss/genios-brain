@@ -33,12 +33,20 @@ log = get_logger(__name__)
 
 @dataclass(frozen=True)
 class ExtractedEntity:
-    """A typed entity extracted from a MemoryItem. Grounded by source_item_id."""
+    """A typed entity extracted from a MemoryItem. Grounded by source_item_id.
+
+    The 5 NodeType slots (entity/event/goal/risk/dependency) are locked by
+    plan; richness lives in `attributes` (JSON dict). Keys we ask the LLM
+    to populate when stated: subtype, role, org, email, industry, location,
+    amount, due, status. Anything else the LLM volunteers also flows
+    through — graph_nodes.attributes is free JSON.
+    """
 
     name: str
     type: NodeType
     aliases: list[str]
     source_item_id: str
+    attributes: dict[str, str | int | float | None] | None = None
 
 
 @dataclass(frozen=True)
@@ -83,21 +91,48 @@ Text:
 
 Rules:
 1. Entities — extract people, accounts, projects, events, goals, risks, dependencies.
-2. Relationships — STATED ones ONLY (e.g., "X is on Y team", "A depends on B", "demo happened before close").
+2. Relationships — STATED ones ONLY (e.g., "X works at Y", "A depends on B", "demo happened before close").
    DO NOT infer causation. DO NOT extract "influence" — those come from rules or humans.
-3. Allowed entity types: entity, event, goal, risk, dependency
-4. Allowed relationship types: temporal (A before B), dependency (A needs B)
+3. Allowed entity types: entity, event, goal, risk, dependency.
+4. Allowed relationship types: temporal (A before B), dependency (A needs B).
 5. Output JSON ONLY. No prose.
 6. CAP: at most 25 entities and 25 relations per call. Pick the most central
    ones if the text mentions more — partial coverage is better than truncated JSON.
 
+Per-entity attributes (RICH, but only what's stated — never invent):
+  subtype:   "person" | "organization" | "product" | "project" | "document"
+             | "deal" | "commitment" | "decision" | "topic" | null
+  role:      free text, e.g. "founder", "engineer", "customer", "vendor"  (people only)
+  org:       company / organization the entity belongs to                  (people only)
+  email:     email address if mentioned                                    (people only)
+  industry:  e.g. "fintech", "saas"                                        (organizations)
+  location:  city / country if mentioned
+  amount:    numeric monetary value if mentioned (e.g. "50000")            (deals)
+  due:       ISO date or relative ("by Friday") if mentioned               (commitments)
+  status:    if explicitly stated ("open", "closed", "pending", "won", "lost")
+
+Predicate style guide (prefer these verbs when applicable; create new only if
+the text genuinely doesn't fit any of them):
+  works_at, owns, founded, reports_to, manages, member_of, located_in,
+  decided_on, agreed_to, committed_to, owes, due_on, valued_at,
+  scheduled_for, met_with, mentioned_in, attended, sourced_from,
+  blocked_by, depends_on, happened_before, happened_during, succeeded_by,
+  has_skill, certified, educated_at, worked_at, applied_for,
+  signed, expires_on, paid_for, replied_to, related_to.
+Pick the closest verb. Consistency across calls is more important than
+expressiveness — rule engines key off the predicate string.
+
 Format:
 {{
   "entities": [
-    {{"name": "...", "type": "entity|event|goal|risk|dependency", "aliases": ["..."]}}
+    {{"name": "...", "type": "entity|event|goal|risk|dependency",
+      "aliases": ["..."],
+      "attributes": {{ "subtype": "...", "role": "...", "org": "..." }}
+    }}
   ],
   "relations": [
-    {{"subject": "name1", "predicate": "depends_on|happened_before|...", "object": "name2", "edge_type": "temporal|dependency"}}
+    {{"subject": "name1", "predicate": "works_at",
+      "object": "name2", "edge_type": "temporal|dependency"}}
   ]
 }}
 
@@ -252,12 +287,24 @@ def _build_extraction(parsed: dict[str, object], item_id: str) -> Extraction:
             if isinstance(aliases_raw, list)
             else []
         )
+        # Attributes: keep only scalar (str/int/float/bool) values. The LLM
+        # sometimes nests dicts (e.g. attributes.contact.email) — those get
+        # dropped because the graph_nodes.attributes JSON is intended for
+        # flat key/value pairs that rule_engine can match against.
+        attrs_raw = e.get("attributes")
+        attributes: dict[str, str | int | float | bool] | None = None
+        if isinstance(attrs_raw, dict):
+            attributes = {
+                str(k): v for k, v in attrs_raw.items()
+                if isinstance(v, (str, int, float, bool)) and v not in (None, "", "null")
+            } or None
         entities.append(
             ExtractedEntity(
                 name=name,
                 type=NodeType(type_str),
                 aliases=aliases,
                 source_item_id=item_id,
+                attributes=attributes,
             )
         )
 

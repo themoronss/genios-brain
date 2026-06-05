@@ -75,6 +75,7 @@ from core.api import ingestion as v2_ingestion_router
 from core.api import intelligence as v2_intelligence_router
 from core.api import mapping as v2_mapping_router
 from core.api import metrics as v2_metrics_router
+from core.api import predicates as v2_predicates_router
 from core.api import usermodel as v2_usermodel_router
 
 logger = logging.getLogger(__name__)
@@ -280,6 +281,7 @@ app.include_router(v2_usermodel_router.router)
 app.include_router(v2_mapping_router.router)
 app.include_router(v2_ingestion_router.router)
 app.include_router(v2_audit_router.router)
+app.include_router(v2_predicates_router.router)
 app.include_router(v2_health_router.router)
 
 

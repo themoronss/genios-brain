@@ -134,7 +134,13 @@ class GmailAdapter(MemoryAdapter):
             raise
 
     def fetch_record(self, ref: RecordRef) -> RawRecord:
-        """Fetch a single message by id (used by webhook -> fetch flow)."""
+        """Fetch a single message by id (used by webhook -> fetch flow).
+
+        Webhook path stays metadata-only — it's used for routing decisions,
+        not for ingestion. Full body + attachments are pulled in the batch
+        path via `_fetch_full` so a single per-event hook isn't doing slow
+        PDF parsing inline.
+        """
         svc = self._service_for()
         msg = svc.users().messages().get(userId="me", id=ref.native_id, format="metadata").execute()
         return _to_raw_record(msg)
@@ -212,7 +218,9 @@ class GmailAdapter(MemoryAdapter):
                     message_ids.append(ma["message"]["id"])
         next_history = history_resp.get("historyId", history_id)
         has_more = bool(history_resp.get("nextPageToken"))
-        records = [self._fetch_metadata(svc, mid) for mid in message_ids[:limit]]
+        records: list[RawRecord] = []
+        for mid in message_ids[:limit]:
+            records.extend(self._fetch_full(svc, mid))
         return records, Cursor(value=str(next_history), strategy="native"), has_more
 
     # Gmail query that excludes marketing / spam / trash / social so we don't
@@ -239,7 +247,9 @@ class GmailAdapter(MemoryAdapter):
             labelIds=["INBOX"],
         ).execute()
         msg_ids = [m["id"] for m in list_resp.get("messages", [])]
-        records = [self._fetch_metadata(svc, mid) for mid in msg_ids]
+        records: list[RawRecord] = []
+        for mid in msg_ids:
+            records.extend(self._fetch_full(svc, mid))
 
         # Capture profile.historyId for next run's delta detection
         profile = svc.users().getProfile(userId="me").execute()
@@ -248,8 +258,41 @@ class GmailAdapter(MemoryAdapter):
 
     @staticmethod
     def _fetch_metadata(svc: Any, mid: str) -> RawRecord:
+        """Cheap metadata-only fetch — used by webhook + tests."""
         msg = svc.users().messages().get(userId="me", id=mid, format="metadata").execute()
         return _to_raw_record(msg)
+
+    @staticmethod
+    def _fetch_full(svc: Any, mid: str) -> list[RawRecord]:
+        """Fetch FULL message: body text + every parseable attachment.
+
+        Returns 1+N RawRecords per message:
+          [0]  body (or snippet fallback) — native_id = mid
+          [1+] one per attachment — native_id = f"{mid}_a{i}", with
+               fields["parent_native_id"] = mid for traceability.
+
+        Per g-i-1: adapter does plaintext extraction at emit-time so the
+        engine just sees clean text. Failing attachments degrade — we
+        skip the part but still emit body and other attachments.
+        """
+        msg = svc.users().messages().get(userId="me", id=mid, format="full").execute()
+        body_text, attachments = _walk_mime_parts(msg.get("payload", {}))
+        records: list[RawRecord] = []
+
+        # Body record — fall back to snippet if no body text was found
+        # (rare: e.g. inline-only PNG without alt text).
+        records.append(_to_raw_record(msg, body_override=body_text or None))
+
+        # Attachments — fetch bytes per part, decode via type-specific parser.
+        for i, att in enumerate(attachments):
+            try:
+                text = _fetch_and_parse_attachment(svc, mid, att)
+            except Exception:
+                continue
+            if not text:
+                continue
+            records.append(_to_attachment_record(msg, mid, i, att, text))
+        return records
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -257,13 +300,20 @@ class GmailAdapter(MemoryAdapter):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _to_raw_record(msg: dict[str, Any]) -> RawRecord:
-    """Convert Gmail message payload to RawRecord. Snippet only (no full body)."""
+def _to_raw_record(msg: dict[str, Any], body_override: str | None = None) -> RawRecord:
+    """Convert Gmail message payload to RawRecord.
+
+    `body_override`: when present, used as `snippet` (which the SourceMapping
+    routes to MemoryItem.content). Falls back to Google's snippet preview
+    for messages we only fetched metadata for, or when no body text was
+    decodable (rare attachment-only emails).
+    """
     headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+    content = body_override if body_override else msg.get("snippet", "")
     return RawRecord(
         native_id=msg["id"],
         fields={
-            "snippet": msg.get("snippet", ""),
+            "snippet": content,
             "internal_date_ms": int(msg.get("internalDate", 0)),
             "from": headers.get("From", ""),
             "subject": headers.get("Subject", ""),
@@ -272,6 +322,172 @@ def _to_raw_record(msg: dict[str, Any]) -> RawRecord:
             "ref": f"gmail:{msg['id']}",
         },
     )
+
+
+def _to_attachment_record(
+    msg: dict[str, Any], parent_mid: str, idx: int,
+    att: dict[str, Any], text: str,
+) -> RawRecord:
+    """One RawRecord per email attachment whose bytes we successfully parsed.
+
+    native_id = "<parent>_a<idx>" so the resolver can still uniquely identify
+    each item, and `parent_native_id` is carried in fields so a downstream
+    view can group attachments under their parent email.
+    """
+    headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+    return RawRecord(
+        native_id=f"{parent_mid}_a{idx}",
+        fields={
+            "snippet": text,
+            "internal_date_ms": int(msg.get("internalDate", 0)),
+            "from": headers.get("From", ""),
+            "subject": f"{headers.get('Subject', '')} — attachment: {att.get('filename', '')}",
+            "labels": msg.get("labelIds", []),
+            "thread_id": msg.get("threadId"),
+            "ref": f"gmail:{parent_mid}#a{idx}",
+            "parent_native_id": parent_mid,
+            "attachment_filename": att.get("filename", ""),
+            "attachment_mime_type": att.get("mime_type", ""),
+        },
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MIME walker + attachment decoder
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+_MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024  # 10 MiB — match Resources upload cap
+
+
+def _walk_mime_parts(payload: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+    """Recurse the MIME tree. Return (joined plaintext body, [attachment refs]).
+
+    Body strategy: prefer text/plain; fall back to text/html stripped to text
+    if no plain part was found. Attachments = any part with a filename + an
+    attachmentId we can resolve via the attachments.get API.
+    """
+    text_plain: list[str] = []
+    text_html: list[str] = []
+    attachments: list[dict[str, Any]] = []
+
+    def walk(part: dict[str, Any]) -> None:
+        mime = (part.get("mimeType") or "").lower()
+        filename = part.get("filename") or ""
+        body = part.get("body") or {}
+        data = body.get("data")
+        attachment_id = body.get("attachmentId")
+        sub_parts = part.get("parts") or []
+        if sub_parts:
+            for sp in sub_parts:
+                walk(sp)
+            return
+        if filename and attachment_id:
+            attachments.append({
+                "filename": filename,
+                "mime_type": mime,
+                "attachment_id": attachment_id,
+                "size": int(body.get("size", 0) or 0),
+            })
+            return
+        if not data:
+            return
+        import base64
+        try:
+            raw = base64.urlsafe_b64decode(data + "==").decode("utf-8", errors="replace")
+        except Exception:
+            return
+        if mime == "text/plain":
+            text_plain.append(raw)
+        elif mime == "text/html":
+            text_html.append(raw)
+
+    walk(payload)
+    body = "\n\n".join(s.strip() for s in text_plain if s.strip())
+    if not body and text_html:
+        body = _html_to_text("\n\n".join(text_html))
+    return body.strip(), attachments
+
+
+def _html_to_text(html: str) -> str:
+    """Strip tags to plaintext using stdlib HTMLParser. Light but enough for
+    transactional email HTML that's mostly text with light markup."""
+    from html.parser import HTMLParser as _H
+
+    chunks: list[str] = []
+
+    class _Strip(_H):
+        def handle_data(self, data: str) -> None:
+            chunks.append(data)
+
+    p = _Strip()
+    try:
+        p.feed(html)
+        p.close()
+    except Exception:
+        return ""
+    return "\n".join(c.strip() for c in chunks if c.strip())
+
+
+def _fetch_and_parse_attachment(svc: Any, mid: str, att: dict[str, Any]) -> str:
+    """Pull the attachment bytes via gmail API + decode by mime type.
+
+    Cap at 10 MiB to match the Resources upload limit; oversized parts are
+    skipped (better than blocking sync on a 50MB PDF). Unsupported mime
+    types return "" so the caller drops the record cleanly.
+    """
+    if att.get("size", 0) > _MAX_ATTACHMENT_BYTES:
+        return ""
+    import base64
+    api = (
+        svc.users().messages().attachments()
+        .get(userId="me", messageId=mid, id=att["attachment_id"])
+        .execute()
+    )
+    raw_b64 = api.get("data", "")
+    if not raw_b64:
+        return ""
+    raw_bytes = base64.urlsafe_b64decode(raw_b64 + "==")
+    if len(raw_bytes) > _MAX_ATTACHMENT_BYTES:
+        return ""
+    mime = (att.get("mime_type") or "").lower()
+    filename = (att.get("filename") or "").lower()
+    return _decode_attachment_bytes(raw_bytes, mime=mime, filename=filename)
+
+
+def _decode_attachment_bytes(raw: bytes, *, mime: str, filename: str) -> str:
+    """Parse PDF/DOCX/plaintext bytes to text. Unknown types → "".
+
+    Mirrors core/resources/uploads.py:_parse_to_text so a PDF emailed and
+    a PDF uploaded land in the same extraction pipeline with the same
+    quality. Parser deps are optional — missing pypdf/python-docx degrades
+    to "" rather than raising into the sync runner.
+    """
+    if mime.startswith("text/") or filename.endswith((".txt", ".md", ".csv", ".tsv")):
+        try:
+            return raw.decode("utf-8", errors="replace")
+        except Exception:
+            return ""
+    if mime == "application/pdf" or filename.endswith(".pdf"):
+        try:
+            import io as _io
+            from pypdf import PdfReader  # type: ignore
+            reader = PdfReader(_io.BytesIO(raw))
+            return "\n\n".join((p.extract_text() or "") for p in reader.pages)
+        except Exception:
+            return ""
+    if mime in (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
+    ) or filename.endswith((".docx", ".doc")):
+        try:
+            import io as _io
+            import docx  # type: ignore
+            d = docx.Document(_io.BytesIO(raw))
+            return "\n".join(p.text for p in d.paragraphs)
+        except Exception:
+            return ""
+    return ""
 
 
 def _google_client_id() -> str:
