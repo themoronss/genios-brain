@@ -165,22 +165,10 @@ def record_db(
     return row
 
 
-def query_events(
-    session: Session,
-    *,
-    org_id: str,
-    action: Action | None = None,
-    target_type: str | None = None,
-    target_id: str | None = None,
-    actor_id: str | None = None,
-    since: datetime | None = None,
-    until: datetime | None = None,
-    limit: int = 200,
-) -> Sequence[AuditLogRow]:
-    """Read-side for the audit API. Always org-scoped (cross-org leaks blocked here)."""
-    if limit < 1 or limit > 1000:
-        raise ValueError("limit must be between 1 and 1000")
-    stmt = select(AuditLogRow).where(AuditLogRow.org_id == org_id)
+def _apply_filters(stmt, *, org_id, action, target_type, target_id, actor_id, since, until):
+    """Shared WHERE clause builder so query_events() and count_events()
+    can never drift out of sync."""
+    stmt = stmt.where(AuditLogRow.org_id == org_id)
     if action is not None:
         stmt = stmt.where(AuditLogRow.action == action)
     if target_type is not None:
@@ -193,5 +181,63 @@ def query_events(
         stmt = stmt.where(AuditLogRow.timestamp >= since)
     if until is not None:
         stmt = stmt.where(AuditLogRow.timestamp <= until)
-    stmt = stmt.order_by(AuditLogRow.timestamp.desc()).limit(limit)
+    return stmt
+
+
+def query_events(
+    session: Session,
+    *,
+    org_id: str,
+    action: Action | None = None,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    actor_id: str | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    limit: int = 200,
+    offset: int = 0,
+) -> Sequence[AuditLogRow]:
+    """Read-side for the audit API. Always org-scoped (cross-org leaks blocked here).
+
+    Pagination is offset+limit. Audit_log is append-only and indexed on
+    timestamp DESC so offset scans remain cheap up to tens of thousands
+    of rows per org; beyond that we'd switch to keyset (cursor) pagination
+    on (timestamp, id).
+    """
+    if limit < 1 or limit > 1000:
+        raise ValueError("limit must be between 1 and 1000")
+    if offset < 0:
+        raise ValueError("offset must be >= 0")
+    stmt = _apply_filters(
+        select(AuditLogRow),
+        org_id=org_id, action=action, target_type=target_type,
+        target_id=target_id, actor_id=actor_id, since=since, until=until,
+    )
+    stmt = stmt.order_by(AuditLogRow.timestamp.desc()).offset(offset).limit(limit)
     return list(session.execute(stmt).scalars().all())
+
+
+def count_events(
+    session: Session,
+    *,
+    org_id: str,
+    action: Action | None = None,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    actor_id: str | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
+) -> int:
+    """Total rows matching the same filter set used by query_events.
+
+    Used by the dashboard to render "showing N–M of TOTAL" and decide
+    whether a Next-page button is meaningful. Cheap on an org-scoped
+    index; no need to cache.
+    """
+    from sqlalchemy import func, select as _select
+    stmt = _apply_filters(
+        _select(func.count(AuditLogRow.id)),
+        org_id=org_id, action=action, target_type=target_type,
+        target_id=target_id, actor_id=actor_id, since=since, until=until,
+    )
+    return int(session.execute(stmt).scalar() or 0)

@@ -41,12 +41,20 @@ def list_events(
     actor_id: str | None = Query(default=None),
     since: datetime | None = Query(default=None),
     until: datetime | None = Query(default=None),
-    limit: int = Query(default=200, ge=1, le=1000),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     org_id: str = Depends(require_org),
     session: Session = Depends(db_session),
-) -> list[dict[str, Any]]:
-    rows = audit.query_events(
-        session,
+) -> dict[str, Any]:
+    """Paginated read of the immutable audit log.
+
+    Response shape:
+      { events: [...], total: N, limit, offset, has_more }
+    The dashboard renders a "Prev / Next" pager from this; non-dashboard
+    callers (cron exports, internal tools) can ignore total and just walk
+    offsets until events is shorter than limit.
+    """
+    common = dict(
         org_id=org_id,
         action=action,  # type: ignore[arg-type]
         target_type=target_type,
@@ -54,18 +62,25 @@ def list_events(
         actor_id=actor_id,
         since=since,
         until=until,
-        limit=limit,
     )
-    return [
-        {
-            "id": r.id,
-            "actor_type": r.actor_type,
-            "actor_id": r.actor_id,
-            "action": r.action,
-            "target_type": r.target_type,
-            "target_id": r.target_id,
-            "metadata": r.metadata_jsonb,
-            "timestamp": r.timestamp.isoformat(),
-        }
-        for r in rows
-    ]
+    rows = audit.query_events(session, **common, limit=limit, offset=offset)
+    total = audit.count_events(session, **common)
+    return {
+        "events": [
+            {
+                "id": r.id,
+                "actor_type": r.actor_type,
+                "actor_id": r.actor_id,
+                "action": r.action,
+                "target_type": r.target_type,
+                "target_id": r.target_id,
+                "metadata": r.metadata_jsonb,
+                "timestamp": r.timestamp.isoformat(),
+            }
+            for r in rows
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + len(rows) < total,
+    }
