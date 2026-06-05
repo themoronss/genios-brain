@@ -11,10 +11,22 @@ from datetime import datetime, timedelta
 import secrets
 
 from app.api.deps import get_db
+from core.foundations import audit
 
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _ip_hash(ip: str) -> str:
+    """Short SHA of source IP for the audit metadata.
+
+    Hashing keeps the audit row compliant with the no-PII rule on the
+    metadata column while still letting an operator correlate a burst of
+    logins from one source. Raw IPs would also bloat the trail.
+    """
+    import hashlib
+    return hashlib.sha256(ip.encode("utf-8")).hexdigest()[:12]
 
 JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
 
@@ -87,8 +99,10 @@ class AuthResponse(BaseModel):
 
 
 @router.post("/auth/login", response_model=AuthResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+def login(request: LoginRequest, http_request: Request, db: Session = Depends(get_db)):
     """Login with email/password."""
+    ip_hash = _ip_hash(_client_ip(http_request))
+
     # Query user from orgs table
     result = db.execute(
         text("""
@@ -100,12 +114,31 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     ).fetchone()
 
     if not result:
+        # Failed login is auditable too — brute-force detection lives here.
+        audit.record(
+            org_id="unknown",
+            actor_type="user",
+            actor_id=request.email,
+            action="login_failed",
+            target_type="auth",
+            target_id=request.email,
+            metadata={"ip_hash": ip_hash, "reason": "no_such_user"},
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Verify password
     if not bcrypt.checkpw(
         request.password.encode("utf-8"), result.password_hash.encode("utf-8")
     ):
+        audit.record(
+            org_id=str(result.id),
+            actor_type="user",
+            actor_id=result.email,
+            action="login_failed",
+            target_type="auth",
+            target_id=result.email,
+            metadata={"ip_hash": ip_hash, "reason": "bad_password"},
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Generate JWT token
@@ -128,6 +161,16 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             created_at=result.created_at,
         ),
     })
+
+    audit.record(
+        org_id=str(result.id),
+        actor_type="user",
+        actor_id=result.email,
+        action="user_logged_in",
+        target_type="org",
+        target_id=str(result.id),
+        metadata={"ip_hash": ip_hash, "plan": result.subscription_tier},
+    )
 
     from fastapi.responses import JSONResponse
     response = JSONResponse(content={
@@ -322,6 +365,20 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
         "$set": org_properties(plan="trial", created_at=datetime.utcnow()),
     })
 
+    audit.record(
+        org_id=str(org_id),
+        actor_type="user",
+        actor_id=request.email,
+        action="user_signed_up",
+        target_type="org",
+        target_id=str(org_id),
+        metadata={
+            "plan": "trial",
+            "trial_credits": trial_cfg["credits"],
+            "ip_hash": _ip_hash(_client_ip(http_request)),
+        },
+    )
+
     from fastapi.responses import JSONResponse
     response = JSONResponse(content={
         "org_id": str(org_id),
@@ -344,8 +401,27 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
 # ── Logout ────────────────────────────────────────────────────────────────────
 
 @router.post("/auth/logout")
-def auth_logout():
+def auth_logout(http_request: Request):
     """Clear the HttpOnly auth cookie."""
+    # Best-effort decode of the token so we can attribute the logout to a
+    # real org. If the token is missing/expired we still clear the cookie
+    # and skip the audit row — anonymous logouts have no auditable subject.
+    token = http_request.cookies.get("genios_token")
+    if token:
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            audit.record(
+                org_id=str(payload.get("org_id", "unknown")),
+                actor_type="user",
+                actor_id=str(payload.get("email", "unknown")),
+                action="user_logged_out",
+                target_type="org",
+                target_id=str(payload.get("org_id", "unknown")),
+                metadata={"ip_hash": _ip_hash(_client_ip(http_request))},
+            )
+        except jwt.PyJWTError:
+            pass
+
     from fastapi.responses import JSONResponse
     response = JSONResponse(content={"logged_out": True})
     response.delete_cookie("genios_token", path="/")

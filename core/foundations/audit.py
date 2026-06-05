@@ -45,6 +45,12 @@ Action = Literal[
     "data_subject_access",
     "data_subject_erasure",
     "retention_swept",
+    # Auth lifecycle — recorded so security review can answer
+    # "kab login hua, kahaan se, kab logout" without grepping app logs.
+    "user_signed_up",
+    "user_logged_in",
+    "user_logged_out",
+    "login_failed",
 ]
 
 
