@@ -144,11 +144,16 @@ Output only the JSON object."""
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def extract(item: MemoryItem) -> Extraction:
+def extract(item: MemoryItem, *, org_id: str | None = None) -> Extraction:
     """Run extraction on a single MemoryItem. Returns grounded entities + STATED relations.
 
     Hard grounding gate: anything that cannot reference item.item_id is DISCARDED.
     LLM = Haiku (per g-i-3 blocker decision); volume is per-item so cost matters.
+
+    org_id (optional): when provided, the LLM call is logged to llm_costs
+    with purpose='extract' and source_item_id=item.item_id. Extraction
+    itself is 0-credit per MD §8.2 but token usage still gets attributed
+    to the org so cost visibility + the daily budget breaker work.
     """
     if not item.content or not item.content.strip():
         return Extraction(item_id=item.item_id, entities=[], relations=[])
@@ -162,11 +167,34 @@ def extract(item: MemoryItem) -> Extraction:
     # 4096 is the safe headroom for the 25-entity cap above. The old 1024
     # ceiling silently truncated mid-JSON on dense inputs (a resume could
     # easily list 10+ orgs + 15+ skills) and the whole extract was lost.
-    resp = client.messages.create(
-        model=settings.ANTHROPIC_HAIKU_MODEL,
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    resp = None
+    try:
+        resp = client.messages.create(
+            model=settings.ANTHROPIC_HAIKU_MODEL,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as e:
+        if org_id:
+            from core.foundations.llm_costs import record_llm_call
+            record_llm_call(
+                org_id=org_id, model=settings.ANTHROPIC_HAIKU_MODEL,
+                purpose="extract", input_tokens=0, output_tokens=0,
+                success=False, error=str(e)[:500],
+                source_item_id=item.item_id,
+            )
+        raise ExtractionError(f"Anthropic API call failed: {e}") from e
+
+    # Cost row writes BEFORE parsing so a downstream JSON-parse error still
+    # counts the tokens we actually paid for.
+    if org_id and resp is not None:
+        from core.foundations.llm_costs import record_llm_call, usage_extract
+        it, ot = usage_extract(resp)
+        record_llm_call(
+            org_id=org_id, model=settings.ANTHROPIC_HAIKU_MODEL,
+            purpose="extract", input_tokens=it, output_tokens=ot,
+            credits_billed=0, source_item_id=item.item_id,
+        )
 
     raw = "".join(block.text for block in resp.content if block.type == "text").strip()
     raw = _strip_code_fence(raw)

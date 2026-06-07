@@ -48,8 +48,17 @@ class ProposerError(Exception):
     """LLM call failed or response unparseable."""
 
 
-def propose(introspection: Introspection) -> MappingProposal:
-    """Return a draft mapping. Tries template-match first; LLM only on miss."""
+def propose(
+    introspection: Introspection,
+    *,
+    org_id: str | None = None,
+) -> MappingProposal:
+    """Return a draft mapping. Tries template-match first; LLM only on miss.
+
+    org_id (optional): when provided, the Sonnet LLM call is logged to
+    llm_costs with purpose='custom_mapping' so this one-time-but-pricey
+    call shows up in the founder's cost dashboard.
+    """
     template_guess = guess_from_introspection(introspection)
     if template_guess is not None:
         log.info(
@@ -61,7 +70,7 @@ def propose(introspection: Introspection) -> MappingProposal:
         return _from_template(template_guess)
 
     log.info("mapping_llm_call", source_type=introspection.source_type)
-    return _from_llm(introspection)
+    return _from_llm(introspection, org_id=org_id)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -114,7 +123,7 @@ Output JSON only. No prose.
 """
 
 
-def _from_llm(introspection: Introspection) -> MappingProposal:
+def _from_llm(introspection: Introspection, *, org_id: str | None = None) -> MappingProposal:
     if not settings.ANTHROPIC_API_KEY:
         raise ProposerError("ANTHROPIC_API_KEY not configured — cannot call LLM proposer")
 
@@ -135,6 +144,19 @@ def _from_llm(introspection: Introspection) -> MappingProposal:
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}],
     )
+
+    # Log to llm_costs — Sonnet is the priciest call we make routinely;
+    # custom mappings happen rarely but each one ~$0.10–0.30 so visibility
+    # matters for budget surprises.
+    if org_id:
+        from core.foundations.llm_costs import record_llm_call, usage_extract
+        it, ot = usage_extract(resp)
+        record_llm_call(
+            org_id=org_id,
+            model=settings.ANTHROPIC_SONNET_MODEL,
+            purpose="custom_mapping",
+            input_tokens=it, output_tokens=ot,
+        )
 
     raw = "".join(block.text for block in resp.content if block.type == "text")
     raw = raw.strip()

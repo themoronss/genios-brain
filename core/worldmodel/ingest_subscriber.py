@@ -99,9 +99,14 @@ def _org_for_source(session: Session, source_id: str) -> str | None:
 
 
 def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
-    """Run the extract → resolve → persist pipeline for one MemoryItem."""
+    """Run the extract → resolve → persist pipeline for one MemoryItem.
+
+    org_id is threaded into extract() so the LLM call writes a row in
+    llm_costs attributed to this tenant — needed for cost visibility +
+    the per-day budget breaker.
+    """
     try:
-        extraction = extract(item)
+        extraction = extract(item, org_id=org_id)
     except ExtractionError as e:
         log.warning(
             "extract_failed", item_id=item.item_id, org_id=org_id, error=str(e)

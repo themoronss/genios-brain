@@ -114,6 +114,24 @@ class LLMClient:
                     latency_ms=latency_ms,
                     attempts=attempt + 1,
                 )
+                # Persist to llm_costs so cost visibility + the daily budget
+                # breaker have a single source of truth. Fail-soft inside
+                # record_llm_call — never blocks the business path.
+                if call.org_id:
+                    try:
+                        from core.foundations.llm_costs import record_llm_call
+                        record_llm_call(
+                            org_id=call.org_id,
+                            model=model_id,
+                            purpose=call.purpose or "other",  # type: ignore[arg-type]
+                            input_tokens=in_toks,
+                            output_tokens=out_toks,
+                        )
+                    except Exception:
+                        # logger inside record_llm_call already warned; the
+                        # outer try keeps a misnamed purpose from crashing
+                        # the LLM path.
+                        pass
                 return LLMResponse(
                     text=text,
                     input_tokens=in_toks,
