@@ -138,9 +138,26 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
             # Per-plan initial-sync limit. Trial orgs no longer get a
             # 50-record blast that consumes most of their starter pool
             # on day-one connect; tiered via env (see app/config.py).
+            #
+            # get_org_plan(db, org_id) takes the v1 DB session, not just
+            # the org_id — earlier draft of this block had the wrong
+            # signature and 500'd the post-OAuth background task. We open
+            # a short v1 session just for the plan lookup, then close it
+            # so it doesn't outlive the limit calc.
             from app.config import initial_sync_limit_for_plan
+            from app.database import SessionLocal as _v1_session
             from app.plan_enforcer import get_org_plan
-            _plan = (get_org_plan(org_id) or {}).get("tier")
+            _plan = None
+            _pdb = _v1_session()
+            try:
+                _plan = (get_org_plan(_pdb, org_id) or {}).get("tier")
+            except Exception as _pe:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"plan lookup failed (defaulting to trial limit): {_pe}"
+                )
+            finally:
+                _pdb.close()
             _limit = initial_sync_limit_for_plan(_plan)
             with _v2_session() as s:
                 result = run_sync_for_connection(s, connection_id=v2_connection_id, limit=_limit)
