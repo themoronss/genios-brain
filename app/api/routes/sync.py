@@ -35,8 +35,10 @@ def _sync_fallback(org_id: str, max_emails=None, account_email=None):
             q = _sel(Connection).where(Connection.org_id == org_id).where(Connection.status == "active")
             if account_email:
                 q = q.where(Connection.source_id == account_email)
+            from app.config import SYNC_PERIODIC_LIMIT
+            _lim = max_emails or SYNC_PERIODIC_LIMIT
             for conn in s.execute(q).scalars():
-                run_sync_for_connection(s, connection_id=conn.id, limit=max_emails or 50)
+                run_sync_for_connection(s, connection_id=conn.id, limit=_lim)
     except Exception as e:
         db = SessionLocal()
         try:
@@ -85,12 +87,14 @@ def trigger_sync(
     def _run_all() -> None:
         import logging
         log = logging.getLogger(__name__)
+        from app.config import SYNC_PERIODIC_LIMIT
         for cid in connection_ids:
             try:
                 with _v2_session() as inner:
-                    r = run_sync_for_connection(inner, connection_id=cid, limit=50)
+                    r = run_sync_for_connection(inner, connection_id=cid, limit=SYNC_PERIODIC_LIMIT)
                     log.info(
-                        f"sync done conn={cid[:8]} emitted={r.items_emitted} dropped={r.items_dropped_scope}"
+                        f"sync done conn={cid[:8]} limit={SYNC_PERIODIC_LIMIT} "
+                        f"emitted={r.items_emitted} dropped={r.items_dropped_scope}"
                     )
             except Exception as e:
                 log.exception(f"sync failed conn={cid[:8]}: {e}")

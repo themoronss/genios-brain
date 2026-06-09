@@ -223,13 +223,22 @@ class GmailAdapter(MemoryAdapter):
             records.extend(self._fetch_full(svc, mid))
         return records, Cursor(value=str(next_history), strategy="native"), has_more
 
-    # Gmail query that excludes marketing / spam / trash / social so we don't
-    # burn LLM credits extracting entities from newsletters and shopping ads.
-    # Negative category filters keep CATEGORY_PERSONAL / CATEGORY_FORUMS /
-    # primary inbox messages. -in:chats drops Hangouts/Chat noise.
+    # Gmail server-side query — first line of defence so we don't even
+    # PAY for the metadata fetch of obvious noise. Negative category
+    # filters drop promotions / social / updates / forums / spam /
+    # trash / chats. Plus a curated sender-blacklist of high-volume
+    # automated senders that always land in Primary (Naukri, LinkedIn
+    # alerts, GitHub notifications, no-reply transactional, OTP/2FA).
+    # NoiseGate runs a second tighter check on what survives this.
     _NOISE_FILTER = (
         "-category:promotions -category:social -category:updates -category:forums "
-        "-in:spam -in:trash -in:chats"
+        "-in:spam -in:trash -in:chats "
+        "-from:(no-reply OR noreply OR do-not-reply OR notifications "
+        " OR alerts OR newsletter "
+        " OR @naukri.com OR @e.linkedin.com OR @updates.linkedin.com "
+        " OR @notifications.github.com OR @notify.bttn.io) "
+        "-subject:(OTP OR \"verification code\" OR \"weekly digest\" "
+        " OR \"job alert\" OR \"password reset\" OR \"daily digest\")"
     )
 
     def _pull_recent(

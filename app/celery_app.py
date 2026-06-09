@@ -861,7 +861,14 @@ def task_scheduled_sync():
                         f"connection={conn.id[:8]} tier={plan_tier}"
                     )
                     try:
-                        result = run_sync_for_connection(s, connection_id=conn.id, limit=50)
+                        # Periodic / delta sync — smaller batch than the
+                        # initial connect blast. Env-driven via
+                        # SYNC_PERIODIC_LIMIT so an operator can dial it
+                        # down during a cost incident without code.
+                        from app.config import SYNC_PERIODIC_LIMIT
+                        result = run_sync_for_connection(
+                            s, connection_id=conn.id, limit=SYNC_PERIODIC_LIMIT
+                        )
                         logger.info(
                             f"  → emitted={result.items_emitted} dropped={result.items_dropped_scope}"
                         )

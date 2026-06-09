@@ -49,6 +49,48 @@ SYNC_MAX_CALENDAR_EVENTS = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS", 250))
 SYNC_MAX_CALENDAR_EVENTS_CRON = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS_CRON", 250))
 SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
 
+
+# ── v2 sync batch limits — per-plan + env-driven ──────────────────────────
+# Replaces every `limit=50` hardcoded across sync_runner / celery_app /
+# integrations_auth / sync routes. Lookup order:
+#   1. plan-specific env (SYNC_INITIAL_LIMIT_TRIAL etc.)
+#   2. SYNC_INITIAL_LIMIT (catch-all override)
+#   3. baked default for the tier
+#
+# Periodic = delta sync (only NEW since last cursor). Initial = first-
+# connect batch which is the painful one for trial users — they connect
+# Gmail and a generous limit eats their starter pool before they've seen
+# a fact extracted.
+SYNC_INITIAL_LIMIT_TRIAL      = int(os.getenv("SYNC_INITIAL_LIMIT_TRIAL",      40))
+SYNC_INITIAL_LIMIT_EARLY      = int(os.getenv("SYNC_INITIAL_LIMIT_EARLY",      100))
+SYNC_INITIAL_LIMIT_STARTUP    = int(os.getenv("SYNC_INITIAL_LIMIT_STARTUP",    100))
+SYNC_INITIAL_LIMIT_ENTERPRISE = int(os.getenv("SYNC_INITIAL_LIMIT_ENTERPRISE", 500))
+# Catch-all: if set, overrides all of the above.
+SYNC_INITIAL_LIMIT            = os.getenv("SYNC_INITIAL_LIMIT")
+SYNC_PERIODIC_LIMIT           = int(os.getenv("SYNC_PERIODIC_LIMIT", 50))
+
+
+def initial_sync_limit_for_plan(plan: str | None) -> int:
+    """Per-plan initial-sync record limit (Gmail / Slack / Calendar / etc).
+
+    Single source of truth so 4 separate sync entry-points stay in sync
+    and a future plan tier just adds an env line. Unknown plan -> trial
+    limit (conservative; we'd rather under-charge a new tier than burn
+    credits on something the plan_enforcer doesn't yet know about).
+    """
+    if SYNC_INITIAL_LIMIT:
+        try:
+            return int(SYNC_INITIAL_LIMIT)
+        except ValueError:
+            pass
+    tier = (plan or "trial").lower()
+    return {
+        "trial":      SYNC_INITIAL_LIMIT_TRIAL,
+        "early":      SYNC_INITIAL_LIMIT_EARLY,
+        "startup":    SYNC_INITIAL_LIMIT_STARTUP,
+        "enterprise": SYNC_INITIAL_LIMIT_ENTERPRISE,
+    }.get(tier, SYNC_INITIAL_LIMIT_TRIAL)
+
 # Bump this when extraction logic changes to trigger re-extraction of old interactions.
 # v4 (2026-04-28): retain LEFT(raw_body, 1000) excerpt instead of nulling raw_body
 # after extraction; sync depth raised 15→200/100→500. Re-extract recovers blank

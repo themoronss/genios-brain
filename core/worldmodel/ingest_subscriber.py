@@ -111,9 +111,23 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
         log.warning(
             "extract_failed", item_id=item.item_id, org_id=org_id, error=str(e)
         )
+        # Failed extract → caller's sync deduction was for nothing of
+        # value. Refund so the customer isn't charged for our error.
+        _refund_zero_signal(
+            org_id=org_id, source_type=item.source_type,
+            native_id=item.item_id, reason="extract_failed",
+        )
         return
 
     if not extraction.entities and not extraction.relations:
+        # The LLM had nothing to extract (truly noisy content the noise
+        # gate didn't catch). Refund the sync deduction so we don't bill
+        # for junk — we still ate the ~$0.003 Haiku call, but that's our
+        # cost of having a safety net.
+        _refund_zero_signal(
+            org_id=org_id, source_type=item.source_type,
+            native_id=item.item_id, reason="zero_signal_extract",
+        )
         return  # nothing extracted — common for trivial messages
 
     # Prefix the stored item_id with source_type so disconnect+wipe can find
@@ -316,6 +330,75 @@ def _bump_predicate_registry(
             )
     except Exception as e:
         log.warning("predicate_registry_bump_failed", error=str(e))
+
+
+def _refund_zero_signal(
+    *,
+    org_id: str,
+    source_type: str,
+    native_id: str,
+    reason: str,
+) -> None:
+    """Refund the sync deduction when extraction returned no usable signal.
+
+    Looks up the original deduct row by the deterministic idempotency_key
+    sync_runner used (`sync:<source_type>:<native_id>`) and calls the
+    ledger's refund() helper, which writes a paired ledger row reversing
+    the deduct + adds the credits back to the org pool.
+
+    Scope:
+      - Only refunds sync deductions (skipped for resources:manual_entry
+        and resources:upload_chunk where the user explicitly authored
+        the input).
+      - Fail-soft: a refund hiccup must never bubble up into ingest;
+        worst case we have a one-credit anomaly the ops team can find
+        via the ledger metadata.
+    """
+    if source_type in ("manual", "upload"):
+        return
+    try:
+        from sqlalchemy import text as _text
+
+        from app.credits.ledger import refund as _ledger_refund
+        from app.database import SessionLocal
+
+        key = f"sync:{source_type}:{native_id}"
+        db = SessionLocal()
+        try:
+            row = db.execute(
+                _text(
+                    """
+                    SELECT id FROM credit_ledger
+                    WHERE org_id = :org
+                      AND idempotency_key = :key
+                      AND kind = 'deduct'
+                    LIMIT 1
+                    """
+                ),
+                {"org": org_id, "key": key},
+            ).fetchone()
+            if row is None:
+                return  # no matching deduct (e.g. trial-bypass, manual, retry)
+            out = _ledger_refund(
+                db, org_id=org_id, ledger_id=int(row.id),
+                reason=f"sync:{source_type}_record:{reason}",
+            )
+            db.commit()
+            if out is not None:
+                log.info(
+                    "sync_record_refunded",
+                    org_id=org_id, source_type=source_type,
+                    native_id=native_id, reason=reason,
+                    refund_ledger_id=out.ledger_id,
+                )
+        finally:
+            db.close()
+    except Exception as e:
+        log.warning(
+            "refund_zero_signal_failed",
+            org_id=org_id, source_type=source_type,
+            native_id=native_id, error=str(e),
+        )
 
 
 # Re-exports for callers

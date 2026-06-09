@@ -46,6 +46,7 @@ class SyncResult:
     items_emitted: int
     items_dropped_scope: int
     cursor_advanced: bool
+    items_dropped_noise: int = 0
     error: str | None = None
 
 
@@ -148,10 +149,28 @@ def run_sync_for_connection(
     mapping = adapter.get_mapping()
     emitted = 0
     dropped = 0
+    dropped_noise = 0
     insufficient_credits = False
+    from core.memory import noise_gate as _noise_gate
     for record in records:
         if not enforcer.is_allowed(record):
             dropped += 1
+            continue
+        # Universal noise gate — runs BEFORE billing so the customer is
+        # never charged for obvious junk (Naukri job alerts, OTP emails,
+        # bot Slack messages, blank calendar holds, etc). The drop is
+        # logged so an operator can tune the per-source rules in
+        # core/memory/noise_gate.py.
+        decision = _noise_gate.should_keep(conn.source_type, record)
+        if not decision.keep:
+            dropped_noise += 1
+            log.info(
+                "noise_dropped",
+                connection_id=connection_id,
+                source_type=conn.source_type,
+                native_id=record.native_id,
+                reason=decision.reason,
+            )
             continue
         # v2 sync-credit deduction: 1 credit per record actually emitted.
         # Uses the v1 ledger (single source of truth) — same `sync:gmail_record`
@@ -233,6 +252,7 @@ def run_sync_for_connection(
         source_type=conn.source_type,
         items_emitted=emitted,
         items_dropped_scope=dropped,
+        items_dropped_noise=dropped_noise,
         cursor_advanced=cursor_advanced,
         error="insufficient_credits" if insufficient_credits else None,
     )

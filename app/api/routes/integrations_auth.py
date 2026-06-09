@@ -135,12 +135,19 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
 
     def _sync_gmail() -> None:
         try:
+            # Per-plan initial-sync limit. Trial orgs no longer get a
+            # 50-record blast that consumes most of their starter pool
+            # on day-one connect; tiered via env (see app/config.py).
+            from app.config import initial_sync_limit_for_plan
+            from app.plan_enforcer import get_org_plan
+            _plan = (get_org_plan(org_id) or {}).get("tier")
+            _limit = initial_sync_limit_for_plan(_plan)
             with _v2_session() as s:
-                result = run_sync_for_connection(s, connection_id=v2_connection_id, limit=50)
+                result = run_sync_for_connection(s, connection_id=v2_connection_id, limit=_limit)
                 import logging
                 logging.getLogger(__name__).info(
-                    f"gmail sync done: emitted={result.items_emitted} "
-                    f"dropped_scope={result.items_dropped_scope}"
+                    f"gmail sync done: plan={_plan} limit={_limit} "
+                    f"emitted={result.items_emitted} dropped_scope={result.items_dropped_scope}"
                 )
         except Exception as e:
             import logging
