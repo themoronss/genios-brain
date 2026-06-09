@@ -94,6 +94,25 @@ DEFAULT_COSTS = {
     "sync:generic_record":        1,
     "sync:default":               1,
 
+    # ── Resources tab (manual + upload) ───────────────────────────────────
+    # 1 cr per input item, matching the sync model. Manual = 1 typed
+    # entry. Upload = 1 cr per chunk emitted (so a 1-page note is 1 cr,
+    # a 50-page contract is ~25 cr — predictable for the customer and
+    # the LLM cost is genuinely linear in chunks).
+    "resources:manual_entry":     1,
+    "resources:upload_chunk":     1,
+
+    # ── Gmail email attachments ──────────────────────────────────────────
+    # The email itself bills under sync:gmail_record. Each attachment we
+    # parse + extract from is a separate item — same 1 cr rate.
+    "sync:gmail_attachment":      1,
+
+    # ── Custom adapter mapping (Sonnet, one-time) ────────────────────────
+    # Rare but pricey (~$0.10-0.30 of model spend). 5 cr captures it
+    # without surprising the customer — they only hit this on first
+    # connect of a new source.
+    "custom_adapter:mapping":     5,
+
     # ── Background ops (free to user, cost eaten internally) ───────────────
     # Listed for completeness; llm/client.py skips deduct when
     # billing_disabled() context is active, so these are 0-charged in

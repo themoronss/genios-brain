@@ -28,10 +28,17 @@ from core.foundations import audit
 from core.foundations.telemetry import get_logger
 from core.memory.emit import emit as emit_memory_item
 from core.memory.types import MemoryItem, MemoryItemMetadata
+from core.resources.billing import deduct_or_raise as _deduct_or_raise_impl
 from core.resources.connection import (
     ensure_resource_connection,
     synthetic_source_id,
 )
+
+
+def _deduct_or_raise(**kwargs):
+    """Local alias so the call site reads cleanly. Forwards to the shared
+    helper that lives in core/resources/billing.py."""
+    return _deduct_or_raise_impl(**kwargs)
 
 log = get_logger(__name__)
 
@@ -79,7 +86,13 @@ def create_manual_entry(
     entry: ManualEntryInput,
     agent_id: str | None = None,
 ) -> dict:
-    """Persist + emit. Returns the created row in dict form for the route."""
+    """Persist + emit. Returns the created row in dict form for the route.
+
+    Billing: 1 credit per entry under reason 'resources:manual_entry'.
+    Charged BEFORE the LLM extract call so an out-of-credits user gets a
+    402 here instead of after we've already burned a Haiku call. The
+    raise propagates to the route which renders the 402 envelope.
+    """
     ensure_resource_connection(session, org_id=org_id, source_type="manual")
     source_id = synthetic_source_id(source_type="manual", org_id=org_id)
 
@@ -87,6 +100,13 @@ def create_manual_entry(
     source_item_id = f"manual_{entry_id}"
     created_at = datetime.now(UTC)
     interaction_ts = entry.interaction_date or created_at
+
+    _deduct_or_raise(
+        org_id=org_id, reason="resources:manual_entry",
+        idempotency_key=f"manual:{entry_id}",
+        related_kind="manual_entry", related_id=entry_id,
+        agent_uuid=agent_id, actor_email=actor_email,
+    )
 
     session.execute(
         text(

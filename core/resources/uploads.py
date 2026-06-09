@@ -22,10 +22,13 @@ from typing import BinaryIO
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from fastapi import HTTPException
+
 from core.foundations import audit
 from core.foundations.telemetry import get_logger
 from core.memory.emit import emit as emit_memory_item
 from core.memory.types import MemoryItem, MemoryItemMetadata
+from core.resources.billing import deduct_or_raise
 from core.resources.connection import (
     ensure_resource_connection,
     synthetic_source_id,
@@ -168,11 +171,33 @@ def create_upload(
     # rather than 500-ing back to the dashboard upload form.
     _set_status(session, file_id, "extracting")
     chunks_n = 0
+    insufficient_at_chunk: int | None = None
     try:
         body = _parse_to_text(storage_path, ext)
         chunks = _chunk(body)
         for i, ch in enumerate(chunks):
             item_id = f"{source_item_prefix}_chunk_{i}"
+            # Per-chunk billing: 1 credit per chunk so a 50-page contract
+            # costs proportionally more than a 1-page note. If the org
+            # runs out mid-file, we stop emitting (don't burn more
+            # Haiku calls) but keep the partial extract already on disk
+            # and the chunks that did process — the row is flagged so
+            # the user knows it was truncated.
+            try:
+                deduct_or_raise(
+                    org_id=org_id,
+                    reason="resources:upload_chunk",
+                    idempotency_key=f"upload:{file_id}:chunk:{i}",
+                    related_kind="upload",
+                    related_id=file_id,
+                    agent_uuid=agent_id,
+                    actor_email=actor_email,
+                )
+            except HTTPException as he:
+                if he.status_code == 402:
+                    insufficient_at_chunk = i
+                    break
+                raise
             item = MemoryItem(
                 item_id=item_id,
                 source_id=source_id,
@@ -194,16 +219,27 @@ def create_upload(
                  "AND source_item_id LIKE :prefix"),
             {"org": org_id, "prefix": f"upload:{source_item_prefix}%"},
         ).scalar() or 0
+        # 'indexed' = whole file ran. 'partial' = credits ran out mid-
+        # file; we keep what we extracted, flag the error so the UI
+        # surfaces it, and the customer top-ups + re-uploads the rest.
+        final_status = "indexed"
+        partial_err: str | None = None
+        if insufficient_at_chunk is not None:
+            final_status = "partial"
+            partial_err = (
+                f"Out of credits at chunk {insufficient_at_chunk + 1} of "
+                f"{len(chunks)}. Top up to extract the rest of this file."
+            )
         session.execute(
             text(
                 """
                 UPDATE resource_uploads
-                SET status = 'indexed', facts_count = :fn,
-                    processed_at = NOW()
+                SET status = :status, facts_count = :fn,
+                    error = :err, processed_at = NOW()
                 WHERE id = :id
                 """
             ),
-            {"id": file_id, "fn": facts_n},
+            {"id": file_id, "fn": facts_n, "status": final_status, "err": partial_err},
         )
         session.commit()
     except Exception as e:

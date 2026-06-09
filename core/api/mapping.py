@@ -81,15 +81,44 @@ def introspect(
 @router.post("/propose")
 def propose_mapping(
     body: ProposeRequest,
-    _org_id: str = Depends(require_org),
+    org_id: str = Depends(require_org),
 ) -> dict[str, Any]:
     introspection = (
         introspect_sql_schema(body.source_type, body.sql_schema_rows)
         if body.sql_schema_rows
         else introspect_samples(body.source_type, body.samples)
     )
+
+    # Billing: only the LLM path pays. The template path (a hardcoded
+    # known mapping like 'gmail') costs us nothing and shouldn't charge
+    # the customer. The Sonnet path (genuinely unknown schema) is the
+    # priciest call we make routinely — 5 cr captures it without
+    # surprising the customer since they only hit this on first connect.
+    from core.memory.adapters.custom.proposer import guess_from_introspection
+    template_hit = guess_from_introspection(introspection) is not None
+
+    if not template_hit:
+        from core.resources.billing import deduct_or_raise
+        import hashlib as _h
+        # Idempotency: hash of (source_type + field names) so a double-
+        # click or browser retry on the same form submission does not
+        # double-charge. Same source connected twice with identical
+        # schema = no second charge (rare; usually the user just made
+        # the same request twice fast).
+        fields_sig = ",".join(sorted(f.name for f in introspection.fields))
+        sample_fp = _h.sha256(
+            f"{body.source_type}:{fields_sig}".encode()
+        ).hexdigest()[:16]
+        deduct_or_raise(
+            org_id=org_id,
+            reason="custom_adapter:mapping",
+            idempotency_key=f"custom_mapping:{org_id}:{sample_fp}",
+            related_kind="custom_mapping",
+            related_id=sample_fp,
+        )
+
     try:
-        proposal = propose(introspection)
+        proposal = propose(introspection, org_id=org_id)
     except ProposerError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
