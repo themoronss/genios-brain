@@ -1194,40 +1194,67 @@ TOOL_CONNECTION_SQL: dict[str, list[str]] = {
 # connect starts a truly fresh sync. Edges whose endpoints are deleted are
 # cleaned up first to satisfy FK constraints.
 def _v2_wipe_sql(source_type: str, oauth_token_pattern: str | None) -> list[str]:
+    """Wipe a single source's data — preserving shared graph nodes.
+
+    The OLD version deleted any node whose source_item_ids contained
+    a {source}:% item, even if the node was ALSO sourced from manual
+    entries or a different connector. That meant "Disconnect & delete
+    Gmail data" silently nuked context the user had typed by hand into
+    Resources or pulled from Slack/HubSpot, because resolve.py merges
+    the same person across sources into one node.
+
+    New flow (per-source, preserves shared context):
+      1. Drop edges ASSERTED by this source. Edges from other sources
+         (manual, slack, etc) survive even if the nodes they connect
+         were also seen in this source.
+      2. Drop facts with this source's prefix — facts are 1:1 with a
+         source_item_id, so source-scoped deletion is exact.
+      3. UPDATE every node that has this source's item in its
+         source_item_ids → strip just that item. Multi-source nodes
+         survive with their remaining provenance intact.
+      4. DELETE nodes whose source_item_ids became empty after step 3
+         (i.e. they were exclusive to this source). ON DELETE CASCADE
+         on graph_edges automatically cleans dangling edges from those
+         orphaned nodes.
+    """
     src_pat = f"{source_type}:%"
     pre = [
-        # 1. Drop edges that reference any node which will be wiped
-        f"""DELETE FROM graph_edges
-            WHERE org_id = :oid
-              AND (from_node IN (
-                    SELECT id FROM graph_nodes
-                    WHERE org_id = :oid
-                      AND EXISTS (
-                        SELECT 1 FROM jsonb_array_elements_text(
-                          CASE jsonb_typeof(source_item_ids::jsonb)
-                               WHEN 'array' THEN source_item_ids::jsonb
-                               ELSE '[]'::jsonb END
-                        ) AS item WHERE item LIKE '{src_pat}'))
-                OR to_node IN (
-                    SELECT id FROM graph_nodes
-                    WHERE org_id = :oid
-                      AND EXISTS (
-                        SELECT 1 FROM jsonb_array_elements_text(
-                          CASE jsonb_typeof(source_item_ids::jsonb)
-                               WHEN 'array' THEN source_item_ids::jsonb
-                               ELSE '[]'::jsonb END
-                        ) AS item WHERE item LIKE '{src_pat}')))""",
-        # 2. Drop facts that came from this source
+        # 1. Edges asserted by THIS source (asserted_by_id carries the
+        #    same `gmail:<msg>` prefix the ingest subscriber wrote).
+        f"DELETE FROM graph_edges "
+        f"WHERE org_id = :oid AND asserted_by_id LIKE '{src_pat}'",
+
+        # 2. Facts produced by THIS source.
         f"DELETE FROM facts WHERE org_id = :oid AND source_item_id LIKE '{src_pat}'",
-        # 3. Drop nodes that came from this source (entire row, not just the source_item_ids item)
-        f"""DELETE FROM graph_nodes
+
+        # 3. Strip this source's items from every multi-source node.
+        f"""UPDATE graph_nodes
+            SET source_item_ids = (
+                SELECT COALESCE(jsonb_agg(item), '[]'::jsonb)
+                FROM jsonb_array_elements_text(
+                    CASE jsonb_typeof(source_item_ids::jsonb)
+                         WHEN 'array' THEN source_item_ids::jsonb
+                         ELSE '[]'::jsonb END
+                ) AS item
+                WHERE item NOT LIKE '{src_pat}'
+            )
             WHERE org_id = :oid
               AND EXISTS (
                 SELECT 1 FROM jsonb_array_elements_text(
-                  CASE jsonb_typeof(source_item_ids::jsonb)
-                       WHEN 'array' THEN source_item_ids::jsonb
-                       ELSE '[]'::jsonb END
+                    CASE jsonb_typeof(source_item_ids::jsonb)
+                         WHEN 'array' THEN source_item_ids::jsonb
+                         ELSE '[]'::jsonb END
                 ) AS item WHERE item LIKE '{src_pat}')""",
+
+        # 4. Delete nodes that were sourced ONLY from this connector
+        #    (their array is now empty). CASCADE on graph_edges drops
+        #    any dangling cross-source edges that pointed at them.
+        f"""DELETE FROM graph_nodes
+            WHERE org_id = :oid
+              AND (
+                source_item_ids IS NULL
+                OR source_item_ids::jsonb = '[]'::jsonb
+              )""",
     ]
     return pre + _v2_disconnect_sql(source_type, oauth_token_pattern)
 
@@ -1265,6 +1292,29 @@ def disconnect_tool(
         for sql in statements:
             db.execute(text(sql), {"oid": org_id})
         db.commit()
+        # g-i-8: every permission / data change must land in the
+        # immutable audit trail. Distinguish the two flavours so a
+        # support query "did the customer ask for a wipe or a soft
+        # disconnect?" answers itself.
+        try:
+            from core.foundations import audit
+            audit.record(
+                org_id=org_id,
+                actor_type="user",
+                actor_id=org_id,
+                action="data_subject_erasure" if wipe_data else "scope_revoked",
+                target_type="integration",
+                target_id=tool,
+                metadata={
+                    "tool": tool,
+                    "wipe_data": wipe_data,
+                    "scope": "source_only",  # shared nodes from other sources survive
+                },
+            )
+        except Exception:
+            # Audit failure must not break the disconnect — the SQL
+            # already committed, the user's action is durable.
+            pass
         return {"disconnected": True, "tool": tool, "data_wiped": wipe_data}
     except Exception as e:
         db.rollback()
