@@ -98,24 +98,118 @@ def propose_mapping(
     template_hit = guess_from_introspection(introspection) is not None
 
     if not template_hit:
-        from core.resources.billing import deduct_or_raise
         import hashlib as _h
+        from sqlalchemy import text as _text
+
+        from app.database import SessionLocal
+        from core.foundations import audit
+        from core.resources.billing import deduct_or_raise
+
         # Idempotency: hash of (source_type + field names) so a double-
         # click or browser retry on the same form submission does not
-        # double-charge. Same source connected twice with identical
-        # schema = no second charge (rare; usually the user just made
-        # the same request twice fast).
+        # double-charge.
         fields_sig = ",".join(sorted(f.name for f in introspection.fields))
         sample_fp = _h.sha256(
             f"{body.source_type}:{fields_sig}".encode()
         ).hexdigest()[:16]
-        deduct_or_raise(
-            org_id=org_id,
-            reason="custom_adapter:mapping",
-            idempotency_key=f"custom_mapping:{org_id}:{sample_fp}",
-            related_kind="custom_mapping",
-            related_id=sample_fp,
-        )
+
+        # Trial-tier grace: the first custom mapping is FREE. Customer
+        # gets to test "bring your own data source" without a 3-credit
+        # toll just to discover whether mapping even works for their
+        # shape. Detected by:
+        #   plan == 'trial' AND no prior ledger row for this reason.
+        # Free path still writes an audit row so the grace is observable
+        # for support + future analytics.
+        granted_free = False
+        _db = SessionLocal()
+        try:
+            plan_row = _db.execute(
+                _text("SELECT subscription_tier FROM orgs WHERE id = :o"),
+                {"o": org_id},
+            ).fetchone()
+            tier = (plan_row.subscription_tier if plan_row else "").lower()
+            if tier == "trial":
+                prior = _db.execute(
+                    _text(
+                        "SELECT 1 FROM credit_ledger "
+                        "WHERE org_id = :o AND reason = 'custom_adapter:mapping' "
+                        "LIMIT 1"
+                    ),
+                    {"o": org_id},
+                ).fetchone()
+                if prior is None:
+                    granted_free = True
+        finally:
+            _db.close()
+
+        if granted_free:
+            # Write a 0-amount ledger row tagged with the grace metadata.
+            # MUST land in credit_ledger (not just audit) — the "prior
+            # mapping?" check above keys off ledger rows; without this
+            # row the next call would qualify for the grace again and
+            # the customer would get unlimited free mappings.
+            _ldb = SessionLocal()
+            try:
+                _ldb.execute(
+                    _text(
+                        """
+                        INSERT INTO credit_ledger
+                          (org_id, bucket, kind, amount, balance_after,
+                           reason, related_kind, related_id,
+                           idempotency_key, metadata)
+                        VALUES
+                          (:org, 'context', 'grant', 0,
+                           (SELECT COALESCE(credits,0)+COALESCE(topup_credits,0)
+                            FROM orgs WHERE id = :org),
+                           'custom_adapter:mapping', 'custom_mapping', :rid,
+                           :key, CAST(:meta AS JSONB))
+                        ON CONFLICT (org_id, idempotency_key)
+                          WHERE idempotency_key IS NOT NULL
+                        DO NOTHING
+                        """
+                    ),
+                    {
+                        "org": org_id, "rid": sample_fp,
+                        "key": f"custom_mapping_grace:{org_id}:{sample_fp}",
+                        "meta": __import__("json").dumps({
+                            "grace": "trial_first_custom_mapping",
+                            "would_have_billed": 3,
+                            "fingerprint": sample_fp,
+                        }),
+                    },
+                )
+                _ldb.commit()
+            except Exception as _e:
+                _ldb.rollback()
+                # If the grace row fails we'd rather under-charge than
+                # block the user — but log it loud so ops can clean up.
+                __import__("logging").getLogger(__name__).warning(
+                    "trial_grace_ledger_write_failed", extra={"err": str(_e)},
+                )
+            finally:
+                _ldb.close()
+            audit.record(
+                org_id=org_id,
+                actor_type="user",
+                actor_id="system",
+                action="permission_changed",
+                target_type="credit_ledger",
+                target_id=sample_fp,
+                metadata={
+                    "reason": "custom_adapter:mapping",
+                    "units": 0,
+                    "grace": "trial_first_custom_mapping",
+                    "would_have_billed": 3,
+                },
+            )
+        else:
+            deduct_or_raise(
+                org_id=org_id,
+                reason="custom_adapter:mapping",
+                idempotency_key=f"custom_mapping:{org_id}:{sample_fp}",
+                related_kind="custom_mapping",
+                related_id=sample_fp,
+            )
 
     try:
         proposal = propose(introspection, org_id=org_id)

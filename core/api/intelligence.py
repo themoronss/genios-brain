@@ -175,6 +175,18 @@ def query(
         else:
             cost = 1  # haiku / hybrid default
 
+        # Customer transparency: tag every Sonnet deduction with
+        # escalation=auto + the model name + decision path. The customer
+        # gets to see "you charged me 3 for this query — why?" answered
+        # directly in the ledger metadata, not buried in server logs.
+        # No-op for symbolic (cost=0 skips the row entirely).
+        ledger_meta = {
+            "model": model,
+            "path": path,
+            "escalation": "auto" if "sonnet" in model else "default",
+            "module_id": body.module_id,
+        }
+
         if cost > 0:
             _ldb = SessionLocal()
             try:
@@ -187,6 +199,7 @@ def query(
                     idempotency_key=f"intel:{envelope.decision_id}",
                     related_kind="decision",
                     related_id=envelope.decision_id,
+                    metadata=ledger_meta,
                 )
                 _ldb.commit()
             except InsufficientCredits as e:

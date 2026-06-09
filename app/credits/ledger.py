@@ -108,10 +108,13 @@ DEFAULT_COSTS = {
     "sync:gmail_attachment":      1,
 
     # ── Custom adapter mapping (Sonnet, one-time) ────────────────────────
-    # Rare but pricey (~$0.10-0.30 of model spend). 5 cr captures it
-    # without surprising the customer — they only hit this on first
-    # connect of a new source.
-    "custom_adapter:mapping":     5,
+    # Rare but pricey (~$0.10-0.30 of model spend). 3 cr matches the
+    # Sonnet-decision rate — same model class, same fairness signal.
+    # Margin on this single row is thin (sometimes negative on cheaper
+    # plans) but the source then unlocks unlimited 1cr/record sync, so
+    # the lifetime economics work out. Trial users get the first one free
+    # via the grace check in core/api/mapping.py.
+    "custom_adapter:mapping":     3,
 
     # ── Background ops (free to user, cost eaten internally) ───────────────
     # Listed for completeness; llm/client.py skips deduct when
