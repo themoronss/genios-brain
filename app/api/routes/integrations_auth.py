@@ -164,7 +164,9 @@ async def gmail_callback(state: str, code: str, background_tasks: BackgroundTask
                 import logging
                 logging.getLogger(__name__).info(
                     f"gmail sync done: plan={_plan} limit={_limit} "
-                    f"emitted={result.items_emitted} dropped_scope={result.items_dropped_scope}"
+                    f"emitted={result.items_emitted} "
+                    f"dropped_scope={result.items_dropped_scope} "
+                    f"dropped_noise={result.items_dropped_noise}"
                 )
         except Exception as e:
             import logging

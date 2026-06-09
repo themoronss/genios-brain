@@ -36,16 +36,24 @@ _LLM_GATE_DISABLED = os.getenv("GENIOS_LLM_GATE_DISABLED", "0") == "1"
 # real extractor downstream.
 _MAX_GATE_INPUT_CHARS = 800
 
-_PROMPT_DEFAULT = """You are a strict business-relevance filter for a CRM-class memory graph.
+_PROMPT_DEFAULT = """You are a permissive relevance filter for a context graph.
 
-Answer ONLY with: YES or NO
+The customer has NOT yet told us what their business is, so default to
+KEEPING anything that could plausibly matter. Only filter out emails
+that are noise for EVERY business:
 
-Default rule of thumb when no business context is given:
-- YES = real human-to-human conversation, deal discussion, support ticket
-  from a real customer, meeting agenda, contract negotiation, PR review
-  comments authored by humans.
-- NO = automated emails, marketing/welcome drips, transactional
-  notifications (statements, receipts, shipping, sign-in alerts, OTPs).
+Answer NO only for:
+- OTPs, verification codes, 2FA codes
+- security / sign-in alerts ("new device signed in")
+- password reset emails
+- pure marketing newsletters from public-facing brands
+- mailer-daemon / bounce messages
+
+Answer YES for EVERYTHING ELSE — including bank statements, job
+applications, invoices, shipping updates, SaaS notifications, support
+threads, calendar invites, and ALL human-to-human conversations. When
+the customer fills in their business context, the filter becomes more
+selective.
 
 Email:
 \"\"\"
@@ -54,7 +62,7 @@ Subject: {subject}
 Body: {body}
 \"\"\"
 
-Answer:"""
+Answer YES or NO:"""
 
 
 # When the org tells us what they do, the prompt asks the model to score

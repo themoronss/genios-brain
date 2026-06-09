@@ -92,7 +92,11 @@ _RULES: dict[str, dict[str, Any]] = {
     "gmail": {
         "sender_patterns":   _GMAIL_NOISE_SENDERS,
         "subject_patterns":  _GMAIL_NOISE_SUBJECTS,
-        "min_content_chars": 80,
+        # Gmail's snippet field is a ~150-char preview, not the full
+        # body — a 2-line ack like "Sure, let's chat 3pm tomorrow" is
+        # legit signal even though it's well under 80 chars. The LLM
+        # gate downstream handles "is this actually content?".
+        "min_content_chars": 30,
         # Gmail category labels we still drop at the adapter query level
         # but enumerated here for completeness / future override path.
         "drop_labels": {
