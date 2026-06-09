@@ -179,6 +179,15 @@ def run_sync_for_connection(
         # v2 sync-credit deduction: 1 credit per record actually emitted.
         # Uses the v1 ledger (single source of truth) — same `sync:gmail_record`
         # reason string the v1 code used so the credit history stays continuous.
+        #
+        # idempotency_key includes connection_id so disconnect → wipe →
+        # reconnect → resync DOES bill again. The credit ledger is
+        # immutable (g-i-8), so without the connection_id segment a
+        # reconnect would short-circuit on yesterday's ledger row, the
+        # customer would get a free re-sync, and we'd eat the LLM cost
+        # of re-extracting everything. Within a single connection
+        # lifecycle (retries, webhook delta dupes), the (org, source,
+        # connection, native_id) tuple still de-dupes exactly.
         try:
             from app.credits.ledger import InsufficientCredits, deduct
             from app.database import SessionLocal
@@ -190,7 +199,9 @@ def run_sync_for_connection(
                     bucket="sync",
                     reason=f"sync:{conn.source_type}_record",
                     units=1,
-                    idempotency_key=f"sync:{conn.source_type}:{record.native_id}",
+                    idempotency_key=(
+                        f"sync:{conn.source_type}:{conn.id}:{record.native_id}"
+                    ),
                     related_kind="memory_item",
                     related_id=record.native_id,
                 )

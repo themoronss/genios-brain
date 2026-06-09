@@ -362,7 +362,14 @@ def _refund_zero_signal(
         from app.credits.ledger import refund as _ledger_refund
         from app.database import SessionLocal
 
-        key = f"sync:{source_type}:{native_id}"
+        # The idempotency_key now includes connection_id
+        # (sync:{source}:{conn_id}:{native_id}) so a disconnect+reconnect
+        # bills again. The refund still keys on the latest deduct that
+        # carries the same (source, native_id) suffix — that's the
+        # row we just charged. LIKE is fine because the prefix is
+        # deterministic and there's at most one connection per
+        # (org, source_type) active at a time.
+        like_key = f"sync:{source_type}:%:{native_id}"
         db = SessionLocal()
         try:
             row = db.execute(
@@ -370,12 +377,13 @@ def _refund_zero_signal(
                     """
                     SELECT id FROM credit_ledger
                     WHERE org_id = :org
-                      AND idempotency_key = :key
+                      AND idempotency_key LIKE :key
                       AND kind = 'deduct'
+                    ORDER BY occurred_at DESC
                     LIMIT 1
                     """
                 ),
-                {"org": org_id, "key": key},
+                {"org": org_id, "key": like_key},
             ).fetchone()
             if row is None:
                 return  # no matching deduct (e.g. trial-bypass, manual, retry)
