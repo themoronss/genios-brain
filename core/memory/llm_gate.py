@@ -36,28 +36,51 @@ _LLM_GATE_DISABLED = os.getenv("GENIOS_LLM_GATE_DISABLED", "0") == "1"
 # real extractor downstream.
 _MAX_GATE_INPUT_CHARS = 800
 
-_PROMPT = """You are a strict business-relevance filter for a CRM-class memory graph.
+_PROMPT_DEFAULT = """You are a strict business-relevance filter for a CRM-class memory graph.
 
 Answer ONLY with: YES or NO
 
-Mark NO for:
-- bank / credit-card statements, balance alerts, EMI reminders
-- payment / invoice / receipt / refund / transaction notifications
-- order / shipping / delivery updates from e-commerce
-- "thanks for applying", interview rejections, job-board alerts
-- SaaS welcome / onboarding / trial-ended / drip marketing
-- newsletters, weekly/daily digests, product announcements
-- security alerts (sign-in from new device, password reset)
-- OTP, verification codes, 2FA
-- government / regulatory notices, tax statements, utility bills
+Default rule of thumb when no business context is given:
+- YES = real human-to-human conversation, deal discussion, support ticket
+  from a real customer, meeting agenda, contract negotiation, PR review
+  comments authored by humans.
+- NO = automated emails, marketing/welcome drips, transactional
+  notifications (statements, receipts, shipping, sign-in alerts, OTPs).
 
-Mark YES for:
-- human-to-human conversations
-- real meeting requests, agenda discussions, deal negotiation
-- proposal / contract / quote correspondence
-- customer support tickets where the customer typed a question
-- direct calendar invites between named people
-- code review or PR comments authored by humans
+Email:
+\"\"\"
+From: {sender}
+Subject: {subject}
+Body: {body}
+\"\"\"
+
+Answer:"""
+
+
+# When the org tells us what they do, the prompt asks the model to score
+# relevance FROM THAT VIEWPOINT. A "thanks for applying" email is junk
+# for a sales SaaS but signal for a recruiting agency; the model gets
+# to use that context instead of a blanket rule.
+_PROMPT_WITH_CONTEXT = """You are a strict relevance filter for a CRM-class memory graph.
+
+The graph belongs to a company described as:
+\"\"\"
+{business_context}
+\"\"\"
+
+Answer ONLY with: YES or NO
+
+YES = this email is meaningful business signal for the company described above.
+      Real conversations with their customers, prospects, vendors, candidates,
+      partners; deal updates; meeting requests; commitments; events that affect
+      their pipeline or operations.
+
+NO  = noise for the company above. Universal junk (OTPs, sign-in alerts,
+      password resets, newsletters, marketing drips, generic welcome emails)
+      OR transactional/automated emails that are NOT what the company
+      ABOVE does (e.g. bank statements ARE noise for a sales SaaS but ARE
+      signal for a fintech; job-application emails ARE noise for a sales
+      SaaS but ARE signal for a recruiting agency).
 
 Email:
 \"\"\"
@@ -75,24 +98,43 @@ class GateLLMDecision:
     reason: str
 
 
-def is_business_relevant(*, sender: str, subject: str, body: str) -> GateLLMDecision:
+def is_business_relevant(
+    *,
+    sender: str,
+    subject: str,
+    body: str,
+    org_id: str | None = None,
+    business_context: str | None = None,
+) -> GateLLMDecision:
     """Single Haiku call, returns (keep, reason).
 
-    Caller is responsible for swallowing errors — this function logs and
-    raises so the caller can decide whether to fail open or closed.
-    Default operator behaviour is fail-open (keep) — see caller in
-    sync_runner.
+    Caller can pass either `business_context` directly OR an `org_id` we
+    look it up from. If both are missing we fall back to the
+    generic-business prompt — works for first-connect before the user
+    has filled the field in Settings.
     """
     if _LLM_GATE_DISABLED:
         return GateLLMDecision(True, "gate_disabled")
     if not settings.ANTHROPIC_API_KEY:
         return GateLLMDecision(True, "no_api_key")
 
-    prompt = _PROMPT.format(
-        sender=(sender or "")[:200],
-        subject=(subject or "")[:200],
-        body=(body or "")[:_MAX_GATE_INPUT_CHARS],
-    )
+    ctx = (business_context or "").strip()
+    if not ctx and org_id:
+        ctx = (_lookup_business_context(org_id) or "").strip()
+
+    if ctx:
+        prompt = _PROMPT_WITH_CONTEXT.format(
+            business_context=ctx[:500],
+            sender=(sender or "")[:200],
+            subject=(subject or "")[:200],
+            body=(body or "")[:_MAX_GATE_INPUT_CHARS],
+        )
+    else:
+        prompt = _PROMPT_DEFAULT.format(
+            sender=(sender or "")[:200],
+            subject=(subject or "")[:200],
+            body=(body or "")[:_MAX_GATE_INPUT_CHARS],
+        )
 
     from anthropic import Anthropic
     client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
@@ -103,18 +145,17 @@ def is_business_relevant(*, sender: str, subject: str, body: str) -> GateLLMDeci
     )
     raw = "".join(b.text for b in resp.content if b.type == "text").strip().upper()
 
-    # Cost row — separate purpose so we can see how much the gate
-    # itself costs vs the main extract that's downstream.
+    # Cost row — log under the actual org when we have one so the
+    # founder's /v1/usage/llm endpoints can attribute gate spend to a
+    # tenant. Falls back to 'system' for callers that haven't threaded
+    # org_id yet (e.g. ad-hoc smoke tests).
     try:
         from core.foundations.llm_costs import record_llm_call, usage_extract
         it, ot = usage_extract(resp)
-        # org_id isn't threaded into noise_gate yet; record without it
-        # for now and we'll wire org propagation in a follow-up if the
-        # gate's total cost is non-trivial.
         record_llm_call(
-            org_id="system",
+            org_id=org_id or "system",
             model=settings.ANTHROPIC_HAIKU_MODEL,
-            purpose="other",
+            purpose="other",  # 'noise_gate' once Purpose Literal is widened
             input_tokens=it, output_tokens=ot,
         )
     except Exception:
@@ -127,3 +168,45 @@ def is_business_relevant(*, sender: str, subject: str, body: str) -> GateLLMDeci
     # Garbled response — fail open
     log.warning("llm_gate_unexpected_response", raw=raw[:30])
     return GateLLMDecision(True, "llm_unparseable")
+
+
+# Tiny in-process cache keyed by org_id. The gate fires once per record
+# during a batch sync (typically 15-50 records back-to-back), so even a
+# few-second TTL kills the per-batch DB hit. We do NOT cache across
+# processes — Settings UI edits show up in the next batch's first call.
+_ORG_CTX_CACHE: dict[str, tuple[float, str | None]] = {}
+_ORG_CTX_TTL_S = 60.0
+
+
+def _lookup_business_context(org_id: str) -> str | None:
+    """Fetch orgs.business_context. Returns None on miss / lookup failure.
+
+    Failures here are silent on purpose — we'd rather fall back to the
+    generic gate prompt than block the whole sync because the v1 DB
+    pool blipped.
+    """
+    import time as _t
+
+    now = _t.monotonic()
+    hit = _ORG_CTX_CACHE.get(org_id)
+    if hit is not None and now - hit[0] < _ORG_CTX_TTL_S:
+        return hit[1]
+
+    try:
+        from sqlalchemy import text as _text
+
+        from core.foundations.db import get_session
+
+        with get_session() as s:
+            row = s.execute(
+                _text("SELECT business_context FROM orgs WHERE id = :o"),
+                {"o": org_id},
+            ).fetchone()
+            ctx = (row.business_context or "").strip() if row else ""
+            ctx = ctx or None
+    except Exception as e:
+        log.warning("llm_gate_ctx_lookup_failed", org_id=org_id, error=str(e))
+        ctx = None
+
+    _ORG_CTX_CACHE[org_id] = (now, ctx)
+    return ctx

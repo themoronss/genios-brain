@@ -158,10 +158,14 @@ def run_sync_for_connection(
             continue
         # Universal noise gate — runs BEFORE billing so the customer is
         # never charged for obvious junk (Naukri job alerts, OTP emails,
-        # bot Slack messages, blank calendar holds, etc). The drop is
-        # logged so an operator can tune the per-source rules in
-        # core/memory/noise_gate.py.
-        decision = _noise_gate.should_keep(conn.source_type, record)
+        # bot Slack messages, blank calendar holds, etc). org_id lets
+        # the LLM-gate inside this call use the customer's
+        # business_context so vertical-specific signal (bank statement
+        # for a fintech, candidate email for a recruiter) is kept while
+        # the same email is dropped for unrelated verticals.
+        decision = _noise_gate.should_keep(
+            conn.source_type, record, org_id=conn.org_id,
+        )
         if not decision.keep:
             dropped_noise += 1
             log.info(

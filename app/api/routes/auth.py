@@ -96,6 +96,10 @@ class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
+    # Optional one-line org description used by the noise gate to decide
+    # what's relevant per vertical. Empty/missing = the gate falls back
+    # to its generic "is this a business conversation" judgement.
+    business_context: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -239,7 +243,8 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
                 plan_started_at, plan_expires_at, period_reset_at,
                 period_context_count,
                 credits,
-                credit_period_start, credit_period_end
+                credit_period_start, credit_period_end,
+                business_context
             )
             VALUES (
                 :name, :email, :password_hash, :api_key,
@@ -248,7 +253,8 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
                 NOW() + (:days || ' days')::INTERVAL,
                 0,
                 :credits,
-                NOW(), NOW() + (:days || ' days')::INTERVAL
+                NOW(), NOW() + (:days || ' days')::INTERVAL,
+                :business_context
             )
             RETURNING id
         """
@@ -260,6 +266,9 @@ def register(request: RegisterRequest, http_request: Request, db: Session = Depe
             "api_key": api_key,
             "days":    trial_cfg["period_days"],
             "credits": trial_cfg["credits"],
+            # Optional — empty/None is fine; the LLM gate uses a sensible
+            # generic default when this isn't set.
+            "business_context": (request.business_context or "").strip()[:500] or None,
         },
     )
     org_id = result.fetchone()[0]
@@ -440,7 +449,10 @@ def auth_logout(http_request: Request):
 @router.get("/api/org/{org_id}/profile")
 def get_profile(org_id: str, db: Session = Depends(get_db)):
     row = db.execute(
-        text("SELECT name, email, first_name, last_name, company, role FROM orgs WHERE id = :oid"),
+        text(
+            "SELECT name, email, first_name, last_name, company, role, "
+            "business_context FROM orgs WHERE id = :oid"
+        ),
         {"oid": org_id},
     ).fetchone()
     if not row:
@@ -454,6 +466,7 @@ def get_profile(org_id: str, db: Session = Depends(get_db)):
         "email": row.email,
         "company": row.company or "",
         "role": row.role or "",
+        "business_context": row.business_context or "",
     }
 
 
@@ -462,6 +475,9 @@ class ProfileUpdate(BaseModel):
     last_name: str = None
     company: str = None
     role: str = None
+    # One-line org description used by the noise gate. Editable from
+    # Settings so a user who skipped it at signup can backfill later.
+    business_context: str | None = None
 
 @router.patch("/api/org/{org_id}/profile")
 def update_profile(org_id: str, body: ProfileUpdate, db: Session = Depends(get_db)):
@@ -484,6 +500,9 @@ def update_profile(org_id: str, body: ProfileUpdate, db: Session = Depends(get_d
     if body.role is not None:
         sets.append("role = :role")
         params["role"] = body.role
+    if body.business_context is not None:
+        sets.append("business_context = :business_context")
+        params["business_context"] = body.business_context.strip()[:500] or None
     if not sets:
         return {"updated": False}
     db.execute(text(f"UPDATE orgs SET {', '.join(sets)} WHERE id = :oid"), params)

@@ -42,103 +42,38 @@ class GateDecision:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-# Sender regexes — match against the `from` header (full string incl. display name).
-# Grouped by category so adding patterns stays grep-able. \b word-boundary at
-# start of each token name lets "alerts@" match inside "ICICI Alerts <alerts@..>".
+# UNIVERSAL noise — these are junk for EVERY business, regardless of vertical.
+# Bank / HR / shipping / SaaS-welcome patterns intentionally REMOVED — they
+# are signal for finance / recruiting / logistics / SaaS-customer-success
+# verticals respectively. Per-vertical relevance is the LLM gate's job
+# (sees org.business_context), not this regex layer.
+#
+# What stays here: identity/auth/security/spam — categories no startup
+# wants in their context graph regardless of what they do.
 _GMAIL_NOISE_SENDERS = [
     re.compile(p, re.I) for p in (
-        # ── Generic automated (no-reply / system / bot) ──────────────────
+        # System / bounces / postmaster — never business signal anywhere
+        r"@(mailer-daemon|postmaster|bounces?)\.",
+        r"^mailer-daemon@",
+        # Account security from major providers
+        r"@accounts\.google\.com$",
+        r"\b(security|account)-?(noreply|notif|alert)@",
+        r"\baccounts?-?noreply@",
+        # Generic noreply / do-not-reply — IF the LLM gate later decides
+        # one of these IS relevant for a given vertical (e.g. tracking
+        # for a logistics startup), the gate will override.
         r"\bno-?reply@",
         r"\bdo-?not-?reply@",
         r"\bnoreply[._-]",
-        r"\bnotifications?@",
-        r"\balerts?@",
-        r"\bautomated?@",
-        r"\bbot@",
-        r"\bnews(letter)?@",
-        r"\bdigest@",
-        r"@(mailer-daemon|postmaster)\.",
-
-        # ── Marketing / sales / SaaS welcome / drip ──────────────────────
-        r"\bmarketing@",
-        r"\bcampaigns?@",
-        r"\bgrowth@",
-        r"\bsales@",
-        r"\bhello@",
-        r"\bhi@",
-        r"\bwelcome@",
-        r"\bgetstarted@",
-        r"\bonboarding@",
-        r"\bnew(s|)letter@",
-        r"\bteam@",  # often used for marketing blasts from saas startups
-        r"\bsupport@",  # tickets land in inbox but rarely business signal
-        r"\bsupport-?(noreply|alert|reply)@",
-
-        # ── HR / recruiting (from BOTH job boards and direct company HR) ─
-        r"@(naukri|indeed|monster|linkedin-jobs|glassdoor|hirist|cutshort|"
-        r"foundit|shine|wellfound|angel|angelco|otta|hired|himalayas|workatastartup)\.",
-        r"\b(careers?|talent|jobs?|hiring|recruit(ing)?|hr|peopleops)@",
-        r"\bapply(ing)?@",
-        r"\bcandidates?@",
-
-        # ── Banks / financial / fintech / payments — India + global ──────
-        r"@([a-z0-9-]*bank[a-z0-9-]*)\.",  # *bank* in domain
-        r"@(icici|hdfc|sbi|axis|kotak|yesbank|paytm|paypal|stripe|square|"
-        r"razorpay|phonepe|gpay|googlepay|cashfree|amex|americanexpress|"
-        r"visa|mastercard|citi|hsbc|chase|barclays|standardchartered|"
-        r"deutsche|ubs|jpmorgan|morganstanley|bofa|wellsfargo|capitalone|"
-        r"discover|ingbank|ing|aubank|idbi|pnb|bankofbaroda|bob|bandhanbank|"
-        r"federal|rblbank|rbl|csb|equitas|esaf|jana|smallfinancebank)\.",
-        r"\b(estatement|statement|estatements|payments?|payroll|invoice|"
-        r"invoices|billing|receipt|transactions?)@",
-        r"\bcustomercare@",
-        r"\bcardservices?@",
-
-        # ── Travel / transport / food / e-commerce / OTAs ────────────────
-        r"@(amazon|flipkart|ebay|paytm|swiggy|zomato|uber|ola|rapido|"
-        r"makemytrip|goibibo|ixigo|cleartrip|yatra|booking|expedia|airbnb|"
-        r"agoda|tripadvisor|redbus|abhibus|irctc|trainpnr|indianrailways|"
-        r"indigo|airindia|vistara|spicejet|emirates|qatar|britishairways|"
-        r"lufthansa|delta|united|americanairlines|dhl|fedex|bluedart|"
-        r"shiprocket|delhivery)\.",
-        r"@(orders?|shipping|tracking|fulfillment|delivery)\.",
-
-        # ── Govt / regulatory (statements, notices) ─────────────────────
-        r"@(uidai|epfindia|incometax|incometaxindia|gst|gstn|gstin|cbic|"
-        r"sebi|rbi|trai|mca|govt?\.in|gov\.in|nic\.in|esic|pfo)\.",
-
-        # ── Telco / utility (bill, recharge) ────────────────────────────
-        r"@(airtel|vi|vodafoneidea|jio|reliancejio|bsnl|tatateleservices|"
-        r"actcorp|hathway|tplink|tata|adani|reliance|torrentpower)\.",
-
-        # ── Social / community / forum noise ────────────────────────────
-        r"@e\.linkedin\.com$",
-        r"@updates\.linkedin\.com$",
-        r"@em\.linkedin\.com$",
-        r"@quora\.com$",
-        r"@medium\.com$",
-        r"@substack\.com$",
-        r"@meetup\.com$",
-        r"@eventbrite\.com$",
-        r"@stackoverflow\.com$",
-        r"@discourse\.",
-        r"@discord(app)?\.com$",
-        r"@reddit\.com$",
-        r"@notifications\.github\.com$",
-        r"@notify\.",
-        r"@notification\.",
-
-        # ── Anti-spam / security alerts (Google, Microsoft, etc) ────────
-        r"\b(security|account)-?(noreply|notif|alert)@",
-        r"\baccounts?-?noreply@",
-        r"@accounts\.google\.com$",
     )
 ]
 
-# Subject regexes — case-insensitive substring matches on the subject line.
+# UNIVERSAL noise subjects — OTPs, password resets, sign-in alerts.
+# Statement / invoice / "thanks for applying" / "order shipped" etc REMOVED
+# for the same vertical-context reason as the senders above.
 _GMAIL_NOISE_SUBJECTS = [
     re.compile(p, re.I) for p in (
-        # ── Identity / auth / security ──────────────────────────────────
+        # Identity / auth / security — junk for everyone
         r"\b(otp|one[- ]time password|verification code|security code)\b",
         r"\bverify (your|the) (email|phone|account|identity)\b",
         r"\bpassword (reset|changed|change request|expir(ed|ing))\b",
@@ -147,55 +82,8 @@ _GMAIL_NOISE_SUBJECTS = [
         r"\bnew (device|sign-?in|login)\b",
         r"\btwo[- ]factor\b",
         r"\b(2fa|mfa) code\b",
-
-        # ── Marketing / digest / newsletter ─────────────────────────────
+        # Unsubscribe / explicit marketing markers — rare in real biz threads
         r"\bunsubscribe\b",
-        r"\b(weekly|daily|monthly)\s+(digest|recap|summary|news|update|roundup)\b",
-        r"\bnewsletter\b",
-        r"\b(free|limited time) (offer|trial|access)\b",
-        r"\b\d+%?\s*off\b",
-        r"\bsale ends?\b",
-        r"\b(announcing|introducing) (the )?new\b",
-
-        # ── Welcome / onboarding ────────────────────────────────────────
-        r"\bwelcome to\b",
-        r"\bthanks for (signing up|joining|registering)\b",
-        r"\bget started with\b",
-        r"\byour (free )?trial (has |is )(begun|started|active|ended)\b",
-        r"\bcomplete your (account|profile|setup)\b",
-
-        # ── Recruiting / job ────────────────────────────────────────────
-        r"\bjob\s+(alert|match|recommendation|opportunit(y|ies))\b",
-        r"\b(thanks?|thank you) for (applying|your application)\b",
-        r"\b(your )?application (has been )?(received|submitted)\b",
-        r"\bnext steps? in your application\b",
-        r"\b(we|the team) (regret|are unable) to\b",  # rejection emails
-        r"\bunfortunatel(y|y,) (we|our)\b",
-
-        # ── Financial / billing / transactional ─────────────────────────
-        r"\b(your )?(monthly|quarterly|annual)? ?(account |credit card |bank )?statement\b",
-        r"\b(your )?invoice\b",
-        r"\b(payment|invoice) (received|reminder|due|failed|successful)\b",
-        r"\breceipt for\b",
-        r"\bautopay\b",
-        r"\btransaction (alert|notification|confirmation)\b",
-        r"\bdebit(ed)? (from|on)\b",
-        r"\bcredit(ed)? (to|on)\b",
-        r"\bbalance (alert|enquiry)\b",
-        r"\bemi (due|reminder|payment)\b",
-        r"\b(card|policy) renewal\b",
-
-        # ── Orders / shipping ───────────────────────────────────────────
-        r"\b(your )?order (has been )?(placed|confirmed|shipped|delivered|cancelled)\b",
-        r"\bout for delivery\b",
-        r"\btracking (number|info|details)\b",
-        r"\bdelivery (update|confirmation)\b",
-
-        # ── Notifications / system ──────────────────────────────────────
-        r"\baction required\b",
-        r"\b(?:please )?reset your password\b",
-        r"\bgovernment of india\b",
-        r"\bregulatory (notice|update)\b",
     )
 ]
 
@@ -251,12 +139,21 @@ _RULES: dict[str, dict[str, Any]] = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def should_keep(source_type: str, record: RawRecord) -> GateDecision:
+def should_keep(
+    source_type: str,
+    record: RawRecord,
+    *,
+    org_id: str | None = None,
+) -> GateDecision:
     """Universal noise gate. Returns (keep, reason).
 
     Unknown source_type → keep (better to over-bill once than block a new
     adapter from working). The rule sheet below makes adding a source a
     one-line registry change.
+
+    org_id (optional): when provided, lets the per-source handler call
+    the org-context-aware LLM gate. Without it the LLM gate falls back
+    to its generic-business default.
     """
     rules = _RULES.get(source_type)
     if rules is None:
@@ -265,7 +162,7 @@ def should_keep(source_type: str, record: RawRecord) -> GateDecision:
         return GateDecision(True, "always_keep")
 
     if source_type == "gmail":
-        return _gmail_decision(record, rules)
+        return _gmail_decision(record, rules, org_id=org_id)
     if source_type == "calendar":
         return _calendar_decision(record, rules)
     if source_type == "slack":
@@ -283,7 +180,7 @@ def should_keep(source_type: str, record: RawRecord) -> GateDecision:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _gmail_decision(record: RawRecord, rules: dict) -> GateDecision:
+def _gmail_decision(record: RawRecord, rules: dict, *, org_id: str | None = None) -> GateDecision:
     f = record.fields
     labels = set(f.get("labels", []) or [])
     if rules["drop_labels"] & labels:
@@ -304,14 +201,17 @@ def _gmail_decision(record: RawRecord, rules: dict) -> GateDecision:
         return GateDecision(False, "too_short")
 
     # LLM gatekeeper — final pass on what the pattern rules let through.
-    # ~$0.0001 per call (50 in + 1-3 out tokens). Pattern misses are the
-    # long tail (varied bank senders, real-looking HR addresses, SaaS
-    # team@ that's marketing, etc) — the gate's domain knowledge catches
-    # them. Fail-open: any LLM error keeps the record (we don't block a
-    # business email on a transient API failure).
+    # ~$0.0003 per call (50-300 in + ≤4 out tokens). With org_id we send
+    # the org's business_context so the model judges relevance from THE
+    # CUSTOMER'S viewpoint (bank statements = signal for a fintech,
+    # noise for a sales SaaS). Without org_id it falls back to the
+    # generic-business prompt. Fail-open on any LLM error so a
+    # transient API blip doesn't drop legitimate mail.
     try:
         from core.memory.llm_gate import is_business_relevant
-        verdict = is_business_relevant(sender=sender, subject=subject, body=content)
+        verdict = is_business_relevant(
+            sender=sender, subject=subject, body=content, org_id=org_id,
+        )
         if not verdict.keep:
             return GateDecision(False, f"llm_gate:{verdict.reason}")
     except Exception as e:
