@@ -69,6 +69,14 @@ SYNC_INITIAL_LIMIT_ENTERPRISE = int(os.getenv("SYNC_INITIAL_LIMIT_ENTERPRISE", 5
 SYNC_INITIAL_LIMIT            = os.getenv("SYNC_INITIAL_LIMIT")
 SYNC_PERIODIC_LIMIT           = int(os.getenv("SYNC_PERIODIC_LIMIT", 50))
 
+# Scan-cap multiplier. `limit` is the TARGET number of POST-FILTER
+# records to emit; the runner scans up to limit × this multiplier raw
+# records looking for them. Without this cap a 100%-noise inbox would
+# loop forever. 5 = scan up to 5× target before giving up. Trade-off:
+# higher = more chance of meeting the emit quota on noisy inboxes,
+# but more LLM gate calls (we eat ~$0.0003 each) and longer sync time.
+SYNC_SCAN_CAP_MULTIPLIER      = int(os.getenv("SYNC_SCAN_CAP_MULTIPLIER", 5))
+
 
 def initial_sync_limit_for_plan(plan: str | None) -> int:
     """Per-plan initial-sync record limit (Gmail / Slack / Calendar / etc).
