@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, harsh/mvp]
+  push:
+    branches: [main, harsh/mvp]
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check core modules tests
+
+      - name: Format check (ruff)
+        run: ruff format --check core modules tests
+
+      - name: Type check (mypy)
+        run: mypy core modules
+
+      - name: Test
+        env:
+          GENIOS_ENV: test
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          REDIS_URL: redis://localhost:6379/0
+          GENIOS_CRYPTO_MASTER_KEY: r3EvaCrC0M31LVH4xDnfbJTxpgPEacVPJ7PM-7qFop8=
+        run: pytest tests -m unit -v
+
+      - name: Security audit (informational)
+        run: pip-audit || true

@@ -1,8 +1,31 @@
 fastapi
 uvicorn
-supabase
-qdrant-client
+sqlalchemy
+psycopg2-binary
+pgvector
+redis
+celery[redis]
 python-dotenv
-google-genai
+pydantic
+requests
 google-generativeai
-httpx
+groq
+anthropic>=0.40.0,<1.0.0
+google-auth-oauthlib
+google-api-python-client
+bcrypt
+PyJWT
+rapidfuzz
+python-louvain
+networkx
+sse-starlette
+python-multipart
+PyMuPDF
+python-docx
+razorpay
+posthog
+sentry-sdk
+# Phase 1 — dev dep for CI CVE scanning
+pip-audit==2.7.3
+# Phase 4 — calibration (Platt scaling over recommendation outcomes)
+scikit-learn==1.5.2

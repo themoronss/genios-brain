@@ -1,0 +1,13 @@
+{
+  "id": "sales",
+  "version": "1.0.0",
+  "requiredScopes": ["crm:read", "email:read"],
+  "engineVersion": ">=2.0",
+  "provides": {
+    "rules": ["pricing", "churn", "velocity"],
+    "graphFragment": "knowledge/relationship_graph.json",
+    "simulationTemplates": ["pricing_change", "sequence_change"],
+    "artifacts": ["churn_brief", "deal_risk_report"]
+  },
+  "goldenSet": "evaluator.py"
+}

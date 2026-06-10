@@ -1,0 +1,23 @@
+# Artifact template: per-deal risk report.
+
+name: deal_risk_report
+title: "Deal Risk Report — {deal_id}"
+required_facts:
+  - deal_id
+  - account_name
+  - stage
+  - deal_value
+  - days_in_current_stage
+sections:
+  - heading: "Conclusion"
+    template: "Status: {conclusion} (confidence {confidence:.0%})"
+  - heading: "Derivation"
+    template: "{derivation_chain_rendered}"
+  - heading: "Counterfactuals (symbolic what-if)"
+    template: "{counterfactuals}"
+  - heading: "Recommendation"
+    template: "{recommendation}"
+  - heading: "Uncertainty flags"
+    template: "{uncertainty_flags}"
+recommendation_field: recommend
+must_include_disclaimer: true

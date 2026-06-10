@@ -1,34 +1,40 @@
-# Environment variables
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual Environment
+venv/
+env/
+.env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment Variables
 .env
 .env.local
 .env.*.local
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-venv/
-env/
-ENV/
+# Logs
+*.log
+logs/
 
-# IDE
+# Databases
+*.db
+*.sqlite3
+*.sqlite
+
+# Python build files
+build/
+dist/
+*.egg-info/
+*.egg
+
+# IDE files
 .vscode/
 .idea/
 *.swp
@@ -36,28 +42,69 @@ ENV/
 *~
 .DS_Store
 
-# Logs
-*.log
-logs/
-*.sqlite
-*.db
+# Mac & Windows OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Test outputs
-baseline_outputs_*.json
-enhanced_outputs_*.json
-comparison_results_*.json
+# Coverage & Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
 
-# Deployment
-.railway/
-.render/
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# FastAPI specific
+*.pid
+
+# Node (if using Node/Next.js)
+node_modules/
+.next/
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# Uploads & Generated files
+uploads/
+storage/
+dist/
 
 # Jupyter Notebook
-.ipynb_checkpoints
+.ipynb_checkpoints/
+*.ipynb
 
-# pyenv
-.python-version
+# Poetry/Pipenv
+poetry.lock
+Pipfile.lock
 
-# Local test files
-test_local.py
-scratch.py
-temp/
+# Redis
+dump.rdb
+
+# Docker
+.dockerignore
+
+# OS specific
+.vscode/settings.json
+.vs/
+
+# Local development
+local_config.py
+config.local.py
+*.local
+
+# Editor backup files
+*.bak
+
+# Local env backups (added after secret leak prevention)
+.env.upstash_backup
+.env.bak
+.env.*.backup

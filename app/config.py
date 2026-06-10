@@ -1,0 +1,142 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+REDIS_URL = os.getenv("REDIS_URL")
+
+# Public base URL where Genios Brain is reachable from the internet — used
+# when registering inbound webhooks (e.g. Inkbox). For local dev set this to
+# your ngrok tunnel, e.g. https://abc123.ngrok-free.app
+GENIOS_PUBLIC_URL = (os.getenv("GENIOS_PUBLIC_URL") or "").rstrip("/")
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/gmail/callback")
+GOOGLE_CALENDAR_REDIRECT_URI = os.getenv("GOOGLE_CALENDAR_REDIRECT_URI", "http://localhost:8000/auth/calendar/callback")
+GOOGLE_DRIVE_REDIRECT_URI = os.getenv("GOOGLE_DRIVE_REDIRECT_URI", "http://localhost:8000/auth/drive/callback")
+GOOGLE_SHEETS_REDIRECT_URI = os.getenv("GOOGLE_SHEETS_REDIRECT_URI", "http://localhost:8000/auth/gsheets/callback")
+GOOGLE_DOCS_REDIRECT_URI = os.getenv("GOOGLE_DOCS_REDIRECT_URI", "http://localhost:8000/auth/gdocs/callback")
+
+SLACK_CLIENT_ID = os.getenv("SLACK_CLIENT_ID")
+SLACK_CLIENT_SECRET = os.getenv("SLACK_CLIENT_SECRET")
+SLACK_REDIRECT_URI = os.getenv("SLACK_REDIRECT_URI", "http://localhost:8000/auth/slack/callback")
+SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
+
+JIRA_CLIENT_ID = os.getenv("JIRA_CLIENT_ID")
+JIRA_CLIENT_SECRET = os.getenv("JIRA_CLIENT_SECRET")
+JIRA_REDIRECT_URI = os.getenv("JIRA_REDIRECT_URI", "http://localhost:8000/auth/jira/callback")
+
+NOTION_CLIENT_ID = os.getenv("NOTION_CLIENT_ID")
+NOTION_CLIENT_SECRET = os.getenv("NOTION_CLIENT_SECRET")
+NOTION_REDIRECT_URI = os.getenv("NOTION_REDIRECT_URI", "http://localhost:8000/auth/notion/callback")
+
+HUBSPOT_CLIENT_ID = os.getenv("HUBSPOT_CLIENT_ID")
+HUBSPOT_CLIENT_SECRET = os.getenv("HUBSPOT_CLIENT_SECRET")
+HUBSPOT_REDIRECT_URI = os.getenv("HUBSPOT_REDIRECT_URI", "http://localhost:8000/auth/hubspot/callback")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+# Sync config — controls both normal (manual) and cron sync batch sizes.
+# Defaults bumped: 15/100 was too shallow to build a meaningful interaction
+# graph (single thread per contact, blank summaries). Real memory needs depth.
+SYNC_MAX_EMAILS = int(os.getenv("SYNC_MAX_EMAILS", 200))
+SYNC_MAX_EMAILS_CRON = int(os.getenv("SYNC_MAX_EMAILS_CRON", 500))
+SYNC_MAX_CALENDAR_EVENTS = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS", 250))
+SYNC_MAX_CALENDAR_EVENTS_CRON = int(os.getenv("SYNC_MAX_CALENDAR_EVENTS_CRON", 250))
+SYNC_INTERVAL_HOURS = int(os.getenv("SYNC_INTERVAL_HOURS", 24))
+
+
+# ── v2 sync batch limits — per-plan + env-driven ──────────────────────────
+# Replaces every `limit=50` hardcoded across sync_runner / celery_app /
+# integrations_auth / sync routes. Lookup order:
+#   1. plan-specific env (SYNC_INITIAL_LIMIT_TRIAL etc.)
+#   2. SYNC_INITIAL_LIMIT (catch-all override)
+#   3. baked default for the tier
+#
+# Periodic = delta sync (only NEW since last cursor). Initial = first-
+# connect batch which is the painful one for trial users — they connect
+# Gmail and a generous limit eats their starter pool before they've seen
+# a fact extracted.
+SYNC_INITIAL_LIMIT_TRIAL      = int(os.getenv("SYNC_INITIAL_LIMIT_TRIAL",      40))
+SYNC_INITIAL_LIMIT_EARLY      = int(os.getenv("SYNC_INITIAL_LIMIT_EARLY",      100))
+SYNC_INITIAL_LIMIT_STARTUP    = int(os.getenv("SYNC_INITIAL_LIMIT_STARTUP",    100))
+SYNC_INITIAL_LIMIT_ENTERPRISE = int(os.getenv("SYNC_INITIAL_LIMIT_ENTERPRISE", 500))
+# Catch-all: if set, overrides all of the above.
+SYNC_INITIAL_LIMIT            = os.getenv("SYNC_INITIAL_LIMIT")
+SYNC_PERIODIC_LIMIT           = int(os.getenv("SYNC_PERIODIC_LIMIT", 50))
+
+# Scan-cap multiplier. `limit` is the TARGET number of POST-FILTER
+# records to emit; the runner scans up to limit × this multiplier raw
+# records looking for them. Without this cap a 100%-noise inbox would
+# loop forever. 5 = scan up to 5× target before giving up. Trade-off:
+# higher = more chance of meeting the emit quota on noisy inboxes,
+# but more LLM gate calls (we eat ~$0.0003 each) and longer sync time.
+SYNC_SCAN_CAP_MULTIPLIER      = int(os.getenv("SYNC_SCAN_CAP_MULTIPLIER", 5))
+
+
+def initial_sync_limit_for_plan(plan: str | None) -> int:
+    """Per-plan initial-sync record limit (Gmail / Slack / Calendar / etc).
+
+    Single source of truth so 4 separate sync entry-points stay in sync
+    and a future plan tier just adds an env line. Unknown plan -> trial
+    limit (conservative; we'd rather under-charge a new tier than burn
+    credits on something the plan_enforcer doesn't yet know about).
+    """
+    if SYNC_INITIAL_LIMIT:
+        try:
+            return int(SYNC_INITIAL_LIMIT)
+        except ValueError:
+            pass
+    tier = (plan or "trial").lower()
+    return {
+        "trial":      SYNC_INITIAL_LIMIT_TRIAL,
+        "early":      SYNC_INITIAL_LIMIT_EARLY,
+        "startup":    SYNC_INITIAL_LIMIT_STARTUP,
+        "enterprise": SYNC_INITIAL_LIMIT_ENTERPRISE,
+    }.get(tier, SYNC_INITIAL_LIMIT_TRIAL)
+
+# Bump this when extraction logic changes to trigger re-extraction of old interactions.
+# v4 (2026-04-28): retain LEFT(raw_body, 1000) excerpt instead of nulling raw_body
+# after extraction; sync depth raised 15→200/100→500. Re-extract recovers blank
+# summaries and surfaces excerpts that were previously discarded.
+# v5 (2026-04-28): drop the 1000-char truncation entirely — keep full raw_body.
+# The verbatim body powers MMR diversification, trigram fuzzy retrieval, and
+# Section B reasoning. Re-extract restores the full text on rows extracted
+# under v4 (which only held the first 1000 chars).
+PROCESSING_VERSION = 5
+
+# ── Phase 1 — LLM foundation, Pull API deadline, webhook retry ──
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_HAIKU_MODEL = os.getenv("ANTHROPIC_HAIKU_MODEL", "claude-haiku-4-5-20251001")
+ANTHROPIC_SONNET_MODEL = os.getenv("ANTHROPIC_SONNET_MODEL", "claude-sonnet-4-6")
+GENIOS_ANTHROPIC_ENABLED = os.getenv("GENIOS_ANTHROPIC_ENABLED", "true").lower() == "true"
+
+GENIOS_LLM_DAILY_CAP_USD = float(os.getenv("GENIOS_LLM_DAILY_CAP_USD", "50.0"))
+GENIOS_PULL_DEADLINE_MS = int(os.getenv("GENIOS_PULL_DEADLINE_MS", "400"))
+GENIOS_WEBHOOK_RETRY_SCHEDULE = [
+    int(s) for s in os.getenv(
+        "GENIOS_WEBHOOK_RETRY_SCHEDULE", "30,120,600,3600,21600,86400"
+    ).split(",") if s.strip()
+]
+
+# ── Phase 2 — reasoning loop (event bus, detectors, reasoner, gate) ──
+GENIOS_REASONER_ENABLED = os.getenv("GENIOS_REASONER_ENABLED", "true").lower() == "true"
+GENIOS_BATCH_WINDOW_SECONDS = int(os.getenv("GENIOS_BATCH_WINDOW_SECONDS", "30"))
+GENIOS_MIN_PUSH_PRIORITY = float(os.getenv("GENIOS_MIN_PUSH_PRIORITY", "0.60"))
+GENIOS_MIN_PUSH_CONFIDENCE = float(os.getenv("GENIOS_MIN_PUSH_CONFIDENCE", "0.50"))
+GENIOS_WEBHOOK_DAILY_BUDGET = int(os.getenv("GENIOS_WEBHOOK_DAILY_BUDGET", "300"))
+GENIOS_EVENT_STREAM = os.getenv("GENIOS_EVENT_STREAM", "genios:events:fact")
+GENIOS_EVENT_GROUP = os.getenv("GENIOS_EVENT_GROUP", "brain_router")
+GENIOS_EVENT_MAXLEN = int(os.getenv("GENIOS_EVENT_MAXLEN", "100000"))
+
+# ── Phase 3 — learning loop (recommendations, cascade, narrative) ──
+GENIOS_CASCADE_ENABLED = os.getenv("GENIOS_CASCADE_ENABLED", "true").lower() == "true"
+
+# ── Phase 4 — correctness (calibration; observability deferred per deviations R) ──
+GENIOS_CALIBRATION_ENABLED = os.getenv("GENIOS_CALIBRATION_ENABLED", "false").lower() == "true"

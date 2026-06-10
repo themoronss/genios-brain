@@ -1,0 +1,359 @@
+"""v2 sync runner — pulls records via a MemoryAdapter, normalizes, emits.
+
+Replaces v1's per-source heavy ingestion (gmail_connector → email_parser →
+classifier → entity_extractor → graph_builder + write to interactions/contacts/...).
+
+Per g-i-1 contract:
+- NO content storage on the v1 side
+- Adapter pulls → normalize → MemoryItem (plaintext, in-flight)
+- emit() publishes to multi-subscriber bus (g-i-3 builds facts, g-i-4 may trigger)
+- Cursor updated; scope drops counted
+
+Subscribers (registered once at app startup via emit.subscribe):
+- "g-i-3 fact-extractor" — runs LLM extract → reconcile → graph persist
+- (later) "g-i-4 proactive-trigger" — diff detect → maybe push
+
+Usage from OAuth callback / scheduler:
+    from core.memory.sync_runner import run_sync_for_connection
+    run_sync_for_connection(session, connection_id="...", limit=50)
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from core.foundations.telemetry import get_logger
+from core.memory.adapters import get_factory
+from core.memory.emit import emit
+from core.memory.interface import MemoryAdapter
+from core.memory.normalize import normalize
+from core.memory.scope import ScopeEnforcer
+from core.memory.store import Connection, CursorRow, ScopeGrant
+from core.memory.types import Cursor
+
+log = get_logger(__name__)
+
+
+@dataclass
+class SyncResult:
+    connection_id: str
+    source_type: str
+    items_emitted: int
+    items_dropped_scope: int
+    cursor_advanced: bool
+    items_dropped_noise: int = 0
+    items_scanned: int = 0
+    scan_cap_hit: bool = False
+    error: str | None = None
+
+
+def _set_sync_active(connection_id: str, org_id: str, source_type: str, on: bool) -> None:
+    """Mark a connection as actively syncing in Redis so the integrations
+    status endpoint can surface 'syncing' to the UI."""
+    try:
+        from app.redis_client import redis_client as _r
+        key_conn = f"sync_active:conn:{connection_id}"
+        key_org = f"sync_active:org:{org_id}:{source_type}"
+        if on:
+            _r.setex(key_conn, 300, "1")  # 5-min safety TTL
+            _r.setex(key_org, 300, "1")
+        else:
+            _r.delete(key_conn)
+            _r.delete(key_org)
+    except Exception:
+        pass
+
+
+def run_sync_for_connection(
+    session: Session,
+    *,
+    connection_id: str,
+    limit: int = 100,
+) -> SyncResult:
+    """Pull one batch from the connection's source, emit each item.
+
+    All work happens with the caller's session; we flush + commit between
+    cursor updates so partial progress is preserved on crash.
+    """
+    conn = session.get(Connection, connection_id)
+    if conn is None:
+        return SyncResult(
+            connection_id=connection_id,
+            source_type="unknown",
+            items_emitted=0,
+            items_dropped_scope=0,
+            cursor_advanced=False,
+            error="connection not found",
+        )
+
+    _set_sync_active(connection_id, conn.org_id, conn.source_type, on=True)
+
+    adapter = _build_adapter(session, conn)
+    if adapter is None:
+        return SyncResult(
+            connection_id=connection_id,
+            source_type=conn.source_type,
+            items_emitted=0,
+            items_dropped_scope=0,
+            cursor_advanced=False,
+            error=f"no adapter factory registered for source_type={conn.source_type}",
+        )
+
+    # Cursor
+    cursor_row = session.execute(
+        select(CursorRow).where(CursorRow.connection_id == connection_id)
+    ).scalar_one_or_none()
+    cursor: Cursor | None = None
+    if cursor_row and cursor_row.cursor_value:
+        # CursorRow.strategy is a free-form str; Cursor.strategy is a Literal
+        # subset. Trust the producer (only adapters write here).
+        cursor = Cursor(
+            strategy=cursor_row.strategy or "native",  # type: ignore[arg-type]
+            value=cursor_row.cursor_value,
+        )
+
+    # Scope grants (post-fetch enforcement)
+    grants = (
+        session.execute(
+            select(ScopeGrant).where(ScopeGrant.connection_id == connection_id)
+        )
+        .scalars()
+        .all()
+    )
+    scopes = []
+    for g in grants:
+        try:
+            scopes.append(g.to_read_scope())  # type: ignore[attr-defined]
+        except Exception:  # noqa: S112 — scope_json may be raw; skip if shape unknown
+            continue
+    enforcer = ScopeEnforcer(scopes, connection_id=connection_id, org_id=conn.org_id)
+
+    mapping = adapter.get_mapping()
+    emitted = 0
+    dropped = 0
+    dropped_noise = 0
+    scanned = 0
+    insufficient_credits = False
+    scan_cap_hit = False
+    cursor_advanced = False
+    last_cursor: Cursor | None = cursor
+    more = True
+
+    # `limit` is now the TARGET POST-FILTER emit count. The loop keeps
+    # pulling batches from the source until we've emitted that many or
+    # we've burned through `scan_cap` raw records trying. Without the
+    # cap a Naukri-flooded inbox would never finish — every batch would
+    # be 100% noise and we'd loop forever.
+    from app.config import SYNC_SCAN_CAP_MULTIPLIER  # noqa: PLC0415
+    scan_cap = max(limit, limit * max(1, SYNC_SCAN_CAP_MULTIPLIER))
+
+    from core.memory import noise_gate as _noise_gate
+
+    while emitted < limit and scanned < scan_cap:
+        # Per-batch pull. Asking for a bit more than (target - emitted)
+        # so a batch heavy with noise still has a chance to fill the
+        # quota in one round-trip; the adapter is free to cap to its
+        # own page size.
+        remaining_emit = limit - emitted
+        remaining_scan = scan_cap - scanned
+        batch_size = min(remaining_scan, max(remaining_emit * 2, 10))
+
+        try:
+            records, new_cursor, more = adapter.list_changed_since(
+                last_cursor, batch_size,
+            )
+        except Exception as e:
+            log.exception("sync_pull_failed", connection_id=connection_id, error=str(e))
+            _set_sync_active(connection_id, conn.org_id, conn.source_type, on=False)
+            return SyncResult(
+                connection_id=connection_id,
+                source_type=conn.source_type,
+                items_emitted=emitted,
+                items_dropped_scope=dropped,
+                items_dropped_noise=dropped_noise,
+                items_scanned=scanned,
+                cursor_advanced=cursor_advanced,
+                error=str(e),
+            )
+
+        if not records:
+            break  # source has nothing more — stop short of the target
+
+        for record in records:
+            scanned += 1
+            if scanned >= scan_cap:
+                scan_cap_hit = True
+            if not enforcer.is_allowed(record):
+                dropped += 1
+                continue
+            # Universal noise gate — runs BEFORE billing so the customer
+            # is never charged for obvious junk. org_id lets the
+            # LLM-gate inside this call use business_context to keep
+            # vertical-specific signal (bank statements for a fintech,
+            # candidate emails for a recruiter) while dropping the same
+            # for unrelated verticals.
+            decision = _noise_gate.should_keep(
+                conn.source_type, record, org_id=conn.org_id,
+            )
+            if not decision.keep:
+                dropped_noise += 1
+                log.info(
+                    "noise_dropped",
+                    connection_id=connection_id,
+                    source_type=conn.source_type,
+                    native_id=record.native_id,
+                    reason=decision.reason,
+                )
+                continue
+            # 1 credit per record actually emitted.
+            # idempotency_key includes connection_id so disconnect →
+            # wipe → reconnect → resync DOES bill again; within a
+            # single connection lifecycle (retries, webhook dupes) the
+            # (org, source, connection, native_id) tuple still dedupes.
+            try:
+                from app.credits.ledger import InsufficientCredits, deduct
+                from app.database import SessionLocal
+                _ldb = SessionLocal()
+                try:
+                    deduct(
+                        _ldb,
+                        org_id=conn.org_id,
+                        bucket="sync",
+                        reason=f"sync:{conn.source_type}_record",
+                        units=1,
+                        idempotency_key=(
+                            f"sync:{conn.source_type}:{conn.id}:{record.native_id}"
+                        ),
+                        related_kind="memory_item",
+                        related_id=record.native_id,
+                    )
+                    _ldb.commit()
+                except InsufficientCredits:
+                    insufficient_credits = True
+                    _ldb.rollback()
+                    break
+                finally:
+                    _ldb.close()
+            except Exception as e:
+                log.warning(
+                    "sync_credit_deduct_failed",
+                    connection_id=connection_id, error=str(e),
+                )
+
+            try:
+                item = normalize(record, mapping, source_id=conn.source_id)
+                emit(item, org_id=conn.org_id)
+                emitted += 1
+            except Exception as e:
+                log.warning(
+                    "normalize_or_emit_failed",
+                    connection_id=connection_id,
+                    native_id=record.native_id,
+                    error=str(e),
+                )
+
+            if emitted >= limit:
+                break  # target hit — stop processing this batch early
+            if scan_cap_hit:
+                break  # scan budget exhausted mid-batch
+
+        # Cursor advance after the batch so a crash mid-batch doesn't
+        # lose progress. Each cursor write is per-batch; the final value
+        # at loop-exit is what persists.
+        if new_cursor and new_cursor.value:
+            if cursor_row is None:
+                cursor_row = CursorRow(
+                    connection_id=connection_id,
+                    org_id=conn.org_id,
+                    strategy=new_cursor.strategy,
+                    cursor_value=new_cursor.value,
+                    last_sync_at=datetime.now(UTC),
+                    items_pulled_count=emitted,
+                )
+                session.add(cursor_row)
+            else:
+                cursor_row.strategy = new_cursor.strategy
+                cursor_row.cursor_value = new_cursor.value
+                cursor_row.last_sync_at = datetime.now(UTC)
+                cursor_row.items_pulled_count = (cursor_row.items_pulled_count or 0) + emitted
+            cursor_advanced = True
+
+        last_cursor = new_cursor or last_cursor
+
+        # Exit conditions that don't require finishing the batch
+        if insufficient_credits or not more or emitted >= limit:
+            break
+
+    conn.last_health_check_at = datetime.now(UTC)
+    conn.health_status = "green"
+    session.flush()
+
+    log.info(
+        "sync_complete",
+        connection_id=connection_id,
+        source_type=conn.source_type,
+        emitted=emitted,
+        target=limit,
+        scanned=scanned,
+        scan_cap=scan_cap,
+        scan_cap_hit=scan_cap_hit,
+        dropped_scope=dropped,
+        dropped_noise=dropped_noise,
+        cursor_advanced=cursor_advanced,
+        more=more,
+        insufficient_credits=insufficient_credits,
+    )
+    _set_sync_active(connection_id, conn.org_id, conn.source_type, on=False)
+    return SyncResult(
+        connection_id=connection_id,
+        source_type=conn.source_type,
+        items_emitted=emitted,
+        items_dropped_scope=dropped,
+        items_dropped_noise=dropped_noise,
+        items_scanned=scanned,
+        scan_cap_hit=scan_cap_hit,
+        cursor_advanced=cursor_advanced,
+        error="insufficient_credits" if insufficient_credits else None,
+    )
+
+
+def _build_adapter(session: Session, conn: Connection) -> MemoryAdapter | None:
+    """Resolve the adapter factory for `source_type` and instantiate it."""
+    try:
+        factory = get_factory(conn.source_type)
+    except KeyError:
+        return None
+
+    # Pull the access + refresh secret refs for this connection (typed `oauth_access`
+    # and `oauth_refresh` per secrets.py convention). Adapter handles refresh.
+    from core.memory.store import SecretRef
+
+    access_ref = session.execute(
+        select(SecretRef)
+        .where(SecretRef.connection_id == conn.id)
+        .where(SecretRef.secret_type == "oauth_access")  # noqa: S105 — enum label, not a credential
+        .order_by(SecretRef.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    refresh_ref = session.execute(
+        select(SecretRef)
+        .where(SecretRef.connection_id == conn.id)
+        .where(SecretRef.secret_type == "oauth_refresh")  # noqa: S105 — enum label, not a credential
+        .order_by(SecretRef.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    kwargs: dict[str, Any] = {
+        "session": session,
+        "connection_id": conn.id,
+        "org_id": conn.org_id,
+        "access_secret_ref": access_ref.id if access_ref else None,
+        "refresh_secret_ref": refresh_ref.id if refresh_ref else None,
+        "account_email": conn.source_id,  # for Gmail, source_id IS the mailbox address
+    }
+    return factory(**kwargs)

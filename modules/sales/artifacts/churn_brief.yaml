@@ -1,0 +1,21 @@
+# Artifact template: churn risk brief.
+# Consumed by g-i-6 builder.py + narrator.py.
+
+name: churn_brief
+title: "Churn Risk Brief — {account_name}"
+required_facts:
+  - account_name
+  - usage_drop_pct_30d
+  - days_since_last_contact
+  - days_to_renewal
+sections:
+  - heading: "Conclusion"
+    template: "Risk level: {churn_risk_level} (confidence {confidence:.0%})"
+  - heading: "Why"
+    template: "Driven by: {derivation_summary}"
+  - heading: "Recommended action"
+    template: "{recommendation}"
+  - heading: "Uncertainty"
+    template: "{uncertainty_flags}"
+recommendation_field: recommend
+must_include_disclaimer: true

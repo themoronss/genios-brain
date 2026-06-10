@@ -1,0 +1,22 @@
+{
+  "name": "@genios/sdk",
+  "version": "1.1.0",
+  "description": "Official Node.js SDK for the GeniOS Context API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node tests/verify.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.4"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
