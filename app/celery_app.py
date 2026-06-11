@@ -77,8 +77,12 @@ celery = Celery(
     "genios",
     broker=BROKER_URL,
     backend=None,
-    # Phase 10: per-connector pull tasks live in app/tasks/sync_connector.py
-    include=["app.tasks.sync_connector"],
+    # app.tasks.sync_connector was the v1 per-connector pull module — it was
+    # deleted in the g-i-1 migration when v2 sync_runner replaced it. Worker
+    # was still trying to `include` it at startup, which raises
+    # ModuleNotFoundError and Celery exits non-zero before any task runs.
+    # task_scheduled_sync (v2) lives in this file and is autoloaded.
+    include=[],
 )
 
 # How often the brain router polls the event stream, and how often pending
@@ -767,13 +771,12 @@ celery.conf.beat_schedule = {
         "schedule": 300.0,  # 5 min
         "options": {"queue": "low_priority"},
     },
-    # Phase 10: pull from per-agent custom connectors (Inkbox, IMAP, ...)
-    # Mirrors Gmail's nightly sync but per-connector.
-    "sync-pull-connectors-5m": {
-        "task": "app.tasks.sync_connector.task_sync_all_connectors",
-        "schedule": 300.0,  # 5 min
-        "options": {"queue": "low_priority"},
-    },
+    # sync-pull-connectors-5m was a v1 Beat entry that dispatched
+    # app.tasks.sync_connector.task_sync_all_connectors — that module was
+    # deleted in the g-i-1 migration. v2 task_scheduled_sync (already in
+    # this file, hourly) drives all per-connector sync now through the
+    # generic core.memory.sync_runner. Leaving the orphan entry crashed
+    # Beat at startup with ModuleNotFoundError.
     # Phase 6: Churn scan — daily engagement_health snapshot at 02:15 UTC
     # (between lifecycle hourly :17 and lifecycle nightly 02:30 — staggered
     # so the brain has fresh score data when the detector fires).
