@@ -7,6 +7,10 @@ redis
 celery[redis]
 python-dotenv
 pydantic
+# pydantic-settings split out of pydantic v2 — required by
+# core/foundations/config.py at import time. Container will exit 1
+# immediately at startup if this isn't installed.
+pydantic-settings>=2.0
 requests
 google-generativeai
 groq
@@ -21,10 +25,17 @@ networkx
 sse-starlette
 python-multipart
 PyMuPDF
+# pypdf — used by core/resources/uploads.py and the Gmail attachment
+# decoder. Imported lazily so a missing install only breaks PDF
+# extraction, not the whole startup, but we still want it on prod.
+pypdf>=4.0
 python-docx
 razorpay
 posthog
 sentry-sdk
+# alembic — required at runtime for migrations + by app.main on boot
+# in some paths. Was missing despite being used in migrations/.
+alembic>=1.13
 # Phase 1 — dev dep for CI CVE scanning
 pip-audit==2.7.3
 # Phase 4 — calibration (Platt scaling over recommendation outcomes)
