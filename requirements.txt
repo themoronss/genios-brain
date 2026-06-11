@@ -40,3 +40,14 @@ alembic>=1.13
 pip-audit==2.7.3
 # Phase 4 — calibration (Platt scaling over recommendation outcomes)
 scikit-learn==1.5.2
+# Below: deps actually imported across core/ + app/ but previously
+# only resolved transitively from other packages. Made explicit so a
+# transitive-dep version bump in a child package can't silently break
+# us on a fresh prod build.
+structlog>=24.0           # telemetry — required at module import
+cryptography>=42.0        # Fernet token encryption (oauth_tokens)
+httpx>=0.27               # async HTTP + adapter clients
+jinja2>=3.1               # email + artifact templates
+starlette>=0.40           # FastAPI core (transitive via fastapi, pinned)
+PyYAML>=6.0               # module rule YAML + benchmarks
+z3-solver>=4.13           # core/reasoning/csp_solver.py (CSP/SMT)
