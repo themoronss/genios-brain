@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "nodes": [
+    {"id": "client", "type": "entity_class", "label": "Client"},
+    {"id": "invoice", "type": "entity_class", "label": "Invoice"}
+  ],
+  "edges": [
+    {
+      "from": "invoice",
+      "to": "client",
+      "predicate": "issued_to",
+      "status": "asserted"
+    }
+  ]
+}

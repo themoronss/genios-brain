@@ -1,0 +1,13 @@
+{
+  "id": "ar_collection",
+  "version": "0.1.0",
+  "requiredScopes": ["invoices:read"],
+  "engineVersion": ">=2.0",
+  "provides": {
+    "rules": ["overdue"],
+    "graphFragment": "knowledge/relationship_graph.json",
+    "simulationTemplates": [],
+    "artifacts": []
+  },
+  "goldenSet": "evaluator.py"
+}

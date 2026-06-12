@@ -1,0 +1,118 @@
+# AR collection rules — designed for Indian B2B services firms (agencies,
+# consulting, SaaS) chasing payment. Each rule fires on an invoice fact set
+# joined with the client's payment history.
+#
+# Inputs the engine expects per invoice (from CSV upload via /v1/mapping):
+#   - days_past_due           (int, negative if not yet due)
+#   - amount_inr              (int, ₹)
+#   - last_reminder_age_days  (int, -1 if never sent)
+#   - client_late_count_90d   (int, count of late payments by this client)
+#   - is_vip_client           (bool, marked by founder during mapping)
+#   - payment_status          (str: "unpaid" | "partial" | "paid")
+#
+# Priorities are chosen so a single client with multiple stale invoices
+# doesn't flood Hermes — higher-tier rules suppress lower-tier ones for
+# the same (client, invoice) pair via the engine's dedup layer.
+
+- id: ar_gentle_first_nudge
+  module: ar_collection
+  priority: 40
+  when:
+    all:
+      - fact: payment_status
+        op: "=="
+        value: "unpaid"
+      - fact: days_past_due
+        op: ">="
+        value: 3
+      - fact: days_past_due
+        op: "<="
+        value: 7
+      - fact: last_reminder_age_days
+        op: "=="
+        value: -1
+  then:
+    conclusion: invoice_needs_polite_reminder
+    recommend: send_polite_reminder
+    reason: "Invoice 3–7 days late, no reminder sent yet — first nudge should be polite."
+  hard: false
+
+- id: ar_firm_second_reminder
+  module: ar_collection
+  priority: 60
+  when:
+    all:
+      - fact: payment_status
+        op: "=="
+        value: "unpaid"
+      - fact: days_past_due
+        op: ">"
+        value: 7
+      - fact: days_past_due
+        op: "<="
+        value: 14
+      - fact: last_reminder_age_days
+        op: ">="
+        value: 4
+  then:
+    conclusion: invoice_needs_firm_reminder
+    recommend: send_firm_reminder
+    reason: "Week+ overdue and last polite reminder was 4+ days ago — escalate tone."
+  hard: false
+
+- id: ar_phone_call_escalation
+  module: ar_collection
+  priority: 85
+  when:
+    all:
+      - fact: payment_status
+        op: "=="
+        value: "unpaid"
+      - fact: days_past_due
+        op: ">"
+        value: 14
+  then:
+    conclusion: invoice_needs_phone_escalation
+    recommend: escalate_to_phone_call
+    reason: "More than two weeks past due — email isn't working. Personal call needed."
+  hard: false
+
+- id: ar_large_invoice_preemptive
+  module: ar_collection
+  priority: 70
+  when:
+    all:
+      - fact: payment_status
+        op: "=="
+        value: "unpaid"
+      - fact: amount_inr
+        op: ">="
+        value: 100000
+      - fact: days_past_due
+        op: ">="
+        value: -2
+      - fact: days_past_due
+        op: "<="
+        value: 0
+  then:
+    conclusion: large_invoice_preemptive_check
+    recommend: send_preemptive_courtesy_check
+    reason: "₹1L+ invoice due in ≤48h — preemptive friendly check usually beats post-due chase."
+  hard: false
+
+- id: ar_repeat_late_payer_flag
+  module: ar_collection
+  priority: 75
+  when:
+    all:
+      - fact: payment_status
+        op: "=="
+        value: "unpaid"
+      - fact: client_late_count_90d
+        op: ">="
+        value: 3
+  then:
+    conclusion: client_credit_terms_review
+    recommend: review_client_payment_terms
+    reason: "Client paid late ≥3 times in last 90 days — credit terms or onboarding flow needs review."
+  hard: false
