@@ -383,7 +383,12 @@ def run_for_org(
 
     for ins in new_insights:
         # Persist the proactive_insights row first — gives us a stable id
-        # for the webhook payload, AND populates the 24h cache for future runs.
+        # for the webhook payload AND populates the 24h cache for future runs.
+        #
+        # scores_jsonb carries the human-readable headline + the rule lineage
+        # the dashboard needs to render a useful list. Keeping these on the
+        # row means the /insights endpoint doesn't have to re-join the
+        # graph at read time.
         insight_id = str(_uuid.uuid4())
         session.add(
             InsightRow(
@@ -395,8 +400,13 @@ def run_for_org(
                 derivation_chain_jsonb=ins["derivation_chain"],
                 foresight_jsonb=None,
                 scores_jsonb={
-                    "priority": ins["priority"],
                     "rule_id": ins["rule_id"],
+                    "priority": ins["priority"],          # low | medium | high
+                    "title": ins["title"],                # "Firm reminder needed"
+                    "category": ins["conclusion"],        # "invoice_needs_firm_reminder"
+                    "client_name": ins["client_name"],    # "Mehta Imports"
+                    "memory_view": ins["memory_view"],    # one-line fact summary
+                    "genios_view": ins["genios_view"],    # rule reason
                 },
                 grounding_refs_jsonb=[],
                 signature_hash=ins["signature_hash"],

@@ -36,19 +36,49 @@ def get_insights(org_id: str, priority: str = None, limit: int = 20,
         {"org_id": org_id, "limit": min(limit, 50)},
     ).fetchall()
 
+    # Map module priority labels (low/medium/high) to the legacy P1/P2/P3
+    # ladder the dashboard expects. P1 = most urgent at the top.
+    _PRIORITY_LABEL = {"high": "P1", "medium": "P2", "low": "P3"}
+
     def _shape(r):
         scores = r[4] if isinstance(r[4], dict) else {}
-        chain = r[3] if isinstance(r[3], dict) else {}
+        chain = r[3]  # list[dict] for v2 / dict for legacy v1 — handled below
         return {
             "id": str(r[0]),
             "insight_type": r[1],
-            "priority": "P1" if r[5] == "push" else ("P2" if r[5] == "review" else "P3"),
-            "category": chain.get("category") or "general",
-            "title": chain.get("title") or f"{r[1]}: {r[2]}",
-            "detail": chain.get("summary") or "",
+            # Prefer the rule-set priority (low/medium/high) when present —
+            # that's what the module author calibrated. Fall back to route
+            # when older rows lack it.
+            "priority": (
+                _PRIORITY_LABEL.get(scores.get("priority", ""))
+                or ("P1" if r[5] == "push" else "P2" if r[5] == "review" else "P3")
+            ),
+            "category": scores.get("category")
+            or (chain.get("category") if isinstance(chain, dict) else None)
+            or "general",
+            # The human headline lives in scores.title (new pipeline). Fall
+            # back to a derived label so legacy rows still render readably.
+            "title": (
+                scores.get("title")
+                or (chain.get("title") if isinstance(chain, dict) else None)
+                or f"{r[1]}: {r[2]}"
+            ),
+            "detail": (
+                scores.get("memory_view")
+                or (chain.get("summary") if isinstance(chain, dict) else None)
+                or ""
+            ),
             "contact_id": None,
-            "contact_name": r[2],
-            "metadata": {"scores": scores, "route": r[5]},
+            # Prefer the actual client name; fall back to the entity id
+            # so the row never renders blank.
+            "contact_name": scores.get("client_name") or r[2],
+            "metadata": {
+                "scores": scores,
+                "route": r[5],
+                "rule_id": scores.get("rule_id"),
+                "genios_view": scores.get("genios_view"),
+                "invoice_id": r[2] if scores.get("rule_id") else None,
+            },
             "generated_at": r[6].isoformat() if r[6] else None,
         }
 
