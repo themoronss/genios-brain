@@ -561,6 +561,31 @@ def _stats_headline(insights: int, outcomes: dict[str, int], recovered_inr: floa
     )
 
 
+@router.post("/v1/hypotheses/generate")
+def generate_hypotheses_endpoint(
+    days: int = Query(default=7, ge=1, le=90),
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Manual trigger for the LLM hypothesis layer (Phase 3).
+
+    The daily Celery beat calls the same underlying function; this route
+    is the dashboard "Find me something I'm missing" button + the ops
+    escape hatch. Returns the propose/survivor/emit counts so the caller
+    can render a confirmation toast without re-querying the insights list.
+
+    Cost note: each call is 1 Sonnet propose + N Sonnet refutes (N = number
+    of proposals). For the AR demo's 35-invoice fact set that's typically
+    ~12k input tokens total -> ~₹6 per run. The 7-day signature dedupe
+    inside the hypothesizer keeps repeat costs bounded.
+    """
+    from core.proactive.hypothesizer import generate_hypotheses_for_org
+
+    result = generate_hypotheses_for_org(db, org_id=org_id, window_days=days)
+    db.commit()
+    return {"hypothesizer_result": result}
+
+
 @router.post("/v1/scan")
 def trigger_scan(
     db: Session = Depends(get_db),

@@ -528,6 +528,58 @@ def task_proactive_scan(self, org_id: str = None):
     return summary
 
 
+@celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")
+def task_generate_hypotheses(self, org_id: str = None):
+    """g-i-4 Phase 3 — daily LLM hypothesis pass per org.
+
+    Reads the last 7 days of facts, asks Sonnet for up to 3 non-obvious
+    patterns, runs an adversarial refute pass on each, persists
+    survivors as proactive_insights with type=risk/opportunity and
+    delivery_route=notify (never autonomous — hypotheses always go to
+    a human first).
+
+    7-day signature dedupe inside the hypothesizer keeps re-runs cheap;
+    re-emitting the same hypothesis within a week is suppressed.
+    """
+    import logging
+    from sqlalchemy import text
+
+    from core.foundations.db import get_session
+    from core.proactive.hypothesizer import generate_hypotheses_for_org
+
+    log = logging.getLogger(__name__)
+    summary = {"orgs_scanned": 0, "emitted_total": 0, "errors": []}
+
+    try:
+        with get_session() as session:
+            if org_id:
+                org_ids = [org_id]
+            else:
+                org_ids = [
+                    str(row[0])
+                    for row in session.execute(text("SELECT id FROM orgs")).fetchall()
+                ]
+    except Exception as e:
+        log.exception(f"task_generate_hypotheses org lookup failed: {e}")
+        raise self.retry(exc=e)
+
+    for oid in org_ids:
+        try:
+            with get_session() as session:
+                result = generate_hypotheses_for_org(
+                    session, org_id=oid, window_days=7
+                )
+                session.commit()
+                summary["orgs_scanned"] += 1
+                summary["emitted_total"] += int(result.get("emitted") or 0)
+        except Exception as e:
+            log.warning(f"task_generate_hypotheses org={oid} failed: {e}")
+            summary["errors"].append({"org_id": oid, "error": str(e)[:200]})
+
+    log.info(f"task_generate_hypotheses complete: {summary}")
+    return summary
+
+
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_oauth_healthcheck(self, org_id: str = None):
     """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
@@ -771,6 +823,16 @@ celery.conf.beat_schedule = {
     "proactive-scan-hourly": {
         "task": "app.celery_app.task_proactive_scan",
         "schedule": 3600.0,  # 1 hour
+        "options": {"queue": "low_priority"},
+    },
+    # g-i-4 Phase 3 — daily LLM hypothesis pass at 06:30 UTC. Runs after
+    # nightly refresh (02:00) + hebbian (04:30) so we hypothesize over a
+    # clean recompute-ed graph. 7-day signature dedupe inside the
+    # hypothesizer keeps repeat costs bounded; we still see real net-new
+    # hypotheses on each fresh upload.
+    "hypothesizer-daily": {
+        "task": "app.celery_app.task_generate_hypotheses",
+        "schedule": crontab(hour=6, minute=30),
         "options": {"queue": "low_priority"},
     },
     # Phase 1.7: Deliver pending webhooks (durable retry via delivery_attempts).
