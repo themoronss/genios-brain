@@ -94,11 +94,22 @@ def _coerce_fact_value(predicate: str, raw: str) -> Any:
     return raw
 
 
-def _load_module_chainer(module_id: str):
+def _load_module_chainer(
+    module_id: str,
+    session: Session | None = None,
+    org_id: str | None = None,
+):
     """Locate the module folder and return a loaded ForwardChainer.
 
-    Resolves from repo root → modules/<id>. Raises ValueError if missing —
-    callers translate that to a 404 on the HTTP path.
+    When `session` + `org_id` are provided, applies any active per-org
+    threshold overrides (Phase 4 calibration loop) before handing the
+    ruleset to the chainer. The overrides are read from
+    `org_rule_overrides` and replace the matching Condition.value in
+    a CLONED ruleset — the original module RuleSet stays untouched so
+    other orgs see the YAML defaults.
+
+    Raises ValueError if the module folder is missing — callers
+    translate that to a 404 on the HTTP path.
     """
     from core.modules_framework.loader import load_module_package
     from core.reasoning.rule_engine import ForwardChainer
@@ -108,7 +119,73 @@ def _load_module_chainer(module_id: str):
     if not module_path.exists():
         raise ValueError(f"Module {module_id} not installed at {module_path}")
     pkg = load_module_package(module_path)
-    return ForwardChainer(pkg.ruleset)
+    ruleset = pkg.ruleset
+
+    if session is not None and org_id is not None:
+        ruleset = _apply_org_overrides(
+            session, ruleset=ruleset, org_id=org_id, module_id=module_id
+        )
+    return ForwardChainer(ruleset)
+
+
+def _apply_org_overrides(
+    session: Session,
+    *,
+    ruleset,
+    org_id: str,
+    module_id: str,
+):
+    """Return a new RuleSet with per-org threshold overrides applied.
+
+    Only rules referenced by an active override row are touched; everything
+    else is left at its YAML default. The Pydantic models are frozen, so
+    we build new instances via `.model_copy(update=...)`.
+    """
+    from core.foundations.threshold_tuner import get_active_override
+    from core.reasoning.rule_loader import Condition, Rule, RuleSet, WhenClause
+
+    new_rules = []
+    overrides_applied = 0
+    for rule in ruleset.rules:
+        override = get_active_override(
+            session, org_id=org_id, module_id=module_id, rule_id=rule.id
+        )
+        if not override:
+            new_rules.append(rule)
+            continue
+        # Walk the rule's `when.all` conditions for the matching fact
+        # predicate + operator and replace its `value`.
+        if not rule.when.all:
+            new_rules.append(rule)
+            continue
+        patched = False
+        new_conds = []
+        for cond in rule.when.all:
+            if (
+                cond.fact == override["fact_predicate"]
+                and cond.op.value == override["op"]
+            ):
+                new_conds.append(cond.model_copy(update={"value": override["threshold_value"]}))
+                patched = True
+            else:
+                new_conds.append(cond)
+        if not patched:
+            new_rules.append(rule)
+            continue
+        new_when = rule.when.model_copy(update={"all": new_conds})
+        new_rules.append(rule.model_copy(update={"when": new_when}))
+        overrides_applied += 1
+        log.info(
+            "proactive_pipeline_override_applied",
+            org_id=org_id,
+            rule_id=rule.id,
+            predicate=override["fact_predicate"],
+            new_value=override["threshold_value"],
+        )
+
+    if overrides_applied == 0:
+        return ruleset
+    return RuleSet(rules=new_rules)
 
 
 def _signature_hash(*, module_id: str, rule_id: str, subject: str) -> str:
@@ -294,7 +371,7 @@ def run_for_org(
         }
     """
     try:
-        chainer = _load_module_chainer(module_id)
+        chainer = _load_module_chainer(module_id, session=session, org_id=org_id)
     except ValueError as e:
         log.warning("proactive_pipeline_module_missing", org_id=org_id, error=str(e))
         return {

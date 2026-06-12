@@ -561,6 +561,92 @@ def _stats_headline(insights: int, outcomes: dict[str, int], recovered_inr: floa
     )
 
 
+@router.post("/v1/calibration/tune")
+def calibration_tune_endpoint(
+    auto_apply: bool = Query(default=True),
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Manual trigger for the threshold tuner (Phase 4).
+
+    The weekly Celery beat (`task_tune_thresholds`) calls the same
+    function. This endpoint exists so an ops engineer can run a tune
+    pass on demand after deploying new rules, and so the dashboard
+    can offer a "tune now" button after a customer records a batch
+    of outcomes.
+
+    `auto_apply=true` (default) writes status=active for any suggestion
+    that meets the auto-bar (>=5pp precision improvement AND >=20 outcome
+    samples). `auto_apply=false` forces every suggestion to status=shadow
+    -- useful for a dry-run preview.
+
+    Plan alignment: g-i-8 (calibration loop), g-i-5 (the rule YAML is
+    never mutated -- overrides live in org_rule_overrides instead).
+    """
+    from core.foundations.threshold_tuner import tune_for_org
+
+    result = tune_for_org(
+        db, org_id=org_id, module_id="ar_collection", auto_apply=auto_apply
+    )
+    db.commit()
+    return {"tuner_result": result}
+
+
+@router.get("/v1/calibration/thresholds")
+def calibration_thresholds_endpoint(
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """List every per-org rule threshold override visible to this org.
+
+    Returns both active overrides (currently applied at fire time) and
+    shadow ones (suggestions the tuner made but didn't meet the auto-bar).
+    The dashboard renders this as "GeniOS learned this about your data"
+    -- closes the visibility loop on what the system is doing on the
+    customer's behalf.
+    """
+    rows = db.execute(
+        text(
+            """
+            SELECT id, module_id, rule_id, fact_predicate, op, threshold_value,
+                   status, source, justification, sample_size,
+                   precision_before, precision_after,
+                   applied_at, reverted_at, created_at
+            FROM org_rule_overrides
+            WHERE org_id = :org
+            ORDER BY created_at DESC
+            LIMIT 100
+            """
+        ),
+        {"org": org_id},
+    ).fetchall()
+
+    return {
+        "overrides": [
+            {
+                "id": str(r.id),
+                "module_id": r.module_id,
+                "rule_id": r.rule_id,
+                "fact_predicate": r.fact_predicate,
+                "op": r.op,
+                "threshold_value": float(r.threshold_value),
+                "status": r.status,
+                "source": r.source,
+                "justification": r.justification,
+                "sample_size": r.sample_size,
+                "precision_before": r.precision_before,
+                "precision_after": r.precision_after,
+                "applied_at": r.applied_at.isoformat() if r.applied_at else None,
+                "reverted_at": r.reverted_at.isoformat() if r.reverted_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ],
+        "active_count": sum(1 for r in rows if r.status == "active"),
+        "shadow_count": sum(1 for r in rows if r.status == "shadow"),
+    }
+
+
 @router.post("/v1/hypotheses/generate")
 def generate_hypotheses_endpoint(
     days: int = Query(default=7, ge=1, le=90),

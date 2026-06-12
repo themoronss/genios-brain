@@ -580,6 +580,61 @@ def task_generate_hypotheses(self, org_id: str = None):
     return summary
 
 
+@celery.task(bind=True, max_retries=2, default_retry_delay=300, queue="low_priority")
+def task_tune_thresholds(self, org_id: str = None):
+    """g-i-8 Phase 4 — weekly per-org threshold tuner.
+
+    For each rule that ships with a tunable knob, the tuner reads the
+    outcome attribution (feedback_actions joined to proactive_insights),
+    proposes a per-org threshold, and writes an org_rule_overrides row
+    -- status=active when the suggestion meets the auto-bar (>=20
+    samples AND >=5pp precision improvement), status=shadow otherwise
+    so the dashboard can surface it for manual opt-in.
+
+    Idempotent: re-running on the same outcomes produces the same
+    suggestion. The prior active override gets status=reverted with
+    reverted_at set so the audit timeline stays append-only.
+    """
+    import logging
+    from sqlalchemy import text
+
+    from core.foundations.db import get_session
+    from core.foundations.threshold_tuner import tune_for_org
+
+    log = logging.getLogger(__name__)
+    summary = {"orgs_scanned": 0, "auto_applied_total": 0, "shadow_total": 0, "errors": []}
+
+    try:
+        with get_session() as session:
+            if org_id:
+                org_ids = [org_id]
+            else:
+                org_ids = [
+                    str(row[0])
+                    for row in session.execute(text("SELECT id FROM orgs")).fetchall()
+                ]
+    except Exception as e:
+        log.exception(f"task_tune_thresholds org lookup failed: {e}")
+        raise self.retry(exc=e)
+
+    for oid in org_ids:
+        try:
+            with get_session() as session:
+                result = tune_for_org(
+                    session, org_id=oid, module_id="ar_collection", auto_apply=True
+                )
+                session.commit()
+                summary["orgs_scanned"] += 1
+                summary["auto_applied_total"] += int(result.get("auto_applied") or 0)
+                summary["shadow_total"] += int(result.get("shadow_suggestions") or 0)
+        except Exception as e:
+            log.warning(f"task_tune_thresholds org={oid} failed: {e}")
+            summary["errors"].append({"org_id": oid, "error": str(e)[:200]})
+
+    log.info(f"task_tune_thresholds complete: {summary}")
+    return summary
+
+
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_oauth_healthcheck(self, org_id: str = None):
     """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
@@ -833,6 +888,16 @@ celery.conf.beat_schedule = {
     "hypothesizer-daily": {
         "task": "app.celery_app.task_generate_hypotheses",
         "schedule": crontab(hour=6, minute=30),
+        "options": {"queue": "low_priority"},
+    },
+    # g-i-8 Phase 4 — weekly threshold tuner at 05:00 UTC Monday. Reads
+    # the last 90 days of outcome attribution per (org, rule) and writes
+    # any auto-bar-meeting overrides to org_rule_overrides (status=active);
+    # everything else is recorded as status=shadow so the dashboard can
+    # offer it for manual opt-in. Idempotent.
+    "threshold-tuner-weekly": {
+        "task": "app.celery_app.task_tune_thresholds",
+        "schedule": crontab(day_of_week="mon", hour=5, minute=0),
         "options": {"queue": "low_priority"},
     },
     # Phase 1.7: Deliver pending webhooks (durable retry via delivery_attempts).
