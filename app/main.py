@@ -112,6 +112,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception(f"v2 ingest subscriber registration failed (non-fatal): {e}")
 
+    # v2 brain — register the g-i-4 proactive event subscriber. Same bus,
+    # different subscriber: each MemoryItem schedules a debounced (5-sec)
+    # per-org proactive scan. After the burst (CSV upload, Gmail sync) settles,
+    # the pipeline runs once, dedupes against the last 24h of insights, and
+    # fires webhooks. Customer doesn't have to call /v1/scan manually.
+    try:
+        from core.proactive.event_subscriber import register_proactive_event_subscriber
+        register_proactive_event_subscriber()
+        logger.info("✓ v2 proactive event subscriber registered on emit() bus")
+    except Exception as e:
+        logger.exception(f"v2 proactive event subscriber registration failed (non-fatal): {e}")
+
     yield
     logger.info("App shutting down.")
     # Flush queued analytics events so the last batch isn't lost on restart.

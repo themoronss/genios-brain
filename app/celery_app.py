@@ -466,13 +466,66 @@ def task_anomaly_scan(self, org_id: str = None):
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=120, queue="low_priority")
 def task_proactive_scan(self, org_id: str = None):
-    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
-    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    """Periodic (hourly) safety net for slow-burn rules.
+
+    The g-i-4 event subscriber fires the proactive pipeline ~5s after the
+    last MemoryItem of a CSV/sync burst — that's the fast path. This task
+    catches the cases the fast path can't:
+
+      * A rule whose condition changes purely because today's date moved
+        (e.g. `client_late_count_90d` crosses 3 because an old invoice
+        is now within the 90d window).
+      * A run where the in-process Timer was lost (process restart,
+        worker bounce, OOM).
+      * Re-evaluation if a customer added/edited rules without
+        re-uploading data.
+
+    The 24h signature dedupe inside `pipeline.run_for_org` keeps this
+    safe to run on every org every hour: insights already fired in the
+    last 24h are suppressed, so the customer doesn't get duplicate
+    webhooks.
+
+    When called with no `org_id`, iterates over all active orgs in the
+    DB. With `org_id`, runs for just that one tenant (used by ops
+    tooling + the Beat scheduler in single-org test setups).
+    """
     import logging
-    logging.getLogger(__name__).warning(
-        "task_proactive_scan called but v1 underlying code is gone — no-op"
-    )
-    return {"status": "noop", "task": "task_proactive_scan"}
+    from sqlalchemy import text
+
+    from core.foundations.db import get_session
+    from core.proactive.pipeline import run_for_org
+
+    log = logging.getLogger(__name__)
+    summary = {"orgs_scanned": 0, "insights_fired_total": 0, "errors": []}
+
+    try:
+        with get_session() as session:
+            if org_id:
+                org_ids = [org_id]
+            else:
+                org_ids = [
+                    str(row[0])
+                    for row in session.execute(text("SELECT id FROM orgs")).fetchall()
+                ]
+    except Exception as e:
+        log.exception(f"task_proactive_scan org lookup failed: {e}")
+        raise self.retry(exc=e)
+
+    for oid in org_ids:
+        try:
+            with get_session() as session:
+                result = run_for_org(
+                    session, org_id=oid, module_id="ar_collection", source="cron"
+                )
+                session.commit()
+                summary["orgs_scanned"] += 1
+                summary["insights_fired_total"] += int(result.get("insights_fired") or 0)
+        except Exception as e:
+            log.warning(f"task_proactive_scan org={oid} failed: {e}")
+            summary["errors"].append({"org_id": oid, "error": str(e)[:200]})
+
+    log.info(f"task_proactive_scan complete: {summary}")
+    return summary
 
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
@@ -710,10 +763,14 @@ celery.conf.beat_schedule = {
         "schedule": crontab(minute=5),  # :05 of every hour — offset from syncs
         "options": {"queue": "low_priority"},
     },
-    # Phase 4+6: Proactive scan (anomalies → insights) every 6 hours
-    "proactive-scan-6h": {
+    # g-i-4 hourly proactive scan — safety net for slow-burn rules whose
+    # condition changes purely because date moved (e.g. client_late_count_90d
+    # crossing 3 today). The fast path is the bus event subscriber that
+    # fires ~5s after a CSV/sync burst; this is the hourly catch-up. 24h
+    # signature dedupe inside the pipeline keeps re-runs safe.
+    "proactive-scan-hourly": {
         "task": "app.celery_app.task_proactive_scan",
-        "schedule": 21600.0,  # 6 hours
+        "schedule": 3600.0,  # 1 hour
         "options": {"queue": "low_priority"},
     },
     # Phase 1.7: Deliver pending webhooks (durable retry via delivery_attempts).
