@@ -1,0 +1,143 @@
+{
+  "signals": {
+    "module_library": {
+      "installed_modules": [
+        "ar_collection",
+        "csm_health",
+        "hr_pipeline",
+        "sales"
+      ],
+      "module_count": 4,
+      "total_rules": 25,
+      "rules_per_module": {
+        "ar_collection": 5,
+        "csm_health": 5,
+        "hr_pipeline": 5,
+        "sales": 10
+      }
+    },
+    "golden_coverage": {
+      "per_module": {
+        "ar_collection": {
+          "score": 1.0,
+          "cases": 16,
+          "matched": 16
+        },
+        "csm_health": {
+          "score": 1.0,
+          "cases": 15,
+          "matched": 15
+        },
+        "hr_pipeline": {
+          "score": 1.0,
+          "cases": 15,
+          "matched": 15
+        },
+        "sales": {
+          "score": 1.0,
+          "cases": 31,
+          "matched": 31
+        }
+      },
+      "overall_cases": 77,
+      "overall_pass": 77,
+      "overall_score": 1.0
+    },
+    "trigger_wiring": {
+      "event_driven": true,
+      "cron_driven": true,
+      "manual_route": true,
+      "all_share_one_pipeline": true
+    },
+    "active_outcomes": {
+      "deliveries_by_outcome": {
+        "failed": 33,
+        "success": 114
+      },
+      "outcomes_by_action": {},
+      "total_recovered_inr": 0.0
+    },
+    "hypothesis_layer": {
+      "persisted_count": 3,
+      "recent": [
+        {
+          "type": "risk",
+          "title": "Hypothesis: GoBlue Logistics shows escalating payment friction despite repeat business",
+          "confidence": 0.65,
+          "created_at": "2026-06-12T11:22:35.326706+00:00"
+        },
+        {
+          "type": "opportunity",
+          "title": "Hypothesis: Net-15 payment terms correlate with faster payment despite smaller invoices",
+          "confidence": 0.62,
+          "created_at": "2026-06-12T11:22:35.326705+00:00"
+        },
+        {
+          "type": "risk",
+          "title": "Hypothesis: VIP clients systematically pay late despite higher invoice values",
+          "confidence": 0.68,
+          "created_at": "2026-06-12T11:22:35.326699+00:00"
+        }
+      ]
+    },
+    "calibration_loop": {
+      "overrides_by_status": {
+        "active": 1
+      },
+      "active_overrides": [
+        {
+          "module": "ar_collection",
+          "rule": "ar_firm_second_reminder",
+          "predicate": "days_past_due",
+          "tuned_to": 9.0,
+          "precision_before": 0.5,
+          "precision_after": 0.777777777777778,
+          "sample_size": 30,
+          "applied_at": "2026-06-12T11:37:37.721401+00:00"
+        }
+      ]
+    },
+    "brutal_tests": {
+      "total": 20,
+      "passed": 20,
+      "failed": 0,
+      "failures": []
+    }
+  },
+  "scoring": {
+    "axes": {
+      "module_library_depth": {
+        "score": 9,
+        "rationale": "4 modules / 25 rules \u2014 production minimum is ~5 modules with ~30 rules total"
+      },
+      "rule_correctness": {
+        "score": 10,
+        "rationale": "100% golden pass across all modules"
+      },
+      "proactive_trigger": {
+        "score": 10,
+        "rationale": "event + cron + manual all delegate to run_all_for_org"
+      },
+      "active_outcome_tracking": {
+        "score": 5,
+        "rationale": "deliveries=y, outcomes=n, recovered \u20b90"
+      },
+      "hypothesis_generation": {
+        "score": 8,
+        "rationale": "3 hypothesis-grade rows persisted via LLM propose+refute"
+      },
+      "calibration_loop": {
+        "score": 8,
+        "rationale": "1 active overrides, 0 shadow suggestions"
+      },
+      "robustness": {
+        "score": 10,
+        "rationale": "20/20 brutal cases pass"
+      }
+    },
+    "raw_total": 60,
+    "max_total": 70,
+    "pct_intelligence": 0.857,
+    "pct_extractor": 0.143
+  }
+}
