@@ -1,0 +1,21 @@
+candidate_id,candidate_name,candidate_email,role,stage,days_in_stage,total_pipeline_days,offer_expiry_days,interview_score,days_since_last_contact,active
+CAND-101,Priya Sharma,priya.s@gmail.com,Senior Backend Engineer,offer,2,22,1,9,1,true
+CAND-102,Arjun Mehra,arjun.m@protonmail.com,Senior Backend Engineer,offer,1,18,2,9,1,true
+CAND-103,Sneha Kapoor,sneha.k@gmail.com,Senior Backend Engineer,offer,3,28,3,8,2,true
+CAND-104,Vikram Iyer,vikram.iyer@outlook.com,Product Designer,interview,9,16,-1,8,6,true
+CAND-105,Rhea D'Souza,rhea.d@gmail.com,Product Designer,interview,8,11,-1,9,7,true
+CAND-106,Sanjay Krishnan,sanjay.k@gmail.com,Frontend Engineer,interview,4,12,-1,7,2,true
+CAND-107,Ananya Reddy,ananya.r@gmail.com,Frontend Engineer,screen,8,12,-1,6,5,true
+CAND-108,Karthik Menon,karthik.m@gmail.com,DevOps Engineer,screen,3,5,-1,-1,1,true
+CAND-109,Tara Bhatia,tara.b@gmail.com,Senior Backend Engineer,interview,11,32,-1,8,4,true
+CAND-110,Imran Khan,imran.k@gmail.com,Product Designer,interview,7,21,-1,5,3,true
+CAND-111,Kavya Pillai,kavya.p@gmail.com,Frontend Engineer,applied,15,15,-1,-1,15,true
+CAND-112,Dhruv Saxena,dhruv.s@gmail.com,DevOps Engineer,applied,20,20,-1,-1,20,true
+CAND-113,Meera Jain,meera.j@gmail.com,Senior Backend Engineer,screen,2,4,-1,-1,2,true
+CAND-114,Rohit Verma,rohit.v@gmail.com,Senior Backend Engineer,interview,3,11,-1,7,2,true
+CAND-115,Nisha Roy,nisha.r@gmail.com,Product Designer,hired,5,28,-1,9,5,false
+CAND-116,Aakash Pandey,aakash.p@gmail.com,Frontend Engineer,rejected,12,22,-1,4,12,false
+CAND-117,Pooja Singh,pooja.s@gmail.com,Senior Backend Engineer,interview,5,38,-1,8,4,true
+CAND-118,Vivek Kulkarni,vivek.k@gmail.com,Product Designer,offer,4,24,5,9,2,true
+CAND-119,Riya Banerjee,riya.b@gmail.com,DevOps Engineer,applied,18,18,-1,-1,18,true
+CAND-120,Aniket Joshi,aniket.j@gmail.com,Frontend Engineer,interview,2,8,-1,7,1,true

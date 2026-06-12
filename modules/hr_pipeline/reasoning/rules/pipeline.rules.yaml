@@ -1,0 +1,124 @@
+# HR recruitment-pipeline rules — designed for startups running their own
+# pipeline (small-team founder-led recruiting). Each rule fires on a single
+# candidate's facts joined with the role they're interviewing for.
+#
+# Facts the engine expects per candidate (mapped from a CSV upload via
+# /v1/mapping):
+#   - stage                    (str: applied | screen | interview | offer | hired | rejected)
+#   - days_in_stage            (int)
+#   - total_pipeline_days      (int, time since `applied`)
+#   - offer_expiry_days        (int, -1 if no offer outstanding)
+#   - interview_score          (int, 1-10, -1 if not yet interviewed)
+#   - days_since_last_contact  (int)
+#   - role                     (str, role name)
+#   - active                   (bool, false once hired/rejected/withdrew)
+#
+# Priorities mirror the AR module's: high = today; medium = this week;
+# low = nudge. The engine's dedupe will collapse duplicates per
+# (rule, candidate) inside the 24h window.
+
+- id: hr_offer_expiring_soon
+  module: hr_pipeline
+  priority: 90
+  when:
+    all:
+      - fact: active
+        op: "=="
+        value: true
+      - fact: stage
+        op: "=="
+        value: "offer"
+      - fact: offer_expiry_days
+        op: "<="
+        value: 3
+      - fact: offer_expiry_days
+        op: ">="
+        value: 0
+  then:
+    conclusion: offer_expiring_today
+    recommend: call_candidate_today
+    reason: "Offer expires in <=3 days. Personal call beats email — losing this candidate now costs a re-open."
+  hard: false
+
+- id: hr_high_score_silent
+  module: hr_pipeline
+  priority: 85
+  when:
+    all:
+      - fact: active
+        op: "=="
+        value: true
+      - fact: interview_score
+        op: ">="
+        value: 8
+      - fact: days_since_last_contact
+        op: ">"
+        value: 5
+      - fact: stage
+        op: "!="
+        value: "offer"
+  then:
+    conclusion: strong_candidate_going_silent
+    recommend: re_engage_personally
+    reason: "Interview score >=8 but >5 days since last touch. Strong candidates evaporate fast in competitive markets."
+  hard: false
+
+- id: hr_stale_in_active_stage
+  module: hr_pipeline
+  priority: 60
+  when:
+    all:
+      - fact: active
+        op: "=="
+        value: true
+      - fact: stage
+        op: "in"
+        value: ["screen", "interview"]
+      - fact: days_in_stage
+        op: ">"
+        value: 7
+  then:
+    conclusion: candidate_stuck_in_stage
+    recommend: move_or_reject
+    reason: "Candidate has been in the same active stage >7 days. Either advance them or close the loop — limbo is the worst signal to send."
+  hard: false
+
+- id: hr_pipeline_drift
+  module: hr_pipeline
+  priority: 55
+  when:
+    all:
+      - fact: active
+        op: "=="
+        value: true
+      - fact: total_pipeline_days
+        op: ">"
+        value: 30
+      - fact: stage
+        op: "!="
+        value: "offer"
+  then:
+    conclusion: pipeline_total_drift
+    recommend: review_fit_or_close
+    reason: "Total time in the funnel exceeds 30 days. Either the fit is wrong or the process is the bottleneck — surface to a human."
+  hard: false
+
+- id: hr_top_funnel_dormant
+  module: hr_pipeline
+  priority: 40
+  when:
+    all:
+      - fact: active
+        op: "=="
+        value: true
+      - fact: stage
+        op: "=="
+        value: "applied"
+      - fact: days_in_stage
+        op: ">"
+        value: 14
+  then:
+    conclusion: top_funnel_dormant
+    recommend: triage_or_reject
+    reason: "Top-of-funnel candidate has been waiting >14 days for first contact. Triage in or send a polite rejection — silence damages the brand."
+  hard: false
