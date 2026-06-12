@@ -9,5 +9,42 @@
     "simulationTemplates": [],
     "artifacts": []
   },
-  "goldenSet": "evaluator.py"
+  "goldenSet": "evaluator.py",
+  "rule_metadata": {
+    "ar_gentle_first_nudge": {
+      "title": "Polite reminder due",
+      "priority": "low",
+      "tunable_knobs": [
+        {"fact_predicate": "days_past_due", "op": ">=", "default_threshold": 3}
+      ]
+    },
+    "ar_firm_second_reminder": {
+      "title": "Firm reminder needed",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "days_past_due", "op": ">", "default_threshold": 7}
+      ]
+    },
+    "ar_phone_call_escalation": {
+      "title": "Escalate — phone call needed",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "days_past_due", "op": ">", "default_threshold": 14}
+      ]
+    },
+    "ar_large_invoice_preemptive": {
+      "title": "Large invoice due soon — courtesy check",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "amount_inr", "op": ">=", "default_threshold": 100000}
+      ]
+    },
+    "ar_repeat_late_payer_flag": {
+      "title": "Client paid late repeatedly — review terms",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "client_late_count_90d", "op": ">=", "default_threshold": 3}
+      ]
+    }
+  }
 }

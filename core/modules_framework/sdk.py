@@ -53,6 +53,14 @@ class Manifest(BaseModel):
     engineVersion: str = Field(..., description="Core engine version requirement (semver range)")
     provides: ModuleProvides
     goldenSet: str = Field(..., description="Path within module to evaluator.py")
+    # Optional rule metadata — read by the proactive pipeline (rule
+    # priority + display title) and by the threshold tuner
+    # (tunable_knobs). Open-shape on purpose so modules can add new
+    # presentation/metadata keys without bumping the SDK.
+    rule_metadata: dict[str, dict[str, Any]] | None = Field(
+        default=None,
+        description="Per-rule metadata: title, priority, tunable_knobs",
+    )
     # Plan keeps predicates open-vocabulary, but each module must declare
     # the verbs its rules reference. SDK then validates every fact: in
     # every rule YAML is present here — catches typos + drift at load

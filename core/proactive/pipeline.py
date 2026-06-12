@@ -49,27 +49,59 @@ SUPPRESS_WINDOW_HOURS = 24
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Rule metadata (priority + headline title)
+# Rule metadata — read from manifest.json (module-agnostic)
 # ─────────────────────────────────────────────────────────────────────────────
-# Lifted from app/api/routes/proactive.py to keep all rule-meta in one place.
-# When a customer plugs in a custom module these will move into module
-# manifest.json; for now AR ships hardcoded.
+# Each module's manifest.json carries a `rule_metadata` block:
+#   {
+#     "<rule_id>": {
+#       "title": "<headline shown in dashboard + Hermes prompts>",
+#       "priority": "low|medium|high",
+#       "tunable_knobs": [
+#         {"fact_predicate": "...", "op": "...", "default_threshold": N}
+#       ]
+#     }
+#   }
+# Loaded once per (module_id, process) and cached so adding a new module
+# is purely a YAML+JSON change — no Python edits in this file.
 
-_RULE_PRIORITY: dict[str, str] = {
-    "ar_gentle_first_nudge": "low",
-    "ar_firm_second_reminder": "medium",
-    "ar_phone_call_escalation": "high",
-    "ar_large_invoice_preemptive": "medium",
-    "ar_repeat_late_payer_flag": "high",
-}
+_rule_metadata_cache: dict[str, dict[str, dict[str, Any]]] = {}
 
-_RULE_TITLE: dict[str, str] = {
-    "ar_gentle_first_nudge": "Polite reminder due",
-    "ar_firm_second_reminder": "Firm reminder needed",
-    "ar_phone_call_escalation": "Escalate — phone call needed",
-    "ar_large_invoice_preemptive": "Large invoice due soon — courtesy check",
-    "ar_repeat_late_payer_flag": "Client paid late repeatedly — review terms",
-}
+
+def _load_rule_metadata(module_id: str) -> dict[str, dict[str, Any]]:
+    """Read manifest.json for a module and return its `rule_metadata` block.
+
+    Returns {} (not raises) when the module exists but the manifest has no
+    metadata block — that's the path for a brand-new module being scaffolded.
+    """
+    if module_id in _rule_metadata_cache:
+        return _rule_metadata_cache[module_id]
+    repo_root = Path(__file__).resolve().parents[2]
+    manifest_path = repo_root / "modules" / module_id / "manifest.json"
+    if not manifest_path.exists():
+        _rule_metadata_cache[module_id] = {}
+        return {}
+    try:
+        with open(manifest_path) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning(
+            "rule_metadata_load_failed", module_id=module_id, error=str(e)
+        )
+        _rule_metadata_cache[module_id] = {}
+        return {}
+    rm = data.get("rule_metadata") or {}
+    _rule_metadata_cache[module_id] = rm
+    return rm
+
+
+def _rule_title(module_id: str, rule_id: str, conclusion: str) -> str:
+    meta = _load_rule_metadata(module_id).get(rule_id) or {}
+    return meta.get("title") or conclusion.replace("_", " ").title()
+
+
+def _rule_priority(module_id: str, rule_id: str) -> str:
+    meta = _load_rule_metadata(module_id).get(rule_id) or {}
+    return meta.get("priority") or "medium"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -77,19 +109,37 @@ _RULE_TITLE: dict[str, str] = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+_INT_PREDICATES = frozenset({
+    # AR
+    "days_past_due", "amount_inr", "last_reminder_age_days", "client_late_count_90d",
+    # HR
+    "days_in_stage", "total_pipeline_days", "offer_expiry_days",
+    "interview_score", "days_since_last_contact",
+    # CSM
+    "mrr_usd", "days_to_renewal", "days_since_last_login", "nps_score",
+    "open_tickets", "usage_drop_pct_30d",
+})
+
+_BOOL_PREDICATES = frozenset({"is_vip_client", "active"})
+
+
 def _coerce_fact_value(predicate: str, raw: str) -> Any:
-    """Cast a facts.object string back to the type rules expect."""
-    if predicate in (
-        "days_past_due",
-        "amount_inr",
-        "last_reminder_age_days",
-        "client_late_count_90d",
-    ):
+    """Cast a facts.object string back to the type rules expect.
+
+    The integer + boolean predicate sets are the union across every module.
+    Rule conditions written as `op: ">"` with a numeric `value:` literal
+    require integers on the fact side; rules using `op: "=="` against a
+    boolean need a real bool, not the string "True".
+    """
+    if predicate in _INT_PREDICATES:
         try:
             return int(raw)
         except (TypeError, ValueError):
-            return 0
-    if predicate == "is_vip_client":
+            try:
+                return int(float(raw))
+            except (TypeError, ValueError):
+                return 0
+    if predicate in _BOOL_PREDICATES:
         return str(raw).lower() in ("true", "1", "yes")
     return raw
 
@@ -314,8 +364,13 @@ def _record_action(
 
 
 def _client_name_for_invoice(session: Session, org_id: str, invoice_id: str) -> str:
-    """One-row join to surface the Client.canonical_name for the human-readable
-    payload. Cached by callers if they care about latency."""
+    """One-row join to surface the *primary* entity's canonical_name for the
+    human-readable payload — works across modules (Client for AR, Candidate
+    for HR, Account for CSM). Cached by callers if they care about latency.
+
+    Lookup: find the secondary-entity node (by canonical_name = invoice_id),
+    follow its outgoing edge to the primary, return that primary's name.
+    """
     row = session.execute(
         text(
             """
@@ -325,18 +380,66 @@ def _client_name_for_invoice(session: Session, org_id: str, invoice_id: str) -> 
             JOIN graph_nodes i ON i.id = e.from_node
             WHERE i.org_id = :org
               AND i.canonical_name = :inv
-              AND n.type = 'client'
             LIMIT 1
             """
         ),
         {"org": org_id, "inv": invoice_id},
     ).fetchone()
-    return row[0] if row else "Unknown client"
+    return row[0] if row else "Unknown"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Public entry point
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def installed_module_ids() -> list[str]:
+    """Enumerate every module folder that has a manifest.json. Cached so
+    list() is O(1) after the first call inside a process."""
+    if not hasattr(installed_module_ids, "_cache"):
+        repo_root = Path(__file__).resolve().parents[2]
+        modules_dir = repo_root / "modules"
+        ids: list[str] = []
+        if modules_dir.exists():
+            for entry in sorted(modules_dir.iterdir()):
+                if not entry.is_dir() or entry.name.startswith("_"):
+                    continue
+                if (entry / "manifest.json").exists():
+                    ids.append(entry.name)
+        installed_module_ids._cache = ids  # type: ignore[attr-defined]
+    return list(installed_module_ids._cache)  # type: ignore[attr-defined]
+
+
+def run_all_for_org(
+    session: Session,
+    *,
+    org_id: str,
+    source: str = "manual",
+) -> dict[str, Any]:
+    """Run every installed module's pipeline for one org and aggregate.
+
+    Used by the event subscriber, the hourly Celery beat, and the /v1/scan
+    HTTP route — none of those callers know which module's data just
+    landed. Each module's chainer fires only on facts that match its
+    rule predicates, so AR rules silently no-op on HR facts and vice
+    versa; the 24h signature dedupe still applies per (rule, subject).
+    """
+    aggregate: dict[str, Any] = {
+        "source": source,
+        "modules": [],
+        "insights_fired_total": 0,
+        "webhook_success_total": 0,
+        "webhooks_called_total": 0,
+        "suppressed_dedupe_total": 0,
+    }
+    for module_id in installed_module_ids():
+        r = run_for_org(session, org_id=org_id, module_id=module_id, source=source)
+        aggregate["modules"].append({"module_id": module_id, **r})
+        aggregate["insights_fired_total"] += int(r.get("insights_fired") or 0)
+        aggregate["webhook_success_total"] += int(r.get("webhook_success") or 0)
+        aggregate["webhooks_called_total"] += int(r.get("webhooks_called") or 0)
+        aggregate["suppressed_dedupe_total"] += int(r.get("suppressed_dedupe") or 0)
+    return aggregate
 
 
 def run_for_org(
@@ -467,10 +570,8 @@ def run_for_org(
                 suppressed += 1
                 continue
 
-            priority = _RULE_PRIORITY.get(step.rule_id, "medium")
-            title = _RULE_TITLE.get(
-                step.rule_id, step.conclusion.replace("_", " ").title()
-            )
+            priority = _rule_priority(module_id, step.rule_id)
+            title = _rule_title(module_id, step.rule_id, step.conclusion)
             memory_view = (
                 f"Invoice {invoice_id} for {client_name}: "
                 f"₹{facts.get('amount_inr', 0):,} · "

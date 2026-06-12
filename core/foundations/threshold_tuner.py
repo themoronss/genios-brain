@@ -59,16 +59,46 @@ _legacy_log = logging.getLogger(__name__)
 MIN_SAMPLE_SIZE = 20
 MIN_PRECISION_IMPROVEMENT_PP = 0.05  # 5 percentage points
 ANALYSIS_WINDOW_DAYS = 90  # look back 3 months for outcomes
-# Rules ship with these tuner-knobs in YAML eventually; hardcoded here for
-# the AR demo. Maps rule_id -> (fact_predicate, op, current_threshold).
-# When we wire more modules these come from manifest.json.
-_AR_RULE_KNOBS: dict[str, tuple[str, str, float]] = {
-    "ar_gentle_first_nudge": ("days_past_due", ">=", 3),
-    "ar_firm_second_reminder": ("days_past_due", ">", 7),
-    "ar_phone_call_escalation": ("days_past_due", ">", 14),
-    "ar_large_invoice_preemptive": ("amount_inr", ">=", 100000),
-    "ar_repeat_late_payer_flag": ("client_late_count_90d", ">=", 3),
-}
+
+
+def _load_module_knobs(
+    module_id: str,
+) -> dict[str, tuple[str, str, float]]:
+    """Read tunable_knobs from a module's manifest.json.
+
+    Returns {rule_id: (fact_predicate, op, default_threshold), ...}. Each
+    rule may declare 0 or more knobs; today we tune the FIRST knob per rule
+    (most rules only have one tunable). Multi-knob tuning is Phase 5+.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    repo_root = _Path(__file__).resolve().parents[2]
+    manifest_path = repo_root / "modules" / module_id / "manifest.json"
+    if not manifest_path.exists():
+        log.warning("threshold_tuner_module_missing", module_id=module_id)
+        return {}
+    try:
+        with open(manifest_path) as f:
+            data = _json.load(f)
+    except (_json.JSONDecodeError, OSError) as e:
+        log.warning(
+            "threshold_tuner_manifest_unreadable", module_id=module_id, error=str(e)
+        )
+        return {}
+    rule_meta = data.get("rule_metadata") or {}
+    knobs: dict[str, tuple[str, str, float]] = {}
+    for rule_id, meta in rule_meta.items():
+        tk = meta.get("tunable_knobs") or []
+        if not tk:
+            continue
+        first = tk[0]
+        knobs[rule_id] = (
+            first["fact_predicate"],
+            first["op"],
+            float(first["default_threshold"]),
+        )
+    return knobs
 
 # Outcomes that count as a "successful" insight — the rule pointed at
 # something the founder did take action on (paid = paid after a nudge;
@@ -405,8 +435,20 @@ def tune_for_org(
     from the HTTP route. Does NOT commit the session — caller does.
     """
     rule_results: list[dict[str, Any]] = []
+    knobs = _load_module_knobs(module_id)
+    if not knobs:
+        return {
+            "org_id": org_id,
+            "module_id": module_id,
+            "rules_evaluated": 0,
+            "rules_with_outcomes": 0,
+            "auto_applied": 0,
+            "shadow_suggestions": 0,
+            "details": [],
+            "note": f"Module {module_id} has no tunable_knobs in manifest.json.",
+        }
 
-    for rule_id, (fact_predicate, op_str, default_threshold) in _AR_RULE_KNOBS.items():
+    for rule_id, (fact_predicate, op_str, default_threshold) in knobs.items():
         samples = _load_rule_outcomes(
             session,
             org_id=org_id,
