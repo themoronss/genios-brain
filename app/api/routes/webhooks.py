@@ -218,15 +218,11 @@ def list_webhook_events(
 ):
     """
     Return the last 50 webhook events for the authenticated org.
-    Startup plan only (real-time sync tier).
-    """
-    plan_info = get_org_plan(db, org_id)
-    if plan_info["tier"] != "startup":
-        raise HTTPException(
-            status_code=403,
-            detail={"error": "PLAN_LIMIT", "message": "Webhook event log is available on Startup plan only.", "upgrade_required": True},
-        )
 
+    Open to all plans — debug visibility is part of evaluating the product,
+    not a premium-only feature. Per-org row caps (LIMIT 50) prevent any
+    Trial-side cost concerns.
+    """
     rows = db.execute(
         text("""
             SELECT id, source, event_type, payload, status, error, received_at, processed_at

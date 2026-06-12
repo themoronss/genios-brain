@@ -668,7 +668,7 @@ _UPLOAD_DIR = os.path.join(
 )
 os.makedirs(_UPLOAD_DIR, exist_ok=True)
 _MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
-_ALLOWED_EXT = {".pdf", ".docx", ".txt"}
+_ALLOWED_EXT = {".pdf", ".docx", ".txt", ".csv", ".json"}
 
 
 @router.post("/v1/documents/upload")
@@ -679,13 +679,13 @@ async def v1_document_upload(
     org_id: str = Depends(verify_api_key),
 ):
     """
-    Upload a document (PDF, DOCX, TXT, max 10 MB) for context extraction.
-    Startup plan only. Uses API key auth.
+    Upload a document (PDF, DOCX, TXT, CSV, max 10 MB) for context extraction.
+
+    Open to all plans — Trial customers need to test the upload path end-to-end
+    to evaluate the product. Per-chunk credit deduction (resources:upload_chunk)
+    handles the cost; the plan gate that used to live here was blocking
+    legitimate evaluation flows, not preventing abuse.
     """
-    from app.plan_enforcer import require_integration
-
-    require_integration(db, org_id, "documents")
-
     file_ext = os.path.splitext(file.filename or "")[1].lower()
     if file_ext not in _ALLOWED_EXT:
         raise HTTPException(
