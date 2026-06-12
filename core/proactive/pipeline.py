@@ -177,6 +177,65 @@ def _load_active_webhooks(session: Session, org_id: str) -> list[dict]:
     return [h for h in hooks if h.get("is_active", True)]
 
 
+def _record_action(
+    session: Session,
+    *,
+    org_id: str,
+    insight_id: str,
+    webhook_id: str,
+    webhook_url: str,
+    payload: dict,
+    response: dict,
+) -> None:
+    """Append an action_ledger row for one webhook delivery.
+
+    Keeps the audit trail self-describing — every webhook the engine
+    actually fired lives here with its full body + the receiver's
+    HTTP response, so a customer can later see *exactly* what GeniOS
+    did on their behalf. Failures DO write a row too (outcome=failed)
+    so the dashboard's "actions taken" widget can surface delivery
+    health, not just successes.
+
+    Idempotency note: signature_hash on the parent proactive_insights
+    row already guards against firing the same (rule, invoice) twice
+    inside 24h, so per-(insight_id, webhook_id) duplication is bounded
+    by that. We don't add a separate uniqueness check here — that
+    would mask a legitimate retry surface.
+    """
+    from app.actions import ledger as _ledger
+
+    ok = bool(response.get("ok"))
+    detail = (
+        f"http={response.get('status_code')} "
+        f"hook={webhook_id} "
+        f"snippet={(response.get('response_snippet') or '')[:200]}"
+    )
+    try:
+        _ledger.record(
+            session,
+            org_id=org_id,
+            agent_id="genios-proactive-engine",
+            action_type="webhook_delivered",
+            risk_tier="external_send",
+            target_type="insight",
+            target_ref=insight_id,
+            payload={
+                "webhook_id": webhook_id,
+                "webhook_url": webhook_url,
+                "insight_payload": payload,
+            },
+            outcome="success" if ok else "failed",
+            outcome_detail=detail,
+        )
+    except Exception as e:
+        log.warning(
+            "proactive_action_ledger_failed",
+            insight_id=insight_id,
+            webhook_id=webhook_id,
+            error=str(e),
+        )
+
+
 def _client_name_for_invoice(session: Session, org_id: str, invoice_id: str) -> str:
     """One-row join to surface the Client.canonical_name for the human-readable
     payload. Cached by callers if they care about latency."""
@@ -432,8 +491,22 @@ def run_for_org(
             "analysis": ins["genios_view"],
             "generated_at": datetime.now(UTC).isoformat(),
         }
+        # Each webhook delivery is recorded in action_ledger so the dashboard
+        # can render "GeniOS sent N reminders" with auditable evidence. The
+        # row is also where customer/Hermes feedback gets persisted later
+        # (paid / dismissed / escalated) via the /outcome endpoint.
         for hook in active_hooks:
-            webhook_calls.append(_sign_and_post(hook, payload))
+            resp = _sign_and_post(hook, payload)
+            webhook_calls.append(resp)
+            _record_action(
+                session,
+                org_id=org_id,
+                insight_id=insight_id,
+                webhook_id=hook.get("id", ""),
+                webhook_url=hook.get("url", ""),
+                payload=payload,
+                response=resp,
+            )
         fired_summary.append(
             {
                 "invoice_id": ins["invoice_id"],

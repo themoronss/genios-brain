@@ -22,7 +22,7 @@ import secrets
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -322,6 +322,244 @@ def delete_webhook(
 
 
 # ── Manual scan trigger ──────────────────────────────────────────────────────
+
+class OutcomeRequest(BaseModel):
+    outcome: str = Field(
+        ...,
+        description="paid | ignored | dismissed | escalated — what actually happened",
+    )
+    value_amount: Optional[float] = Field(
+        default=None,
+        description="If a positive outcome (paid), how much value was recovered (in INR for AR).",
+    )
+    currency: str = Field(
+        default="INR",
+        description="ISO currency code for value_amount",
+    )
+    evidence: Optional[str] = Field(
+        default=None,
+        description="Free-form text the founder / Hermes can leave to explain HOW we know — e.g. 'paid via NEFT 14 Jun'",
+    )
+
+
+_VALID_OUTCOMES = {"paid", "ignored", "dismissed", "escalated", "acted"}
+
+
+@router.post("/v1/insights/{insight_id}/outcome", status_code=201)
+def record_insight_outcome(
+    insight_id: str,
+    body: OutcomeRequest,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Persist the business outcome of an insight — paid, ignored, dismissed.
+
+    Two callers in practice:
+      1. The customer's dashboard ("mark paid" button on an AR insight).
+      2. Hermes / OpenClaw / a custom adapter, after it ran the suggested
+         action and learned the result (e.g. it sent the email, then a
+         downstream Stripe webhook said the invoice was paid).
+
+    Writes to `feedback_actions` so the same row also feeds calibration
+    (Phase 4). The matching action_ledger rows have their outcome_detail
+    appended so anyone reading the delivery audit trail sees the
+    eventual business outcome alongside the HTTP success.
+
+    Plan alignment: g-i-7 (outcome attribution on delivery), g-i-8
+    (feedback for calibration), g-i-9 (per-user feedback ledger).
+    """
+    if body.outcome not in _VALID_OUTCOMES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"outcome must be one of {sorted(_VALID_OUTCOMES)}",
+        )
+
+    # 1) Verify this insight belongs to the calling org
+    row = db.execute(
+        text("SELECT id, signature_hash FROM proactive_insights WHERE id = :id AND org_id = :oid"),
+        {"id": insight_id, "oid": org_id},
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Insight not found")
+
+    # 2) Record feedback — uses the existing feedback_actions shape so
+    # downstream calibration / threshold-tuner can read all outcomes
+    # from one place.
+    import uuid as _uuid
+    feedback_id = str(_uuid.uuid4())
+    edit_payload = {
+        "value_amount": body.value_amount,
+        "currency": body.currency,
+        "evidence": body.evidence,
+        "outcome": body.outcome,
+    }
+    db.execute(
+        text(
+            """
+            INSERT INTO feedback_actions
+                (id, org_id, user_id, decision_id, insight_id, action,
+                 edit_diff_jsonb, timestamp)
+            VALUES
+                (:id, :org_id, :user_id, NULL, :insight_id, :action,
+                 CAST(:edits AS jsonb), NOW())
+            """
+        ),
+        {
+            "id": feedback_id,
+            "org_id": org_id,
+            # API-key callers don't have a per-user identity — attribute to
+            # the org owner placeholder. Dashboard callers populate this
+            # via the cookie session in a later refactor.
+            "user_id": "system:api",
+            "insight_id": insight_id,
+            "action": body.outcome,
+            "edits": json.dumps(edit_payload),
+        },
+    )
+
+    # 3) Append the outcome onto every action_ledger row tied to this
+    # insight — keeps the delivery audit trail self-describing.
+    db.execute(
+        text(
+            """
+            UPDATE action_ledger
+            SET outcome_detail = COALESCE(outcome_detail, '') ||
+                                 ' | outcome=' || :outcome ||
+                                 COALESCE(' value=' || :val_str, '') ||
+                                 COALESCE(' evidence=' || :evidence, ''),
+                completed_at = NOW()
+            WHERE org_id = :org_id
+              AND target_type = 'insight'
+              AND target_ref = :insight_id
+            """
+        ),
+        {
+            "outcome": body.outcome,
+            "val_str": (
+                f"{body.value_amount:.2f} {body.currency}"
+                if body.value_amount is not None
+                else None
+            ),
+            "evidence": (body.evidence[:200] if body.evidence else None),
+            "org_id": org_id,
+            "insight_id": insight_id,
+        },
+    )
+    db.commit()
+    return {
+        "ok": True,
+        "feedback_id": feedback_id,
+        "insight_id": insight_id,
+        "outcome": body.outcome,
+    }
+
+
+@router.get("/v1/insights/stats")
+def insight_stats(
+    days: int = Query(default=7, ge=1, le=90),
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Aggregated ROI numbers for the dashboard "Actions GeniOS took" widget.
+
+    Window is the last N days (default 7). Numbers come from:
+      * proactive_insights (insights fired)
+      * action_ledger      (deliveries attempted + their outcome)
+      * feedback_actions   (business outcomes recorded by /outcome)
+
+    Plan alignment: g-i-7 delivery accounting + g-i-8 outcome
+    attribution. The widget that consumes this is the closing of the
+    "what did GeniOS do for me" loop.
+    """
+    n_insights = db.execute(
+        text(
+            "SELECT COUNT(*) FROM proactive_insights "
+            "WHERE org_id = :org AND created_at >= NOW() - (:days || ' days')::INTERVAL"
+        ),
+        {"org": org_id, "days": days},
+    ).scalar() or 0
+
+    delivery = db.execute(
+        text(
+            """
+            SELECT
+              COUNT(*) AS total_actions,
+              COUNT(*) FILTER (WHERE outcome = 'success') AS delivered,
+              COUNT(*) FILTER (WHERE outcome = 'failed')  AS failed
+            FROM action_ledger
+            WHERE org_id = :org
+              AND action_type = 'webhook_delivered'
+              AND created_at >= NOW() - (:days || ' days')::INTERVAL
+            """
+        ),
+        {"org": org_id, "days": days},
+    ).fetchone()
+
+    outcomes_rows = db.execute(
+        text(
+            """
+            SELECT action, COUNT(*),
+                   COALESCE(SUM((edit_diff_jsonb->>'value_amount')::NUMERIC), 0)
+            FROM feedback_actions
+            WHERE org_id = :org
+              AND insight_id IS NOT NULL
+              AND timestamp >= NOW() - (:days || ' days')::INTERVAL
+              AND action IN ('paid', 'ignored', 'dismissed', 'escalated', 'acted')
+            GROUP BY action
+            """
+        ),
+        {"org": org_id, "days": days},
+    ).fetchall()
+
+    outcomes: dict[str, int] = {
+        "paid": 0,
+        "ignored": 0,
+        "dismissed": 0,
+        "escalated": 0,
+        "acted": 0,
+    }
+    value_recovered_inr = 0.0
+    for action, count, total_value in outcomes_rows:
+        outcomes[action] = int(count)
+        if action == "paid":
+            value_recovered_inr = float(total_value or 0)
+
+    outcomes_recorded = sum(outcomes.values())
+
+    return {
+        "window_days": days,
+        "insights_fired": int(n_insights),
+        "actions_taken": int(delivery[0]) if delivery else 0,
+        "actions_delivered": int(delivery[1]) if delivery else 0,
+        "actions_failed": int(delivery[2]) if delivery else 0,
+        "outcomes_recorded": outcomes_recorded,
+        "outcomes": outcomes,
+        "value_recovered_inr": value_recovered_inr,
+        "headline": _stats_headline(int(n_insights), outcomes, value_recovered_inr),
+    }
+
+
+def _stats_headline(insights: int, outcomes: dict[str, int], recovered_inr: float) -> str:
+    """One-line summary for the dashboard banner."""
+    if insights == 0:
+        return "No insights yet — upload data in Resources to get started."
+    paid = outcomes.get("paid", 0)
+    if paid == 0:
+        return (
+            f"GeniOS surfaced {insights} insight{'s' if insights != 1 else ''}. "
+            "Mark the outcomes to start tracking impact."
+        )
+    rec_lakh = recovered_inr / 100000
+    rec_str = (
+        f"₹{rec_lakh:.1f}L"
+        if rec_lakh >= 1
+        else f"₹{int(recovered_inr):,}"
+    )
+    return (
+        f"GeniOS surfaced {insights} insight{'s' if insights != 1 else ''}, "
+        f"{paid} closed paid — {rec_str} attributable to those nudges."
+    )
+
 
 @router.post("/v1/scan")
 def trigger_scan(
