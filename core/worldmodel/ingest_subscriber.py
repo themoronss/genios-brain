@@ -101,10 +101,27 @@ def _org_for_source(session: Session, source_id: str) -> str | None:
 def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
     """Run the extract → resolve → persist pipeline for one MemoryItem.
 
+    Two modes:
+
+      * STRUCTURED (hint present) — adapter pre-resolved column→fact mapping
+        and pre-computed derived facts. Persist directly, skip LLM. Used by
+        CSV/JSON/SQL adapters where the schema is deterministic.
+
+      * UNSTRUCTURED (hint absent) — adapter delivered free-text content.
+        Call extract() (Haiku) to discover entities + relations + facts,
+        then persist. Used by gmail/notion/upload-pdf paths.
+
     org_id is threaded into extract() so the LLM call writes a row in
     llm_costs attributed to this tenant — needed for cost visibility +
     the per-day budget breaker.
     """
+    # ── Structured fast-path ─────────────────────────────────────────────────
+    # Hint present → no LLM call. The adapter already resolved everything.
+    hint = item.metadata.structured_facts
+    if hint is not None:
+        _ingest_structured(session, item, org_id, hint)
+        return
+
     try:
         extraction = extract(item, org_id=org_id)
     except ExtractionError as e:
@@ -183,6 +200,166 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
         n_entities=len(extraction.entities),
         n_relations=len(extraction.relations),
     )
+
+
+def _ingest_structured(
+    session: Session,
+    item: MemoryItem,
+    org_id: str,
+    hint,  # core.memory.types.StructuredFactsHint
+) -> None:
+    """Persist pre-resolved entities + facts from a structured adapter hint.
+
+    Idempotent on the composite key (org_id, item.item_id) — re-emitting the
+    same MemoryItem is a no-op (existing facts / edges are detected and
+    skipped, node attributes get a merge update for any new contact fields).
+
+    Two-pass write so EdgeRow FKs (graph_nodes.id) point to flushed rows
+    before the edge batch insert hits Postgres — avoids the FK violation
+    we saw when the original csv_ingest tried a single-pass write.
+    """
+    import uuid as _uuid
+
+    from core.graph.schema import AssertionSource, EdgeStatus, EdgeType
+    from core.graph.store import EdgeRow, FactRow, NodeRow
+
+    tagged_item_id = f"{item.source_type}:{item.item_id}"
+
+    # ── Pass 1: primary entity (Client) ──────────────────────────────────────
+    primary = _upsert_structured_node(
+        session,
+        org_id=org_id,
+        node_type=hint.entity_type,
+        canonical_name=hint.entity_name,
+        attributes=dict(hint.entity_attributes or {}),
+        source_item_id=tagged_item_id,
+    )
+
+    # ── Pass 1 continued: secondary entity (Invoice) if hint provides one ───
+    secondary = None
+    if hint.secondary_entity_id:
+        secondary = _upsert_structured_node(
+            session,
+            org_id=org_id,
+            node_type=hint.secondary_entity_type,
+            canonical_name=hint.secondary_entity_id,
+            attributes={"client_node_id": primary.id},
+            source_item_id=tagged_item_id,
+        )
+
+    session.flush()  # nodes durable before edges/facts reference them
+
+    # ── Pass 2: edge linking secondary → primary ─────────────────────────────
+    if secondary is not None and hint.edge_predicate:
+        edge_exists = session.execute(
+            select(EdgeRow.id)
+            .where(EdgeRow.org_id == org_id)
+            .where(EdgeRow.from_node == secondary.id)
+            .where(EdgeRow.to_node == primary.id)
+            .where(EdgeRow.type == EdgeType.DEPENDENCY.value)
+            .limit(1)
+        ).scalar_one_or_none()
+        if not edge_exists:
+            session.add(
+                EdgeRow(
+                    org_id=org_id,
+                    from_node=secondary.id,
+                    to_node=primary.id,
+                    type=EdgeType.DEPENDENCY.value,
+                    asserted_by_type=AssertionSource.SOURCE.value,
+                    asserted_by_id=item.source_id,
+                    weight=1.0,
+                    weight_source="default",
+                    status=EdgeStatus.ASSERTED.value,
+                )
+            )
+
+    # ── Pass 2 continued: facts on the secondary (or primary if no secondary)
+    fact_subject = hint.secondary_entity_id or hint.entity_name
+    for predicate, value in (hint.facts or {}).items():
+        existing = session.execute(
+            select(FactRow.id)
+            .where(FactRow.org_id == org_id)
+            .where(FactRow.subject == fact_subject)
+            .where(FactRow.predicate == predicate)
+            .where(FactRow.source_item_id == tagged_item_id)
+            .limit(1)
+        ).scalar_one_or_none()
+        if existing:
+            continue
+        session.add(
+            FactRow(
+                org_id=org_id,
+                subject=fact_subject,
+                predicate=predicate,
+                object=str(value),
+                source_item_id=tagged_item_id,
+                asserted_by_type=AssertionSource.SOURCE.value,
+                asserted_by_id=item.source_id,
+                confidence=1.0,
+            )
+        )
+
+    session.flush()
+    log.info(
+        "ingest_structured_persisted",
+        item_id=tagged_item_id,
+        org_id=org_id,
+        primary=hint.entity_name,
+        secondary=hint.secondary_entity_id,
+        n_facts=len(hint.facts or {}),
+    )
+
+
+def _upsert_structured_node(
+    session: Session,
+    *,
+    org_id: str,
+    node_type: str,
+    canonical_name: str,
+    attributes: dict,
+    source_item_id: str,
+):
+    """Idempotent upsert by (org_id, type, canonical_name). Merges any new
+    attribute keys into the existing node — never overwrites known values."""
+    from core.graph.store import NodeRow
+    import uuid as _uuid
+
+    existing = session.execute(
+        select(NodeRow)
+        .where(NodeRow.org_id == org_id)
+        .where(NodeRow.type == node_type)
+        .where(NodeRow.canonical_name.ilike(canonical_name))
+        .limit(1)
+    ).scalar_one_or_none()
+    if existing:
+        merged_attrs = dict(existing.attributes or {})
+        for k, v in (attributes or {}).items():
+            if v is not None and not merged_attrs.get(k):
+                merged_attrs[k] = v
+        if merged_attrs != (existing.attributes or {}):
+            existing.attributes = merged_attrs
+        existing.last_seen = datetime.now(UTC)
+        # Append source provenance — useful for audit + multi-source dedup
+        provenance = list(existing.source_item_ids or [])
+        if source_item_id not in provenance:
+            provenance.append(source_item_id)
+            existing.source_item_ids = provenance
+        return existing
+
+    new_id = str(_uuid.uuid4())
+    node = NodeRow(
+        id=new_id,
+        org_id=org_id,
+        org_unit=org_id,
+        type=node_type,
+        canonical_name=canonical_name,
+        aliases=[],
+        attributes={k: v for k, v in (attributes or {}).items() if v is not None},
+        source_item_ids=[source_item_id],
+    )
+    session.add(node)
+    return node
 
 
 def _upsert_node(

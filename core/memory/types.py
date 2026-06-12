@@ -22,6 +22,48 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+class StructuredFactsHint(BaseModel):
+    """Hint that this MemoryItem already carries deterministic structured
+    facts and the LLM-extraction subscriber should skip the Haiku call.
+
+    Used by row-shaped adapters (CSV upload, custom-mapping connections,
+    direct API sync of well-typed records) where:
+      * Column→fact mapping is already resolved (no need to re-discover via
+        LLM) — so emit cost-free.
+      * Predicate names are guaranteed to match what module rules consume —
+        so engine reasoning stays deterministic.
+      * Derived facts the LLM cannot reliably compute (days_past_due,
+        client_late_count_90d) are pre-baked here.
+
+    Wire contract: when this is present on `MemoryItemMetadata`, the
+    `g-i-3` ingest subscriber MUST persist the entities+facts directly
+    (no extract call). When absent, the existing LLM-extract path runs
+    unchanged. Single bus, two ingestion modes.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    entity_name: str = Field(..., min_length=1, description="Primary entity (e.g. Client) — becomes canonical_name on a graph node")
+    entity_type: str = Field(default="client", description="Graph node type for the primary entity")
+    secondary_entity_id: str | None = Field(
+        default=None,
+        description="External id of a secondary entity emitted alongside (e.g. invoice_id) — also persisted as a graph node",
+    )
+    secondary_entity_type: str = Field(default="invoice", description="Type of the secondary entity")
+    entity_attributes: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Attributes stored on the primary entity node (email, phone, etc.)",
+    )
+    facts: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Predicate -> value map. Each entry becomes one FactRow on the secondary entity (or primary if secondary absent).",
+    )
+    edge_predicate: str | None = Field(
+        default="issued_to",
+        description="Predicate of the edge linking secondary -> primary entity",
+    )
+
+
 class MemoryItemMetadata(BaseModel):
     """Metadata for a MemoryItem — every field optional except timestamp."""
 
@@ -36,6 +78,10 @@ class MemoryItemMetadata(BaseModel):
         description="1.0 for known adapters; lower for LLM-mapped custom sources",
     )
     tags: list[str] = Field(default_factory=list, description="Source-native labels passed through")
+    structured_facts: StructuredFactsHint | None = Field(
+        default=None,
+        description="Optional — present when the adapter already resolved column->fact mapping. Tells g-i-3 ingest subscriber to skip LLM extraction and persist directly. See StructuredFactsHint docstring for the invariant.",
+    )
 
 
 class MemoryItem(BaseModel):

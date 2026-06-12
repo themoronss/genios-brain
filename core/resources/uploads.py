@@ -172,6 +172,104 @@ def create_upload(
     _set_status(session, file_id, "extracting")
     chunks_n = 0
     insufficient_at_chunk: int | None = None
+
+    # CSV gets a deterministic, LLM-free path — see csv_ingest.py for the
+    # rationale. It still flows through the g-i-1 memory bus (one
+    # MemoryItem per row, structured_facts hint set) so the single-pipeline
+    # invariant holds: the g-i-3 subscriber sees the hint, persists
+    # directly, no Haiku call. Same bus, two modes.
+    if ext == "csv":
+        try:
+            from core.resources import csv_ingest
+
+            columns, raw_rows = csv_ingest.parse_csv_bytes(upload.raw)
+            mapping, unmapped = csv_ingest.infer_column_mapping(columns)
+            structured = csv_ingest.process_rows(raw_rows, mapping)
+
+            # Emit one MemoryItem per row → the registered subscriber writes
+            # nodes + edges + facts inside its own DB session. We use a
+            # fresh session here only to roll up post-emission counts for
+            # the resource_uploads row.
+            csv_ingest.emit_rows_to_bus(
+                org_id=org_id,
+                rows=structured,
+                file_id=file_id,
+                source_id=source_id,
+            )
+
+            # Roll up stored counts from facts / nodes — what actually landed
+            # in the graph, not what we tried to emit.
+            facts_n = session.execute(
+                text(
+                    "SELECT COUNT(*) FROM facts WHERE org_id = :org "
+                    "AND source_item_id LIKE :prefix"
+                ),
+                {"org": org_id, "prefix": f"upload:{file_id}:%"},
+            ).scalar() or 0
+            # JSON-text LIKE keeps the SQL portable (avoids ::jsonb cast
+            # parameter binding clash with Postgres ::). For the entities
+            # count we want every Client/Invoice node tied to this upload's
+            # source_item_ids — file_id is unique per upload so the LIKE
+            # over the JSON text is sufficient.
+            entities_n = session.execute(
+                text(
+                    "SELECT COUNT(*) FROM graph_nodes WHERE org_id = :org "
+                    "AND type IN ('client', 'invoice') "
+                    "AND source_item_ids::text LIKE :like_probe"
+                ),
+                {"org": org_id, "like_probe": f"%upload:{file_id}:%"},
+            ).scalar() or 0
+
+            mapped_summary = (
+                f"Auto-mapped {len(mapping)}/{len(columns)} columns. "
+                f"Skipped: {', '.join(unmapped[:5])}"
+                if unmapped
+                else f"Auto-mapped all {len(columns)} columns."
+            )
+            session.execute(
+                text(
+                    """
+                    UPDATE resource_uploads
+                    SET status = 'indexed',
+                        facts_count = :fn,
+                        entities_count = :en,
+                        error = :err,
+                        processed_at = NOW()
+                    WHERE id = :id
+                    """
+                ),
+                {
+                    "id": file_id,
+                    "fn": int(facts_n),
+                    "en": int(entities_n),
+                    "err": mapped_summary,
+                },
+            )
+            session.commit()
+            audit.record(
+                org_id=org_id, actor_type="user", actor_id=actor_email,
+                action="data_accessed", target_type="upload",
+                target_id=file_id,
+                metadata={
+                    "op": "create_csv",
+                    "file_name": upload.file_name,
+                    "rows": len(structured),
+                    "columns_mapped": len(mapping),
+                    "columns_skipped": len(unmapped),
+                    "facts_persisted": int(facts_n),
+                    "entities_persisted": int(entities_n),
+                },
+            )
+            return _row_to_dict(session, org_id=org_id, file_id=file_id)
+        except ValueError as ve:
+            _set_status(session, file_id, "failed", error=f"CSV parse failed: {ve}")
+            log.warning("upload_csv_parse_failed", file_id=file_id, error=str(ve))
+            return _row_to_dict(session, org_id=org_id, file_id=file_id)
+        except Exception as e:
+            _set_status(session, file_id, "failed", error=str(e)[:500])
+            log.exception("upload_csv_ingest_failed", file_id=file_id, error=str(e))
+            return _row_to_dict(session, org_id=org_id, file_id=file_id)
+
     try:
         body = _parse_to_text(storage_path, ext)
         chunks = _chunk(body)
