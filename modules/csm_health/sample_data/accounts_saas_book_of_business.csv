@@ -1,0 +1,21 @@
+account_id,account_name,account_email,csm_owner,status,mrr_usd,days_to_renewal,days_since_last_login,nps_score,open_tickets,usage_drop_pct_30d
+ACC-201,Helix Robotics,founder@helix.io,Anjali,active,1800,45,6,5,2,15
+ACC-202,Volta Finance,ops@voltafinance.com,Anjali,active,2400,80,3,4,1,8
+ACC-203,Loomtree Studios,team@loomtree.in,Vikram,active,650,120,10,8,1,12
+ACC-204,Pioneer Labs,billing@pioneer.io,Vikram,active,3200,28,9,3,2,22
+ACC-205,Spark Capital,it@sparkcap.com,Anjali,active,950,200,2,8,1,5
+ACC-206,Rhino Logistics,success@rhinologistics.io,Vikram,active,1500,90,4,6,7,18
+ACC-207,Maple Health Systems,ops@maplehealth.in,Anjali,active,2100,55,21,7,0,25
+ACC-208,Coral Edu Tech,team@coraledu.com,Vikram,active,420,250,3,9,0,4
+ACC-209,Nimbus Cloud,billing@nimbuscloud.io,Anjali,active,2800,160,18,8,2,55
+ACC-210,Indigo Mobility,ops@indigomob.in,Vikram,active,1100,75,2,5,1,8
+ACC-211,Beta Bio,team@betabio.com,Anjali,active,80,180,40,8,0,5
+ACC-212,Cipher Networks,support@ciphernet.io,Vikram,active,3500,42,5,4,6,30
+ACC-213,Solstice Travel,ops@solsticetravel.com,Anjali,active,750,300,30,7,0,3
+ACC-214,Quill Publishing,billing@quillpub.in,Vikram,active,180,200,8,8,1,2
+ACC-215,Lighthouse Diagnostics,team@lhdiag.com,Anjali,churned,0,-30,90,3,0,100
+ACC-216,Forge Analytics,billing@forge.io,Vikram,active,1200,38,6,6,4,12
+ACC-217,Eclipse Robotics,ops@eclipserob.com,Anjali,active,4200,180,2,9,0,3
+ACC-218,Tangerine Apparel,team@tangerine.in,Vikram,active,520,140,25,8,0,2
+ACC-219,Vector Education,success@vector-edu.com,Anjali,active,180,220,12,8,0,7
+ACC-220,Mosaic Foods,billing@mosaicfoods.io,Vikram,active,820,210,4,7,1,6
