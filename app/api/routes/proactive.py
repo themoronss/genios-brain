@@ -192,8 +192,15 @@ def create_webhook(
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
-    if not req.url.startswith("https://"):
-        raise HTTPException(status_code=400, detail="Webhook URL must use HTTPS")
+    # HTTPS is required in prod. In dev we also allow http://localhost and
+    # http://127.0.0.1 so the founder/customer can point a local Hermes /
+    # OpenClaw / n8n at the brain without spinning up ngrok every time.
+    is_localhost = req.url.startswith(("http://localhost", "http://127.0.0.1"))
+    if not (req.url.startswith("https://") or is_localhost):
+        raise HTTPException(
+            status_code=400,
+            detail="Webhook URL must use HTTPS (or http://localhost in dev)",
+        )
 
     hooks = _read_hooks(db, org_id)
     if any(h.get("url") == req.url for h in hooks):
@@ -221,6 +228,86 @@ def create_webhook(
     }
 
 
+@router.post("/v1/webhooks/{webhook_id}/test")
+def test_webhook(
+    webhook_id: str,
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Fire a sample, signed insight payload at a registered webhook.
+
+    Built so a Trial customer can verify their Hermes / OpenClaw / n8n
+    receiver is wired up correctly without waiting for the engine to
+    actually emit an insight. The payload shape matches the real
+    `event=insight` delivery in webhook_delivery.py.
+    """
+    import hashlib
+    import hmac
+    import uuid as _uuid
+    from datetime import datetime, timezone
+
+    import requests
+
+    hooks = _read_hooks(db, org_id)
+    hook = next((h for h in hooks if h.get("id") == webhook_id), None)
+    if not hook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+
+    payload = {
+        "event": "insight",
+        "insight_id": str(_uuid.uuid4()),
+        "org_id": org_id,
+        "type": "test",
+        "priority": "high",
+        "category": "engagement_risk",
+        "title": "Test insight — verify your receiver is wired correctly",
+        "contact_name": "Test Contact",
+        "contact_id": None,
+        "memory_view": "This is a sample memory_view payload from GeniOS.",
+        "genios_view": "This is a sample genios_view analysis.",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "fact": "Sample fact (alias for memory_view).",
+        "analysis": "Sample analysis (alias for genios_view).",
+    }
+    body = json.dumps(payload, default=str)
+    secret = hook.get("secret", "")
+    digest_hex = hmac.new(
+        secret.encode("utf-8"), body.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+    try:
+        resp = requests.post(
+            hook["url"], data=body,
+            headers={
+                "Content-Type": "application/json",
+                # GeniOS-native header (legacy receivers + our own adapters).
+                "X-Genios-Signature": "sha256=" + digest_hex,
+                "X-Genios-Event": "insight",
+                # Hermes routes events by reading X-GitHub-Event; send it so
+                # subscriptions filtered to events=["insight"] actually match.
+                "X-GitHub-Event": "insight",
+                # GitHub-style — Hermes, n8n's HMAC node, and most generic
+                # webhook receivers accept this format.
+                "X-Hub-Signature-256": "sha256=" + digest_hex,
+                # Plain-hex generic header for receivers that don't expect
+                # the `sha256=` prefix (Hermes "generic" path).
+                "X-Webhook-Signature": digest_hex,
+            },
+            timeout=10,
+        )
+        return {
+            "ok": 200 <= resp.status_code < 300,
+            "status_code": resp.status_code,
+            "response_body": resp.text[:500],
+            "url": hook["url"],
+        }
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to reach webhook URL: {str(e)[:200]}",
+        )
+
+
 @router.delete("/v1/webhooks/{webhook_id}")
 def delete_webhook(
     webhook_id: str,
@@ -236,24 +323,234 @@ def delete_webhook(
 
 # ── Manual scan trigger ──────────────────────────────────────────────────────
 
+_RULE_PRIORITY = {
+    "ar_gentle_first_nudge": "low",
+    "ar_firm_second_reminder": "medium",
+    "ar_phone_call_escalation": "high",
+    "ar_large_invoice_preemptive": "medium",
+    "ar_repeat_late_payer_flag": "high",
+}
+
+_RULE_TITLE = {
+    "ar_gentle_first_nudge": "Polite reminder due",
+    "ar_firm_second_reminder": "Firm reminder needed",
+    "ar_phone_call_escalation": "Escalate — phone call needed",
+    "ar_large_invoice_preemptive": "Large invoice due soon — courtesy check",
+    "ar_repeat_late_payer_flag": "Client paid late repeatedly — review terms",
+}
+
+
+def _coerce_fact_value(predicate: str, raw: str):
+    """Cast a facts.object string back to the type rules expect."""
+    if predicate in (
+        "days_past_due",
+        "amount_inr",
+        "last_reminder_age_days",
+        "client_late_count_90d",
+    ):
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return 0
+    if predicate == "is_vip_client":
+        return str(raw).lower() in ("true", "1", "yes")
+    return raw
+
+
+def _load_module_chainer(module_id: str):
+    """Locate the module directory and return a loaded ForwardChainer."""
+    from pathlib import Path
+    from core.modules_framework.loader import load_module_package
+    from core.reasoning.rule_engine import ForwardChainer
+
+    repo_root = Path(__file__).resolve().parents[3]  # genios-brain root
+    module_path = repo_root / "modules" / module_id
+    if not module_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Module {module_id} not installed",
+        )
+    pkg = load_module_package(module_path)
+    return ForwardChainer(pkg.ruleset)
+
+
+def _post_signed(hook: dict, payload: dict) -> dict:
+    """Sign + POST a webhook payload using the same multi-format headers as
+    the test endpoint. Returns delivery summary for the response."""
+    import hashlib
+    import hmac
+    import requests
+
+    body = json.dumps(payload, default=str)
+    secret = hook.get("secret", "")
+    digest_hex = hmac.new(
+        secret.encode("utf-8"), body.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    headers = {
+        "Content-Type": "application/json",
+        "X-Genios-Signature": "sha256=" + digest_hex,
+        "X-Genios-Event": "insight",
+        "X-GitHub-Event": "insight",  # Hermes routes on this
+        "X-Hub-Signature-256": "sha256=" + digest_hex,
+        "X-Webhook-Signature": digest_hex,
+    }
+    try:
+        resp = requests.post(hook["url"], data=body, headers=headers, timeout=10)
+        return {
+            "webhook_id": hook["id"],
+            "status_code": resp.status_code,
+            "ok": 200 <= resp.status_code < 300,
+            "response_snippet": resp.text[:200],
+        }
+    except requests.RequestException as e:
+        return {
+            "webhook_id": hook["id"],
+            "status_code": 0,
+            "ok": False,
+            "response_snippet": f"network: {str(e)[:200]}",
+        }
+
+
 @router.post("/v1/scan")
 def trigger_scan(
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
-    """Trigger a proactive scan. Hustler/Startup only.
+    """Real scan: load the org's facts, run a module's rules, fire each
+    insight to every registered webhook.
 
-    v1 had a heavy `run_proactive_scan` task; v2 proactive insights fire
-    continuously from the engine. The dashboard "scan now" button is now
-    a hint — it returns the current insight count so the UI can refresh.
+    Module is hardcoded to `ar_collection` for the AR demo. A real install
+    would loop over all installed modules (or pick based on the org's
+    business_context). This route exists so a customer can manually retrigger
+    after an upload instead of waiting for the periodic engine pass.
     """
-    from app.plan_enforcer import get_org_plan
-    plan = get_org_plan(db, org_id)
-    if plan["tier"] not in ("startup", "hustler"):
-        raise HTTPException(status_code=403, detail="Proactive scanning requires Hustler or Startup plan")
+    chainer = _load_module_chainer("ar_collection")
 
-    n = db.execute(
-        text("SELECT COUNT(*) FROM proactive_insights WHERE org_id = :oid"),
-        {"oid": org_id},
-    ).scalar() or 0
-    return {"scan_result": {"insights_total": int(n), "note": "Proactive insights stream live from the engine."}}
+    # Group facts by subject (invoice id) — coerce types so numeric rule
+    # comparisons (days_past_due > 7) actually work against DB strings.
+    rows = db.execute(
+        text(
+            """
+            SELECT subject, predicate, object
+            FROM facts
+            WHERE org_id = :org
+              AND source_item_id LIKE 'upload:%'
+            ORDER BY subject, predicate
+            """
+        ),
+        {"org": org_id},
+    ).fetchall()
+
+    invoices: dict[str, dict] = {}
+    for r in rows:
+        invoices.setdefault(r.subject, {})[r.predicate] = _coerce_fact_value(
+            r.predicate, r.object
+        )
+
+    if not invoices:
+        return {
+            "scan_result": {
+                "insights_fired": 0,
+                "webhooks_called": 0,
+                "note": "No facts uploaded yet — drop a CSV in Resources first.",
+            }
+        }
+
+    # Resolve client name per invoice from the graph (faster than re-reading
+    # all rows). Cache so we hit DB once per invoice not per firing.
+    client_name_for_invoice: dict[str, str] = {}
+
+    def _client_name(invoice_id: str) -> str:
+        if invoice_id in client_name_for_invoice:
+            return client_name_for_invoice[invoice_id]
+        row = db.execute(
+            text(
+                """
+                SELECT n.canonical_name
+                FROM graph_nodes n
+                JOIN graph_edges e ON e.to_node = n.id
+                JOIN graph_nodes i ON i.id = e.from_node
+                WHERE i.org_id = :org
+                  AND i.canonical_name = :inv
+                  AND n.type = 'client'
+                LIMIT 1
+                """
+            ),
+            {"org": org_id, "inv": invoice_id},
+        ).fetchone()
+        client_name_for_invoice[invoice_id] = row[0] if row else "Unknown client"
+        return client_name_for_invoice[invoice_id]
+
+    hooks = _read_hooks(db, org_id)
+    active_hooks = [h for h in hooks if h.get("is_active", True)]
+
+    firings: list[dict] = []
+    webhook_calls: list[dict] = []
+    import uuid as _uuid
+
+    for invoice_id, facts in invoices.items():
+        result = chainer.run(facts)
+        if not result.proof.steps:
+            continue
+        client_name = _client_name(invoice_id)
+
+        for step in result.proof.steps:
+            priority = _RULE_PRIORITY.get(step.rule_id, "medium")
+            title = _RULE_TITLE.get(step.rule_id, step.conclusion.replace("_", " ").title())
+
+            # Concise human-readable views — these become the {fact} /
+            # {analysis} variables the Hermes prompt template expands.
+            memory_view = (
+                f"Invoice {invoice_id} for {client_name}: "
+                f"₹{facts.get('amount_inr', 0):,} · "
+                f"{facts.get('days_past_due', 'n/a')} days past due · "
+                f"status={facts.get('payment_status', 'n/a')} · "
+                f"reminder_age={facts.get('last_reminder_age_days', -1)} · "
+                f"client_late_count_90d={facts.get('client_late_count_90d', 0)} · "
+                f"vip={facts.get('is_vip_client', False)}"
+            )
+            genios_view = step.reason or step.conclusion
+
+            payload = {
+                "event": "insight",
+                "insight_id": str(_uuid.uuid4()),
+                "org_id": org_id,
+                "type": "ar_collection",
+                "rule_id": step.rule_id,
+                "invoice_id": invoice_id,
+                "priority": priority,
+                "category": step.conclusion,
+                "title": title,
+                "contact_name": client_name,
+                "contact_id": None,
+                "memory_view": memory_view,
+                "genios_view": genios_view,
+                "fact": memory_view,
+                "analysis": genios_view,
+                "generated_at": __import__("datetime").datetime.now(
+                    __import__("datetime").timezone.utc
+                ).isoformat(),
+            }
+
+            for hook in active_hooks:
+                webhook_calls.append(_post_signed(hook, payload))
+
+            firings.append({
+                "invoice_id": invoice_id,
+                "client_name": client_name,
+                "rule_id": step.rule_id,
+                "priority": priority,
+                "title": title,
+            })
+
+    return {
+        "scan_result": {
+            "module_id": "ar_collection",
+            "invoices_evaluated": len(invoices),
+            "insights_fired": len(firings),
+            "webhooks_called": len(webhook_calls),
+            "webhook_success": sum(1 for w in webhook_calls if w.get("ok")),
+            "firings": firings,
+            "webhook_responses": webhook_calls,
+        }
+    }
