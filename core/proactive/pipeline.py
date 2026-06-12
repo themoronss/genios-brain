@@ -123,6 +123,129 @@ _INT_PREDICATES = frozenset({
 _BOOL_PREDICATES = frozenset({"is_vip_client", "active"})
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Tool registry — minimum viable side-effect-class + blast-radius lookup
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Per the CTO brief (g-i-7): every recommended action carries a side-effect
+# class so the autonomy router can decide:
+#   irreversible  → notify-first  (human approves before action fires)
+#   financial     → flag          (always human-confirmed)
+#   reversible    → autonomous-eligible if confidence is high
+#   internal      → autonomous (low blast radius, no external party touched)
+#
+# Each rule's `recommend` field names an action; we map that action to its
+# class here. Adding a new vertical means: append the new actions to this
+# table. Later this moves into the module manifest; hardcoded for v1 so the
+# brief's "no naked recommendations" invariant is honored today.
+
+_TOOL_REGISTRY: dict[str, dict[str, str]] = {
+    # AR
+    "send_polite_reminder":           {"side_effect": "irreversible", "blast_radius": "small"},
+    "send_firm_reminder":             {"side_effect": "irreversible", "blast_radius": "small"},
+    "send_preemptive_courtesy_check": {"side_effect": "irreversible", "blast_radius": "small"},
+    "escalate_to_phone_call":         {"side_effect": "irreversible", "blast_radius": "medium"},
+    "review_client_payment_terms":    {"side_effect": "internal",     "blast_radius": "small"},
+    # HR
+    "call_candidate_today":           {"side_effect": "irreversible", "blast_radius": "medium"},
+    "re_engage_personally":           {"side_effect": "irreversible", "blast_radius": "small"},
+    "move_or_reject":                 {"side_effect": "internal",     "blast_radius": "small"},
+    "review_fit_or_close":            {"side_effect": "internal",     "blast_radius": "small"},
+    "triage_or_reject":               {"side_effect": "internal",     "blast_radius": "small"},
+    # CSM
+    "schedule_exec_call":             {"side_effect": "reversible",   "blast_radius": "small"},
+    "save_call_with_csm":             {"side_effect": "irreversible", "blast_radius": "medium"},
+    "escalate_to_support_lead":       {"side_effect": "internal",     "blast_radius": "small"},
+    "discovery_call":                 {"side_effect": "reversible",   "blast_radius": "small"},
+    "friendly_health_check":          {"side_effect": "reversible",   "blast_radius": "small"},
+}
+
+
+def _registry_for_action(action: str) -> dict[str, str]:
+    """Returns side_effect + blast_radius for a recommend action. Unknown
+    actions default to the safest classification — irreversible + medium —
+    so a new module without a registry entry routes notify-first."""
+    return _TOOL_REGISTRY.get(action) or {
+        "side_effect": "irreversible",
+        "blast_radius": "medium",
+    }
+
+
+def _route_for_side_effect(side_effect: str, confidence: float) -> str:
+    """The 80/20 autonomy router per the brief.
+
+    irreversible/financial → notify (always human-confirms first)
+    reversible             → autonomous if confidence >= 0.75, else notify
+    internal               → autonomous (low blast radius)
+    """
+    if side_effect in ("irreversible", "financial"):
+        return "notify"
+    if side_effect == "internal":
+        return "autonomous"
+    # reversible
+    return "autonomous" if confidence >= 0.75 else "notify"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Confidence + uncertainty — the response-envelope contract
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _confidence_and_uncertainty(
+    *,
+    facts: dict[str, Any],
+    rule_id: str,
+    has_active_override: bool,
+    other_fires: int,
+) -> tuple[float, list[str]]:
+    """Compute a confidence in [0,1] + an uncertainty[] list for one firing.
+
+    The symbolic path defaults to high confidence (0.92) because the rule
+    only fired when every condition matched. We DEMOTE confidence when the
+    facts the rule consumed are themselves weak — missing/stale/contradicted —
+    and surface the specific reason in uncertainty[] so a downstream agent
+    or human can decide whether to act.
+
+    Honest math, not invented precision. Each demotion is a small fixed
+    penalty (0.05–0.1) tied to a named cause. Capped at floor 0.55 so we
+    never push a symbolic firing below the action threshold purely from
+    uncertainty flags — those are SIGNALS, not vetoes.
+    """
+    conf = 0.92
+    uncertainty: list[str] = []
+
+    # Missing primary signal — the rule fired on a sparse fact set
+    if facts.get("last_reminder_age_days") == -1:
+        # AR-shape: no prior communication recorded
+        uncertainty.append("no_prior_communication_recorded")
+        conf -= 0.05
+    if facts.get("days_since_last_contact", 0) > 30 and "hr_" in rule_id:
+        uncertainty.append("contact_freshness_low")
+        conf -= 0.05
+
+    # Override active → threshold was learned, not given. Mark + small demotion.
+    if has_active_override:
+        uncertainty.append("threshold_tuned_from_limited_outcomes")
+        conf -= 0.05
+
+    # Multiple rules fire on the same subject → compound case, partial
+    # priority ambiguity. Not a defect (the engine handles them), but the
+    # agent should know.
+    if other_fires > 0:
+        uncertainty.append(f"compound_case_{other_fires}_other_rules_fired")
+        conf -= 0.03
+
+    # Stale fact: if days_past_due > 90, the customer signal is old.
+    dpd = facts.get("days_past_due")
+    if isinstance(dpd, int) and dpd > 90:
+        uncertainty.append("fact_age_exceeds_90_days")
+        conf -= 0.05
+
+    # Floor — symbolic firings never drop below 0.55. If you don't trust the
+    # rule that much, REMOVE the rule, don't keep firing it at low confidence.
+    return max(0.55, round(conf, 3)), uncertainty
+
+
 def _coerce_fact_value(predicate: str, raw: str) -> Any:
     """Cast a facts.object string back to the type rules expect.
 
@@ -552,6 +675,19 @@ def run_for_org(
     suppressed = 0
     new_insights: list[dict[str, Any]] = []  # for delivery
 
+    # Detect when an org override is active so the confidence helper can
+    # surface it as an uncertainty signal.
+    from core.foundations.threshold_tuner import get_active_override as _gao
+
+    _override_cache: dict[str, bool] = {}
+
+    def _has_override(rule_id: str) -> bool:
+        if rule_id in _override_cache:
+            return _override_cache[rule_id]
+        present = _gao(session, org_id=org_id, module_id=module_id, rule_id=rule_id) is not None
+        _override_cache[rule_id] = present
+        return present
+
     for invoice_id, facts in invoices.items():
         result = chainer.run(facts)
         if not result.proof.steps:
@@ -561,6 +697,7 @@ def run_for_org(
         )
         client_name_cache[invoice_id] = client_name
 
+        steps_for_subject = len(result.proof.steps)
         for step in result.proof.steps:
             candidates_total += 1
             sig_hash = _signature_hash(
@@ -572,6 +709,19 @@ def run_for_org(
 
             priority = _rule_priority(module_id, step.rule_id)
             title = _rule_title(module_id, step.rule_id, step.conclusion)
+
+            # Response-envelope fields per the CTO brief — confidence + named
+            # uncertainty[] + tool registry classification + the resulting
+            # delivery_route. No naked recommendations from this point on.
+            confidence, uncertainty = _confidence_and_uncertainty(
+                facts=facts,
+                rule_id=step.rule_id,
+                has_active_override=_has_override(step.rule_id),
+                other_fires=max(0, steps_for_subject - 1),
+            )
+            recommend_action = step.recommend or step.conclusion
+            registry = _registry_for_action(recommend_action)
+            delivery_route = _route_for_side_effect(registry["side_effect"], confidence)
             memory_view = (
                 f"Invoice {invoice_id} for {client_name}: "
                 f"₹{facts.get('amount_inr', 0):,} · "
@@ -594,6 +744,12 @@ def run_for_org(
                     "title": title,
                     "memory_view": memory_view,
                     "genios_view": genios_view,
+                    "confidence": confidence,
+                    "uncertainty": uncertainty,
+                    "recommend_action": recommend_action,
+                    "side_effect_class": registry["side_effect"],
+                    "blast_radius": registry["blast_radius"],
+                    "delivery_route": delivery_route,
                     "derivation_chain": [
                         {
                             "rule_id": s.rule_id,
@@ -644,10 +800,17 @@ def run_for_org(
                     "client_name": ins["client_name"],    # "Mehta Imports"
                     "memory_view": ins["memory_view"],    # one-line fact summary
                     "genios_view": ins["genios_view"],    # rule reason
+                    # Response-envelope fields (CTO brief g-i-7) — every
+                    # consumer (Hermes, dashboard, audit) sees the same shape.
+                    "confidence": ins["confidence"],
+                    "uncertainty": ins["uncertainty"],
+                    "recommend_action": ins["recommend_action"],
+                    "side_effect_class": ins["side_effect_class"],
+                    "blast_radius": ins["blast_radius"],
                 },
                 grounding_refs_jsonb=[],
                 signature_hash=ins["signature_hash"],
-                delivery_route="notify",
+                delivery_route=ins["delivery_route"],
             )
         )
 
@@ -668,6 +831,18 @@ def run_for_org(
             "fact": ins["memory_view"],
             "analysis": ins["genios_view"],
             "generated_at": datetime.now(UTC).isoformat(),
+            # ─── Response envelope per CTO brief (g-i-7) ───
+            # No naked recommendations. Every downstream agent / Hermes /
+            # dashboard sees the same self-describing shape.
+            "envelope": {
+                "recommendation": ins["recommend_action"],
+                "confidence": ins["confidence"],
+                "uncertainty": ins["uncertainty"],
+                "side_effect_class": ins["side_effect_class"],
+                "blast_radius": ins["blast_radius"],
+                "route": ins["delivery_route"],
+                "derivation_chain": ins["derivation_chain"],
+            },
         }
         # Each webhook delivery is recorded in action_ledger so the dashboard
         # can render "GeniOS sent N reminders" with auditable evidence. The

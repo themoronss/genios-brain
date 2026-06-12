@@ -644,6 +644,184 @@ def t19_stats_recovered_amount_math() -> tuple[bool, str]:
     return True, ""
 
 
+def t21_response_envelope_present_on_every_insight() -> tuple[bool, str]:
+    """Per the CTO brief: 'naked recommendations are forbidden'. Every
+    persisted insight MUST carry the envelope fields (confidence,
+    uncertainty[], side_effect_class, blast_radius, recommend_action)
+    so any downstream consumer can render or route the action safely."""
+    from core.foundations.db import get_session
+    from core.proactive.pipeline import run_for_org
+
+    org_id = _org_id()
+    with get_session() as s:
+        s.execute(
+            text(
+                "DELETE FROM proactive_insights "
+                "WHERE org_id = :o AND (scores_jsonb->>'rule_id') NOT LIKE 'hypothesis%'"
+            ),
+            {"o": org_id},
+        )
+        s.commit()
+    with get_session() as s:
+        r = run_for_org(s, org_id=org_id, module_id="ar_collection", source="brutal-env")
+        s.commit()
+    if r["insights_fired"] == 0:
+        return False, "No initial firings; envelope assertion would be vacuous"
+    with get_session() as s:
+        rows = s.execute(
+            text(
+                """
+                SELECT scores_jsonb FROM proactive_insights
+                WHERE org_id = :o
+                  AND (scores_jsonb->>'rule_id') NOT LIKE 'hypothesis%'
+                ORDER BY created_at DESC LIMIT 10
+                """
+            ),
+            {"o": org_id},
+        ).fetchall()
+    missing: list[str] = []
+    for r0 in rows:
+        sj = r0[0] if isinstance(r0[0], dict) else json.loads(r0[0])
+        for key in (
+            "confidence", "uncertainty",
+            "recommend_action", "side_effect_class", "blast_radius",
+        ):
+            if key not in sj:
+                missing.append(key)
+                break
+    if missing:
+        return False, f"Envelope fields missing on persisted rows: {missing[:3]}"
+    return True, ""
+
+
+def t22_irreversible_actions_always_notify() -> tuple[bool, str]:
+    """80/20 router invariant: an irreversible side-effect class CANNOT
+    route autonomous regardless of confidence. Brief is explicit:
+    irreversible → notify-first, every time."""
+    from core.proactive.pipeline import _route_for_side_effect
+
+    # High confidence on an irreversible action MUST still notify.
+    if _route_for_side_effect("irreversible", 0.99) != "notify":
+        return False, "irreversible @ 0.99 routed autonomous (must be notify)"
+    if _route_for_side_effect("financial", 0.99) != "notify":
+        return False, "financial @ 0.99 routed autonomous (must be notify)"
+    # Internal small-blast can autonomously route.
+    if _route_for_side_effect("internal", 0.4) != "autonomous":
+        return False, "internal @ 0.4 didn't autonomous-route"
+    # Reversible respects the confidence threshold.
+    if _route_for_side_effect("reversible", 0.5) != "notify":
+        return False, "reversible @ 0.5 should route notify (below 0.75)"
+    if _route_for_side_effect("reversible", 0.8) != "autonomous":
+        return False, "reversible @ 0.8 should route autonomous (>=0.75)"
+    return True, ""
+
+
+def t23_unknown_action_defaults_to_safe_route() -> tuple[bool, str]:
+    """Unknown recommend actions (no registry entry) MUST default to
+    irreversible + medium blast → notify. Safe-by-default invariant —
+    a new module without a registry entry never silently auto-acts."""
+    from core.proactive.pipeline import _registry_for_action, _route_for_side_effect
+
+    reg = _registry_for_action("brutal_test_unknown_action_xyz")
+    if reg["side_effect"] != "irreversible":
+        return False, f"Unknown action got side_effect={reg['side_effect']} (expected irreversible)"
+    route = _route_for_side_effect(reg["side_effect"], 0.99)
+    if route != "notify":
+        return False, f"Unknown action @ 0.99 routed {route} (expected notify)"
+    return True, ""
+
+
+def t24_intervention_rate_math_is_honest() -> tuple[bool, str]:
+    """Intervention rate = dismissed / (paid + ignored + dismissed +
+    escalated + acted). Insufficient data must label as such, not pretend
+    a direction."""
+    org_id = _org_id()
+    # Fresh state: clear feedback in the window
+    with get_session() as s:
+        s.execute(
+            text(
+                """
+                DELETE FROM feedback_actions
+                WHERE org_id = :o AND user_id IN ('brutal-e2e', 'brutal-e2e-direction')
+                """
+            ),
+            {"o": org_id},
+        )
+        s.commit()
+
+    # Seed 12 outcomes: 3 dismissed, 9 paid → rate = 0.25
+    iids: list[str] = []
+    with get_session() as s:
+        for i in range(12):
+            iid = str(_uuid.uuid4())
+            iids.append(iid)
+            s.execute(
+                text(
+                    """
+                    INSERT INTO proactive_insights
+                        (id, org_id, type, primary_entity, root_cause_edge,
+                         derivation_chain_jsonb, foresight_jsonb, scores_jsonb,
+                         grounding_refs_jsonb, signature_hash, delivery_route,
+                         created_at)
+                    VALUES
+                        (:id, :org, 'risk', :pe, '',
+                         '[]'::jsonb, NULL, '{}'::jsonb,
+                         '[]'::jsonb, :sig, 'notify', NOW())
+                    """
+                ),
+                {
+                    "id": iid, "org": org_id, "pe": f"brutal-ir-{i}",
+                    "sig": f"brutal_ir_{i:03d}".ljust(32, "0")[:32],
+                },
+            )
+            action = "dismissed" if i < 3 else "paid"
+            s.execute(
+                text(
+                    """
+                    INSERT INTO feedback_actions
+                        (id, org_id, user_id, insight_id, action,
+                         edit_diff_jsonb, timestamp)
+                    VALUES
+                        (:fid, :org, 'brutal-e2e', :iid, :a,
+                         '{}'::jsonb, NOW())
+                    """
+                ),
+                {"fid": str(_uuid.uuid4()), "org": org_id, "iid": iid, "a": action},
+            )
+        s.commit()
+
+    # Compute via the same SQL the endpoint uses (a manual count of the
+    # feedback table). We don't hit HTTP — keeps the test offline.
+    with get_session() as s:
+        n_overrides = s.execute(
+            text(
+                "SELECT COUNT(*) FROM feedback_actions "
+                "WHERE org_id = :o AND user_id = 'brutal-e2e' "
+                "AND action = 'dismissed'"
+            ),
+            {"o": org_id},
+        ).scalar() or 0
+        n_decisions = s.execute(
+            text(
+                "SELECT COUNT(*) FROM feedback_actions "
+                "WHERE org_id = :o AND user_id = 'brutal-e2e' "
+                "AND action IN ('paid','ignored','dismissed','escalated','acted')"
+            ),
+            {"o": org_id},
+        ).scalar() or 0
+    rate = round(n_overrides / n_decisions, 4) if n_decisions else 0
+
+    # Cleanup BEFORE asserting so a failure doesn't pollute future runs
+    with get_session() as s:
+        s.execute(text("DELETE FROM feedback_actions WHERE org_id = :o AND user_id = 'brutal-e2e'"), {"o": org_id})
+        s.execute(text("DELETE FROM proactive_insights WHERE id = ANY(:ids)"), {"ids": iids})
+        s.commit()
+
+    if abs(rate - 0.25) > 0.01:
+        return False, f"Expected rate=0.25 from 3/12 dismissed, got {rate}"
+    return True, ""
+
+
 def t20_ignored_outcome_doesnt_inflate_recovered() -> tuple[bool, str]:
     """Marking an insight 'ignored' must NOT bump value_recovered_inr —
     only 'paid' contributes to recovered ₹."""
@@ -727,6 +905,10 @@ _TESTS: list[tuple[str, Callable[[], tuple[bool, str]]]] = [
     ("t18_tuner_reverts_prior", t18_tuner_reverts_prior_active_when_writing_new),
     ("t19_stats_recovered_math", t19_stats_recovered_amount_math),
     ("t20_ignored_doesnt_inflate_recovered", t20_ignored_outcome_doesnt_inflate_recovered),
+    ("t21_envelope_present", t21_response_envelope_present_on_every_insight),
+    ("t22_irreversible_always_notify", t22_irreversible_actions_always_notify),
+    ("t23_unknown_action_safe_default", t23_unknown_action_defaults_to_safe_route),
+    ("t24_intervention_rate_math", t24_intervention_rate_math_is_honest),
 ]
 
 

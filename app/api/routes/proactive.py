@@ -526,6 +526,58 @@ def insight_stats(
 
     outcomes_recorded = sum(outcomes.values())
 
+    # Intervention rate — the CTO-brief north star, computed live from
+    # feedback_actions (the same rows the calibration tuner reads).
+    #
+    #   intervention_rate = human_overrides / total_recorded_outcomes
+    #
+    # human_overrides = dismissed (strongest signal — "this insight was
+    # wrong, I rejected it"). `ignored` is excluded from the numerator
+    # because absence-of-judgment is not an override per the brief
+    # (intentional alignment with calibration.py's outcome window logic).
+    #
+    # Trending DOWN over weeks means the engine is learning. Flat or up
+    # is a red flag and surfaces here so the founder can act on it.
+    n_overrides = int(outcomes.get("dismissed", 0))
+    n_decisions = outcomes_recorded
+    intervention_rate = (
+        round(n_overrides / n_decisions, 4) if n_decisions > 0 else 0.0
+    )
+
+    # Companion: a 7d-prior window comparison so the dashboard can show
+    # direction (↓ / → / ↑). Sample size guard: need >=10 outcomes in BOTH
+    # windows before claiming a direction; otherwise "insufficient_data".
+    prior_overrides_row = db.execute(
+        text(
+            """
+            SELECT
+              COUNT(*) FILTER (WHERE action = 'dismissed') AS overrides,
+              COUNT(*) FILTER (WHERE action IN ('paid','ignored','dismissed','escalated','acted')) AS total
+            FROM feedback_actions
+            WHERE org_id = :org
+              AND insight_id IS NOT NULL
+              AND timestamp >= NOW() - ((:days * 2) || ' days')::INTERVAL
+              AND timestamp <  NOW() - (:days || ' days')::INTERVAL
+            """
+        ),
+        {"org": org_id, "days": days},
+    ).fetchone()
+    prior_overrides = int(prior_overrides_row[0]) if prior_overrides_row else 0
+    prior_total = int(prior_overrides_row[1]) if prior_overrides_row else 0
+    prior_rate = (
+        round(prior_overrides / prior_total, 4) if prior_total > 0 else None
+    )
+    if prior_total < 10 or n_decisions < 10:
+        direction = "insufficient_data"
+    elif prior_rate is None:
+        direction = "insufficient_data"
+    elif intervention_rate < prior_rate - 0.02:
+        direction = "down"
+    elif intervention_rate > prior_rate + 0.02:
+        direction = "up"
+    else:
+        direction = "flat"
+
     return {
         "window_days": days,
         "insights_fired": int(n_insights),
@@ -536,6 +588,11 @@ def insight_stats(
         "outcomes": outcomes,
         "value_recovered_inr": value_recovered_inr,
         "headline": _stats_headline(int(n_insights), outcomes, value_recovered_inr),
+        # North-star block (CTO brief). Direction is a triangle the
+        # dashboard renders; "insufficient_data" hides it instead of lying.
+        "intervention_rate": intervention_rate,
+        "intervention_rate_prior": prior_rate,
+        "intervention_rate_direction": direction,
     }
 
 
