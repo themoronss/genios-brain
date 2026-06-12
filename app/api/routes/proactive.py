@@ -686,8 +686,8 @@ def trigger_scan(
     hatch — every other trigger (CSV bus event, hourly cron) hits the
     same pipeline function so behavior can't drift.
     """
-    from core.proactive.pipeline import run_for_org
+    from core.proactive.pipeline import run_all_for_org
 
-    result = run_for_org(db, org_id=org_id, module_id="ar_collection", source="manual")
+    result = run_all_for_org(db, org_id=org_id, source="manual")
     db.commit()
     return {"scan_result": result}

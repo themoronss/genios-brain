@@ -183,18 +183,28 @@ def create_upload(
             from core.resources import csv_ingest
 
             columns, raw_rows = csv_ingest.parse_csv_bytes(upload.raw)
-            mapping, unmapped = csv_ingest.infer_column_mapping(columns)
-            structured = csv_ingest.process_rows(raw_rows, mapping)
+            # Auto-detect which vertical module owns this CSV by counting
+            # signature-column hits per registered profile. Falls back to
+            # AR when the CSV is ambiguous so older callers still work.
+            detected_module = csv_ingest.detect_module(columns) or "ar_collection"
+            mapping, unmapped = csv_ingest.infer_column_mapping(
+                columns, module_id=detected_module
+            )
+            structured = csv_ingest.process_rows(
+                raw_rows, mapping, module_id=detected_module
+            )
 
             # Emit one MemoryItem per row → the registered subscriber writes
             # nodes + edges + facts inside its own DB session. We use a
             # fresh session here only to roll up post-emission counts for
-            # the resource_uploads row.
+            # the resource_uploads row. The per-module entity shape comes
+            # from the matched profile.
             csv_ingest.emit_rows_to_bus(
                 org_id=org_id,
                 rows=structured,
                 file_id=file_id,
                 source_id=source_id,
+                module_id=detected_module,
             )
 
             # Roll up stored counts from facts / nodes — what actually landed
@@ -221,10 +231,10 @@ def create_upload(
             ).scalar() or 0
 
             mapped_summary = (
-                f"Auto-mapped {len(mapping)}/{len(columns)} columns. "
+                f"Auto-mapped {len(mapping)}/{len(columns)} columns to {detected_module}. "
                 f"Skipped: {', '.join(unmapped[:5])}"
                 if unmapped
-                else f"Auto-mapped all {len(columns)} columns."
+                else f"Auto-mapped all {len(columns)} columns to {detected_module}."
             )
             session.execute(
                 text(

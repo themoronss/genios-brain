@@ -493,7 +493,7 @@ def task_proactive_scan(self, org_id: str = None):
     from sqlalchemy import text
 
     from core.foundations.db import get_session
-    from core.proactive.pipeline import run_for_org
+    from core.proactive.pipeline import run_all_for_org
 
     log = logging.getLogger(__name__)
     summary = {"orgs_scanned": 0, "insights_fired_total": 0, "errors": []}
@@ -514,12 +514,12 @@ def task_proactive_scan(self, org_id: str = None):
     for oid in org_ids:
         try:
             with get_session() as session:
-                result = run_for_org(
-                    session, org_id=oid, module_id="ar_collection", source="cron"
-                )
+                result = run_all_for_org(session, org_id=oid, source="cron")
                 session.commit()
                 summary["orgs_scanned"] += 1
-                summary["insights_fired_total"] += int(result.get("insights_fired") or 0)
+                summary["insights_fired_total"] += int(
+                    result.get("insights_fired_total") or 0
+                )
         except Exception as e:
             log.warning(f"task_proactive_scan org={oid} failed: {e}")
             summary["errors"].append({"org_id": oid, "error": str(e)[:200]})

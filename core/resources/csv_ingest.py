@@ -42,18 +42,32 @@ log = get_logger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Column-name synonym dictionary
+# Per-module column profiles
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# Maps normalized (snake_case lowercase) CSV column names to the canonical
-# predicates module rules look up. Add synonyms here as real customer CSVs
-# surface variants — single source of truth so the LLM-fallback path doesn't
-# need its own list.
+# A profile owns the column→fact synonyms for ONE module + the entity-shape
+# the structured-facts hint should emit. `signature_columns` are the
+# canonical predicates whose presence in the CSV implies "this CSV belongs
+# to this module" — used by `detect_module()` to auto-route a CSV upload to
+# the right ruleset without making the customer pick from a dropdown.
+#
+# Add a new vertical module by adding a profile here. No other code in
+# csv_ingest.py needs to change.
 
-# `entity_name` is special: that column's value becomes the Client entity's
-# canonical_name. `entity_id` is the Invoice's stable ID. Everything else is
-# emitted as a FactRow under the Invoice subject.
-COLUMN_SYNONYMS: dict[str, str] = {
+@dataclass(frozen=True)
+class ModuleProfile:
+    module_id: str
+    primary_entity_type: str       # eg "client" (the Client node)
+    secondary_entity_type: str     # eg "invoice" (the Invoice node)
+    edge_predicate: str            # eg "issued_to"
+    column_synonyms: dict[str, str]
+    signature_columns: tuple[str, ...]  # canonical predicates that imply this module
+
+
+# `entity_name` is special: that column's value becomes the primary entity's
+# canonical_name. `entity_id` is the secondary entity's stable ID. Everything
+# else is emitted as a FactRow under the secondary-entity subject.
+_AR_SYNONYMS: dict[str, str] = {
     # ── Invoice ID (becomes Invoice entity stable id) ───────────────────────
     "invoice_id": "entity_id",
     "invoice_number": "entity_id",
@@ -119,6 +133,156 @@ COLUMN_SYNONYMS: dict[str, str] = {
 }
 
 
+_HR_SYNONYMS: dict[str, str] = {
+    # Candidate stable id (becomes Candidate.canonical_name)
+    "candidate_id": "entity_id",
+    "id": "entity_id",
+    "ref": "entity_id",
+    # Candidate display name (used as the primary entity, the role they're
+    # interviewing for becomes a secondary entity)
+    "candidate_name": "entity_name",
+    "name": "entity_name",
+    "applicant_name": "entity_name",
+    # Role being interviewed for — becomes the secondary entity (the role
+    # the candidate is in the pipeline for)
+    "role": "secondary_entity",
+    "role_name": "secondary_entity",
+    "position": "secondary_entity",
+    "title": "secondary_entity",
+    "job": "secondary_entity",
+    # Contact attrs
+    "candidate_email": "candidate_email",
+    "email": "candidate_email",
+    "candidate_phone": "candidate_phone",
+    "phone": "candidate_phone",
+    # Facts the rules read
+    "stage": "stage",
+    "pipeline_stage": "stage",
+    "status": "stage",
+    "days_in_stage": "days_in_stage",
+    "stage_age_days": "days_in_stage",
+    "total_pipeline_days": "total_pipeline_days",
+    "pipeline_days": "total_pipeline_days",
+    "applied_days_ago": "total_pipeline_days",
+    "offer_expiry_days": "offer_expiry_days",
+    "offer_expires_in_days": "offer_expiry_days",
+    "offer_expiry": "offer_expiry_days",
+    "interview_score": "interview_score",
+    "score": "interview_score",
+    "rating": "interview_score",
+    "days_since_last_contact": "days_since_last_contact",
+    "last_contact_days": "days_since_last_contact",
+    "last_touched_days": "days_since_last_contact",
+    "active": "active",
+    "is_active": "active",
+    "notes": "notes",
+    "comments": "notes",
+}
+
+
+_CSM_SYNONYMS: dict[str, str] = {
+    # Account stable id (becomes Account.canonical_name) — also acts as the
+    # primary entity because CSM tracks accounts directly (no secondary
+    # "invoice"-style child).
+    "account_id": "entity_id",
+    "id": "entity_id",
+    "ref": "entity_id",
+    "account_name": "entity_name",
+    "company": "entity_name",
+    "customer_name": "entity_name",
+    "name": "entity_name",
+    # CSM owner — becomes secondary entity (the rep)
+    "csm_owner": "secondary_entity",
+    "owner": "secondary_entity",
+    "rep": "secondary_entity",
+    # Contact attrs
+    "account_email": "account_email",
+    "email": "account_email",
+    # Facts the rules read
+    "status": "status",
+    "account_status": "status",
+    "subscription_status": "status",
+    "mrr_usd": "mrr_usd",
+    "mrr": "mrr_usd",
+    "monthly_revenue": "mrr_usd",
+    "days_to_renewal": "days_to_renewal",
+    "renewal_days": "days_to_renewal",
+    "renewal_in_days": "days_to_renewal",
+    "days_since_last_login": "days_since_last_login",
+    "last_login_days": "days_since_last_login",
+    "last_active_days": "days_since_last_login",
+    "nps_score": "nps_score",
+    "nps": "nps_score",
+    "open_tickets": "open_tickets",
+    "tickets_open": "open_tickets",
+    "support_tickets": "open_tickets",
+    "usage_drop_pct_30d": "usage_drop_pct_30d",
+    "usage_drop_pct": "usage_drop_pct_30d",
+    "usage_drop_30d": "usage_drop_pct_30d",
+    "notes": "notes",
+    "comments": "notes",
+}
+
+
+# Public registry — single source of truth keyed by module_id.
+MODULE_PROFILES: dict[str, ModuleProfile] = {
+    "ar_collection": ModuleProfile(
+        module_id="ar_collection",
+        primary_entity_type="client",
+        secondary_entity_type="invoice",
+        edge_predicate="issued_to",
+        column_synonyms=_AR_SYNONYMS,
+        # An AR CSV is one that ships amount + due_date + payment_status.
+        signature_columns=("amount_inr", "due_date", "payment_status"),
+    ),
+    "hr_pipeline": ModuleProfile(
+        module_id="hr_pipeline",
+        primary_entity_type="candidate",
+        secondary_entity_type="role",
+        edge_predicate="applied_for",
+        column_synonyms=_HR_SYNONYMS,
+        signature_columns=("stage", "days_in_stage", "interview_score"),
+    ),
+    "csm_health": ModuleProfile(
+        module_id="csm_health",
+        primary_entity_type="account",
+        secondary_entity_type="owner",
+        edge_predicate="owned_by",
+        column_synonyms=_CSM_SYNONYMS,
+        signature_columns=("mrr_usd", "days_to_renewal", "nps_score"),
+    ),
+}
+
+
+# Back-compat — older call sites use the AR-only flat dict. Kept as a view
+# over the ar_collection profile so they don't break.
+COLUMN_SYNONYMS = _AR_SYNONYMS
+
+
+def detect_module(columns: list[str]) -> str | None:
+    """Pick the best-fit module for an uploaded CSV by counting how many
+    of each profile's `signature_columns` map cleanly via that profile's
+    synonyms. Returns None when no profile catches >=2 signature columns
+    -- caller falls back to manual selection / LLM-extract path.
+    """
+    scores: list[tuple[str, int]] = []
+    normalized = [normalize_column_name(c) for c in columns]
+    for module_id, profile in MODULE_PROFILES.items():
+        hits = 0
+        for sig in profile.signature_columns:
+            for norm in normalized:
+                canonical = profile.column_synonyms.get(norm)
+                if canonical == sig:
+                    hits += 1
+                    break
+        scores.append((module_id, hits))
+    scores.sort(key=lambda x: x[1], reverse=True)
+    best_id, best_score = scores[0]
+    if best_score < 2:
+        return None
+    return best_id
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Parsing + normalization
 # ─────────────────────────────────────────────────────────────────────────────
@@ -149,19 +313,26 @@ def parse_csv_bytes(raw: bytes) -> tuple[list[str], list[dict[str, str]]]:
     return list(reader.fieldnames), rows
 
 
-def infer_column_mapping(columns: list[str]) -> tuple[dict[str, str], list[str]]:
-    """Map CSV columns → canonical predicates via the synonym table.
+def infer_column_mapping(
+    columns: list[str], module_id: str | None = None
+) -> tuple[dict[str, str], list[str]]:
+    """Map CSV columns → canonical predicates via the module's synonym table.
+
+    When `module_id` is None, the AR profile is used for back-compat with
+    older call sites. New code passes the module_id (typically the result
+    of `detect_module(columns)`).
 
     Returns (mapping, unmapped). `mapping` keys are the original column names;
-    values are canonical predicates (or one of the special "entity_id" /
-    "entity_name" / "client_*" sentinels). `unmapped` lists columns that
-    didn't match — surfaced back to the customer so they can rename.
+    values are canonical predicates. `unmapped` lists columns that didn't
+    match — surfaced back to the customer so they can rename.
     """
+    profile = MODULE_PROFILES.get(module_id or "ar_collection") or MODULE_PROFILES["ar_collection"]
+    synonyms = profile.column_synonyms
     mapping: dict[str, str] = {}
     unmapped: list[str] = []
     for col in columns:
         norm = normalize_column_name(col)
-        canonical = COLUMN_SYNONYMS.get(norm)
+        canonical = synonyms.get(norm)
         if canonical:
             mapping[col] = canonical
         else:
@@ -221,13 +392,18 @@ def process_rows(
     mapping: dict[str, str],
     *,
     today: date | None = None,
+    module_id: str = "ar_collection",
 ) -> list[StructuredRow]:
     """Apply mapping + compute derived facts. Drops rows missing the basics.
 
-    Derived facts the rules require:
+    For the AR module, derived facts the rules require:
       - days_past_due           = today - due_date (in days)
       - last_reminder_age_days  = today - last_reminder_sent, -1 if blank
       - client_late_count_90d   = (computed cross-row below)
+
+    For HR / CSM modules, the customer's CSV is expected to ship those
+    integers directly (days_in_stage, days_to_renewal, etc.) — the
+    date-derivation branches are no-ops for them.
     """
     if today is None:
         today = datetime.now(UTC).date()
@@ -252,12 +428,22 @@ def process_rows(
             continue
 
         facts: dict[str, Any] = {}
-        # Direct passthroughs (string-valued)
-        for k in ("payment_status", "payment_terms", "project_name", "notes"):
+        # Direct passthroughs (string-valued). The profile-specific lists
+        # carry whichever fields the module's rules expect from a CSV; the
+        # union covers every field across modules so the mapper code itself
+        # stays profile-blind.
+        for k in (
+            # AR-shape passthroughs
+            "payment_status", "payment_terms", "project_name", "notes",
+            # HR-shape passthroughs
+            "stage", "role", "secondary_entity",
+            # CSM-shape passthroughs
+            "status",
+        ):
             if mapped.get(k):
-                facts[k] = mapped[k].lower() if k == "payment_status" else mapped[k]
+                facts[k] = mapped[k].lower() if k in ("payment_status", "status") else mapped[k]
 
-        # Typed fields
+        # ── AR-shape typed fields ────────────────────────────────────────
         if "amount_inr" in mapped:
             amt = _parse_int_loose(mapped["amount_inr"])
             if amt is not None:
@@ -273,10 +459,37 @@ def process_rows(
             facts["issue_date"] = issue_d.isoformat()
 
         last_d = _parse_date_loose(mapped.get("last_reminder_sent", ""))
-        facts["last_reminder_age_days"] = (today - last_d).days if last_d else -1
+        if last_d or "last_reminder_sent" in mapped:
+            facts["last_reminder_age_days"] = (today - last_d).days if last_d else -1
 
         if mapped.get("is_vip_client"):
             facts["is_vip_client"] = _parse_bool_loose(mapped["is_vip_client"])
+
+        # ── HR-shape typed fields ───────────────────────────────────────
+        for k in (
+            "days_in_stage", "total_pipeline_days", "offer_expiry_days",
+            "interview_score", "days_since_last_contact",
+        ):
+            if k in mapped:
+                v = _parse_int_loose(mapped[k])
+                if v is not None:
+                    facts[k] = v
+        if "active" in mapped:
+            facts["active"] = _parse_bool_loose(mapped["active"])
+        elif module_id == "hr_pipeline":
+            # The "active" boolean is essential for HR rules — default true
+            # unless the CSV says otherwise.
+            facts["active"] = True
+
+        # ── CSM-shape typed fields ──────────────────────────────────────
+        for k in (
+            "mrr_usd", "days_to_renewal", "days_since_last_login",
+            "nps_score", "open_tickets", "usage_drop_pct_30d",
+        ):
+            if k in mapped:
+                v = _parse_int_loose(mapped[k])
+                if v is not None:
+                    facts[k] = v
 
         structured.append(
             StructuredRow(
@@ -332,15 +545,18 @@ def emit_rows_to_bus(
     rows: list[StructuredRow],
     file_id: str,
     source_id: str,
+    module_id: str = "ar_collection",
 ) -> dict[str, int]:
     """Emit one MemoryItem per CSV row, each carrying a `structured_facts`
     hint so the g-i-3 ingest subscriber persists deterministically (no LLM).
 
-    This is the structured counterpart to the unstructured upload path —
-    same bus, same subscriber, just a different metadata flag. Preserves
-    the g-i-1 invariant that *all* facts flow through `emit -> subscriber`.
+    Per-module entity shape comes from MODULE_PROFILES so AR rows produce
+    Client+Invoice nodes, HR rows produce Candidate+Role nodes, CSM rows
+    produce Account+Owner nodes — all through the same bus, all with the
+    same subscriber, just with different hint shape.
 
-    Returns counts derived from emission outcome.
+    Preserves the g-i-1 invariant that *all* facts flow through
+    `emit -> subscriber`.
     """
     from core.memory.emit import emit as emit_memory_item
     from core.memory.types import (
@@ -349,6 +565,7 @@ def emit_rows_to_bus(
         StructuredFactsHint,
     )
 
+    profile = MODULE_PROFILES.get(module_id) or MODULE_PROFILES["ar_collection"]
     emitted = 0
     uploaded_at = datetime.now(UTC)
 
@@ -357,19 +574,20 @@ def emit_rows_to_bus(
         # and for any downstream subscriber that wants to peek at the row
         # (search index, dashboard previews) without re-parsing facts.
         content = (
-            f"Invoice {r.invoice_id} issued to {r.client_name}. "
+            f"{profile.secondary_entity_type.title()} {r.invoice_id} "
+            f"{profile.edge_predicate} {r.client_name}. "
             + ", ".join(f"{k}={v}" for k, v in r.facts.items() if v is not None)
         )
         hint = StructuredFactsHint(
             entity_name=r.client_name,
-            entity_type="client",
+            entity_type=profile.primary_entity_type,
             secondary_entity_id=r.invoice_id,
-            secondary_entity_type="invoice",
+            secondary_entity_type=profile.secondary_entity_type,
             entity_attributes={
                 k: v for k, v in (("email", r.client_email), ("phone", r.client_phone)) if v
             },
             facts=r.facts,
-            edge_predicate="issued_to",
+            edge_predicate=profile.edge_predicate,
         )
         # The g-i-3 subscriber prepends source_type to form the stored
         # `source_item_id` ("upload:{item_id}"). Keep item_id raw to avoid a

@@ -122,22 +122,21 @@ def _run_pipeline_for_org(org_id: str) -> None:
             _pending_timers.pop(org_id, None)
 
         from core.foundations.db import get_session
-        from core.proactive.pipeline import run_for_org
+        from core.proactive.pipeline import run_all_for_org
 
         started_at = time.time()
         with get_session() as session:
-            result = run_for_org(
-                session, org_id=org_id, module_id="ar_collection", source="event"
-            )
+            result = run_all_for_org(session, org_id=org_id, source="event")
             session.commit()
         elapsed_ms = int((time.time() - started_at) * 1000)
         log.info(
             "proactive_event_run_completed",
             org_id=org_id,
             elapsed_ms=elapsed_ms,
-            insights_fired=result.get("insights_fired"),
-            suppressed=result.get("suppressed_dedupe"),
-            webhooks=result.get("webhooks_called"),
+            insights_fired=result.get("insights_fired_total"),
+            suppressed=result.get("suppressed_dedupe_total"),
+            webhooks=result.get("webhooks_called_total"),
+            modules=[m["module_id"] for m in result.get("modules") or []],
         )
     except Exception as e:
         log.exception(
@@ -147,24 +146,19 @@ def _run_pipeline_for_org(org_id: str) -> None:
         org_lock.release()
 
 
-def _is_structured_invoice_item(item: MemoryItem) -> bool:
-    """Cheap filter — only invoices trigger the AR pipeline today.
+def _is_structured_module_item(item: MemoryItem) -> bool:
+    """Any MemoryItem carrying a structured_facts hint triggers the
+    multi-module pipeline. The pipeline's per-module chainers self-filter:
+    rules looking for `payment_status` silently no-op on candidate facts
+    and vice versa.
 
-    Once we have multiple modules wired (HR, CSM, etc.) this becomes a
-    dispatcher reading `item.metadata.structured_facts.secondary_entity_type`
-    and looking up which module(s) consume that entity type. For now,
-    `invoice` → ar_collection is the only route.
-
-    Unstructured items (gmail, pdfs) are deliberately ignored here. Those
-    flow through their own LLM-extraction subscribers; the AR rules are
-    schema-bound and would no-op on the loose facts those produce. When we
-    add a module whose rules CAN consume LLM-extracted facts (sales / CSM)
-    this filter loosens.
+    Unstructured items (gmail, pdfs) are deliberately ignored — they flow
+    through their own LLM-extraction subscribers, and the schema-bound
+    rules would no-op on loose extracted facts anyway. When we add a
+    vertical whose rules CAN consume LLM-extracted facts (eg a sales
+    module reading email threads) this filter loosens to include them.
     """
-    hint = item.metadata.structured_facts
-    if hint is None:
-        return False
-    return hint.secondary_entity_type == "invoice"
+    return item.metadata.structured_facts is not None
 
 
 def proactive_event_subscriber(item: MemoryItem) -> None:
@@ -175,7 +169,7 @@ def proactive_event_subscriber(item: MemoryItem) -> None:
     work + a thread spawn. The actual pipeline runs on a Timer thread
     DEBOUNCE_SECONDS later.
     """
-    if not _is_structured_invoice_item(item):
+    if not _is_structured_module_item(item):
         return
 
     org_id = _resolve_org_id(item)
