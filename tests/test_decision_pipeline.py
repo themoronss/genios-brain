@@ -202,8 +202,15 @@ def test_pipeline_hard_constraint_blocks_neural(session: Session) -> None:
 
 
 @pytest.mark.unit
-def test_pipeline_low_confidence_routes_flag(session: Session) -> None:
-    """Symbolic silent + neural produces something ungrounded -> low confidence -> FLAG."""
+def test_pipeline_neural_validated_routes_notify(session: Session) -> None:
+    """Symbolic silent + neural produces a SCHEMA-VALID non-empty answer.
+
+    Under the path-aware confidence weights (NEURAL_PATH_WEIGHTS), a valid
+    LLM gap-fill that passes hard constraints earns enough llm_validation
+    credit to clear theta_flag (0.45). On a reversible action this lands
+    at NOTIFY, not FLAG — that's the intended 80/20 router behavior so
+    customers don't see every neural answer flagged for human review.
+    """
     rs = RuleSet(rules=[])  # nothing fires symbolically
     llm = _FakeLLM('{"conclusion": "do_something_random"}')
     gateway = Gateway(llm, _OkCostGuard())  # type: ignore[arg-type]
@@ -224,9 +231,43 @@ def test_pipeline_low_confidence_routes_flag(session: Session) -> None:
     )
     session.commit()
 
-    # No symbolic support + likely ungrounded -> low confidence -> flag
-    assert result.route == Route.FLAG
+    # Valid LLM output + reversible -> NOTIFY (between theta_flag 0.45 and theta_act 0.75)
+    assert result.route == Route.NOTIFY
     assert result.path in {"neural", "hybrid"}
+    # Confidence should land in the NOTIFY band — proves llm_validation weight kicked in
+    assert 0.45 <= result.confidence < 0.75
+
+
+@pytest.mark.unit
+def test_pipeline_neural_empty_output_routes_flag(session: Session) -> None:
+    """Symbolic silent + neural returns empty -> llm_validation=0 -> FLAG.
+
+    Guarantees the path-aware weights still flag the case the original test
+    cared about: when the LLM refuses to answer (empty conclusion) we must
+    NOT promote the response — flag for human review.
+    """
+    rs = RuleSet(rules=[])
+    llm = _FakeLLM('{"conclusion": ""}')
+    gateway = Gateway(llm, _OkCostGuard())  # type: ignore[arg-type]
+
+    result = decide(
+        session,
+        gateway=gateway,
+        request=DecideRequest(
+            org_id="o",
+            query={"q": "what should I do?"},
+            facts={},
+            ruleset=rs,
+            reversible=True,
+            gap_description="anything",
+            neural_system_prompt="you are an agent",
+            neural_output_schema=_NeuralOutput,
+        ),
+    )
+    session.commit()
+
+    assert result.route == Route.FLAG
+    assert result.confidence < 0.45
 
 
 @pytest.mark.unit

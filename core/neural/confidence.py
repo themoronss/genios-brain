@@ -18,7 +18,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from core.foundations.config import CONFIDENCE_WEIGHTS
+from core.foundations.config import (
+    CONFIDENCE_WEIGHTS,
+    NEURAL_PATH_WEIGHTS,
+    SYMBOLIC_PATH_WEIGHTS,
+)
 
 
 @dataclass(frozen=True)
@@ -30,11 +34,24 @@ class ConfidenceBreakdown:
     grounding_score: float  # in [0, 1]
     consistency_score: float  # in [0, 1]
     symbolic_support: float  # in {0.0, 1.0}
+    llm_validation_score: float  # in {0.0, 1.0} — 1 if LLM produced schema-valid non-empty output
     weights: dict[str, float]  # the weights actually used (for reproducibility)
 
 
 class ConfidenceScorer:
-    """Pure functional scorer. No I/O. Construct once, score many."""
+    """Pure functional scorer. No I/O. Construct once, score many.
+
+    Two weight presets selected by `path`:
+    - SYMBOLIC_PATH_WEIGHTS — original distribution (grounding+symbolic dominate)
+    - NEURAL_PATH_WEIGHTS   — adds `llm_validation` weight so an LLM gap-fill
+                              that passed schema + hard constraints can clear
+                              the routing thresholds even when no rule fired
+                              and no graph data backs the claim.
+
+    Callers may still pass custom `weights` to override either preset; default
+    behavior is backwards-compatible (uses CONFIDENCE_WEIGHTS = symbolic-preset
+    without the llm_validation term).
+    """
 
     def __init__(self, weights: dict[str, float] | None = None) -> None:
         self._weights = weights or CONFIDENCE_WEIGHTS
@@ -47,10 +64,24 @@ class ConfidenceScorer:
         grounding_score: float,
         consistency_score: float,
         symbolic_support: bool,
+        llm_validation_score: float = 0.0,
+        path: str | None = None,
     ) -> ConfidenceBreakdown:
-        """Compute overall confidence. constraint_pass acts as hard gate."""
+        """Compute overall confidence. constraint_pass acts as hard gate.
+
+        When `path` is "neural" or "hybrid", NEURAL_PATH_WEIGHTS are used so
+        a valid LLM gap-fill can clear the routing thresholds. Otherwise the
+        scorer falls back to the weights configured at construction time
+        (CONFIDENCE_WEIGHTS by default), preserving prior behavior for
+        symbolic-only callers and existing tests.
+        """
         _check_unit(grounding_score, "grounding_score")
         _check_unit(consistency_score, "consistency_score")
+        _check_unit(llm_validation_score, "llm_validation_score")
+
+        weights = (
+            NEURAL_PATH_WEIGHTS if path in ("neural", "hybrid") else self._weights
+        )
 
         if not constraint_pass:
             return ConfidenceBreakdown(
@@ -59,14 +90,16 @@ class ConfidenceScorer:
                 grounding_score=grounding_score,
                 consistency_score=consistency_score,
                 symbolic_support=1.0 if symbolic_support else 0.0,
-                weights=dict(self._weights),
+                llm_validation_score=llm_validation_score,
+                weights=dict(weights),
             )
 
         sym_val = 1.0 if symbolic_support else 0.0
         overall = (
-            self._weights["grounding"] * grounding_score
-            + self._weights["consistency"] * consistency_score
-            + self._weights["symbolic"] * sym_val
+            weights.get("grounding", 0.0) * grounding_score
+            + weights.get("consistency", 0.0) * consistency_score
+            + weights.get("symbolic", 0.0) * sym_val
+            + weights.get("llm_validation", 0.0) * llm_validation_score
         )
         # Clamp due to float drift
         overall = max(0.0, min(1.0, overall))
@@ -76,13 +109,15 @@ class ConfidenceScorer:
             grounding_score=grounding_score,
             consistency_score=consistency_score,
             symbolic_support=sym_val,
-            weights=dict(self._weights),
+            llm_validation_score=llm_validation_score,
+            weights=dict(weights),
         )
 
     def _validate_weights(self) -> None:
         for k in ("grounding", "consistency", "symbolic"):
             if k not in self._weights:
                 raise ValueError(f"Confidence weights missing required key: {k}")
+        # Sum may include llm_validation (0 in symbolic preset). Total must be ~1.0.
         total = sum(self._weights.values())
         if not 0.99 <= total <= 1.01:
             raise ValueError(

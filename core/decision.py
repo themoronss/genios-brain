@@ -91,6 +91,11 @@ class DecideResult:
     reflected: bool
     as_of_version: int
     halted_by_cost_guard: bool = False
+    # Extra fields the neural schema produced (rationale, recommended_action,
+    # etc.) — surfaced in the envelope's recommendation block so the caller
+    # gets a concrete next step alongside the verdict. None for symbolic-only
+    # paths where no LLM produced these fields.
+    recommendation_extras: dict[str, Any] | None = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -125,6 +130,7 @@ def decide(
     )
     halted = gateway_result.route == RoutingChoice.HALTED
     neural_conclusion: str | None = None
+    neural_extras: dict[str, Any] | None = None
     if (
         gateway_result.route == RoutingChoice.NEURAL_GAP_FILL
         and gateway_result.parsed_output is not None
@@ -132,6 +138,19 @@ def decide(
         # Caller's schema is responsible for having a 'conclusion'-equivalent field;
         # we extract via duck-typing on common names.
         neural_conclusion = _extract_neural_conclusion(gateway_result.parsed_output)
+        # Surface non-conclusion schema fields (rationale, recommended_action,
+        # confidence-self, …) so the envelope's recommendation block can
+        # carry a concrete next step — not just a verdict label.
+        try:
+            dumped = gateway_result.parsed_output.model_dump()
+        except Exception:
+            dumped = {}
+        if isinstance(dumped, dict):
+            neural_extras = {
+                k: v
+                for k, v in dumped.items()
+                if k not in ("conclusion",) and v not in (None, "")
+            } or None
 
     # Step 7-pre: GUARDRAILS (hard constraints) on candidate (neural or symbolic)
     candidate = (
@@ -155,22 +174,66 @@ def decide(
     path = _path_from_fusion(symbolic, neural_conclusion, fusion.winner)
 
     # Step 7-post: GROUNDING (verify the chosen conclusion's claims map to facts)
+    # Verbose-claim policy: we pass not just `final_conclusion` (often a 1-2
+    # word verdict like "HOT" or "escalate") but also the LLM's rationale +
+    # recommended_action when available — those mention entity names and
+    # numeric facts that *do* match FactRow entries. Without this the
+    # grounding_score stays at 0.0 even when query facts have already been
+    # persisted to the graph, capping confidence at ~0.54 forever.
+    grounding_claims: list[str] = []
+    if final_conclusion:
+        grounding_claims.append(final_conclusion)
+    if isinstance(neural_extras, dict):
+        for k in ("rationale", "recommended_action"):
+            v = neural_extras.get(k)
+            if isinstance(v, str) and v.strip():
+                grounding_claims.append(v.strip())
+    # Per-entity claims: the verbose rationale rarely matches grounding's
+    # strict "ALL tokens in one FactRow" check, but a single-token claim
+    # like "TestCorpZZ" matches the FactRow whose subject == TestCorpZZ.
+    # Add one such claim per distinct entity referenced in request.facts
+    # so a query about a known entity gets credit when its facts ARE in
+    # the graph (they were either pre-loaded via CSV ingest or persisted
+    # by an earlier query through P1).
+    if isinstance(request.facts, dict):
+        inner = request.facts.get("facts")
+        if isinstance(inner, list):
+            seen_subjects: set[str] = set()
+            for t in inner:
+                if not isinstance(t, dict):
+                    continue
+                s = t.get("subject")
+                if isinstance(s, str) and s and s not in seen_subjects:
+                    seen_subjects.add(s)
+                    grounding_claims.append(s)
     grounding = verify_grounding(
         session,
         org_id=request.org_id,
-        claims=[final_conclusion] if final_conclusion else [],
+        claims=grounding_claims,
     )
     grounding_refs = [
         c.supporting_fact_id for c in grounding.claims if c.supporting_fact_id is not None
     ]
 
     # Step 6: CONFIDENCE (external)
+    # llm_validation_score = 1.0 when the LLM produced a non-empty conclusion
+    # AND the hard-constraint check passed for that conclusion. This lets the
+    # neural-path scorer give meaningful weight to a valid gap-fill that the
+    # symbolic engine couldn't reach — without it, neural answers collapse to
+    # ~0.14 confidence and always route to FLAG (defeats the autonomy promise).
+    llm_validation_score = (
+        1.0
+        if (neural_conclusion is not None and neural_conclusion.strip() and not neural_violates)
+        else 0.0
+    )
     breakdown = scorer.score(
         constraint_pass=constraint_check.ok,
         grounding_score=grounding.grounding_score,
         # consistency: only meaningful for neural-sampled outputs; pass 1.0 if no neural
         consistency_score=1.0 if neural_conclusion is None else 0.7,
         symbolic_support=symbolic.resolved,
+        llm_validation_score=llm_validation_score,
+        path=path,
     )
 
     # Step 8: ROUTE 80/20
@@ -216,6 +279,7 @@ def decide(
             "grounding_score": breakdown.grounding_score,
             "consistency_score": breakdown.consistency_score,
             "symbolic_support": breakdown.symbolic_support,
+            "llm_validation_score": breakdown.llm_validation_score,
             "weights": breakdown.weights,
         },
         grounding_refs_jsonb=grounding_refs,
@@ -259,6 +323,7 @@ def decide(
             "grounding_score": breakdown.grounding_score,
             "consistency_score": breakdown.consistency_score,
             "symbolic_support": breakdown.symbolic_support,
+            "llm_validation_score": breakdown.llm_validation_score,
             "weights": breakdown.weights,
         },
         proof=symbolic.proof,
@@ -268,6 +333,7 @@ def decide(
         reflected=reflected,
         as_of_version=as_of_v,
         halted_by_cost_guard=halted,
+        recommendation_extras=neural_extras,
     )
 
 

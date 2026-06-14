@@ -61,6 +61,18 @@ class Manifest(BaseModel):
         default=None,
         description="Per-rule metadata: title, priority, tunable_knobs",
     )
+    # Per-module override for the neural gap-fill system prompt. When set,
+    # the bootstrap query_handler uses this instead of the generic
+    # _DEFAULT_NEURAL_SYSTEM_PROMPT. A domain-specific prompt is the
+    # cheapest quality lever — a sales prompt knows that "verbal_commit +
+    # contract_sent + low days_since_send" is a HOT signal; a generic
+    # prompt asks for more facts. Keep it short (under ~600 chars) so the
+    # Haiku call stays well under the model's input budget.
+    neural_prompt: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Module-specific system prompt for the LLM gap-fill path",
+    )
     # Plan keeps predicates open-vocabulary, but each module must declare
     # the verbs its rules reference. SDK then validates every fact: in
     # every rule YAML is present here — catches typos + drift at load

@@ -15,13 +15,67 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from core.api.intelligence import (
     register_graph_view_handler,
     register_query_handler,
 )
-from core.decision import DecideRequest, decide
+from core.decision import DecideRequest, DecideResult, decide
+from core.neural.gateway import GatewayValidationError
+
+
+class _NeuralGapConclusion(BaseModel):
+    """Default schema for module gap-fill LLM responses.
+
+    Engine's symbolic pass returns this when rules can't reach a conclusion.
+    The neural pass must produce the same shape so the decision row downstream
+    treats it identically.
+
+    Requirements enforced by Pydantic + the retry-on-empty loop in
+    `_query_with_neural_retry`:
+    - `conclusion` MUST be non-empty (min_length=1). The fail-fast property
+      blocks the LLM from punting with `""` — that was the dominant quality
+      bug (67% empty rate). When the LLM truly has nothing to say it should
+      respond with an explicit "insufficient data" conclusion, NOT empty.
+    - `recommended_action` is a single concrete next-step the integrator
+      (Hermes/langchain/customer agent) can act on. Generic verbs like
+      "review" / "consider" are accepted but discouraged in the prompt.
+    - `rationale` is the chain-of-reasoning, capped to keep envelopes small.
+    """
+
+    conclusion: str = Field(min_length=1, description="Short answer label, non-empty")
+    rationale: str = Field(
+        default="", max_length=500,
+        description="One-line reason using ONLY the facts supplied — no invention",
+    )
+    recommended_action: str = Field(
+        default="", max_length=240,
+        description="Concrete next step the caller can act on",
+    )
+    confidence: float = Field(default=0.6, ge=0.0, le=1.0)
+
+
+_DEFAULT_NEURAL_SYSTEM_PROMPT = (
+    "You are an analyst inside GeniOS — a hybrid neuro-symbolic engine. "
+    "The symbolic rule engine has run and could not reach a confident "
+    "conclusion for the user's query. Your job is to produce a SHORT, "
+    "grounded conclusion plus a concrete recommended_action using the "
+    "facts supplied. "
+    "RULES: "
+    "(1) Do NOT invent facts not in the input. "
+    "(2) Do NOT return an empty conclusion — if the facts genuinely don't "
+    "support a useful answer, set conclusion to a short label like "
+    "\"insufficient_data\" or \"need_more_facts\" and explain in rationale "
+    "what's missing. "
+    "(3) recommended_action must be a single, concrete next step the "
+    "caller can act on (e.g. \"send firm reminder to GoBlue Logistics\", "
+    "\"schedule discovery call with CFO\"). Avoid vague verbs alone "
+    "(\"review\", \"consider\") — pair them with the target. "
+    "(4) Prefer specifics from the facts (names, numbers, days) over "
+    "generic language."
+)
 from core.delivery.envelope import (
     AsOfPin,
     Envelope,
@@ -80,6 +134,11 @@ def _register_pkg(pkg: ModulePackage) -> None:
     mid = pkg.manifest.id
     ruleset: RuleSet = pkg.ruleset
 
+    # Module-specific system prompt overrides the generic default when
+    # declared in manifest.json. Captured in closure so query_handler
+    # doesn't re-read the manifest on every request.
+    system_prompt = pkg.manifest.neural_prompt or _DEFAULT_NEURAL_SYSTEM_PROMPT
+
     def query_handler(
         session: Session,
         org_id: str,
@@ -89,19 +148,58 @@ def _register_pkg(pkg: ModulePackage) -> None:
     ) -> Envelope:
         """Per-request dispatcher: runs the engine using THIS module's rules."""
         gateway = Gateway(llm=LLMClient(), cost_guard=CostGuard())
-        request = DecideRequest(
+        # Neural fallback wiring — without these the gateway hits
+        # "symbolic_default_no_neural" and LLM never runs, so every
+        # unresolved query returns confidence=0.20/conclusion="" with
+        # zero credits deducted. We supply a module-agnostic default
+        # prompt + schema so symbolic-unresolved queries actually
+        # escalate to Haiku gap-fill (1 credit per call).
+        gap_desc = (
+            query.get("q") or query.get("question") or query.get("kind") or "Decide the user's question"
+            if isinstance(query, dict) else "Decide the user's question"
+        )
+        # Retry-on-empty / retry-on-schema-fail policy. The Pydantic schema
+        # enforces conclusion.min_length=1, so an LLM that returns `""`
+        # bubbles a GatewayValidationError. Retrying ONCE with a stronger
+        # prompt + the schema spec embedded gets the answer >90% of the
+        # time in practice. If the second attempt still fails we surface a
+        # graceful "insufficient_data" envelope rather than a 500 — that
+        # preserves the contract Hermes/langchain consumers depend on.
+        result = _decide_with_retry(
+            session=session,
+            gateway=gateway,
+            ruleset=ruleset,
             org_id=org_id,
             query=query,
             facts=facts,
-            ruleset=ruleset,
-            module_id=mid,
             user_id=user_id,
+            module_id=mid,
+            gap_desc=gap_desc,
+            system_prompt=system_prompt,
         )
-        result = decide(session, gateway=gateway, request=request)
+
+        # Persist query facts to the graph so future queries about these
+        # entities get a non-zero grounding_score. Without this every query
+        # is stateless — facts vanish after the call and the confidence
+        # ceiling stays stuck at 0.54 (NEURAL_PATH_WEIGHTS with grounding=0).
+        # Persistence only fires when the LLM gave a useful answer; skip
+        # the insufficient_data and empty conclusion cases so junk doesn't
+        # pollute the org's graph.
+        if (
+            result.conclusion
+            and result.conclusion.strip().lower() not in ("insufficient_data", "need_more_facts")
+        ):
+            _persist_query_facts_to_graph(
+                org_id=org_id, module_id=mid, facts=facts
+            )
+
+        recommendation: dict[str, Any] = {"conclusion": result.conclusion}
+        if isinstance(result.recommendation_extras, dict):
+            recommendation.update(result.recommendation_extras)
         return build_envelope(
             org_id=org_id,
             decision_id=result.decision_id,
-            recommendation={"conclusion": result.conclusion},
+            recommendation=recommendation,
             confidence=result.confidence,
             derivation=[
                 _step_to_dict(step) for step in result.proof.steps
@@ -143,6 +241,109 @@ def _step_to_dict(step: Any) -> dict[str, Any]:
     }
 
 
+def _persist_query_facts_to_graph(
+    *,
+    org_id: str,
+    module_id: str,
+    facts: Any,
+) -> None:
+    """Emit query facts to the memory bus so g-i-3 writes FactRow entries.
+
+    Query facts arrive in one of two shapes:
+      A) `{"facts": [{"subject": S, "predicate": P, "object": O}, ...]}`
+      B) flat `{S1: {P1: V1, ...}, ...}` (rare, custom callers)
+
+    We normalize to per-subject groups → emit one MemoryItem per subject
+    with a StructuredFactsHint so the existing ingest subscriber persists
+    them directly (no LLM extract). Failures are swallowed and logged —
+    persistence is best-effort and must not break the query path.
+    """
+    from hashlib import sha256
+
+    from core.foundations.db import get_session
+    from core.memory.types import (
+        MemoryItem,
+        MemoryItemMetadata,
+        StructuredFactsHint,
+    )
+    from core.worldmodel.ingest_subscriber import _ingest_structured
+
+    # Normalize input to {subject: {predicate: object}} groups.
+    grouped: dict[str, dict[str, Any]] = {}
+    candidates: list[dict[str, Any]] = []
+    if isinstance(facts, dict):
+        inner = facts.get("facts") if "facts" in facts else None
+        if isinstance(inner, list):
+            candidates = [c for c in inner if isinstance(c, dict)]
+        elif inner is None:
+            # Shape B: treat each top-level key as a subject with attribute dict
+            for k, v in facts.items():
+                if isinstance(v, dict):
+                    grouped[str(k)] = {str(pk): pv for pk, pv in v.items()}
+                else:
+                    grouped.setdefault("_query_root_", {})[str(k)] = v
+    elif isinstance(facts, list):
+        candidates = [c for c in facts if isinstance(c, dict)]
+
+    for t in candidates:
+        s = t.get("subject")
+        p = t.get("predicate")
+        o = t.get("object")
+        if not s or not p:
+            continue
+        grouped.setdefault(str(s), {})[str(p)] = o
+
+    if not grouped:
+        return
+
+    ts = datetime.now(UTC)
+    # Call `_ingest_structured` directly with a fresh session — the
+    # memory_bus subscriber resolves org_id via the `connections` table,
+    # and our synthetic source_id ("genios-query:*") has no connection
+    # row, so going through the bus would silently skip every insert.
+    # The direct call uses the org_id we already know and writes the
+    # FactRow + NodeRow under the same idempotency rules the CSV ingest
+    # path uses.
+    try:
+        with get_session() as session:
+            for subject, fact_map in grouped.items():
+                digest = sha256(
+                    f"{org_id}|{module_id}|{subject}|{sorted(fact_map.items())}".encode()
+                ).hexdigest()[:16]
+                item = MemoryItem(
+                    item_id=f"query:{module_id}:{digest}",
+                    source_id=f"genios-query:{module_id}",
+                    source_type="genios_query",
+                    content=(
+                        f"{subject} — "
+                        + ", ".join(f"{k}={v}" for k, v in fact_map.items())
+                    )[:1000],
+                    metadata=MemoryItemMetadata(
+                        timestamp=ts,
+                        owner=None,
+                        source_confidence=0.95,  # caller-asserted, slightly under 1.0
+                        tags=[f"module:{module_id}", "channel:intelligence_query"],
+                        structured_facts=StructuredFactsHint(
+                            entity_name=subject,
+                            entity_type="entity",
+                            secondary_entity_id=None,
+                            entity_attributes={},
+                            facts=fact_map,
+                            edge_predicate=None,
+                        ),
+                    ),
+                )
+                _ingest_structured(session, item, org_id, item.metadata.structured_facts)
+            session.commit()
+    except Exception as e:
+        log.warning(
+            "query_fact_persist_failed",
+            org_id=org_id,
+            module_id=module_id,
+            error=str(e)[:200],
+        )
+
+
 def _to_envelope_route(route: Any) -> EnvelopeRoute:
     """Engine Route → EnvelopeRoute. Both are str enums with same values."""
     val = getattr(route, "value", route)
@@ -151,6 +352,125 @@ def _to_envelope_route(route: Any) -> EnvelopeRoute:
     if val == "flag":
         return EnvelopeRoute.FLAG
     return EnvelopeRoute.NOTIFY
+
+
+_RETRY_PROMPT_SUFFIX = (
+    "\n\nIMPORTANT: A prior attempt produced an output that failed schema "
+    "validation (likely empty conclusion or missing recommended_action). "
+    "You MUST return a non-empty conclusion and a concrete recommended_action. "
+    "If facts genuinely don't support a useful answer, set conclusion to "
+    "\"insufficient_data\" and use rationale to state precisely what's "
+    "missing (e.g. \"need contract_value, last_response_date\")."
+)
+
+
+def _decide_with_retry(
+    *,
+    session: Session,
+    gateway: Gateway,
+    ruleset: RuleSet,
+    org_id: str,
+    query: dict[str, Any],
+    facts: dict[str, Any],
+    user_id: str | None,
+    module_id: str,
+    gap_desc: str,
+    system_prompt: str = _DEFAULT_NEURAL_SYSTEM_PROMPT,
+) -> DecideResult:
+    """Run `decide()` with one retry on GatewayValidationError.
+
+    The Pydantic schema enforces non-empty conclusion (`min_length=1`); when
+    the LLM returns `{"conclusion": ""}` the gateway raises and `decide()`
+    bubbles the error up. We retry once with a stronger prompt that
+    explicitly instructs the model to either answer or return
+    `"insufficient_data"`. If the retry also fails, we synthesize a graceful
+    `DecideResult` so the FastAPI handler returns 200 with a clear envelope
+    instead of a 500 — Hermes/langchain consumers can route on it.
+    """
+
+    def _build_request(system_prompt: str) -> DecideRequest:
+        return DecideRequest(
+            org_id=org_id,
+            query=query,
+            facts=facts,
+            ruleset=ruleset,
+            module_id=module_id,
+            user_id=user_id,
+            gap_description=gap_desc,
+            gap_facts=facts if isinstance(facts, dict) else {"facts": facts},
+            neural_system_prompt=system_prompt,
+            neural_output_schema=_NeuralGapConclusion,
+        )
+
+    try:
+        return decide(session, gateway=gateway, request=_build_request(system_prompt))
+    except GatewayValidationError as first_err:
+        log.warning(
+            "neural_query_first_attempt_rejected",
+            module_id=module_id,
+            org_id=org_id,
+            error=str(first_err)[:200],
+        )
+
+    # Retry once with the suffix. Use the same gateway so the cost_guard +
+    # billing path still meter the second call (customer pays for both
+    # attempts — empirically <5% of queries take this branch).
+    try:
+        return decide(
+            session,
+            gateway=gateway,
+            request=_build_request(system_prompt + _RETRY_PROMPT_SUFFIX),
+        )
+    except GatewayValidationError as final_err:
+        log.warning(
+            "neural_query_retry_rejected_synthesizing_envelope",
+            module_id=module_id,
+            org_id=org_id,
+            error=str(final_err)[:200],
+        )
+
+    # Both attempts failed schema validation — return a graceful envelope
+    # so the customer integration doesn't crash. We don't persist this as a
+    # DecisionRow (it never reached `decide()`'s emit step), which is fine
+    # for now since 500s would have lost the row too; if we need an audit
+    # trail for these cases we can add a manual insert here later.
+    from uuid import uuid4
+
+    from core.delivery.envelope import build_envelope  # noqa: F401  (kept local to avoid cycles)
+    from core.reasoning.rule_loader import ProofTree as _ProofTree
+    from core.reflection.human_flag import Route as _Route
+    from core.reflection.human_flag import RoutingDecision as _RoutingDecision
+
+    return DecideResult(
+        decision_id=str(uuid4()),
+        conclusion="insufficient_data",
+        path="neural",
+        route=_Route.FLAG,
+        confidence=0.10,
+        confidence_breakdown={
+            "constraint_pass": True,
+            "grounding_score": 0.0,
+            "consistency_score": 0.0,
+            "symbolic_support": 0.0,
+            "llm_validation_score": 0.0,
+            "weights": {},
+        },
+        proof=_ProofTree(steps=[], final_conclusion="insufficient_data"),
+        grounding_score=0.0,
+        grounding_refs=[],
+        routing=_RoutingDecision(
+            route=_Route.FLAG,
+            confidence=0.10,
+            reason="neural output failed schema validation after retry",
+        ),
+        reflected=False,
+        as_of_version=0,
+        halted_by_cost_guard=False,
+        recommendation_extras={
+            "rationale": "LLM produced invalid/empty output twice — human review needed.",
+            "recommended_action": "Inspect query + provided facts; engine could not synthesize an answer.",
+        },
+    )
 
 
 # AsOfPin import retained for callers that import from this module

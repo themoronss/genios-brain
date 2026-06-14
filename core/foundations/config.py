@@ -84,6 +84,30 @@ CONFIDENCE_WEIGHTS: dict[str, float] = {
 }
 # constraint_pass is a HARD GATE (multiplier), not a weighted term.
 
+# Path-aware weights. When the engine takes the SYMBOLIC path, rules carry
+# the load and grounding+symbolic dominate. When the engine takes the NEURAL
+# path (LLM gap-fill), there's no rule match so symbolic_support is 0 by
+# construction — using the default weights collapses confidence to ~0.14
+# even when the LLM returned a valid, schema-constrained answer. We give
+# weight to `llm_validation` (was the LLM output schema-valid + constraint-
+# passing + non-empty?) so a good neural answer can clear the 0.45 NOTIFY
+# threshold and the 0.75 AUTONOMOUS threshold once grounding catches up.
+NEURAL_PATH_WEIGHTS: dict[str, float] = {
+    "grounding": 0.20,
+    "consistency": 0.20,
+    "symbolic": 0.20,
+    "llm_validation": 0.40,
+}
+# Symbolic-path weights kept backwards-compatible — `llm_validation` is
+# always 0 on this path (no LLM ran), so an explicit 0 weight here means
+# the math collapses to the original CONFIDENCE_WEIGHTS form.
+SYMBOLIC_PATH_WEIGHTS: dict[str, float] = {
+    "grounding": 0.40,
+    "consistency": 0.20,
+    "symbolic": 0.40,
+    "llm_validation": 0.0,
+}
+
 LLM_TIMEOUT_SECONDS: int = 30
 LLM_MAX_RETRIES: int = 2
 CSP_TIMEOUT_SECONDS: int = 5  # Z3 fall back if exceeds
