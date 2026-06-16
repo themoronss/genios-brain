@@ -27,6 +27,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, verify_api_key
+from core.delivery.bands import to_band
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -83,7 +84,11 @@ def list_insights(
 
     def _shape(r):
         chain = r.derivation_chain_jsonb if isinstance(r.derivation_chain_jsonb, dict) else {}
-        scores = r.scores_jsonb if isinstance(r.scores_jsonb, dict) else {}
+        scores = dict(r.scores_jsonb) if isinstance(r.scores_jsonb, dict) else {}
+        # Customer-facing: present the stored raw confidence as a qualitative
+        # band (§5 Gate 1). The raw float remains in the proactive_insights row.
+        if "confidence" in scores:
+            scores["confidence"] = to_band(scores.get("confidence")).value
         priority = "high" if r.delivery_route == "push" else (
             "medium" if r.delivery_route == "review" else "low"
         )

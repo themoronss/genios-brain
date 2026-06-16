@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.api.deps import get_db, verify_api_key
+from core.delivery.bands import to_band
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ async def _event_gen(
                 "insight_type": r[1],
                 "category": r[2],
                 "priority": float(r[3] or 0),
-                "confidence": float(r[4] or 0),
+                "confidence": to_band(r[4]).value,
                 "confidence_level": r[13],
                 "title": r[5],
                 "rationale": r[14] or r[6],

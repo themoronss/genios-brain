@@ -17,7 +17,7 @@ import json
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -53,6 +53,15 @@ class Manifest(BaseModel):
     engineVersion: str = Field(..., description="Core engine version requirement (semver range)")
     provides: ModuleProvides
     goldenSet: str = Field(..., description="Path within module to evaluator.py")
+    # Module maturity — the freeze lever per GENIOS_BRIEFING §5 (4-modules decision).
+    # Defaults to "preview" so a module is NOT presented as production-ready until
+    # it has been validated (Sales is the only "ga" wedge today). A module stays
+    # loaded + usable regardless of this flag — it only governs how it's PITCHED:
+    # "ga" modules can be sold; "preview" ones must be labelled as not-yet-validated.
+    maturity: Literal["ga", "preview", "deprecated"] = Field(
+        default="preview",
+        description="ga = validated + sellable; preview = loaded but not pitched as ready",
+    )
     # Optional rule metadata — read by the proactive pipeline (rule
     # priority + display title) and by the threshold tuner
     # (tunable_knobs). Open-shape on purpose so modules can add new

@@ -38,6 +38,7 @@ import requests
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from core.delivery.bands import to_band
 from core.foundations.telemetry import get_logger
 from core.proactive.store import InsightRow
 
@@ -836,7 +837,10 @@ def run_for_org(
             # dashboard sees the same self-describing shape.
             "envelope": {
                 "recommendation": ins["recommend_action"],
-                "confidence": ins["confidence"],
+                # Customer-facing: qualitative band, not a raw probability
+                # (§5 Gate 1). The raw float stays internal in the
+                # proactive_insights row's scores_jsonb above.
+                "confidence": to_band(ins["confidence"]).value,
                 "uncertainty": ins["uncertainty"],
                 "side_effect_class": ins["side_effect_class"],
                 "blast_radius": ins["blast_radius"],

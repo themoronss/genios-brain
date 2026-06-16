@@ -1,0 +1,6 @@
+invoice_id,client_name,payment_status,days_past_due,amount_inr,last_reminder_age_days
+INV-1001,Mehta Imports,unpaid,5,120000,-1
+INV-1002,GoBlue Logistics,unpaid,12,450000,5
+INV-1003,Sunrise Retail,unpaid,40,900000,9
+INV-1004,Patel & Sons,paid,-3,75000,-1
+INV-1005,Verma Textiles,unpaid,8,210000,-1

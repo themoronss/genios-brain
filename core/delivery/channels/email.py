@@ -118,7 +118,7 @@ def _format_envelope_email(envelope: Envelope, *, to: str, is_digest: bool) -> E
     body_lines = [
         headline,
         "",
-        f"Confidence: {envelope.confidence:.0%}",
+        f"Confidence: {envelope.confidence.value}",
         f"Route: {envelope.route.value}",
         "",
     ]

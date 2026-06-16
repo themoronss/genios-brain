@@ -121,6 +121,7 @@ def bootstrap_modules() -> dict[str, ModulePackage]:
                 "module_loaded",
                 module_id=pkg.manifest.id,
                 version=pkg.manifest.version,
+                maturity=pkg.manifest.maturity,
                 rules=len(pkg.ruleset.rules),
             )
         except Exception as e:

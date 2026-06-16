@@ -94,6 +94,43 @@ def test_edit_creates_correction_with_diff(session: Session) -> None:
 
 
 @pytest.mark.unit
+def test_edit_edge_outcomes_reach_learning_layer(session: Session) -> None:
+    """Gate-2 regression: edges_confirmed / edges_contradicted passed in edit_diff
+    must land on correction.diff as FLAT lists so learning.derive_outcomes() can
+    read them and fire the Bayesian edge update. Before the fix, _compute_diff
+    wrapped them as {"engine","human"} and derive_outcomes returned {} — the
+    learning loop could never move a graph-edge weight."""
+    from core.worldmodel.learning import derive_outcomes
+
+    out = capture_feedback(
+        session,
+        org_id="o",
+        user_id="alice",
+        decision_id="dec_1",
+        insight_id=None,
+        action=FeedbackAction.EDIT,
+        edit_diff={
+            "edges_contradicted": ["edge_A", "edge_B"],
+            "edges_confirmed": ["edge_C"],
+        },
+    )
+    session.commit()
+
+    correction = session.get(CorrectionRow, out.correction_id)
+    assert correction is not None
+    # Flat lists on the diff — not {"engine","human"} wrappers.
+    assert correction.diff["edges_contradicted"] == ["edge_A", "edge_B"]
+    assert correction.diff["edges_confirmed"] == ["edge_C"]
+    assert set(correction.edge_ids) == {"edge_A", "edge_B", "edge_C"}
+    # The learning layer can now actually derive per-edge outcomes.
+    assert derive_outcomes(correction.diff) == {
+        "edge_C": True,
+        "edge_A": False,
+        "edge_B": False,
+    }
+
+
+@pytest.mark.unit
 def test_thumbs_down_requires_decision_id(session: Session) -> None:
     with pytest.raises(ValueError):
         capture_feedback(

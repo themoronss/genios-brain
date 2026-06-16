@@ -118,6 +118,19 @@ def capture_feedback(
     human_decision = edit_diff or {"thumbs_down": True}
     diff = _compute_diff(engine_decision, human_decision)
 
+    # g-i-3 edge outcomes: learning.derive_outcomes() reads FLAT lists off
+    # correction.diff ("edges_confirmed" / "edges_contradicted"), but
+    # _compute_diff wraps every field as {"engine", "human"} — so edge lists
+    # passed in edit_diff would never reach the Bayesian update. Carry them
+    # through verbatim (flat) and record them in edge_ids. Without this the
+    # learning loop cannot move a single graph-edge weight (Gate 2 blocker).
+    edges_confirmed = _flat_str_list((edit_diff or {}).get("edges_confirmed"))
+    edges_contradicted = _flat_str_list((edit_diff or {}).get("edges_contradicted"))
+    if edges_confirmed:
+        diff["edges_confirmed"] = edges_confirmed
+    if edges_contradicted:
+        diff["edges_contradicted"] = edges_contradicted
+
     correction = CorrectionRow(
         org_id=org_id,
         decision_id=decision_id,
@@ -126,7 +139,7 @@ def capture_feedback(
         human_decision=human_decision,
         diff=diff,
         rule_ids=[],
-        edge_ids=[],
+        edge_ids=edges_confirmed + edges_contradicted,
         timestamp=datetime.now(UTC),
         actor=user_id,
     )
@@ -159,3 +172,11 @@ def _compute_diff(engine: dict[str, Any], human: dict[str, Any]) -> dict[str, An
         if e != h:
             diff[k] = {"engine": e, "human": h}
     return diff
+
+
+def _flat_str_list(v: Any) -> list[str]:
+    """Coerce a value to a flat list[str]. Mirrors learning._str_list so the
+    edge-outcome contract matches on both the write (here) and read sides."""
+    if isinstance(v, list):
+        return [str(x) for x in v]
+    return []

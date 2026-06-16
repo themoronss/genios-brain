@@ -96,7 +96,7 @@ def _format_envelope_for_slack(envelope: Envelope, *, is_digest: bool) -> dict[s
             "text": {
                 "type": "mrkdwn",
                 "text": f"*{headline}*\n"
-                f"_confidence {envelope.confidence:.0%} · route `{envelope.route.value}`_",
+                f"_confidence {envelope.confidence.value} · route `{envelope.route.value}`_",
             },
         }
     ]

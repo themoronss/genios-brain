@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from core.delivery.bands import ConfidenceBand
 from core.delivery.envelope import (
     Envelope,
     EnvelopeRoute,
@@ -43,7 +44,9 @@ def test_build_envelope_happy_path() -> None:
     env = build_envelope(**_kwargs())
     assert env.org_id == "o"
     assert env.decision_id == "dec_1"
-    assert env.confidence == 0.85
+    # 0.85 >= theta_act (0.75) -> the customer-facing band is "high".
+    # The raw float is intentionally NOT on the envelope (stays internal).
+    assert env.confidence == ConfidenceBand.HIGH
     assert env.route == EnvelopeRoute.NOTIFY
     assert env.as_of.graph_version == 42
 
@@ -131,7 +134,7 @@ def test_extras_rejected_at_pydantic_level() -> None:
         Envelope.model_validate(
             {
                 "recommendation": {},
-                "confidence": 0.5,
+                "confidence": "high",
                 "derivation": [],
                 "uncertainty": [],
                 "route": "notify",

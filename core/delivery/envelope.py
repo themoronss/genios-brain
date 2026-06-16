@@ -3,7 +3,9 @@
 Per MD g-i-7 §0 + acceptance:
     Envelope {
       recommendation:   any
-      confidence:       number   (calibrated external from g-i-2)
+      confidence:       band     (high|medium|low — qualitative until calibrated;
+                                  raw float stays internal in DecisionRow per
+                                  GENIOS_BRIEFING §5 Gate 1 / §8 Task 2)
       derivation:       proof tree
       uncertainty:      flag list (visible weak parts)
       route:            autonomous | notify | flag
@@ -24,6 +26,8 @@ from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from core.delivery.bands import ConfidenceBand, to_band
 
 
 class EnvelopeRoute(StrEnum):
@@ -53,7 +57,12 @@ class Envelope(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     recommendation: dict[str, Any]
-    confidence: float = Field(..., ge=0.0, le=1.0)
+    confidence: ConfidenceBand = Field(
+        ...,
+        description="Qualitative confidence band (high|medium|low). The raw float "
+        "is NOT exposed here — it stays internal in DecisionRow.confidence_score "
+        "until calibrated (GENIOS_BRIEFING §5 Gate 1).",
+    )
     derivation: list[dict[str, Any]] = Field(
         ...,
         description="Proof tree steps (rule_id, conclusion, matched_facts, ...).",
@@ -107,11 +116,16 @@ def build_envelope(
         raise NakedOutputError("derivation is required (use [] if symbolic produced no steps)")
     if uncertainty is None:
         raise NakedOutputError("uncertainty is required (use [] if no flags)")
+    # The raw float is validated here but NOT carried into the Envelope — the
+    # customer-facing surface gets the qualitative band. The float lives on in
+    # DecisionRow.confidence_score for later calibration (§5 Gate 1).
+    if not 0.0 <= confidence <= 1.0:
+        raise NakedOutputError(f"confidence must be in [0, 1]; got {confidence}")
 
     try:
         return Envelope(
             recommendation=recommendation,
-            confidence=confidence,
+            confidence=to_band(confidence),
             derivation=derivation,
             uncertainty=uncertainty,
             route=EnvelopeRoute(route),

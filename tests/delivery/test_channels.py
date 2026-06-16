@@ -48,7 +48,8 @@ def test_slack_sends_when_mapping_exists() -> None:
     # Confidence + uncertainty must be visible in the Slack blocks
     msg = posted[0][1]
     text_blob = str(msg)
-    assert "85%" in text_blob or "0.85" in text_blob.replace(",", "")
+    # Confidence is shown as a qualitative band now, not a raw % (§5 Gate 1).
+    assert "confidence high" in text_blob
     assert "uncertainty flag" in text_blob
 
 

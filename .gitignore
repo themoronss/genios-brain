@@ -28,6 +28,11 @@ logs/
 *.sqlite3
 *.sqlite
 
+# §7 experiment — real customer deal data + generated results (never commit)
+modules/sales/golden/real_cases.jsonl
+section7_*_results.json
+**/section7_*_results.json
+
 # Python build files
 build/
 dist/

@@ -1,6 +1,7 @@
 {
   "id": "sales",
   "version": "1.0.0",
+  "maturity": "ga",
   "requiredScopes": ["crm:read", "email:read"],
   "engineVersion": ">=2.0",
   "provides": {

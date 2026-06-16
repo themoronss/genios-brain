@@ -116,7 +116,7 @@ def test_intelligence_dev_org_header_accepted(client: TestClient) -> None:
 def _stub_envelope(org_id: str = "o_test", decision_id: str = "dec_x") -> Envelope:
     return Envelope(
         recommendation={"conclusion": "x"},
-        confidence=0.8,
+        confidence="high",
         derivation=[{"rule_id": "r1", "conclusion": "x"}],
         uncertainty=[],
         route=EnvelopeRoute.NOTIFY,
@@ -145,7 +145,7 @@ def test_query_dispatches_to_registered_handler(client: TestClient) -> None:
     )
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["confidence"] == 0.8
+    assert body["confidence"] == "high"  # qualitative band, not a raw probability (§5 Gate 1)
     assert body["org_id"] == "o_test"
     assert captured["query"] == {"q": "X"}
 
