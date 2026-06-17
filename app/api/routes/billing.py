@@ -38,6 +38,11 @@ router = APIRouter()
 
 RAZORPAY_KEY_ID     = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
+# Razorpay signs WEBHOOKS with the webhook secret you set in the dashboard when
+# creating the webhook — NOT the API key secret. Falls back to the key secret
+# only for backward-compat; set RAZORPAY_WEBHOOK_SECRET to the value you enter
+# in the Razorpay webhook config.
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 
 SUPPORTED_CURRENCIES = ("INR", "USD")
 
@@ -420,8 +425,10 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     body_bytes = await request.body()
     sig = request.headers.get("X-Razorpay-Signature", "")
 
+    # Webhooks are signed with the WEBHOOK secret (dashboard), not the key secret.
+    webhook_secret = RAZORPAY_WEBHOOK_SECRET or RAZORPAY_KEY_SECRET
     expected = hmac.new(
-        RAZORPAY_KEY_SECRET.encode(), body_bytes, hashlib.sha256
+        webhook_secret.encode(), body_bytes, hashlib.sha256
     ).hexdigest()
 
     if not hmac.compare_digest(expected, sig):
