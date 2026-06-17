@@ -39,25 +39,41 @@ router = APIRouter()
 RAZORPAY_KEY_ID     = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
 
-PLAN_PRICES_PAISE = {
-    # Single-pool credit model (post-099). Prices reflect cost-based
-    # margins documented in UNIT_ECONOMICS.md §7.
-    "early":   450_000,     # ₹4,500   — 10K credits, ~36% margin realistic
-    "startup": 2_500_000,   # ₹25,000  — 100K credits, ~34% margin realistic
-    # "enterprise" intentionally absent — contract-priced, handled offline
-    # via admin grant (see app.credits.grant).
-    # Legacy alias so existing checkout buttons keep working during rollout.
-    "hustler": 450_000,
+SUPPORTED_CURRENCIES = ("INR", "USD")
+
+# Per-plan price in the SMALLEST UNIT of each currency (INR = paise, USD = cents).
+# We DISPLAY USD everywhere (global positioning) but CHARGE India in INR (UPI works,
+# no forex markup) and international in USD (Razorpay International settles INR to
+# us either way). USD figures are tunable — see UNIT_ECONOMICS.md §7.
+PLAN_PRICES = {
+    "early":   {"INR": 450_000,   "USD": 5_900},      # ₹4,500  / $59   — 10K credits
+    "startup": {"INR": 2_500_000, "USD": 29_900},     # ₹25,000 / $299  — 100K credits
+    # "enterprise" intentionally absent — contract-priced, handled offline.
+    "hustler": {"INR": 450_000,   "USD": 5_900},      # legacy alias of "early"
 }
+# Back-compat: read endpoints that still reference INR paise directly.
+PLAN_PRICES_PAISE = {k: v["INR"] for k, v in PLAN_PRICES.items()}
 
 # Top-up packs (single pool — bucket arg is just analytics tag).
-# Prices re-tuned post-099 for ~40-50% margin (see UNIT_ECONOMICS.md §10).
+# 3rd element is the per-currency price map (smallest unit). See UNIT_ECONOMICS.md §10.
 TOPUP_PACKS = {
-    # pack_id   → (bucket_tag, credits, price_paise, label)
-    "small":      ("credits",   5_000,   250_000, "5,000 credits"),
-    "medium":     ("credits",  25_000, 1_000_000, "25,000 credits"),
-    "large":      ("credits", 100_000, 3_500_000, "100,000 credits (-30% bulk)"),
+    # pack_id   → (bucket_tag, credits, {currency: smallest_unit}, label)
+    "small":      ("credits",   5_000, {"INR":   250_000, "USD":  3_500}, "5,000 credits"),
+    "medium":     ("credits",  25_000, {"INR": 1_000_000, "USD": 12_900}, "25,000 credits"),
+    "large":      ("credits", 100_000, {"INR": 3_500_000, "USD": 44_900}, "100,000 credits (-30% bulk)"),
 }
+
+
+def _resolve_currency(currency: str | None) -> str:
+    """Normalize + validate the charge currency. Frontend sends INR for India
+    customers (UPI), USD for international. Defaults to INR."""
+    c = (currency or "INR").upper()
+    if c not in SUPPORTED_CURRENCIES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported currency '{c}'. Use one of {list(SUPPORTED_CURRENCIES)}.",
+        )
+    return c
 
 
 def _razorpay_client():
@@ -82,41 +98,45 @@ def _verify_signature(order_id: str, payment_id: str, signature: str) -> bool:
 
 class CreateOrderRequest(BaseModel):
     plan: str  # "early" or "startup" (legacy "hustler" accepted)
+    currency: str = "INR"  # "INR" (India, UPI) | "USD" (international). Frontend sets by country.
 
 
 @router.post("/api/org/{org_id}/billing/order")
 def create_order(org_id: str, body: CreateOrderRequest, db: Session = Depends(get_db)):
-    if body.plan not in PLAN_PRICES_PAISE:
+    if body.plan not in PLAN_PRICES:
         raise HTTPException(status_code=400, detail="Invalid plan. Choose 'early' or 'startup'.")
 
-    amount = PLAN_PRICES_PAISE[body.plan]
+    currency = _resolve_currency(body.currency)
+    amount = PLAN_PRICES[body.plan][currency]
     client = _razorpay_client()
 
     try:
         order = client.order.create({
             "amount":   amount,
-            "currency": "INR",
+            "currency": currency,
             "receipt":  f"gn_{org_id[:8]}_{secrets.token_hex(4)}",
-            "notes":    {"org_id": org_id, "plan": body.plan},
+            "notes":    {"org_id": org_id, "plan": body.plan, "currency": currency},
         })
     except Exception as e:
         logger.error(f"Razorpay order creation failed: {e}")
         raise HTTPException(status_code=502, detail="Payment gateway error")
 
-    # Record pending subscription
+    # Record pending subscription. amount_paise stores the smallest unit of the
+    # charged currency (paise for INR, cents for USD); `currency` disambiguates.
     db.execute(
         text("""
-            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, invoice_type)
-            VALUES (:org_id, :plan, 'pending', :order_id, :amount, 'subscription')
+            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type)
+            VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'subscription')
         """),
-        {"org_id": org_id, "plan": body.plan, "order_id": order["id"], "amount": amount},
+        {"org_id": org_id, "plan": body.plan, "order_id": order["id"],
+         "amount": amount, "currency": currency},
     )
     db.commit()
 
     return {
         "order_id":  order["id"],
         "amount":    amount,
-        "currency":  "INR",
+        "currency":  currency,
         "key_id":    RAZORPAY_KEY_ID,
         "plan":      body.plan,
     }
@@ -278,6 +298,7 @@ def _unlocked_features(plan: str) -> list[str]:
 
 class TopupOrderRequest(BaseModel):
     pack: str  # one of TOPUP_PACKS keys
+    currency: str = "INR"  # "INR" (India) | "USD" (international)
 
 
 @router.post("/api/org/{org_id}/billing/topup")
@@ -294,16 +315,18 @@ def create_topup_order(org_id: str, body: TopupOrderRequest, db: Session = Depen
             status_code=400,
             detail={"error": "UNKNOWN_PACK", "available": list(TOPUP_PACKS.keys())},
         )
-    bucket_tag, credits, amount_paise, label = pack
+    bucket_tag, credits, prices, label = pack
+    currency = _resolve_currency(body.currency)
+    amount = prices[currency]
 
     client = _razorpay_client()
     try:
         order = client.order.create({
-            "amount":   amount_paise,
-            "currency": "INR",
+            "amount":   amount,
+            "currency": currency,
             "receipt":  f"gn_tu_{org_id[:8]}_{secrets.token_hex(4)}",
             "notes":    {"org_id": org_id, "pack": body.pack,
-                         "credits": str(credits), "type": "topup"},
+                         "credits": str(credits), "type": "topup", "currency": currency},
         })
     except Exception as e:
         logger.error(f"Razorpay top-up order creation failed: {e}")
@@ -311,18 +334,18 @@ def create_topup_order(org_id: str, body: TopupOrderRequest, db: Session = Depen
 
     db.execute(
         text("""
-            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, invoice_type)
-            VALUES (:org_id, :plan, 'pending', :order_id, :amount, 'topup')
+            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type)
+            VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'topup')
         """),
         {"org_id": org_id, "plan": body.pack, "order_id": order["id"],
-         "amount": amount_paise},
+         "amount": amount, "currency": currency},
     )
     db.commit()
 
     return {
         "order_id": order["id"],
-        "amount":   amount_paise,
-        "currency": "INR",
+        "amount":   amount,
+        "currency": currency,
         "key_id":   RAZORPAY_KEY_ID,
         "pack":     body.pack,
         "credits":  credits,
@@ -489,13 +512,18 @@ def get_subscription(org_id: str, db: Session = Depends(get_db)):
         "sonnet_daily_limit": config.get("sonnet_daily_limit", 0),
         "expires_at":      expires_at.isoformat() if expires_at else None,
         "grace_until":     grace_until.isoformat() if grace_until else None,
+        # Both currencies so the frontend can DISPLAY USD and CHARGE the
+        # customer's local currency (INR for India, USD for international).
         "prices": {
-            "early":    PLAN_PRICES_PAISE["early"]   // 100,
-            "startup":  PLAN_PRICES_PAISE["startup"] // 100,
+            "early":   {"inr": PLAN_PRICES["early"]["INR"] // 100,
+                        "usd": PLAN_PRICES["early"]["USD"] // 100},
+            "startup": {"inr": PLAN_PRICES["startup"]["INR"] // 100,
+                        "usd": PLAN_PRICES["startup"]["USD"] // 100},
         },
         "topup_packs": [
-            {"pack_id": pid, "credits": c, "price_inr": amt // 100, "label": lbl}
-            for pid, (_b, c, amt, lbl) in TOPUP_PACKS.items()
+            {"pack_id": pid, "credits": c,
+             "price_inr": prices["INR"] // 100, "price_usd": prices["USD"] // 100, "label": lbl}
+            for pid, (_b, c, prices, lbl) in TOPUP_PACKS.items()
         ],
     }
 
@@ -506,7 +534,8 @@ def get_subscription(org_id: str, db: Session = Depends(get_db)):
 def list_invoices(org_id: str, db: Session = Depends(get_db)):
     rows = db.execute(
         text("""
-            SELECT id, plan, status, amount_paise, invoice_type,
+            SELECT id, plan, status, amount_paise,
+                   COALESCE(currency, 'INR') AS currency, invoice_type,
                    payment_id, period_start, period_end, created_at
             FROM subscriptions
             WHERE org_id = :org_id
@@ -522,6 +551,11 @@ def list_invoices(org_id: str, db: Session = Depends(get_db)):
             "id":           str(r.id),
             "plan":         r.plan,
             "status":       r.status,
+            # amount is in the major unit of `currency` (₹ for INR, $ for USD)
+            "amount":       (r.amount_paise or 0) // 100,
+            "currency":     r.currency,
+            # kept as a plain number for back-compat with existing UI; use
+            # `currency` + `amount` for the correct symbol.
             "amount_inr":   (r.amount_paise or 0) // 100,
             "type":         r.invoice_type,
             "payment_id":   r.payment_id,
