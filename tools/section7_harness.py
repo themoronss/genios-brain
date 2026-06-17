@@ -132,17 +132,30 @@ def _allowed_labels(cases: list[dict[str, Any]]) -> list[str]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def run_preflight(cases: list[dict[str, Any]]) -> dict[str, Any]:
+def run_preflight(cases: list[dict[str, Any]], with_sonnet: bool = False) -> dict[str, Any]:
     from core.modules_framework.loader import load_module_package
     from core.reasoning.rule_engine import ForwardChainer
 
     pkg = load_module_package(SALES_ROOT)
     chainer = ForwardChainer(pkg.ruleset)
 
+    # Optional raw-Sonnet baseline — an INDEPENDENT LLM on the same facts. No DB.
+    sonnet_client = None
+    sonnet_sys = ""
+    if with_sonnet:
+        from core.neural.client import LLMClient
+        sonnet_client = LLMClient()
+        allowed = _allowed_labels(cases)
+        sonnet_sys = (
+            "You are a B2B SaaS sales analyst. Given facts about a deal, output a single "
+            f"short conclusion label from this allowed set when one fits: {allowed}. "
+            "If no action is needed, output an empty string. Output ONLY the label."
+        )
+
     rows: list[dict[str, Any]] = []
-    n_symbolic_resolved = 0
-    n_symbolic_match = 0
-    for case in cases:
+    n_symbolic_resolved = n_symbolic_match = n_sonnet_match = 0
+    sonnet_cost = 0.0
+    for idx, case in enumerate(cases, start=1):
         result = chainer.run(case["facts"])
         fired = [s.conclusion for s in result.proof.steps]
         top = fired[0] if fired else ""
@@ -156,16 +169,38 @@ def run_preflight(cases: list[dict[str, Any]]) -> dict[str, Any]:
             n_symbolic_resolved += 1
         if match:
             n_symbolic_match += 1
-        rows.append(
-            {
-                "case_id": case["case_id"],
-                "symbolic_resolved": resolved,
-                "symbolic_conclusion": top,
-                "all_fired": fired,
-                "human_label": case["human_label"],
-                "symbolic_match": match,
-            }
-        )
+
+        s_label: str | None = None
+        s_match: bool | None = None
+        if with_sonnet and sonnet_client is not None:
+            from core.neural.client import LLMCall
+            try:
+                resp = sonnet_client.call(LLMCall(
+                    model="sonnet", system_prompt=sonnet_sys,
+                    user_prompt=f"Facts: {json.dumps(case['facts'])}",
+                    max_tokens=16, temperature=0.0, org_id="section7", purpose="sonnet_preflight",
+                ))
+                s_label = resp.text.strip().strip("'\"")
+                sonnet_cost += resp.cost_usd
+            except Exception as e:  # noqa: BLE001
+                s_label = f"<error:{str(e)[:40]}>"
+            s_match = _matches(s_label, case["human_label"])
+            if s_match:
+                n_sonnet_match += 1
+            print(f"  [{idx}/{len(cases)}] {case['case_id']}: "
+                  f"genios={top or '∅'} sonnet={s_label or '∅'} human={case['human_label'] or '∅'}",
+                  flush=True)
+
+        rows.append({
+            "case_id": case["case_id"],
+            "symbolic_resolved": resolved,
+            "symbolic_conclusion": top,
+            "all_fired": fired,
+            "human_label": case["human_label"],
+            "symbolic_match": match,
+            "sonnet_conclusion": s_label,
+            "sonnet_match": s_match,
+        })
 
     n = len(cases)
     aggregates = {
@@ -176,6 +211,11 @@ def run_preflight(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "n_symbolic_match": n_symbolic_match,
         "sales_rules_loaded": len(pkg.ruleset.rules),
     }
+    if with_sonnet:
+        aggregates["sonnet_accuracy_vs_human"] = round(n_sonnet_match / n, 3)
+        aggregates["n_sonnet_match"] = n_sonnet_match
+        aggregates["genios_minus_sonnet_pp"] = round(100 * (n_symbolic_match - n_sonnet_match) / n, 1)
+        aggregates["sonnet_cost_usd"] = round(sonnet_cost, 4)
     return {"mode": "preflight", "rows": rows, "aggregates": aggregates}
 
 
@@ -329,10 +369,16 @@ def _print_report(out: dict[str, Any]) -> None:
         print(f"  cases:                    {agg['n_cases']}")
         print(f"  sales rules loaded:       {agg['sales_rules_loaded']}")
         print(f"  % symbolic-resolved:      {agg['pct_symbolic_resolved']}%   <- the 80/20 read")
-        print(f"  symbolic accuracy:        {agg['symbolic_accuracy_vs_human']}  "
+        print(f"  GeniOS (rules) accuracy:  {agg['symbolic_accuracy_vs_human']}  "
               f"({agg['n_symbolic_match']}/{agg['n_cases']} vs human)")
-        print("\n  NOTE: this is the cheap pre-check. Run the full 3-way mode")
-        print("  (needs ANTHROPIC_API_KEY + DB) for the GeniOS-vs-Sonnet result.")
+        if "sonnet_accuracy_vs_human" in agg:
+            print(f"  raw Sonnet accuracy:      {agg['sonnet_accuracy_vs_human']}  "
+                  f"({agg['n_sonnet_match']}/{agg['n_cases']})")
+            print(f"  GeniOS − Sonnet:          {agg['genios_minus_sonnet_pp']:+} pp")
+            print(f"  Sonnet cost:              ${agg['sonnet_cost_usd']}")
+        else:
+            print("\n  NOTE: cheap pre-check (symbolic rules only, no LLM gap-fill).")
+            print("  Add --with-sonnet for the rules-vs-Sonnet head-to-head.")
     else:
         print("§7 FULL RESULT — GeniOS vs. raw Sonnet vs. human label")
         print("=" * 70)
@@ -362,6 +408,8 @@ def main(argv: list[str] | None = None) -> None:
                         help="path to real_cases.jsonl (default: modules/sales/golden/real_cases.jsonl)")
     parser.add_argument("--preflight", action="store_true",
                         help="symbolic-only check — no DB, no API key, no cost")
+    parser.add_argument("--with-sonnet", action="store_true",
+                        help="(preflight) also run raw Sonnet for a no-DB head-to-head (costs $)")
     parser.add_argument("--org-id", default="genios-eval",
                         help="org_id to run decide() under (full mode only)")
     parser.add_argument("--out", type=Path, default=None,
@@ -372,7 +420,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"Loaded {len(cases)} case(s) from {args.cases}")
 
     if args.preflight:
-        out = run_preflight(cases)
+        out = run_preflight(cases, with_sonnet=args.with_sonnet)
     else:
         out = run_full(cases, args.org_id)
 

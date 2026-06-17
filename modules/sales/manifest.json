@@ -5,7 +5,7 @@
   "requiredScopes": ["crm:read", "email:read"],
   "engineVersion": ">=2.0",
   "provides": {
-    "rules": ["pricing", "churn", "velocity"],
+    "rules": ["pricing", "churn", "velocity", "competition", "qualification"],
     "graphFragment": "knowledge/relationship_graph.json",
     "simulationTemplates": ["pricing_change", "sequence_change"],
     "artifacts": ["churn_brief", "deal_risk_report"]

@@ -71,3 +71,37 @@
     recommend: escalate_to_executive_sponsor
     reason: "Primary champion departed on high-value deal — escalation required"
   hard: false
+
+- id: churn_engagement_decay
+  module: sales
+  priority: 75
+  when:
+    all:
+      - fact: login_frequency_drop_pct
+        op: ">"
+        value: 50
+      - fact: days_since_last_login
+        op: ">"
+        value: 14
+  then:
+    conclusion: early_churn_signal
+    recommend: trigger_adoption_outreach
+    reason: "Logins down >50% and dark >14d — early behavioral churn decay"
+  hard: false
+
+- id: churn_support_pre_renewal
+  module: sales
+  priority: 82
+  when:
+    all:
+      - fact: open_critical_tickets
+        op: ">"
+        value: 0
+      - fact: days_to_renewal
+        op: "<="
+        value: 90
+  then:
+    conclusion: churn_risk_high
+    recommend: exec_escalate_support_resolution
+    reason: "Unresolved critical tickets within 90d of renewal — high churn risk"
+  hard: false

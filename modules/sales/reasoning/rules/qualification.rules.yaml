@@ -1,0 +1,71 @@
+# Qualification rules (MEDDIC-grounded). Reversible recommendations (no hard).
+# Deals stall/lose when there is no economic buyer, no confirmed budget, a single
+# thread, or no scheduled next step — the strongest leading indicators in B2B.
+
+- id: no_economic_buyer_late_stage
+  module: sales
+  priority: 78
+  when:
+    all:
+      - fact: stage
+        op: "in"
+        value: ["proposal", "negotiation"]
+      - fact: economic_buyer_engaged
+        op: "=="
+        value: false
+  then:
+    conclusion: qualification_risk
+    recommend: get_meeting_with_economic_buyer
+    reason: "Late stage with no economic buyer engaged — deal likely to stall at signature"
+  hard: false
+
+- id: budget_not_confirmed_late_stage
+  module: sales
+  priority: 72
+  when:
+    all:
+      - fact: stage
+        op: "in"
+        value: ["proposal", "negotiation"]
+      - fact: budget_confirmed
+        op: "=="
+        value: false
+  then:
+    conclusion: qualification_risk
+    recommend: confirm_budget_and_funding_source
+    reason: "Proposal/negotiation stage without confirmed budget — no funding path"
+  hard: false
+
+- id: single_threaded_big_deal
+  module: sales
+  priority: 68
+  when:
+    all:
+      - fact: contacts_engaged
+        op: "<="
+        value: 1
+      - fact: deal_value
+        op: ">"
+        value: 30000
+  then:
+    conclusion: single_threaded_risk
+    recommend: multithread_to_second_stakeholder
+    reason: "High-value deal riding on a single contact — champion-loss risk"
+  hard: false
+
+- id: no_next_step_scheduled
+  module: sales
+  priority: 64
+  when:
+    all:
+      - fact: next_step_scheduled
+        op: "=="
+        value: false
+      - fact: stage
+        op: "not_in"
+        value: ["closed_won", "closed_lost"]
+  then:
+    conclusion: deal_drift
+    recommend: book_mutual_next_step_now
+    reason: "Open deal with no scheduled next step — the #1 anti-stall signal"
+  hard: false

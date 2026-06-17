@@ -51,3 +51,20 @@
     recommend: send_lightweight_check_in
     reason: "Buyer silent >10 days after proposal sent"
   hard: false
+
+- id: early_stage_stall
+  module: sales
+  priority: 55
+  when:
+    all:
+      - fact: days_in_current_stage
+        op: ">"
+        value: 30
+      - fact: stage
+        op: "in"
+        value: ["discovery", "qualification"]
+  then:
+    conclusion: deal_stalled
+    recommend: requalify_or_disqualify
+    reason: "30+ days stuck in an early stage — stalled or mis-qualified"
+  hard: false

@@ -48,3 +48,18 @@
     recommend: apply_standard_volume_terms
     reason: "Deal >=$100K with <=15% discount falls inside standard volume policy"
   hard: false
+
+- id: pricing_steep_discount_any_margin
+  module: sales
+  priority: 105
+  when:
+    all:
+      - fact: discount_pct
+        op: ">"
+        value: 35
+  then:
+    conclusion: block_or_escalate
+    recommend: require_sales_lead_approval
+    reason: "Discount >35% always escalates regardless of margin — protects price integrity"
+  hard: true
+
