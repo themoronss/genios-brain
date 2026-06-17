@@ -1,6 +1,14 @@
 import os
 os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
+# Load .env into os.environ BEFORE importing routers. pydantic Settings(env_file)
+# only fills the `settings` object, not os.environ — so os.getenv-based config
+# (e.g. billing's RAZORPAY_KEY_ID/SECRET, read at import time) would come back
+# empty without this. load_dotenv() does NOT override vars already set by the
+# host, so production env injection still wins.
+from dotenv import load_dotenv
+load_dotenv()
+
 # Structured logging — must init before any logger is created
 from app.logging_config import setup_logging, generate_request_id, request_id_var
 setup_logging()
