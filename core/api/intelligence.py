@@ -141,6 +141,27 @@ def query(
             detail=f"module '{body.module_id}' has no query handler registered",
         )
 
+    # ── Pre-gate: block hard-expired plans + zero-credit orgs BEFORE the engine
+    # runs. Celery-independent — check_period_quota() → is_plan_expired() compares
+    # plan_expires_at/grace_until timestamps, so a post-grace expired or
+    # out-of-credits org is rejected here even if the hourly expiry job never
+    # flipped plan_status. Stops the org from burning LLM cost on work it can't
+    # pay for. Within the 7-day grace window the org is still allowed (the UI
+    # nudges renewal); only a hard-expired or 0-credit org is blocked.
+    from app.plan_enforcer import check_period_quota
+
+    gate = check_period_quota(session, org_id)
+    if not gate.get("allowed"):
+        err = (gate.get("error_code") or "INSUFFICIENT_CREDITS").lower()
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": err,  # "plan_expired" | "insufficient_credits"
+                "message": gate.get("message", "Payment required to continue."),
+                "upgrade_required": gate.get("upgrade_required", True),
+            },
+        )
+
     # If caller passed a list-of-fact-dicts in body.facts, scope-filter before
     # reasoning. Engine modules pass these to rule_engine — filtering at the
     # boundary keeps modules unaware of per-tenant policy.

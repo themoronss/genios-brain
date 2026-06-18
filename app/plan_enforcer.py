@@ -268,6 +268,30 @@ def is_in_grace(plan_info: dict) -> bool:
     return now <= grace_until
 
 
+def assert_plan_not_expired(db: Session, org_id: str) -> None:
+    """Raise HTTP 402 (plan_expired) if the org's plan is HARD-expired.
+
+    Celery-independent: is_plan_expired() compares plan_expires_at/grace_until
+    timestamps, so this fires even if the hourly expiry job never flipped
+    plan_status. Orgs inside the 7-day grace window PASS (soft read window).
+    Credit exhaustion is enforced separately by deduct()'s atomic UPDATE.
+
+    Call at the top of paid write paths (LLM calls, ingest, outbound send) so an
+    expired org can't keep spending leftover credits on new work.
+    """
+    from fastapi import HTTPException
+
+    if is_plan_expired(get_org_plan(db, org_id)):
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "plan_expired",
+                "message": "Your plan has expired. Renew to continue.",
+                "upgrade_required": True,
+            },
+        )
+
+
 # ── Quota checks ──────────────────────────────────────────────────────────────
 
 def check_period_quota(db: Session, org_id: str) -> dict:

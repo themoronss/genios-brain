@@ -420,6 +420,11 @@ class LLMClient:
         db = SessionLocal()
         try:
             try:
+                # Hard-expired plan can't trigger new LLM work (drafts, proactive,
+                # fusion) even with leftover credits. Celery-independent; grace
+                # orgs pass. A DB hiccup here falls through to the fail-open below.
+                from app.plan_enforcer import assert_plan_not_expired
+                assert_plan_not_expired(db, org_id)
                 res = deduct(
                     db,
                     org_id=org_id,

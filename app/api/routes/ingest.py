@@ -331,6 +331,11 @@ async def _common_ingest(
                interaction_id=dup[0], contact_id=dup[1], payload_bytes=len(raw))
         return {"deduped": True, "interaction_id": dup[0], "contact_id": dup[1]}
 
+    # Hard-expired plans can't ingest new data even with leftover sync credits
+    # — block before charging. Grace orgs still pass (soft read window).
+    from app.plan_enforcer import assert_plan_not_expired
+    assert_plan_not_expired(db, org_id)
+
     # ── Per-item credit deduction ────────────────────────────────────────
     # IMPORTANT: bills per accepted item, NOT per webhook call. A vendor
     # that batches 1000 emails into one POST gets charged 1000 sync
@@ -962,6 +967,11 @@ async def send_email_route(req: SendEmailRequest,
     if not send_fn:
         raise HTTPException(status_code=501, detail={"error": "PROVIDER_NO_SEND", "message": f"provider '{provider}' does not support outbound send"})
 
+    # Hard-expired plans can't send even with leftover sync credits — block
+    # before charging. Grace orgs still pass (soft read window).
+    from app.plan_enforcer import assert_plan_not_expired
+    assert_plan_not_expired(db, auth.org_id)
+
     # ── Pre-deduct credits before invoking provider ──────────────────────
     # Outbound sends cost real money (Inkbox / Twilio fees), so we charge
     # up-front. On provider failure we refund below.
@@ -1043,6 +1053,11 @@ async def send_sms_route(req: SendSmsRequest,
     send_fn = ops.get("send_sms")
     if not send_fn:
         raise HTTPException(status_code=501, detail={"error": "PROVIDER_NO_SEND", "message": f"provider '{provider}' does not support outbound SMS"})
+
+    # Hard-expired plans can't send even with leftover sync credits — block
+    # before charging. Grace orgs still pass (soft read window).
+    from app.plan_enforcer import assert_plan_not_expired
+    assert_plan_not_expired(db, auth.org_id)
 
     from app.credits import deduct, refund, InsufficientCredits
     try:
