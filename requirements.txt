@@ -51,3 +51,4 @@ jinja2>=3.1               # email + artifact templates
 starlette>=0.40           # FastAPI core (transitive via fastapi, pinned)
 PyYAML>=6.0               # module rule YAML + benchmarks
 z3-solver>=4.13           # core/reasoning/csp_solver.py (CSP/SMT)
+stripe

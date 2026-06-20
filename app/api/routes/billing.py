@@ -44,7 +44,22 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
 # in the Razorpay webhook config.
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 
+# Stripe — international card payments (USD). India keeps using Razorpay (UPI,
+# no forex). STRIPE_SECRET_KEY = sk_test_/sk_live_; STRIPE_WEBHOOK_SECRET = the
+# `whsec_...` shown when you create the webhook in the Stripe dashboard.
+STRIPE_SECRET_KEY     = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+# Where Stripe Checkout returns the customer after pay/cancel.
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 SUPPORTED_CURRENCIES = ("INR", "USD")
+
+
+def _processor_for(currency: str) -> str:
+    """Route by charge currency: India (INR) → Razorpay (UPI, no forex markup),
+    international (USD) → Stripe (global cards). One mapping decides which gateway
+    the order is created on; the frontend follows whatever this returns."""
+    return "razorpay" if currency.upper() == "INR" else "stripe"
 
 # Per-plan price in the SMALLEST UNIT of each currency (INR = paise, USD = cents).
 # We DISPLAY USD everywhere (global positioning) but CHARGE India in INR (UPI works,
@@ -90,6 +105,46 @@ def _razorpay_client():
         raise HTTPException(status_code=503, detail="Razorpay SDK not installed")
 
 
+def _stripe_client():
+    """Lazy import + key wiring. Raises 503 if the SDK/key is missing."""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe not configured")
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        return stripe
+    except ImportError:
+        raise HTTPException(status_code=503, detail="Stripe SDK not installed")
+
+
+def _create_stripe_checkout(*, amount: int, currency: str, label: str, metadata: dict) -> "object":
+    """Create a hosted Stripe Checkout Session (one-time payment). Returns the
+    session; caller stores session.id as the order_id and redirects the browser
+    to session.url. The `checkout.session.completed` webhook is the authoritative
+    activation (the success redirect is just UX), mirroring the Razorpay flow."""
+    stripe = _stripe_client()
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=[{
+                "price_data": {
+                    "currency": currency.lower(),
+                    "product_data": {"name": label},
+                    "unit_amount": amount,  # smallest unit (cents for USD)
+                },
+                "quantity": 1,
+            }],
+            success_url=f"{FRONTEND_URL}/dashboard/upgrade?stripe=success",
+            cancel_url=f"{FRONTEND_URL}/dashboard/upgrade?stripe=cancel",
+            metadata=metadata,
+            payment_intent_data={"metadata": metadata},
+        )
+        return session
+    except Exception as e:
+        logger.error(f"Stripe checkout creation failed: {e}")
+        raise HTTPException(status_code=502, detail="Payment gateway error")
+
+
 def _verify_signature(order_id: str, payment_id: str, signature: str) -> bool:
     """Verify Razorpay payment signature."""
     body = f"{order_id}|{payment_id}"
@@ -113,8 +168,34 @@ def create_order(org_id: str, body: CreateOrderRequest, db: Session = Depends(ge
 
     currency = _resolve_currency(body.currency)
     amount = PLAN_PRICES[body.plan][currency]
-    client = _razorpay_client()
+    processor = _processor_for(currency)
 
+    # ── International (USD) → Stripe hosted checkout ──────────────────────────
+    if processor == "stripe":
+        session = _create_stripe_checkout(
+            amount=amount, currency=currency,
+            label=f"GeniOS {body.plan.capitalize()} plan",
+            metadata={"org_id": org_id, "plan": body.plan, "kind": "subscription"},
+        )
+        db.execute(
+            text("""
+                INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type, processor)
+                VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'subscription', 'stripe')
+            """),
+            {"org_id": org_id, "plan": body.plan, "order_id": session.id,
+             "amount": amount, "currency": currency},
+        )
+        db.commit()
+        return {
+            "processor":    "stripe",
+            "checkout_url": session.url,
+            "amount":       amount,
+            "currency":     currency,
+            "plan":         body.plan,
+        }
+
+    # ── India (INR) → Razorpay ────────────────────────────────────────────────
+    client = _razorpay_client()
     try:
         order = client.order.create({
             "amount":   amount,
@@ -130,8 +211,8 @@ def create_order(org_id: str, body: CreateOrderRequest, db: Session = Depends(ge
     # charged currency (paise for INR, cents for USD); `currency` disambiguates.
     db.execute(
         text("""
-            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type)
-            VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'subscription')
+            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type, processor)
+            VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'subscription', 'razorpay')
         """),
         {"org_id": org_id, "plan": body.plan, "order_id": order["id"],
          "amount": amount, "currency": currency},
@@ -139,6 +220,7 @@ def create_order(org_id: str, body: CreateOrderRequest, db: Session = Depends(ge
     db.commit()
 
     return {
+        "processor": "razorpay",
         "order_id":  order["id"],
         "amount":    amount,
         "currency":  currency,
@@ -328,7 +410,35 @@ def create_topup_order(org_id: str, body: TopupOrderRequest, db: Session = Depen
     bucket_tag, credits, prices, label = pack
     currency = _resolve_currency(body.currency)
     amount = prices[currency]
+    processor = _processor_for(currency)
 
+    # ── International (USD) → Stripe ──────────────────────────────────────────
+    if processor == "stripe":
+        session = _create_stripe_checkout(
+            amount=amount, currency=currency,
+            label=f"GeniOS top-up — {label}",
+            metadata={"org_id": org_id, "pack": body.pack, "kind": "topup"},
+        )
+        db.execute(
+            text("""
+                INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type, processor)
+                VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'topup', 'stripe')
+            """),
+            {"org_id": org_id, "plan": body.pack, "order_id": session.id,
+             "amount": amount, "currency": currency},
+        )
+        db.commit()
+        return {
+            "processor":    "stripe",
+            "checkout_url": session.url,
+            "amount":       amount,
+            "currency":     currency,
+            "pack":         body.pack,
+            "credits":      credits,
+            "label":        label,
+        }
+
+    # ── India (INR) → Razorpay ────────────────────────────────────────────────
     client = _razorpay_client()
     try:
         order = client.order.create({
@@ -344,8 +454,8 @@ def create_topup_order(org_id: str, body: TopupOrderRequest, db: Session = Depen
 
     db.execute(
         text("""
-            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type)
-            VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'topup')
+            INSERT INTO subscriptions (org_id, plan, status, order_id, amount_paise, currency, invoice_type, processor)
+            VALUES (:org_id, :plan, 'pending', :order_id, :amount, :currency, 'topup', 'razorpay')
         """),
         {"org_id": org_id, "plan": body.pack, "order_id": order["id"],
          "amount": amount, "currency": currency},
@@ -353,13 +463,14 @@ def create_topup_order(org_id: str, body: TopupOrderRequest, db: Session = Depen
     db.commit()
 
     return {
-        "order_id": order["id"],
-        "amount":   amount,
-        "currency": currency,
-        "key_id":   RAZORPAY_KEY_ID,
-        "pack":     body.pack,
-        "credits":  credits,
-        "label":    label,
+        "processor": "razorpay",
+        "order_id":  order["id"],
+        "amount":    amount,
+        "currency":  currency,
+        "key_id":    RAZORPAY_KEY_ID,
+        "pack":      body.pack,
+        "credits":   credits,
+        "label":     label,
     }
 
 
@@ -424,30 +535,12 @@ def verify_topup(org_id: str, body: VerifyTopupRequest, db: Session = Depends(ge
 
 # ── Razorpay webhook ─────────────────────────────────────────────────────────
 
-@router.post("/v1/billing/webhook")
-async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
-    """Async webhook from Razorpay — verify signature then activate plan."""
-    body_bytes = await request.body()
-    sig = request.headers.get("X-Razorpay-Signature", "")
+def _fulfill_payment(db: Session, order_id: str, payment_id: str) -> None:
+    """Activate the plan / grant the top-up for a captured payment.
 
-    # Webhooks are signed with the WEBHOOK secret (dashboard), not the key secret.
-    webhook_secret = RAZORPAY_WEBHOOK_SECRET or RAZORPAY_KEY_SECRET
-    expected = hmac.new(
-        webhook_secret.encode(), body_bytes, hashlib.sha256
-    ).hexdigest()
-
-    if not hmac.compare_digest(expected, sig):
-        raise HTTPException(status_code=400, detail="Invalid webhook signature")
-
-    import json
-    event = json.loads(body_bytes)
-    if event.get("event") != "payment.captured":
-        return {"ack": True}
-
-    payment   = event["payload"]["payment"]["entity"]
-    order_id  = payment.get("order_id")
-    payment_id = payment.get("id")
-
+    Shared by the Razorpay and Stripe webhooks: both resolve a captured payment
+    to (order_id, payment_id), and fulfilment from there is identical and
+    idempotent on payment_id (so a webhook + verify race credits only once)."""
     row = db.execute(
         text("""
             SELECT org_id, plan, invoice_type FROM subscriptions
@@ -457,14 +550,14 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     ).fetchone()
 
     if not row:
-        return {"ack": True}
+        return
 
     if (row.invoice_type or "subscription") == "topup":
         # row.plan stores the pack_id for top-up rows.
         pack = TOPUP_PACKS.get(row.plan)
         if not pack:
             logger.error(f"Unknown top-up pack in webhook: {row.plan}")
-            return {"ack": True}
+            return
         bucket_tag, credits, _amt, _label = pack
         from app.credits import topup
         try:
@@ -490,6 +583,54 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     else:
         _activate_plan(db, str(row.org_id), row.plan, payment_id, order_id)
 
+
+@router.post("/v1/billing/webhook")
+async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
+    """Async webhook from Razorpay — verify signature then activate plan."""
+    body_bytes = await request.body()
+    sig = request.headers.get("X-Razorpay-Signature", "")
+
+    # Webhooks are signed with the WEBHOOK secret (dashboard), not the key secret.
+    webhook_secret = RAZORPAY_WEBHOOK_SECRET or RAZORPAY_KEY_SECRET
+    expected = hmac.new(
+        webhook_secret.encode(), body_bytes, hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, sig):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    import json
+    event = json.loads(body_bytes)
+    if event.get("event") != "payment.captured":
+        return {"ack": True}
+
+    payment = event["payload"]["payment"]["entity"]
+    _fulfill_payment(db, payment.get("order_id"), payment.get("id"))
+    return {"ack": True}
+
+
+@router.post("/v1/billing/stripe/webhook")
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+    """Async webhook from Stripe — verify signature then activate plan/top-up.
+
+    We stored the Checkout Session id as the subscription's order_id, so the
+    `checkout.session.completed` event resolves straight into _fulfill_payment
+    (same path as Razorpay). payment_intent is the durable payment id."""
+    body_bytes = await request.body()
+    sig = request.headers.get("Stripe-Signature", "")
+    stripe = _stripe_client()
+    try:
+        event = stripe.Webhook.construct_event(body_bytes, sig, STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    if event["type"] != "checkout.session.completed":
+        return {"ack": True}
+
+    session = event["data"]["object"]
+    order_id = session.get("id")
+    payment_id = session.get("payment_intent") or session.get("id")
+    _fulfill_payment(db, order_id, payment_id)
     return {"ack": True}
 
 
