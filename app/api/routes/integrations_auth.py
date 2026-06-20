@@ -648,31 +648,8 @@ async def notion_callback(state: str, code: str, background_tasks: BackgroundTas
     access_token = token_data.get("access_token")
     bot_id = token_data.get("bot_id")
 
-    db = SessionLocal()
-    try:
-        db.execute(
-            text("""
-                INSERT INTO notion_connections
-                    (org_id, workspace_id, workspace_name, access_token, bot_id, backfill_status)
-                VALUES (:org_id, :workspace_id, :workspace_name, :access_token, :bot_id, 'pending')
-                ON CONFLICT (org_id, workspace_id) DO UPDATE SET
-                    workspace_name = EXCLUDED.workspace_name,
-                    access_token = EXCLUDED.access_token,
-                    bot_id = EXCLUDED.bot_id,
-                    updated_at = NOW()
-            """),
-            {
-                "org_id": org_id,
-                "workspace_id": workspace_id,
-                "workspace_name": workspace_name,
-                "access_token": access_token,
-                "bot_id": bot_id,
-            },
-        )
-        db.commit()
-    finally:
-        db.close()
-
+    # Token storage + sync handled by v2 register_v2_notion_connection below
+    # (SecretRef + Connection). Legacy notion_connections table dropped in 0015.
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "notion"})
 
@@ -746,34 +723,8 @@ async def gsheets_callback(state: str, code: str, background_tasks: BackgroundTa
     drive_service = build_drive_service(creds.token, creds.refresh_token)
     connected_email = get_sheets_user_email(drive_service)
 
-    expires_at = creds.expiry
-
-    db = SessionLocal()
-    try:
-        db.execute(
-            text("""
-                INSERT INTO sheets_connections
-                    (org_id, access_token, refresh_token, token_expires_at, last_sync_at)
-                VALUES (:org_id, :access_token, :refresh_token, :expires_at, :now)
-                ON CONFLICT (org_id) DO UPDATE SET
-                    access_token = EXCLUDED.access_token,
-                    refresh_token = EXCLUDED.refresh_token,
-                    token_expires_at = EXCLUDED.token_expires_at,
-                    last_sync_at = EXCLUDED.last_sync_at,
-                    updated_at = NOW()
-            """),
-            {
-                "org_id": org_id,
-                "access_token": creds.token,
-                "refresh_token": creds.refresh_token,
-                "expires_at": expires_at,
-                "now": datetime.utcnow(),
-            },
-        )
-        db.commit()
-    finally:
-        db.close()
-
+    # Token storage + sync handled by v2 register_v2_gsheets_connection below
+    # (SecretRef + Connection). Legacy sheets_connections table dropped in 0015.
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gsheets"})
 
@@ -842,40 +793,10 @@ async def gdrive_callback(state: str, code: str, background_tasks: BackgroundTas
     drive_service = build_drive_service(creds.token, creds.refresh_token)
     connected_email = get_drive_user_email(drive_service)
 
-    # Initialize the changes page token immediately
-    start_page_token = get_start_page_token(drive_service)
-    expires_at = creds.expiry
-
-    db = SessionLocal()
-    try:
-        db.execute(
-            text("""
-                INSERT INTO gdrive_connections
-                    (org_id, access_token, refresh_token, token_expires_at,
-                     changes_page_token, last_full_metadata_sync_at)
-                VALUES (:org_id, :access_token, :refresh_token, :expires_at,
-                        :page_token, :now)
-                ON CONFLICT (org_id) DO UPDATE SET
-                    access_token = EXCLUDED.access_token,
-                    refresh_token = EXCLUDED.refresh_token,
-                    token_expires_at = EXCLUDED.token_expires_at,
-                    changes_page_token = EXCLUDED.changes_page_token,
-                    last_full_metadata_sync_at = EXCLUDED.last_full_metadata_sync_at,
-                    updated_at = NOW()
-            """),
-            {
-                "org_id": org_id,
-                "access_token": creds.token,
-                "refresh_token": creds.refresh_token,
-                "expires_at": expires_at,
-                "page_token": start_page_token,
-                "now": datetime.utcnow(),
-            },
-        )
-        db.commit()
-    finally:
-        db.close()
-
+    # Token storage + delta cursor + sync are handled by the v2
+    # register_v2_drive_connection below (SecretRef + Connection + CursorRow).
+    # The legacy gdrive_connections table was dropped in migration 0015; its
+    # plaintext-token INSERT was removed.
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gdrive"})
 
@@ -975,32 +896,8 @@ async def gdocs_callback(state: str, code: str, background_tasks: BackgroundTask
     creds = flow.credentials
     drive_service = build_drive_service(creds.token, creds.refresh_token)
     connected_email = get_docs_user_email(drive_service)
-    expires_at = creds.expiry
-
-    db = SessionLocal()
-    try:
-        db.execute(
-            text("""
-                INSERT INTO gdocs_connections
-                    (org_id, access_token, refresh_token, token_expires_at, backfill_status)
-                VALUES (:org_id, :access_token, :refresh_token, :expires_at, 'pending')
-                ON CONFLICT (org_id) DO UPDATE SET
-                    access_token = EXCLUDED.access_token,
-                    refresh_token = EXCLUDED.refresh_token,
-                    token_expires_at = EXCLUDED.token_expires_at,
-                    updated_at = NOW()
-            """),
-            {
-                "org_id": org_id,
-                "access_token": creds.token,
-                "refresh_token": creds.refresh_token,
-                "expires_at": expires_at,
-            },
-        )
-        db.commit()
-    finally:
-        db.close()
-
+    # Token storage + sync handled by v2 register_v2_gdocs_connection below
+    # (SecretRef + Connection). Legacy gdocs_connections table dropped in 0015.
     from app.core.analytics import capture
     capture(org_id, "integration_connected", {"tool": "gdocs"})
 
@@ -1035,7 +932,7 @@ _TOOL_TO_V2_SOURCE = {
     "jira":    "jira",
     "notion":  "notion",
     "gsheets": "gsheets",
-    "gdrive":  "drive",
+    "gdrive":  "gdrive",
     "gdocs":   "gdocs",
     "hubspot": "hubspot",
 }
@@ -1114,6 +1011,19 @@ def get_integrations_status(org_id: str):
             {"oid": org_id},
         ).scalar() or 0
 
+        # Per-source fact counts — facts carry a "<source_type>:<id>" prefix in
+        # source_item_id, so we can attribute each fact to the tool that produced
+        # it (instead of only showing the global total for gmail).
+        fact_rows = db.execute(
+            text("""
+                SELECT split_part(source_item_id, ':', 1) AS source_type, COUNT(*) AS n
+                FROM facts WHERE org_id = :oid AND source_item_id LIKE '%:%'
+                GROUP BY 1
+            """),
+            {"oid": org_id},
+        ).fetchall()
+        facts_by_source = {row.source_type: int(row.n or 0) for row in fact_rows}
+
         # Active-sync flags written by core.memory.sync_runner while a pull
         # is in flight. Surfaced to UI as syncStatus="syncing" so the user
         # sees an actual progress signal instead of a frozen "idle".
@@ -1125,6 +1035,33 @@ def get_integrations_status(org_id: str):
                     active_now.add(src)
         except Exception:
             pass
+
+        # Plan cadence drives the freshness band so the badge reflects the
+        # ACTUAL sync interval (early=6h, startup/enterprise=1h) instead of a
+        # hardcoded 1h/6h threshold that made every source look "stale". And a
+        # red health_status (last sync errored — e.g. OAuth token expired) is
+        # surfaced as "error" → the UI prompts a reconnect, not just "stale".
+        from datetime import datetime, timezone
+
+        from app.plan_enforcer import get_org_plan, sync_interval_hours
+
+        plan_info = get_org_plan(db, org_id)
+        interval_h = sync_interval_hours(plan_info["tier"])
+        _now = datetime.now(timezone.utc)
+
+        def _freshness(last_sync, health) -> str:
+            if health == "red":
+                return "error"
+            if last_sync is None:
+                return "pending"
+            ls = last_sync if last_sync.tzinfo else last_sync.replace(tzinfo=timezone.utc)
+            age_h = (_now - ls).total_seconds() / 3600.0
+            window = interval_h if interval_h is not None else 24.0
+            if age_h < window:
+                return "healthy"
+            if age_h < 2 * window:
+                return "aging"
+            return "stale"
 
         # Build the per-tool status payload
         status: dict[str, dict] = {}
@@ -1148,18 +1085,19 @@ def get_integrations_status(org_id: str):
                 "connected": primary.status == "active",
                 "syncStatus": sync_status,
                 "lastSyncAt": last_sync.isoformat() if last_sync else None,
+                "freshness": _freshness(last_sync, primary.health_status),
+                "syncIntervalHours": interval_h,
                 "metadata": {
                     "accounts":          [c.source_id for c in conns],
                     "recordsPulled":     int(sum(getattr(c, "items_pulled", 0) or 0 for c in conns)),
                     "entitiesExtracted": nodes_by_source.get(v2_src, 0),
-                    "factsExtracted":    fact_count if tool == "gmail" else None,
+                    "factsExtracted":    facts_by_source.get(v2_src, fact_count if tool == "gmail" else 0),
                     "lastError":         primary.last_error,
                 },
             }
 
         # Include plan's allowed integrations so frontend can gate UI
-        from app.plan_enforcer import get_org_plan
-        plan_info = get_org_plan(db, org_id)
+        # (plan_info already fetched above for the freshness window).
         status["_plan"] = {
             "tier": plan_info["tier"],
             "integrations_allowed": sorted(plan_info["config"]["integrations_allowed"]),
@@ -1202,7 +1140,7 @@ TOOL_CONNECTION_SQL: dict[str, list[str]] = {
     "jira":    _v2_disconnect_sql("jira", "jira:%"),
     "notion":  _v2_disconnect_sql("notion", "notion:%"),
     "gsheets": _v2_disconnect_sql("gsheets", "gsheets:%"),
-    "gdrive":  _v2_disconnect_sql("drive", "gdrive:%"),
+    "gdrive":  _v2_disconnect_sql("gdrive", "gdrive:%"),
     "gdocs":   _v2_disconnect_sql("gdocs", "gdocs:%"),
     "hubspot": _v2_disconnect_sql("hubspot", "hubspot:%"),
 }
@@ -1285,7 +1223,7 @@ TOOL_CLEANUP_SQL: dict[str, list[str]] = {
 }
 # Gmail's oauth_token row has no prefix — patch:
 TOOL_CLEANUP_SQL["gmail"] = _v2_wipe_sql("gmail", "")
-TOOL_CLEANUP_SQL["gdrive"] = _v2_wipe_sql("drive", "gdrive:%")
+TOOL_CLEANUP_SQL["gdrive"] = _v2_wipe_sql("gdrive", "gdrive:%")
 
 
 @router.delete("/api/org/{org_id}/integrations/{tool}/disconnect")

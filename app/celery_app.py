@@ -1015,12 +1015,18 @@ def task_scheduled_sync():
             org_id = str(org.id)
             plan = get_org_plan(db, org_id)
             plan_tier = plan.get("tier", "trial")
-            if plan_tier == "trial":
-                continue
 
-            effective_interval = org.interval_hours
-            if plan_tier == "hustler":
-                effective_interval = min(org.interval_hours, 6)
+            # Plan cadence is the single source (early=6h, startup/enterprise=1h,
+            # trial=manual). This replaces the dead `== "hustler"` check (tier is
+            # normalized to "early" before this, so that branch never ran and
+            # every paid org silently fell back to the 24h default).
+            from app.plan_enforcer import sync_interval_hours
+            plan_interval = sync_interval_hours(plan_tier)
+            if plan_interval is None:
+                continue  # manual-only tier (trial) — no scheduled sync
+            # An org may sync MORE often via its own override, but never slower
+            # than the plan's promised cadence.
+            effective_interval = min(org.interval_hours, plan_interval)
             interval_seconds = effective_interval * 3600
 
             with v2_session() as s:

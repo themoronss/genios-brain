@@ -59,6 +59,7 @@ from app.api.routes import retrieval as retrieval_routes
 from app.api.routes import explain as explain_routes
 from app.api.routes import live as live_routes
 from app.api.routes import billing as billing_routes
+from app.api.routes import billing_stream as billing_stream_routes
 from app.api.routes import seats as seats_routes
 from app.api.routes import tags_disclosure as tags_disclosure_routes
 from app.api.routes import proactive as proactive_routes
@@ -281,6 +282,7 @@ app.include_router(retrieval_routes.router)
 app.include_router(explain_routes.router)
 app.include_router(live_routes.router)
 app.include_router(billing_routes.router)
+app.include_router(billing_stream_routes.router)
 app.include_router(seats_routes.router)
 app.include_router(tags_disclosure_routes.router)
 app.include_router(proactive_routes.router)

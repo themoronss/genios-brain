@@ -354,6 +354,13 @@ def deduct(
     except Exception:
         pass
 
+    # Push the new balance to any open dashboard SSE stream (no client polling).
+    try:
+        from app.credits.stream_hub import hub
+        hub.publish(org_id)
+    except Exception:
+        pass
+
     return DeductResult(
         ledger_id=int(ledger_row.id),
         balance_after=new_balance,
@@ -500,6 +507,12 @@ def grant(
         },
     ).fetchone()
 
+    try:
+        from app.credits.stream_hub import hub
+        hub.publish(org_id)
+    except Exception:
+        pass
+
     return DeductResult(
         ledger_id=int(ledger_row.id) if ledger_row else 0,
         balance_after=int(row.total),
@@ -551,6 +564,12 @@ def topup(
             "rid": related_id, "key": idempotency_key,
         },
     ).fetchone()
+
+    try:
+        from app.credits.stream_hub import hub
+        hub.publish(org_id)
+    except Exception:
+        pass
 
     return DeductResult(
         ledger_id=int(ledger_row.id) if ledger_row else 0,

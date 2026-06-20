@@ -271,6 +271,11 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
 
     from app.plan_enforcer import _plan_cache_invalidate
     _plan_cache_invalidate(org_id)
+    try:
+        from app.credits.stream_hub import hub
+        hub.publish(org_id)
+    except Exception:
+        pass
     logger.info(f"Plan activated atomically: org={org_id} plan={plan} payment={payment_id}")
     try:
         from app.core.analytics import capture, org_properties

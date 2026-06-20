@@ -159,6 +159,24 @@ def get_plan_config(tier: str) -> dict:
     return PLAN_CONFIG.get(_normalize_tier(tier), PLAN_CONFIG["trial"])
 
 
+# sync_method → hours between scheduled syncs. SINGLE SOURCE OF TRUTH used by
+# BOTH the scheduler (task_scheduled_sync — when to re-sync) AND the data-
+# freshness badge (what "fresh" means). Deriving both from one value means the
+# badge can never disagree with the actual cadence (the old bug: badge said
+# "stale >6h" while early actually synced every 24h → always red).
+_SYNC_METHOD_HOURS: dict[str, float | None] = {
+    "manual":            None,  # no scheduled sync — user triggers it
+    "6h_cron":           6.0,
+    "realtime_webhook":  1.0,   # webhook is real-time; cron is the hourly safety net
+}
+
+
+def sync_interval_hours(tier: str) -> float | None:
+    """Hours between scheduled syncs for a tier (None = manual only)."""
+    method = get_plan_config(tier).get("sync_method", "manual")
+    return _SYNC_METHOD_HOURS.get(method, 24.0)
+
+
 # ── Org plan info ─────────────────────────────────────────────────────────────
 
 # In-process 30s cache — plan/tier changes rarely (only on billing events).

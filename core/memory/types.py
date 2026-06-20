@@ -145,9 +145,11 @@ class Cursor(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     value: str = Field(..., description="Opaque cursor value (sync token / timestamp / hash)")
-    strategy: Literal["native", "updated_at", "content_hash"] = Field(
+    strategy: Literal["native", "updated_at", "content_hash", "backfill"] = Field(
         ...,
-        description="Which delta-detection strategy produced this cursor",
+        description="Which delta-detection strategy produced this cursor. "
+        "'backfill' = paginating existing items on first connect (Drive), "
+        "switched to the native delta token once the backfill is exhausted.",
     )
 
 

@@ -34,6 +34,32 @@ from core.memory.types import (
 log = get_logger(__name__)
 SOURCE_TYPE = "gdrive"
 
+# File types with no extractable text — skipped so photos/videos/audio/binaries
+# don't burn a sync credit + LLM call for zero signal (Drive captures only the
+# filename, so an image gives nothing worth extracting).
+_SKIP_MIME_PREFIXES = ("image/", "video/", "audio/")
+_SKIP_MIME_EXACT = {
+    "application/zip",
+    "application/x-zip-compressed",
+    "application/octet-stream",
+    "application/vnd.google-apps.folder",
+}
+_FILE_FIELDS = "files(id,name,mimeType,modifiedTime,owners,webViewLink)"
+
+
+def _keep_file(f: dict[str, Any]) -> bool:
+    """Skip ONLY files with genuinely no extractable text — photos / video /
+    audio / binaries (the current pipeline can't OCR an image, so they yield no
+    signal). We deliberately DON'T judge by filename: an auto-named file
+    ("DOC-...-WA0015.pdf" from WhatsApp) can still be an important document —
+    we just can't tell from the name. Real fix = read file content, not guess."""
+    mime = f.get("mimeType", "")
+    if not mime:
+        return True
+    if any(mime.startswith(p) for p in _SKIP_MIME_PREFIXES):
+        return False
+    return mime not in _SKIP_MIME_EXACT
+
 
 class DriveAdapter(MemoryAdapter):
     def __init__(
@@ -82,19 +108,42 @@ class DriveAdapter(MemoryAdapter):
         svc = self._service_for()
         try:
             if cursor and cursor.value and cursor.strategy == "native":
-                page_token = cursor.value
-            else:
-                page_token = svc.changes().getStartPageToken().execute().get("startPageToken", "1")
+                # Delta sync — only files changed since the cursor token.
+                resp = svc.changes().list(
+                    pageToken=cursor.value,
+                    pageSize=limit,
+                    fields="newStartPageToken,nextPageToken,changes(fileId,file(id,name,mimeType,modifiedTime,owners,webViewLink))",
+                ).execute()
+                files = [c["file"] for c in resp.get("changes", []) if c.get("file")]
+                records = [_file_to_raw(f) for f in files if _keep_file(f)]
+                next_token = resp.get("newStartPageToken") or resp.get("nextPageToken") or cursor.value
+                return records, Cursor(value=str(next_token), strategy="native"), bool(resp.get("nextPageToken"))
 
-            resp = svc.changes().list(
-                pageToken=page_token,
-                pageSize=limit,
-                fields="newStartPageToken,nextPageToken,changes(fileId,file(id,name,mimeType,modifiedTime,owners,webViewLink))",
-            ).execute()
-            changes = resp.get("changes", [])
-            records = [_file_to_raw(c.get("file", {})) for c in changes if c.get("file")]
-            next_token = resp.get("newStartPageToken") or resp.get("nextPageToken") or page_token
-            return records, Cursor(value=str(next_token), strategy="native"), bool(resp.get("nextPageToken"))
+            # First connect (no cursor) OR ongoing backfill of EXISTING files.
+            # The changes API only returns FUTURE changes, so a fresh connect must
+            # backfill via files.list or it pulls nothing. Paginate existing files
+            # newest-first (folders excluded); when exhausted, pin the changes
+            # start-token so all SUBSEQUENT syncs do cheap delta-only pulls.
+            kwargs: dict[str, Any] = {
+                "pageSize": limit,
+                "orderBy": "modifiedTime desc",
+                "q": "trashed = false and mimeType != 'application/vnd.google-apps.folder'",
+                "fields": "nextPageToken," + _FILE_FIELDS,
+            }
+            if cursor and cursor.strategy == "backfill" and cursor.value:
+                kwargs["pageToken"] = cursor.value
+            resp = svc.files().list(**kwargs).execute()
+            records = [
+                _file_to_raw(f) for f in resp.get("files", [])
+                if _keep_file(f)
+            ]
+            next_page = resp.get("nextPageToken")
+            if next_page:
+                # More existing files to backfill on the next pull.
+                return records, Cursor(value=str(next_page), strategy="backfill"), True
+            # Backfill complete → switch to delta via the changes start-token.
+            start_token = svc.changes().getStartPageToken().execute().get("startPageToken", "1")
+            return records, Cursor(value=str(start_token), strategy="native"), False
         except HttpError as e:
             if e.resp.status == 429:
                 retry_after = float(e.resp.get("retry-after", "1"))
