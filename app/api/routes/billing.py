@@ -627,9 +627,11 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     if event["type"] != "checkout.session.completed":
         return {"ack": True}
 
+    # StripeObject supports the dict protocol ([] / in) but NOT .get() — use
+    # bracket access. We stored the Checkout Session id as the order_id.
     session = event["data"]["object"]
-    order_id = session.get("id")
-    payment_id = session.get("payment_intent") or session.get("id")
+    order_id = session["id"]
+    payment_id = (session["payment_intent"] if "payment_intent" in session else None) or order_id
     _fulfill_payment(db, order_id, payment_id)
     return {"ack": True}
 
