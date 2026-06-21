@@ -73,6 +73,7 @@ from app.api.routes import mcp_oauth as mcp_oauth_routes
 from app.api.routes import messages as messages_routes
 from app.api.routes import benchmarks as benchmarks_routes
 from app.api.routes import activity as activity_routes  # Phase 9
+from app.api.routes import expertise as expertise_routes  # domain modules (read-only)
 
 # v2 brain routers — single backend, single process. Routes mounted at /v1/*
 # (intelligence, metrics, persona, mapping, audit, ingest). Auth is shared
@@ -296,6 +297,7 @@ app.include_router(mcp_oauth_routes.router)
 app.include_router(messages_routes.router)
 app.include_router(benchmarks_routes.router)
 app.include_router(activity_routes.router)  # Phase 9 — live SSE feed
+app.include_router(expertise_routes.router)  # Expertise — domain modules (read-only)
 
 # ── v2 brain mounted ───────────────────────────────────────────────────────
 app.include_router(v2_intelligence_router.router)
