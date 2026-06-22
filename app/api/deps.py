@@ -16,6 +16,15 @@ JWT_SECRET = os.getenv("JWT_SECRET", "genios-secret-key-replace-in-production")
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
+# Surfaced verbatim in the 401 body. The dashboard keys off detail.code to tell
+# "session is dead, clean-logout + redirect to /login" apart from other 4xx.
+# TOKEN_REVOKED = JWT valid but its org no longer exists (deleted/wiped).
+# SESSION_EXPIRED = JWT expired or signature invalid (decode failed).
+_SESSION_EXPIRED_DETAIL = {
+    "code": "SESSION_EXPIRED",
+    "message": "Your session has expired. Please log in again.",
+}
+
 # ── Kill switch — cached in Redis, checked on every API request ───────────────
 _KILL_SWITCH_CACHE_KEY = "feature_flag:kill_switch_all"
 _KILL_SWITCH_CACHE_TTL = 10  # seconds — re-check DB at most every 10s
@@ -157,7 +166,10 @@ def verify_api_key(
         org_id = _verify_jwt_and_stash_ctx(token, request)
         if org_id is not None:
             return org_id
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
+        # Token was JWT-shaped but failed to decode (expired / bad signature).
+        # Return a structured code so the dashboard clean-logs-out instead of
+        # leaving the user in a half-dead session.
+        raise HTTPException(status_code=401, detail=_SESSION_EXPIRED_DETAIL)
 
     # ── Path 2: API key (programmatic / customer agents) ──────────────────
     if not token.startswith("gn_live_"):

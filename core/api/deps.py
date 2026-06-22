@@ -77,6 +77,14 @@ def require_org(
     if x_dev_org and settings.GENIOS_ENV.lower() != "production":
         return x_dev_org
 
+    # A session JWT was supplied (cookie or Bearer) but never resolved — it
+    # decoded-failed (expired / bad signature). Surface a code the dashboard
+    # recognises so it cleanly logs out instead of looping on a dead token.
+    if jwt_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=_SESSION_EXPIRED_DETAIL,
+        )
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="missing auth (cookie session, Bearer token, or X-Dev-Org)",
@@ -134,6 +142,12 @@ def require_org_and_policy(
     if x_dev_org and settings.GENIOS_ENV.lower() != "production":
         return {"org_id": x_dev_org, "policy": None, "agent_uuid": None, "scope_source": "dev"}
 
+    # JWT supplied but decode-failed (expired / bad signature) → dead session.
+    if jwt_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=_SESSION_EXPIRED_DETAIL,
+        )
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="missing auth (cookie session, Bearer token, or X-Dev-Org)",
@@ -212,6 +226,16 @@ def _org_exists(session: Session, org_id: str) -> bool:
 # the user to know what DevTools is.
 _TOKEN_REVOKED_DETAIL = {
     "code": "TOKEN_REVOKED",
+    "message": "Your session has expired. Please log in again.",
+}
+
+# Same purpose as TOKEN_REVOKED but for the other dead-session case: a JWT that
+# was supplied yet failed to decode (expired or bad signature). The dashboard
+# treats both codes as "clean-logout + redirect to /login" — without a code the
+# user would sit in a broken half-logged-in state (org_id still in localStorage,
+# every call 401'ing). Keep the two codes distinct for log triage.
+_SESSION_EXPIRED_DETAIL = {
+    "code": "SESSION_EXPIRED",
     "message": "Your session has expired. Please log in again.",
 }
 
