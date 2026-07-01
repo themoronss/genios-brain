@@ -539,6 +539,26 @@ def expire_stale_plans(db: Session):
         for r in entered_grace + expired:
             _plan_cache_invalidate(str(r[0]))
 
+        # Churn signal — fire one event per org as it flips active→expired.
+        # This job is the SINGLE place that transition happens and RETURNING
+        # gives exactly the rows that flipped (guarded by plan_status='active'),
+        # so it's exactly-once with no request-path latency. Paid tier expiring
+        # = revenue churn; trial expiring = trial-end (a different funnel stage).
+        if expired:
+            try:
+                from app.core.analytics import capture
+                for r in expired:
+                    tier = (r[1] or "trial").lower()
+                    if tier in ("trial", ""):
+                        capture(str(r[0]), "trial_expired", {"tier": tier})
+                    else:
+                        capture(str(r[0]), "subscription_expired", {
+                            "tier": tier,
+                            "$set": {"is_paying": False, "plan_status": "expired"},
+                        })
+            except Exception:
+                pass
+
         if entered_grace:
             logger.info(f"Entered grace: {len(entered_grace)} plans")
         if expired:

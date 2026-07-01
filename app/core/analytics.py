@@ -24,6 +24,27 @@ llm_cost_var: ContextVar = ContextVar("genios_llm_cost", default=None)
 # MRR (INR / month) per plan — keep in sync with billing.PLAN_PRICES_PAISE.
 _PLAN_MRR_INR = {"early": 4500, "hustler": 4500, "startup": 25000}
 
+# Fixed INR-per-USD rate used ONLY to normalize multi-gateway revenue into one
+# currency for dashboards (Razorpay charges INR, Stripe charges USD). It is NOT
+# a live FX feed — the gateway's settled amount is the true ₹. Override per-env
+# via INR_PER_USD when the rate drifts materially.
+INR_PER_USD = float(os.getenv("INR_PER_USD", "83"))
+
+
+def to_inr_paise(amount_minor: int, currency: str) -> int:
+    """Normalize a charged amount — given in the currency's MINOR unit (paise for
+    INR, cents for USD) — to INR paise, so revenue across Razorpay (INR) and
+    Stripe (USD) can be summed in one currency without mixing units.
+
+    INR: already paise → returned unchanged.
+    USD: cents × INR_PER_USD = INR paise  (e.g. 29900¢ × 83 = 2,481,700 paise).
+    """
+    if not amount_minor:
+        return 0
+    if (currency or "INR").upper() == "USD":
+        return int(round(amount_minor * INR_PER_USD))
+    return int(amount_minor)
+
 
 def capture(org_id: str, event: str, properties: dict = None):
     """Send one event to PostHog via a direct HTTP POST. Never raises.
@@ -64,14 +85,21 @@ def record_llm_cost(cost_usd: float, tokens: int):
         acc["tokens"] += tokens or 0
 
 
-def org_properties(plan: str, credits: int = None, created_at=None) -> dict:
+def org_properties(plan: str, credits: int = None, created_at=None,
+                   is_internal: bool = False) -> dict:
     """PostHog person ($set) properties for an org/account, so DAU / retention
-    / revenue can be sliced by plan, MRR and paying status."""
+    / revenue can be sliced by plan, MRR and paying status.
+
+    `is_internal` flags founder/test/demo accounts. Every dashboard filters on a
+    cohort where is_internal != true, so internal traffic never pollutes the
+    numbers. Defaults False so real customers are external by default.
+    """
     plan = (plan or "trial").lower()
     props = {
         "plan": plan,
         "is_paying": plan not in ("trial", ""),
         "mrr_inr": _PLAN_MRR_INR.get(plan, 0),
+        "is_internal": bool(is_internal),
     }
     if credits is not None:
         props["credits_balance"] = credits

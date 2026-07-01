@@ -170,6 +170,7 @@ def login(request: LoginRequest, http_request: Request, db: Session = Depends(ge
             plan=result.subscription_tier,
             credits=(result.credits or 0) + (result.topup_credits or 0),
             created_at=result.created_at,
+            is_internal=getattr(result, "is_internal", False),
         ),
     })
 

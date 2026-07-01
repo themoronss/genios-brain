@@ -288,6 +288,37 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
         # credit pool / ledger row land, or NONE. Prevents the dreaded
         # "paid but no credits" state. See UNIT_ECONOMICS.md §11.
         new_credits = plan_config["credits"]
+
+        # CLAIM this activation: flip the subscription pending→active ONCE.
+        # rowcount tells us whether THIS call is the real activation or a
+        # duplicate (the verify+webhook race). Everything below — credit reset,
+        # ledger, the revenue event — runs ONLY on the real activation, so
+        # credits are never reset twice and `payment_completed` never
+        # double-counts revenue. Concurrency-safe: the second racer blocks on
+        # the row lock, then sees status != 'pending' and gets rowcount 0.
+        claimed = db.execute(
+            text("""
+                UPDATE subscriptions
+                SET status       = 'active',
+                    payment_id   = :payment_id,
+                    period_start = :now,
+                    period_end   = :end
+                WHERE order_id = :order_id AND org_id = :org_id
+                  AND status = 'pending'
+            """),
+            {"payment_id": payment_id, "now": now, "end": period_end,
+             "order_id": order_id, "org_id": org_id},
+        ).rowcount
+        if not claimed:
+            # Already fulfilled by the other path (verify/webhook). Do NOT
+            # re-reset credits and do NOT re-fire analytics.
+            db.rollback()
+            logger.info(
+                "Plan activation skipped — already fulfilled: org=%s order=%s",
+                org_id, order_id,
+            )
+            return
+
         db.execute(
             text("""
                 UPDATE orgs
@@ -310,20 +341,8 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
                 "credits": new_credits,
             },
         )
-        db.execute(
-            text("""
-                UPDATE subscriptions
-                SET status       = 'active',
-                    payment_id   = :payment_id,
-                    period_start = :now,
-                    period_end   = :end
-                WHERE order_id = :order_id AND org_id = :org_id
-            """),
-            {"payment_id": payment_id, "now": now, "end": period_end,
-             "order_id": order_id, "org_id": org_id},
-        )
-        # Ledger row — idempotent on payment_id so verify+webhook race
-        # doesn't double-credit.
+        # Ledger row — idempotent on payment_id (belt-and-braces alongside the
+        # claim above).
         db.execute(
             text("""
                 INSERT INTO credit_ledger
@@ -341,6 +360,14 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
                 "key": f"plan_activate:{payment_id}",
             },
         )
+        # Pull the charged amount for the revenue event while we're in the txn.
+        sub_row = db.execute(
+            text("""
+                SELECT amount_paise, currency, processor
+                FROM subscriptions WHERE order_id = :oid AND org_id = :org
+            """),
+            {"oid": order_id, "org": org_id},
+        ).fetchone()
         db.commit()
     except Exception as e:
         db.rollback()
@@ -359,12 +386,52 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
     except Exception:
         pass
     logger.info(f"Plan activated atomically: org={org_id} plan={plan} payment={payment_id}")
+    # Analytics — fires EXACTLY ONCE per real activation (guarded by the claim
+    # above). `plan_upgraded` = lifecycle/funnel; `payment_completed` = the
+    # AUTHORITATIVE server-side revenue event (covers Razorpay AND Stripe — the
+    # client-side payment events are unreliable). `amount_inr` normalizes USD→INR
+    # so revenue sums in one currency.
     try:
-        from app.core.analytics import capture, org_properties
+        from app.core.analytics import capture, org_properties, to_inr_paise
         capture(org_id, "plan_upgraded", {
             "plan": plan,
             "payment_id": payment_id,
             "$set": org_properties(plan=plan),
+        })
+        amount_paise = (sub_row.amount_paise if sub_row else None) or 0
+        currency = (sub_row.currency if sub_row else "INR") or "INR"
+        capture(org_id, "payment_completed", {
+            "plan": plan,
+            "invoice_type": "subscription",
+            "amount_paise": amount_paise,
+            "currency": currency,
+            "processor": (sub_row.processor if sub_row else "razorpay") or "razorpay",
+            "amount_inr": round(to_inr_paise(amount_paise, currency) / 100, 2),
+            "payment_id": payment_id,
+        })
+    except Exception:
+        pass
+
+
+def _emit_topup_revenue(org_id: str, pack_id: str, credits: int,
+                        payment_id: str, sub_row) -> None:
+    """Server-side `topup_purchased` revenue event — fired EXACTLY ONCE per real
+    top-up fulfilment (each caller guards on its claim rowcount). Mirrors the
+    plan `payment_completed` shape; `amount_inr` normalizes USD→INR so top-up
+    and subscription revenue sum in one currency."""
+    try:
+        from app.core.analytics import capture, to_inr_paise
+        amount_paise = (sub_row.amount_paise if sub_row else None) or 0
+        currency = (sub_row.currency if sub_row else "INR") or "INR"
+        capture(org_id, "topup_purchased", {
+            "pack": pack_id,
+            "credits": credits,
+            "invoice_type": "topup",
+            "amount_paise": amount_paise,
+            "currency": currency,
+            "processor": (sub_row.processor if sub_row else "razorpay") or "razorpay",
+            "amount_inr": round(to_inr_paise(amount_paise, currency) / 100, 2),
+            "payment_id": payment_id,
         })
     except Exception:
         pass
@@ -510,13 +577,21 @@ def verify_topup(org_id: str, body: VerifyTopupRequest, db: Session = Depends(ge
         )
         # Step 2: only NOW mark subscription paid. Atomic — if topup
         # raised above this never runs and the txn rolls back as a unit.
-        db.execute(
+        # `AND status='pending'` makes this a claim: rowcount tells us whether
+        # THIS call is the real fulfilment or a verify+webhook duplicate, so
+        # the revenue event below fires exactly once.
+        claimed = db.execute(
             text("""
                 UPDATE subscriptions SET status = 'active', payment_id = :pid
-                WHERE order_id = :oid AND org_id = :org_id
+                WHERE order_id = :oid AND org_id = :org_id AND status = 'pending'
             """),
             {"pid": body.razorpay_payment_id, "oid": body.razorpay_order_id, "org_id": org_id},
-        )
+        ).rowcount
+        sub_row = db.execute(
+            text("""SELECT amount_paise, currency, processor FROM subscriptions
+                    WHERE order_id = :oid AND org_id = :org"""),
+            {"oid": body.razorpay_order_id, "org": org_id},
+        ).fetchone()
         db.commit()
     except Exception as e:
         db.rollback()
@@ -529,6 +604,9 @@ def verify_topup(org_id: str, body: VerifyTopupRequest, db: Session = Depends(ge
 
     from app.plan_enforcer import _plan_cache_invalidate
     _plan_cache_invalidate(org_id)
+    if claimed:
+        _emit_topup_revenue(org_id, body.pack, credits,
+                            body.razorpay_payment_id, sub_row)
     return {"granted": True, "pack": body.pack, "credits": credits,
             "label": label, "balance_after": res.balance_after}
 
@@ -543,7 +621,8 @@ def _fulfill_payment(db: Session, order_id: str, payment_id: str) -> None:
     idempotent on payment_id (so a webhook + verify race credits only once)."""
     row = db.execute(
         text("""
-            SELECT org_id, plan, invoice_type FROM subscriptions
+            SELECT org_id, plan, invoice_type, amount_paise, currency, processor
+            FROM subscriptions
             WHERE order_id = :oid AND status = 'pending'
         """),
         {"oid": order_id},
@@ -567,16 +646,19 @@ def _fulfill_payment(db: Session, order_id: str, payment_id: str) -> None:
                 related_id=payment_id,
                 idempotency_key=f"topup:{payment_id}",
             )
-            db.execute(
+            claimed = db.execute(
                 text("""
                     UPDATE subscriptions SET status = 'active', payment_id = :pid
-                    WHERE order_id = :oid
+                    WHERE order_id = :oid AND status = 'pending'
                 """),
                 {"pid": payment_id, "oid": order_id},
-            )
+            ).rowcount
             db.commit()
             from app.plan_enforcer import _plan_cache_invalidate
             _plan_cache_invalidate(str(row.org_id))
+            if claimed:
+                _emit_topup_revenue(str(row.org_id), row.plan, credits,
+                                    payment_id, row)
         except Exception as e:
             db.rollback()
             logger.error(f"Top-up webhook credit grant failed: {e}")

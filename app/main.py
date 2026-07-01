@@ -66,6 +66,7 @@ from app.api.routes import proactive as proactive_routes
 from app.api.routes import writeback as writeback_routes
 from app.api.routes import feedback as feedback_routes
 from app.api.routes import admin as admin_routes
+from app.api.routes import admin_metrics
 from app.api.routes import stream as stream_routes
 from app.api.routes import brain_activity as brain_activity_routes
 from app.api.routes import mcp as mcp_routes
@@ -290,6 +291,7 @@ app.include_router(proactive_routes.router)
 app.include_router(writeback_routes.router)
 app.include_router(feedback_routes.router)
 app.include_router(admin_routes.router)
+app.include_router(admin_metrics.router)
 app.include_router(stream_routes.router)
 app.include_router(brain_activity_routes.router)
 app.include_router(mcp_routes.router)
