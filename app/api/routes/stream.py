@@ -14,17 +14,14 @@ webhook use case.)
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.api.deps import get_db, verify_api_key
-from core.delivery.bands import to_band
 
 logger = logging.getLogger(__name__)
 
@@ -47,58 +44,12 @@ async def _event_gen(
         if await request.is_disconnected():
             return
 
-        try:
-            rows = db.execute(
-                text("""
-                    SELECT id, insight_type, category, priority, confidence,
-                           title, reason, action, subject_entity_id, created_at,
-                           evidence, precedent_links, suggested_action,
-                           confidence_level, rationale
-                    FROM recommendations
-                    WHERE org_id = :oid
-                      AND delivered_at IS NULL
-                      AND priority >= :pri
-                    ORDER BY created_at ASC
-                    LIMIT 50
-                """),
-                {"oid": org_id, "pri": min_priority},
-            ).fetchall()
-        except Exception as e:
-            logger.warning(f"sse poll failed: {e}")
-            rows = []
-
-        for r in rows:
-            # Payload v2 — new fields always emitted; consumers built against
-            # v1 can ignore them (additive contract).
-            payload = {
-                "payload_version": 2,
-                "recommendation_id": str(r[0]),
-                "insight_type": r[1],
-                "category": r[2],
-                "priority": float(r[3] or 0),
-                "confidence": to_band(r[4]).value,
-                "confidence_level": r[13],
-                "title": r[5],
-                "rationale": r[14] or r[6],
-                "reason": r[6],  # v1 compat
-                "action": r[7],  # v1 compat
-                "suggested_action": r[12],
-                "evidence": r[10] or [],
-                "precedent_links": r[11] or [],
-                "subject_entity_id": str(r[8]) if r[8] else None,
-                "created_at": r[9].isoformat() if r[9] else None,
-            }
-            yield {"event": "recommendation", "data": json.dumps(payload, default=str)}
-
-            try:
-                db.execute(
-                    text("UPDATE recommendations SET delivered_at = NOW() WHERE id = :id"),
-                    {"id": str(r[0])},
-                )
-                db.commit()
-            except Exception as e:
-                db.rollback()
-                logger.warning(f"sse delivered_at update failed: {e}")
+        # `recommendations` was dropped in migration 0015 with the dead System-B
+        # brain router that fed it. No v2 source writes it, so there is nothing
+        # to stream — this loop emits heartbeats only (keeping the SSE contract
+        # + connection alive) until a v2 stream source is wired from
+        # `proactive_insights`. The per-row emit + delivered_at UPDATE were
+        # removed with the dropped table.
 
         now = asyncio.get_event_loop().time()
         if now - last_heartbeat >= _HEARTBEAT_SECONDS:
@@ -134,54 +85,9 @@ def list_pending_recommendations(
     min_priority = max(0.0, min(1.0, float(min_priority)))
     limit = max(1, min(100, int(limit)))
 
-    rows = db.execute(
-        text("""
-            SELECT id, insight_type, category, priority, confidence,
-                   title, reason, action, subject_entity_id, created_at,
-                   evidence, precedent_links, suggested_action,
-                   confidence_level, rationale
-            FROM recommendations
-            WHERE org_id = :oid
-              AND delivered_at IS NULL
-              AND priority >= :pri
-            ORDER BY priority DESC, created_at ASC
-            LIMIT :lim
-        """),
-        {"oid": org_id, "pri": min_priority, "lim": limit},
-    ).fetchall()
-
-    items = []
-    for r in rows:
-        items.append({
-            "payload_version": 2,
-            "recommendation_id": str(r[0]),
-            "insight_type": r[1],
-            "category": r[2],
-            "priority": float(r[3] or 0),
-            "confidence": float(r[4] or 0),
-            "confidence_level": r[13],
-            "title": r[5],
-            "rationale": r[14] or r[6],
-            "reason": r[6],
-            "action": r[7],
-            "suggested_action": r[12],
-            "evidence": r[10] or [],
-            "precedent_links": r[11] or [],
-            "subject_entity_id": str(r[8]) if r[8] else None,
-            "created_at": r[9].isoformat() if r[9] else None,
-        })
-
-    if ack and items:
-        ids = [i["recommendation_id"] for i in items]
-        try:
-            db.execute(
-                text("UPDATE recommendations SET delivered_at = NOW() "
-                     "WHERE id = ANY(CAST(:ids AS uuid[]))"),
-                {"ids": ids},
-            )
-            db.commit()
-        except Exception as e:
-            db.rollback()
-            logger.warning(f"pending poll ack failed: {e}")
-
+    # `recommendations` was dropped in migration 0015 with the dead System-B
+    # brain router that fed it. No v2 source writes it, so this poll returns an
+    # empty set (route kept live so existing clients don't 404) until a v2
+    # source is wired from `proactive_insights`.
+    items: list[dict] = []
     return {"recommendations": items, "count": len(items), "ack": ack}

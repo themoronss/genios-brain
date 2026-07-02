@@ -24,7 +24,6 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
@@ -37,93 +36,19 @@ _POLL_INTERVAL_S = 2.0
 _MAX_PER_TICK = 10
 
 
-def _anonymize_contact(name: str) -> str:
-    if not name:
-        return "(unknown)"
-    parts = name.strip().split()
-    if not parts:
-        return "(unknown)"
-    initial = parts[0][0].upper()
-    suffix = "."
-    if len(parts) > 1:
-        suffix = " " + parts[1][0].upper() + "."
-    return f"{initial}{suffix}"
-
-
 def _fetch_activity(db: Session, since_iso: str | None) -> list[dict]:
-    """Pull recent items from recommendations + interactions live-fetch."""
-    out: list[dict] = []
-    since_clause = ""
-    params = {"lim": _MAX_PER_TICK}
-    if since_iso:
-        since_clause = "AND created_at > :since"
-        params["since"] = since_iso
+    """Pull recent brain activity for the public "watch the brain think" feed.
 
-    try:
-        rows = db.execute(text(f"""
-            SELECT id::text AS id, created_at, insight_type,
-                   COALESCE(title, reason, '') AS msg
-            FROM recommendations
-            WHERE created_at > NOW() - INTERVAL '5 minutes'
-              {since_clause}
-            ORDER BY created_at DESC
-            LIMIT :lim
-        """), params).fetchall()
-        for r in rows:
-            out.append({
-                "kind": "decision",
-                "id": str(r.id),
-                "ts": r.created_at.isoformat() if r.created_at else None,
-                "label": r.insight_type or "insight",
-                "text": (r.msg or "")[:160],
-            })
-    except Exception as e:
-        logger.debug(f"activity recommendations fetch failed: {e}")
+    Neutralized on v2: all three original sources were dropped in migration
+    0015 — `recommendations` + `pending_alerts` (dead System-B brain router,
+    now removed) and `interactions` (v1 auto-classified email table, replaced by
+    graph_nodes/facts). Querying them here would fail on every 2s poll tick, so
+    those blocks are removed rather than left to log-spam.
 
-    try:
-        rows = db.execute(text("""
-            SELECT id::text AS id, interaction_at, source,
-                   COALESCE(subject, summary, '') AS msg
-            FROM interactions
-            WHERE interaction_at > NOW() - INTERVAL '5 minutes'
-              AND source IN ('gmail_live', 'calendar_live')
-            ORDER BY interaction_at DESC
-            LIMIT :lim
-        """), {"lim": _MAX_PER_TICK}).fetchall()
-        for r in rows:
-            out.append({
-                "kind": "live_fetch",
-                "id": str(r.id),
-                "ts": r.interaction_at.isoformat() if r.interaction_at else None,
-                "label": r.source,
-                "text": (r.msg or "")[:160],
-            })
-    except Exception as e:
-        logger.debug(f"activity interactions fetch failed: {e}")
-
-    try:
-        rows = db.execute(text("""
-            SELECT id::text AS id, created_at, insight_type,
-                   COALESCE(title, '') AS msg, contact_name
-            FROM pending_alerts
-            WHERE created_at > NOW() - INTERVAL '5 minutes'
-            ORDER BY created_at DESC
-            LIMIT :lim
-        """), {"lim": _MAX_PER_TICK}).fetchall()
-        for r in rows:
-            out.append({
-                "kind": "proactive_alert",
-                "id": str(r.id),
-                "ts": r.created_at.isoformat() if r.created_at else None,
-                "label": r.insight_type or "alert",
-                "text": (r.msg or "")[:160],
-                "contact": _anonymize_contact(r.contact_name or ""),
-            })
-    except Exception:
-        pass  # pending_alerts may not exist on older deploys
-
-    out.sort(key=lambda x: x.get("ts") or "", reverse=True)
-    return out[: _MAX_PER_TICK]
+    Kept as a live route (mounted, public, SSE) returning an empty feed until a
+    v2 activity source is wired from `proactive_insights` / the graph event log.
+    """
+    return []
 
 
 @router.get("/v1/activity/stream")

@@ -673,15 +673,22 @@ def task_refresh_bundle(self, org_id: str, contact_id: str):
 
 @celery.task(bind=True, queue="brain_router")
 def task_brain_router(self):
-    """Phase 2: one router tick — consume events, debounce, reason, gate."""
-    try:
-        from app.brain.router import run_once
-        return run_once()
-    except Exception:
-        # Router failures must not retry — each tick is independent and
-        # losing one tick is cheaper than a retry storm on Upstash.
-        logger.exception("brain_router tick failed")
-        return {"consumed": 0, "flushed": 0, "pushed": 0, "error": True}
+    """Stub — dead System B removed (app/brain/router.py deleted).
+
+    The router consumed the event bus, ran app/graph/detectors/* (which
+    queried v1 tables dropped in migration 0015), and wrote to the
+    `recommendations` + `pending_alerts` tables (also dropped). It produced
+    nothing on the v2 schema and burned an Upstash Redis tick every 60s. The
+    `brain-router` beat entry was removed to stop the tick; this stub remains
+    only so any straggler enqueue (or worker still bound to the brain_router
+    queue) no-ops instead of raising ModuleNotFoundError.
+
+    Proactive intelligence now lives entirely in core/proactive/* (module
+    rulesets + hypothesizer + timing_detectors), driven by task_proactive_scan
+    and the bus event subscriber, writing proactive_insights.
+    """
+    logger.warning("task_brain_router called but System B is removed — no-op")
+    return {"consumed": 0, "flushed": 0, "pushed": 0, "status": "noop"}
 
 
 @celery.task(bind=True, queue="low_priority")
@@ -908,15 +915,6 @@ celery.conf.beat_schedule = {
         "schedule": WEBHOOK_DELIVERY_INTERVAL_SEC,
         "options": {"queue": "high_priority"},
     },
-    # Phase 2: brain router tick — consume event stream, debounce, reason, gate.
-    # Interval bumped 15s -> BRAIN_ROUTER_INTERVAL_SEC (default 60s): event_log
-    # debounce window is 30s, so this adds only a few tens of seconds of latency
-    # while cutting Redis traffic 4x. Critical for staying under Upstash limits.
-    "brain-router": {
-        "task": "app.celery_app.task_brain_router",
-        "schedule": BRAIN_ROUTER_INTERVAL_SEC,
-        "options": {"queue": "brain_router"},
-    },
     # Phase 4.5: hourly lifecycle transitions
     "lifecycle-hourly": {
         "task": "app.celery_app.task_lifecycle_hourly",
@@ -933,14 +931,6 @@ celery.conf.beat_schedule = {
     "calibration-nightly": {
         "task": "app.celery_app.task_calibration_nightly",
         "schedule": crontab(hour=3, minute=0),
-        "options": {"queue": "low_priority"},
-    },
-    # Section B intelligence: per-contact baselines for z-score detectors.
-    # Runs after lifecycle (2:30) and before calibration (3:00) so calibration
-    # sees fresh baselines.
-    "baseline-writer-nightly": {
-        "task": "app.celery_app.task_baseline_writer",
-        "schedule": crontab(hour=2, minute=45),
         "options": {"queue": "low_priority"},
     },
     # Phase 1.3: Renew Gmail + Calendar watch channels daily before 7-day expiry.
@@ -961,22 +951,6 @@ celery.conf.beat_schedule = {
     # this file, hourly) drives all per-connector sync now through the
     # generic core.memory.sync_runner. Leaving the orphan entry crashed
     # Beat at startup with ModuleNotFoundError.
-    # Phase 6: Churn scan — daily engagement_health snapshot at 02:15 UTC
-    # (between lifecycle hourly :17 and lifecycle nightly 02:30 — staggered
-    # so the brain has fresh score data when the detector fires).
-    "churn-scan-daily": {
-        "task": "app.celery_app.task_churn_scan",
-        "schedule": crontab(hour=2, minute=15),
-        "options": {"queue": "low_priority"},
-    },
-    # Phase 6: Retention offer composition — runs after churn scan and
-    # baseline writer. Pushes into pending_alerts → surfaces in next
-    # Claude/MCP turn.
-    "retention-offers-daily": {
-        "task": "app.celery_app.task_retention_offers",
-        "schedule": crontab(hour=3, minute=15),
-        "options": {"queue": "low_priority"},
-    },
 }
 
 

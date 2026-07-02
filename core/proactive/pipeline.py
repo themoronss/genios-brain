@@ -563,6 +563,23 @@ def run_all_for_org(
         aggregate["webhook_success_total"] += int(r.get("webhook_success") or 0)
         aggregate["webhooks_called_total"] += int(r.get("webhooks_called") or 0)
         aggregate["suppressed_dedupe_total"] += int(r.get("suppressed_dedupe") or 0)
+
+    # Timing detectors — the 3 v2-ported time-based signals (going_cold,
+    # role_change, overdue_commitment). Module rulesets above key off `facts`
+    # predicate changes; these fire on the passage of time instead, reading
+    # `graph_nodes` / `facts` directly. Same `proactive_insights` sink, same
+    # 24h signature dedupe, same transaction (no commit here). Isolated so a
+    # detector-side failure can't sink the module scan that already succeeded.
+    try:
+        from core.proactive.timing_detectors import run_timing_detectors
+
+        td = run_timing_detectors(session, org_id=org_id)
+        aggregate["timing_detectors"] = td
+        aggregate["insights_fired_total"] += int(td.get("insights_fired") or 0)
+    except Exception as e:  # noqa: BLE001 — never let timing detectors break the scan
+        log.warning("proactive_timing_detectors_failed", org_id=org_id, error=str(e))
+        aggregate["timing_detectors"] = {"insights_fired": 0, "error": str(e)[:200]}
+
     return aggregate
 
 

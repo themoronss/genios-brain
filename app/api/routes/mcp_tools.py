@@ -385,58 +385,18 @@ def _resolve_org_id_from_bearer(bearer_token: str) -> str | None:
 
 
 def drain_pending_alerts(org_id: str, limit: int = _MAX_ALERTS_PER_RESPONSE) -> list:
-    """Pop up to `limit` undelivered alerts for this org, mark delivered."""
-    if not org_id:
-        return []
-    try:
-        from sqlalchemy import text as _text
-        from app.database import SessionLocal
-        db = SessionLocal()
-        try:
-            rows = db.execute(
-                _text("""
-                    SELECT id, insight_type, contact_name, title, body,
-                           suggested_action, priority, confidence
-                    FROM pending_alerts
-                    WHERE org_id = :oid
-                      AND delivered = FALSE
-                      AND (expires_at IS NULL OR expires_at > NOW())
-                    ORDER BY priority DESC, created_at DESC
-                    LIMIT :lim
-                """),
-                {"oid": org_id, "lim": int(limit)},
-            ).fetchall()
-            if not rows:
-                return []
-            ids = [str(r[0]) for r in rows]
-            db.execute(
-                _text("""
-                    UPDATE pending_alerts
-                    SET delivered = TRUE,
-                        delivered_at = NOW(),
-                        delivered_via = 'mcp'
-                    WHERE id = ANY(CAST(:ids AS uuid[]))
-                """),
-                {"ids": ids},
-            )
-            db.commit()
-            return [
-                {
-                    "id": str(r[0]),
-                    "type": r[1],
-                    "contact": r[2],
-                    "title": r[3],
-                    "body": r[4],
-                    "suggested_action": r[5],
-                    "priority": float(r[6] or 0.0),
-                    "confidence": float(r[7] or 0.0),
-                }
-                for r in rows
-            ]
-        finally:
-            db.close()
-    except Exception:
-        return []
+    """Neutralized — the `pending_alerts` table was dropped in migration 0015.
+
+    This fed the dead System-B brain router (app/brain/router.py, removed): the
+    router wrote proactive pushes into `pending_alerts` for the MCP response to
+    piggyback. With System B gone the source no longer exists, so there is
+    nothing to drain — returning [] keeps every MCP response working while
+    skipping a guaranteed-failing query on every call.
+
+    v2 proactive output lives in `proactive_insights` (core/proactive/*) and is
+    surfaced via the /v1 insight routes + webhooks, not this MCP piggyback.
+    """
+    return []
 
 
 def attach_pending_alerts(data: Any, bearer_token: str) -> Any:

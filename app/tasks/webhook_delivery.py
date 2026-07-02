@@ -720,14 +720,23 @@ def deliver_due_recommendations(org_id: str | None = None) -> dict:
 
 # ── Entry point kept for celery-beat backward compat ──────────────────────
 def deliver_pending_insights(org_id: str | None = None) -> dict:
-    """Schedule + deliver everything due across both legacy insights and recommendations."""
-    enqueued_i = schedule_for_insights(org_id)
-    enqueued_r = schedule_for_recommendations(org_id)
-    r_insights = deliver_due(org_id)
-    r_recs = deliver_due_recommendations(org_id)
-    return {
-        "enqueued": enqueued_i + enqueued_r,
-        "delivered": r_insights["delivered"] + r_recs["delivered"],
-        "retried": r_insights["retried"] + r_recs["retried"],
-        "dead": r_insights["dead"] + r_recs["dead"],
-    }
+    """Neutralized on v2 — every table this module's durable-retry path uses was
+    dropped in migration 0015 (or renamed away):
+
+      * `insights`           — renamed to `proactive_insights` (mig 0014); the
+                               columns queried here (delivery_status,
+                               is_dismissed, generated_at) don't exist on it.
+      * `recommendations`    — dropped (fed by the dead System-B brain router).
+      * `delivery_attempts`  — dropped (durable-retry ledger).
+      * `webhook_config`     — dropped (webhook registry).
+
+    Running the four internal schedule/deliver helpers would therefore raise on
+    every 60s `task_deliver_webhooks` tick. v2 proactive delivery does NOT use
+    this path: `core.proactive.pipeline` signs + POSTs each insight webhook
+    inline (`_sign_and_post`, reading the active webhook set from Redis) at scan
+    time. This entrypoint is kept importable + returns a zeroed summary so the
+    beat task no-ops cleanly. The internal helpers below are left intact for the
+    day the durable-retry ledger is re-introduced on the v2 schema.
+    """
+    logger.info("deliver_pending_insights: no-op (v2 delivers inline; retry ledger tables dropped)")
+    return {"enqueued": 0, "delivered": 0, "retried": 0, "dead": 0}
