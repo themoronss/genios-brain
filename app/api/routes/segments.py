@@ -132,30 +132,13 @@ def list_segments(
     plan_info = get_org_plan(db, org_id)
     max_clusters = plan_info["config"]["max_clusters"]
 
-    rows = db.execute(
-        text("""
-            SELECT gs.id, gs.org_id, gs.name, gs.cluster_type, gs.config,
-                   gs.sync_interval_hours, gs.last_synced_at, gs.created_at,
-                   COUNT(sm.contact_id) AS member_count
-            FROM graph_segments gs
-            LEFT JOIN segment_members sm ON sm.segment_id = gs.id
-            WHERE gs.org_id = :org_id
-            GROUP BY gs.id
-            ORDER BY gs.created_at ASC
-        """),
-        {"org_id": org_id},
-    ).fetchall()
-
-    segments = []
-    for i, row in enumerate(rows):
-        seg = _format_segment(row, member_count=row.member_count or 0)
-        # Mark clusters beyond plan limit as locked
-        seg["locked"] = i >= max_clusters
-        segments.append(seg)
-
+    # v2: `graph_segments` + `segment_members` were dropped in mig 0015; the
+    # segments feature is not yet rebuilt on the v2 graph. Return an empty list
+    # so callers / the genios_list_segments MCP tool get a valid response
+    # instead of a 500. TODO: rebuild segments on graph_nodes/graph_edges.
     return {
-        "segments": segments,
-        "count": len(segments),
+        "segments": [],
+        "count": 0,
         "max_allowed": max_clusters,
         "plan_tier": plan_info["tier"],
     }
@@ -323,36 +306,11 @@ def list_members(
     org_id: str = Depends(verify_api_key),
 ):
     """List all contacts in a segment."""
-    _get_segment_or_404(db, segment_id, org_id)
-
-    rows = db.execute(
-        text("""
-            SELECT c.id, c.name, c.email, c.company, c.relationship_stage,
-                   c.context_score, sm.added_at
-            FROM segment_members sm
-            JOIN contacts c ON c.id = sm.contact_id
-            WHERE sm.segment_id = :sid
-            ORDER BY c.name ASC
-        """),
-        {"sid": segment_id},
-    ).fetchall()
-
-    return {
-        "segment_id": segment_id,
-        "members": [
-            {
-                "id": str(r.id),
-                "name": r.name,
-                "email": r.email,
-                "company": r.company,
-                "relationship_stage": r.relationship_stage,
-                "context_score": float(r.context_score or 0),
-                "added_at": r.added_at.isoformat() if r.added_at else None,
-            }
-            for r in rows
-        ],
-        "count": len(rows),
-    }
+    # v2: `graph_segments` / `segment_members` / `contacts` were dropped in
+    # mig 0015; the segments feature is not yet rebuilt on the v2 graph.
+    # Return empty so the genios_get_segment_members MCP tool gets a valid
+    # response instead of a 500. TODO: rebuild segments on graph_nodes/edges.
+    return {"segment_id": segment_id, "members": [], "count": 0}
 
 
 # ── POST /v1/segment/{id}/sync ────────────────────────────────────────────────
