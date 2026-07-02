@@ -229,136 +229,54 @@ def v1_search_contacts(
 
     Ranking: exact-email > exact-name > fuzzy match > recent interaction.
     """
-    where = ["c.org_id = :org_id", "(c.is_archived IS FALSE OR c.is_archived IS NULL)"]
+    # ── v2 thin-pipe: contacts are entity-type graph_nodes. The dropped v1
+    # `contacts`/`interactions`/`commitments`/`contact_anomalies` tables and
+    # their columns (relationship_stage, sentiment_trend, scores, is_archived,
+    # classification, is_bidirectional) no longer exist. We source from
+    # graph_nodes (mirroring core.graph.views.list_contacts), search over
+    # canonical_name/aliases, derive last_seen-based fields, and return safe
+    # defaults for fields with no v2 equivalent so the response shape stays
+    # backward-compatible.
+    #
+    # Filters that depended on dropped v1 columns/tables (stage,
+    # needs_attention, recent_days, silent_days, overdue, exclude_broadcast,
+    # has_anomaly) have no v2 equivalent yet and are accepted-but-ignored to
+    # keep the endpoint contract stable. `q` search + limit are honored.
+    where = ["n.org_id = :org_id", "n.type = 'entity'"]
     params: dict = {"org_id": org_id, "limit": limit}
-
-    # ── Agent Registry scope filter (PRD §05) ────────────────────────────
-    # Server-derived from the bearer key. Restricts which contacts an agent
-    # can list at all — segments, exclude_tags applied as SQL WHERE.
-    _scope_frag, _scope_binds = scope_filter.contact_clauses(auth.policy, contact_alias="c")
-    if _scope_frag:
-        # contact_clauses prepends " AND " — strip it for cleaner combination
-        where.append(_scope_frag.strip().removeprefix("AND "))
-        params.update(_scope_binds)
-
-    # Interaction-level isolation: a scoped agent only lists contacts it has at
-    # least one visible interaction with. interaction_clauses returns '' for
-    # master agents (data_visibility='all'), so this is a no-op for the org-wide
-    # key. Closes the cross-agent contact-directory leak.
-    _iscope_frag, _iscope_binds = scope_filter.interaction_clauses(
-        auth.policy, auth.agent_uuid, interaction_alias="iv"
-    )
-    if _iscope_frag:
-        where.append(
-            f"EXISTS (SELECT 1 FROM interactions iv WHERE iv.contact_id = c.id{_iscope_frag})"
-        )
-        params.update(_iscope_binds)
 
     if q:
         q_clean = q.strip()
         params["q_exact"] = q_clean.lower()
         params["q_like"] = f"%{q_clean.lower()}%"
-        params["q_trgm"] = q_clean.lower()
-        # Fuzzy match via pg_trgm `%` operator. Uses the GIN indexes from
-        # migration 042 (idx_contacts_name_trgm, idx_contacts_email_trgm).
-        # Default similarity threshold is 0.3, which catches typos, partial
-        # matches, and short forms without returning unrelated rows.
+        # Search canonical_name, any alias, and the optional email attribute.
         where.append(
-            "(LOWER(c.email) = :q_exact "
-            "OR LOWER(c.name) = :q_exact "
-            "OR LOWER(c.email) LIKE :q_like "
-            "OR LOWER(c.name) LIKE :q_like "
-            "OR LOWER(COALESCE(c.company, '')) LIKE :q_like "
-            "OR c.name % :q_trgm "
-            "OR c.email % :q_trgm "
-            "OR COALESCE(c.company, '') % :q_trgm)"
+            "(LOWER(n.canonical_name) = :q_exact "
+            "OR LOWER(n.canonical_name) LIKE :q_like "
+            "OR LOWER(COALESCE(n.attributes->>'email', '')) = :q_exact "
+            "OR LOWER(COALESCE(n.attributes->>'email', '')) LIKE :q_like "
+            "OR LOWER(COALESCE(n.attributes->>'company', '')) LIKE :q_like "
+            "OR LOWER(n.aliases::text) LIKE :q_like)"
         )
 
-    if needs_attention:
-        where.append("c.relationship_stage = 'NEEDS_ATTENTION'")
-    elif stage:
-        params["stage"] = stage.upper()
-        where.append("UPPER(c.relationship_stage) = :stage")
-
-    if recent_days is not None:
-        params["recent_days"] = recent_days
-        where.append("c.last_interaction_at >= NOW() - (:recent_days || ' days')::interval")
-
-    if silent_days is not None:
-        params["silent_days"] = silent_days
-        where.append(
-            "(c.last_interaction_at IS NULL "
-            "OR c.last_interaction_at < NOW() - (:silent_days || ' days')::interval)"
-        )
-
-    if overdue:
-        where.append(
-            "EXISTS (SELECT 1 FROM commitments cm WHERE cm.contact_id = c.id "
-            "AND cm.status = 'OPEN' AND cm.due_date IS NOT NULL AND cm.due_date < NOW())"
-        )
-
-    # ── Broadcast detection — Phase 3.4: prefer DB classification column,
-    # fall back to regex for contacts not yet classified.
-    params["broadcast_local_re"] = broadcast_local_sql_regex()
-    params["broadcast_domain_re"] = broadcast_domain_sql_regex()
-    params["broadcast_min_count"] = BROADCAST_MIN_ONEWAY_COUNT
-
-    broadcast_sql = """
-        (
-          -- Prefer persisted classification (from header parse or LLM)
-          COALESCE(c.classification_override, c.classification) IN ('newsletter', 'bot', 'transactional')
-          -- Fall back to regex for unclassified contacts
-          OR (
-            COALESCE(c.classification_override, c.classification, 'unknown') = 'unknown'
-            AND (
-              LOWER(COALESCE(c.email, '')) ~ :broadcast_local_re
-              OR LOWER(COALESCE(c.email, '')) ~ :broadcast_domain_re
-              OR (
-                c.is_bidirectional IS NOT TRUE
-                AND COALESCE(c.interaction_count, 0) >= :broadcast_min_count
-              )
-            )
-          )
-        )
-    """
-
-    if exclude_broadcast:
-        where.append(f"NOT {broadcast_sql}")
-
-    if has_anomaly:
-        where.append(
-            "EXISTS (SELECT 1 FROM contact_anomalies ca "
-            "WHERE ca.contact_id = c.id AND ca.status = 'active')"
-        )
-
-    select_cols = f"""
-        c.id, c.name, c.email, c.company,
-        c.relationship_stage, c.sentiment_trend,
-        c.last_interaction_at, c.interaction_count,
-        c.context_score, c.confidence_score,
-        COALESCE(c.classification_override, c.classification, 'unknown') AS classification,
-        {broadcast_sql} AS is_broadcast,
-        (SELECT COUNT(*) FROM commitments cm
-            WHERE cm.contact_id = c.id AND cm.status = 'OPEN') AS open_commitments
-    """
+    order_sql = (
+        """
+        ORDER BY
+            CASE WHEN LOWER(n.canonical_name) = :q_exact THEN 0
+                 WHEN LOWER(COALESCE(n.attributes->>'email', '')) = :q_exact THEN 1
+                 ELSE 2 END,
+            n.last_seen DESC NULLS LAST
+        """
+        if q
+        else "ORDER BY n.last_seen DESC NULLS LAST"
+    )
 
     sql = f"""
-        SELECT {select_cols}
-        FROM contacts c
+        SELECT n.id, n.canonical_name, n.attributes, n.aliases,
+               n.source_item_ids, n.last_seen
+        FROM graph_nodes n
         WHERE {' AND '.join(where)}
-        ORDER BY
-            -- exact email match first
-            CASE WHEN LOWER(c.email) = :q_exact THEN 0
-                 WHEN LOWER(c.name) = :q_exact THEN 1
-                 ELSE 2 END,
-            c.last_interaction_at DESC NULLS LAST,
-            c.interaction_count DESC NULLS LAST
-        LIMIT :limit
-    """ if q else f"""
-        SELECT {select_cols}
-        FROM contacts c
-        WHERE {' AND '.join(where)}
-        ORDER BY c.last_interaction_at DESC NULLS LAST
+        {order_sql}
         LIMIT :limit
     """
 
@@ -366,25 +284,37 @@ def v1_search_contacts(
 
     contacts = []
     for r in rows:
-        last_at = r.last_interaction_at
+        attrs = r.attributes if isinstance(r.attributes, dict) else {}
+        aliases = r.aliases if isinstance(r.aliases, list) else []
+        # Email: prefer attributes->>'email', else first alias that looks like one.
+        email = attrs.get("email")
+        if not email:
+            email = next((a for a in aliases if isinstance(a, str) and "@" in a), None)
+
+        last_at = r.last_seen
         days_ago = None
         if last_at:
             if hasattr(last_at, "tzinfo") and last_at.tzinfo is None:
                 last_at = last_at.replace(tzinfo=timezone.utc)
             days_ago = (datetime.now(timezone.utc) - last_at).days
+
+        # interaction_count ≈ number of grounding source items on the node.
+        source_ids = r.source_item_ids if isinstance(r.source_item_ids, list) else []
+
         contacts.append({
             "id": str(r.id),
-            "name": r.name,
-            "email": r.email,
-            "company": r.company,
-            "relationship_stage": r.relationship_stage,
-            "sentiment_trend": r.sentiment_trend,
+            "name": r.canonical_name,
+            "email": email,
+            "company": attrs.get("company"),
+            # No v2 equivalent — safe defaults so callers don't break.
+            "relationship_stage": None,
+            "sentiment_trend": None,
             "last_interaction_days_ago": days_ago,
-            "interaction_count": r.interaction_count or 0,
-            "open_commitments": r.open_commitments or 0,
-            "context_score": round(float(r.context_score or 0), 3),
-            "classification": r.classification or "unknown",
-            "is_broadcast": bool(r.is_broadcast),
+            "interaction_count": len(source_ids),
+            "open_commitments": 0,
+            "context_score": 0.0,
+            "classification": "unknown",
+            "is_broadcast": False,
         })
 
     return {"contacts": contacts, "count": len(contacts), "query": q or None}

@@ -21,9 +21,10 @@ def list_for_agent(db: Session, org_id: str, agent_uuid: str):
     return db.execute(
         text("""
             SELECT t.id::text, t.contact_id::text, t.match_email, t.match_phone,
-                   t.note, t.created_at, c.name AS contact_name, c.email AS contact_email
+                   t.note, t.created_at, c.canonical_name AS contact_name,
+                   c.attributes->>'email' AS contact_email
             FROM agent_trust t
-            LEFT JOIN contacts c ON c.id = t.contact_id
+            LEFT JOIN graph_nodes c ON c.id = t.contact_id
             WHERE t.org_id = :o AND t.agent_uuid = :a
             ORDER BY t.created_at DESC
         """),

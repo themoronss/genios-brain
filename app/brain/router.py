@@ -213,7 +213,7 @@ def run_once() -> dict:
                             contact_name = None
                             try:
                                 row = db.execute(
-                                    text("SELECT name FROM contacts WHERE id = :cid"),
+                                    text("SELECT canonical_name FROM graph_nodes WHERE id = :cid"),
                                     {"cid": entity_id},
                                 ).fetchone()
                                 if row:

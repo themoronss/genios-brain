@@ -109,9 +109,10 @@ def record_from_feedback(
     rec = db.execute(
         text("""
             SELECT r.id, r.insight_type, r.subject_entity_id, r.title, r.rationale,
-                   c.name AS contact_name, c.email AS contact_email
+                   c.canonical_name AS contact_name,
+                   c.attributes->>'email' AS contact_email
             FROM recommendations r
-            LEFT JOIN contacts c ON c.id = r.subject_entity_id
+            LEFT JOIN graph_nodes c ON c.id = r.subject_entity_id
             WHERE r.id = :rid AND r.org_id = :oid
         """),
         {"rid": recommendation_id, "oid": org_id},

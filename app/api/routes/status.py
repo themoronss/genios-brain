@@ -127,21 +127,22 @@ def get_contacts(
 @router.get("/v1/graph/stats")
 def get_graph_stats(db: Session = Depends(get_db), org_id: str = Depends(verify_api_key)):
     """Graph health check — confirms graph is ready for context calls."""
+    # v2 thin-pipe: nodes = entity-type graph_nodes, edges = graph_edges
+    # (both org-scoped via org_id). v1 contacts/interactions joins + the
+    # relationship_stage filter are gone (no such columns in v2).
     stats = db.execute(
         text("""
             SELECT
-                COUNT(DISTINCT c.id) as total_nodes,
-                COUNT(DISTINCT i.id) as total_edges,
+                (SELECT COUNT(*) FROM graph_nodes
+                   WHERE org_id = :org_id AND type = 'entity')  AS total_nodes,
+                (SELECT COUNT(*) FROM graph_edges
+                   WHERE org_id = :org_id)                      AS total_edges,
                 o.graph_quality_score,
                 o.brain_status,
-                MAX(ot.last_synced_at) as last_sync
+                (SELECT MAX(ot.last_synced_at) FROM oauth_tokens ot
+                   WHERE ot.org_id = o.id)                      AS last_sync
             FROM orgs o
-            LEFT JOIN contacts c ON c.org_id = o.id
-                AND c.relationship_stage IS NOT NULL AND c.relationship_stage != 'unknown'
-            LEFT JOIN interactions i ON i.org_id = o.id
-            LEFT JOIN oauth_tokens ot ON ot.org_id = o.id
             WHERE o.id = :org_id
-            GROUP BY o.id, o.graph_quality_score, o.brain_status
         """),
         {"org_id": org_id}
     ).fetchone()

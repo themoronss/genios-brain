@@ -357,20 +357,21 @@ def get_sync_interval(org_id: str, db: Session = Depends(get_db)):
 
 @router.post("/api/org/{org_id}/reset")
 def reset_org_data(org_id: str, db: Session = Depends(get_db)):
-    """Wipe all graph data (interactions, contacts) but keep connected accounts.
+    """Wipe all v2 graph data (edges, facts, nodes) but keep connected accounts.
        Resets the sync progress to idle. Used for testing/debugging.
     """
     try:
-        # 1. Delete commitments first (foreign key to interactions)
-        db.execute(text("DELETE FROM commitments WHERE org_id = :oid"), {"oid": org_id})
+        # 1. Delete edges first (FK to graph_nodes; ON DELETE CASCADE would
+        #    also handle this, but be explicit + org-scoped).
+        db.execute(text("DELETE FROM graph_edges WHERE org_id = :oid"), {"oid": org_id})
 
-        # 2. Delete interactions
-        db.execute(text("DELETE FROM interactions WHERE org_id = :oid"), {"oid": org_id})
+        # 2. Delete facts
+        db.execute(text("DELETE FROM facts WHERE org_id = :oid"), {"oid": org_id})
 
-        # 2. Delete contacts
-        db.execute(text("DELETE FROM contacts WHERE org_id = :oid"), {"oid": org_id})
+        # 3. Delete nodes
+        db.execute(text("DELETE FROM graph_nodes WHERE org_id = :oid"), {"oid": org_id})
 
-        # 3. Reset sync progress in oauth_tokens
+        # 4. Reset sync progress in oauth_tokens
         db.execute(
             text("""
                 UPDATE oauth_tokens
