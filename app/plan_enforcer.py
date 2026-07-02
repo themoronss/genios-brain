@@ -370,8 +370,11 @@ def check_contact_limit(db: Session, org_id: str) -> dict:
     plan_info = get_org_plan(db, org_id)
     config = plan_info["config"]
 
+    # v2 thin-pipe: contacts live in `graph_nodes` (type='entity'); the v1
+    # `contacts` table was dropped in mig 0015. Mirror the canonical count
+    # used by /v1/status and /v1/sync so plan limits stay consistent.
     contact_count = db.execute(
-        text("SELECT COUNT(*) FROM contacts WHERE org_id = :org_id AND (is_archived IS FALSE OR is_archived IS NULL)"),
+        text("SELECT COUNT(*) FROM graph_nodes WHERE org_id = :org_id AND type = 'entity'"),
         {"org_id": org_id},
     ).scalar() or 0
 

@@ -136,22 +136,18 @@ def v1_org_info(
     tier = plan_info["tier"]
     config = plan_info["config"]
 
-    # Contact + cluster counts
+    # Contact + cluster counts.
+    # v2 thin-pipe: contacts live in `graph_nodes` (type='entity'); the v1
+    # `contacts` table was dropped in mig 0015. Mirror /v1/status + /v1/sync.
     contact_count = db.execute(
-        text("""
-            SELECT COUNT(*) FROM contacts
-            WHERE org_id = :org_id AND (is_archived IS FALSE OR is_archived IS NULL)
-        """),
+        text("SELECT COUNT(*) FROM graph_nodes WHERE org_id = :org_id AND type = 'entity'"),
         {"org_id": org_id},
     ).scalar() or 0
 
-    cluster_count = db.execute(
-        text("""
-            SELECT COUNT(DISTINCT community_id) FROM contacts
-            WHERE org_id = :org_id AND community_id IS NOT NULL
-        """),
-        {"org_id": org_id},
-    ).scalar() or 0
+    # 'community_id' was a v1 `contacts` column (community detection) with no
+    # equivalent on graph_nodes; report 0, matching how /v1/status handles
+    # dropped v1 concepts. TODO: derive clusters from graph_edges if needed.
+    cluster_count = 0
 
     # Period usage: count engine decisions (v2). v1 context_calls dropped in mig 0015.
     period_reset_at = plan_info.get("period_reset_at")
