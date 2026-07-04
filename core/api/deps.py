@@ -36,6 +36,20 @@ def db_session() -> Iterator[Session]:
         yield session
 
 
+def _stash_auth(request: Request, org_id: str, agent_id: str | None = None) -> None:
+    """Record the resolved identity on request.state.auth.
+
+    The app-level ApiAnalyticsMiddleware (app/main.py) fires the `api_call`
+    PostHog event only when request.state.auth.org_id is set. The v1 deps set it;
+    these v2 deps did not — so every v2 route (including the flagship
+    /v1/intelligence/query) was invisible in api_call analytics. v2 handlers
+    don't read this — only the analytics middleware does — so a lightweight
+    holder suffices.
+    """
+    from types import SimpleNamespace
+    request.state.auth = SimpleNamespace(org_id=org_id, agent_id=agent_id)
+
+
 def require_org(
     request: Request,
     session: Session = Depends(db_session),
@@ -64,17 +78,20 @@ def require_org(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail=_TOKEN_REVOKED_DETAIL,
                 )
+            _stash_auth(request, org_id)
             return org_id
 
     if api_key:
         org_id = _org_from_api_key(session, api_key)
         if org_id is not None:
+            _stash_auth(request, org_id)
             return org_id
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="unknown api key"
         )
 
     if x_dev_org and settings.GENIOS_ENV.lower() != "production":
+        _stash_auth(request, x_dev_org)
         return x_dev_org
 
     # A session JWT was supplied (cookie or Bearer) but never resolved — it
@@ -129,17 +146,20 @@ def require_org_and_policy(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail=_TOKEN_REVOKED_DETAIL,
                 )
+            _stash_auth(request, org_id)
             return {"org_id": org_id, "policy": None, "agent_uuid": None, "scope_source": "jwt"}
 
     if api_key:
         ctx = _org_and_policy_from_api_key(session, api_key)
         if ctx is not None:
+            _stash_auth(request, ctx["org_id"], ctx.get("agent_uuid"))
             return ctx
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="unknown api key"
         )
 
     if x_dev_org and settings.GENIOS_ENV.lower() != "production":
+        _stash_auth(request, x_dev_org)
         return {"org_id": x_dev_org, "policy": None, "agent_uuid": None, "scope_source": "dev"}
 
     # JWT supplied but decode-failed (expired / bad signature) → dead session.

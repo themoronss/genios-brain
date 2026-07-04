@@ -8,15 +8,17 @@ Endpoints:
   GET  /api/org/{org_id}/billing/subscription — current plan + credit balances + overage
   GET  /api/org/{org_id}/billing/invoices — payment history
 
-Plan prices (INR, in paise):
-  Early       ₹4,500  → 450,000   paise   (covers ~$54 of LLM cost; positive margin)
-  Startup    ₹14,000  → 1,400,000 paise   (covers ~$168; positive margin)
+Plan prices (charged in each currency's smallest unit — INR paise / USD cents).
+Source of truth is PLAN_PRICES below; keep this table in sync with it:
+  Early      ₹4,500  / $59   → 450,000   paise  · 10K  credits/mo
+  Startup    ₹25,000 / $299  → 2,500,000 paise  · 100K credits/mo
   Enterprise  custom — contract-priced; no fixed amount here
 
-Top-up packs (INR, in paise) — survive period resets, never expire:
-  context_5k    ₹1,000 → 5,000 context credits
-  sync_25k      ₹2,000 → 25,000 sync credits
-  context_50k   ₹8,000 → 50,000 context credits  (bulk discount)
+Top-up packs (single credit pool; survive period resets, never expire).
+Source of truth is TOPUP_PACKS below:
+  small    ₹2,500  / $35   → 5,000   credits
+  medium   ₹10,000 / $129  → 25,000  credits
+  large    ₹35,000 / $449  → 100,000 credits  (-30% bulk)
 """
 
 import hashlib

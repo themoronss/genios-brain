@@ -61,7 +61,9 @@ class Settings(BaseSettings):
     # Observability
     SENTRY_DSN: str = ""
     POSTHOG_API_KEY: str = ""
-    POSTHOG_HOST: str = "https://us.i.posthog.com"
+    # EU region. Reference config only — the actual event sender is
+    # app/core/analytics.py (override its ingest host via POSTHOG_INGEST_HOST).
+    POSTHOG_HOST: str = "https://eu.i.posthog.com"
 
     # Environment
     GENIOS_ENV: str = Field(default="development", description="development | staging | production")

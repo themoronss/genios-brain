@@ -31,7 +31,6 @@ PyMuPDF
 pypdf>=4.0
 python-docx
 razorpay
-posthog
 sentry-sdk
 # alembic — required at runtime for migrations + by app.main on boot
 # in some paths. Was missing despite being used in migrations/.

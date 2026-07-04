@@ -64,7 +64,7 @@ _DEFAULT_ROUTES = {
     "extract_entities": ("anthropic", "claude-haiku-4-5-20251001"),
     "calendar_extract": ("anthropic", "claude-haiku-4-5-20251001"),
     "draft":            ("anthropic", "claude-haiku-4-5-20251001"),
-    "chat":             ("gemini",    "gemini-2.5-flash"),
+    "chat":             ("anthropic", "claude-haiku-4-5-20251001"),
     "reason_haiku":     ("anthropic", "claude-haiku-4-5-20251001"),
     "reason_sonnet":    ("anthropic", "claude-sonnet-4-6"),
     "narrative":        ("anthropic", "claude-haiku-4-5-20251001"),
@@ -534,6 +534,15 @@ class LLMClient:
                 raise TenantCostGuardrailExceeded(
                     f"Org {org_id} hit daily LLM cap (${spent:.2f} / ${cap:.2f})."
                 )
+        except TenantCostGuardrailExceeded:
+            raise
+        except Exception as e:
+            # The daily cap is a safety limit, not a correctness requirement. If
+            # its bookkeeping table is unavailable (e.g. llm_usage was dropped in
+            # the v2 migration 0015 and not recreated), fail OPEN so a broken
+            # cost-ledger never blocks a customer's LLM call. Warn so ops sees
+            # that the cap isn't currently enforcing.
+            logger.warning(f"cost guardrail check skipped (fail-open): {e}")
         finally:
             db.close()
 

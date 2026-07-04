@@ -29,11 +29,11 @@ log = get_logger(__name__)
 # Per Anthropic public pricing (approximate; tune via config_overrides later).
 # Cost per 1M tokens, in USD.
 _COST_PER_M_INPUT_TOKENS = {
-    "claude-haiku-4-5-20251001": 0.80,
+    "claude-haiku-4-5-20251001": 1.00,
     "claude-sonnet-4-6": 3.00,
 }
 _COST_PER_M_OUTPUT_TOKENS = {
-    "claude-haiku-4-5-20251001": 4.00,
+    "claude-haiku-4-5-20251001": 5.00,
     "claude-sonnet-4-6": 15.00,
 }
 

@@ -14,7 +14,10 @@ logger = logging.getLogger(__name__)
 # POST is version-proof, works inside forked Celery workers, and lets us log the
 # exact HTTP status so delivery is actually verifiable in the logs.
 _POSTHOG_KEY = os.getenv("POSTHOG_API_KEY", "")
-_POSTHOG_HOST = "https://eu.i.posthog.com"
+# EU ingest host. Overridable via POSTHOG_INGEST_HOST for a region/self-host
+# move without a code change. NOTE: this is the *ingest* host (eu.i.posthog.com),
+# distinct from the *query/app* host used by admin_metrics (eu.posthog.com).
+_POSTHOG_HOST = os.getenv("POSTHOG_INGEST_HOST", "https://eu.i.posthog.com")
 
 # Per-request LLM-cost accumulator. ApiAnalyticsMiddleware sets a fresh dict
 # before the route runs; llm_client._log_usage adds to it; the middleware reads

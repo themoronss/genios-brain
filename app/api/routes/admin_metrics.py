@@ -66,6 +66,95 @@ def _llm_cost_inr(db: Session, days: int) -> float | None:
         return None
 
 
+def _write_snapshot(db: Session) -> None:
+    """Idempotently record TODAY's MRR-per-paying-org snapshot — one row per
+    active paying external org, keyed on (snapshot_date, org_id) so re-running
+    the same day is a no-op. Runs in-process on every /metrics read (NO Celery →
+    Upstash quota-safe). This accumulating history is what makes exact NRR/GRR
+    computable. Best-effort: a snapshot failure must never break the report."""
+    try:
+        paying = db.execute(
+            text("""
+                SELECT id::text AS org_id,
+                       COALESCE(subscription_tier, 'trial') AS tier
+                FROM orgs
+                WHERE plan_status = 'active'
+                  AND plan_expires_at > now()
+                  AND COALESCE(is_internal, false) = false
+                  AND COALESCE(subscription_tier, 'trial') NOT IN ('trial', '')
+            """)
+        ).fetchall()
+        for r in paying:
+            db.execute(
+                text("""
+                    INSERT INTO mrr_snapshots (snapshot_date, org_id, tier, mrr_inr)
+                    VALUES (current_date, :org, :tier, :mrr)
+                    ON CONFLICT (snapshot_date, org_id) DO UPDATE
+                        SET tier = EXCLUDED.tier, mrr_inr = EXCLUDED.mrr_inr
+                """),
+                {"org": r.org_id, "tier": r.tier,
+                 "mrr": _PLAN_MRR_INR.get((r.tier or "").lower(), 0)},
+            )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.warning("admin_metrics: snapshot write failed — %s", e)
+
+
+def _retention_from_snapshots(db: Session, days: int) -> dict:
+    """Exact retention from mrr_snapshots: compare the paying cohort at the START
+    of the window to the SAME cohort now. Returns null values (never faked) until
+    ≥2 distinct snapshot dates span the window.
+
+    NRR = end-MRR of the start cohort ÷ start-MRR (counts expansion, penalises
+          churn/contraction, EXCLUDES brand-new logos → measures the base alone).
+    GRR = same but each org's end-MRR capped at its start (no expansion credit).
+    """
+    null = {"nrr_pct": None, "grr_pct": None, "expansion_mrr_inr": None,
+            "contraction_mrr_inr": None, "churned_mrr_inr": None,
+            "new_mrr_inr": None, "retention_period": None}
+    try:
+        start_date = db.execute(
+            text("""SELECT MIN(snapshot_date) FROM mrr_snapshots
+                    WHERE snapshot_date >= current_date - (:days || ' days')::interval"""),
+            {"days": days},
+        ).scalar()
+        end_date = db.execute(text("SELECT MAX(snapshot_date) FROM mrr_snapshots")).scalar()
+        if not start_date or not end_date or start_date == end_date:
+            return null  # not enough history yet
+
+        start = {r.org_id: int(r.mrr_inr) for r in db.execute(
+            text("SELECT org_id, mrr_inr FROM mrr_snapshots WHERE snapshot_date = :d"),
+            {"d": start_date})}
+        end = {r.org_id: int(r.mrr_inr) for r in db.execute(
+            text("SELECT org_id, mrr_inr FROM mrr_snapshots WHERE snapshot_date = :d"),
+            {"d": end_date})}
+        start_mrr = sum(start.values())
+        if not start_mrr:
+            return null
+
+        end_of_cohort = sum(end.get(o, 0) for o in start)                       # NRR numerator
+        grr_num = sum(min(end.get(o, 0), m) for o, m in start.items())          # GRR numerator
+        expansion = sum(max(0, end.get(o, 0) - m) for o, m in start.items())
+        contraction = sum(max(0, m - end.get(o, 0)) for o, m in start.items()
+                          if end.get(o, 0) > 0)                                  # still paying, less
+        churned = sum(m for o, m in start.items() if end.get(o, 0) == 0)        # fully gone
+        new_mrr = sum(m for o, m in end.items() if o not in start)              # brand-new logos
+        return {
+            "nrr_pct": round(100 * end_of_cohort / start_mrr, 2),
+            "grr_pct": round(100 * grr_num / start_mrr, 2),
+            "expansion_mrr_inr": expansion,
+            "contraction_mrr_inr": contraction,
+            "churned_mrr_inr": churned,
+            "new_mrr_inr": new_mrr,
+            "retention_period": {"start": str(start_date), "end": str(end_date),
+                                 "start_mrr_inr": start_mrr},
+        }
+    except Exception as e:
+        logger.warning("admin_metrics: retention calc failed — %s", e)
+        return null
+
+
 @router.get("/v1/admin/metrics")
 def admin_metrics(
     days: int = Query(30, ge=1, le=365),
@@ -74,6 +163,10 @@ def admin_metrics(
 ):
     """DB-truth financial snapshot. `days` controls the rolling window for the
     flow metrics (new/revenue/churn); MRR/ARR are point-in-time."""
+
+    # Record today's MRR-per-org snapshot first (idempotent, in-process) so the
+    # retention window below can compare against a start-of-period baseline.
+    _write_snapshot(db)
 
     # ── MRR / ARR / paying accounts — from CURRENT org state (point-in-time) ──
     # Paying = active plan, not expired, not internal, on a paid tier.
@@ -165,6 +258,9 @@ def admin_metrics(
         if (gross_margin is not None and rev_window) else None
     )
 
+    # ── Retention (NRR / GRR / MRR movement) — exact, from mrr_snapshots ───────
+    retention = _retention_from_snapshots(db, days)
+
     return {
         "window_days": days,
         "fx_inr_per_usd": INR_PER_USD,
@@ -185,14 +281,21 @@ def admin_metrics(
         "llm_cost_window_inr": llm_cost,
         "gross_margin_window_inr": gross_margin,
         "gross_margin_pct": gross_margin_pct,
-        # churn (approx)
+        # churn (approx, logo-level)
         "churned_logos_window": int(churned),
         "logo_churn_pct_approx": logo_churn_pct,
-        "nrr_pct": None,
+        # retention (exact, revenue-level, from mrr_snapshots) — null until history spans window
+        "nrr_pct": retention["nrr_pct"],
+        "grr_pct": retention["grr_pct"],
+        "expansion_mrr_inr": retention["expansion_mrr_inr"],
+        "contraction_mrr_inr": retention["contraction_mrr_inr"],
+        "churned_mrr_inr": retention["churned_mrr_inr"],
+        "new_mrr_inr": retention["new_mrr_inr"],
+        "retention_period": retention["retention_period"],
         "_notes": {
-            "source": "DB system-of-record (orgs/subscriptions/llm_costs) — penny-accurate, internal orgs excluded",
-            "churn": "APPROX: derived from plan expiry, not period snapshots",
-            "nrr": "null until a monthly mrr_snapshots table exists (exact NRR needs start-of-period MRR)",
+            "source": "DB system-of-record (orgs/subscriptions/llm_costs/mrr_snapshots) — penny-accurate, internal orgs excluded",
+            "logo_churn": "APPROX: derived from plan expiry, not period snapshots",
+            "nrr": "exact from mrr_snapshots (cohort start-MRR vs now); null until ≥2 snapshot dates span the window — snapshots self-populate on each /metrics read",
         },
     }
 

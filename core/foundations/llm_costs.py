@@ -24,7 +24,7 @@ log = get_logger(__name__)
 # $ per 1M tokens — keep in sync with core/neural/client.py constants.
 # Anthropic public pricing (claude.com/pricing — accurate as of cutoff).
 _PRICE_PER_M_TOKENS_USD: dict[str, dict[str, float]] = {
-    "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.00},
+    "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
     "claude-sonnet-4-6":         {"input": 3.00, "output": 15.00},
     # Older model ids the codebase may still mention — keep so a stale
     # config_overrides.yaml doesn't silently log $0.
@@ -116,6 +116,29 @@ def record_llm_call(
             s.commit()
     except Exception as e:
         log.warning("llm_cost_persist_failed", error=str(e), model=model, purpose=purpose)
+
+    # Mirror this spend into PostHog (+ the per-request cost accumulator) so the
+    # V2 engine's LLM cost shows up in the same `llm_call` event/tile as V1. The
+    # engine calls Anthropic directly (bypassing V1's instrumented client), so
+    # without this every V2 query / extraction / noise-gate call is invisible in
+    # PostHog. record_llm_cost feeds ApiAnalyticsMiddleware so /v1/* routes also
+    # carry cost_usd on their `api_call` event; it no-ops outside a request
+    # (Celery/background). Fail-soft — analytics must never break the LLM path.
+    if org_id:
+        try:
+            from app.core.analytics import capture, record_llm_cost
+            record_llm_cost(cost, (input_tokens or 0) + (output_tokens or 0))
+            capture(org_id, "llm_call", {
+                "purpose": purpose,
+                "provider": "anthropic",
+                "model": model,
+                "tokens_in": input_tokens,
+                "tokens_out": output_tokens,
+                "cost_usd": round(cost, 6),
+                "success": success,
+            })
+        except Exception as e:
+            log.warning("llm_call_posthog_failed", error=str(e), model=model)
 
 
 def usage_extract(resp: Any) -> tuple[int, int]:

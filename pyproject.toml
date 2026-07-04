@@ -45,7 +45,6 @@ dependencies = [
     # Observability
     "structlog>=24.4",
     "sentry-sdk[fastapi]>=2.18",
-    "posthog>=3.7",
 
     # Reasoning (g-i-2)
     "z3-solver>=4.13",
