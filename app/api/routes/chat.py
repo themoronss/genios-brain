@@ -251,6 +251,87 @@ def get_semantic_context(db, org_id: str, query: str, limit: int = 8) -> str:
         return "Semantic search unavailable. Ensure contacts have embeddings."
 
 
+def get_v2_graph_context(db, org_id: str, query: str, entity_name: str | None = None) -> str:
+    """Grounding context from the v2 graph (graph_nodes + facts).
+
+    The v1 `contacts`/`interactions` tables were dropped in migration 0015;
+    this reads the live v2 data via core.graph.views so Mr. Elite answers are
+    grounded in the user's actual graph instead of erroring on a missing table.
+    """
+    try:
+        from core.graph.views import list_contacts, list_facts
+
+        lines: list[str] = []
+
+        # People / companies — v2 'entity' nodes, most recently active first.
+        contacts = list_contacts(db, org_id=org_id, limit=25).get("contacts", [])
+        if contacts:
+            lines.append("=== PEOPLE / COMPANIES IN YOUR GRAPH (most recent first) ===")
+            for c in contacts:
+                comp = f" @ {c['company']}" if c.get("company") else ""
+                last = c.get("lastInteraction")
+                last_str = last[:10] if isinstance(last, str) else "unknown"
+                lines.append(
+                    f"- {c.get('name', '?')}{comp} | stage: {c.get('relationshipStage', 'unknown')}"
+                    f" | mentions: {c.get('interactionCount', 0)} | last seen: {last_str}"
+                )
+
+        # Facts (subject-predicate-object). If a specific entity is in play,
+        # focus on it; always add a recent-facts baseline so broad questions
+        # ("any risky relationships?") still have material to reason over.
+        facts: list = []
+        if entity_name:
+            facts = list_facts(db, org_id=org_id, subject=entity_name, limit=40).get("facts", [])
+        if len(facts) < 10:
+            recent = list_facts(db, org_id=org_id, limit=50).get("facts", [])
+            seen = {(f["subject"], f["predicate"], f["object"]) for f in facts}
+            for f in recent:
+                key = (f["subject"], f["predicate"], f["object"])
+                if key not in seen:
+                    facts.append(f)
+        if facts:
+            lines.append("\n=== FACTS KNOWN (subject — predicate — object) ===")
+            for f in facts[:60]:
+                lines.append(f"- {f.get('subject', '?')} — {f.get('predicate', '?')} — {f.get('object', '?')}")
+
+        if not lines:
+            return (
+                "No graph data yet — the user hasn't synced a source or the graph "
+                "is empty. Tell them to connect Gmail / upload data in Resources."
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        logger.error(f"v2 graph context error: {e}", exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return "Unable to load graph context right now."
+
+
+def resolve_entity_v2(db, org_id: str, message: str) -> str | None:
+    """Return an entity name from the v2 graph whose name appears in the message.
+
+    Replaces the v1 `get_contact_by_name` lookup (dropped contacts table).
+    Longest names match first so 'Acme Corp' wins over 'Acme'.
+    """
+    try:
+        from core.graph.views import list_contacts
+        contacts = list_contacts(db, org_id=org_id, limit=500).get("contacts", [])
+        msg_low = (message or "").lower()
+        for c in sorted(contacts, key=lambda x: -len(x.get("name") or "")):
+            name = (c.get("name") or "").strip()
+            if len(name) >= 3 and name.lower() in msg_low:
+                return name
+        return None
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return None
+
+
 @router.post("/api/org/{org_id}/chat")
 def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(get_db)):
     """
@@ -264,10 +345,23 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
             raise HTTPException(status_code=400, detail="Message cannot be empty")
 
         # ── Check for warm intro / "who knows" queries ────────────────────
+        # Warm-intro path traversal needs the v1 interactions graph (dropped in
+        # mig 0015), so it's unavailable until the v2 edge-path build lands.
+        # Guard resolution so "who knows X" degrades to a normal v2-grounded
+        # answer instead of 500-ing on the dropped contacts table.
         warm_intro_target = detect_warm_intro_query(message)
-        if warm_intro_target:
-            target_contact = get_contact_by_name(db, org_id, warm_intro_target)
-            if target_contact:
+        try:
+            target_contact = (
+                get_contact_by_name(db, org_id, warm_intro_target)
+                if warm_intro_target else None
+            )
+        except Exception:
+            target_contact = None
+            try:
+                db.rollback()
+            except Exception:
+                pass
+        if warm_intro_target and target_contact:
                 intros = find_warm_intro_path(db, org_id, str(target_contact["id"]))
                 intro_context = format_warm_intro_response(target_contact["name"], intros)
                 # Also get the target's bundle for full context
@@ -331,103 +425,14 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
         context_block = ""
 
         if query_type == "semantic":
-            context_block = get_semantic_context(db, org_id, message)
+            context_block = get_v2_graph_context(db, org_id, message)
 
         elif query_type in ("entity", "situation", "action"):
-            # Try to find entity from explicit param or message
-            entity_name = request.entity_name
-            if not entity_name:
-                entity_name = extract_entity_from_message(message, db, org_id)
-
-            # If no specific entity found, check if message mentions a category
-            # e.g. "tell me about my top investor" → find best investor contact
-            if not entity_name:
-                msg_lower = message.lower()
-                category_keywords = {
-                    "investor": "investor", "investors": "investor",
-                    "customer": "customer", "customers": "customer",
-                    "vendor": "vendor", "vendors": "vendor",
-                    "partner": "partner", "partners": "partner",
-                    "advisor": "advisor", "advisors": "advisor",
-                    "lead": "lead", "leads": "lead",
-                }
-                for keyword, entity_type in category_keywords.items():
-                    if keyword in msg_lower:
-                        try:
-                            top_contact = db.execute(
-                                text("""
-                                    SELECT name FROM contacts
-                                    WHERE org_id = :org_id AND entity_type = :etype
-                                    ORDER BY interaction_count DESC, context_score DESC NULLS LAST
-                                    LIMIT 1
-                                """),
-                                {"org_id": org_id, "etype": entity_type},
-                            ).fetchone()
-                            if top_contact:
-                                entity_name = top_contact[0]
-                        except Exception:
-                            try:
-                                db.rollback()
-                            except Exception:
-                                pass
-                        break
-
-            if entity_name:
-                try:
-                    bundle = build_context_bundle(db, org_id, entity_name)
-                except Exception as e:
-                    logger.warning(f"Bundle build failed for '{entity_name}': {e}")
-                    try:
-                        db.rollback()
-                    except Exception:
-                        pass
-                    bundle = {"error": str(e)}
-                if not bundle.get("error"):
-                    ctx = bundle.get("context_for_agent", "")
-                    entity = bundle.get("entity", {})
-                    scores = bundle.get("scores", {})
-                    context_block = (
-                        f"=== RELATIONSHIP CONTEXT ===\n"
-                        f"{ctx}\n\n"
-                        f"Scores — Freshness: {scores.get('freshness', 0.5):.0%}, "
-                        f"Confidence: {scores.get('confidence', 0.5):.0%}, "
-                        f"Consistency: {scores.get('consistency', 0.5):.0%}, "
-                        f"Context: {scores.get('context', 0.5):.0%}\n"
-                        f"Response rate: {entity.get('response_rate', 'unknown')}, "
-                        f"Avg reply time: {entity.get('avg_response_time_hours', 'unknown')}h\n"
-                        f"Action signal: {bundle.get('action_recommendation', 'proceed')} — {bundle.get('action_reason', '')}"
-                    )
-                else:
-                    context_block = f"No relationship data found for '{entity_name}' in your network."
-            else:
-                # No entity found — provide general graph overview as context
-                try:
-                    top_contacts = db.execute(
-                        text("""
-                            SELECT name, company, entity_type, relationship_stage, interaction_count
-                            FROM contacts WHERE org_id = :org_id AND interaction_count > 0
-                            ORDER BY interaction_count DESC LIMIT 10
-                        """),
-                        {"org_id": org_id},
-                    ).fetchall()
-                    if top_contacts:
-                        lines = ["=== YOUR TOP CONTACTS ==="]
-                        for tc in top_contacts:
-                            company_str = f" @ {tc[1]}" if tc[1] else ""
-                            lines.append(f"- {tc[0]}{company_str} | {tc[2] or 'other'} | {tc[3]} | {tc[4]} interactions")
-                        context_block = "\n".join(lines)
-                    else:
-                        context_block = "No contacts found in your network yet. Connect Gmail and sync to build your graph."
-                except Exception:
-                    try:
-                        db.rollback()
-                    except Exception:
-                        pass
-                    context_block = "Unable to load graph data."
+            entity_name = request.entity_name or resolve_entity_v2(db, org_id, message)
+            context_block = get_v2_graph_context(db, org_id, message, entity_name=entity_name)
 
         elif query_type == "temporal":
-            temporal_data = get_temporal_context(db, org_id)
-            context_block = f"=== CONTACTS NEEDING ATTENTION ===\n{temporal_data}"
+            context_block = get_v2_graph_context(db, org_id, message)
 
         # ── Build Gemini prompt ────────────────────────────────────────────
 
@@ -461,7 +466,7 @@ def chat_with_mr_elite(org_id: str, request: ChatRequest, db: Session = Depends(
             "reply": reply,
             "query_type": query_type,
             "context_used": bool(context_block and "===" in context_block),
-            "entity_resolved": request.entity_name or extract_entity_from_message(message, db, org_id),
+            "entity_resolved": request.entity_name or resolve_entity_v2(db, org_id, message),
         }
 
     except HTTPException:
