@@ -1378,30 +1378,53 @@ async def update_calendar_selection(org_id: str, request: Request):
 
 # ─── Manual Sync Trigger ─────────────────────────────────────────────────────
 
-TOOL_SYNC_TASKS = {
-    "gcal": "app.tasks.calendar_sync.run_calendar_sync",
-    "slack": "app.tasks.slack_sync.run_slack_backfill",
-    "jira": "app.tasks.jira_sync.run_jira_sync",
-    "notion": "app.tasks.notion_sync.run_notion_sync",
-    "gsheets": "app.tasks.sheets_sync.run_sheets_sync",
-    "gdrive": "app.tasks.drive_sync.run_drive_sync",
-    "gdocs": "app.tasks.docs_sync.run_docs_sync",
-    "hubspot": "app.tasks.hubspot_sync.run_hubspot_sync",
+# The frontend tool id IS the v2 source_type. Manual "Sync now" resolves the
+# org's active Connection(s) for that source_type and runs the v2 thin-pipe
+# sync_runner — the SAME path the all-tools /api/org/{org}/sync and the
+# scheduled sync use. (The old code imported app.tasks.<tool>_sync modules that
+# were deleted in the v2 refactor → every call raised ModuleNotFoundError.)
+_KNOWN_SYNC_TOOLS = {
+    "gmail", "gcal", "slack", "jira", "notion", "gsheets", "gdrive", "gdocs", "hubspot",
 }
+
+
+def _run_tool_sync_v2(org_id: str, source_type: str) -> None:
+    """Walk active Connection(s) for (org, source_type) and run the thin pipe."""
+    log = logging.getLogger(__name__)
+    try:
+        from sqlalchemy import select as _sel
+
+        from app.config import SYNC_PERIODIC_LIMIT
+        from core.foundations.db import get_session as _v2s
+        from core.memory.store import Connection
+        from core.memory.sync_runner import run_sync_for_connection
+
+        with _v2s() as s:
+            q = (
+                _sel(Connection)
+                .where(Connection.org_id == org_id)
+                .where(Connection.source_type == source_type)
+                .where(Connection.status == "active")
+            )
+            conns = list(s.execute(q).scalars())
+            if not conns:
+                log.info("manual_sync: no active connection org=%s tool=%s", org_id, source_type)
+            for conn in conns:
+                try:
+                    run_sync_for_connection(s, connection_id=conn.id, limit=SYNC_PERIODIC_LIMIT)
+                except Exception as e:
+                    s.rollback()
+                    log.warning("manual_sync failed tool=%s conn=%s: %s", source_type, conn.id, e)
+    except Exception as e:
+        log.error("manual_sync error org=%s tool=%s: %s", org_id, source_type, e)
 
 
 @router.post("/api/org/{org_id}/integrations/{tool}/sync")
 async def trigger_tool_sync(org_id: str, tool: str, background_tasks: BackgroundTasks):
-    """Manually trigger a sync for a connected tool."""
-    if tool not in TOOL_SYNC_TASKS:
+    """Manually trigger a v2 sync for a connected tool's Connection(s)."""
+    if tool not in _KNOWN_SYNC_TOOLS:
         raise HTTPException(status_code=400, detail=f"Unknown tool: {tool}")
-
-    import importlib
-    module_path, func_name = TOOL_SYNC_TASKS[tool].rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    sync_func = getattr(module, func_name)
-
-    background_tasks.add_task(sync_func, org_id)
+    background_tasks.add_task(_run_tool_sync_v2, org_id, tool)
     return {"started": True, "tool": tool}
 
 

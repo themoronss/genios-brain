@@ -892,14 +892,13 @@ celery.conf.beat_schedule = {
         "schedule": crontab(day_of_week="mon", hour=5, minute=0),
         "options": {"queue": "low_priority"},
     },
-    # Phase 1.7: Deliver pending webhooks (durable retry via delivery_attempts).
-    # Interval bumped 30s -> WEBHOOK_DELIVERY_INTERVAL_SEC (default 60s) to cut
-    # Redis dispatch traffic; delivery still retries durably.
-    "deliver-webhooks": {
-        "task": "app.celery_app.task_deliver_webhooks",
-        "schedule": WEBHOOK_DELIVERY_INTERVAL_SEC,
-        "options": {"queue": "high_priority"},
-    },
+    # DISABLED: task_deliver_webhooks queries webhook_config / delivery_attempts,
+    # both dropped in migration 0015 and never recreated — so this beat threw on
+    # every 60s tick, delivering nothing while burning quota-limited Upstash
+    # dispatches. Proactive webhook delivery already happens INLINE in
+    # core/proactive/pipeline.py (registry in Redis `webhooks:<org>`), so removing
+    # this dead retry-queue beat loses no delivery. Re-add a v2 durable retry
+    # queue later only if inline delivery needs one.
     # Phase 4.5: hourly lifecycle transitions
     "lifecycle-hourly": {
         "task": "app.celery_app.task_lifecycle_hourly",
