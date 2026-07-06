@@ -245,13 +245,23 @@ def verify_payment(org_id: str, body: VerifyPaymentRequest, db: Session = Depend
     if not _verify_signature(body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature):
         raise HTTPException(status_code=400, detail="Payment signature verification failed")
 
-    _activate_plan(db, org_id, body.plan, body.razorpay_payment_id, body.razorpay_order_id)
-    plan_config = PLAN_CONFIG[body.plan]
+    from app.plan_enforcer import _normalize_tier
+    # `_activate_plan` ignores body.plan and activates the plan stored on the
+    # PAID order row (anti-tamper). It returns that authoritative plan, or None
+    # on an idempotent re-verify — in which case read it back from the row.
+    resolved = _activate_plan(db, org_id, body.plan, body.razorpay_payment_id, body.razorpay_order_id)
+    if resolved is None:
+        row = db.execute(
+            text("SELECT plan FROM subscriptions WHERE order_id = :oid AND org_id = :org"),
+            {"oid": body.razorpay_order_id, "org": org_id},
+        ).fetchone()
+        resolved = _normalize_tier(row.plan) if row else _normalize_tier(body.plan)
+    plan_config = PLAN_CONFIG[resolved]
 
     return {
         "activated": True,
-        "plan":      body.plan,
-        "unlocked":  _unlocked_features(body.plan),
+        "plan":      resolved,
+        "unlocked":  _unlocked_features(resolved),
         "period_days": plan_config["period_days"],
     }
 
@@ -275,42 +285,39 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
     once.
     """
     from datetime import datetime, timezone, timedelta
-    # Resolve legacy "hustler" → "early" before reading config
+    # Resolve legacy "hustler" → "early".
     from app.plan_enforcer import _normalize_tier
-    plan = _normalize_tier(plan)
 
-    period_days = PLAN_CONFIG[plan]["period_days"]
-    plan_config = PLAN_CONFIG[plan]
     now = datetime.now(timezone.utc)
-    period_end = now + timedelta(days=period_days)
 
     try:
         # ── Atomic plan activation: org row + credits in ONE update ─────
         # Single transaction means either ALL of plan_status / expiry /
         # credit pool / ledger row land, or NONE. Prevents the dreaded
         # "paid but no credits" state. See UNIT_ECONOMICS.md §11.
-        new_credits = plan_config["credits"]
-
-        # CLAIM this activation: flip the subscription pending→active ONCE.
-        # rowcount tells us whether THIS call is the real activation or a
-        # duplicate (the verify+webhook race). Everything below — credit reset,
-        # ledger, the revenue event — runs ONLY on the real activation, so
-        # credits are never reset twice and `payment_completed` never
-        # double-counts revenue. Concurrency-safe: the second racer blocks on
-        # the row lock, then sees status != 'pending' and gets rowcount 0.
+        #
+        # CLAIM this activation AND read the AUTHORITATIVE plan in one shot: flip
+        # the subscription pending→active ONCE and RETURN the plan that was
+        # stored when the order was created (and paid for). We deliberately do
+        # NOT trust the caller-supplied `plan` arg — the Razorpay signature only
+        # covers order_id|payment_id, so a caller could otherwise pay the Early
+        # price and claim Startup. The stored plan always matches the amount
+        # charged. RETURNING also gives the real-activation-vs-duplicate signal
+        # (verify+webhook race): the second racer blocks on the row lock, then
+        # sees status != 'pending' and gets no row back.
         claimed = db.execute(
             text("""
                 UPDATE subscriptions
                 SET status       = 'active',
                     payment_id   = :payment_id,
-                    period_start = :now,
-                    period_end   = :end
+                    period_start = :now
                 WHERE order_id = :order_id AND org_id = :org_id
                   AND status = 'pending'
+                RETURNING plan
             """),
-            {"payment_id": payment_id, "now": now, "end": period_end,
+            {"payment_id": payment_id, "now": now,
              "order_id": order_id, "org_id": org_id},
-        ).rowcount
+        ).fetchone()
         if not claimed:
             # Already fulfilled by the other path (verify/webhook). Do NOT
             # re-reset credits and do NOT re-fire analytics.
@@ -319,7 +326,23 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
                 "Plan activation skipped — already fulfilled: org=%s order=%s",
                 org_id, order_id,
             )
-            return
+            return None
+
+        # Everything below uses the DB plan, NEVER the caller's `plan` arg.
+        plan = _normalize_tier(claimed.plan)
+        plan_config = PLAN_CONFIG[plan]
+        period_days = plan_config["period_days"]
+        new_credits = plan_config["credits"]
+        period_end = now + timedelta(days=period_days)
+
+        # Now that the true plan is known, stamp the period end (same txn).
+        db.execute(
+            text("""
+                UPDATE subscriptions SET period_end = :end
+                WHERE order_id = :order_id AND org_id = :org_id
+            """),
+            {"end": period_end, "order_id": order_id, "org_id": org_id},
+        )
 
         db.execute(
             text("""
@@ -413,6 +436,8 @@ def _activate_plan(db: Session, org_id: str, plan: str, payment_id: str, order_i
         })
     except Exception:
         pass
+
+    return plan
 
 
 def _emit_topup_revenue(org_id: str, pack_id: str, credits: int,

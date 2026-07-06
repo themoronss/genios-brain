@@ -208,6 +208,16 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             response.delete_cookie("genios_token", path="/")
             return response
 
+        # Tenancy guard (IDOR): a dashboard JWT is scoped to exactly ONE org, and
+        # every /api/org/{org_id}/* route is org-scoped. The org in the path MUST
+        # match the token's org — otherwise a logged-in user could read or modify
+        # another org's data (billing, invoices, resources, agents, …). Enforced
+        # here once, centrally, so no individual handler can forget it.
+        if path.startswith("/api/org/"):
+            path_org = path[len("/api/org/"):].split("/", 1)[0]
+            if path_org and path_org != request.state.jwt_org_id:
+                return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+
         return await call_next(request)
 
 
