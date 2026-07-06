@@ -52,6 +52,7 @@ def normalize(record: RawRecord, mapping: SourceMapping, source_id: str) -> Memo
             owner=str(owner) if owner is not None else None,
             source_confidence=mapping.overall_confidence,
             tags=tags,
+            native_id=record.native_id,
         ),
     )
 

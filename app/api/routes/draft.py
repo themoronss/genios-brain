@@ -52,6 +52,75 @@ class DraftResponse(BaseModel):
     entity_name: str
 
 
+def _v2_context_bundle(db, org_id: str, entity_name: str) -> dict:
+    """Build a draft context bundle from the v2 graph (graph_nodes + facts).
+
+    Replaces the legacy build_context_bundle(), which queried the v1
+    `contacts`/`interactions` tables dropped in migration 0015 (→ hard 500).
+    Returns the shape draft generation consumes ({entity, context_for_agent,
+    confidence, error}) and NEVER raises on missing data — worst case a thin
+    bundle so the draft still generates from the user's request alone.
+    """
+    from sqlalchemy import text as _t
+
+    name = entity_name.strip()
+    node = db.execute(
+        _t("""
+            SELECT id, canonical_name
+            FROM graph_nodes
+            WHERE org_id = :oid AND type = 'entity'
+              AND (
+                    LOWER(canonical_name) = LOWER(:n)
+                 OR LOWER(COALESCE(attributes->>'email','')) = LOWER(:n)
+                 OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(
+                                COALESCE(aliases::jsonb,'[]'::jsonb)) AS a
+                            WHERE LOWER(a) = LOWER(:n))
+              )
+            ORDER BY last_seen DESC
+            LIMIT 1
+        """),
+        {"oid": org_id, "n": name},
+    ).fetchone()
+    canonical = node.canonical_name if node else name
+    node_id = str(node.id) if node else None
+
+    facts = db.execute(
+        _t("""
+            SELECT predicate, object, confidence
+            FROM facts
+            WHERE org_id = :oid
+              AND (LOWER(subject) = LOWER(:cn) OR LOWER(subject) = LOWER(:n))
+            ORDER BY created_at DESC
+            LIMIT 40
+        """),
+        {"oid": org_id, "cn": canonical, "n": name},
+    ).fetchall()
+
+    if not facts:
+        return {
+            "entity": {"id": node_id, "name": canonical},
+            "context_for_agent": (
+                f"No stored relationship history for {canonical} yet. "
+                "Draft from the user's request; keep it professional and concise."
+            ),
+            "confidence": 0.0,
+            "error": None,
+        }
+
+    lines = [f"What GeniOS knows about {canonical} (most recent first):"]
+    for f in facts:
+        lines.append(f"- {str(f.predicate).replace('_', ' ')} {f.object}")
+    avg_conf = sum(float(f.confidence or 0) for f in facts) / len(facts)
+    coverage = min(len(facts) / 10.0, 1.0)
+
+    return {
+        "entity": {"id": node_id, "name": canonical},
+        "context_for_agent": "\n".join(lines),
+        "confidence": round(avg_conf * (0.5 + 0.5 * coverage), 3),
+        "error": None,
+    }
+
+
 @router.post("/api/generate/draft")
 def generate_draft(request: DraftRequest, db: Session = Depends(get_db)):
     """
@@ -89,11 +158,23 @@ def generate_draft(request: DraftRequest, db: Session = Depends(get_db)):
         # Resolve entity → contact_id early so the ledger row + policy ctx
         # carry the UUID (the explainer joins on it, segment filters too).
         from sqlalchemy import text as _sql_text
+        # v2: resolve entity → graph_nodes id (v1 `contacts` was dropped in 0015).
+        # Match on canonical_name, a stored email attribute, or any alias.
         _contact_row = db.execute(
             _sql_text("""
-                SELECT id FROM contacts
+                SELECT id FROM graph_nodes
                 WHERE org_id = :oid
-                  AND (LOWER(name) = LOWER(:n) OR LOWER(email) = LOWER(:n))
+                  AND type = 'entity'
+                  AND (
+                        LOWER(canonical_name) = LOWER(:n)
+                     OR LOWER(COALESCE(attributes->>'email', '')) = LOWER(:n)
+                     OR EXISTS (
+                            SELECT 1
+                            FROM jsonb_array_elements_text(COALESCE(aliases::jsonb, '[]'::jsonb)) AS a
+                            WHERE LOWER(a) = LOWER(:n)
+                        )
+                  )
+                ORDER BY last_seen DESC
                 LIMIT 1
             """),
             {"oid": request.org_id, "n": request.entity_name.strip()},
@@ -166,17 +247,22 @@ def generate_draft(request: DraftRequest, db: Session = Depends(get_db)):
                 },
             )
 
-        # Step 1: Get context bundle for the entity
+        # Step 1: Get context bundle for the entity (v2 graph — graph_nodes/facts).
         try:
-            context_bundle = build_context_bundle(
-                db, request.org_id, request.entity_name, None
-            )
+            context_bundle = _v2_context_bundle(db, request.org_id, request.entity_name)
         except Exception as e:
             logger.error(f"Context bundle build failed: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to build relationship context. Please try again.",
-            )
+            # Degrade rather than 500 — draft from the user's request alone.
+            context_bundle = {
+                "entity": {"id": None, "name": request.entity_name},
+                "context_for_agent": (
+                    f"(Relationship context unavailable.) Draft for "
+                    f"{request.entity_name} from the user's request; keep it "
+                    "professional and concise."
+                ),
+                "confidence": 0.0,
+                "error": None,
+            }
 
         # Check if contact was found
         if context_bundle.get("error"):

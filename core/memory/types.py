@@ -78,6 +78,12 @@ class MemoryItemMetadata(BaseModel):
         description="1.0 for known adapters; lower for LLM-mapped custom sources",
     )
     tags: list[str] = Field(default_factory=list, description="Source-native labels passed through")
+    native_id: str | None = Field(
+        default=None,
+        description="Raw provider record id (pre-hash). Lets the zero-signal sync "
+        "refund key back to the exact deduct row, whose idempotency_key ends in "
+        "the raw native_id — item_id (the hash) would never match.",
+    )
     structured_facts: StructuredFactsHint | None = Field(
         default=None,
         description="Optional — present when the adapter already resolved column->fact mapping. Tells g-i-3 ingest subscriber to skip LLM extraction and persist directly. See StructuredFactsHint docstring for the invariant.",

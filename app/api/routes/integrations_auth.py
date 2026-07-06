@@ -1405,6 +1405,42 @@ async def trigger_tool_sync(org_id: str, tool: str, background_tasks: Background
     return {"started": True, "tool": tool}
 
 
+@router.put("/api/org/{org_id}/integrations/{tool}/config")
+async def save_integration_config(
+    org_id: str, tool: str, request: Request, db: Session = Depends(get_db)
+):
+    """Persist per-tool UI settings (sync prefs, preferences, domain filters)
+    saved from the Integrations page. Upserts into integration_configs so the
+    'Save changes' action succeeds and settings survive a reload."""
+    try:
+        config = await request.json()
+    except Exception:
+        config = {}
+    if not isinstance(config, dict):
+        raise HTTPException(status_code=400, detail="config must be a JSON object")
+    db.execute(
+        text("""
+            INSERT INTO integration_configs (org_id, tool, config, updated_at)
+            VALUES (:org, :tool, CAST(:config AS jsonb), now())
+            ON CONFLICT (org_id, tool)
+            DO UPDATE SET config = EXCLUDED.config, updated_at = now()
+        """),
+        {"org": org_id, "tool": tool, "config": json.dumps(config)},
+    )
+    db.commit()
+    return {"saved": True, "tool": tool}
+
+
+@router.get("/api/org/{org_id}/integrations/{tool}/config")
+def get_integration_config(org_id: str, tool: str, db: Session = Depends(get_db)):
+    """Read back a tool's saved UI settings (empty object if never saved)."""
+    row = db.execute(
+        text("SELECT config FROM integration_configs WHERE org_id = :org AND tool = :tool"),
+        {"org": org_id, "tool": tool},
+    ).fetchone()
+    return {"tool": tool, "config": (row.config if row else {})}
+
+
 # ─── HubSpot OAuth ────────────────────────────────────────────────────────────
 
 @router.get("/auth/hubspot/connect")

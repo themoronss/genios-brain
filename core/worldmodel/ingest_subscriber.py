@@ -122,6 +122,20 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
         _ingest_structured(session, item, org_id, hint)
         return
 
+    # Idempotency guard: the same source record always yields the same
+    # tagged_item_id. If facts for it already exist (webhook+cron overlap,
+    # Gmail historyId overlap, a manual re-trigger), skip — the unstructured
+    # path has no unique constraint, so re-running would duplicate every
+    # FactRow. Checked BEFORE extract() so a re-sync also skips the LLM call.
+    tagged_item_id = f"{item.source_type}:{item.item_id}"
+    if session.execute(
+        select(FactRow.id)
+        .where(FactRow.org_id == org_id, FactRow.source_item_id == tagged_item_id)
+        .limit(1)
+    ).first() is not None:
+        log.debug("ingest_skip_duplicate", item_id=tagged_item_id, org_id=org_id)
+        return
+
     try:
         extraction = extract(item, org_id=org_id)
     except ExtractionError as e:
@@ -132,7 +146,7 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
         # value. Refund so the customer isn't charged for our error.
         _refund_zero_signal(
             org_id=org_id, source_type=item.source_type,
-            native_id=item.item_id, reason="extract_failed",
+            native_id=(item.metadata.native_id or item.item_id), reason="extract_failed",
         )
         return
 
@@ -143,7 +157,7 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
         # cost of having a safety net.
         _refund_zero_signal(
             org_id=org_id, source_type=item.source_type,
-            native_id=item.item_id, reason="zero_signal_extract",
+            native_id=(item.metadata.native_id or item.item_id), reason="zero_signal_extract",
         )
         return  # nothing extracted — common for trivial messages
 
