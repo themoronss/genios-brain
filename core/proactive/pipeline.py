@@ -119,9 +119,17 @@ _INT_PREDICATES = frozenset({
     # CSM
     "mrr_usd", "days_to_renewal", "days_since_last_login", "nps_score",
     "open_tickets", "usage_drop_pct_30d",
+    # Sales
+    "deal_value", "days_in_current_stage", "contacts_engaged",
+    "discount_pct", "gross_margin_pct", "days_to_close",
 })
 
-_BOOL_PREDICATES = frozenset({"is_vip_client", "active"})
+_BOOL_PREDICATES = frozenset({
+    "is_vip_client", "active",
+    # Sales
+    "economic_buyer_engaged", "budget_confirmed", "next_step_scheduled",
+    "competitor_poc_active",
+})
 
 
 # ─────────────────────────────────────────────────────────────────────────────

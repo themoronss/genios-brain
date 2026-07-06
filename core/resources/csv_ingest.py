@@ -224,6 +224,92 @@ _CSM_SYNONYMS: dict[str, str] = {
 }
 
 
+_SALES_SYNONYMS: dict[str, str] = {
+    # Deal / opportunity identifier → the Deal (secondary entity) stable id.
+    # Deal name is the reliable identifier across CRM exports (HubSpot,
+    # Salesforce), so it doubles as the id when no explicit id column exists.
+    "deal_id": "entity_id",
+    "opportunity_id": "entity_id",
+    "opp_id": "entity_id",
+    "deal_name": "entity_id",
+    "opportunity_name": "entity_id",
+    "opportunity": "entity_id",
+    "deal": "entity_id",
+    "id": "entity_id",
+    # Account / company → primary entity canonical_name.
+    "account_name": "entity_name",
+    "account": "entity_name",
+    "company": "entity_name",
+    "company_name": "entity_name",
+    "customer_name": "entity_name",
+    "customer": "entity_name",
+    "client_name": "entity_name",
+    "name": "entity_name",
+    # Contact attrs on the account.
+    "contact_email": "client_email",
+    "email": "client_email",
+    "contact_phone": "client_phone",
+    "phone": "client_phone",
+    "contact": "client_phone",
+    # ── Deal facts the sales rules read ──────────────────────────────────
+    "stage": "stage",
+    "deal_stage": "stage",
+    "sales_stage": "stage",
+    "pipeline_stage": "stage",
+    "status": "stage",
+    "amount": "deal_value",
+    "deal_value": "deal_value",
+    "value": "deal_value",
+    "deal_amount": "deal_value",
+    "acv": "deal_value",
+    "arr": "deal_value",
+    "contract_value": "deal_value",
+    "close_date": "close_date",
+    "expected_close_date": "close_date",
+    "expected_close": "close_date",
+    "close": "close_date",
+    "days_in_stage": "days_in_current_stage",
+    "days_in_current_stage": "days_in_current_stage",
+    "stage_age_days": "days_in_current_stage",
+    "days_since_last_contact": "days_since_last_contact",
+    "last_activity_days": "days_since_last_contact",
+    "last_contact_days": "days_since_last_contact",
+    "last_activity_date": "last_activity_date",
+    "last_activity": "last_activity_date",
+    "last_contacted": "last_activity_date",
+    "contacts_engaged": "contacts_engaged",
+    "num_contacts": "contacts_engaged",
+    "number_of_contacts": "contacts_engaged",
+    "associated_contacts": "contacts_engaged",
+    "stakeholders": "contacts_engaged",
+    "next_step": "next_step",
+    "next_activity": "next_step",
+    "next_activity_date": "next_step",
+    "next_step_date": "next_step",
+    "next_meeting": "next_step",
+    "economic_buyer_engaged": "economic_buyer_engaged",
+    "economic_buyer": "economic_buyer_engaged",
+    "eb_engaged": "economic_buyer_engaged",
+    "budget_confirmed": "budget_confirmed",
+    "budget": "budget_confirmed",
+    "discount_pct": "discount_pct",
+    "discount": "discount_pct",
+    "gross_margin_pct": "gross_margin_pct",
+    "margin": "gross_margin_pct",
+    "competitor_poc_active": "competitor_poc_active",
+    "competitor_active": "competitor_poc_active",
+    "competitor": "competitor_poc_active",
+    "champion_status": "champion_status",
+    "champion": "champion_status",
+    "nps_score": "nps_score",
+    "nps": "nps_score",
+    "days_to_renewal": "days_to_renewal",
+    "usage_drop_pct_30d": "usage_drop_pct_30d",
+    "notes": "notes",
+    "comments": "notes",
+}
+
+
 # Public registry — single source of truth keyed by module_id.
 MODULE_PROFILES: dict[str, ModuleProfile] = {
     "ar_collection": ModuleProfile(
@@ -250,6 +336,16 @@ MODULE_PROFILES: dict[str, ModuleProfile] = {
         edge_predicate="owned_by",
         column_synonyms=_CSM_SYNONYMS,
         signature_columns=("mrr_usd", "days_to_renewal", "nps_score"),
+    ),
+    "sales": ModuleProfile(
+        module_id="sales",
+        primary_entity_type="account",
+        secondary_entity_type="deal",
+        edge_predicate="deal_with",
+        column_synonyms=_SALES_SYNONYMS,
+        # A deals/pipeline CSV ships a stage + a deal value + a close date.
+        # ("stage" alone is shared with HR; deal_value + close_date disambiguate.)
+        signature_columns=("stage", "deal_value", "close_date"),
     ),
 }
 
@@ -441,7 +537,7 @@ def process_rows(
             "status",
         ):
             if mapped.get(k):
-                facts[k] = mapped[k].lower() if k in ("payment_status", "status") else mapped[k]
+                facts[k] = mapped[k].lower() if k in ("payment_status", "status", "stage") else mapped[k]
 
         # ── AR-shape typed fields ────────────────────────────────────────
         if "amount_inr" in mapped:
@@ -490,6 +586,42 @@ def process_rows(
                 v = _parse_int_loose(mapped[k])
                 if v is not None:
                     facts[k] = v
+
+        # ── Sales-shape typed fields ────────────────────────────────────
+        if "deal_value" in mapped:
+            v = _parse_int_loose(mapped["deal_value"])
+            if v is not None:
+                facts["deal_value"] = v
+        for k in ("days_in_current_stage", "contacts_engaged",
+                  "discount_pct", "gross_margin_pct"):
+            if k in mapped:
+                v = _parse_int_loose(mapped[k])
+                if v is not None:
+                    facts[k] = v
+        for k in ("economic_buyer_engaged", "budget_confirmed",
+                  "competitor_poc_active"):
+            if k in mapped:
+                facts[k] = _parse_bool_loose(mapped[k])
+        if mapped.get("champion_status"):
+            facts["champion_status"] = mapped["champion_status"].lower()
+        # A non-empty "next step / next activity" cell ⇒ a next step IS
+        # scheduled (the #1 anti-stall rule reads this); a sales CSV with no
+        # such column ⇒ none scheduled.
+        if "next_step" in mapped:
+            facts["next_step_scheduled"] = bool(str(mapped["next_step"]).strip())
+        elif module_id == "sales":
+            facts["next_step_scheduled"] = False
+        # days_since_last_contact: direct int handled in the HR loop above; if
+        # only a last-activity DATE is present, derive the day count.
+        if "days_since_last_contact" not in facts:
+            la = _parse_date_loose(mapped.get("last_activity_date", ""))
+            if la is not None:
+                facts["days_since_last_contact"] = (today - la).days
+        # close_date passthrough + days-to-close derivation.
+        close_d = _parse_date_loose(mapped.get("close_date", ""))
+        if close_d is not None:
+            facts["close_date"] = close_d.isoformat()
+            facts["days_to_close"] = (close_d - today).days
 
         structured.append(
             StructuredRow(

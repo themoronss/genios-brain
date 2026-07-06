@@ -166,6 +166,11 @@ def _register_pkg(pkg: ModulePackage) -> None:
         # time in practice. If the second attempt still fails we surface a
         # graceful "insufficient_data" envelope rather than a 500 — that
         # preserves the contract Hermes/langchain consumers depend on.
+        # Enrich the caller's facts with the queried entity's OWN stored graph
+        # facts (uploaded CSVs, synced email) so the engine reasons over the
+        # org's data — not just what the caller re-supplies each request.
+        facts = _enrich_facts_from_graph(session, org_id, query, facts)
+
         result = _decide_with_retry(
             session=session,
             gateway=gateway,
@@ -240,6 +245,61 @@ def _step_to_dict(step: Any) -> dict[str, Any]:
         "conclusion": getattr(step, "conclusion", ""),
         "matched_facts": getattr(step, "matched_facts", {}) or {},
     }
+
+
+def _enrich_facts_from_graph(
+    session: Session, org_id: str, query: Any, facts: Any
+) -> Any:
+    """Merge the queried entity's OWN stored graph facts into the engine's flat
+    facts dict.
+
+    Historically the engine reasoned ONLY over the caller's request.facts, so a
+    query never saw the org's ingested data (uploaded CSVs, synced email). When
+    the query names a subject, load that subject's persisted facts and merge them
+    UNDER the caller's facts — explicit caller values always win. Values are
+    coerced to the types the rules expect (shared with the proactive path).
+
+    Safe + additive: only the flat-dict ("shape B") case is touched, and any
+    failure returns the facts unchanged (never breaks a query).
+    """
+    try:
+        if not isinstance(facts, dict) or isinstance(facts.get("facts"), list):
+            return facts
+        subject = None
+        if isinstance(query, dict):
+            for k in ("subject", "entity", "entity_name", "contact", "account",
+                      "account_name", "deal", "deal_name", "company", "name"):
+                v = query.get(k)
+                if isinstance(v, str) and v.strip():
+                    subject = v.strip()
+                    break
+        if not subject:
+            return facts
+
+        from sqlalchemy import text as _t
+
+        from core.proactive.pipeline import _coerce_fact_value
+
+        rows = session.execute(
+            _t("""
+                SELECT predicate, object
+                FROM facts
+                WHERE org_id = :org AND LOWER(subject) = LOWER(:subj)
+                ORDER BY created_at DESC
+            """),
+            {"org": org_id, "subj": subject},
+        ).fetchall()
+        if not rows:
+            return facts
+
+        enriched: dict[str, Any] = {}
+        for r in rows:
+            if r.predicate not in enriched:            # most-recent value wins
+                enriched[r.predicate] = _coerce_fact_value(r.predicate, r.object)
+        enriched.update(facts)                          # caller facts always win
+        return enriched
+    except Exception:
+        return facts
 
 
 def _persist_query_facts_to_graph(
