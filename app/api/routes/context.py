@@ -98,7 +98,7 @@ def _resolve_entity(db: Session, org_id: str, entity: str) -> dict | None:
     anything the user clicks — not just people."""
     row = db.execute(
         text("""
-            SELECT id, canonical_name, type, attributes, last_seen
+            SELECT id, canonical_name, type, attributes, last_seen, aliases
             FROM graph_nodes
             WHERE org_id = :oid
               AND LOWER(canonical_name) = LOWER(:e)
@@ -110,7 +110,7 @@ def _resolve_entity(db: Session, org_id: str, entity: str) -> dict | None:
     if not row:
         row = db.execute(
             text("""
-                SELECT id, canonical_name, type, attributes, last_seen
+                SELECT id, canonical_name, type, attributes, last_seen, aliases
                 FROM graph_nodes
                 WHERE org_id = :oid
                   AND LOWER(canonical_name) LIKE LOWER(:p)
@@ -127,19 +127,39 @@ def _resolve_entity(db: Session, org_id: str, entity: str) -> dict | None:
         "type": row[2],
         "attributes": row[3] if isinstance(row[3], dict) else {},
         "last_seen_at": row[4],
+        "aliases": row[5] if isinstance(row[5], list) else [],
     }
 
 
+def _subject_names(node: dict) -> list[str]:
+    """All lowercased name-variants a fact's subject/object might use for this
+    node — its canonical_name plus any aliases.
+
+    WHY: facts are keyed by the raw subject STRING (whatever the extractor
+    emitted), not the node id — so a fact's subject can differ in casing or
+    variant ("acme" / "Acme Inc") from the node's canonical_name. The node
+    resolves case-insensitively but the fact lookups used exact `subject = name`,
+    which silently returned ZERO facts (graph has the data, agent sees nothing).
+    Matching against this set case-insensitively fixes that class of miss."""
+    names = [node.get("name")] + list(node.get("aliases") or [])
+    seen: dict[str, None] = {}
+    for n in names:
+        if isinstance(n, str) and n.strip():
+            seen[n.strip().lower()] = None
+    return list(seen.keys())
+
+
 def _entity_details(db: Session, org_id: str, node: dict) -> EntityDetails:
+    names = _subject_names(node)
     facts = db.execute(
         text("""
             SELECT predicate, object, confidence
             FROM facts
-            WHERE org_id = :oid AND subject = :name
+            WHERE org_id = :oid AND LOWER(subject) = ANY(:names)
             ORDER BY confidence DESC, created_at DESC
             LIMIT 50
         """),
-        {"oid": org_id, "name": node["name"]},
+        {"oid": org_id, "names": names},
     ).fetchall()
 
     edges_count = db.execute(
@@ -177,7 +197,7 @@ def _entity_details(db: Session, org_id: str, node: dict) -> EntityDetails:
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
-def _node_scores(db: Session, org_id: str, name: str) -> NodeScores:
+def _node_scores(db: Session, org_id: str, names: list[str]) -> NodeScores:
     """Compute right-panel scores from facts + edges for any node type."""
     row = db.execute(
         text("""
@@ -187,9 +207,9 @@ def _node_scores(db: Session, org_id: str, name: str) -> NodeScores:
                 MAX(created_at)                                         AS latest,
                 COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') AS fresh
             FROM facts
-            WHERE org_id = :oid AND (subject = :n OR object = :n)
+            WHERE org_id = :oid AND (LOWER(subject) = ANY(:names) OR LOWER(object) = ANY(:names))
         """),
-        {"oid": org_id, "n": name},
+        {"oid": org_id, "names": names},
     ).fetchone()
     n_facts = int(row[0] or 0)
     avg_conf = float(row[1] or 0)
@@ -210,7 +230,7 @@ def _node_scores(db: Session, org_id: str, name: str) -> NodeScores:
 def _facts_as_interactions(
     db: Session,
     org_id: str,
-    name: str,
+    names: list[str],
     limit: int = 20,
     policy: dict | None = None,
 ) -> list[dict[str, Any]]:
@@ -220,7 +240,7 @@ def _facts_as_interactions(
     agent isn't allowed to see."""
     from core.policy.v2_scope import fact_clauses_v2, is_unrestricted
 
-    binds: dict[str, Any] = {"oid": org_id, "n": name, "limit": limit}
+    binds: dict[str, Any] = {"oid": org_id, "names": names, "limit": limit}
     extra = ""
     if policy and not is_unrestricted(policy):
         frag, fbinds = fact_clauses_v2(policy, fact_alias="facts", bind_prefix="fai")
@@ -231,7 +251,7 @@ def _facts_as_interactions(
         text(f"""
             SELECT predicate, object, subject, confidence, created_at, source_item_id
             FROM facts
-            WHERE org_id = :oid AND (subject = :n OR object = :n){extra}
+            WHERE org_id = :oid AND (LOWER(subject) = ANY(:names) OR LOWER(object) = ANY(:names)){extra}
             ORDER BY created_at DESC
             LIMIT :limit
         """),
@@ -273,21 +293,22 @@ def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict 
     # entities. This makes "Role application" / "Job cuts" clicks useful too.
     node_type = node.get("type") or "entity"
     if node_type != "entity":
+        _names = _subject_names(node)
         related = db.execute(
             text("""
                 SELECT predicate, object FROM facts
-                WHERE org_id = :oid AND subject = :n
+                WHERE org_id = :oid AND LOWER(subject) = ANY(:names)
                 ORDER BY created_at DESC LIMIT 20
             """),
-            {"oid": org_id, "n": node["name"]},
+            {"oid": org_id, "names": _names},
         ).fetchall()
         also_about = db.execute(
             text("""
                 SELECT subject, predicate FROM facts
-                WHERE org_id = :oid AND object = :n
+                WHERE org_id = :oid AND LOWER(object) = ANY(:names)
                 ORDER BY created_at DESC LIMIT 20
             """),
-            {"oid": org_id, "n": node["name"]},
+            {"oid": org_id, "names": _names},
         ).fetchall()
         lines = [f"{node['name']} ({node_type})"]
         if related:
@@ -310,7 +331,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict 
             open_commitments=[],
             interaction_count=len(related) + len(also_about),
         )
-        interactions = _facts_as_interactions(db, org_id, node["name"], policy=policy)
+        interactions = _facts_as_interactions(db, org_id, _subject_names(node), policy=policy)
         high_conf = sum(1 for i in interactions if (i.get("sentiment") or 0) >= 0.45)
         coverage = (high_conf / max(len(interactions), 1)) if interactions else 0.0
         return ContextResponse(
@@ -319,7 +340,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict 
             matched_from="exact",
             context_for_agent="\n".join(lines),
             confidence=0.7,
-            scores=_node_scores(db, org_id, node["name"]),
+            scores=_node_scores(db, org_id, _subject_names(node)),
             coverage_score=round(coverage, 3),
             recent_interactions=interactions,
             facts_included=len(interactions),
@@ -337,7 +358,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict 
     if body.situation:
         summary_lines.append(f"Situation: {body.situation}")
 
-    interactions = _facts_as_interactions(db, org_id, node["name"], policy=policy)
+    interactions = _facts_as_interactions(db, org_id, _subject_names(node), policy=policy)
     high_conf = sum(1 for i in interactions if (i.get("sentiment") or 0) >= 0.45)
     coverage = (high_conf / max(len(interactions), 1)) if interactions else 0.0
     return ContextResponse(
@@ -346,7 +367,7 @@ def _build_context(db: Session, org_id: str, body: ContextRequest, policy: dict 
         matched_from="exact" if details.name.lower() == body.entity.lower() else "fuzzy",
         context_for_agent="\n".join(summary_lines),
         confidence=min(1.0, 0.4 + 0.05 * details.interaction_count),
-        scores=_node_scores(db, org_id, node["name"]),
+        scores=_node_scores(db, org_id, _subject_names(node)),
         coverage_score=round(coverage, 3),
         recent_interactions=interactions,
         facts_included=len(interactions),
@@ -469,7 +490,7 @@ def get_entity_detail(entity_id: str, db: Session = Depends(get_db),
                       org_id: str = Depends(verify_api_key)) -> dict[str, Any]:
     row = db.execute(
         text("""
-            SELECT id, canonical_name, type, attributes, last_seen
+            SELECT id, canonical_name, type, attributes, last_seen, aliases
             FROM graph_nodes
             WHERE org_id = :oid AND id = :eid
         """),

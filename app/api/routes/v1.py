@@ -628,24 +628,13 @@ async def v1_document_upload(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    # Log upload
-    db.execute(
-        text("""
-            INSERT INTO activity_log (id, org_id, event_type, event_data, created_at)
-            VALUES (:id, :org_id, 'file_uploaded', :data, NOW())
-        """),
-        {
-            "id": file_id,
-            "org_id": org_id,
-            "data": json.dumps({
-                "filename": file.filename,
-                "tag": tag,
-                "size_bytes": len(content),
-                "file_ext": file_ext,
-                "source": "v1_api",
-            }),
-        },
-    )
+    # Ensure a v2 `upload` connection so the emitted document resolves to this
+    # org. ingest_subscriber resolves org via source_id → connections; a bare
+    # "org:{id}" source has NO connection row, so the doc would be silently
+    # dropped. (The old code here INSERT'd into activity_log — a table dropped
+    # in migration 0015 — which 500'd every call.)
+    from core.resources.connection import ensure_resource_connection
+    upload_source_id = ensure_resource_connection(db, org_id=org_id, source_type="upload")
     db.commit()
 
     # Extract text
@@ -681,8 +670,8 @@ async def v1_document_upload(
             from core.memory.types import MemoryItem, MemoryItemMetadata
             item = MemoryItem(
                 item_id=f"document:{file_id}",
-                source_id=f"org:{org_id}",
-                source_type="document",
+                source_id=upload_source_id,
+                source_type="upload",
                 content=text_content[:20000],
                 content_ref=str(file_id),
                 metadata=MemoryItemMetadata(
