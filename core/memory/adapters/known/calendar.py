@@ -117,14 +117,26 @@ class CalendarAdapter(MemoryAdapter):
             if cursor and cursor.value and cursor.strategy == "native":
                 params["syncToken"] = cursor.value
             else:
-                # First run: use time-window so we don't pull years of history
-                params["timeMin"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+                # First run: pull a bounded PAST window — the old timeMin=now was
+                # future-only, so users whose meetings are in the past saw zero
+                # events synced ("connected but nothing shows up"). Expand
+                # recurring events and sort by start time.
+                from datetime import timedelta
+                params["timeMin"] = (
+                    datetime.now(UTC) - timedelta(days=90)
+                ).isoformat().replace("+00:00", "Z")
+                params["singleEvents"] = True
+                params["orderBy"] = "startTime"
                 params["showDeleted"] = False
 
             resp = svc.events().list(**params).execute()
             items = resp.get("items", [])
             records = [_event_to_raw(ev) for ev in items if ev.get("status") != "cancelled"]
-            next_token = resp.get("nextSyncToken") or resp.get("nextPageToken") or cursor.value if cursor else ""
+            # Precedence: without the parens, `A or B or cursor.value if cursor`
+            # parsed as `(A or B or cursor.value) if cursor else ""`, discarding
+            # the token on the first run (cursor is None) — so no cursor ever
+            # persisted and every sync restarted as a full first run.
+            next_token = resp.get("nextSyncToken") or resp.get("nextPageToken") or (cursor.value if cursor else "")
             return (
                 records,
                 Cursor(value=str(next_token or ""), strategy="native"),

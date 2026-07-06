@@ -280,14 +280,11 @@ async def gcal_callback(state: str, code: str, background_tasks: BackgroundTasks
 
     db = SessionLocal()
     try:
-        db.execute(
-            text("""
-                INSERT INTO calendar_sync_state (org_id, calendar_id)
-                VALUES (:org_id, 'primary')
-                ON CONFLICT (org_id, calendar_id) DO NOTHING
-            """),
-            {"org_id": org_id},
-        )
+        # NOTE: removed a dead `INSERT INTO calendar_sync_state` here — that table
+        # was dropped in migration 0015, so the INSERT raised UndefinedTable and
+        # 500'd the entire OAuth callback *before* the v2 connection was ever
+        # registered → calendar could never connect. The real v2 connection is
+        # registered below via register_v2_calendar_connection.
         # Store tokens in oauth_tokens with tool identifier
         db.execute(
             text("""
@@ -1309,12 +1306,11 @@ def list_user_calendars(org_id: str):
         service = build_calendar_service(token_row.access_token, token_row.refresh_token)
         calendars = list_calendars(service)
 
-        # Get current sync selections from DB
-        enabled_rows = db.execute(
-            text("SELECT calendar_id, sync_enabled FROM calendar_sync_state WHERE org_id = :oid"),
-            {"oid": org_id},
-        ).fetchall()
-        enabled_map = {r.calendar_id: r.sync_enabled for r in enabled_rows}
+        # Per-calendar sync selections lived in calendar_sync_state (dropped in
+        # 0015). Sync now always uses the primary calendar, so this list is
+        # informational — default to primary-enabled and don't 500 the settings
+        # page on the missing table.
+        enabled_map: dict = {}
 
         result = []
         for cal in calendars:
@@ -1348,25 +1344,20 @@ async def update_calendar_selection(org_id: str, request: Request):
 
     db = SessionLocal()
     try:
-        for sel in selections:
-            cal_id = sel.get("id")
-            enabled = sel.get("sync_enabled", False)
-            cal_name = sel.get("name", "")
-            if not cal_id:
-                continue
-
-            db.execute(
-                text("""
-                    INSERT INTO calendar_sync_state (org_id, calendar_id, sync_enabled, calendar_name)
-                    VALUES (:oid, :cal_id, :enabled, :name)
-                    ON CONFLICT (org_id, calendar_id) DO UPDATE SET
-                        sync_enabled = EXCLUDED.sync_enabled,
-                        calendar_name = COALESCE(EXCLUDED.calendar_name, calendar_sync_state.calendar_name),
-                        updated_at = NOW()
-                """),
-                {"oid": org_id, "cal_id": cal_id, "enabled": enabled, "name": cal_name},
-            )
-
+        # calendar_sync_state was dropped in 0015; persist the selection to
+        # integration_configs instead. NOTE: sync currently uses the primary
+        # calendar only, so this is stored for future use and does not yet change
+        # what gets synced — but it no longer 500s on the missing table.
+        import json as _json
+        db.execute(
+            text("""
+                INSERT INTO integration_configs (org_id, tool, config, updated_at)
+                VALUES (:org, 'gcal', CAST(:cfg AS jsonb), now())
+                ON CONFLICT (org_id, tool)
+                DO UPDATE SET config = EXCLUDED.config, updated_at = now()
+            """),
+            {"org": org_id, "cfg": _json.dumps({"calendars": selections})},
+        )
         db.commit()
         return {"updated": True, "count": len(selections)}
     except Exception as e:
