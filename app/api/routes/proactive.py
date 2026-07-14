@@ -89,20 +89,26 @@ def list_insights(
         # band (§5 Gate 1). The raw float remains in the proactive_insights row.
         if "confidence" in scores:
             scores["confidence"] = to_band(scores.get("confidence")).value
-        priority = "high" if r.delivery_route == "push" else (
-            "medium" if r.delivery_route == "review" else "low"
+        # The pipeline writes the human headline + why into scores_jsonb
+        # (pipeline.py:821). Older/other producers may put them in the
+        # derivation_chain. Read scores first, then chain, then a generic
+        # fallback — otherwise the dashboard shows bare "risk: <entity>".
+        priority = scores.get("priority") or (
+            "high" if r.delivery_route == "push" else (
+                "medium" if r.delivery_route == "review" else "low"
+            )
         )
         return {
             "id": str(r.id),
             "type": r.type,
             "priority": priority,
-            "category": chain.get("category") or "general",
-            "title": chain.get("title") or f"{r.type}: {r.primary_entity}",
-            "detail": chain.get("summary") or "",
+            "category": scores.get("category") or chain.get("category") or "general",
+            "title": scores.get("title") or chain.get("title") or f"{r.type}: {r.primary_entity}",
+            "detail": scores.get("memory_view") or chain.get("summary") or "",
             "contact_name": r.primary_entity,
             "contact_id": None,
-            "memory_view": chain.get("memory_view"),
-            "genios_view": chain.get("genios_view"),
+            "memory_view": scores.get("memory_view") or chain.get("memory_view"),
+            "genios_view": scores.get("genios_view") or chain.get("genios_view"),
             "delivery_status": "delivered",
             "source": "engine",
             "generated_at": r.created_at.isoformat() if r.created_at else None,
