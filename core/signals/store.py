@@ -102,6 +102,49 @@ def upsert_signal(session: Session, u: SignalUpsert) -> None:
     session.execute(stmt)
 
 
+def upsert_signals_bulk(session: Session, upserts: list[SignalUpsert]) -> int:
+    """One INSERT ... ON CONFLICT for many signals — avoids N round-trips on a
+    networked DB. Each (org, subject, signal_type) must be unique within the
+    batch (one per node per type, so it is)."""
+    if not upserts:
+        return 0
+    now = _utcnow()
+    rows = [
+        {
+            "id": _uuid(),
+            "org_id": u.org_id,
+            "subject_node_id": u.subject_node_id,
+            "subject_name": u.subject_name,
+            "signal_type": u.signal_type,
+            "value_num": u.value_num,
+            "value_cat": u.value_cat,
+            "confidence": u.confidence,
+            "produced_by": u.produced_by,
+            "evidence": list(u.evidence),
+            "as_of_version": u.as_of_version,
+            "half_life_days": u.half_life_days,
+            "computed_at": now,
+        }
+        for u in upserts
+    ]
+    stmt = pg_insert(SignalRow).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_signals_subject_type",
+        set_={
+            "value_num": stmt.excluded.value_num,
+            "value_cat": stmt.excluded.value_cat,
+            "confidence": stmt.excluded.confidence,
+            "produced_by": stmt.excluded.produced_by,
+            "evidence": stmt.excluded.evidence,
+            "as_of_version": stmt.excluded.as_of_version,
+            "half_life_days": stmt.excluded.half_life_days,
+            "computed_at": stmt.excluded.computed_at,
+        },
+    )
+    session.execute(stmt)
+    return len(rows)
+
+
 def read_signals(
     session: Session,
     *,

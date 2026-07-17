@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from core.graph.store import EdgeRow, FactRow, NodeRow
 from core.signals.detectors import symbolic as det
-from core.signals.store import read_signals, upsert_signal
+from core.signals.store import read_signals, upsert_signals_bulk
 from core.signals.types import (
     SIG_ENGAGEMENT,
     SIG_IMPORTANCE,
@@ -44,52 +44,51 @@ def run_symbolic_detectors(session: Session, *, org_id: str, now: datetime | Non
         .scalars()
         .all()
     )
+    if not nodes:
+        return 0
+    names = [n.canonical_name for n in nodes]
+    node_ids = [n.id for n in nodes]
 
-    written = 0
-    for node in nodes:
-        name = node.canonical_name
-
-        def _fcount(*conds) -> int:
-            return (
-                session.execute(
-                    select(func.count())
-                    .select_from(FactRow)
-                    .where(FactRow.org_id == org_id, FactRow.subject == name, *conds)
-                ).scalar()
-                or 0
+    # 1 query: fact counts per subject (total / recent-7d / prior-8..30d)
+    fcounts: dict[str, tuple[int, int, int]] = {
+        r.subject: (r.total, r.recent, r.prior)
+        for r in session.execute(
+            select(
+                FactRow.subject,
+                func.count().label("total"),
+                func.count().filter(FactRow.created_at >= week_ago).label("recent"),
+                func.count()
+                .filter(FactRow.created_at < week_ago, FactRow.created_at >= month_ago)
+                .label("prior"),
             )
+            .where(FactRow.org_id == org_id, FactRow.subject.in_(names))
+            .group_by(FactRow.subject)
+        ).all()
+    }
 
-        total = _fcount()
-        recent = _fcount(FactRow.created_at >= week_ago)
-        prior = _fcount(FactRow.created_at < week_ago, FactRow.created_at >= month_ago)
-        edges = (
-            session.execute(
-                select(func.count())
-                .select_from(EdgeRow)
-                .where(
-                    EdgeRow.org_id == org_id,
-                    or_(EdgeRow.from_node == node.id, EdgeRow.to_node == node.id),
-                )
-            ).scalar()
-            or 0
+    # 1 query: edge counts per node (either direction)
+    ecounts: dict[str, int] = {}
+    for frm, to in session.execute(
+        select(EdgeRow.from_node, EdgeRow.to_node).where(
+            EdgeRow.org_id == org_id,
+            or_(EdgeRow.from_node.in_(node_ids), EdgeRow.to_node.in_(node_ids)),
         )
+    ).all():
+        ecounts[frm] = ecounts.get(frm, 0) + 1
+        ecounts[to] = ecounts.get(to, 0) + 1
+
+    ups: list[SignalUpsert] = []
+    for node in nodes:
+        total, recent, prior = fcounts.get(node.canonical_name, (0, 0, 0))
+        edges = ecounts.get(node.id, 0)
         days = (now - _naive_utc(node.last_seen)).total_seconds() / 86400.0
+        base = dict(org_id=org_id, subject_node_id=node.id, subject_name=node.canonical_name, produced_by="symbolic")
+        ups.append(SignalUpsert(signal_type=SIG_ENGAGEMENT, value_num=det.engagement_level(days, total), half_life_days=14, **base))
+        ups.append(SignalUpsert(signal_type=SIG_MOMENTUM, value_num=det.momentum(recent, prior), half_life_days=10, **base))
+        ups.append(SignalUpsert(signal_type=SIG_IMPORTANCE, value_num=det.importance(node.attributes or {}, edges), **base))
 
-        base = dict(org_id=org_id, subject_node_id=node.id, subject_name=name, produced_by="symbolic")
-        upsert_signal(
-            session,
-            SignalUpsert(signal_type=SIG_ENGAGEMENT, value_num=det.engagement_level(days, total), half_life_days=14, **base),
-        )
-        upsert_signal(
-            session,
-            SignalUpsert(signal_type=SIG_MOMENTUM, value_num=det.momentum(recent, prior), half_life_days=10, **base),
-        )
-        upsert_signal(
-            session,
-            SignalUpsert(signal_type=SIG_IMPORTANCE, value_num=det.importance(node.attributes or {}, edges), **base),
-        )
-        written += 3
-    return written
+    # 1 bulk INSERT ... ON CONFLICT (instead of 3-per-node round-trips)
+    return upsert_signals_bulk(session, ups)
 
 
 def merge_signals_into_facts(
