@@ -588,6 +588,17 @@ def run_all_for_org(
         log.warning("proactive_timing_detectors_failed", org_id=org_id, error=str(e))
         aggregate["timing_detectors"] = {"insights_fired": 0, "error": str(e)[:200]}
 
+    # Signal Layer — recompute derived signals (importance / momentum /
+    # engagement) from graph state on each scan. Same isolation as the timing
+    # detectors: a signal-side failure must never sink the scan that succeeded.
+    try:
+        from core.signals.runtime import run_symbolic_detectors
+
+        aggregate["signals_computed"] = run_symbolic_detectors(session, org_id=org_id)
+    except Exception as e:  # noqa: BLE001 — never let signals break the scan
+        log.warning("proactive_signals_failed", org_id=org_id, error=str(e))
+        aggregate["signals_computed"] = 0
+
     return aggregate
 
 
@@ -715,6 +726,18 @@ def run_for_org(
         return present
 
     for invoice_id, facts in invoices.items():
+        # Signal Layer — enrich this subject's facts with its derived signals
+        # (importance / momentum / ball_in_court / ...) so signal-aware rules can
+        # fire. Additive + wrapped: caller (uploaded) facts win on conflict, and
+        # a signal-read failure must never break the existing rule run.
+        try:
+            from core.signals.runtime import merge_signals_into_facts
+
+            facts = merge_signals_into_facts(
+                session, org_id=org_id, subject_name=invoice_id, facts=facts
+            )
+        except Exception:  # noqa: BLE001
+            pass
         result = chainer.run(facts)
         if not result.proof.steps:
             continue
