@@ -42,10 +42,15 @@ _SYSTEM = (
 def analyze_contact(
     contact: str = Query(..., min_length=1, description="Contact / company name"),
     situation: str | None = Query(None, description="Optional what-you're-doing hint"),
+    deep: bool = Query(False, description="Use Sonnet (slower/costlier) vs Haiku default"),
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
-    """Deep Sonnet analysis of one contact from real (graph + live) context."""
+    """Analyse one contact from real (graph + live Gmail) context.
+
+    Cost-first: Haiku by default (~10x cheaper); `deep=true` escalates to Sonnet
+    only when the user asks for a deeper take. On-demand + client-cached.
+    """
     try:
         bundle = build_context_bundle(db, org_id, contact, situation=situation or "")
     except Exception as e:  # noqa: BLE001 — context miss must not 500
@@ -69,7 +74,7 @@ def analyze_contact(
     def _run() -> str:
         return llm_client.call(
             org_id=org_id,
-            purpose="reason_sonnet",
+            purpose="reason_sonnet" if deep else "reason_haiku",  # cheap by default
             messages=[
                 {"role": "system", "content": _SYSTEM},
                 {"role": "user", "content": user_prompt},
@@ -87,4 +92,4 @@ def analyze_contact(
     if not suggestion:
         raise HTTPException(status_code=503, detail="Analysis unavailable — try again.")
 
-    return {"contact": contact, "suggestion": suggestion, "source": "sonnet"}
+    return {"contact": contact, "suggestion": suggestion, "model": "sonnet" if deep else "haiku"}
