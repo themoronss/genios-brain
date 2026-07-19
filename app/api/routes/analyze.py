@@ -58,7 +58,9 @@ def analyze_contact(
         bundle = None
 
     ctx = (bundle or {}).get("context_for_agent") or ""
-    if not ctx.strip():
+    sit = (situation or "").strip()
+    # With a draft/situation we can still help even if there's no cached context.
+    if not ctx.strip() and not sit:
         return {
             "contact": contact,
             "suggestion": None,
@@ -67,8 +69,11 @@ def analyze_contact(
 
     user_prompt = (
         f"Contact: {contact}\n\n"
-        f"Context (from emails / calendar / history):\n{ctx[:6000]}\n\n"
-        f"What is the real situation, and the single best next move for the founder?"
+        f"Context (from emails / calendar / history):\n{ctx[:6000] or '(no cached context)'}\n\n"
+        + (f"What the user is doing right now: {sit[:2500]}\n\n" if sit else "")
+        + "Give the real situation and the single best next move. If the user is "
+        "reviewing a draft message, say what's weak or missing and how to fix it — "
+        "specific to this context, not generic."
     )
 
     def _run() -> str:
