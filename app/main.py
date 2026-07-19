@@ -63,6 +63,7 @@ from app.api.routes import billing_stream as billing_stream_routes
 from app.api.routes import seats as seats_routes
 from app.api.routes import tags_disclosure as tags_disclosure_routes
 from app.api.routes import proactive as proactive_routes
+from app.api.routes import analyze as analyze_routes
 from app.api.routes import writeback as writeback_routes
 from app.api.routes import feedback as feedback_routes
 from app.api.routes import admin as admin_routes
@@ -298,6 +299,7 @@ app.include_router(billing_stream_routes.router)
 app.include_router(seats_routes.router)
 app.include_router(tags_disclosure_routes.router)
 app.include_router(proactive_routes.router)
+app.include_router(analyze_routes.router)
 app.include_router(writeback_routes.router)
 app.include_router(feedback_routes.router)
 app.include_router(admin_routes.router)
