@@ -599,6 +599,18 @@ def run_all_for_org(
         log.warning("proactive_signals_failed", org_id=org_id, error=str(e))
         aggregate["signals_computed"] = 0
 
+    # Graph-path — turn the fresh signals into 'important relationship cooling'
+    # suggestions (proactive_insights + NBA). Isolated like the detectors above.
+    try:
+        from core.signals.insight_runner import run_relationship_detectors
+
+        rel = run_relationship_detectors(session, org_id=org_id)
+        aggregate["relationship_insights"] = rel
+        aggregate["insights_fired_total"] += int(rel.get("insights_fired") or 0)
+    except Exception as e:  # noqa: BLE001 — never let it break the scan
+        log.warning("proactive_relationship_failed", org_id=org_id, error=str(e))
+        aggregate["relationship_insights"] = {"insights_fired": 0, "error": str(e)[:200]}
+
     return aggregate
 
 
