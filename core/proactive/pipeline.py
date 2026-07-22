@@ -221,6 +221,27 @@ def _sales_memory_view(deal_name: str, facts: dict) -> str:
     return " · ".join(parts)
 
 
+_SALES_BENCH: dict | None = None
+
+
+def _sales_benchmarks() -> dict:
+    """Load (once) the shipped sales benchmarks (modules/sales/knowledge/
+    benchmarks.yaml) — SaaS-standard medians used for day-1 benchmark comparison
+    without needing accumulated tenant history."""
+    global _SALES_BENCH
+    if _SALES_BENCH is None:
+        try:
+            from pathlib import Path as _P
+
+            import yaml as _yaml
+
+            p = _P(__file__).resolve().parents[2] / "modules" / "sales" / "knowledge" / "benchmarks.yaml"
+            _SALES_BENCH = _yaml.safe_load(p.read_text("utf-8")) or {}
+        except Exception:  # noqa: BLE001
+            _SALES_BENCH = {}
+    return _SALES_BENCH
+
+
 def _enrich_sales_facts_from_graph(session, org_id: str, deal_id: str, facts: dict) -> dict:
     """Structural join: a sales deal's facts are keyed by deal_id, but its derived
     signals (sentiment / buying_intent / momentum / importance / ball_in_court)
@@ -294,6 +315,17 @@ def _enrich_sales_facts_from_graph(session, org_id: str, deal_id: str, facts: di
             age = _age_days(getattr(deal_node, "first_seen", None))
             if age is not None:
                 merged["deal_age_days"] = age
+
+        # S8 (day-1 part): deal_cycle_ratio = age vs the shipped benchmark median.
+        # Works without tenant history (uses benchmarks.yaml); the tenant's-own
+        # median version waits for accumulated data.
+        if merged.get("deal_age_days") is not None and "deal_cycle_ratio" not in merged:
+            median = (_sales_benchmarks().get("deal_cycle") or {}).get("median_days_midmarket", 60)
+            try:
+                if median:
+                    merged["deal_cycle_ratio"] = round(float(merged["deal_age_days"]) / float(median), 2)
+            except (TypeError, ValueError, ZeroDivisionError):
+                pass
 
         # days_since_last_buyer_response (un-deads `response_silence_after_proposal`):
         # time since last contact, counted only when the ball is in THEIR court

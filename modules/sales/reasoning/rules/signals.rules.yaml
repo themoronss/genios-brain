@@ -91,3 +91,17 @@
     recommend: book_mutual_next_step_now
     reason: "We owe them something we haven't delivered yet — close the loop to rebuild trust"
   hard: false
+
+- id: deal_cycle_overrun
+  module: sales
+  priority: 78
+  when:
+    all:
+      - fact: deal_cycle_ratio
+        op: ">="
+        value: 1.5
+  then:
+    conclusion: deal_aging_vs_benchmark
+    recommend: schedule_pipeline_review
+    reason: "This deal has run well past the typical cycle for its size — pressure-test whether it's still real or escalate"
+  hard: false
