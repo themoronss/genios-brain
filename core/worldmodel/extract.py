@@ -13,6 +13,7 @@ to persist NodeRow / FactRow updates.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 
@@ -71,6 +72,10 @@ class Extraction:
     item_id: str
     entities: list[ExtractedEntity]
     relations: list[ExtractedRelation]
+    # Per-message neural signals about the primary external counterpart
+    # (sentiment / buying_intent / ball_in_court / domain + primary_subject).
+    # Rides on the SAME extraction call — no extra LLM. None when unclear.
+    signals: dict | None = None
 
 
 class ExtractionError(Exception):
@@ -122,6 +127,20 @@ the text genuinely doesn't fit any of them):
 Pick the closest verb. Consistency across calls is more important than
 expressiveness — rule engines key off the predicate string.
 
+Per-message SIGNALS (about the MAIN external counterpart; tone-based; emit null when unclear):
+  primary_subject: the main external person/org this message is with, by name
+                   (MUST match one of the entity names above, else the signal is dropped)
+  sentiment:       number -1..1 = their tone toward us, or null
+  buying_intent:   number 0..1 = how much they want to move the deal forward, or null
+  ball_in_court:   true if WE owe the next reply, false if they do, or null
+  domain:          "investor"|"customer"|"hire"|"partner"|"team"|"vendor"|"advisor"|"other"|null
+  open_objection:  short phrase of the counterpart's main STILL-OPEN objection/concern/blocker
+                   (e.g. "pricing too high", "EU data residency"), or null
+  open_commitment: short phrase of what WE promised/owe them that is NOT done yet
+                   (e.g. "send revised pricing", "SOC2 doc"), or null
+  competitor:      name of a competing vendor/product mentioned, or null
+Be conservative: null unless the text clearly supports it. Never invent a number or a phrase.
+
 Format:
 {{
   "entities": [
@@ -133,7 +152,10 @@ Format:
   "relations": [
     {{"subject": "name1", "predicate": "works_at",
       "object": "name2", "edge_type": "temporal|dependency"}}
-  ]
+  ],
+  "signals": {{"primary_subject": "name1", "sentiment": null, "buying_intent": null,
+    "ball_in_court": null, "domain": null, "open_objection": null,
+    "open_commitment": null, "competitor": null}}
 }}
 
 Output only the JSON object."""
@@ -158,46 +180,57 @@ def extract(item: MemoryItem, *, org_id: str | None = None) -> Extraction:
     if not item.content or not item.content.strip():
         return Extraction(item_id=item.item_id, entities=[], relations=[])
 
-    if not settings.ANTHROPIC_API_KEY:
-        raise ExtractionError("ANTHROPIC_API_KEY not configured")
-
-    client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     prompt = _PROMPT.format(content=item.content[:8000])  # cap input
+    # Content-addressed cache: identical source text -> the identical stored raw
+    # LLM output -> the identical extraction. This is what makes extraction truly
+    # REPRODUCIBLE (temp=0 alone still wobbles a little — proven live) AND it skips
+    # the LLM cost entirely on a repeat. Degrades gracefully: if Redis is
+    # unavailable the cache calls return None / no-op and we recompute.
+    content_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+    raw = _extract_cache_get(content_hash)
 
-    # 4096 is the safe headroom for the 25-entity cap above. The old 1024
-    # ceiling silently truncated mid-JSON on dense inputs (a resume could
-    # easily list 10+ orgs + 15+ skills) and the whole extract was lost.
-    resp = None
-    try:
-        resp = client.messages.create(
-            model=settings.ANTHROPIC_HAIKU_MODEL,
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-    except Exception as e:
-        if org_id:
-            from core.foundations.llm_costs import record_llm_call
+    if raw is None:
+        if not settings.ANTHROPIC_API_KEY:
+            raise ExtractionError("ANTHROPIC_API_KEY not configured")
+
+        client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+        # 4096 is the safe headroom for the 25-entity cap above. The old 1024
+        # ceiling silently truncated mid-JSON on dense inputs (a resume could
+        # easily list 10+ orgs + 15+ skills) and the whole extract was lost.
+        resp = None
+        try:
+            resp = client.messages.create(
+                model=settings.ANTHROPIC_HAIKU_MODEL,
+                max_tokens=4096,
+                temperature=0,  # L1 clamp: same source content -> same extraction (determinism doctrine)
+                messages=[{"role": "user", "content": prompt}],
+            )
+        except Exception as e:
+            if org_id:
+                from core.foundations.llm_costs import record_llm_call
+                record_llm_call(
+                    org_id=org_id, model=settings.ANTHROPIC_HAIKU_MODEL,
+                    purpose="extract", input_tokens=0, output_tokens=0,
+                    success=False, error=str(e)[:500],
+                    source_item_id=item.item_id,
+                )
+            raise ExtractionError(f"Anthropic API call failed: {e}") from e
+
+        # Cost row writes BEFORE parsing so a downstream JSON-parse error still
+        # counts the tokens we actually paid for.
+        if org_id and resp is not None:
+            from core.foundations.llm_costs import record_llm_call, usage_extract
+            it, ot = usage_extract(resp)
             record_llm_call(
                 org_id=org_id, model=settings.ANTHROPIC_HAIKU_MODEL,
-                purpose="extract", input_tokens=0, output_tokens=0,
-                success=False, error=str(e)[:500],
-                source_item_id=item.item_id,
+                purpose="extract", input_tokens=it, output_tokens=ot,
+                credits_billed=0, source_item_id=item.item_id,
             )
-        raise ExtractionError(f"Anthropic API call failed: {e}") from e
 
-    # Cost row writes BEFORE parsing so a downstream JSON-parse error still
-    # counts the tokens we actually paid for.
-    if org_id and resp is not None:
-        from core.foundations.llm_costs import record_llm_call, usage_extract
-        it, ot = usage_extract(resp)
-        record_llm_call(
-            org_id=org_id, model=settings.ANTHROPIC_HAIKU_MODEL,
-            purpose="extract", input_tokens=it, output_tokens=ot,
-            credits_billed=0, source_item_id=item.item_id,
-        )
-
-    raw = "".join(block.text for block in resp.content if block.type == "text").strip()
-    raw = _strip_code_fence(raw)
+        raw = "".join(block.text for block in resp.content if block.type == "text").strip()
+        raw = _strip_code_fence(raw)
+        _extract_cache_set(content_hash, raw)
 
     parsed = _parse_json_lenient(raw)
     if parsed is None:
@@ -365,7 +398,34 @@ def _build_extraction(parsed: dict[str, object], item_id: str) -> Extraction:
             )
         )
 
-    return Extraction(item_id=item_id, entities=entities, relations=relations)
+    signals = _parse_signals(parsed.get("signals"))
+    return Extraction(item_id=item_id, entities=entities, relations=relations, signals=signals)
+
+
+def _parse_signals(raw: object) -> dict | None:
+    """Keep only well-typed neural-signal fields from the LLM's `signals` block.
+    Conservative: unknown / None / wrongly-typed values are dropped. Returns None
+    unless there's at least one real signal beyond the subject label."""
+    if not isinstance(raw, dict):
+        return None
+    kept: dict = {}
+    subj = raw.get("primary_subject")
+    if isinstance(subj, str) and subj.strip():
+        kept["primary_subject"] = subj.strip()
+    for k in ("sentiment", "buying_intent"):
+        v = raw.get(k)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            kept[k] = float(v)
+    if isinstance(raw.get("ball_in_court"), bool):
+        kept["ball_in_court"] = raw["ball_in_court"]
+    dom = raw.get("domain")
+    if isinstance(dom, str) and dom.strip() and dom.strip().lower() not in ("null", "none"):
+        kept["domain"] = dom.strip().lower()
+    for tkey in ("open_objection", "open_commitment", "competitor"):
+        tv = raw.get(tkey)
+        if isinstance(tv, str) and tv.strip() and tv.strip().lower() not in ("null", "none"):
+            kept[tkey] = tv.strip()
+    return kept if any(k != "primary_subject" for k in kept) else None
 
 
 # Convenience constant for callers building Facts from ExtractedRelations
@@ -385,3 +445,31 @@ def _strip_code_fence(s: str) -> str:
         if s.endswith("```"):
             s = s[:-3].strip()
     return s
+
+
+# ─── extraction cache (content-addressed) ─────────────────────────────────────
+
+_EXTRACT_CACHE_TTL = 60 * 60 * 24 * 30  # 30 days
+_EXTRACT_CACHE_VER = "v2"  # bump whenever _PROMPT changes so stale raws invalidate
+
+
+def _extract_cache_get(content_hash: str) -> str | None:
+    """Return the cached raw LLM output for this exact source text, or None.
+    Best-effort: any Redis problem -> None (recompute)."""
+    try:
+        from app.redis_client import redis_client
+
+        v = redis_client.get(f"extract:{_EXTRACT_CACHE_VER}:{content_hash}")
+        return v.decode() if isinstance(v, (bytes, bytearray)) else v
+    except Exception:
+        return None
+
+
+def _extract_cache_set(content_hash: str, raw: str) -> None:
+    """Store the raw LLM output keyed by the source-text hash. Best-effort."""
+    try:
+        from app.redis_client import redis_client
+
+        redis_client.setex(f"extract:{_EXTRACT_CACHE_VER}:{content_hash}", _EXTRACT_CACHE_TTL, raw)
+    except Exception:
+        pass

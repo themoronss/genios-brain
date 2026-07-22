@@ -11,7 +11,10 @@ from __future__ import annotations
 from core.signals.types import (
     SIG_BALL_IN_COURT,
     SIG_BUYING_INTENT,
+    SIG_COMMITMENT,
+    SIG_COMPETITOR,
     SIG_DOMAIN,
+    SIG_OBJECTION,
     SIG_SENTIMENT,
     SignalUpsert,
 )
@@ -60,5 +63,17 @@ def signals_from_extraction(
     dom = s.get("domain")
     if dom and str(dom).lower() in _VALID_DOMAINS:
         out.append(SignalUpsert(signal_type=SIG_DOMAIN, value_cat=str(dom).lower(), **base))
+
+    # Text signals — the counterpart's open objection, what WE still owe them, and
+    # any competitor named. value_cat carries the short phrase so downstream can
+    # NAME it (anti-"naam ka"). Capped so a runaway phrase can't bloat the row.
+    for tkey, sigtype in (
+        ("open_objection", SIG_OBJECTION),
+        ("open_commitment", SIG_COMMITMENT),
+        ("competitor", SIG_COMPETITOR),
+    ):
+        tv = s.get(tkey)
+        if isinstance(tv, str) and tv.strip():
+            out.append(SignalUpsert(signal_type=sigtype, value_cat=tv.strip()[:120], **base))
 
     return out

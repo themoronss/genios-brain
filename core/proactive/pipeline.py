@@ -167,7 +167,101 @@ _TOOL_REGISTRY: dict[str, dict[str, str]] = {
     "escalate_to_support_lead":       {"side_effect": "internal",     "blast_radius": "small"},
     "discovery_call":                 {"side_effect": "reversible",   "blast_radius": "small"},
     "friendly_health_check":          {"side_effect": "reversible",   "blast_radius": "small"},
+    # Sales
+    "trigger_reengagement_sequence":               {"side_effect": "irreversible", "blast_radius": "medium"},
+    "schedule_executive_check_in":                 {"side_effect": "irreversible", "blast_radius": "medium"},
+    "get_meeting_with_economic_buyer":             {"side_effect": "irreversible", "blast_radius": "medium"},
+    "multithread_to_second_stakeholder":           {"side_effect": "irreversible", "blast_radius": "medium"},
+    "reengage_before_competitor_locks_in":         {"side_effect": "irreversible", "blast_radius": "medium"},
+    "schedule_differentiation_call_with_champion": {"side_effect": "irreversible", "blast_radius": "medium"},
+    "send_lightweight_check_in":                   {"side_effect": "irreversible", "blast_radius": "small"},
+    "book_mutual_next_step_now":                   {"side_effect": "irreversible", "blast_radius": "small"},
+    "trigger_adoption_outreach":                   {"side_effect": "irreversible", "blast_radius": "small"},
+    "flag_to_rep_with_next_action":                {"side_effect": "internal",     "blast_radius": "small"},
+    "schedule_pipeline_review":                    {"side_effect": "internal",     "blast_radius": "small"},
+    "requalify_or_disqualify":                     {"side_effect": "internal",     "blast_radius": "small"},
+    "confirm_budget_and_funding_source":           {"side_effect": "internal",     "blast_radius": "small"},
+    "identify_new_champion_immediately":           {"side_effect": "internal",     "blast_radius": "small"},
+    "escalate_to_executive_sponsor":               {"side_effect": "internal",     "blast_radius": "medium"},
+    "exec_escalate_support_resolution":            {"side_effect": "internal",     "blast_radius": "medium"},
+    "require_cfo_approval":                        {"side_effect": "internal",     "blast_radius": "medium"},
+    "require_finance_approval":                    {"side_effect": "internal",     "blast_radius": "medium"},
+    "require_sales_lead_approval":                 {"side_effect": "internal",     "blast_radius": "small"},
+    "apply_standard_volume_terms":                 {"side_effect": "internal",     "blast_radius": "small"},
 }
+
+
+def _sales_memory_view(deal_name: str, facts: dict) -> str:
+    """Deal-shaped one-line summary for a sales insight (replaces the AR invoice
+    format). Only includes fields actually present, so it degrades cleanly."""
+    parts: list[str] = [str(deal_name)]
+    dv = facts.get("deal_value")
+    if dv is not None:
+        try:
+            parts.append(f"₹{float(dv):,.0f} deal")
+        except (TypeError, ValueError):
+            pass
+    if facts.get("stage"):
+        parts.append(f"stage={facts['stage']}")
+    if facts.get("days_in_current_stage") is not None:
+        parts.append(f"{facts['days_in_current_stage']}d in stage")
+    if facts.get("contacts_engaged") is not None:
+        parts.append(f"{facts['contacts_engaged']} contact(s)")
+    for key, lbl in (("momentum", "momentum"), ("buying_intent", "buying_intent"), ("sentiment", "sentiment")):
+        v = facts.get(key)
+        if v is not None:
+            try:
+                parts.append(f"{lbl}={round(float(v), 2)}")
+            except (TypeError, ValueError):
+                pass
+    for key, lbl in (("objection", "objection"), ("commitment", "we-owe"), ("competitor", "competitor")):
+        v = facts.get(key)
+        if isinstance(v, str) and v.strip():
+            parts.append(f'{lbl}="{v.strip()}"')
+    return " · ".join(parts)
+
+
+def _enrich_sales_facts_from_graph(session, org_id: str, deal_id: str, facts: dict) -> dict:
+    """Structural join: a sales deal's facts are keyed by deal_id, but its derived
+    signals (sentiment / buying_intent / momentum / importance / ball_in_court)
+    live on the ACCOUNT entity. The deal node stores `client_node_id` (set at CSV
+    ingest), so resolve deal -> account and merge the account's signals into the
+    deal's flat facts. Best-effort; any failure returns facts unchanged."""
+    try:
+        from sqlalchemy import select as _sel
+
+        from core.graph.store import NodeRow
+        from core.signals.runtime import merge_signals_into_facts
+
+        deal_node = (
+            session.execute(
+                _sel(NodeRow)
+                .where(NodeRow.org_id == org_id, NodeRow.canonical_name == str(deal_id))
+                .limit(1)
+            )
+            .scalars()
+            .first()
+        )
+        attrs = getattr(deal_node, "attributes", None) if deal_node else None
+        account_node_id = attrs.get("client_node_id") if isinstance(attrs, dict) else None
+        if not account_node_id:
+            return facts
+        acct = session.get(NodeRow, account_node_id)
+        account_name = acct.canonical_name if acct else None
+        merged = merge_signals_into_facts(
+            session,
+            org_id=org_id,
+            facts=facts,
+            subject_node_id=account_node_id,
+            subject_name=account_name,
+        )
+        # Bridge the neural `competitor` signal to the legacy boolean the
+        # competition ruleset reads — un-deads `competitor_named_going_quiet`.
+        if merged.get("competitor") and "competing_vendor_named" not in merged:
+            merged["competing_vendor_named"] = True
+        return merged
+    except Exception:  # noqa: BLE001
+        return facts
 
 
 def _registry_for_action(action: str) -> dict[str, str]:
@@ -745,9 +839,14 @@ def run_for_org(
         try:
             from core.signals.runtime import merge_signals_into_facts
 
-            facts = merge_signals_into_facts(
-                session, org_id=org_id, subject_name=invoice_id, facts=facts
-            )
+            if module_id == "sales":
+                # Deal facts are keyed by deal_id; signals live on the account.
+                # Join deal -> account and merge the account's signals.
+                facts = _enrich_sales_facts_from_graph(session, org_id, invoice_id, facts)
+            else:
+                facts = merge_signals_into_facts(
+                    session, org_id=org_id, subject_name=invoice_id, facts=facts
+                )
         except Exception:  # noqa: BLE001
             pass
         result = chainer.run(facts)
@@ -759,7 +858,13 @@ def run_for_org(
         client_name_cache[invoice_id] = client_name
 
         steps_for_subject = len(result.proof.steps)
-        for step in result.proof.steps:
+        # Best-in-class: one deal surfaces ONE decision, not N near-identical alerts.
+        # For sales, emit only the highest-priority firing per deal — its
+        # derivation_chain + confidence still reflect ALL the signals that fired.
+        emit_steps = result.proof.steps
+        if module_id == "sales" and len(emit_steps) > 1:
+            emit_steps = [max(emit_steps, key=lambda st: _rule_priority(module_id, st.rule_id))]
+        for step in emit_steps:
             candidates_total += 1
             sig_hash = _signature_hash(
                 module_id=module_id, rule_id=step.rule_id, subject=invoice_id
@@ -783,16 +888,32 @@ def run_for_org(
             recommend_action = step.recommend or step.conclusion
             registry = _registry_for_action(recommend_action)
             delivery_route = _route_for_side_effect(registry["side_effect"], confidence)
-            memory_view = (
-                f"Invoice {invoice_id} for {client_name}: "
-                f"₹{facts.get('amount_inr', 0):,} · "
-                f"{facts.get('days_past_due', 'n/a')} days past due · "
-                f"status={facts.get('payment_status', 'n/a')} · "
-                f"reminder_age={facts.get('last_reminder_age_days', -1)} · "
-                f"client_late_count_90d={facts.get('client_late_count_90d', 0)} · "
-                f"vip={facts.get('is_vip_client', False)}"
-            )
-            genios_view = step.reason or step.conclusion
+            if module_id == "sales":
+                # Deal-shaped rendering + a specific, situation-aware next-best-action
+                # (names the action + deal + signals) instead of the AR invoice format
+                # and a static YAML reason string.
+                deal_name = client_name or invoice_id
+                memory_view = _sales_memory_view(deal_name, facts)
+                from core.actions.recommender import build_next_best_action
+
+                _nba = build_next_best_action(
+                    subject_name=deal_name,
+                    recommend=recommend_action,
+                    signals=facts,
+                    reason=step.reason or step.conclusion,
+                )
+                genios_view = _nba.prescription
+            else:
+                memory_view = (
+                    f"Invoice {invoice_id} for {client_name}: "
+                    f"₹{facts.get('amount_inr', 0):,} · "
+                    f"{facts.get('days_past_due', 'n/a')} days past due · "
+                    f"status={facts.get('payment_status', 'n/a')} · "
+                    f"reminder_age={facts.get('last_reminder_age_days', -1)} · "
+                    f"client_late_count_90d={facts.get('client_late_count_90d', 0)} · "
+                    f"vip={facts.get('is_vip_client', False)}"
+                )
+                genios_view = step.reason or step.conclusion
 
             new_insights.append(
                 {

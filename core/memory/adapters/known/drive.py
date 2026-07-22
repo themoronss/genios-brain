@@ -46,6 +46,20 @@ _SKIP_MIME_EXACT = {
 }
 _FILE_FIELDS = "files(id,name,mimeType,modifiedTime,owners,webViewLink)"
 
+# Downloadable file types we extract TEXT from → the real document body is
+# ingested, not just the filename. Native Google Docs/Sheets are handled by their
+# own adapters (export API), so they're intentionally absent here.
+_EXT_FOR_MIME = {
+    "application/pdf": "pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/msword": "doc",
+    "text/plain": "txt",
+    "text/markdown": "md",
+    "text/csv": "csv",
+    "application/json": "json",
+}
+_BODY_CHAR_CAP = 8000  # matches the extraction input cap
+
 
 def _keep_file(f: dict[str, Any]) -> bool:
     """Skip ONLY files with genuinely no extractable text — photos / video /
@@ -115,7 +129,7 @@ class DriveAdapter(MemoryAdapter):
                     fields="newStartPageToken,nextPageToken,changes(fileId,file(id,name,mimeType,modifiedTime,owners,webViewLink))",
                 ).execute()
                 files = [c["file"] for c in resp.get("changes", []) if c.get("file")]
-                records = [_file_to_raw(f) for f in files if _keep_file(f)]
+                records = [_file_to_raw(f, _download_text(svc, f)) for f in files if _keep_file(f)]
                 next_token = resp.get("newStartPageToken") or resp.get("nextPageToken") or cursor.value
                 return records, Cursor(value=str(next_token), strategy="native"), bool(resp.get("nextPageToken"))
 
@@ -134,7 +148,7 @@ class DriveAdapter(MemoryAdapter):
                 kwargs["pageToken"] = cursor.value
             resp = svc.files().list(**kwargs).execute()
             records = [
-                _file_to_raw(f) for f in resp.get("files", [])
+                _file_to_raw(f, _download_text(svc, f)) for f in resp.get("files", [])
                 if _keep_file(f)
             ]
             next_page = resp.get("nextPageToken")
@@ -153,13 +167,13 @@ class DriveAdapter(MemoryAdapter):
     def fetch_record(self, ref: RecordRef) -> RawRecord:
         svc = self._service_for()
         f = svc.files().get(fileId=ref.native_id, fields="id,name,mimeType,modifiedTime,owners,webViewLink").execute()
-        return _file_to_raw(f)
+        return _file_to_raw(f, _download_text(svc, f))
 
     def get_mapping(self) -> SourceMapping:
         return SourceMapping(
             source_type=SOURCE_TYPE,
             field_map={
-                "content": FieldMapping(source_field="name", confidence=1.0),
+                "content": FieldMapping(source_field="content", confidence=1.0),
                 "timestamp": FieldMapping(source_field="modifiedTime", confidence=1.0),
                 "owner": FieldMapping(source_field="owner_email", confidence=1.0),
                 "tags": FieldMapping(source_field="mimeType", confidence=1.0),
@@ -181,13 +195,60 @@ class DriveAdapter(MemoryAdapter):
         return self._service
 
 
-def _file_to_raw(f: dict[str, Any]) -> RawRecord:
+def _bytes_to_text(data: bytes, ext: str) -> str:
+    """Extract plaintext from downloaded file bytes. "" on unsupported/failure."""
+    import io
+
+    if ext in ("txt", "md", "csv", "tsv", "json"):
+        return data.decode("utf-8", "replace")
+    if ext == "pdf":
+        try:
+            from pypdf import PdfReader  # type: ignore
+
+            return "\n\n".join((p.extract_text() or "") for p in PdfReader(io.BytesIO(data)).pages)
+        except Exception as e:  # missing dep or malformed pdf
+            log.warning("gdrive_pdf_parse_failed", error=str(e)[:150])
+            return ""
+    if ext in ("docx", "doc"):
+        try:
+            import docx  # type: ignore  # python-docx
+
+            return "\n".join(p.text for p in docx.Document(io.BytesIO(data)).paragraphs)
+        except Exception as e:
+            log.warning("gdrive_docx_parse_failed", error=str(e)[:150])
+            return ""
+    return ""
+
+
+def _download_text(svc: Any, f: dict[str, Any]) -> str:
+    """Download a Drive file's body and extract plaintext so the actual DOCUMENT
+    (not just its filename) reaches the graph. "" for unsupported types or on any
+    failure — the caller then falls back to the filename."""
+    ext = _EXT_FOR_MIME.get(f.get("mimeType", ""))
+    if ext is None:
+        return ""
+    try:
+        data = svc.files().get_media(fileId=f.get("id", "")).execute()
+        if isinstance(data, str):
+            data = data.encode("utf-8", "replace")
+        return _bytes_to_text(data, ext)[:_BODY_CHAR_CAP]
+    except Exception as e:
+        log.warning("gdrive_body_download_failed", file=f.get("id"), mime=f.get("mimeType"), error=str(e)[:150])
+        return ""
+
+
+def _file_to_raw(f: dict[str, Any], body_text: str = "") -> RawRecord:
     owners = f.get("owners", []) or []
     owner_email = (owners[0] if owners else {}).get("emailAddress", "")
+    name = f.get("name", "") or ""
+    # Content = the file BODY prefixed with its filename as a title line when we
+    # could extract text; otherwise just the filename (images / unsupported types).
+    content = f"{name}\n\n{body_text}".strip() if body_text else name
     return RawRecord(
         native_id=f.get("id", ""),
         fields={
-            "name": f.get("name", "") or "",
+            "name": name,
+            "content": content,
             "modifiedTime": f.get("modifiedTime", ""),
             "owner_email": owner_email,
             "mimeType": f.get("mimeType", ""),

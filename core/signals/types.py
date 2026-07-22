@@ -24,6 +24,9 @@ SIG_SENTIMENT = "sentiment"  # value_num -1..1 (neural)
 SIG_BUYING_INTENT = "buying_intent"  # value_num 0..1 (neural)
 SIG_STAGE = "stage"  # value_cat — e.g. "negotiation"
 SIG_DOMAIN = "domain"  # value_cat — investor|customer|hire|partner|team|vendor|other
+SIG_OBJECTION = "objection"    # value_cat — counterpart's open objection/blocker (neural)
+SIG_COMMITMENT = "commitment"  # value_cat — what WE owe them, still open (neural)
+SIG_COMPETITOR = "competitor"  # value_cat — competing vendor/product named (neural)
 
 
 @dataclass(frozen=True)

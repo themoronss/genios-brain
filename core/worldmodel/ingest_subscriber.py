@@ -171,6 +171,28 @@ def _ingest_one(session: Session, item: MemoryItem, org_id: str) -> None:
         node = _upsert_node(session, org_id=org_id, entity=ent, item_id=tagged_item_id)
         node_id_by_name[ent.name.lower()] = node.id
 
+    # Neural signals (sentiment / buying_intent / ball_in_court / domain) ride on
+    # the SAME extraction — no extra LLM call. Attach to the primary counterpart's
+    # node when it resolves; drop silently otherwise (fail-safe: no wrong signal).
+    if extraction.signals:
+        subj_name = extraction.signals.get("primary_subject")
+        subj_node_id = (
+            node_id_by_name.get(str(subj_name).lower()) if subj_name else None
+        )
+        if subj_node_id:
+            from core.signals.detectors.neural import signals_from_extraction
+            from core.signals.store import upsert_signals_bulk
+
+            sig_ups = signals_from_extraction(
+                org_id=org_id,
+                subject_node_id=subj_node_id,
+                subject_name=str(subj_name),
+                extracted_signals=extraction.signals,
+                source_item_id=tagged_item_id,
+            )
+            if sig_ups:
+                upsert_signals_bulk(session, sig_ups)
+
     # Upsert edges (only TEMPORAL/DEPENDENCY — INFLUENCE never from source per spec)
     for rel in extraction.relations:
         _upsert_edge(

@@ -173,7 +173,40 @@ def query(
             filtered = filter_facts_v2(body.facts["facts"], policy)
             facts_for_engine = {**body.facts, "facts": filtered}
 
-    envelope = handler(session, org_id, body.query, facts_for_engine, body.user_id)
+    # Cache-first (Decision: cache-first, LLM only on a real miss). An identical
+    # (module_id, query, scoped-facts) within the TTL serves the prior Envelope
+    # instead of re-running enrichment + rules + LLM gap-fill — the per-query cost
+    # leak. Billing stays correct: the deduct below is idempotent on decision_id,
+    # so a repeat hit returns the same decision_id and never double-charges.
+    import hashlib as _hl
+    import json as _json
+
+    from app.context.cache import get_cached_context, set_cached_context
+
+    _qsig = _hl.sha256(
+        _json.dumps(
+            {"m": body.module_id, "q": body.query, "f": facts_for_engine},
+            sort_keys=True, default=str,
+        ).encode()
+    ).hexdigest()[:24]
+    _cache_situation = f"intel_query:{_qsig}"
+
+    envelope = None
+    _cached = get_cached_context(org_id, situation=_cache_situation)
+    if _cached is not None:
+        try:
+            envelope = Envelope.model_validate(_cached)
+        except Exception:
+            envelope = None  # stale/incompatible cache -> recompute
+
+    if envelope is None:
+        envelope = handler(session, org_id, body.query, facts_for_engine, body.user_id)
+        try:
+            set_cached_context(
+                org_id, situation=_cache_situation, bundle=envelope.model_dump(mode="json")
+            )
+        except Exception:
+            pass
 
     # Per-query credit deduction. Cost derived from the persisted Decision row
     # (path = symbolic | neural | hybrid). Done AFTER engine returns so partial

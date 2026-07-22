@@ -289,14 +289,25 @@ def _enrich_facts_from_graph(
             """),
             {"org": org_id, "subj": subject},
         ).fetchall()
-        if not rows:
-            return facts
-
         enriched: dict[str, Any] = {}
         for r in rows:
             if r.predicate not in enriched:            # most-recent value wins
                 enriched[r.predicate] = _coerce_fact_value(r.predicate, r.object)
         enriched.update(facts)                          # caller facts always win
+
+        # Also merge the entity's DERIVED signals (sentiment / buying_intent /
+        # momentum / importance / engagement) so the engine reasons over deal
+        # STATE, not just raw facts — same enrichment the proactive path already
+        # gets. Signals go UNDER facts (explicit facts still win). Best-effort:
+        # any failure leaves `enriched` untouched and never breaks the query.
+        try:
+            from core.signals.runtime import merge_signals_into_facts
+
+            enriched = merge_signals_into_facts(
+                session, org_id=org_id, facts=enriched, subject_name=subject
+            )
+        except Exception:
+            pass
         return enriched
     except Exception:
         return facts

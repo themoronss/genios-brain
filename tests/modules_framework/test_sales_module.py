@@ -20,7 +20,7 @@ def test_sales_manifest_loads() -> None:
     assert m.id == "sales"
     assert m.version == "1.0.0"
     assert "crm:read" in m.requiredScopes
-    assert m.provides.rules == ["pricing", "churn", "velocity", "competition", "qualification"]
+    assert m.provides.rules == ["pricing", "churn", "velocity", "competition", "qualification", "signals"]
 
 
 @pytest.mark.unit
@@ -36,8 +36,8 @@ def test_sales_module_loads_into_package() -> None:
     """Loader pulls rules + graph + benchmarks + templates."""
     pkg = load_module_package(SALES_ROOT)
     assert pkg.manifest.id == "sales"
-    # 5 rule files (churn, velocity, pricing, competition, qualification)
-    assert len(pkg.ruleset.rules) >= 18  # deepened from 10 -> 20 (MEDDIC/deal-health signals)
+    # 6 rule files (churn, velocity, pricing, competition, qualification, signals)
+    assert len(pkg.ruleset.rules) >= 18  # deepened from 10 -> 20 (MEDDIC) -> 26 (signal-driven)
     # Graph fragment has expected nodes
     assert "nodes" in pkg.graph_fragment
     assert len(pkg.graph_fragment["nodes"]) == 5

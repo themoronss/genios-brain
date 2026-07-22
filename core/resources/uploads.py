@@ -217,14 +217,14 @@ def create_upload(
                 {"org": org_id, "prefix": f"upload:{file_id}:%"},
             ).scalar() or 0
             # JSON-text LIKE keeps the SQL portable (avoids ::jsonb cast
-            # parameter binding clash with Postgres ::). For the entities
-            # count we want every Client/Invoice node tied to this upload's
-            # source_item_ids — file_id is unique per upload so the LIKE
-            # over the JSON text is sufficient.
+            # parameter binding clash with Postgres ::). Count EVERY node tied
+            # to this upload — file_id is unique per upload so the LIKE over the
+            # JSON text already scopes it. (The old AR-only `type IN
+            # ('client','invoice')` filter reported 0 entities for sales/HR/CSM
+            # CSVs, whose nodes are account/deal/candidate/etc.)
             entities_n = session.execute(
                 text(
                     "SELECT COUNT(*) FROM graph_nodes WHERE org_id = :org "
-                    "AND type IN ('client', 'invoice') "
                     "AND source_item_ids::text LIKE :like_probe"
                 ),
                 {"org": org_id, "like_probe": f"%upload:{file_id}:%"},
