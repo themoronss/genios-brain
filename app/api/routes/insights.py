@@ -88,6 +88,62 @@ def get_insights(org_id: str, priority: str = None, limit: int = 20,
     return {"insights": out, "total": len(out)}
 
 
+_PRI_RANK = {"high": 0, "medium": 1, "low": 2}
+
+
+def build_morning_brief(db: Session, org_id: str, limit: int = 3) -> dict:
+    """Compose the day's top priorities from the org's recently-fired insights.
+    Pure read — backs both the endpoint and the daily digest task."""
+    rows = db.execute(
+        text(
+            """
+            SELECT id, type, primary_entity, scores_jsonb, created_at
+            FROM proactive_insights
+            WHERE org_id = :org AND created_at >= NOW() - INTERVAL '48 hours'
+            ORDER BY created_at DESC
+            LIMIT 50
+            """
+        ),
+        {"org": org_id},
+    ).fetchall()
+
+    items = []
+    for r in rows:
+        sc = r[3] if isinstance(r[3], dict) else {}
+        items.append(
+            {
+                "id": str(r[0]),
+                "title": sc.get("title") or f"{r[1]}: {r[2]}",
+                "priority": sc.get("priority", "medium"),
+                "action": sc.get("genios_view") or "",
+                "detail": sc.get("memory_view") or "",
+                "entity": sc.get("client_name") or r[2],
+                "category": sc.get("category") or "general",
+            }
+        )
+    items.sort(key=lambda x: _PRI_RANK.get(x["priority"], 1))
+    top = items[:limit]
+
+    if not top:
+        headline = "All clear — nothing flagged in the last 24h."
+    elif len(items) == 1:
+        headline = "1 thing needs you today."
+    else:
+        headline = f"{len(top)} priorities today (of {len(items)} flagged)."
+    return {
+        "org_id": org_id,
+        "headline": headline,
+        "considered": len(items),
+        "priorities": top,
+    }
+
+
+@router.get("/api/org/{org_id}/morning-brief")
+def morning_brief(org_id: str, limit: int = 3, db: Session = Depends(get_db)):
+    """The day's top priorities — the habit-anchor 'Morning Brief' surface."""
+    return build_morning_brief(db, org_id, limit=min(max(limit, 1), 10))
+
+
 @router.post("/api/org/{org_id}/insights/{insight_id}/dismiss")
 def dismiss_insight(org_id: str, insight_id: str, db: Session = Depends(get_db)):
     """Record a 'dismissed' feedback row against the insight's signature.

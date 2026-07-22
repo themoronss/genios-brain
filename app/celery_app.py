@@ -362,13 +362,40 @@ def task_sync_all_tools(org_id: str):
 
 @celery.task(bind=True, max_retries=1, default_retry_delay=300, queue="low_priority")
 def task_morning_digest(self, org_id: str = None):
-    """Stub — underlying v1 code deleted. Per g-i-1 plan all ingestion
-    is now core.memory.sync_runner (called by task_scheduled_sync)."""
+    """Build the daily Morning Brief (top priorities) per org and log it. Same
+    builder backs GET /api/org/{id}/morning-brief for the dashboard; push
+    delivery (email/Slack) can hook onto the returned brief later."""
     import logging
-    logging.getLogger(__name__).warning(
-        "task_morning_digest called but v1 underlying code is gone — no-op"
-    )
-    return {"status": "noop", "task": "task_morning_digest"}
+
+    from sqlalchemy import text as _text
+
+    from app.api.routes.insights import build_morning_brief
+    from app.database import SessionLocal
+
+    log = logging.getLogger(__name__)
+    db = SessionLocal()
+    try:
+        if org_id:
+            orgs = [org_id]
+        else:
+            orgs = [
+                r[0]
+                for r in db.execute(
+                    _text(
+                        "SELECT DISTINCT org_id FROM proactive_insights "
+                        "WHERE created_at >= NOW() - INTERVAL '48 hours'"
+                    )
+                ).fetchall()
+            ]
+        built = 0
+        for oid in orgs:
+            brief = build_morning_brief(db, oid)
+            if brief["priorities"]:
+                built += 1
+                log.info("morning_brief_built org=%s headline=%s", oid, brief["headline"])
+        return {"status": "ok", "orgs": len(orgs), "briefs_with_priorities": built}
+    finally:
+        db.close()
 
 
 
