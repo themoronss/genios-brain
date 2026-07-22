@@ -259,6 +259,51 @@ def _enrich_sales_facts_from_graph(session, org_id: str, deal_id: str, facts: di
         # competition ruleset reads — un-deads `competitor_named_going_quiet`.
         if merged.get("competitor") and "competing_vendor_named" not in merged:
             merged["competing_vendor_named"] = True
+
+        # ── Graph-derived deal facts (un-dead legacy rules + graph-truth thread) ──
+        from datetime import UTC, datetime
+
+        from sqlalchemy import text as _t
+
+        def _age_days(dt) -> int | None:
+            if dt is None:
+                return None
+            now = datetime.now(UTC).replace(tzinfo=None)
+            d = dt.replace(tzinfo=None) if getattr(dt, "tzinfo", None) else dt
+            return max(0, int((now - d).total_seconds() // 86400))
+
+        # S6: real thread width = distinct people (entity nodes) linked to the
+        # account in the graph. Never lowers a CSV-supplied count.
+        try:
+            cnt = session.execute(
+                _t(
+                    "SELECT COUNT(DISTINCT n.id) FROM graph_edges e "
+                    "JOIN graph_nodes n ON n.id = CASE WHEN e.from_node = :a THEN e.to_node ELSE e.from_node END "
+                    "WHERE e.org_id = :o AND (e.from_node = :a OR e.to_node = :a) "
+                    "AND n.type = 'entity' AND n.id != :a"
+                ),
+                {"o": org_id, "a": account_node_id},
+            ).scalar() or 0
+            if cnt:
+                merged["contacts_engaged"] = max(int(merged.get("contacts_engaged") or 0), int(cnt))
+        except Exception:  # noqa: BLE001
+            pass
+
+        # deal_age_days (un-deads `deal_aging_overall`) — days since we first saw the deal.
+        if "deal_age_days" not in merged and deal_node is not None:
+            age = _age_days(getattr(deal_node, "first_seen", None))
+            if age is not None:
+                merged["deal_age_days"] = age
+
+        # days_since_last_buyer_response (un-deads `response_silence_after_proposal`):
+        # time since last contact, counted only when the ball is in THEIR court
+        # (ball_in_court != 1) — if we owe the reply, the buyer isn't the silent one.
+        if "days_since_last_buyer_response" not in merged:
+            dslc = merged.get("days_since_last_contact")
+            bic = merged.get("ball_in_court")
+            if dslc is not None and bic not in (1, 1.0, True):
+                merged["days_since_last_buyer_response"] = dslc
+
         return merged
     except Exception:  # noqa: BLE001
         return facts
