@@ -49,6 +49,7 @@ from app.api.routes import facts
 from app.api.routes import manual_context
 from app.api.routes import integrations_auth
 from app.api.routes import insights
+from app.api.routes import tasks as user_tasks_routes
 from app.api.routes import v1 as v1_routes
 from app.api.routes import segments as segments_routes
 from app.api.routes import webhooks as webhooks_routes
@@ -285,6 +286,7 @@ app.include_router(facts.router)
 app.include_router(manual_context.router)
 app.include_router(integrations_auth.router)
 app.include_router(insights.router)
+app.include_router(user_tasks_routes.router)
 app.include_router(v1_routes.router)
 app.include_router(segments_routes.router)
 app.include_router(webhooks_routes.router)

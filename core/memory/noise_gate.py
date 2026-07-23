@@ -65,6 +65,11 @@ _GMAIL_NOISE_SENDERS = [
         r"\bno-?reply@",
         r"\bdo-?not-?reply@",
         r"\bnoreply[._-]",
+        # Bulk-marketing senders — newsletters / campaign blasts. A founder's
+        # manager-brain should never surface these as "priorities".
+        r"\b(newsletter|marketing|promo(tions)?|campaigns?|events?|webinars?)@",
+        r"@e?mail\.(mailchimp|mailgun|sendgrid|hubspotemail|substack|beehiiv|convertkit)\.",
+        r"@(mailchimpapp|sendgrid|mailgun|customeriomail)\.",
     )
 ]
 
@@ -84,6 +89,19 @@ _GMAIL_NOISE_SUBJECTS = [
         r"\b(2fa|mfa) code\b",
         # Unsubscribe / explicit marketing markers — rare in real biz threads
         r"\bunsubscribe\b",
+        # Promo / event-blast subjects — "register now", "you're invited",
+        # webinar pushes, %-off sales. These were leaking through as
+        # "suggestions"; a 1:1 event invite from a real contact has none of
+        # these phrasings, so false-positive risk is low. LLM gate can still
+        # override for verticals where events ARE the business.
+        r"\bwebinar\b",
+        r"\byou'?re invited\b",
+        r"\bregister (now|today|here|free)\b",
+        r"\b(last chance|don'?t miss|limited (time|seats|spots))\b",
+        r"\b\d{1,2}% off\b",
+        r"\b(flash|mega|festive) sale\b",
+        r"\bnewsletter\b",
+        r"\bjoin us (for|at|live)\b",
     )
 ]
 

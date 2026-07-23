@@ -124,9 +124,22 @@ def build_morning_brief(db: Session, org_id: str, limit: int = 3) -> dict:
     items.sort(key=lambda x: _PRI_RANK.get(x["priority"], 1))
     top = items[:limit]
 
-    if not top:
+    # Manager nags — the founder's own overdue tasks lead the brief ("you said
+    # you'd do this"). Best-effort; never breaks the brief.
+    nags: list[dict] = []
+    try:
+        from app.api.routes.tasks import overdue_nags
+
+        nags = overdue_nags(db, org_id, limit=3)
+    except Exception:  # noqa: BLE001
+        pass
+
+    total = len(top) + len(nags)
+    if total == 0:
         headline = "All clear — nothing flagged in the last 24h."
-    elif len(items) == 1:
+    elif nags:
+        headline = f"{len(nags)} promise(s) pending + {len(top)} priorities today."
+    elif total == 1:
         headline = "1 thing needs you today."
     else:
         headline = f"{len(top)} priorities today (of {len(items)} flagged)."
@@ -134,6 +147,7 @@ def build_morning_brief(db: Session, org_id: str, limit: int = 3) -> dict:
         "org_id": org_id,
         "headline": headline,
         "considered": len(items),
+        "nags": nags,
         "priorities": top,
     }
 
@@ -142,6 +156,138 @@ def build_morning_brief(db: Session, org_id: str, limit: int = 3) -> dict:
 def morning_brief(org_id: str, limit: int = 3, db: Session = Depends(get_db)):
     """The day's top priorities — the habit-anchor 'Morning Brief' surface."""
     return build_morning_brief(db, org_id, limit=min(max(limit, 1), 10))
+
+
+# ─── First-Scan Report — the Day-0 "here's what was leaking" diagnosis ────────
+
+
+def _rows(db: Session, sql: str, **p):
+    return db.execute(text(sql), p).fetchall()
+
+
+def build_first_scan(db: Session, org_id: str) -> dict:
+    """Aggregate the org's ALREADY-EXTRACTED facts + signals into one diagnosis:
+    money at risk, broken promises, cooling relationships, competitor threats,
+    thin deals, overdue invoices. Pure read — no LLM, no writes."""
+    from datetime import UTC, datetime
+
+    # Data footprint (the "we read your world" proof)
+    nodes = db.execute(text("SELECT count(*) FROM graph_nodes WHERE org_id=:o"), {"o": org_id}).scalar() or 0
+    facts_n = db.execute(text("SELECT count(*) FROM facts WHERE org_id=:o"), {"o": org_id}).scalar() or 0
+    emails = db.execute(text(
+        "SELECT count(DISTINCT source_item_id) FROM facts WHERE org_id=:o AND source_item_id LIKE 'gmail:%'"
+    ), {"o": org_id}).scalar() or 0
+
+    # Per-subject fact map for deals/invoices (small org-scoped read)
+    frows = _rows(db, "SELECT subject, predicate, object FROM facts WHERE org_id=:o", o=org_id)
+    by_subj: dict[str, dict[str, str]] = {}
+    for r in frows:
+        by_subj.setdefault(r.subject, {})[r.predicate] = r.object
+
+    def _num(v):
+        try:
+            return float(str(v).replace(",", ""))
+        except (TypeError, ValueError):
+            return None
+
+    # Broken promises: due_on/due in the past (status not done)
+    broken: list[dict] = []
+    now = datetime.now(UTC).date()
+    for subj, kv in by_subj.items():
+        due_raw = kv.get("due_on") or kv.get("due")
+        if not due_raw:
+            continue
+        try:
+            due = datetime.fromisoformat(str(due_raw)[:10]).date()
+        except ValueError:
+            continue
+        if due < now and str(kv.get("status", "")).lower() not in ("done", "closed", "paid", "fulfilled"):
+            broken.append({"what": subj, "due": str(due), "days_overdue": (now - due).days})
+    broken.sort(key=lambda x: -x["days_overdue"])
+
+    # Signal-derived: cooling (important), competitor named, we-owe commitments
+    srows = _rows(db, """
+        SELECT subject_name, signal_type, value_num, value_cat FROM signals WHERE org_id=:o
+          AND signal_type IN ('momentum','importance','competitor','commitment','objection')
+    """, o=org_id)
+    sig: dict[str, dict] = {}
+    for r in srows:
+        sig.setdefault(r.subject_name, {})[r.signal_type] = r.value_num if r.value_num is not None else r.value_cat
+    cooling = [
+        {"who": n, "momentum": round(float(s["momentum"]), 2)}
+        for n, s in sig.items()
+        if _num(s.get("momentum")) is not None and float(s["momentum"]) <= -0.3
+        and _num(s.get("importance", 0)) and float(s.get("importance", 0)) >= 0.5
+    ]
+    competitors = [
+        {"who": n, "competitor": s["competitor"]} for n, s in sig.items() if s.get("competitor")
+    ]
+    we_owe = [
+        {"who": n, "commitment": s["commitment"]} for n, s in sig.items() if s.get("commitment")
+    ]
+    objections = [
+        {"who": n, "objection": s["objection"]} for n, s in sig.items() if s.get("objection")
+    ]
+
+    # Deals: value at risk (cooling/competitor/single-thread accounts' deals)
+    risky_accounts = {c["who"] for c in cooling} | {c["who"] for c in competitors}
+    deals_at_risk: list[dict] = []
+    single_threaded: list[dict] = []
+    value_at_risk = 0.0
+    for subj, kv in by_subj.items():
+        dv = _num(kv.get("deal_value"))
+        if dv is None:
+            continue
+        ce = _num(kv.get("contacts_engaged"))
+        entry = {"deal": subj, "value": dv, "stage": kv.get("stage")}
+        if ce is not None and ce <= 1 and dv >= 1:
+            single_threaded.append(entry)
+        # deal → account linkage via node attributes is indirect here; a deal counts
+        # as at-risk when ANY risk signal exists org-wide for its account name OR
+        # the deal itself is single-threaded/stalled.
+        stalled = (_num(kv.get("days_in_current_stage")) or 0) >= 21
+        if stalled or (ce is not None and ce <= 1) or risky_accounts:
+            deals_at_risk.append(entry)
+            value_at_risk += dv
+
+    # Overdue invoices (AR)
+    overdue_inv: list[dict] = []
+    for subj, kv in by_subj.items():
+        dpd = _num(kv.get("days_past_due"))
+        if dpd and dpd > 0:
+            amt = _num(kv.get("amount_inr")) or 0
+            overdue_inv.append({"invoice": subj, "days_past_due": int(dpd), "amount_inr": amt})
+            value_at_risk += amt
+    overdue_inv.sort(key=lambda x: -x["days_past_due"])
+
+    return {
+        "org_id": org_id,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "footprint": {"items_read": emails, "entities": nodes, "facts": facts_n},
+        "headline": {
+            "value_at_risk_inr": round(value_at_risk),
+            "broken_promises": len(broken),
+            "cooling_relationships": len(cooling),
+            "competitor_threats": len(competitors),
+            "overdue_invoices": len(overdue_inv),
+        },
+        "findings": {
+            "broken_promises": broken[:5],
+            "cooling": cooling[:5],
+            "competitors": competitors[:5],
+            "we_owe": we_owe[:5],
+            "objections": objections[:5],
+            "single_threaded_deals": single_threaded[:5],
+            "deals_at_risk": deals_at_risk[:5],
+            "overdue_invoices": overdue_inv[:5],
+        },
+    }
+
+
+@router.get("/api/org/{org_id}/first-scan")
+def first_scan(org_id: str, db: Session = Depends(get_db)):
+    """Day-0 diagnosis: what was already leaking in the org's own data."""
+    return build_first_scan(db, org_id)
 
 
 @router.post("/api/org/{org_id}/insights/{insight_id}/dismiss")

@@ -21,7 +21,7 @@ import logging
 import secrets
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -37,22 +37,73 @@ router = APIRouter()
 
 @router.get("/v1/insights")
 def list_insights(
+    request: Request,
+    response: Response,
     status: Optional[str] = Query(None, description="Filter: pending | delivered | dismissed (best-effort)"),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     org_id: str = Depends(verify_api_key),
 ):
-    """List proactive insights for the org from v2 `proactive_insights`."""
+    """List proactive insights for the org from v2 `proactive_insights`,
+    ranked by WHO matters × urgency (Priority Brain), not just recency.
+
+    Cheap polling: an ETag (insight max-time + counts + feedback count) is set
+    on every response; a matching If-None-Match returns 304 with no body — so
+    the extension's steady poll costs one tiny COUNT query, not a 300-row
+    fetch + rank. The poll itself doubles as an ACTIVITY signal: if the org's
+    data is stale we nudge a background sync (throttled, 15 min)."""
+    # ── fingerprint (2 cheap indexed reads) ──────────────────────────────────
+    etag = None
+    try:
+        fp = db.execute(
+            text("""
+                SELECT COALESCE(MAX(created_at)::text, '') || '|' || COUNT(*)
+                FROM proactive_insights
+                WHERE org_id = :oid AND created_at >= NOW() - INTERVAL '7 days'
+            """),
+            {"oid": org_id},
+        ).scalar() or ""
+        fb = db.execute(
+            text("SELECT COUNT(*) FROM insight_feedback WHERE org_id = :oid"),
+            {"oid": org_id},
+        ).scalar() or 0
+        import hashlib as _hl
+
+        etag = '"' + _hl.md5(f"{fp}|{fb}|{status}|{limit}".encode()).hexdigest()[:20] + '"'
+        response.headers["ETag"] = etag
+    except Exception:  # noqa: BLE001 — fingerprint is an optimization only
+        pass
+
+    # ── sync-on-activity: extension/dashboard polling = the user is present.
+    # If nothing synced recently, kick a per-org background sync (15-min
+    # throttle via Redis; fully best-effort). Keeps the manager FRESH without
+    # tightening the hourly cron (Upstash quota safe).
+    try:
+        from app.redis_client import redis_client
+
+        if redis_client.set(f"sync_nudge:{org_id}", "1", nx=True, ex=900):
+            from app.celery_app import task_sync_all_tools
+
+            task_sync_all_tools.delay(org_id)
+    except Exception:  # noqa: BLE001
+        pass
+
+    if etag and request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})
+    # Candidate window = last 7 days (capped) — NOT just the newest N. Without
+    # this, a flood of fresh low-value insights pushes an older-but-important
+    # one (a ₹6L deal) out of the fetch window before ranking even sees it.
     rows = db.execute(
         text("""
             SELECT id, type, primary_entity, derivation_chain_jsonb,
                    scores_jsonb, delivery_route, created_at, signature_hash
             FROM proactive_insights
             WHERE org_id = :org_id
+              AND created_at >= NOW() - INTERVAL '7 days'
             ORDER BY created_at DESC
-            LIMIT :limit
+            LIMIT 300
         """),
-        {"org_id": org_id, "limit": limit},
+        {"org_id": org_id},
     ).fetchall()
 
     # Apply dismissed filter via insight_feedback (org-scoped).
@@ -81,6 +132,82 @@ def list_insights(
             ).fetchall()
         }
         rows = [r for r in rows if r.signature_hash not in dismissed_sigs]
+
+    # ── Priority Brain: rank = who-matters × urgency × user-priorities ────────
+    # who-matters: the entity's importance + domain signals (investor > customer
+    # > partner > unknown). user-priorities: the founder's stated lead_with /
+    # deprioritize keywords (user_models.priorities_jsonb — previously unwired).
+    # All best-effort: any failure leaves recency order intact.
+    _DOMAIN_W = {"investor": 1.5, "customer": 1.3, "partner": 1.2, "advisor": 1.1,
+                 "hire": 1.0, "team": 0.9, "vendor": 0.8, "other": 0.7}
+    _PRIO_W = {"high": 3.0, "medium": 2.0, "low": 1.0}
+    ent_sig: dict[str, dict] = {}
+    lead_with: list[str] = []
+    deprioritize: list[str] = []
+    try:
+        ents = list({r.primary_entity for r in rows if r.primary_entity})
+        if ents:
+            for s in db.execute(
+                text("""
+                    SELECT subject_name, signal_type, value_num, value_cat
+                    FROM signals
+                    WHERE org_id = :oid AND subject_name = ANY(:ents)
+                      AND signal_type IN ('importance', 'domain')
+                """),
+                {"oid": org_id, "ents": ents},
+            ).fetchall():
+                d = ent_sig.setdefault(s.subject_name, {})
+                d[s.signal_type] = s.value_num if s.value_num is not None else s.value_cat
+        pr = db.execute(
+            text("""
+                SELECT priorities_jsonb FROM user_models
+                WHERE org_unit = :oid ORDER BY updated_at DESC LIMIT 1
+            """),
+            {"oid": org_id},
+        ).scalar()
+        if isinstance(pr, dict):
+            lead_with = [str(x).lower() for x in (pr.get("lead_with") or [])]
+            deprioritize = [str(x).lower() for x in (pr.get("deprioritize") or [])]
+    except Exception:  # noqa: BLE001 — ranking is an enhancement, never a 500
+        pass
+
+    def _rank(r) -> float:
+        scores = r.scores_jsonb if isinstance(r.scores_jsonb, dict) else {}
+        prio = scores.get("priority") or ("high" if r.delivery_route == "push" else "medium")
+        base = _PRIO_W.get(str(prio), 2.0)
+        sig = ent_sig.get(r.primary_entity or "", {})
+        try:
+            importance = float(sig.get("importance") or 0.5)
+        except (TypeError, ValueError):
+            importance = 0.5
+        dom_w = _DOMAIN_W.get(str(sig.get("domain") or "").lower(), 1.0)
+        rank = base * (0.5 + importance) * dom_w
+        blob = " ".join(str(scores.get(k) or "") for k in ("title", "category", "genios_view")).lower()
+        blob += f" {(r.primary_entity or '').lower()} {str(sig.get('domain') or '').lower()}"
+        if any(k and k in blob for k in lead_with):
+            rank *= 1.5
+        if any(k and k in blob for k in deprioritize):
+            rank *= 0.4
+        return rank
+
+    try:
+        ranked = sorted(rows, key=lambda r: (_rank(r), r.created_at or 0), reverse=True)
+        rank_by_id = {r.id: round(_rank(r), 3) for r in rows}
+        # Manager view: one card per (entity, title) — keep the newest/highest.
+        seen_keys: set[tuple] = set()
+        deduped = []
+        for r in ranked:
+            sc = r.scores_jsonb if isinstance(r.scores_jsonb, dict) else {}
+            key = (r.primary_entity, sc.get("title") or r.type)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            deduped.append(r)
+        ranked = deduped
+    except Exception:  # noqa: BLE001
+        ranked = rows
+        rank_by_id = {}
+    rows = ranked
 
     def _shape(r):
         chain = r.derivation_chain_jsonb if isinstance(r.derivation_chain_jsonb, dict) else {}
@@ -113,6 +240,7 @@ def list_insights(
             "source": "engine",
             "generated_at": r.created_at.isoformat() if r.created_at else None,
             "delivered_at": r.created_at.isoformat() if r.created_at else None,
+            "rank": rank_by_id.get(r.id),
             "scores": scores,
         }
 
