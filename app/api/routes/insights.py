@@ -110,19 +110,41 @@ def build_morning_brief(db: Session, org_id: str, limit: int = 3) -> dict:
     items = []
     for r in rows:
         sc = r[3] if isinstance(r[3], dict) else {}
+        action = (sc.get("genios_view") or "").strip()
+        # Founder-grade copy: headline = the clean title; sub = first sentence
+        # of the recommendation, capped — never a wall of technical text.
+        sub = action.split(". ")[0].strip()
+        if len(sub) > 110:
+            sub = sub[:107].rstrip() + "…"
         items.append(
             {
                 "id": str(r[0]),
                 "title": sc.get("title") or f"{r[1]}: {r[2]}",
                 "priority": sc.get("priority", "medium"),
-                "action": sc.get("genios_view") or "",
+                "action": sub,
                 "detail": sc.get("memory_view") or "",
                 "entity": sc.get("client_name") or r[2],
                 "category": sc.get("category") or "general",
             }
         )
     items.sort(key=lambda x: _PRI_RANK.get(x["priority"], 1))
-    top = items[:limit]
+    # Diversify: a founder's top-3 should span DIFFERENT problems, not three
+    # copies of the same one (e.g. 3 overdue invoices). One per category first;
+    # fill remaining slots by rank if fewer categories exist.
+    top: list[dict] = []
+    seen_cat: set[str] = set()
+    for it in items:
+        if it["category"] not in seen_cat:
+            top.append(it)
+            seen_cat.add(it["category"])
+        if len(top) >= limit:
+            break
+    if len(top) < limit:
+        for it in items:
+            if it not in top:
+                top.append(it)
+            if len(top) >= limit:
+                break
 
     # Manager nags — the founder's own overdue tasks lead the brief ("you said
     # you'd do this"). Best-effort; never breaks the brief.

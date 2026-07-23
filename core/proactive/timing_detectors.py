@@ -399,10 +399,11 @@ def _detect_overdue_commitment(
             f"{subject}: {predicate}={due_str} · status={status or 'n/a'} · "
             f"{days_overdue}d overdue"
         )
+        # Founder-facing copy: plain language, no internal field jargon
+        # ("status='unset'") — say what it is and what to do.
         genios_view = (
-            f"Commitment '{subject}' was due {due_str} ({days_overdue} days ago) "
-            f"and its status is '{status or 'unset'}', not resolved. Follow up "
-            f"or close it out."
+            f"{subject} slipped {days_overdue} days past its {due_str} due date "
+            f"with no resolution — chase it today or close it out."
         )
         out.append(
             _insight_row(
