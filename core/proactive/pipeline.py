@@ -754,6 +754,17 @@ def run_all_for_org(
 
         td = run_timing_detectors(session, org_id=org_id)
         aggregate["timing_detectors"] = td
+        # Automation advisor — repeated manual actions → "delegate to your agent"
+        try:
+            from core.proactive.automation_advisor import run_automation_advisor
+
+            aa = run_automation_advisor(session, org_id=org_id)
+            aggregate["automation_advisor"] = aa
+            aggregate["insights_fired_total"] = (
+                aggregate.get("insights_fired_total") or 0
+            ) + int(aa.get("insights_fired") or 0)
+        except Exception as e:  # noqa: BLE001 — advisor never breaks the scan
+            log.warning("automation_advisor_failed", org_id=org_id, error=str(e))
         aggregate["insights_fired_total"] += int(td.get("insights_fired") or 0)
     except Exception as e:  # noqa: BLE001 — never let timing detectors break the scan
         log.warning("proactive_timing_detectors_failed", org_id=org_id, error=str(e))
