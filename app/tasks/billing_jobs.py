@@ -125,7 +125,7 @@ def _send_trial_warning(org_id: str, email: str, name: str):
         <p>
           <a href="{upgrade_url}" style="display:inline-block;padding:10px 20px;
             background:#c8962e;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">
-            Upgrade to Hustler — ₹2,500/mo
+            Upgrade to Early — ₹4,500/mo
           </a>
         </p>
         <p style="color:#999;font-size:12px;">GeniOS · <a href="{FRONTEND_URL}">thegenios.com</a></p>
