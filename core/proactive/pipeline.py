@@ -991,6 +991,13 @@ def run_for_org(
                     reason=step.reason or step.conclusion,
                 )
                 genios_view = _nba.prescription
+                # The recommender already decides what KIND of action fits and
+                # whether a message draft even makes sense — keep it, don't throw
+                # it away, so the UI can show the RIGHT action (draft vs advice
+                # vs schedule) instead of a Draft button on everything.
+                action_type = _nba.action_type
+                action_channel = _nba.channel
+                draft_needed = _nba.draft_needed
             else:
                 memory_view = (
                     f"Invoice {invoice_id} for {client_name}: "
@@ -1002,6 +1009,11 @@ def run_for_org(
                     f"vip={facts.get('is_vip_client', False)}"
                 )
                 genios_view = step.reason or step.conclusion
+                # No structured next-best-action for this rule → advice-only,
+                # never push a message draft.
+                action_type = recommend_action or "review"
+                action_channel = "email"
+                draft_needed = False
 
             new_insights.append(
                 {
@@ -1017,6 +1029,9 @@ def run_for_org(
                     "confidence": confidence,
                     "uncertainty": uncertainty,
                     "recommend_action": recommend_action,
+                    "action_type": action_type,
+                    "action_channel": action_channel,
+                    "draft_needed": draft_needed,
                     "side_effect_class": registry["side_effect"],
                     "blast_radius": registry["blast_radius"],
                     "delivery_route": delivery_route,
@@ -1075,6 +1090,9 @@ def run_for_org(
                     "confidence": ins["confidence"],
                     "uncertainty": ins["uncertainty"],
                     "recommend_action": ins["recommend_action"],
+                    "action_type": ins["action_type"],
+                    "action_channel": ins["action_channel"],
+                    "draft_needed": ins["draft_needed"],
                     "side_effect_class": ins["side_effect_class"],
                     "blast_radius": ins["blast_radius"],
                 },

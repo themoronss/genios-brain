@@ -222,6 +222,28 @@ def list_insights(
         rank_by_id = {}
     rows = ranked
 
+    def _source_tags(scores: dict, itype: str) -> list[str]:
+        """Small provenance chips so the founder sees WHERE an insight came from
+        (Sales / Finance / Relationship …). Domain-level for now; tool-level
+        (Gmail / CRM / Calendar) needs consistent grounding refs — a follow-up."""
+        cat = str(scores.get("category") or "").lower()
+        rid = str(scores.get("rule_id") or "").lower()
+        tags: list[str] = []
+        if "invoice" in cat or rid.startswith(("ar", "invoice")):
+            tags.append("Finance")
+        elif cat in ("going_cold", "cooling") or "cold" in cat:
+            tags.append("Relationship")
+        elif "sales" in cat or "deal" in cat or "meeting" in cat or rid.startswith("sales"):
+            tags.append("Sales")
+        elif "hr" in rid or "hr" in cat:
+            tags.append("HR")
+        elif "csm" in rid or "customer" in cat or "renewal" in cat:
+            tags.append("Customer")
+        if not tags:
+            tags.append({"risk": "Risk", "opportunity": "Opportunity",
+                         "misalignment": "Alignment"}.get(itype, "Signal"))
+        return tags
+
     def _shape(r):
         chain = r.derivation_chain_jsonb if isinstance(r.derivation_chain_jsonb, dict) else {}
         scores = dict(r.scores_jsonb) if isinstance(r.scores_jsonb, dict) else {}
@@ -249,6 +271,18 @@ def list_insights(
             "contact_id": None,
             "memory_view": scores.get("memory_view") or chain.get("memory_view"),
             "genios_view": scores.get("genios_view") or chain.get("genios_view"),
+            # What KIND of move this is, and whether a message draft even makes
+            # sense — so the UI shows the right action, not Draft on everything.
+            "action_type": scores.get("action_type") or scores.get("recommend_action") or "advice",
+            # Prefer the engine's explicit decision; for rows written before that
+            # field existed, infer from the recommend_action (a reply/update/
+            # follow-up owes a message; a nag or a call does not).
+            "draft_needed": (
+                bool(scores.get("draft_needed")) if "draft_needed" in scores
+                else str(scores.get("recommend_action") or "") in ("reply_now", "send_update", "follow_up")
+            ),
+            "action_channel": scores.get("action_channel") or "email",
+            "sources": _source_tags(scores, r.type),
             "delivery_status": "delivered",
             "source": "engine",
             "generated_at": r.created_at.isoformat() if r.created_at else None,
