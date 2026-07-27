@@ -113,3 +113,75 @@ def analyze_contact(
         raise HTTPException(status_code=503, detail="Analysis unavailable — try again.")
 
     return {"contact": contact, "suggestion": suggestion, "model": "sonnet" if deep else "haiku"}
+
+
+# ── Draft: a ready-to-SEND reply for the contact the user is looking at ───────
+# Same key-auth + live context bundle as /analyze, but a DRAFT system prompt so
+# the output is an actual message body (not advice). Lightweight on purpose —
+# the founder reviews/edits and sends it themselves, so this deliberately skips
+# the heavy policy/ledger/approval machinery of POST /api/generate/draft (which
+# is for autonomous agents). Routed to Haiku (cheap); the extension calls it
+# once per "Draft reply" click.
+_DRAFT_SYSTEM = (
+    "You are the founder's communication assistant. Using the REAL context "
+    "(emails, calendar, history) for ONE contact, write a ready-to-SEND reply "
+    "on the founder's behalf. Rules:\n"
+    "- Output ONLY the message body. No subject line, no 'Here is a draft', no "
+    "commentary, no markdown, no placeholders like [Name] unless truly unknown.\n"
+    "- Match the relationship's tone from the context; be concise and specific, "
+    "and reference the actual thread/history where relevant.\n"
+    "- Lead with the point; close with one clear next step.\n"
+    "- If context is thin, still write a professional reply from the request."
+)
+
+
+@router.get("/v1/intelligence/draft")
+def draft_reply(
+    contact: str = Query(..., min_length=1, description="Contact / company name"),
+    instruction: str | None = Query(
+        None, description="What to write (e.g. 'chase the overdue invoice'); optional"
+    ),
+    db: Session = Depends(get_db),
+    org_id: str = Depends(verify_api_key),
+):
+    """Write a send-ready reply for ONE contact from real (graph + live Gmail)
+    context. Returns {contact, draft, model}. The founder reviews and sends it —
+    GeniOS never auto-sends from here."""
+    try:
+        bundle = build_context_bundle(db, org_id, contact, situation=instruction or "")
+    except Exception as e:  # noqa: BLE001 — context miss must not 500
+        logger.warning("draft_bundle_failed contact=%s err=%s", contact, e)
+        bundle = None
+
+    ctx = (bundle or {}).get("context_for_agent") or ""
+    ask = (instruction or "").strip() or "a reply that moves this forward"
+
+    user_prompt = (
+        f"Contact: {contact}\n\n"
+        f"Context (from emails / calendar / history):\n{ctx[:6000] or '(no cached context)'}\n\n"
+        f"What to write: {ask}\n\n"
+        "Write the message body now."
+    )
+
+    def _run() -> str:
+        return llm_client.call(
+            org_id=org_id,
+            purpose="draft",  # routes to Haiku (cheap), same as the agent draft path
+            messages=[
+                {"role": "system", "content": _DRAFT_SYSTEM},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.4,
+            max_tokens=800,
+        ).strip()
+
+    try:
+        draft = call_with_timeout(_run, fallback=None)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("draft_llm_failed contact=%s err=%s", contact, e)
+        draft = None
+
+    if not draft:
+        raise HTTPException(status_code=503, detail="Draft unavailable — try again.")
+
+    return {"contact": contact, "draft": draft, "model": "haiku"}

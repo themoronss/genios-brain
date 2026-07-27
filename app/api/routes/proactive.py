@@ -182,6 +182,13 @@ def list_insights(
             importance = 0.5
         dom_w = _DOMAIN_W.get(str(sig.get("domain") or "").lower(), 1.0)
         rank = base * (0.5 + importance) * dom_w
+        # Pure time-elapsed nags (going_cold / cooling) are the weakest signal —
+        # a countdown, not a reason. Demote them so any money- or relationship-
+        # bearing insight outranks them; a genuinely important cold entity still
+        # rises via its importance weight above, so we don't lose the real ones.
+        cat = str(scores.get("category") or "").lower()
+        if cat in ("going_cold", "cooling"):
+            rank *= 0.4
         blob = " ".join(str(scores.get(k) or "") for k in ("title", "category", "genios_view")).lower()
         blob += f" {(r.primary_entity or '').lower()} {str(sig.get('domain') or '').lower()}"
         if any(k and k in blob for k in lead_with):
@@ -198,7 +205,13 @@ def list_insights(
         deduped = []
         for r in ranked:
             sc = r.scores_jsonb if isinstance(r.scores_jsonb, dict) else {}
-            key = (r.primary_entity, sc.get("title") or r.type)
+            # Dedup on the STABLE signature first. Time-based detectors
+            # (going_cold, overdue) re-fire daily with the day-count baked into
+            # the title ("…42 days" → "…41 days"), so keying on title let those
+            # duplicates all through — that's the "same nag 3x" flood. The
+            # signature ignores the changing age, so one entity = one card and
+            # the highest-ranked/newest survives (rows are already rank-sorted).
+            key = r.signature_hash or (r.primary_entity, sc.get("title") or r.type)
             if key in seen_keys:
                 continue
             seen_keys.add(key)
