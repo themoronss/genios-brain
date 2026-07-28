@@ -239,6 +239,40 @@ def list_insights(
         rank_by_id = {}
     rows = ranked
 
+    # ── Tool-level provenance: resolve each entity → the tools its knowledge
+    # came from (Gmail / Calendar / CRM …) via graph_nodes.source_item_ids,
+    # which are tool-prefixed ('gmail:<hash>'). One batch query for the page.
+    _TOOL_LABEL = {
+        "gmail": "Gmail", "calendar": "Calendar", "gcal": "Calendar", "slack": "Slack",
+        "upload": "Uploaded", "csv": "Uploaded", "document": "Document", "manual": "Manual",
+        "linkedin": "LinkedIn", "hubspot": "HubSpot", "salesforce": "Salesforce",
+        "pipedrive": "Pipedrive", "zoho": "Zoho", "close": "Close", "notion": "Notion",
+    }
+
+    def _tool_from_sid(sid: str) -> str:
+        prefix = str(sid).split(":", 1)[0].lower()
+        return _TOOL_LABEL.get(prefix, prefix.title() if prefix else "")
+
+    ent_tools: dict[str, list[str]] = {}
+    try:
+        names = list({r.primary_entity for r in rows if r.primary_entity})
+        if names:
+            for gn in db.execute(
+                text("SELECT canonical_name, source_item_ids FROM graph_nodes "
+                     "WHERE org_id = :o AND canonical_name = ANY(:names)"),
+                {"o": org_id, "names": names},
+            ).fetchall():
+                labels: list[str] = []
+                for sid in (gn.source_item_ids or []):
+                    lab = _tool_from_sid(sid)
+                    if lab and lab not in labels:
+                        labels.append(lab)
+                if labels:
+                    ent_tools[gn.canonical_name] = labels[:3]
+    except Exception:  # noqa: BLE001 — provenance is a bonus, never a 500
+        db.rollback()
+        ent_tools = {}
+
     def _source_tags(scores: dict, itype: str) -> list[str]:
         """Small provenance chips so the founder sees WHERE an insight came from
         (Sales / Finance / Relationship …). Domain-level for now; tool-level
@@ -264,8 +298,10 @@ def list_insights(
     def _shape(r):
         chain = r.derivation_chain_jsonb if isinstance(r.derivation_chain_jsonb, dict) else {}
         scores = dict(r.scores_jsonb) if isinstance(r.scores_jsonb, dict) else {}
-        # Customer-facing: present the stored raw confidence as a qualitative
-        # band (§5 Gate 1). The raw float remains in the proactive_insights row.
+        # Keep the RAW numeric confidence for the UI's score+bar (like the
+        # reference 0.94), then band the scores copy for the qualitative label.
+        _raw_conf = scores.get("confidence")
+        confidence_score = float(_raw_conf) if isinstance(_raw_conf, (int, float)) else None
         if "confidence" in scores:
             scores["confidence"] = to_band(scores.get("confidence")).value
         # The pipeline writes the human headline + why into scores_jsonb
@@ -299,7 +335,12 @@ def list_insights(
                 else str(scores.get("recommend_action") or "") in ("reply_now", "send_update", "follow_up")
             ),
             "action_channel": scores.get("action_channel") or "email",
+            # Provenance: tool-level chips (Gmail/CRM/Calendar) when the entity's
+            # knowledge is traceable, plus the domain tag as a fallback; and the
+            # raw confidence score for a number + bar in the UI.
             "sources": _source_tags(scores, r.type),
+            "source_tools": ent_tools.get(r.primary_entity, []),
+            "confidence_score": confidence_score,
             "delivery_status": "delivered",
             "source": "engine",
             "generated_at": r.created_at.isoformat() if r.created_at else None,
@@ -348,6 +389,8 @@ def list_insights(
                 "draft_needed": bool(ent),
                 "action_channel": "email",
                 "sources": ["Reminder"],
+                "source_tools": ent_tools.get(ent, []) if ent else [],
+                "confidence_score": None,
                 "delivery_status": "delivered",
                 "source": "task",
                 "generated_at": t.due_at.isoformat() if t.due_at else None,
