@@ -101,6 +101,7 @@ def get_active_facts(
     fact_type: str | None = None,
     min_score: float = 0.0,  # accepted for back-compat; v2 facts don't carry composite score
     entity_name: str | None = None,
+    file_id: str | None = None,  # scope to a single uploaded file's facts (source_item_id LIKE "upload:<file_id>:%")
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -125,6 +126,7 @@ def get_active_facts(
             org_id=org_id,
             subject=entity_name,
             predicate=fact_type,
+            source_prefix=f"upload:{file_id}:" if file_id else None,
             policy=ctx.get("policy"),
             limit=limit,
             offset=offset,

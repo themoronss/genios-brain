@@ -253,6 +253,7 @@ def list_facts(
     subject: str | None = None,
     predicate: str | None = None,
     subject_type: str | None = None,  # filter by node type (entity/event/goal/risk)
+    source_prefix: str | None = None,  # scope to facts whose source_item_id starts with this (e.g. "upload:<file_id>:")
     policy: dict | None = None,        # per-agent scope policy (None = unrestricted)
     limit: int = 100,
     offset: int = 0,
@@ -278,6 +279,9 @@ def list_facts(
         if predicate:
             base_where.append("f.predicate = :_lf_pred")
             binds["_lf_pred"] = predicate
+        if source_prefix:
+            base_where.append("f.source_item_id LIKE :_lf_srcpfx")
+            binds["_lf_srcpfx"] = f"{source_prefix}%"
 
         where_sql = " WHERE " + " AND ".join(base_where) + frag
         total = session.execute(
@@ -305,6 +309,8 @@ def list_facts(
             q = q.where(FactRow.subject.ilike(f"%{subject}%"))
         if predicate:
             q = q.where(FactRow.predicate == predicate)
+        if source_prefix:
+            q = q.where(FactRow.source_item_id.like(f"{source_prefix}%"))
         total = session.execute(
             select(func.count()).select_from(q.subquery())
         ).scalar_one()
