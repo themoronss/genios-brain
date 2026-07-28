@@ -67,9 +67,26 @@ def list_insights(
             text("SELECT COUNT(*) FROM insight_feedback WHERE org_id = :oid"),
             {"oid": org_id},
         ).scalar() or 0
+        # Due-reminder fingerprint: when a task crosses its due time the count
+        # changes, busting the ETag so the reminder actually surfaces on the
+        # next poll (otherwise a 304 would hide it until an insight changed).
+        # Own try — a missing user_tasks table must not kill the whole ETag.
+        try:
+            due_fp = db.execute(
+                text("""
+                    SELECT COUNT(*) FROM user_tasks
+                    WHERE org_id = :oid AND status = 'open'
+                      AND due_at IS NOT NULL AND due_at <= NOW()
+                      AND (snoozed_until IS NULL OR snoozed_until <= NOW())
+                """),
+                {"oid": org_id},
+            ).scalar() or 0
+        except Exception:  # noqa: BLE001
+            db.rollback()
+            due_fp = 0
         import hashlib as _hl
 
-        etag = '"' + _hl.md5(f"{fp}|{fb}|{status}|{limit}".encode()).hexdigest()[:20] + '"'
+        etag = '"' + _hl.md5(f"{fp}|{fb}|{due_fp}|{status}|{limit}".encode()).hexdigest()[:20] + '"'
         response.headers["ETag"] = etag
     except Exception:  # noqa: BLE001 — fingerprint is an optimization only
         pass
@@ -291,7 +308,59 @@ def list_insights(
             "scores": scores,
         }
 
-    return {"insights": [_shape(r) for r in rows[:limit]], "count": min(len(rows), limit)}
+    # Due reminders → surface as high-priority items at the TOP of the feed.
+    # This is how "remind me in 1 min" actually fires: the extension's 5-min
+    # poll already raises a notification for new high-priority insights, so a
+    # task crossing its due time now pings the founder — no new Celery beat,
+    # no extra Redis traffic (Upstash-quota safe).
+    task_items: list[dict] = []
+    try:
+        trows = db.execute(
+            text("""
+                SELECT id, text, target_entity, due_at
+                FROM user_tasks
+                WHERE org_id = :oid AND status = 'open'
+                  AND due_at IS NOT NULL AND due_at <= NOW()
+                  AND (snoozed_until IS NULL OR snoozed_until <= NOW())
+                ORDER BY due_at ASC
+                LIMIT 10
+            """),
+            {"oid": org_id},
+        ).fetchall()
+        for t in trows:
+            ent = t.target_entity
+            task_items.append({
+                "id": f"task:{t.id}",
+                "type": "risk",
+                "priority": "high",
+                "category": "reminder",
+                "title": f"⏰ Reminder: {t.text}",
+                "detail": "",
+                "contact_name": ent,
+                "contact_id": None,
+                "memory_view": f"You asked to be reminded: {t.text}",
+                "genios_view": (
+                    f"Reminder you set{(' about ' + ent) if ent else ''}: {t.text}"
+                ),
+                # If the reminder is tied to a person, a draft helps; otherwise
+                # it's just a nudge (advice/none).
+                "action_type": "reminder",
+                "draft_needed": bool(ent),
+                "action_channel": "email",
+                "sources": ["Reminder"],
+                "delivery_status": "delivered",
+                "source": "task",
+                "generated_at": t.due_at.isoformat() if t.due_at else None,
+                "delivered_at": t.due_at.isoformat() if t.due_at else None,
+                "rank": 999.0,
+                "scores": {"confidence": "high", "priority": "high", "category": "reminder"},
+            })
+    except Exception:  # noqa: BLE001 — tasks are a bonus; never break the feed
+        db.rollback()
+        task_items = []
+
+    shaped = task_items + [_shape(r) for r in rows[: max(0, limit - len(task_items))]]
+    return {"insights": shaped, "count": len(shaped)}
 
 
 @router.post("/v1/insights/{insight_id}/dismiss")

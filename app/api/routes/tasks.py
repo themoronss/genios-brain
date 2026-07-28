@@ -49,21 +49,32 @@ def _ensure_table(db: Session) -> None:
     _ENSURED = True
 
 
-# Light natural-date parsing for quick-add ("remember: msg Isha next week").
-_REL = [
+# Light natural-date parsing for quick-add ("remember: msg Isha next week",
+# "remind me in 1 min"). Minute/hour patterns are checked BEFORE day patterns
+# so short-fuse reminders get a real due time instead of being stored NULL.
+_MIN_RX = re.compile(r"\bin\s+(\d{1,3})\s*min(?:ute)?s?\b", re.I)
+_HR_RX = re.compile(r"\bin\s+(\d{1,2})\s*h(?:ou)?rs?\b", re.I)
+_REL_DAYS = [
     (re.compile(r"\btoday\b", re.I), 0),
     (re.compile(r"\btomorrow\b", re.I), 1),
     (re.compile(r"\bnext week\b", re.I), 7),
-    (re.compile(r"\bin (\d{1,2}) days?\b", re.I), None),  # captured
+    (re.compile(r"\bin\s+(\d{1,3})\s*days?\b", re.I), None),  # captured
 ]
 
 
 def parse_due(task_text: str) -> datetime | None:
-    for rx, days in _REL:
+    now = datetime.now(UTC)
+    m = _MIN_RX.search(task_text)
+    if m:
+        return now + timedelta(minutes=int(m.group(1)))
+    m = _HR_RX.search(task_text)
+    if m:
+        return now + timedelta(hours=int(m.group(1)))
+    for rx, days in _REL_DAYS:
         m = rx.search(task_text)
         if m:
             d = days if days is not None else int(m.group(1))
-            return datetime.now(UTC) + timedelta(days=d)
+            return now + timedelta(days=d)
     return None
 
 

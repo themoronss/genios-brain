@@ -110,6 +110,12 @@ def run_relationship_detectors(session: Session, *, org_id: str) -> dict[str, An
                     "client_name": name,
                     "memory_view": memory_view,
                     "genios_view": nba.prescription,
+                    # Carry the recommender's decision so the UI shows the right
+                    # action (a re-engage draft vs a call) + a confidence chip.
+                    "confidence": 0.7,
+                    "draft_needed": bool(getattr(nba, "draft_needed", True)),
+                    "action_type": getattr(nba, "action_type", "reengage"),
+                    "action_channel": getattr(nba, "channel", "email"),
                 },
                 grounding_refs_jsonb=[node_id],
                 signature_hash=h,

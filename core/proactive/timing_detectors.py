@@ -149,11 +149,18 @@ def _insight_row(
     signature_hash: str,
     matched_facts: dict[str, Any],
     grounding_refs: list[str],
+    draft_needed: bool = False,
+    confidence: float = 0.65,
+    action_type: str = "advice",
 ) -> InsightRow:
     """Build a proactive_insights row in the exact shape pipeline/hypothesizer use.
 
     delivery_route is always 'notify' — timing signals surface to a human, they
     never fire an autonomous action (mirrors the hypothesizer's contract).
+
+    draft_needed / confidence / action_type let each detector say what KIND of
+    response fits (draft a message vs advise) and how sure it is — so the UI
+    shows the right action + a confidence chip instead of Draft-on-everything.
     """
     return InsightRow(
         id=str(_uuid.uuid4()),
@@ -180,6 +187,9 @@ def _insight_row(
             "client_name": subject,
             "memory_view": memory_view,
             "genios_view": genios_view,
+            "confidence": confidence,
+            "draft_needed": draft_needed,
+            "action_type": action_type,
         },
         grounding_refs_jsonb=grounding_refs,
         signature_hash=signature_hash,
@@ -255,6 +265,10 @@ def _detect_going_cold(
                 signature_hash=sig,
                 matched_facts={"last_seen_age_days": age_i, "band": band},
                 grounding_refs=[str(r.id)],
+                # Reconnecting is a message you owe → offer a warm re-engage draft.
+                draft_needed=True,
+                action_type="reengage",
+                confidence=0.72 if band == "cold" else 0.6,
             )
         )
     return out
@@ -332,6 +346,12 @@ def _detect_role_change(
                     "new_value": new_val,
                 },
                 grounding_refs=[subject],
+                # A role change is a "reclassify / update ownership" judgement,
+                # not a message to send → advise, don't draft. Fact-derived, so
+                # high confidence.
+                draft_needed=False,
+                action_type="advice",
+                confidence=0.8,
             )
         )
     return out
@@ -424,6 +444,11 @@ def _detect_overdue_commitment(
                     "days_overdue": days_overdue,
                 },
                 grounding_refs=[subject],
+                # Chasing an overdue commitment IS an outbound message to send →
+                # hand the founder a ready payment-reminder draft, not a lecture.
+                draft_needed=True,
+                action_type="send_payment_reminder",
+                confidence=0.85,
             )
         )
     return out
