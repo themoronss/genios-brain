@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from genios_engine.capture.connectors.base import RawObject
+from genios_engine.contracts.source_event import (Actor, SourceEvent, SyncMode,
+                                                  compute_dedup_key)
+from genios_engine.platform.ids import new_id
+
+
+def to_source_event(
+    raw: RawObject,
+    *,
+    org_id: str,
+    connection_id: str,
+    sync_mode: SyncMode = SyncMode.incremental,
+    payload_ref: str | None = None,
+) -> SourceEvent:
+    """Deterministic raw → immutable SourceEvent. dedup_key is stable per source
+    object; only event_id/captured_at are non-deterministic (assigned at ingest)."""
+    return SourceEvent(
+        event_id=new_id("evt"),
+        org_id=org_id,
+        connection_id=connection_id,
+        source=raw.source,
+        object_type=raw.object_type,
+        source_object_id=raw.source_object_id,
+        parent_object_id=raw.parent_object_id,
+        dedup_key=compute_dedup_key(raw.source, raw.object_type, raw.source_object_id,
+                                    raw.content_version),
+        actor=Actor(type=raw.actor_type, email=raw.actor_email),
+        occurred_at=raw.occurred_at,
+        captured_at=datetime.now(timezone.utc),
+        sync_mode=sync_mode,
+        payload_ref=payload_ref,
+    )
