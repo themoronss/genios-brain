@@ -1,0 +1,53 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+pgvector
+redis
+celery[redis]
+python-dotenv
+pydantic
+# pydantic-settings split out of pydantic v2 — required by
+# core/foundations/config.py at import time. Container will exit 1
+# immediately at startup if this isn't installed.
+pydantic-settings>=2.0
+requests
+google-generativeai
+groq
+anthropic>=0.40.0,<1.0.0
+google-auth-oauthlib
+google-api-python-client
+bcrypt
+PyJWT
+rapidfuzz
+python-louvain
+networkx
+sse-starlette
+python-multipart
+PyMuPDF
+# pypdf — used by core/resources/uploads.py and the Gmail attachment
+# decoder. Imported lazily so a missing install only breaks PDF
+# extraction, not the whole startup, but we still want it on prod.
+pypdf>=4.0
+python-docx
+razorpay
+sentry-sdk
+# alembic — required at runtime for migrations + by app.main on boot
+# in some paths. Was missing despite being used in migrations/.
+alembic>=1.13
+# Phase 1 — dev dep for CI CVE scanning
+pip-audit==2.7.3
+# Phase 4 — calibration (Platt scaling over recommendation outcomes)
+scikit-learn==1.5.2
+# Below: deps actually imported across core/ + app/ but previously
+# only resolved transitively from other packages. Made explicit so a
+# transitive-dep version bump in a child package can't silently break
+# us on a fresh prod build.
+structlog>=24.0           # telemetry — required at module import
+cryptography>=42.0        # Fernet token encryption (oauth_tokens)
+httpx>=0.27               # async HTTP + adapter clients
+jinja2>=3.1               # email + artifact templates
+starlette>=0.40           # FastAPI core (transitive via fastapi, pinned)
+PyYAML>=6.0               # module rule YAML + benchmarks
+z3-solver>=4.13           # core/reasoning/csp_solver.py (CSP/SMT)
+stripe
