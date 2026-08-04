@@ -8,7 +8,8 @@ from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.packs.registry import PackRegistry
-from genios_engine.packs.wiring import DEFAULT_PACK_ID, ensure_default, make_registry
+from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
+                                        make_registry)
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
@@ -292,3 +293,28 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     return {"nodes": len(nodes), "outcomes": dict(out), "eval_time": eval_time.isoformat(),
             "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
                      "snapshot_id": snapshot_id}}
+
+
+def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
+           registry: PackRegistry | None = None) -> dict:
+    """Evaluate EVERY pack applied to the org (sales + general by default), sequentially. Each
+    pack's own run() re-reads the daily budget from the signals table, which already counts every
+    org signal regardless of which pack emitted it — so the budget is shared across packs, not
+    additive, with zero extra bookkeeping here. Outcomes merge; callers that only care about one
+    pack can still call run() directly."""
+    eval_time = eval_time or datetime.now(timezone.utc)
+    registry = registry or make_registry()
+    ensure_defaults(registry, org_id)
+    with store.engine.connect() as c:
+        pack_ids = [r[0] for r in c.execute(text(
+            "select pack_id from tenant_packs where org_id=:o and state='active'"),
+            {"o": org_id})]
+    combined: Counter = Counter()
+    nodes = 0
+    for pid in pack_ids:
+        res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid)
+        nodes = max(nodes, res["nodes"])
+        for k, v in res["outcomes"].items():
+            combined[k] += v
+    return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
+            "packs": pack_ids}

@@ -148,7 +148,7 @@ def _prompt(question: str, module_id: str, signals, facts, plays: dict, extra: d
                  f"then give the single next-best-action that addresses the biggest driver. Do not list "
                  f"them as separate points.\n")
     return (
-        f"You are GeniOS, a {module_id} decision copilot. Answer the user's question with ONE concrete "
+        f"You are GeniOS, a decision copilot. Answer the user's question with ONE concrete "
         f"next-best-action, grounded ONLY in the fired signals + facts below. Never invent data; if the "
         f"grounding is thin, say so and lower the confidence.\n{synth}\n"
         f"QUESTION: {question}\n\n"

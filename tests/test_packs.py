@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+from genios_engine.packs.general_v1 import GENERAL_V1
 from genios_engine.packs.merge import apply_guardrails, merge_config
 from genios_engine.packs.sales_v1 import SALES_V1
 from genios_engine.packs.snapshot import canonical, snapshot_id
@@ -19,7 +20,7 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.3.1"
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.4.0"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100
@@ -100,10 +101,9 @@ def test_snapshot_is_sensitive_to_any_value_change():
 
 def test_rule_from_dict_roundtrip_and_scope_filter():
     rules = [rule_from_dict(r) for r in SALES_V1["rules"]]
-    assert {r.scope for r in rules} == {"deal", "person", "meeting"}
+    assert {r.scope for r in rules} == {"deal", "person"}   # "meeting" moved to general_v1
     assert [r.id for r in rules_for_scope(rules, "deal")] == \
         ["stalled_deal", "single_threaded_deal", "competitor_in_live_deal"]
-    assert len(rules_for_scope(rules, "meeting")) == 1
 
 
 # ---- pack-driven scoring (the injection point) -----------------------------
@@ -242,3 +242,67 @@ def test_plan_composites_needs_two_distinct_concerns():
     # a single concern → no composite
     lone = [{"subject_node_id": deal, "reason_code": "stalled_deal", "score": 70, "score_inputs": {}}]
     assert plan_composites([deal], lone, adj) == []
+
+
+# ---- general pack (relationship hygiene, any contact — not deal-linked) ---------------------
+# same conformance bar as sales_v1: this pack ships to production too, evaluated alongside sales
+# by reason/runner.run_all on every org.
+
+GC = GENERAL_V1["scoring_defaults"]
+
+
+def test_general_pack_is_wellformed():
+    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.0.0"
+    assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
+            "bands"} <= GC.keys()
+    assert GC["weights"]["u"] + GC["weights"]["i"] + GC["weights"]["r"] == 100
+    assert GC["gate"]["s_min"] < GC["bands"]["high"] < GC["bands"]["critical"]
+    # shared org-wide daily budget across packs (runner._budget_used counts every org signal
+    # regardless of pack) — must match sales' value or the combined cap silently changes.
+    assert GC["budget_per_user_day"] == SC["budget_per_user_day"]
+
+
+def test_general_every_reason_code_has_a_card_template():
+    tpls = GENERAL_V1["templates"]
+    for rc in GENERAL_V1["schema"]["signal_vocab"]:
+        assert rc in tpls, f"{rc} has no card template"
+        t = tpls[rc]
+        assert "render_hint" in t and "fallback" in t and "artifact_kind" in t
+        assert "headline" in t["fallback"] and "situation" in t["fallback"]
+
+
+def test_general_every_rule_has_a_play_and_matching_vocab():
+    plays, vocab = GENERAL_V1["plays"], set(GENERAL_V1["schema"]["signal_vocab"])
+    for r in GENERAL_V1["rules"]:
+        assert r["play"] in plays, f"{r['id']} references unknown play {r['play']}"
+        assert r["reason_code"] in vocab, f"{r['id']} reason_code not in signal_vocab"
+
+
+def test_general_rule_evidence_fields_are_declared_in_schema():
+    fields = set(GENERAL_V1["schema"]["fields"])
+    for r in GENERAL_V1["rules"]:
+        for f in r["evidence_fields"]:
+            assert f in fields, f"{r['id']} evidence {f} not in pack schema.fields"
+
+
+def test_sales_and_general_rule_ids_never_collide():
+    """run_all evaluates both packs against the same node set — a shared rule id would collide
+    on the (org_id, rule_id, subject_node_id) open-signal key and on the dedup/cooldown lookup."""
+    sales_ids = {r["id"] for r in SALES_V1["rules"]}
+    general_ids = {r["id"] for r in GENERAL_V1["rules"]}
+    assert sales_ids & general_ids == set()
+
+
+def test_unanswered_email_fires_and_scores_from_general_pack():
+    rule = next(rule_from_dict(r) for r in GENERAL_V1["rules"] if r["id"] == "unanswered_email")
+    ctx = NodeContext(
+        node_id="p1", node_type="person",
+        facts={
+            "thread.ball_in_court": {"value": "us", "confidence": 0.9, "authority_rank": 2},
+            "thread.last_inbound": {"value": (NOW - timedelta(days=3)).isoformat(),
+                                    "confidence": 0.9, "authority_rank": 2},
+        })
+    assert evaluate(ctx, rule, NOW) is True
+    S, inputs = score_rule(ctx, rule, NOW, GC)
+    assert inputs["I"] == GC["impact"]["i_floor"]     # no deal.value on a plain contact → floored
+    assert S >= GC["gate"]["s_min"]                   # clears the gate — a real, deliverable card

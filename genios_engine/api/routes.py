@@ -94,7 +94,7 @@ def _run_l2(org_id: str) -> None:
     try:
         from genios_engine.context.runner import process_pending
         process_pending(org_id=org_id, store=_graph, llm=_llm, crypto_key=get_settings().crypto_key)
-        from genios_engine.reason.runner import run as run_l3    # L3 after the graph updates
+        from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         run_l3(org_id=org_id, store=_graph, registry=_registry)
         if _card_store is not None:                              # L5: new gated signals → cards
             from genios_engine.deliver.pipeline import build_cards_for_org
@@ -608,7 +608,7 @@ def context_reason(org_id: str = Depends(get_current_org)) -> dict:
     """L3: evaluate deterministic rules over the authed tenant's graph → scored signals (no LLM)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
-    from genios_engine.reason.runner import run as run_l3
+    from genios_engine.reason.runner import run_all as run_l3
     return run_l3(org_id=org_id, store=_graph, registry=_registry)
 
 
@@ -619,7 +619,7 @@ def context_sweep(_internal: None = Depends(require_internal)) -> dict:
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
-    from genios_engine.reason.runner import run as run_l3
+    from genios_engine.reason.runner import run_all as run_l3
     with _graph.engine.connect() as c:
         orgs = [r[0] for r in c.execute(text("select org_id from graph_versions"))]
     return {"orgs": len(orgs),

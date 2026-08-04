@@ -119,6 +119,42 @@ def _wants_draft(entity, head: str, sit: str) -> bool:
     return any(k in t for k in _DRAFT_KW)
 
 
+# Real source labels for context_tags (app:gmail → "Gmail"). This is the PROVENANCE the card
+# actually carries — not the pack_id, which was mislabeling every card "sales".
+_APP_LABEL = {"gmail": "Gmail", "gcal": "Calendar", "calendar": "Calendar", "hubspot": "HubSpot",
+              "notion": "Notion", "outlook": "Outlook", "stripe": "Stripe", "slack": "Slack"}
+
+
+def _provenance(context_tags) -> tuple[list[str], list[str]]:
+    """From a card's context_tags (['app:gmail','url_domain:x.com', …]) → (source apps, company
+    domains). The apps are the REAL 'where it came from' (Gmail/HubSpot); domains identify the org."""
+    tags = context_tags if isinstance(context_tags, list) else []
+    apps, domains = [], []
+    for t in tags:
+        if not isinstance(t, str):
+            continue
+        if t.startswith("app:"):
+            a = t.split(":", 1)[1].lower()
+            apps.append(_APP_LABEL.get(a, a.title()))
+        elif t.startswith("url_domain:"):
+            domains.append(t.split(":", 1)[1])
+    return apps, domains
+
+
+# sales_v1's rules are a mix: some are genuinely about a DEAL (pipeline/pricing/competitor), others
+# are generic relationship hygiene (an overdue reply, a missed follow-up) that fire for ANY contact,
+# sales or not. The pack_id can't tell them apart (it's "sales" for both) — the reason_code can.
+_DEAL_REASON_CODES = {
+    "stalled_deal", "buying_signal", "cooling_deal", "single_threaded_deal",
+    "competitor_in_live_deal", "going_dark_after_proposal", "deal_sentiment_negative",
+    "objection_open", "deal_health",
+}
+
+
+def _category(reason_code: str | None) -> str:
+    return "sales" if reason_code in _DEAL_REASON_CODES else "general"
+
+
 @router.get("/v1/insights")
 def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(get_current_org)) -> dict:
     """Extension feed. state=open (default) → cards needing action; state=resolved → acted/resolved
@@ -131,7 +167,7 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
         # page-matching + resolving Draft/Advice. Left joins so a card without a node still returns.
         rows = c.execute(text(
             "select k.card_id, k.headline, k.situation, k.score, k.domain, k.urgency_band, "
-            "k.context_tags, k.created_at, n.display_name as entity "
+            "k.context_tags, k.created_at, n.display_name as entity, s.reason_code "
             "from cards k left join signals s on s.signal_id=k.signal_id "
             "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
             "and n.valid_to is null "
@@ -144,6 +180,7 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
         sc = float(r.score) if r.score is not None else 50.0
         sc01 = round(sc / 100, 3) if sc > 1 else round(sc, 3)   # card score is 0-100 → normalize 0-1
         priority = "high" if r.urgency_band in ("high", "critical") else "medium"
+        apps, domains = _provenance(r.context_tags)
         insights.append({
             "id": r.card_id, "type": _insight_type(r.urgency_band),
             "priority": priority,                # extension fires notifications on priority=='high'
@@ -152,10 +189,12 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
             "genios_view": (f"{head} — {sit}" if sit else head),
             "detail": sit, "memory_view": head,
             "confidence_score": sc01,
-            "scores": {"confidence": _band_label(sc01), "category": r.domain or "general"},
+            # category from the fired RULE (reason_code), not r.domain (the pack_id, always
+            # "sales" — one pack exists — which mislabeled every card regardless of content).
+            "scores": {"confidence": _band_label(sc01), "category": _category(r.reason_code)},
             "draft_needed": _wants_draft(r.entity, head, sit),   # reply-shaped → show the Draft hero
-            "source_tools": [r.domain] if r.domain else [],
-            "sources": [r.context_tags] if r.context_tags else [],
+            "source_tools": apps,                # real provenance (Gmail/HubSpot/Calendar)
+            "sources": domains,                  # company domains from context_tags
             "generated_at": r.created_at.isoformat() if r.created_at else "",
         })
     return {"insights": insights, "count": len(insights)}
@@ -411,12 +450,16 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
     action = str(rec.get("action", ""))
     view = f"{rec.get('headline', '')} — {action}".strip(" —")
     draft_needed = any(w in (view + action).lower() for w in ("email", "reply", "respond", "send", "message"))
+    # category from whichever rule(s) actually fired for this contact (env["derivation"]), same
+    # reason_code-based split as /v1/insights — not a blanket "sales" regardless of the contact.
+    fired_codes = {d.get("conclusion") for d in (env.get("derivation") or [])}
+    category = "sales" if fired_codes & _DEAL_REASON_CODES else "general"
     return {"id": env["decision_id"], "type": "risk" if env["route"] == "flag" else "opportunity",
             "genios_view": view, "detail": str(rec.get("reasoning", "")),
             # extension 'Advice' reads suggestion/note (its card renders these directly)
             "suggestion": view, "note": str(rec.get("reasoning", "")),
             "confidence_score": env["confidence"],
-            "scores": {"confidence": _band_label(env["confidence"]), "category": "sales"},
+            "scores": {"confidence": _band_label(env["confidence"]), "category": category},
             "draft_needed": draft_needed, "source_tools": ["Gmail"],
             "generated_at": env["as_of"]["timestamp"]}
 

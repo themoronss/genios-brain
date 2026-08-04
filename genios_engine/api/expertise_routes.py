@@ -21,8 +21,11 @@ _log = get_logger("genios.expertise")
 _graph = make_graph_store()
 
 # per-pack display metadata the manifest doesn't carry (kept small + explicit, not guessed).
-_MATURITY = {"sales": "ga"}
-_DISPLAY = {"sales": "Sales"}
+_MATURITY = {"sales": "ga", "general": "ga"}
+_DISPLAY = {"sales": "Sales", "general": "General"}
+# rule_id → pack_id, built from the registry's own manifests — so learned patterns (below)
+# attribute a nudge/mute to the pack that actually owns the rule, not a hardcoded guess.
+_RULE_PACK = {r["id"]: p["id"] for p in BUILTIN_PACKS for r in p.get("rules", [])}
 
 
 def _require_graph():
@@ -78,7 +81,8 @@ def expertise_learned(module_id: str | None = None,
                 "created_at from calibration_nudges where org_id=:o order by created_at desc limit 100"),
                 {"o": org_id}):
             patterns.append({
-                "module_id": "sales", "rule_id": r.rule_id, "predicate": r.param,
+                "module_id": _RULE_PACK.get(r.rule_id, "sales"), "rule_id": r.rule_id,
+                "predicate": r.param,
                 "op": r.direction, "threshold": float(r.after_val) if r.after_val is not None else None,
                 "status": "active", "source": "tuner",
                 "justification": f"{r.direction} — precision {r.precision} over {r.impressions} impressions",
@@ -90,7 +94,8 @@ def expertise_learned(module_id: str | None = None,
                 "select rule_id, reason, precision, impressions, muted_at from rule_mutes "
                 "where org_id=:o and active order by muted_at desc"), {"o": org_id}):
             patterns.append({
-                "module_id": "sales", "rule_id": r.rule_id, "predicate": "gate.mute",
+                "module_id": _RULE_PACK.get(r.rule_id, "sales"), "rule_id": r.rule_id,
+                "predicate": "gate.mute",
                 "op": "mute", "threshold": None, "status": "reverted", "source": "tuner",
                 "justification": f"auto-muted ({r.reason}) — precision {r.precision} over {r.impressions}",
                 "sample_size": int(r.impressions) if r.impressions is not None else None,
