@@ -103,7 +103,8 @@ def _resolve_subject(name, name_to_node: dict, fallback: str | None) -> str | No
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   llm: LLMClient, store: GraphStore, is_inbound: bool = False,
-                  recipient_emails: list[str] | None = None) -> L2Result:
+                  recipient_emails: list[str] | None = None,
+                  internal_emails: frozenset[str] | None = None) -> L2Result:
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -167,6 +168,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 edge_n += 1
 
         sender_norm = (sender_email or "").lower()
+        internal_set = internal_emails or frozenset()
         sender_node = None
         if sender_email:                        # always — facts/observations attach to this node
             sender_node = _person(sender_email)
@@ -199,6 +201,24 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                         evidence={"derived": "email to/cc"}, source=source,
                                         authority_rank=2):
                         edge_n += 1
+                # OUTBOUND RESET: we just replied to this person → the ball moves to THEIR court.
+                # Without this, unanswered_email kept firing forever after we'd already answered,
+                # because nothing ever flipped ball_in_court back — the "still shows as unanswered
+                # after I replied" bug. Skipped for internal teammates (not a prospect thread) and
+                # for noise (an outbound auto-reply doesn't count as answering).
+                if (not is_inbound and not is_noise and occurred_at is not None
+                        and rn_email not in internal_set):
+                    store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
+                                     field="thread.last_outbound", value=occurred_at.isoformat(),
+                                     value_type="timestamp", confidence=max(ex.relevance, 0.05),
+                                     occurred_at=occurred_at, event_id=event_id,
+                                     evidence={"derived": "outbound event"}, source=source,
+                                     authority_rank=2)
+                    store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
+                                     field="thread.ball_in_court", value="them", value_type="enum",
+                                     confidence=max(ex.relevance, 0.05), occurred_at=occurred_at,
+                                     event_id=event_id, evidence={"derived": "we replied"},
+                                     source=source, authority_rank=2)
 
         for e in ents:                          # B5 resolve — deterministic anchors only
             email = (str(e.get("email") or "").lower() or None)
@@ -243,18 +263,24 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             obs_n += 1
 
         # thread state (direction-derived, deterministic) → feeds L3's unanswered_email.
-        # Skip for noise (a newsletter doesn't put the ball in our court).
-        if is_inbound and sender_node and occurred_at is not None and not is_noise:
+        # Skip for noise (a newsletter doesn't put the ball in our court) and for internal
+        # teammates (an internal reply isn't a prospect thread we owe an external reply on).
+        # Confidence = this email's actual relevance (was hardcoded 1.0) — so a low-relevance
+        # inbound message (off-topic, low-signal) scores a low C in L3 and can miss the gate,
+        # instead of nagging with the same urgency as a real stalled prospect thread.
+        if (is_inbound and sender_node and occurred_at is not None and not is_noise
+                and sender_norm not in internal_set):
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
-                             value_type="timestamp", confidence=1.0, occurred_at=occurred_at,
-                             event_id=event_id, evidence={"derived": "inbound event"},
+                             value_type="timestamp", confidence=max(ex.relevance, 0.05),
+                             occurred_at=occurred_at, event_id=event_id,
+                             evidence={"derived": "inbound event"},
                              source=source, authority_rank=2)
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.ball_in_court", value="us", value_type="enum",
-                             confidence=1.0, occurred_at=occurred_at, event_id=event_id,
-                             evidence={"derived": "last message inbound"}, source=source,
-                             authority_rank=2)
+                             confidence=max(ex.relevance, 0.05), occurred_at=occurred_at,
+                             event_id=event_id, evidence={"derived": "last message inbound"},
+                             source=source, authority_rank=2)
 
         # commitments → commitment.due_at (best-effort due) → feeds L3's commitment rules.
         # Stored for every email (confidence = relevance), never gated away.

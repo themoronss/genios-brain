@@ -42,7 +42,17 @@ def _clean_for_llm(raw: dict, event_id: str) -> str:
     return prepared.clean_text
 
 
-def _process_one(row, *, org_id, store, llm, crypto_key):
+def _internal_emails(store: GraphStore, org_id: str) -> frozenset[str]:
+    """Org's own seat emails — teammates, not prospects. unanswered_email etc. must not fire on
+    an internal reply; queried ONCE per drain call (not per event) to stay pool-safe."""
+    with store.engine.connect() as c:
+        rows = c.execute(text("select lower(email) as e from org_seats "
+                              "where org_id=:o and active and email is not null"),
+                         {"o": org_id}).fetchall()
+    return frozenset(r.e for r in rows if r.e)
+
+
+def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset()):
     """Route + process ONE event. Returns (outcome, affected_node_id | None)."""
     raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
     mapping = get_mapping(row.source, row.object_type)
@@ -67,7 +77,7 @@ def _process_one(row, *, org_id, store, llm, crypto_key):
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
                         occurred_at=row.occurred_at, llm=llm, store=store,
-                        is_inbound=is_inbound)
+                        is_inbound=is_inbound, internal_emails=internal_emails)
     return res.outcome, res.primary_node
 
 
@@ -109,10 +119,11 @@ def _record_failure(store, org_id: str, event_id: str, error: str | None) -> int
     return int(n)
 
 
-def _safe_process_one(row, *, org_id, store, llm, crypto_key):
+def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset()):
     """Isolation wrapper: ONE event's failure never aborts the batch (§L2 'drain every event')."""
     try:
-        outcome, node = _process_one(row, org_id=org_id, store=store, llm=llm, crypto_key=crypto_key)
+        outcome, node = _process_one(row, org_id=org_id, store=store, llm=llm, crypto_key=crypto_key,
+                                     internal_emails=internal_emails)
         return outcome, node, None
     except Exception as e:      # noqa: BLE001 — quarantine this event, keep the batch alive
         return "error", None, str(e)[:400]
@@ -124,6 +135,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     affected: set[str] = set()
     seen: set[str] = set()                            # attempted THIS call → no intra-call re-pull
     done = 0
+    internal_emails = _internal_emails(store, org_id)  # once per drain, not per event
     while done < max_total:
         rows = [r for r in _pull(store, org_id, _BATCH) if r.event_id not in seen]
         if not rows:
@@ -131,7 +143,8 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as ex:   # parallel LLM calls
             results = list(ex.map(
                 lambda r: _safe_process_one(r, org_id=org_id, store=store, llm=llm,
-                                            crypto_key=crypto_key), rows))
+                                            crypto_key=crypto_key,
+                                            internal_emails=internal_emails), rows))
         for row, (outcome, node, err) in zip(rows, results):
             seen.add(row.event_id)
             out[outcome] += 1
