@@ -80,7 +80,10 @@ register(StructuredMapping(
     identity_field="id", node_type="meeting",
     fields=[FieldMap("summary", "meeting.title", "string"),
             FieldMap("start", "meeting.start_at", "timestamp"),
-            FieldMap("status", "meeting.status", "enum")],
+            FieldMap("end", "meeting.end_at", "timestamp"),
+            FieldMap("status", "meeting.status", "enum"),
+            FieldMap("description", "meeting.description", "string"),
+            FieldMap("location", "meeting.location", "string")],
     intent="scheduling_move", name_field="meeting.title",
     relations=[RelationMap("attendees", "person", "attended", "in", "email")],
     emit_on_change=["start", "status"]))

@@ -61,9 +61,13 @@ class ComposioCalendarConnector:
             raw={  # structured fields the gcal.calendar_event mapping reads
                 "summary": ev.get("summary"),
                 "start": (ev.get("start") or {}).get("dateTime") or (ev.get("start") or {}).get("date"),
+                "end": (ev.get("end") or {}).get("dateTime") or (ev.get("end") or {}).get("date"),
                 "status": ev.get("status"),
                 "attendees": attendees,
                 "hangoutLink": ev.get("hangoutLink"),
+                # agenda/notes + where — real relevant info that was being dropped (only summary was kept)
+                "description": ev.get("description"),
+                "location": ev.get("location"),
             },
         )
 

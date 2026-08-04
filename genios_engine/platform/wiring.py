@@ -39,8 +39,12 @@ def make_connector_for(connection) -> SourceConnector:
     key, uid = s.composio_api_key, connection.composio_user_id
     if st == "gmail":
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
+        ocr = None                              # scanned-PDF attachments need OCR (native-only if off)
+        if s.enable_ocr:
+            from genios_engine.capture.documents.tesseract import TesseractOcr
+            ocr = TesseractOcr()
         return ComposioGmailConnector(api_key=key, user_id=uid,
-                                      connected_account_id=s.composio_gmail_account or None)
+                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr)
     if st in ("gcal", "calendar", "google_calendar"):
         from genios_engine.capture.connectors.calendar import ComposioCalendarConnector
         return ComposioCalendarConnector(api_key=key, user_id=uid)

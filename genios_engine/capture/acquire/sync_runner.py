@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Callable
@@ -20,6 +22,14 @@ from genios_engine.contracts.source_event import SyncMode
 # whether the connector is Composio or native; the connector is just the read primitive.
 
 SenderResolver = Callable[[RawObject], bool]        # deterministic "is this a known sender?"
+
+# Per-page capture concurrency. Each email's capture is independent (dedup is DB-enforced, the
+# watermark is an order-independent max), so we run them in parallel to overlap the per-email DB
+# round-trips — the real L1 cost. Kept ≤ the Supabase client cap (L2 uses 5); NO data changes,
+# only faster.
+_CAPTURE_WORKERS = int(os.environ.get("GENIOS_L1_WORKERS", "3"))   # pool-safe default (Supabase
+# session-mode caps total clients at 15; keep L1+L2 workers + the live app well under it). Both are
+# env-overridable — raise once the pooler moves to transaction mode. See genios-graph-capture-gaps.
 
 
 @dataclass
@@ -82,15 +92,27 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
         batch = (connector.initial_snapshot(page_cursor, limit) if mode == "backfill"
                  else connector.incremental_changes(page_cursor, limit, since=since))
         summary.next_cursor = batch.next_cursor
-        for raw in batch.objects:
-            summary.scanned += 1
-            sender_known = sender_resolver(raw) if sender_resolver else False
+        summary.scanned += len(batch.objects)
+
+        def _cap(raw: RawObject):
+            sk = sender_resolver(raw) if sender_resolver else False
             res, err = _capture_bounded(raw, retries=2, org_id=org_id,
                                         connection_id=connection_id, repo=repo,
-                                        sender_known=sender_known, relevance=relevance,
+                                        sender_known=sk, relevance=relevance,
                                         trace_repo=trace_repo, payload_store=payload_store,
                                         document_job_store=document_job_store,
                                         sync_mode=sync_mode)
+            return raw, res, err
+
+        # capture the whole page CONCURRENTLY — DB round-trips overlap. Each email is independent,
+        # so this changes nothing about WHAT is captured, only how fast.
+        if batch.objects:
+            with ThreadPoolExecutor(max_workers=_CAPTURE_WORKERS) as ex:
+                captured = list(ex.map(_cap, batch.objects))
+        else:
+            captured = []
+
+        for raw, res, err in captured:              # aggregate SINGLE-THREADED → no races on summary
             if res is None:                          # poison → quarantine, batch continues
                 summary.quarantined += 1
                 if parked_store is not None:
