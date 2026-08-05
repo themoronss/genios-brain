@@ -18,6 +18,18 @@ def make_repo() -> SourceEventRepository:
     return InMemorySourceEventRepository()
 
 
+# Source types make_connector_for can actually build. The integrations UI reads this
+# so a "Connect" button never starts an OAuth flow that ends in a 502 — advertising a
+# connector that raises ValueError was a customer-visible lie.
+IMPLEMENTED_SOURCE_TYPES: frozenset[str] = frozenset({
+    "postgres", "database", "mysql",
+    "gmail",
+    "gcal", "calendar", "google_calendar",
+    "notion",
+    "gdrive", "drive", "google_drive",
+})
+
+
 def make_connector_for(connection) -> SourceConnector:
     """Build the right connector for ONE org's connection, dispatched by source_type.
     Composio API key is global (GeniOS's); per-org identity is composio_user_id. Every

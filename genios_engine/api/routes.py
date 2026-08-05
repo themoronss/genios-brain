@@ -86,6 +86,53 @@ def list_connections(org_id: str = Depends(get_current_org)) -> dict:
 # ── ingestion ────────────────────────────────────────────────────────────────────
 _log = get_logger("genios.api")
 
+# known-sender resolver: "is this email already a person in the org's graph?" feeds the
+# gate's W-01 whitelist so mail from known contacts is never N-code dropped. The resolver
+# param existed in run_sync since day one — it was simply never passed, so W-01 never
+# fired in production. Cached per org (5 min) — one query per sync, not per email.
+_SENDER_CACHE: dict[str, tuple[float, frozenset]] = {}
+_SENDER_TTL_S = 300.0
+
+
+def _sender_resolver_for(org_id: str):
+    if _graph is None:
+        return None
+
+    def _known(raw) -> bool:
+        email = (getattr(raw, "actor_email", None) or "").strip().lower()
+        if not email:
+            return False
+        import time
+        now = time.time()
+        hit = _SENDER_CACHE.get(org_id)
+        if hit is None or now - hit[0] > _SENDER_TTL_S:
+            from sqlalchemy import text
+            with _graph.engine.connect() as c:
+                rows = c.execute(text(
+                    "select canonical_key from graph_nodes where org_id=:o "
+                    "and node_type='person' and valid_to is null"), {"o": org_id}).fetchall()
+            hit = (now, frozenset(r.canonical_key for r in rows if r.canonical_key))
+            _SENDER_CACHE[org_id] = hit
+        return email in hit[1]
+    return _known
+
+
+def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary) -> None:
+    """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop."""
+    if _graph is None:
+        return
+    from sqlalchemy import text
+
+    from genios_engine.platform.ids import new_id
+    with _graph.engine.begin() as c:
+        c.execute(text(
+            "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
+            "scanned, emitted, dropped, parked, duplicate, quarantined) "
+            "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu)"),
+            {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
+             "sc": summary.scanned, "em": summary.emitted, "dr": summary.dropped,
+             "pa": summary.parked, "du": summary.duplicate, "qu": summary.quarantined})
+
 
 def _run_l2(org_id: str) -> None:
     """Background L2 + L3 + L5 pass for one org. In-process (no Celery/Upstash). Wrapped so a
@@ -113,8 +160,12 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
         run_sync(make_connector_for(connection), org_id=connection.org_id,
                  connection_id=connection.connection_id, repo=_repo, mode=mode, limit=limit,
                  parked_store=_parked, relevance=make_relevance_classifier(),
-                 trace_repo=_trace_repo, payload_store=_payload_store, cursor_store=_cursors,
-                 document_job_store=_documents, source=connection.source_type, max_pages=20)
+                 trace_repo=_trace_repo, payload_store=_payload_store,
+                 prepared_store=_prepared_store,
+                 sender_resolver=_sender_resolver_for(connection.org_id),
+                 cursor_store=_cursors,
+                 document_job_store=_documents, source=connection.source_type, max_pages=20,
+                 run_ledger=_run_ledger)
     except Exception:
         _log.exception("L1 sync failed for org_id=%s connection_id=%s",
                        connection.org_id, connection.connection_id)
@@ -136,8 +187,12 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
         try:
             run_sync(make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
-                     trace_repo=_trace_repo, payload_store=_payload_store, cursor_store=_cursors,
-                     document_job_store=_documents, source=conn.source_type, max_pages=20)
+                     trace_repo=_trace_repo, payload_store=_payload_store,
+                     prepared_store=_prepared_store,
+                     sender_resolver=_sender_resolver_for(conn.org_id),
+                     cursor_store=_cursors,
+                     document_job_store=_documents, source=conn.source_type, max_pages=20,
+                     run_ledger=_run_ledger)
             l1_ok += 1
         except Exception:
             l1_err += 1
@@ -168,6 +223,16 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     except Exception:                                        # noqa: BLE001 — never kill the heartbeat
         _log.exception("card lifecycle sweep failed")
         lifecycle = {"error": True}
+    # retention clocks, ENFORCED: raw payloads (30d) + prepared text (180d). purge_expired
+    # existed and was never scheduled — the "short TTL" deletion promise was unmet in prod.
+    retention = {}
+    for name, store in (("raw_payloads", _payload_store), ("prepared_content", _prepared_store)):
+        try:
+            if hasattr(store, "purge_expired"):
+                retention[name] = store.purge_expired()
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for %s", name)
+            retention[name] = "error"
     calibration = None
     if _last_calibration_at is None or (now - _last_calibration_at) >= timedelta(days=7):
         from genios_engine.feedback.calibrate import run_calibration
@@ -187,7 +252,8 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         _last_calibration_at = now
         calibration = {"orgs": len(orgs), "pack_runs": runs}
         _log.info("weekly calibration pass complete: %d org(s), %d pack-run(s)", len(orgs), runs)
-    return {"sync": sync, "lifecycle": lifecycle, "calibration": calibration}
+    return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
+            "calibration": calibration}
 
 
 @router.post("/ingest/all")
@@ -207,8 +273,11 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                                connection_id=conn.connection_id, repo=_repo, mode=mode,
                                limit=limit, parked_store=_parked, relevance=rc,
                                trace_repo=_trace_repo, payload_store=_payload_store,
+                               prepared_store=_prepared_store,
+                               sender_resolver=_sender_resolver_for(conn.org_id),
                                cursor_store=_cursors, document_job_store=_documents,
-                               source=conn.source_type, max_pages=20)
+                               source=conn.source_type, max_pages=20,
+                               run_ledger=_run_ledger)
         except Exception as e:                   # one bad source never kills the rest
             per.append({"org_id": conn.org_id, "source": conn.source_type, "error": str(e)[:120]})
             continue
@@ -345,6 +414,11 @@ class InitiateConnect(BaseModel):
 def connect_initiate(body: InitiateConnect, org_id: str = Depends(get_current_org)) -> dict:
     """Authenticated tenant starts OAuth for a tool → Composio redirect URL. After authorizing,
     add a /connections row with the same user_id."""
+    from genios_engine.platform.wiring import IMPLEMENTED_SOURCE_TYPES
+    if body.source_type not in IMPLEMENTED_SOURCE_TYPES:
+        raise HTTPException(400, f"'{body.source_type}' is not available yet — no connector is "
+                                 "implemented for it. Connecting would authorize data GeniOS "
+                                 "cannot ingest.")
     s = get_settings()
     if not s.use_real_composio:
         raise HTTPException(400, "Composio not configured")
@@ -391,6 +465,12 @@ def tool_connect_redirect(tool: str, org_id: str, callback: str | None = None):
     s = get_settings()
     if not s.use_real_composio:
         raise HTTPException(400, "Composio not configured — set GENIOS_COMPOSIO_API_KEY in the engine .env")
+    # Stop the 502 lie: never START an OAuth flow for a source make_connector_for can't
+    # build — the user would grant real data access and every later sync would crash.
+    from genios_engine.platform.wiring import IMPLEMENTED_SOURCE_TYPES
+    if tool.lower() not in IMPLEMENTED_SOURCE_TYPES:
+        raise HTTPException(400, f"'{tool}' is not available yet — its connector is not "
+                                 "implemented. Coming soon; nothing was authorized.")
     slug = _TOOLKIT_SLUGS.get(tool.lower(), tool.lower())
     from composio import Composio
     comp = Composio(api_key=s.composio_api_key)
@@ -556,8 +636,10 @@ def _sync_source(org_id: str, source_type: str, limit: int):
     return run_sync(make_connector_for(conn), org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
                     relevance=make_relevance_classifier(), trace_repo=_trace_repo,
-                    payload_store=_payload_store, cursor_store=_cursors,
-                    document_job_store=_documents, source=source_type, max_pages=3)
+                    payload_store=_payload_store, prepared_store=_prepared_store,
+                    sender_resolver=_sender_resolver_for(org_id), cursor_store=_cursors,
+                    document_job_store=_documents, source=source_type, max_pages=3,
+                    run_ledger=_run_ledger)
 
 
 @router.post("/integrations/{tool}/sync")
