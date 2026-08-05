@@ -38,6 +38,7 @@ class SourceEvent(BaseModel):
     org_id: str
     connection_id: str
     source: str
+    source_family: str = "unclassified"     # one of capture.source_families.FAMILIES
     object_type: str
     source_object_id: str
     parent_object_id: str | None = None
@@ -48,4 +49,4 @@ class SourceEvent(BaseModel):
     sync_mode: SyncMode = SyncMode.incremental
     payload_ref: str | None = None          # -> raw_payloads (encrypted + TTL)
     capture_confidence: float = 1.0
-    schema_version: int = 1
+    schema_version: int = 2                 # v2: + source_family (additive only)

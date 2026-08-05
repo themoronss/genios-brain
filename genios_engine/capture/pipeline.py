@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 
 from genios_engine.capture.connectors.base import RawObject
+from genios_engine.capture.documents.native import extract_native_text
 from genios_engine.capture.domain.hints import domain_hints
 from genios_engine.capture.gate.context import GateContext, GateResult
 from genios_engine.capture.gate.gate import run_gate
@@ -82,9 +83,8 @@ def _linkage_hints(event: SourceEvent) -> list[dict]:
 
 
 def _build_gated_event(event: SourceEvent, prepared: PreparedContent | None,
-                       gate: GateResult, lane: str,
-                       structured_fields: dict) -> GatedEvent:
-    text = prepared.clean_text if prepared else None
+                       gate: GateResult, lane: str, structured_fields: dict,
+                       hints: list[dict], links: list[dict]) -> GatedEvent:
     return GatedEvent(
         event_id=event.event_id,
         org_id=event.org_id,
@@ -95,8 +95,8 @@ def _build_gated_event(event: SourceEvent, prepared: PreparedContent | None,
         prepared_content_ref=prepared.prepared_content_id if prepared else None,
         route=gate.route or "needs_extraction",
         structured_fields=structured_fields,
-        domain_hints=domain_hints(event.source, text),
-        linkage_hints=_linkage_hints(event),
+        domain_hints=hints,
+        linkage_hints=links,
         triage_lane=lane,
         versions={
             "preprocessor": prepared.preprocessor_version if prepared else None,
@@ -121,10 +121,16 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                   relevance: RelevanceClassifier | None = None,
                   trace_repo: TraceRepository | None = None,
                   payload_store: RawPayloadStore | None = None,
+                  prepared_store=None,
                   document_job_store: DocumentJobStore | None = None,
                   sync_mode: SyncMode = SyncMode.incremental) -> CaptureResult:
     """The L1 pipeline for one raw object, fully traced. Terminal outcomes:
-    duplicate (landing), dropped/park (gate), or emitted (gated_event → L2)."""
+    duplicate (landing), dropped/park (gate), or emitted (gated_event → L2).
+
+    Everything L1 computes is PERSISTED at the seam: the decision (route/lane/hints)
+    lands on the source_events row and the PII-masked prepared text (+offset map) in
+    prepared_content — so L2 reads the seam instead of re-deriving it, and evidence
+    can trace back to exact source characters."""
     structured_fields = structured_fields or {}
 
     landing = land_raw_object(raw, org_id=org_id, connection_id=connection_id,
@@ -138,11 +144,15 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     if not is_structured and has_mapping(event.source, event.object_type):
         is_structured = True
 
-    # preprocess (unstructured text only; structured events carry typed fields)
+    # preprocess (unstructured text only; structured events carry typed fields).
+    # HTML is stripped HERE (heavy at ingestion): the gate's OOO/empty checks and the
+    # persisted seam text both want prose, and L2 used to re-strip it per event.
+    # Offset map note: src coordinates refer to the stripped text, not raw HTML bytes.
     prepared: PreparedContent | None = None
     if not is_structured:
         source_text = raw.raw.get("body") or raw.raw.get("snippet") or ""
-        prepared = preprocess(source_text, event_id=event.event_id, mask_phone=mask_phone)
+        stripped = extract_native_text(mime="text/html", data=source_text) or source_text
+        prepared = preprocess(stripped, event_id=event.event_id, mask_phone=mask_phone)
         trace.record("preprocess", "pass", language=prepared.language,
                      masked=len(prepared.masked_spans),
                      protected=len(prepared.protected_spans))
@@ -156,20 +166,40 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # decision) AFTER the gate, for every new object — this is the dedup + audit ledger
     # ("already fetched?" check reads it).
     outcome = {"drop": "dropped", "park": "parked"}.get(gate.action, "emitted")
+    kept = outcome in ("emitted", "parked")
+
+    # The seam, computed ONCE for kept events (dropped noise gets only the ledger row):
+    # deterministic hints persisted WITH the decision so L2 and any replay read them
+    # instead of recomputing. The triage lane is the L2 DRAIN order, so it exists only
+    # for emitted events — a parked event's terminal trace record stays the gate's
+    # park decision (recovery re-emits and the drain treats lane-less as P3).
+    hints: list[dict] = []
+    links: list[dict] = []
+    lane: str | None = None
+    if kept:
+        text = prepared.clean_text if prepared else None
+        hints = domain_hints(event.source, text)
+        links = _linkage_hints(event)
+    if gate.action not in ("drop", "park"):
+        lane = triage_lane(ctx, prepared)
+        trace.record("triage", "pass", lane=lane)
 
     # KEPT content: stash the raw body (encrypted, short TTL) for EMITTED and PARKED events.
     # Parked = a human-review queue (grey-zone), so it MUST keep content to be recoverable — was
     # a bug: parked stored no payload, dedup blocked re-fetch, /recover was a no-op → black hole.
     # Dropped noise still gets NO content — only the ledger row (L1 stays a filter, not a warehouse).
-    kept = outcome in ("emitted", "parked")
     if kept and payload_store is not None:
         event.payload_ref = new_id("pay")
-    repo.add(event, outcome=outcome)
+    repo.add(event, outcome=outcome, route=gate.route, triage_lane=lane,
+             domain_hints=hints or None, linkage_hints=links or None)
     if kept and payload_store is not None:
         # full raw object → L2 reads body (unstructured) or maps fields (structured); a recovered
         # parked event flips to 'emitted' and L2 reads this same payload.
         payload_store.put(payload_id=event.payload_ref, org_id=org_id,
                           event_id=event.event_id, content=json.dumps(raw.raw, default=str))
+    if kept and prepared is not None and prepared_store is not None:
+        # the PII-masked, replayable form + offset map — retained longer than the raw payload
+        prepared_store.put(org_id=org_id, prepared=prepared)
 
     # document provenance (native vs OCR + status) for any file-type event
     doc = raw.raw.get("document")
@@ -186,9 +216,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
         if mapping:
             structured_fields = apply_mapping(mapping, raw.raw)
 
-    lane = triage_lane(ctx, prepared)
-    trace.record("triage", "pass", lane=lane)
-
-    gated = _build_gated_event(event, prepared, gate, lane, structured_fields)
+    gated = _build_gated_event(event, prepared, gate, lane or "P3", structured_fields,
+                               hints, links)
     trace.record("emit", "emit", route=gated.route, lane=lane)
     return _finish(event, trace, "emitted", gated, trace_repo)

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from genios_engine.capture.source_families import DELIBERATE_FAMILIES, DELIBERATE_SOURCES
+
 from .context import GateContext
 
 # Deterministic S1. Whitelist runs BEFORE destructive drops so known
@@ -15,7 +17,7 @@ _OOO = re.compile(r"\b(out of office|ooo|on leave|automatic reply|chutti)\b", re
 # Human-readable label per reason code — shown in traces/logs so a drop is legible.
 REASON_LABELS = {
     "W-01": "known_sender", "W-02": "starred_important", "W-03": "agent_event",
-    "W-04": "important_attachment",
+    "W-04": "important_attachment", "W-05": "deliberate_source",
     "N-01": "machine_ack", "N-02": "bulk_campaign_unsub", "N-03": "no_reply_sender",
     "N-04": "bulk_precedence", "N-05": "out_of_office", "N-06": "gmail_promotions",
     "N-07": "gmail_social", "N-08": "tenant_blocklisted", "N-09": "provider_spam",
@@ -38,6 +40,10 @@ def whitelist(ctx: GateContext) -> str | None:
         return "W-03"                            # agent event
     if ctx.raw.get("important_attachment"):
         return "W-04"                            # contract/invoice/legal marker
+    if (ctx.event.source in DELIBERATE_SOURCES
+            or ctx.event.source_family in DELIBERATE_FAMILIES):
+        return "W-05"                            # a human/agent deliberately handed us this —
+                                                 # N-codes exist for inbox firehoses, not for it
     return None
 
 

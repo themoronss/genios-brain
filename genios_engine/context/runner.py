@@ -34,7 +34,14 @@ _DONE_OUTCOMES = {"committed_structured", "committed", "committed_structural",
                   "no_op", "committed_facts", "committed_observation"}
 
 
-def _clean_for_llm(raw: dict, event_id: str) -> str:
+def _clean_for_llm(raw: dict, event_id: str, prepared_text: str | None = None) -> str:
+    """Prefer the SEAM: L1 already computed the PII-masked prepared text (+offset map)
+    at ingestion and persisted it to prepared_content — re-deriving it here both wasted
+    the work and produced a second, subtly different text (no offset map, no mask
+    parity). Fallback to re-derivation only for pre-seam rows."""
+    if prepared_text:
+        subject = raw.get("subject") or ""
+        return (subject + "\n\n" + prepared_text) if subject else prepared_text
     body = raw.get("body") or raw.get("snippet") or ""
     stripped = extract_native_text(mime="text/html", data=body) or body
     prepared = preprocess((raw.get("subject") or "") + "\n\n" + stripped,
@@ -70,7 +77,8 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
         return "committed_structured", res.node_id
     if llm is None:
         return "skipped_no_llm", None
-    content = _clean_for_llm(raw, row.event_id)      # unstructured lane (B3, LLM)
+    content = _clean_for_llm(raw, row.event_id,      # unstructured lane (B3, LLM)
+                             prepared_text=getattr(row, "prepared_text", None))
     is_inbound = "SENT" not in (raw.get("labelIds") or [])   # direction → thread state
     # recipients (To + Cc, captured in L1) → sender↔recipient correspondence edges in L2
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
@@ -82,16 +90,23 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
 
 
 def _pull(store: GraphStore, org_id: str, limit: int):
+    """Drain order = L1's triage lane FIRST (P0 preempts P3 — the lane was computed at
+    ingestion and previously thrown away), then arrival time. Prepared text rides along
+    from the seam so processing doesn't re-derive it."""
     with store.engine.connect() as c:
         return c.execute(text(
             "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
-            "se.occurred_at, se.source_object_id, rp.enc_content "
-            "from source_events se join raw_payloads rp on rp.event_id = se.event_id "
+            "se.occurred_at, se.source_object_id, se.triage_lane, rp.enc_content, "
+            "pc.clean_text as prepared_text "
+            "from source_events se "
+            "join raw_payloads rp on rp.event_id = se.event_id "
+            "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
             "where se.org_id=:o and se.outcome='emitted' "
             "and se.event_id not in (select event_id from l2_extraction_results where org_id=:o) "
             "and se.event_id not in (select event_id from l2_processing_runs "
             "                        where org_id=:o and status in ('done','parked')) "
-            "order by se.occurred_at asc limit :lim"), {"o": org_id, "lim": limit}).fetchall()
+            "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
+            "limit :lim"), {"o": org_id, "lim": limit}).fetchall()
 
 
 def _record_done(store, org_id: str, event_id: str) -> None:

@@ -143,6 +143,17 @@ def make_payload_store():
     return InMemoryRawPayloadStore()
 
 
+def make_prepared_store():
+    """PreparedContent store — the persisted L1→L2 seam (PII-masked text + offset map).
+    Retained longer than the raw payload: it is the replayable form."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.prepared_store import PostgresPreparedContentStore
+        return PostgresPreparedContentStore(s.database_url)
+    from genios_engine.capture.prepared_store import InMemoryPreparedContentStore
+    return InMemoryPreparedContentStore()
+
+
 def make_trace_repo():
     """Decision-trace persistence. Postgres/Supabase if DATABASE_URL is set, else
     in-memory. Every event's per-stage path lands in event_trace for debugging."""

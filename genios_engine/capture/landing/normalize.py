@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from genios_engine.capture.connectors.base import RawObject
+from genios_engine.capture.source_families import family_of
 from genios_engine.contracts.source_event import (Actor, SourceEvent, SyncMode,
                                                   compute_dedup_key)
 from genios_engine.platform.ids import new_id
@@ -23,6 +24,7 @@ def to_source_event(
         org_id=org_id,
         connection_id=connection_id,
         source=raw.source,
+        source_family=family_of(raw.source),
         object_type=raw.object_type,
         source_object_id=raw.source_object_id,
         parent_object_id=raw.parent_object_id,

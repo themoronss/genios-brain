@@ -67,10 +67,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
              parked_store: ParkedStore | None = None,
              relevance=None, trace_repo: TraceRepository | None = None,
              payload_store: RawPayloadStore | None = None,
+             prepared_store=None,
              cursor_store: CursorStore | None = None,
              document_job_store=None,
              source: str = "gmail", max_pages: int = 1,
-             reconcile_days: int = 7) -> SyncSummary:
+             reconcile_days: int = 7,
+             run_ledger=None) -> SyncSummary:
     # No-miss: resume from the stored watermark (incremental only). The dedup ledger
     # drops the boundary overlap, so nothing is missed and nothing double-processed.
     # mode="recovery" = a safety re-scan of a fixed lookback window (ignores watermark,
@@ -100,6 +102,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                                         connection_id=connection_id, repo=repo,
                                         sender_known=sk, relevance=relevance,
                                         trace_repo=trace_repo, payload_store=payload_store,
+                                        prepared_store=prepared_store,
                                         document_job_store=document_job_store,
                                         sync_mode=sync_mode)
             return raw, res, err
@@ -139,4 +142,10 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     if cursor_store is not None and mode != "recovery":
         cursor_store.save(org_id, connection_id, source, cursor=summary.next_cursor,
                           watermark=watermark)
+    if run_ledger is not None:                    # l1_sync_runs — observability, never fatal
+        try:
+            run_ledger(org_id=org_id, connection_id=connection_id, source=source,
+                       mode=mode, summary=summary)
+        except Exception:       # noqa: BLE001 — a ledger hiccup must not fail the sync
+            pass
     return summary
