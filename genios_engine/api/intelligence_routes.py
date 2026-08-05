@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.platform.auth import get_current_org
+from genios_engine.platform.cache import get_cache
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_graph_store, make_llm_client,
@@ -44,6 +45,41 @@ def _cache_key(org_id: str, module_id: str, question: str, gv: int) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+# L7 spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
+# cap, checked BEFORE the LLM call (cached queries never reach it → always free). Both fail-open on
+# infra errors so a Redis/DB blip never blocks a legitimate query. (Was the gap: spend was recorded
+# after the fact, incr_window was defined-but-never-called → unbounded LLM spend / retry loops.)
+_CREDIT_LIMIT = {"trial": 100, "startup": 2000, "growth": 10000, "scale": 50000}
+_RPM_LIMIT = 20                        # billable intelligence queries / org / minute (burst guard)
+
+
+def _enforce_query_budget(org_id: str) -> None:
+    from datetime import datetime, timezone
+    try:                                                    # RPM burst (Noop cache → 0 → no cap)
+        n = get_cache().incr_window(f"rpm:iq:{org_id}", 60)
+        if n and int(n) > _RPM_LIMIT:
+            raise HTTPException(429, "too many queries this minute — retry shortly")
+    except HTTPException:
+        raise
+    except Exception:                                       # noqa: BLE001 — cache blip never blocks
+        pass
+    try:                                                    # monthly credit allowance
+        now = datetime.now(timezone.utc)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        with _graph.engine.connect() as c:
+            tier = (c.execute(text("select subscription_tier from orgs where id=:o"),
+                              {"o": org_id}).scalar() or "trial").lower()
+            used = c.execute(text("select count(*) from decisions where org_id=:o and created_at>=:s"),
+                             {"o": org_id, "s": month_start}).scalar() or 0
+        limit = _CREDIT_LIMIT.get(tier, 100)
+        if int(used) >= limit:
+            raise HTTPException(402, f"monthly credit limit reached ({limit}) — upgrade or wait for reset")
+    except HTTPException:
+        raise
+    except Exception:                                       # noqa: BLE001 — DB blip never blocks
+        pass
+
+
 @router.post("/v1/intelligence/query")
 def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) -> dict:
     if _graph is None:
@@ -64,6 +100,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         env["cached"] = True
         return env
 
+    _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
                          registry=_registry, graph_version=gv)
@@ -148,6 +185,10 @@ _DEAL_REASON_CODES = {
     "stalled_deal", "buying_signal", "cooling_deal", "single_threaded_deal",
     "competitor_in_live_deal", "going_dark_after_proposal", "deal_sentiment_negative",
     "objection_open", "deal_health",
+    # v1.5.0–1.7.0 deep lifecycle rules — categorise as sales (else they'd show as 'general')
+    "pricing_objection", "verbal_yes_not_closed", "contract_requested", "security_review_pending",
+    "champion_left", "budget_freeze", "discount_pressure", "legal_in_review", "timeline_slip",
+    "demo_requested", "proposal_no_response", "closed_lost_risk",
 }
 
 
@@ -194,6 +235,20 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
             "where k.org_id=:o and k.state = any(:states) "
             "order by k.score desc nulls last, k.created_at desc limit :l"),
             {"o": org_id, "states": list(states), "l": max(1, min(int(limit), 100))}).fetchall()
+    # L6 impressions — log card.surfaced ONCE per shown card (deterministic id + dedup) so the
+    # calibration precision loop has impressions to reach eligibility. Open feed only (not Resolved).
+    if state != "resolved" and rows:
+        try:
+            with _graph.engine.begin() as c:
+                c.execute(text(
+                    "insert into card_events (id, card_id, org_id, kind, cause, actor_id) "
+                    "select 'cevs_' || k.card_id, k.card_id, :o, 'card.surfaced', 'pull', 'extension' "
+                    "from cards k where k.org_id=:o and k.card_id = any(:ids) "
+                    "and not exists (select 1 from card_events ce where ce.card_id=k.card_id "
+                    "                and ce.kind='card.surfaced') on conflict do nothing"),
+                    {"o": org_id, "ids": [r.card_id for r in rows]})
+        except Exception:      # noqa: BLE001 — impressions are best-effort, never block the feed
+            pass
     insights = []
     for r in rows:
         head, sit = (r.headline or "Recommendation"), (r.situation or "")
@@ -272,27 +327,36 @@ class FeedbackBody(BaseModel):
     edit_diff: dict | None = None
 
 
-_FB_KIND = {"thumbs_down": "wrong", "never_show": "wrong", "snooze": "snoozed",
-            "thumbs_up": "helpful", "edit": "edited"}
+# Map the extension's feedback verbs to the CANONICAL card-action shape L6 precision reads
+# (kind='human.card_action' + cause + detail.reason). Was the gap: it logged kind='wrong'/'helpful'
+# with no cause, and precision_28d counts on ce.cause → every extension thumb was invisible to the
+# calibration loop, so "it learns from you" couldn't demonstrably learn.
+_FB_CAUSE = {"thumbs_up": "do_it_myself", "edit": "do_it_myself",
+             "thumbs_down": "wrong", "never_show": "wrong", "snooze": "snooze"}
+_FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant"}
 
 
 @router.post("/v1/intelligence/feedback")
 def intelligence_feedback(body: FeedbackBody, org_id: str = Depends(get_current_org)) -> dict:
-    """Human feedback on a recommendation. For an insight (a card) it logs a card_event, which the
-    L6 calibration loop reads (repeated 'wrong' auto-mutes the rule). Returns the correction id."""
+    """Human feedback on a recommendation. For an insight (a card) it logs a card_event in the
+    canonical shape the L6 calibration loop reads (cause + reason) — repeated 'wrong' auto-mutes the
+    rule. Returns the correction id."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     fid = new_id("fb")
     routed = False
     if body.insight_id:      # an insight IS a card → feed L6 through the card_events ledger
         try:
+            detail = dict(body.edit_diff or {})
+            if body.action in _FB_REASON:
+                detail["reason"] = _FB_REASON[body.action]     # → precision denominator (rel_wrong)
             with _graph.engine.begin() as c:
                 c.execute(text(
-                    "insert into card_events (id, card_id, org_id, kind, actor_id, detail) "
-                    "values (:i, :c, :o, :k, :a, cast(:d as jsonb))"),
+                    "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
+                    "values (:i, :c, :o, 'human.card_action', :cause, :a, cast(:d as jsonb))"),
                     {"i": new_id("cev"), "c": body.insight_id, "o": org_id,
-                     "k": _FB_KIND.get(body.action, body.action), "a": body.user_id or "user",
-                     "d": json.dumps(body.edit_diff or {}, default=str)})
+                     "cause": _FB_CAUSE.get(body.action, body.action), "a": body.user_id or "user",
+                     "d": json.dumps(detail, default=str)})
             routed = True
         except Exception:      # noqa: BLE001
             _log.warning("feedback card_event failed for %s", org_id)
@@ -468,6 +532,22 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001
             pass
+    # real provenance: which connected tool(s) actually fed THIS contact's facts (was hardcoded "Gmail")
+    _node, _ = _resolve_contact_facts(org_id, contact)
+    src_tools: list[str] = []
+    if _node is not None:
+        try:
+            _TL = {"gmail": "Gmail", "gcal": "Calendar", "hubspot": "HubSpot", "notion": "Notion",
+                   "jira": "Jira", "stripe": "Stripe", "human": "You"}
+            with _graph.engine.connect() as c:
+                src_tools = [_TL.get(r.source, (r.source or "").title()) for r in c.execute(text(
+                    "select distinct sr.source from graph_source_refs sr join graph_facts f "
+                    "on f.fact_version_id=sr.fact_version_id and f.org_id=sr.org_id "
+                    "where sr.org_id=:o and f.subject_node_id=:n and f.valid_to is null "
+                    "and sr.source is not null limit 5"), {"o": org_id, "n": _node.node_id})]
+        except Exception:      # noqa: BLE001
+            pass
+    src_tools = [s for s in src_tools if s] or ["Gmail"]
     rec = env["recommendation"]
     action = str(rec.get("action", ""))
     view = f"{rec.get('headline', '')} — {action}".strip(" —")
@@ -482,7 +562,7 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
             "suggestion": view, "note": str(rec.get("reasoning", "")),
             "confidence_score": env["confidence"],
             "scores": {"confidence": _band_label(env["confidence"]), "category": category},
-            "draft_needed": draft_needed, "source_tools": ["Gmail"],
+            "draft_needed": draft_needed, "source_tools": src_tools,
             "generated_at": env["as_of"]["timestamp"]}
 
 

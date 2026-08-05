@@ -12,12 +12,17 @@ def rhu(x: float) -> int:
     return int(math.floor(x + 0.5))
 
 
-def urgency(kind: str, elapsed_hours: float, h: float) -> int:
-    """elapsed rules rise with time (stalled state); countdown rules decay toward a due
-    moment. h = the rule's curve constant (in the rule's natural time unit)."""
+def urgency(kind: str, elapsed_hours: float, h: float, floor: float = 0.0) -> int:
+    """elapsed rules rise with time (stalled state); countdown rules decay toward a due moment.
+    h = the rule's curve constant (in the rule's natural time unit). `floor` (0..100) is the
+    minimum urgency at the trigger moment — for HOT signals (budget approved, contract requested,
+    objection raised) the signal ITSELF is the urgency, so they must fire immediately rather than
+    wait for elapsed time to lift U off zero; U still grows with time above the floor."""
     if kind == "countdown":
-        return rhu(100 * math.exp(-max(0.0, elapsed_hours) / 24.0))
-    return rhu(100 * (1 - math.exp(-max(0.0, elapsed_hours) / max(1.0, h))))
+        u = rhu(100 * math.exp(-max(0.0, elapsed_hours) / 24.0))
+    else:
+        u = rhu(100 * (1 - math.exp(-max(0.0, elapsed_hours) / max(1.0, h))))
+    return max(int(floor), u)
 
 
 def impact(value: float | None, p90: float | None, *, linked_deal: bool = True,

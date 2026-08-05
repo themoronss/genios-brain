@@ -199,9 +199,41 @@ def get_auth_ctx(request: Request,
     return ctx
 
 
+_ORG_KILL_TTL = 30
+
+
+def check_org_kill(org_id: str) -> None:
+    """Per-org kill (spec Level C — the tenant's 'stop everything' switch, complementing the global
+    kill and the per-source pause). A feature_flags row key='kill_switch:{org}' with enabled=false
+    blocks every request for that org (503). Redis-cached (30s), fail-open like the global switch —
+    an infra hiccup never blocks a legitimate tenant."""
+    if not org_id:
+        return
+    cache = get_cache()
+    ckey = f"ff:kill:{org_id}"
+    cached = cache.get(ckey)
+    if cached == "1":
+        return
+    if cached == "0":
+        raise HTTPException(503, {"error": "TENANT_PAUSED", "message": "This workspace is paused."})
+    try:
+        with _engine().connect() as c:
+            row = c.execute(text("select enabled from feature_flags where key=:k"),
+                            {"k": f"kill_switch:{org_id}"}).first()
+        live = row is None or bool(row.enabled)
+        cache.setex(ckey, _ORG_KILL_TTL, "1" if live else "0")
+        if not live:
+            raise HTTPException(503, {"error": "TENANT_PAUSED", "message": "This workspace is paused."})
+    except HTTPException:
+        raise
+    except Exception:
+        return                       # infra hiccup → fail open
+
+
 def get_current_org(ctx: AuthCtx = Depends(get_auth_ctx)) -> str:
     """The org_id, resolved from the credential. Endpoints use this INSTEAD of an org_id query
-    param, so a caller can only ever touch their own tenant."""
+    param, so a caller can only ever touch their own tenant. Also enforces the per-org kill."""
+    check_org_kill(ctx.org_id)
     return ctx.org_id
 
 

@@ -21,16 +21,17 @@ _stop = threading.Event()
 
 def _loop(interval_seconds: float, initial_delay: float) -> None:
     # lazy import: routes.py wires the stores at import time; importing here avoids a cycle
-    from genios_engine.api.routes import run_sync_sweep
+    from genios_engine.api.routes import run_maintenance_sweep
 
     if _stop.wait(initial_delay):        # let startup settle; interruptible
         return
     while not _stop.is_set():
         try:
-            res = run_sync_sweep()
-            _log.info("scheduled sync sweep: %s", res)
+            # heartbeat = sync sweep + card lifecycle (expire/snooze-wake) every tick + weekly L6
+            res = run_maintenance_sweep()
+            _log.info("scheduled maintenance sweep: %s", res)
         except Exception:                 # noqa: BLE001 — a crashed sweep must not kill the loop
-            _log.exception("scheduled sync sweep crashed")
+            _log.exception("scheduled maintenance sweep crashed")
         if _stop.wait(interval_seconds):  # sleep until next tick (or until stop)
             return
 

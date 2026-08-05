@@ -149,6 +149,46 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err, "orgs": len(orgs)}
 
 
+_last_calibration_at = None            # in-process weekly gate for L6 (module-level; resets on restart)
+
+
+def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
+    """The scheduler heartbeat (in-process, no Celery/Upstash): the data-sync sweep every tick, PLUS
+    the two maintenance passes the queue otherwise never gets — the card LIFECYCLE sweep (expire +
+    snooze-wake + abandoned-claim release) every tick, and the L6 CALIBRATION pass (precision →
+    auto-mute → bounded nudges) weekly, per active pack per org. Without this, snoozed cards were a
+    black hole, expired cards never cleared, and the self-tuning loop stayed inert (built, unscheduled)."""
+    from datetime import datetime, timedelta, timezone
+    global _last_calibration_at
+    now = datetime.now(timezone.utc)
+    sync = run_sync_sweep(mode=mode, limit=limit)
+    try:
+        lifecycle = _card_store.sweep_lifecycle()            # every tick: expire + snooze-wake + claim-release
+    except Exception:                                        # noqa: BLE001 — never kill the heartbeat
+        _log.exception("card lifecycle sweep failed")
+        lifecycle = {"error": True}
+    calibration = None
+    if _last_calibration_at is None or (now - _last_calibration_at) >= timedelta(days=7):
+        from genios_engine.feedback.calibrate import run_calibration
+        orgs = {c.org_id for c in _connections.list_active()}
+        runs = 0
+        for org in orgs:                                     # weekly: precision + auto-mute + nudges
+            try:
+                with _graph.engine.connect() as c:
+                    packs = [r[0] for r in c.execute(text(
+                        "select pack_id from tenant_packs where org_id=:o and state='active'"),
+                        {"o": org})]
+                for pid in (packs or ["sales"]):
+                    run_calibration(_graph, org, registry=_registry, pack_id=pid)
+                    runs += 1
+            except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
+                _log.exception("calibration failed org=%s", org)
+        _last_calibration_at = now
+        calibration = {"orgs": len(orgs), "pack_runs": runs}
+        _log.info("weekly calibration pass complete: %d org(s), %d pack-run(s)", len(orgs), runs)
+    return {"sync": sync, "lifecycle": lifecycle, "calibration": calibration}
+
+
 @router.post("/ingest/all")
 def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                limit: int = 25, auto_l2: bool = True,
@@ -268,6 +308,28 @@ def connection_lifecycle(connection_id: str, action: str,
         raise HTTPException(404, "connection not found")
     _connections.set_status(connection_id, status)
     return {"connection_id": connection_id, "status": status}
+
+
+@router.post("/workspace/{action}")
+def workspace_kill(action: str, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+    """Per-org kill (spec Level C) — the tenant's 'stop everything' switch. pause → every request
+    for this org 503s (checked in get_current_org, cache-invalidated for immediate effect); resume
+    lifts it. Uses get_auth_ctx (NOT get_current_org) so a paused owner can still call resume.
+    Complements per-source pause (/connections/{id}/pause) and the global kill."""
+    org_id = ctx.org_id
+    enabled = {"pause": False, "resume": True}.get(action)
+    if enabled is None:
+        raise HTTPException(422, "action must be pause | resume")
+    with _graph.engine.begin() as c:
+        c.execute(text("insert into feature_flags (key, enabled) values (:k, :e) "
+                       "on conflict (key) do update set enabled=:e"),
+                  {"k": f"kill_switch:{org_id}", "e": enabled})
+    try:
+        from genios_engine.platform.cache import get_cache
+        get_cache().delete(f"ff:kill:{org_id}")            # immediate effect, don't wait for TTL
+    except Exception:      # noqa: BLE001
+        pass
+    return {"org_id": org_id, "paused": not enabled}
 
 
 # ── self-serve connect (frontend initiates Composio OAuth) ───────────────────────
