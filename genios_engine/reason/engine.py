@@ -149,8 +149,17 @@ def score_rule(ctx: NodeContext, rule: Rule, eval_time: datetime,
     sc = scoring_cfg or {}
     hrs = _hours_since(ctx, rule.urgency["path"], eval_time) or 0.0
     elapsed_days = hrs / 24.0
+    # HOT-signal fix: a rule with NO time gate in `when` (buying_signal, contract_requested,
+    # objection, competitor…) fires the moment the signal lands → elapsed=0 → U=0 → it would sit
+    # below the gate for days, missing the hot moment. Its signal IS the urgency, so floor U at the
+    # trigger. Explicit rule.urgency.floor wins; else immediate non-`slow` rules get the pack's
+    # immediate_urgency_floor (default 65). Time-gated rules (stalled/unanswered/overdue) keep U=0→grow.
+    ufloor = float(rule.urgency.get("floor", 0))
+    if ufloor == 0 and not rule.urgency.get("slow") and not any(
+            c.get("fn") in ("days_since", "hours_since") for c in rule.when):
+        ufloor = float((scoring_cfg or {}).get("immediate_urgency_floor", 65))
     U = scoring.urgency(rule.urgency.get("type", "elapsed"), elapsed_days,
-                        float(rule.urgency.get("h", 3)))
+                        float(rule.urgency.get("h", 3)), ufloor)
 
     imp = sc.get("impact", {})
     deal_val = _num((ctx.facts.get("deal.value") or {}).get("value"))

@@ -162,7 +162,7 @@ SALES_V1 = {
         # Slow-burn (long half-life) + long cooldown — a heads-up, not a nag.
         {"id": "budget_freeze", "level": "predictive", "scope": "person",
          "when": [{"has_obs": "budget_freeze"}],
-         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 12},
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 12, "slow": True},
          "reason_code": "budget_freeze", "play": "re_engage", "cooldown_hours": 240,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
 
@@ -188,7 +188,7 @@ SALES_V1 = {
         # loses urgency and slips a quarter.
         {"id": "timeline_slip", "level": "predictive", "scope": "person",
          "when": [{"has_obs": "timeline_slip"}],
-         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 8},
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 8, "slow": True},
          "reason_code": "timeline_slip", "play": "re_engage", "cooldown_hours": 168,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
 

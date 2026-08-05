@@ -282,12 +282,16 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     for nid in comp["active"]:
         fired.add((_COMPOSITE_RULE_ID, nid))
 
-    # lifecycle (C7) — close open signals whose rule no longer fires (condition cleared)
+    # lifecycle (C7) — close open signals whose rule no longer fires (condition cleared). Scope to
+    # THIS pack's own rules: run_all() invokes run() once per active pack, and a per-pack close that
+    # touched every open signal would resolve the OTHER pack's just-emitted signals (sales cards
+    # wiped by the general pass, and vice versa). Only a rule's own pack retires its signals.
+    pack_owns = {r.id for r in all_rules}
     with store.engine.connect() as c:
         open_sigs = c.execute(text("select signal_id, rule_id, subject_node_id from signals "
                                    "where org_id=:o and status='open'"), {"o": org_id}).fetchall()
     for sig in open_sigs:
-        if (sig.rule_id, sig.subject_node_id) not in fired:
+        if sig.rule_id in pack_owns and (sig.rule_id, sig.subject_node_id) not in fired:
             with store.engine.begin() as c:
                 c.execute(text("update signals set status='resolved' where signal_id=:id"),
                           {"id": sig.signal_id})
