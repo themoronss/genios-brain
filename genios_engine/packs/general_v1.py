@@ -68,32 +68,36 @@ GENERAL_V1 = {
     },
 
     "templates": {
-        "_version": "cards.v1",
+        # manager mode — headline is a direct order (verb first, name who), never a passive fact.
+        "_version": "cards.v2",
         "commitment_overdue": {
             "artifact_kind": "draft_delivery",
-            "render_hint": ("Headline: the promised thing is overdue, name it. Situation: what was "
-                            "promised, to whom, how overdue. Artifact: a short note delivering or "
-                            "rescheduling the commitment."),
-            "fallback": {"headline": "Overdue: {action}",
-                         "situation": "Promised to {entity} · {days}d overdue"}},
+            "render_hint": ("Headline: a direct order to deliver the specific overdue thing NOW, "
+                            "naming who it's owed to — imperative voice, not a status line. "
+                            "Situation: what was promised, how overdue. Artifact: a short note "
+                            "delivering or rescheduling the commitment."),
+            "fallback": {"headline": "Deliver {action} to {entity} today",
+                         "situation": "{days}d overdue — you promised this"}},
         "unanswered_email": {
             "artifact_kind": "draft_reply",
-            "render_hint": ("Headline: name the thread and that a reply is owed. Situation: who is "
-                            "waiting and since when. Artifact: a concise reply moving it forward."),
-            "fallback": {"headline": "Reply owed: {entity}",
-                         "situation": "Waiting on us · {days}d since their last message"}},
+            "render_hint": ("Headline: a direct order to reply to this person now — imperative "
+                            "voice ('Reply to X now'), not a status line. Situation: how long they've "
+                            "been waiting. Artifact: a concise reply moving it forward."),
+            "fallback": {"headline": "Reply to {entity} now",
+                         "situation": "{days}d since they wrote — still waiting on you"}},
         "champion_quiet": {
             "artifact_kind": "draft_reengage",
-            "render_hint": ("Headline: the contact has gone quiet vs their own cadence. Situation: "
-                            "who, how long vs normal. Artifact: a light-touch check-in."),
-            "fallback": {"headline": "{entity} quieter than usual",
-                         "situation": "No word in {days}d · past their normal cadence"}},
+            "render_hint": ("Headline: a direct order to check in with this contact today — "
+                            "imperative voice, not a status line. Situation: how long since their "
+                            "normal cadence. Artifact: a light-touch check-in."),
+            "fallback": {"headline": "Check in with {entity} today",
+                         "situation": "Quiet {days}d — past their usual pace"}},
         "meeting_no_followup": {
             "artifact_kind": "draft_recap",
-            "render_hint": ("Headline: a meeting has no follow-up yet. Situation: which meeting, "
-                            "how long since. Artifact: a crisp recap + next step."),
-            "fallback": {"headline": "No recap sent: {entity}",
-                         "situation": "Met {days}d ago · no follow-up on record"}},
+            "render_hint": ("Headline: a direct order to send the recap now, naming who. Situation: "
+                            "how long since the meeting. Artifact: a crisp recap + next step."),
+            "fallback": {"headline": "Send {entity} a recap now",
+                         "situation": "Met {days}d ago — nothing sent since"}},
     },
 
     "schema": {

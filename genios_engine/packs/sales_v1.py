@@ -126,74 +126,83 @@ SALES_V1 = {
     # when the invention validator or length caps reject the model output. Fallbacks NEVER
     # invent — they only place fact-derived slots — so a card always ships, honest either way.
     "templates": {
-        "_version": "cards.v1",
+        # manager mode — headline is a direct order (verb first, name who), never a passive fact.
+        "_version": "cards.v2",
         "stalled_deal": {
             "artifact_kind": "draft_followup",
-            "render_hint": ("Headline: name the deal and that it has gone quiet. Situation: who "
-                            "went quiet, what they last said, the stage and $ value. Artifact: a "
-                            "warm 2-3 sentence re-engagement email — no fluff, one clear ask."),
-            "fallback": {"headline": "{entity} deal quiet {days}d",
-                         "situation": "Ball in our court · {stage} stage · {money}"}},
+            "render_hint": ("Headline: a direct order to re-engage this deal today, naming who — "
+                            "imperative voice, not a status line. Situation: what they last said, "
+                            "the stage and $ value. Artifact: a warm 2-3 sentence re-engagement "
+                            "email — no fluff, one clear ask."),
+            "fallback": {"headline": "Re-engage {entity} today",
+                         "situation": "Deal quiet {days}d · {stage} stage · {money}"}},
         "objection_open": {
             "artifact_kind": "draft_objection_reply",
-            "render_hint": ("Headline: an objection is open and the ball is with us. Situation: who "
-                            "raised the concern and how long ago. Artifact: a concise, empathetic "
-                            "reply that acknowledges the objection and moves the deal forward."),
-            "fallback": {"headline": "Objection open: {entity}",
-                         "situation": "They raised a concern · {days}d, ball in our court"}},
+            "render_hint": ("Headline: a direct order to handle this person's objection now, naming "
+                            "them. Situation: what concern they raised, how long ago. Artifact: a "
+                            "concise, empathetic reply that acknowledges the objection and moves the "
+                            "deal forward."),
+            "fallback": {"headline": "Handle {entity}'s objection now",
+                         "situation": "Raised {days}d ago — still unanswered"}},
         "buying_signal": {
             "artifact_kind": "draft_advance",
-            "render_hint": ("Headline: a buying signal — budget/authority surfaced. Situation: who "
-                            "signalled and the opportunity. Artifact: a short note advancing to the "
-                            "next step (proposal or meeting) while intent is hot."),
-            "fallback": {"headline": "Buying signal: {entity}",
-                         "situation": "Budget signalled · advance the deal now"}},
+            "render_hint": ("Headline: a direct order to advance the deal with this person now — "
+                            "budget/authority surfaced, intent is hot. Situation: what signalled. "
+                            "Artifact: a short note advancing to the next step (proposal or meeting) "
+                            "while intent is hot."),
+            "fallback": {"headline": "Advance the deal with {entity}",
+                         "situation": "Budget signalled — move now while hot"}},
         "cooling_deal": {
             "artifact_kind": "draft_reengage",
-            "render_hint": ("Headline: a live deal is cooling — engagement has thinned. Situation: "
-                            "who, the deal, how much the interaction has dropped. Artifact: a "
+            "render_hint": ("Headline: a direct order to re-engage this person — their deal is "
+                            "cooling. Situation: how much the interaction has dropped. Artifact: a "
                             "light-touch, value-led check-in that revives the conversation."),
-            "fallback": {"headline": "{entity} cooling on a live deal",
-                         "situation": "Two-way engagement halved · deal still open"}},
+            "fallback": {"headline": "Re-engage {entity} — deal cooling",
+                         "situation": "Two-way engagement halved on an open deal"}},
         "single_threaded_deal": {
             "artifact_kind": "draft_multithread",
-            "render_hint": ("Headline: an open deal rides a single contact — key-person risk. "
-                            "Situation: the deal, the lone relationship. Artifact: a note that asks "
-                            "for an intro to another stakeholder (procurement, exec sponsor)."),
-            "fallback": {"headline": "Single-threaded: {entity}",
-                         "situation": "Open deal · only one relationship · widen the base"}},
+            "render_hint": ("Headline: a direct order to widen the contacts on this deal — it rides "
+                            "a single relationship, key-person risk. Situation: the deal, the lone "
+                            "relationship. Artifact: a note that asks for an intro to another "
+                            "stakeholder (procurement, exec sponsor)."),
+            "fallback": {"headline": "Widen contacts on the {entity} deal",
+                         "situation": "Only one relationship — key-person risk"}},
         "competitor_in_live_deal": {
             "artifact_kind": "draft_competitive",
-            "render_hint": ("Headline: a competitor is in play on a live deal. Situation: which "
-                            "account/deal, that a rival was named. Artifact: a concise, "
-                            "non-defensive note that reinforces our unique value — no bashing."),
-            "fallback": {"headline": "Competitor in play: {entity}",
-                         "situation": "Rival named on an open deal · differentiate now"}},
+            "render_hint": ("Headline: a direct order to defend position on this deal — a competitor "
+                            "is in play. Situation: which account/deal, that a rival was named. "
+                            "Artifact: a concise, non-defensive note that reinforces our unique "
+                            "value — no bashing."),
+            "fallback": {"headline": "Defend position on the {entity} deal",
+                         "situation": "Rival named on an open deal — differentiate now"}},
         "going_dark_after_proposal": {
             "artifact_kind": "draft_reengage",
-            "render_hint": ("Headline: they went quiet after seeing pricing. Situation: who, how "
-                            "long since the proposal/quote. Artifact: a warm nudge that lowers the "
-                            "cost of replying — offer to answer questions or adjust scope."),
-            "fallback": {"headline": "Gone quiet post-quote: {entity}",
-                         "situation": "Pricing shared · silent {days}d · ball in their court"}},
+            "render_hint": ("Headline: a direct order to re-engage this person post-quote — they "
+                            "went quiet after seeing pricing. Situation: how long since the "
+                            "proposal/quote. Artifact: a warm nudge that lowers the cost of "
+                            "replying — offer to answer questions or adjust scope."),
+            "fallback": {"headline": "Re-engage {entity} post-quote",
+                         "situation": "Silent {days}d since pricing shared"}},
         "deal_sentiment_negative": {
             "artifact_kind": "draft_reengage",
-            "render_hint": ("Headline: sentiment on a live deal has turned negative. Situation: who, "
-                            "the deal, that concerns outweigh positive signals. Artifact: a note "
-                            "that surfaces and addresses the concern directly."),
-            "fallback": {"headline": "Sentiment negative: {entity}",
-                         "situation": "Concerns outweigh positives · open deal · address it"}},
+            "render_hint": ("Headline: a direct order to address concerns with this person — "
+                            "sentiment on their deal has turned negative. Situation: that concerns "
+                            "outweigh positive signals. Artifact: a note that surfaces and addresses "
+                            "the concern directly."),
+            "fallback": {"headline": "Address concerns with {entity}",
+                         "situation": "Sentiment turned negative on an open deal"}},
         # composite deal-health verdict (C3) — the evidence chain here is the member reason_codes
         # (field='signal'), so the render composes them into ONE story instead of listing alerts.
         "deal_health": {
             "artifact_kind": "draft_deal_action",
-            "render_hint": ("Headline: ONE deal-health verdict that composes the listed concern "
-                            "signals into a single story (e.g. \"{entity} at risk: quiet + objection "
-                            "+ competitor\") — do NOT list them separately. Situation: the deal, its "
-                            "stage/value, and the compound picture across the signals. Artifact: the "
-                            "single next-best-action that addresses the biggest driver first."),
-            "fallback": {"headline": "{entity}: deal at risk",
-                         "situation": "Open concerns: {concerns} · {stage} · {money}"}},
+            "render_hint": ("Headline: a direct order to review this deal now — ONE verdict that "
+                            "composes the listed concern signals into a single story (e.g. \"Review "
+                            "{entity} deal now — at risk: quiet + objection + competitor\") — do NOT "
+                            "list them separately. Situation: the deal, its stage/value, and the "
+                            "compound picture. Artifact: the single next-best-action that addresses "
+                            "the biggest driver first."),
+            "fallback": {"headline": "Review {entity} deal now",
+                         "situation": "At risk: {concerns} · {stage} · {money}"}},
     },
 
     # L2 extraction whitelist + L1 hints (domain vocabulary lives here, not in the engine)

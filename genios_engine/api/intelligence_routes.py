@@ -155,6 +155,26 @@ def _category(reason_code: str | None) -> str:
     return "sales" if reason_code in _DEAL_REASON_CODES else "general"
 
 
+# Manager mode — the card's button says the SPECIFIC move, not a generic "Advice". Keyed off the
+# rule's `play` (already stored in a card's actions[] as run_play.play_id), so it's one dict shared
+# by every pack instead of a per-reason_code table that drifts out of sync with the packs.
+_PLAY_LABEL = {
+    "follow_up": "Re-engage", "re_engage": "Re-engage", "handle_objection": "Handle objection",
+    "advance_deal": "Advance deal", "multi_thread": "Widen contacts",
+    "defend_position": "Defend position", "review_deal": "Review deal",
+    "deliver_commitment": "Deliver it", "reply": "Reply now", "send_recap": "Send recap",
+}
+
+
+def _action_label(actions) -> str | None:
+    if not isinstance(actions, list):
+        return None
+    for a in actions:
+        if isinstance(a, dict) and a.get("type") == "run_play":
+            return _PLAY_LABEL.get(a.get("play_id"))
+    return None
+
+
 @router.get("/v1/insights")
 def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(get_current_org)) -> dict:
     """Extension feed. state=open (default) → cards needing action; state=resolved → acted/resolved
@@ -167,7 +187,7 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
         # page-matching + resolving Draft/Advice. Left joins so a card without a node still returns.
         rows = c.execute(text(
             "select k.card_id, k.headline, k.situation, k.score, k.domain, k.urgency_band, "
-            "k.context_tags, k.created_at, n.display_name as entity, s.reason_code "
+            "k.context_tags, k.created_at, k.actions, n.display_name as entity, s.reason_code "
             "from cards k left join signals s on s.signal_id=k.signal_id "
             "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
             "and n.valid_to is null "
@@ -181,6 +201,7 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
         sc01 = round(sc / 100, 3) if sc > 1 else round(sc, 3)   # card score is 0-100 → normalize 0-1
         priority = "high" if r.urgency_band in ("high", "critical") else "medium"
         apps, domains = _provenance(r.context_tags)
+        actions = r.actions if isinstance(r.actions, list) else json.loads(r.actions or "[]")
         insights.append({
             "id": r.card_id, "type": _insight_type(r.urgency_band),
             "priority": priority,                # extension fires notifications on priority=='high'
@@ -188,6 +209,7 @@ def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(ge
             "contact_name": r.entity,            # extension page-match + Draft/Advice target
             "genios_view": (f"{head} — {sit}" if sit else head),
             "detail": sit, "memory_view": head,
+            "action_label": _action_label(actions),   # manager mode: the specific move (e.g. "Reply now")
             "confidence_score": sc01,
             # category from the fired RULE (reason_code), not r.domain (the pack_id, always
             # "sales" — one pack exists — which mislabeled every card regardless of content).
