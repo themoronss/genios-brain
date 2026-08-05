@@ -40,23 +40,27 @@ class PackRegistry:
     def write_lvl3_offset(self, org_id: str, pack_id: str, rule_id: str, offset: int) -> bool:
         """L6 F4 — the ONLY calibration write path: set a per-rule score offset in lvl3_config,
         which the L4 merge overlays. Law 5: if the rule-offsets path is PINNED, reject + return
-        False (the calibrator gets no private door). Bounded value is the caller's responsibility."""
-        import json as _json
+        False (the calibrator gets no private door). Bounded value is the caller's responsibility.
+
+        ONE atomic statement, pin-guard in the WHERE. The old shape (read whole blob → mutate in
+        Python → write whole blob) meant two concurrent calibration runs both read the same blob
+        and the second write silently discarded the first — losing offsets for rules it never
+        touched, i.e. corrupting tenant config, not just double-stepping one nudge."""
         with self._engine.begin() as c:
-            tp = c.execute(text("select lvl3_config, pins from tenant_packs "
-                                "where org_id=:o and pack_id=:p"),
-                           {"o": org_id, "p": pack_id}).first()
-            if tp is None:
-                return False
-            pins = tp.pins if isinstance(tp.pins, list) else _json.loads(tp.pins or "[]")
-            if any(str(p).startswith("scoring_defaults.rule_offsets") for p in pins):
-                return False                          # pinned → nudge rejected
-            lvl3 = tp.lvl3_config if isinstance(tp.lvl3_config, dict) else _json.loads(tp.lvl3_config or "{}")
-            lvl3.setdefault("scoring_defaults", {}).setdefault("rule_offsets", {})[rule_id] = int(offset)
-            c.execute(text("update tenant_packs set lvl3_config=cast(:l as jsonb), updated_at=now() "
-                           "where org_id=:o and pack_id=:p"),
-                      {"l": _json.dumps(lvl3, default=str), "o": org_id, "p": pack_id})
-        return True
+            res = c.execute(text(
+                "update tenant_packs set lvl3_config = jsonb_set("
+                "  jsonb_set(coalesce(lvl3_config, '{}'::jsonb), '{scoring_defaults}',"
+                "            coalesce(lvl3_config->'scoring_defaults', '{}'::jsonb), true),"
+                "  '{scoring_defaults,rule_offsets}',"
+                "  coalesce(lvl3_config->'scoring_defaults'->'rule_offsets', '{}'::jsonb)"
+                "    || jsonb_build_object(cast(:r as text), cast(:v as int)), true),"
+                "  updated_at = now() "
+                "where org_id=:o and pack_id=:p "
+                "and not exists ("
+                "  select 1 from jsonb_array_elements_text(coalesce(pins, '[]'::jsonb)) pe "
+                "  where pe like 'scoring_defaults.rule_offsets%')"),
+                {"r": rule_id, "v": int(offset), "o": org_id, "p": pack_id})
+        return res.rowcount == 1                     # 0 → no such tenant pack, or pinned
 
     def _manifest(self, c, pack_id, version) -> dict | None:
         r = c.execute(text("select manifest from pack_registry where pack_id=:p and version=:v"),
