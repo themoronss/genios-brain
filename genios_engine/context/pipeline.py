@@ -51,7 +51,16 @@ PROMPT_VERSION = "b3-1"
 # email classes that carry no real relationship → no structural graph (newsletters, bots, spam).
 # NOTE: "personal" is NOT here — a personal 1:1 email is still a real correspondence edge.
 _NOISE_TYPES = {"newsletter", "automated", "spam"}
+# P1 — node-type whitelist. An LLM entity_mention becomes a first-class graph NODE only if its type
+# is a person WITH an email (a deterministic anchor). Anything else (product/system/organization/
+# tool/event, or an anchorless person/company mention) is recorded as a `mention:<type>` observation
+# on the sender — data kept + queryable, but no orphan node (the SAP/OpenClaw dead-dots go away).
+# This whitelist governs ONLY the L2 mention loop below; the structured lane (deal/meeting/
+# subscription/product_account, anchored by source-id) is NOT gated here.
+_NODE_TYPES = {"person", "company", "deal", "meeting", "commitment", "thread", "document", "agent"}
 _MAX_RECIPIENTS = 25          # cap fan-out from a mass To/Cc so one email can't explode the graph
+_BULK_RECIPIENTS = 10         # P2 — above this many recipients an email is a bulk blast: skip
+                              # per-recipient nodes/edges (not 1:1 relationships). HYP, tune in shadow.
 
 
 def _company_domain(email: str | None) -> str | None:
@@ -61,6 +70,17 @@ def _company_domain(email: str | None) -> str | None:
         return None
     dom = email.rsplit("@", 1)[1].strip().lower()
     return None if (not dom or dom in _PERSONAL_DOMAINS) else dom
+
+
+def _norm_email(email: str | None) -> str | None:
+    """P5 — canonical email key: lowercase + trim + strip a +tag suffix from the local part, so
+    priya+vendors@x.com and priya@x.com resolve to ONE person node. None for malformed input.
+    Merge stays deterministic (exact key only); no fuzzy-name merge is ever done."""
+    if not email or "@" not in email:
+        return None
+    local, _, dom = str(email).strip().lower().partition("@")
+    local = local.split("+", 1)[0]
+    return f"{local}@{dom}" if local and dom else None
 
 
 @dataclass
@@ -145,10 +165,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         name_to_node: dict[str, str] = {}
         nodes = 0
         edge_n = 0
+        obs_n = 0
 
         def _person(email: str) -> str:
             return store.find_or_create_node(
-                conn, org_id=org_id, node_type="person", canonical_key=email.lower(),
+                conn, org_id=org_id, node_type="person",
+                canonical_key=(_norm_email(email) or email.strip().lower()),
                 display_name=email, event_id=event_id)
 
         def _works_at(email: str, person_node: str) -> None:
@@ -167,10 +189,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                 source=source, authority_rank=2):
                 edge_n += 1
 
-        sender_norm = (sender_email or "").lower()
+        sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
         sender_node = None
-        if sender_email:                        # always — facts/observations attach to this node
+        # P2 — a NODE means a real relationship. A noise sender (newsletter/automated/spam) does
+        # NOT become a person/company node; the email stays in the L1 ledger (recoverable), out of
+        # the graph. A real sender (incl. a personal 1:1) still anchors its facts/observations.
+        if sender_email and not is_noise:
             sender_node = _person(sender_email)
             nodes += 1
 
@@ -181,10 +206,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if sender_node:
                 _works_at(sender_email, sender_node)
             # recipients (To + Cc) → person nodes + sender↔recipient correspondence + affiliation.
-            # This is exactly what was missing — a thread with Piyush left him with only a calendar
-            # edge; now every message links the people.
-            for rcpt in (recipient_emails or [])[:_MAX_RECIPIENTS]:
-                rn_email = rcpt.lower()
+            # P2 — skip per-recipient nodes on a mass fan-out (a large To/Cc blast is not a set of
+            # 1:1 relationships); small/direct threads still link everyone. Bulk lists stay in the
+            # L1 ledger, out of the graph.
+            recips = recipient_emails or []
+            for rcpt in ([] if len(recips) > _BULK_RECIPIENTS else recips[:_MAX_RECIPIENTS]):
+                rn_email = _norm_email(rcpt) or rcpt.strip().lower()
                 if not rn_email or rn_email == sender_norm:
                     continue
                 rnode = _person(rn_email)
@@ -220,17 +247,35 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      event_id=event_id, evidence={"derived": "we replied"},
                                      source=source, authority_rank=2)
 
-        for e in ents:                          # B5 resolve — deterministic anchors only
-            email = (str(e.get("email") or "").lower() or None)
+        # B5 resolve — P1 anchor rule. A mention becomes a NODE only when it is a person WITH an
+        # email (deterministic anchor). Anchorless mentions (companies/products/tools/systems, or
+        # people with no email) do NOT get their own node — they land as a `mention:<type>`
+        # observation on the sender, and their name maps to the sender so any fact_candidate about
+        # them attaches to an anchored node (fallback is already sender). Kills the orphan
+        # SAP/OpenClaw/Product/System nodes without losing a single extracted fact.
+        for e in ents:
+            etype = str(e.get("type") or "person").strip().lower()
+            email = _norm_email(e.get("email"))
             name = e.get("name")
-            nid = store.find_or_create_node(
-                conn, org_id=org_id, node_type=str(e.get("type") or "person"),
-                canonical_key=email, display_name=name or email, event_id=event_id)
-            nodes += 1
-            if name:
-                name_to_node[_norm(str(name))] = nid
-            if email:
+            if etype == "person" and email:                  # anchored contact → real node
+                nid = store.find_or_create_node(
+                    conn, org_id=org_id, node_type="person", canonical_key=email,
+                    display_name=name or email, event_id=event_id)
+                nodes += 1
                 name_to_node[_norm(email)] = nid
+                if name:
+                    name_to_node[_norm(str(name))] = nid
+                if not is_noise:
+                    _works_at(email, nid)                    # affiliation from a real anchor
+            elif name and sender_node:                       # anchorless mention → context on sender
+                store.write_observation(
+                    conn, org_id=org_id, subject_node_id=sender_node,
+                    kind="mention:" + (etype if etype in _NODE_TYPES else "entity"),
+                    confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
+                    evidence={"name": name, "type": etype, "text": e.get("evidence_text")},
+                    source=source)
+                obs_n += 1
+                name_to_node.setdefault(_norm(str(name)), sender_node)
         fact_n = 0
         for f in facts:
             subj = _resolve_subject(f.get("subject"), name_to_node, sender_node)
@@ -244,7 +289,6 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      authority_rank=2)   # R2: direct evidence-backed
             if wrote:
                 fact_n += 1
-        obs_n = 0
         for o in obs:
             store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
                                     kind=str(o.get("kind") or "note"), confidence=ex.relevance,
