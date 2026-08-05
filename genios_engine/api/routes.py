@@ -22,7 +22,7 @@ from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_document_job_store, make_graph_store,
                                            make_human_event_store, make_llm_client,
                                            make_pack_registry, make_parked_store,
-                                           make_payload_store,
+                                           make_payload_store, make_prepared_store,
                                            make_relevance_classifier, make_repo,
                                            make_trace_repo)
 
@@ -33,6 +33,7 @@ router = APIRouter()
 _repo = make_repo()
 _trace_repo = make_trace_repo()
 _payload_store = make_payload_store()
+_prepared_store = make_prepared_store()
 _connections = make_connection_store()
 _parked = make_parked_store()
 _cursors = make_cursor_store()
@@ -1118,8 +1119,14 @@ def human_event(ev: HumanEvent, org_id: str = Depends(get_current_org)) -> dict:
     if not ev.is_known_type():
         raise HTTPException(422, f"unknown human event type: {ev.type}")
     ev.org_id = org_id                  # bind to the authed tenant — body value never trusted
-    _human_events.add(ev)
-    return {"accepted": True, "type": ev.type}
+    _human_events.add(ev)               # the correction ledger (kept — audit/undo reads it)
+    # ONE DOOR: the event also enters the graph's world as a SourceEvent, so L2 actually
+    # learns what the human said (before: side table only, the twin never saw it).
+    from genios_engine.capture.intake import ingest_human_event
+    res = ingest_human_event(ev, repo=_repo, payload_store=_payload_store,
+                             prepared_store=_prepared_store, trace_repo=_trace_repo)
+    return {"accepted": True, "type": ev.type, "event_id": res.event.event_id,
+            "outcome": res.outcome}
 
 
 class RegisterAgent(BaseModel):
@@ -1146,8 +1153,14 @@ def agent_event(ev: AgentEvent, x_agent_key: str = Header(...)) -> dict:
         raise HTTPException(422, f"unknown action_taken: {ev.action_taken}")
     if not _agent_registry.verify(ev.org_id, ev.agent_id, x_agent_key, ev.action_taken):
         raise HTTPException(401, "agent key invalid or action not allowed for this agent")
-    is_new = _agent_events.add(ev)
-    return {"accepted": True, "duplicate": not is_new, "action": ev.action_taken}
+    is_new = _agent_events.add(ev)      # the outcome ledger (kept — idempotency reads it)
+    # ONE DOOR: the agent's completed action becomes a SourceEvent too, so GeniOS never
+    # recommends what an agent already did. Dedup rides the agent's idempotency key.
+    from genios_engine.capture.intake import ingest_agent_event
+    res = ingest_agent_event(ev, repo=_repo, payload_store=_payload_store,
+                             prepared_store=_prepared_store, trace_repo=_trace_repo)
+    return {"accepted": True, "duplicate": not is_new, "action": ev.action_taken,
+            "event_id": res.event.event_id, "outcome": res.outcome}
 
 
 # ── L5 delivery · cards ───────────────────────────────────────────────────────────

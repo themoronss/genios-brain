@@ -238,10 +238,15 @@ def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict
 
 
 # ── destructive: wipe graph / delete account ─────────────────────────────────
+# Every org_id-carrying table with derived/customer content belongs here — a table
+# missing from this list survives account deletion, which is a broken promise.
+# raw_payloads + prepared_content hold email-derived text (the worst to leak).
 _ORG_SCOPED_TABLES = [
     "cards", "card_events", "signals", "signal_suppression_log", "decisions",
     "graph_facts", "graph_edges", "graph_observations", "graph_source_refs", "graph_nodes",
-    "graph_versions", "baselines", "source_events", "agent_events",
+    "graph_versions", "baselines", "raw_payloads", "prepared_content",
+    "l2_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
+    "l1_sync_runs", "source_events", "agent_events", "human_events",
 ]
 
 

@@ -22,13 +22,18 @@ from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
-from genios_engine.platform.wiring import make_graph_store, make_llm_client, make_payload_store
+from genios_engine.platform.wiring import (make_graph_store, make_llm_client,
+                                           make_payload_store, make_prepared_store,
+                                           make_repo, make_trace_repo)
 
 router = APIRouter()
 _log = get_logger("genios.uploads")
 _graph = make_graph_store()
 _llm = make_llm_client()
 _payloads = make_payload_store()
+_repo = make_repo()
+_prepared = make_prepared_store()
+_trace_repo = make_trace_repo()
 
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"   # genios-engine/uploads/
 MAX_BYTES = 10 * 1024 * 1024                                    # 10 MiB
@@ -74,30 +79,26 @@ def _chunk(text_content: str) -> list[str]:
 
 
 def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str, uploader_email: str) -> None:
-    """One upload chunk → a source_events (outcome='emitted') + encrypted raw_payloads row, the exact
-    shape L2's process_pending consumes. source/object_type ('upload','document') miss the structured
-    registry, so the chunk takes the LLM extraction lane."""
-    eid = new_id("evt")
-    dedup = f"upload:{file_id}:chunk_{idx}"
-    actor = json.dumps({"type": "internal_user", "email": uploader_email})
-    now = datetime.now(timezone.utc)
-    with _graph.engine.begin() as c:
-        row = c.execute(text(
-            "insert into source_events (event_id, org_id, connection_id, source, object_type, "
-            "source_object_id, dedup_key, actor, occurred_at, outcome) values "
-            "(:eid,:o,'upload','upload','document',:soid,:dk,cast(:actor as jsonb),:now,'emitted') "
-            "on conflict (org_id, dedup_key) do nothing returning event_id"),
-            {"eid": eid, "o": org_id, "soid": dedup, "dk": dedup, "actor": actor, "now": now}).first()
-    if row is None:                                             # dedup collision (re-upload) — skip payload
-        return
-    _payloads.put(payload_id=new_id("pay"), org_id=org_id, event_id=eid,
-                  content=json.dumps({"subject": subject, "body": body}))
+    """One upload chunk → THE ONE DOOR (capture_event via intake): deduped, traced,
+    W-05-whitelisted, payload + prepared text persisted — identical to a connector sync.
+    (Was a hand-rolled SQL insert that skipped the gate, the trace and the seam.)
+    source/object_type ('upload','document_chunk') miss the structured registry, so the
+    chunk takes the LLM extraction lane."""
+    from genios_engine.capture.intake import ingest_manual
+    ingest_manual(org_id=org_id, source="upload", object_type="document_chunk",
+                  source_object_id=f"{file_id}:chunk_{idx}", body=body, subject=subject,
+                  actor_type="internal_user", actor_email=uploader_email,
+                  repo=_repo, payload_store=_payloads, prepared_store=_prepared,
+                  trace_repo=_trace_repo, connection_id="upload")
 
 
 def _ingest(org_id: str, file_id: str, prefix: str) -> None:
     """Background: drain L2 extraction for the org (same entry point as a sync), then reconcile this
-    file's real fact/entity counts + flip status to 'indexed'. Best-effort, per-org isolated."""
-    like = f"{prefix}:%"
+    file's real fact/entity counts + flip status to 'indexed'. Best-effort, per-org isolated.
+    Two dedup shapes are matched: the one-door key 'upload:document_chunk:{file}:…' and the
+    legacy pre-door key 'upload:{file}:…'."""
+    like_new = f"upload:document_chunk:{file_id}:%"
+    like_old = f"{prefix}:%"
     try:
         if _llm is not None:
             from genios_engine.context.runner import process_pending
@@ -109,11 +110,13 @@ def _ingest(org_id: str, file_id: str, prefix: str) -> None:
             facts = c.execute(text(
                 "select count(*) from graph_facts where org_id=:o and valid_to is null and status='active' "
                 "and created_by_event_id in (select event_id from source_events where org_id=:o "
-                "and dedup_key like :p)"), {"o": org_id, "p": like}).scalar()
+                "and (dedup_key like :p or dedup_key like :p2))"),
+                {"o": org_id, "p": like_old, "p2": like_new}).scalar()
             ents = c.execute(text(
                 "select count(*) from graph_nodes where org_id=:o and valid_to is null "
                 "and created_by_event_id in (select event_id from source_events where org_id=:o "
-                "and dedup_key like :p)"), {"o": org_id, "p": like}).scalar()
+                "and (dedup_key like :p or dedup_key like :p2))"),
+                {"o": org_id, "p": like_old, "p2": like_new}).scalar()
             note = None
             if _llm is None:
                 note = "Stored — AI extraction is currently disabled (no model configured)."
@@ -204,21 +207,28 @@ def list_uploads(org_id: str, org: str = Depends(_org)) -> dict:
 
 @router.delete("/api/org/{org_id}/uploads/{file_id}")
 def delete_upload(org_id: str, file_id: str, org: str = Depends(_org)) -> dict:
-    like = f"upload:{file_id}:%"
+    like_old = f"upload:{file_id}:%"                      # pre-door key shape
+    like_new = f"upload:document_chunk:{file_id}:%"       # one-door key shape
     with _graph.engine.begin() as c:
         rec = c.execute(text("select storage_path from resource_uploads where org_id=:o and file_id=:f"),
                         {"o": org, "f": file_id}).first()
         if rec is None:
             raise HTTPException(404, {"error": "not_found", "message": "upload not found"})
         evids = [r.event_id for r in c.execute(text(
-            "select event_id from source_events where org_id=:o and dedup_key like :p"),
-            {"o": org, "p": like})]
+            "select event_id from source_events where org_id=:o "
+            "and (dedup_key like :p or dedup_key like :p2)"),
+            {"o": org, "p": like_old, "p2": like_new})]
         if evids:
-            # remove the facts learned from THIS file + its capture artifacts. Shared graph_nodes are
-            # left in place (they may be referenced by other sources).
+            # remove the facts learned from THIS file + its capture artifacts (raw payload,
+            # prepared text, observations). Shared graph_nodes are left in place (they may
+            # be referenced by other sources).
             c.execute(text("delete from graph_facts where org_id=:o and created_by_event_id = any(:e)"),
                       {"o": org, "e": evids})
+            c.execute(text("delete from graph_observations where org_id=:o "
+                           "and created_by_event_id = any(:e)"), {"o": org, "e": evids})
             c.execute(text("delete from raw_payloads where org_id=:o and event_id = any(:e)"),
+                      {"o": org, "e": evids})
+            c.execute(text("delete from prepared_content where org_id=:o and event_id = any(:e)"),
                       {"o": org, "e": evids})
             c.execute(text("delete from source_events where org_id=:o and event_id = any(:e)"),
                       {"o": org, "e": evids})
