@@ -1098,7 +1098,9 @@ def metrics_headline(org_id: str = Depends(get_current_org)) -> dict:
 
 @router.get("/context/overview")
 def context_overview(org_id: str = Depends(get_current_org)) -> dict:
-    """Context page health cards — fact totals + avg confidence + recent graph changes."""
+    """Context page health cards — fact totals + avg confidence + recent graph changes.
+    conflictsDetected is the REAL open-discrepancy count (was hardcoded 0 while the
+    conflict detector ran and wrote rows nobody read)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
@@ -1106,44 +1108,104 @@ def context_overview(org_id: str = Depends(get_current_org)) -> dict:
         row = c.execute(text("select count(*) n, coalesce(avg(confidence),0) a from graph_facts "
                              "where org_id=:o and valid_to is null and status='active'"),
                         {"o": org_id}).first()
+        conflicts = c.execute(text(
+            "select count(*) from discrepancies where org_id=:o and status='open'"),
+            {"o": org_id}).scalar()
         recent = c.execute(text("select field, subject_node_id, created_at from graph_facts "
                                 "where org_id=:o and valid_to is null order by created_at desc "
                                 "limit 10"), {"o": org_id}).fetchall()
     return {"healthCards": {"totalFacts": int(row.n), "avgConfidence": round(float(row.a), 3),
-                            "factsDecaying": 0, "conflictsDetected": 0},
+                            "factsDecaying": 0, "conflictsDetected": int(conflicts or 0)},
             "recentEvents": [{"eventType": r.field, "eventData": {"node": r.subject_node_id},
                               "createdAt": r.created_at.isoformat() if r.created_at else ""}
                              for r in recent]}
 
 
-@router.get("/context/facts")
-def context_facts(limit: int = 100, offset: int = 0,
-                  org_id: str = Depends(get_current_org)) -> dict:
-    """Per-entity fact summary with derived scores (the Context 'Facts' tab)."""
+@router.get("/context/discrepancies")
+def context_discrepancies(limit: int = 50, org_id: str = Depends(get_current_org)) -> dict:
+    """Open conflicts: a lower-authority source disagreed with the held value (e.g. an
+    email says unpaid, Stripe says paid). The detector always wrote these; this is the
+    first surface that reads them. The flag is product — 'which one is true?' is a card."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
+    limit = max(1, min(int(limit), 200))
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select d.id, d.subject_node_id, d.field, d.held, d.challenger, d.created_at, "
+            "n.display_name from discrepancies d "
+            "left join graph_nodes n on n.node_id=d.subject_node_id and n.org_id=d.org_id "
+            "and n.valid_to is null "
+            "where d.org_id=:o and d.status='open' order by d.created_at desc limit :l"),
+            {"o": org_id, "l": limit}).fetchall()
+    import json as _json
+
+    def _j(v):
+        return v if isinstance(v, dict) else (_json.loads(v) if v else {})
+    return {"discrepancies": [
+        {"id": r.id, "entity": r.display_name, "entity_id": r.subject_node_id,
+         "field": r.field, "held": _j(r.held), "challenger": _j(r.challenger),
+         "detected_at": r.created_at.isoformat() if r.created_at else None}
+        for r in rows]}
+
+
+def _stage_from_age(last_at, now) -> str:
+    """Deterministic relationship stage from the last real activity. Honest bands:
+    <14d active · 14–45d cooling · >45d dormant · never → new."""
+    if last_at is None:
+        return "new"
+    if last_at.tzinfo is None:
+        from datetime import timezone as _tz
+        last_at = last_at.replace(tzinfo=_tz.utc)
+    age_d = (now - last_at).total_seconds() / 86400.0
+    return "active" if age_d < 14 else ("cooling" if age_d <= 45 else "dormant")
+
+
+@router.get("/context/facts")
+def context_facts(limit: int = 100, offset: int = 0,
+                  org_id: str = Depends(get_current_org)) -> dict:
+    """Per-entity fact summary (the Context 'Facts' tab). Every number is REAL or null —
+    this endpoint used to ship invented constants (stage 'active' for everyone,
+    freshness 1.0, consistency 1.0, sentiment 0), which is a trust liability on the one
+    page that exists to show what the twin knows. Ordered by attention when present."""
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from datetime import datetime, timezone
+
+    from sqlalchemy import text
     limit = max(1, min(int(limit), 500))
+    now = datetime.now(timezone.utc)
     with _graph.engine.connect() as c:
         rows = c.execute(text(
             "select n.node_id, n.node_type, n.display_name, n.canonical_key, "
             "count(f.fact_version_id) fc, coalesce(avg(f.confidence),0) conf, "
-            "coalesce(max(f.authority_rank),1) auth, max(f.occurred_at) last_at "
-            "from graph_nodes n left join graph_facts f on f.subject_node_id=n.node_id "
+            "coalesce(max(f.authority_rank),1) auth, max(f.occurred_at) last_at, "
+            "a.score as attention_score, a.band as attention_band "
+            "from graph_nodes n "
+            "left join graph_facts f on f.subject_node_id=n.node_id "
             "and f.org_id=n.org_id and f.valid_to is null and f.status='active' "
+            "left join context_attention a on a.node_id=n.node_id and a.org_id=n.org_id "
             "where n.org_id=:o and n.valid_to is null "
-            "group by n.node_id, n.node_type, n.display_name, n.canonical_key "
-            "order by last_at desc nulls last, fc desc limit :l offset :off"),
+            "group by n.node_id, n.node_type, n.display_name, n.canonical_key, a.score, a.band "
+            "order by a.score desc nulls last, last_at desc nulls last, fc desc "
+            "limit :l offset :off"),
             {"o": org_id, "l": limit, "off": offset}).fetchall()
         total = c.execute(text("select count(*) from graph_nodes where org_id=:o and valid_to is null"),
                           {"o": org_id}).scalar()
     facts = [{"id": r.node_id, "entity": r.display_name,
               "email": r.canonical_key if r.node_type == "person" else None, "company": None,
-              "entity_type": r.node_type, "relationship_stage": "active", "freshness": 1.0,
-              "confidence": round(float(r.conf), 3), "consistency": 1.0, "authority": int(r.auth),
+              "entity_type": r.node_type,
+              "relationship_stage": _stage_from_age(r.last_at, now),
+              "freshness": None,                       # honest: not computed yet
+              "confidence": round(float(r.conf), 3),
+              "consistency": None,                     # honest: not computed yet
+              "authority": int(r.auth),
               "context": round(float(r.conf), 3),
+              "attention": int(r.attention_score) if r.attention_score is not None else None,
+              "attention_band": r.attention_band,
               "last_confirmed": r.last_at.isoformat() if r.last_at else None,
-              "interaction_count": int(r.fc), "sentiment_avg": 0, "topics": []} for r in rows]
+              "interaction_count": int(r.fc), "sentiment_avg": None, "topics": []}
+             for r in rows]
     return {"facts": facts, "total": int(total or 0)}
 
 
