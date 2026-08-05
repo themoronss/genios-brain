@@ -18,8 +18,11 @@ EXPIRY_DAYS = 7
 
 # field prefix → the surface that produced it (for the evidence chain's `source`)
 _SOURCE = {"deal": "crm", "thread": "gmail", "commitment": "gmail", "meeting": "calendar"}
-_APP = {"deal": "app:hubspot", "thread": "app:gmail", "commitment": "app:gmail",
-        "meeting": "app:googlecalendar"}
+# real connector source (graph_source_refs.source) → app tag. NOT field-name-based: there is no
+# "deal" entry here on purpose. A "deal.*" field is just a field name — the L2 extractor writes it
+# from whatever it was reading (usually a Gmail email), and only source_refs.source knows the truth.
+_SOURCE_APP = {"gmail": "app:gmail", "gcal": "app:googlecalendar", "calendar": "app:googlecalendar",
+               "notion": "app:notion", "drive": "app:googledrive", "hubspot": "app:hubspot"}
 
 
 def load_node(store, org_id: str, node_id: str) -> tuple[str, str, dict, dict]:
@@ -47,6 +50,20 @@ def load_node(store, org_id: str, node_id: str) -> tuple[str, str, dict, dict]:
     return (nd.display_name or "this account"), nd.node_type, attrs, facts
 
 
+def _real_sources(store, org_id: str, node_id: str) -> set[str]:
+    """The TRUE app(s) behind this node's current facts, via graph_source_refs — never guessed from
+    a field-name prefix. Fixes the bug where an LLM-extracted "deal.*" field from a Gmail email got
+    tagged app:hubspot purely because its field name started with "deal.", regardless of the fact's
+    actual (correctly-recorded) source."""
+    with store.engine.connect() as c:
+        rows = c.execute(text(
+            "select distinct sr.source from graph_facts f "
+            "join graph_source_refs sr on sr.fact_version_id = f.fact_version_id "
+            "where f.org_id=:o and f.subject_node_id=:n and f.valid_to is null and f.status='active'"),
+            {"o": org_id, "n": node_id}).fetchall()
+    return {r.source for r in rows if r.source}
+
+
 def _why(evidence: list, facts: dict) -> list[dict]:
     """Evidence chain: field + value + source. ≥2 inline (Law 2 · no naked cards). Pads from
     the node's other active facts if the rule carried fewer than two."""
@@ -65,14 +82,11 @@ def _why(evidence: list, facts: dict) -> list[dict]:
     return out
 
 
-def _context_tags(node_type: str, attrs: dict, facts: dict) -> list[str]:
-    """On-device matcher whitelist (§5.14). Built ONLY from the signal's source refs — app tags
-    + a work-tool url_domain/tool path when the fact set carries one. No intelligence, by design."""
-    tags: set[str] = set()
-    for field in facts:
-        app = _APP.get(field.split(".")[0])
-        if app:
-            tags.add(app)
+def _context_tags(node_type: str, attrs: dict, facts: dict, sources: set[str]) -> list[str]:
+    """On-device matcher whitelist (§5.14). App tags come from each fact's REAL source_ref.source
+    (graph_source_refs) — never guessed from a field-name prefix — plus a work-tool url_domain/tool
+    path when the fact set carries one."""
+    tags: set[str] = {_SOURCE_APP[s] for s in sources if s in _SOURCE_APP}
     domain = (attrs or {}).get("company_domain") or \
         (facts.get("deal.company_domain") or {}).get("value") or \
         (facts.get("company.domain") or {}).get("value")
@@ -88,6 +102,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
     """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state."""
     node_id = signal["subject_node_id"]
     name, node_type, attrs, facts = load_node(store, org_id, node_id)
+    sources = _real_sources(store, org_id, node_id)
     reason_code = signal["reason_code"]
 
     scoring = effective.get("scoring", {})
@@ -126,7 +141,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         "score_block": {"S": int(signal["score"]), **{k: score_inputs.get(k) for k in
                         ("U", "I", "R", "C")}, "inputs": score_inputs},
         "actions": actions, "why": _why(signal.get("evidence"), facts),
-        "context_tags": _context_tags(node_type, attrs, facts),
+        "context_tags": _context_tags(node_type, attrs, facts, sources),
         "config_snapshot_id": signal.get("config_snapshot_id"),
         "template_version": (effective.get("templates", {}) or {}).get("_version"),
         "expires_at": eval_time + timedelta(days=EXPIRY_DAYS),
