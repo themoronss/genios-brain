@@ -149,6 +149,46 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err, "orgs": len(orgs)}
 
 
+_last_calibration_at = None            # in-process weekly gate for L6 (module-level; resets on restart)
+
+
+def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
+    """The scheduler heartbeat (in-process, no Celery/Upstash): the data-sync sweep every tick, PLUS
+    the two maintenance passes the queue otherwise never gets — the card LIFECYCLE sweep (expire +
+    snooze-wake + abandoned-claim release) every tick, and the L6 CALIBRATION pass (precision →
+    auto-mute → bounded nudges) weekly, per active pack per org. Without this, snoozed cards were a
+    black hole, expired cards never cleared, and the self-tuning loop stayed inert (built, unscheduled)."""
+    from datetime import datetime, timedelta, timezone
+    global _last_calibration_at
+    now = datetime.now(timezone.utc)
+    sync = run_sync_sweep(mode=mode, limit=limit)
+    try:
+        lifecycle = _card_store.sweep_lifecycle()            # every tick: expire + snooze-wake + claim-release
+    except Exception:                                        # noqa: BLE001 — never kill the heartbeat
+        _log.exception("card lifecycle sweep failed")
+        lifecycle = {"error": True}
+    calibration = None
+    if _last_calibration_at is None or (now - _last_calibration_at) >= timedelta(days=7):
+        from genios_engine.feedback.calibrate import run_calibration
+        orgs = {c.org_id for c in _connections.list_active()}
+        runs = 0
+        for org in orgs:                                     # weekly: precision + auto-mute + nudges
+            try:
+                with _graph.engine.connect() as c:
+                    packs = [r[0] for r in c.execute(text(
+                        "select pack_id from tenant_packs where org_id=:o and state='active'"),
+                        {"o": org})]
+                for pid in (packs or ["sales"]):
+                    run_calibration(_graph, org, registry=_registry, pack_id=pid)
+                    runs += 1
+            except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
+                _log.exception("calibration failed org=%s", org)
+        _last_calibration_at = now
+        calibration = {"orgs": len(orgs), "pack_runs": runs}
+        _log.info("weekly calibration pass complete: %d org(s), %d pack-run(s)", len(orgs), runs)
+    return {"sync": sync, "lifecycle": lifecycle, "calibration": calibration}
+
+
 @router.post("/ingest/all")
 def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                limit: int = 25, auto_l2: bool = True,

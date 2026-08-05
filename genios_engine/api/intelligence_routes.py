@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.platform.auth import get_current_org
+from genios_engine.platform.cache import get_cache
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_graph_store, make_llm_client,
@@ -44,6 +45,41 @@ def _cache_key(org_id: str, module_id: str, question: str, gv: int) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+# L7 spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
+# cap, checked BEFORE the LLM call (cached queries never reach it → always free). Both fail-open on
+# infra errors so a Redis/DB blip never blocks a legitimate query. (Was the gap: spend was recorded
+# after the fact, incr_window was defined-but-never-called → unbounded LLM spend / retry loops.)
+_CREDIT_LIMIT = {"trial": 100, "startup": 2000, "growth": 10000, "scale": 50000}
+_RPM_LIMIT = 20                        # billable intelligence queries / org / minute (burst guard)
+
+
+def _enforce_query_budget(org_id: str) -> None:
+    from datetime import datetime, timezone
+    try:                                                    # RPM burst (Noop cache → 0 → no cap)
+        n = get_cache().incr_window(f"rpm:iq:{org_id}", 60)
+        if n and int(n) > _RPM_LIMIT:
+            raise HTTPException(429, "too many queries this minute — retry shortly")
+    except HTTPException:
+        raise
+    except Exception:                                       # noqa: BLE001 — cache blip never blocks
+        pass
+    try:                                                    # monthly credit allowance
+        now = datetime.now(timezone.utc)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        with _graph.engine.connect() as c:
+            tier = (c.execute(text("select subscription_tier from orgs where id=:o"),
+                              {"o": org_id}).scalar() or "trial").lower()
+            used = c.execute(text("select count(*) from decisions where org_id=:o and created_at>=:s"),
+                             {"o": org_id, "s": month_start}).scalar() or 0
+        limit = _CREDIT_LIMIT.get(tier, 100)
+        if int(used) >= limit:
+            raise HTTPException(402, f"monthly credit limit reached ({limit}) — upgrade or wait for reset")
+    except HTTPException:
+        raise
+    except Exception:                                       # noqa: BLE001 — DB blip never blocks
+        pass
+
+
 @router.post("/v1/intelligence/query")
 def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) -> dict:
     if _graph is None:
@@ -64,6 +100,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         env["cached"] = True
         return env
 
+    _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
                          registry=_registry, graph_version=gv)
