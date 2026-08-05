@@ -532,6 +532,22 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001
             pass
+    # real provenance: which connected tool(s) actually fed THIS contact's facts (was hardcoded "Gmail")
+    _node, _ = _resolve_contact_facts(org_id, contact)
+    src_tools: list[str] = []
+    if _node is not None:
+        try:
+            _TL = {"gmail": "Gmail", "gcal": "Calendar", "hubspot": "HubSpot", "notion": "Notion",
+                   "jira": "Jira", "stripe": "Stripe", "human": "You"}
+            with _graph.engine.connect() as c:
+                src_tools = [_TL.get(r.source, (r.source or "").title()) for r in c.execute(text(
+                    "select distinct sr.source from graph_source_refs sr join graph_facts f "
+                    "on f.fact_version_id=sr.fact_version_id and f.org_id=sr.org_id "
+                    "where sr.org_id=:o and f.subject_node_id=:n and f.valid_to is null "
+                    "and sr.source is not null limit 5"), {"o": org_id, "n": _node.node_id})]
+        except Exception:      # noqa: BLE001
+            pass
+    src_tools = [s for s in src_tools if s] or ["Gmail"]
     rec = env["recommendation"]
     action = str(rec.get("action", ""))
     view = f"{rec.get('headline', '')} — {action}".strip(" —")
@@ -546,7 +562,7 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
             "suggestion": view, "note": str(rec.get("reasoning", "")),
             "confidence_score": env["confidence"],
             "scores": {"confidence": _band_label(env["confidence"]), "category": category},
-            "draft_needed": draft_needed, "source_tools": ["Gmail"],
+            "draft_needed": draft_needed, "source_tools": src_tools,
             "generated_at": env["as_of"]["timestamp"]}
 
 
