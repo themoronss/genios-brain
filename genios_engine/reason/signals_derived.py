@@ -12,17 +12,11 @@ Two families:
 """
 from __future__ import annotations
 
-# qualitative observation vocabulary → polarity. Kept here (reason-layer), not the pack, because a
-# derived metric is engine machinery; packs add rules that THRESHOLD these, they don't redefine them.
-# Vocabulary is the canonical set the L2 obs-kind normalizer emits (context.pipeline.norm_obs_kind).
-POS_OBS = {"budget_approved", "buying_intent", "pricing_discussed", "positive_reply",
-           "champion_engaged", "next_step_agreed", "verbal_yes", "contract_requested",
-           "demo_requested", "stakeholder_added", "security_review_started"}
-NEG_OBS = {"objection", "objection_price", "objection_timing", "objection_security",
-           "objection_authority", "objection_integration", "competitor", "going_dark",
-           "churn_risk", "negative_reply", "price_pushback", "stakeholder_left",
-           "discount_pressure", "budget_freeze", "champion_change", "timeline_slip",
-           "closed_lost_mention"}
+# qualitative observation polarity — the vocabulary is CONTEXT-owned (the L2 normalizer
+# emits it), so the sets live in context/vocabulary.py and reason imports them DOWNWARD.
+# Re-exported under the old names for existing callers.
+from genios_engine.context.vocabulary import OBS_NEGATIVE as NEG_OBS
+from genios_engine.context.vocabulary import OBS_POSITIVE as POS_OBS
 
 # closed-stage tells for deriving deal.status from the CRM's deal.stage.
 _STAGE_WON = ("won", "closedwon", "closed_won")
@@ -58,12 +52,34 @@ def _f(value):
             "occurred_at": None, "src_count": 1}
 
 
-def sentiment_facts(obs) -> dict:
-    """derived.sentiment/obs_pos/obs_neg/obs_count from the node's observations (already loaded)."""
-    kinds = [o.get("kind") for o in obs]
-    pos = sum(1 for k in kinds if k in POS_OBS)
-    neg = sum(1 for k in kinds if k in NEG_OBS)
-    out = {"derived.obs_count": _f(len(kinds))}
+SENTIMENT_WINDOW_DAYS = 90
+
+
+def _in_window(o, eval_time, window_days: int) -> bool:
+    if eval_time is None:
+        return True
+    ts = o.get("occurred_at")
+    if ts is None:
+        return True                       # undated obs: keep (never silently drop data)
+    if not hasattr(ts, "tzinfo"):
+        return True
+    if ts.tzinfo is None:
+        from datetime import timezone as _tz
+        ts = ts.replace(tzinfo=_tz.utc)
+    from datetime import timedelta as _td
+    return ts >= eval_time - _td(days=window_days)
+
+
+def sentiment_facts(obs, eval_time=None, window_days: int = SENTIMENT_WINDOW_DAYS) -> dict:
+    """derived.sentiment/obs_pos/obs_neg/obs_count from the node's observations (already
+    loaded). WINDOWED: only observations from the trailing `window_days` count — a single
+    14-month-old pricing objection must not pin a contact negative forever (sentiment is
+    a trajectory, not a life sentence). obs_count stays all-time (it measures history)."""
+    kinds_all = [o.get("kind") for o in obs]
+    recent = [o.get("kind") for o in obs if _in_window(o, eval_time, window_days)]
+    pos = sum(1 for k in recent if k in POS_OBS)
+    neg = sum(1 for k in recent if k in NEG_OBS)
+    out = {"derived.obs_count": _f(len(kinds_all))}
     if pos or neg:
         out["derived.sentiment"] = _f(round((pos - neg) / float(pos + neg), 3))
         out["derived.obs_pos"] = _f(pos)

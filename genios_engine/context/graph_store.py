@@ -102,6 +102,7 @@ class GraphStore:
                    value: Any, value_type: str, confidence: float,
                    occurred_at: datetime | None, event_id: str,
                    evidence: dict, source: str | None, authority_rank: int = 1,
+                   relevance: float | None = None,
                    replay: bool = False) -> str | None:
         """B6/B7: authority-aware, no-op-aware, out-of-order-aware, versioned. The decision
         itself lives in fact_write_action() (pure, tested). Returns the new fact_version_id,
@@ -144,13 +145,14 @@ class GraphStore:
         fv = new_id("factv")
         conn.execute(text(
             "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, "
-            "value, value_type, status, authority_rank, confidence, occurred_at, created_by_event_id"
+            "value, value_type, status, authority_rank, confidence, relevance, occurred_at, "
+            "created_by_event_id"
             + (", valid_to" if status == "historical" else "") + ") "
-            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, :st, :ar, :c, :oc, :ev"
+            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, :st, :ar, :c, :rel, :oc, :ev"
             + (", now()" if status == "historical" else "") + ")"),
             {"fv": fv, "fid": new_id("fact"), "o": org_id, "s": subject_node_id, "f": field,
              "val": new_val, "vt": value_type, "st": status, "ar": authority_rank,
-             "c": confidence, "oc": occurred_at, "ev": event_id})
+             "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id})
         self._write_ref(conn, org_id=org_id, fact_version_id=fv, event_id=event_id,
                         source=source, evidence=evidence)
         return fv
@@ -191,12 +193,24 @@ class GraphStore:
             "and from_node_id=:f and to_node_id=:tn and valid_to is null limit 1"),
             {"o": org_id, "t": edge_type, "f": from_node_id, "tn": to_node_id}).first()
         if held is not None:
+            # Relationship DEPTH: a repeat interaction is not a no-op — it bumps the
+            # edge's interaction_count and advances last_seen_at. This is the difference
+            # between a relationship graph and a boolean adjacency list (and the
+            # substrate relationship_stage / attention read). Still returns None:
+            # no new edge VERSION was created.
+            conn.execute(text(
+                "update graph_edges set interaction_count = coalesce(interaction_count,1) + 1, "
+                "last_seen_at = greatest(coalesce(last_seen_at, valid_from, now()), "
+                "coalesce(cast(:oc as timestamptz), now())) "
+                "where edge_version_id=:ev"),
+                {"ev": held.edge_version_id, "oc": occurred_at})
             return None
         edge_version_id = new_id("edgev")
         conn.execute(text(
             "insert into graph_edges (edge_version_id, edge_id, org_id, edge_type, from_node_id, "
-            "to_node_id, authority_rank, confidence, valid_from, created_by_event_id) "
-            "values (:ev, :eid, :o, :t, :f, :tn, :ar, :c, coalesce(:vf, now()), :e)"),
+            "to_node_id, authority_rank, confidence, valid_from, last_seen_at, created_by_event_id) "
+            "values (:ev, :eid, :o, :t, :f, :tn, :ar, :c, coalesce(:vf, now()), "
+            "coalesce(:vf, now()), :e)"),
             {"ev": edge_version_id, "eid": new_id("edge"), "o": org_id, "t": edge_type,
              "f": from_node_id, "tn": to_node_id, "ar": authority_rank, "c": confidence,
              "vf": occurred_at, "e": event_id})

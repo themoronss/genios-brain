@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -47,6 +48,15 @@ def parse_due(text: str | None, base: datetime) -> datetime | None:
 # Downstream RANKING reference only (NOT a commit gate): facts below this relevance are low-priority
 # for surfacing, but are still stored and queryable.
 RELEVANCE_FLOOR = 0.35
+
+# Deterministic fact confidence by authority rank — the ONLY confidence the L3 gate reads.
+# The constitution's line ("the model extracts, it never decides") was broken here for
+# months: fact confidence was ex.relevance (an LLM float), which flowed into engine
+# ext_conf → C → the c_min gate — a language model's mood decided whether signals fired.
+# Now: confidence = what KIND of source asserted it (human 1.0, system-of-record 0.9,
+# grounded extraction 0.7, weak inference 0.4). The LLM's relevance is stored SEPARATELY
+# on the fact (relevance column) and may rank; it may never gate.
+FACT_CONF_BY_RANK = {4: 1.00, 3: 0.90, 2: 0.70, 1: 0.40}
 PROMPT_VERSION = "b3-2"          # b3-2: enriched observations with the canonical SIGNAL KINDS vocab
                                 # (deep sales+general detection). Bump invalidates the extraction
                                 # cache → new events extract rich for free; existing backlog gets
@@ -290,17 +300,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # because nothing ever flipped ball_in_court back — the "still shows as unanswered
                 # after I replied" bug. Skipped for internal teammates (not a prospect thread) and
                 # for noise (an outbound auto-reply doesn't count as answering).
+                # Confidence is deterministic (rank 2 = grounded event): whether WE replied is a
+                # fact of the mailbox, not a function of how interesting the LLM found the email.
                 if (not is_inbound and not is_noise and occurred_at is not None
                         and rn_email not in internal_set):
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.last_outbound", value=occurred_at.isoformat(),
-                                     value_type="timestamp", confidence=max(ex.relevance, 0.05),
+                                     value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                                     relevance=ex.relevance,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence={"derived": "outbound event"}, source=source,
                                      authority_rank=2)
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.ball_in_court", value="them", value_type="enum",
-                                     confidence=max(ex.relevance, 0.05), occurred_at=occurred_at,
+                                     confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                                     occurred_at=occurred_at,
                                      event_id=event_id, evidence={"derived": "we replied"},
                                      source=source, authority_rank=2)
 
@@ -340,58 +354,118 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 continue
             wrote = store.write_fact(conn, org_id=org_id, subject_node_id=subj,
                                      field=str(f.get("field") or "note"), value=f.get("value"),
-                                     value_type="string", confidence=ex.relevance,
+                                     value_type="string", confidence=FACT_CONF_BY_RANK[2],
+                                     relevance=ex.relevance,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence={"text": f.get("evidence_text")}, source=source,
                                      authority_rank=2)   # R2: direct evidence-backed
             if wrote:
                 fact_n += 1
+        # observation hygiene: one email quoting the same moment twice must not commit the
+        # same (kind, evidence) twice — duplicates double-count in derived sentiment.
+        seen_obs: set[tuple[str, str]] = set()
         for o in obs:
+            kind = norm_obs_kind(o.get("kind"))
+            key = (kind, str(o.get("evidence_text") or ""))
+            if key in seen_obs:
+                continue
+            seen_obs.add(key)
             store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
-                                    kind=norm_obs_kind(o.get("kind")), confidence=ex.relevance,
+                                    kind=kind, confidence=ex.relevance,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"text": o.get("evidence_text")}, source=source)
+            obs_n += 1
+        # INTENT, finally committed: the LLM already extracts open questions — the pipeline
+        # parsed and DROPPED them for months. A question directed at us is the strongest
+        # "they expect an answer" signal the twin can hold.
+        for q in keep_grounded(content, ex.questions):
+            key = ("question", str(q.get("evidence_text") or ""))
+            if key in seen_obs or sender_node is None:
+                continue
+            seen_obs.add(key)
+            store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
+                                    kind="question", confidence=ex.relevance,
+                                    occurred_at=occurred_at, event_id=event_id,
+                                    evidence={"text": q.get("evidence_text"),
+                                              "directed_at": q.get("directed_at")},
+                                    source=source)
             obs_n += 1
 
         # per-email relevance recorded as an append-only signal so L3/queries can RANK — the
         # "score, don't delete" record: even a low-relevance email leaves its score, never a gap.
+        # domains (which business areas the email touches) ride along — extracted since day
+        # one, dropped until now.
         if sender_node:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
                 kind=("email_noise:" + ex.noise_type) if is_noise else "email_relevance",
                 confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
-                evidence={"relevance": ex.relevance, "noise_type": ex.noise_type}, source=source)
+                evidence={"relevance": ex.relevance, "noise_type": ex.noise_type,
+                          "domains": ex.domains}, source=source)
             obs_n += 1
 
         # thread state (direction-derived, deterministic) → feeds L3's unanswered_email.
         # Skip for noise (a newsletter doesn't put the ball in our court) and for internal
         # teammates (an internal reply isn't a prospect thread we owe an external reply on).
-        # Confidence = this email's actual relevance (was hardcoded 1.0) — so a low-relevance
-        # inbound message (off-topic, low-signal) scores a low C in L3 and can miss the gate,
-        # instead of nagging with the same urgency as a real stalled prospect thread.
+        # Confidence is deterministic rank-2 (the mailbox is certain the message arrived);
+        # the email's LLM relevance is stored on the fact's relevance column for RANKING —
+        # it no longer decides whether the signal clears the c_min gate (D3).
         if (is_inbound and sender_node and occurred_at is not None and not is_noise
                 and sender_norm not in internal_set):
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
-                             value_type="timestamp", confidence=max(ex.relevance, 0.05),
+                             value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                             relevance=ex.relevance,
                              occurred_at=occurred_at, event_id=event_id,
                              evidence={"derived": "inbound event"},
                              source=source, authority_rank=2)
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.ball_in_court", value="us", value_type="enum",
-                             confidence=max(ex.relevance, 0.05), occurred_at=occurred_at,
+                             confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                             occurred_at=occurred_at,
                              event_id=event_id, evidence={"derived": "last message inbound"},
                              source=source, authority_rank=2)
 
-        # commitments → commitment.due_at (best-effort due) → feeds L3's commitment rules.
-        # Stored for every email (confidence = relevance), never gated away.
+        # commitments → FIRST-CLASS nodes. A commitment is the highest-value extracted
+        # object in the system, and it used to be one colliding fact field on the person:
+        # facts key on (subject, field), so the SECOND promise silently superseded the
+        # first — a person could hold exactly one commitment. Data loss, fixed.
+        # Each commitment now gets its own node (deterministic canonical key: who +
+        # normalized text + due date), an owns-edge from the actor, and its own facts.
+        # DUAL-WRITE strangler: the legacy person-level commitment.due_at keeps being
+        # written (latest wins, as before) so general_v1's commitment_overdue rule keeps
+        # firing unchanged; commitment-scoped rules migrate to the nodes later.
         for cm in keep_grounded(content, ex.commitments):
             subj = _resolve_subject(cm.get("actor"), name_to_node, sender_node)
             due = parse_due(cm.get("due_text"), occurred_at) if occurred_at else None
             if subj and due:
+                cm_text = str(cm.get("evidence_text") or "").strip()
+                ck = "commitment:" + hashlib.sha1(
+                    f"{subj}:{_norm(cm_text)}:{due.date().isoformat()}".encode()).hexdigest()[:20]
+                cnode = store.find_or_create_node(
+                    conn, org_id=org_id, node_type="commitment", canonical_key=ck,
+                    display_name=(cm_text[:80] or "commitment"), event_id=event_id)
+                if store.write_edge(conn, org_id=org_id, edge_type="owns",
+                                    from_node_id=subj, to_node_id=cnode, confidence=0.9,
+                                    occurred_at=occurred_at, event_id=event_id,
+                                    evidence={"derived": "commitment actor"}, source=source,
+                                    authority_rank=2):
+                    edge_n += 1
+                for fld, val, vt in (("commitment.due_at", due.isoformat(), "timestamp"),
+                                     ("commitment.text", cm_text, "string"),
+                                     ("commitment.status", "open", "enum")):
+                    store.write_fact(conn, org_id=org_id, subject_node_id=cnode,
+                                     field=fld, value=val, value_type=vt,
+                                     confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                                     occurred_at=due if fld == "commitment.due_at" else occurred_at,
+                                     event_id=event_id,
+                                     evidence={"text": cm.get("evidence_text")},
+                                     source=source, authority_rank=2)
+                # legacy dual-write (person-level; latest wins — pre-existing shape)
                 store.write_fact(conn, org_id=org_id, subject_node_id=subj,
                                  field="commitment.due_at", value=due.isoformat(),
-                                 value_type="timestamp", confidence=ex.relevance, occurred_at=due,
+                                 value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                                 relevance=ex.relevance, occurred_at=due,
                                  event_id=event_id, evidence={"text": cm.get("evidence_text")},
                                  source=source, authority_rank=2)
 

@@ -7,15 +7,17 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.contracts.reasoning import DecisionOutcome
 from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
+from .adapters import reason_legacy_rule
 from .composer import COMPOSITE_RULE_ID as _COMPOSITE_RULE_ID
 from .composer import compose_deal_health
-from .engine import NodeContext, evaluate, score_rule
+from .engine import NodeContext
 from .rules import rule_from_dict, rules_for_scope
 from .signals_derived import deal_facts, sentiment_facts
 
@@ -248,7 +250,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         baselines, derived = load_node_metrics(store, org_id, nd.node_id)  # C1: one query, both
         ctx.baselines = baselines
         ctx.facts.update(derived)                          # derived.momentum / derived.engagement
-        ctx.facts.update(sentiment_facts(ctx.obs))         # derived.sentiment / obs_pos / obs_neg
+        ctx.facts.update(sentiment_facts(ctx.obs, eval_time))  # derived.sentiment (90d window)
         if nd.node_type == "deal":                         # F1: deal.status/value from deal.stage/amount
             ctx.facts.update(deal_facts(ctx.facts))
         if need_neighbors:
@@ -258,11 +260,31 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             if rule.id in muted:                          # L6 auto-mute — rule is harmful, silence it
                 out["muted"] += 1
                 continue
-            if not evaluate(ctx, rule, eval_time):
+            reasoned = reason_legacy_rule(
+                org_id=org_id,
+                context=ctx,
+                rule=rule,
+                evaluation_time=eval_time,
+                scoring=scoring_cfg,
+                config_snapshot_id=snapshot_id,
+                pack_id=effective["pack_id"],
+                pack_version=effective["version"],
+                play_config=(effective.get("plays") or {}).get(rule.play, {}),
+            )
+            if reasoned.execution.decision.outcome in {
+                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
+                outcome = reasoned.execution.decision.outcome.value
+                _suppress(store, org_id, rule.id, nd.node_id, "reasoning_failed", eval_time,
+                          {"outcome": outcome,
+                           "uncertainty": reasoned.execution.decision.uncertainty,
+                           "run_id": reasoned.execution.trace.run_id})
+                out[outcome] += 1
+                continue
+            if not reasoned.matched:
                 continue
             out["detected"] += 1
             fired.add((rule.id, nd.node_id))
-            S, inputs = score_rule(ctx, rule, eval_time, scoring_cfg)
+            S, inputs = reasoned.score, reasoned.score_inputs
             gate_s_eff = max(40, min(90, gate_s + int(rule_offsets.get(rule.id, 0))))  # L6 nudge
             if S < gate_s_eff or inputs["C"] < gate_c:
                 _suppress(store, org_id, rule.id, nd.node_id, "below_gate", eval_time,

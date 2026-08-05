@@ -174,4 +174,15 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
 
     for node_id in affected:                          # B9 rebuild affected read models
         build_entity_360(store, org_id=org_id, node_id=node_id)
-    return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected)}
+    # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh
+    # when anything changed (recency decays even for untouched nodes, and it is a few
+    # bulk queries, not per-node round-trips).
+    attention_rows = 0
+    if done or affected:
+        try:
+            from genios_engine.context.attention import refresh_attention
+            attention_rows = refresh_attention(store, org_id)
+        except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
+            pass
+    return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected),
+            "attention_rows": attention_rows}
