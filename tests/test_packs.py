@@ -20,7 +20,7 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.6.0"
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.7.0"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100

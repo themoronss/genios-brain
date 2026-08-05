@@ -125,6 +125,12 @@ _OBS_CANON = {
     # sentiment
     "positive_reply": "positive_reply", "negative_reply": "negative_reply", "price_pushback": "price_pushback",
     "buying_intent": "buying_intent", "churn_risk": "churn_risk",
+    # general
+    "introduction": "introduction", "intro": "introduction", "introduced": "introduction",
+    "connecting_you": "introduction", "warm_intro": "introduction",
+    "followup_sent": "followup_sent", "follow_up_sent": "followup_sent", "recap_sent": "followup_sent",
+    "meeting_request": "meeting_request", "meeting_requested": "meeting_request",
+    "book_a_meeting": "meeting_request", "schedule_call": "meeting_request",
 }
 
 

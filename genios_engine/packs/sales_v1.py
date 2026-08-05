@@ -5,7 +5,7 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.6.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
+    "version": "1.7.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
                                       # · 1.5.0 deep lifecycle corpus (pricing_objection, verbal_yes_not_closed,
                                       #   contract_requested, security_review_pending, champion_left, budget_freeze)
@@ -200,6 +200,24 @@ SALES_V1 = {
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
          "reason_code": "demo_requested", "play": "advance_deal", "cooldown_hours": 48,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
+
+        # proposal sent, no response — a proposal went out, the ball is with them, and they've gone
+        # quiet. The single most common place deals stall (distinct trigger from pricing going dark).
+        {"id": "proposal_no_response", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "proposal_sent"},
+                  {"path": "thread.ball_in_court", "op": "=", "value": "them"},
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 4}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
+         "reason_code": "proposal_no_response", "play": "re_engage", "cooldown_hours": 96,
+         "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
+
+        # closed-lost risk — they hinted the deal may be lost / going with someone else. Last chance
+        # to save it with a direct, specific save play before it's gone.
+        {"id": "closed_lost_risk", "level": "predictive", "scope": "person",
+         "when": [{"has_obs": "closed_lost_mention"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
+         "reason_code": "closed_lost_risk", "play": "defend_position", "cooldown_hours": 120,
+         "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
     ],
 
     # plays — the artifact L5 renders + the graph event that marks success (D8/D9). Read-only:
@@ -379,6 +397,22 @@ SALES_V1 = {
                             "use-case."),
             "fallback": {"headline": "Book {entity}'s demo now",
                          "situation": "They asked to see it — move fast"}},
+        "proposal_no_response": {
+            "artifact_kind": "draft_reengage",
+            "render_hint": ("Headline: a direct order to chase {entity} on the sent proposal — "
+                            "they've gone quiet. Situation: proposal out, silent {days}d. Artifact: "
+                            "a low-friction nudge that offers to walk through it or adjust scope, "
+                            "making it easy to reply."),
+            "fallback": {"headline": "Chase {entity} on the proposal",
+                         "situation": "Proposal sent — quiet {days}d"}},
+        "closed_lost_risk": {
+            "artifact_kind": "draft_competitive",
+            "render_hint": ("Headline: a direct order to save the {entity} deal now — they hinted "
+                            "it may be going elsewhere. Situation: the loss signal. Artifact: a "
+                            "direct, non-desperate save note that reopens the conversation on the "
+                            "one thing that would change their decision."),
+            "fallback": {"headline": "Save the {entity} deal now",
+                         "situation": "Loss signal — one last specific save"}},
     },
 
     # L2 extraction whitelist + L1 hints (domain vocabulary lives here, not in the engine)
@@ -394,7 +428,8 @@ SALES_V1 = {
                          "deal_sentiment_negative", "deal_health",
                          "pricing_objection", "verbal_yes_not_closed", "contract_requested",
                          "security_review_pending", "champion_left", "budget_freeze",
-                         "discount_pressure", "legal_in_review", "timeline_slip", "demo_requested"],
+                         "discount_pressure", "legal_in_review", "timeline_slip", "demo_requested",
+                         "proposal_no_response", "closed_lost_risk"],
     },
     "capture": {"classifier_hints": "sales: deals, pricing, proposals, demos, commitments, follow-ups"},
 }
