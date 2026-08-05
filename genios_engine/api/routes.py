@@ -310,6 +310,28 @@ def connection_lifecycle(connection_id: str, action: str,
     return {"connection_id": connection_id, "status": status}
 
 
+@router.post("/workspace/{action}")
+def workspace_kill(action: str, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+    """Per-org kill (spec Level C) — the tenant's 'stop everything' switch. pause → every request
+    for this org 503s (checked in get_current_org, cache-invalidated for immediate effect); resume
+    lifts it. Uses get_auth_ctx (NOT get_current_org) so a paused owner can still call resume.
+    Complements per-source pause (/connections/{id}/pause) and the global kill."""
+    org_id = ctx.org_id
+    enabled = {"pause": False, "resume": True}.get(action)
+    if enabled is None:
+        raise HTTPException(422, "action must be pause | resume")
+    with _graph.engine.begin() as c:
+        c.execute(text("insert into feature_flags (key, enabled) values (:k, :e) "
+                       "on conflict (key) do update set enabled=:e"),
+                  {"k": f"kill_switch:{org_id}", "e": enabled})
+    try:
+        from genios_engine.platform.cache import get_cache
+        get_cache().delete(f"ff:kill:{org_id}")            # immediate effect, don't wait for TTL
+    except Exception:      # noqa: BLE001
+        pass
+    return {"org_id": org_id, "paused": not enabled}
+
+
 # ── self-serve connect (frontend initiates Composio OAuth) ───────────────────────
 class InitiateConnect(BaseModel):
     source_type: str
