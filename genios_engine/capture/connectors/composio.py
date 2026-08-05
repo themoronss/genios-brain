@@ -231,12 +231,17 @@ class ComposioGmailConnector:
             return []
         mid = str(mid)
 
-        # Pull the FULL message when the list row lacks parts and has only a thin body — that's
-        # where the ~280-char truncation was. If already full (or fetch fails), use the list row.
+        # Pull the FULL MIME message UNLESS the list row already carries a complete MIME structure
+        # (payload.parts, walked below). A flat body string of ANY length may be Gmail's clipped
+        # preview — and for deep extraction a signal (competitor, pricing, legal, budget) can sit
+        # anywhere in the body, so we never feed the LLM a possibly-truncated body. Full-fetch is one
+        # extra call for exactly the at-risk emails; if it fails we fall back to the list row (safe).
+        # (Was: only fetched full when body < 400 chars → a 500-char clip of a 2,000-char email slipped
+        #  through truncated → the LLM missed everything past the clip.)
         list_body = m.get("messageText") or m.get("body") or ""
         list_body = list_body if isinstance(list_body, str) else ""
         list_payload = m.get("payload") if isinstance(m.get("payload"), dict) else None
-        need_full = not (list_payload and list_payload.get("parts")) and len(list_body.strip()) < 400
+        need_full = not (list_payload and list_payload.get("parts"))
         full = self._full_message(mid) if need_full else {}
         src = full or m                                  # prefer the full message for every field
         payload = (src.get("payload") if isinstance(src.get("payload"), dict) else list_payload)
