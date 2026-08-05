@@ -81,7 +81,8 @@ def _neighbor_index(store, org_id):
             obs_idx.setdefault(r.nid, set()).add(r.kind)
         for r in c.execute(text("select subject_node_id nid, field, value, occurred_at from graph_facts "
                                 "where org_id=:o and valid_to is null and status='active' "
-                                "order by occurred_at desc nulls last"), {"o": org_id}):
+                                "order by occurred_at desc nulls last, fact_version_id desc"),
+                           {"o": org_id}):
             d = fact_idx.setdefault(r.nid, {})
             if r.field in d:                           # ordered desc → first seen is the latest
                 continue
@@ -101,15 +102,22 @@ def _neighborhood(node_id, adj, obs_idx, fact_idx):
     result is deterministic — not whichever neighbour set-iteration happened to visit first."""
     nbrs = adj.get(node_id, set())
     neighbor_obs: set = set()
-    best: dict = {}          # field -> (value, occurred_at)
-    for n in nbrs:
+    best: dict = {}          # field -> (value, occurred_at, source_node_id)
+    # A graph neighbourhood is a set, so iteration order is intentionally undefined. Always
+    # traverse by stable node id and retain that id in the tie-break state; otherwise two equal-time
+    # facts can produce different decisions under a different PYTHONHASHSEED.
+    for n in sorted(nbrs):
         neighbor_obs |= obs_idx.get(n, set())
         for f, (v, ts) in fact_idx.get(n, {}).items():
             cur = best.get(f)
-            # prefer the newer occurred_at; a dated fact beats an undated one; ties keep the first.
-            if cur is None or (ts is not None and (cur[1] is None or ts > cur[1])):
-                best[f] = (v, ts)
-    neighbor_facts = {f: v for f, (v, _ts) in best.items()}
+            # Prefer the newer occurred_at; a dated fact beats an undated one. Equal timestamps
+            # resolve by lexical source node id, never by set/row order.
+            if (cur is None
+                    or (ts is not None and cur[1] is None)
+                    or (ts is not None and cur[1] is not None and ts > cur[1])
+                    or (ts == cur[1] and n < cur[2])):
+                best[f] = (v, ts, n)
+    neighbor_facts = {f: v for f, (v, _ts, _nid) in best.items()}
     return len(nbrs), neighbor_obs, neighbor_facts
 
 
@@ -186,6 +194,15 @@ def _tenant_deal_p90(store, org_id: str, min_deals: int = 5) -> float | None:
     return round(vals[min(len(vals) - 1, int(math.ceil(0.9 * len(vals)) - 1))], 2)
 
 
+def _muted_rules(store, org_id: str) -> set[str]:
+    """Active auto-mutes, read from the rule_mutes table the learning layer (L7) writes.
+    Learned state flows to reasoning as DATA (this table, and rule_offsets via lvl3_config)
+    — never as an upward code import; the layer-topology test enforces that."""
+    with store.engine.connect() as c:
+        return {r.rule_id for r in c.execute(text(
+            "select rule_id from rule_mutes where org_id=:o and active"), {"o": org_id})}
+
+
 def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
@@ -215,14 +232,14 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     nbr_adj = nbr_obs_idx = nbr_fact_idx = None
     if need_neighbors:
         nbr_adj, nbr_obs_idx, nbr_fact_idx = _neighbor_index(store, org_id)   # 3 queries for the whole org
-    from genios_engine.feedback.calibrate import muted_rules
-    muted = muted_rules(store, org_id)                     # L6 F5: skip auto-muted (harmful) rules
+    muted = _muted_rules(store, org_id)                    # L7 F5 output: skip auto-muted rules
     out: Counter = Counter()
     fired: set[tuple[str, str]] = set()
     candidates: list = []                                  # gated signals, ranked before spending
     with store.engine.connect() as c:
         nodes = c.execute(text("select node_id, node_type from graph_nodes "
-                               "where org_id=:o and valid_to is null"), {"o": org_id}).fetchall()
+                               "where org_id=:o and valid_to is null order by node_id"),
+                          {"o": org_id}).fetchall()
     for nd in nodes:
         rules = rules_for_scope(all_rules, nd.node_type)
         if not rules:
@@ -263,7 +280,9 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     # Rank by S, then spend a SEAT-SCALED daily budget on the best first (was: per-org cap of 7 in
     # node-scan order → a multi-seat team starved to 7 total and a 90-score signal budget-dropped
     # by earlier low ones). Delivery still caps pushes per assignee at L5 (router.budget_full).
-    candidates.sort(key=lambda x: x[0], reverse=True)
+    # Stable total order: score desc, then rule and entity ids. A score-only stable sort inherits
+    # database row order, which PostgreSQL does not guarantee and replay cannot tolerate.
+    candidates.sort(key=lambda x: (-x[0], x[2].id, x[3]))
     remaining = max(0, budget_per_day * _active_seats(store, org_id)
                     - _budget_used(store, org_id, eval_time))
     for i, (S, inputs, rule, node_id, evidence) in enumerate(candidates):
