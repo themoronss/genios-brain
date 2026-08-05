@@ -47,7 +47,10 @@ def parse_due(text: str | None, base: datetime) -> datetime | None:
 # Downstream RANKING reference only (NOT a commit gate): facts below this relevance are low-priority
 # for surfacing, but are still stored and queryable.
 RELEVANCE_FLOOR = 0.35
-PROMPT_VERSION = "b3-1"
+PROMPT_VERSION = "b3-2"          # b3-2: enriched observations with the canonical SIGNAL KINDS vocab
+                                # (deep sales+general detection). Bump invalidates the extraction
+                                # cache → new events extract rich for free; existing backlog gets
+                                # rich signals only on a deliberate (cheap Haiku) re-extract/rebuild.
 # email classes that carry no real relationship → no structural graph (newsletters, bots, spam).
 # NOTE: "personal" is NOT here — a personal 1:1 email is still a real correspondence edge.
 _NOISE_TYPES = {"newsletter", "automated", "spam"}

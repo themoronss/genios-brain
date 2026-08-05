@@ -20,7 +20,7 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.5.0"
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.6.0"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100
@@ -252,7 +252,7 @@ GC = GENERAL_V1["scoring_defaults"]
 
 
 def test_general_pack_is_wellformed():
-    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.0.0"
+    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.1.0"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= GC.keys()
     assert GC["weights"]["u"] + GC["weights"]["i"] + GC["weights"]["r"] == 100

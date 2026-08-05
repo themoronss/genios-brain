@@ -5,11 +5,12 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.5.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
+    "version": "1.6.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
                                       # · 1.5.0 deep lifecycle corpus (pricing_objection, verbal_yes_not_closed,
                                       #   contract_requested, security_review_pending, champion_left, budget_freeze)
-                                      #   + obs-kind normalizer (deterministic firing)
+                                      #   + obs-kind normalizer · 1.6.0 +discount_pressure, legal_in_review,
+                                      #   timeline_slip, demo_requested (18 rules) + enriched extraction vocab
     "requires": {"engine": ">=0.1.0"},
 
     # L3 scoring configuration (was hardcoded in the engine — now pack data)
@@ -164,6 +165,41 @@ SALES_V1 = {
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 12},
          "reason_code": "budget_freeze", "play": "re_engage", "cooldown_hours": 240,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
+
+        # discount pressure — they're pushing on price and the ball is with us. Hold margin: respond
+        # with value + a considered concession path, not a reflex discount.
+        {"id": "discount_pressure", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "discount_pressure"},
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 3},
+         "reason_code": "discount_pressure", "play": "handle_objection", "cooldown_hours": 72,
+         "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
+
+        # legal in review — the contract sits with legal/redlines and it's gone quiet. A silent legal
+        # cycle is where deals die slowly; check in and offer to unblock.
+        {"id": "legal_in_review", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "legal_review"},
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 3}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 5},
+         "reason_code": "legal_in_review", "play": "follow_up", "cooldown_hours": 120,
+         "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
+
+        # timeline slip — they signalled the timeline is moving. Re-anchor the plan before the deal
+        # loses urgency and slips a quarter.
+        {"id": "timeline_slip", "level": "predictive", "scope": "person",
+         "when": [{"has_obs": "timeline_slip"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 8},
+         "reason_code": "timeline_slip", "play": "re_engage", "cooldown_hours": 168,
+         "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
+
+        # demo requested — they asked to see it and the ball is with us. Speed-to-demo wins deals;
+        # book it now.
+        {"id": "demo_requested", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "demo_requested"},
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
+         "reason_code": "demo_requested", "play": "advance_deal", "cooldown_hours": 48,
+         "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
     ],
 
     # plays — the artifact L5 renders + the graph event that marks success (D8/D9). Read-only:
@@ -311,6 +347,38 @@ SALES_V1 = {
                             "date) that keeps us first in line, no hard ask."),
             "fallback": {"headline": "Nurture {entity} through the freeze",
                          "situation": "Budget on hold — stay first in line"}},
+        "discount_pressure": {
+            "artifact_kind": "draft_objection_reply",
+            "render_hint": ("Headline: a direct order to answer {entity}'s discount push without "
+                            "caving. Situation: they're pressing on price. Artifact: a reply that "
+                            "reframes value first, then offers a considered trade (term/scope) if a "
+                            "concession is warranted — never a reflex discount."),
+            "fallback": {"headline": "Answer {entity}'s price push — hold margin",
+                         "situation": "Discount pressure — reframe value first"}},
+        "legal_in_review": {
+            "artifact_kind": "draft_followup",
+            "render_hint": ("Headline: a direct order to unblock the {entity} contract in legal. "
+                            "Situation: it's with legal/redlines and quiet {days}d. Artifact: a "
+                            "check-in offering to jump on a call with their legal, or a clause "
+                            "summary, to keep the paper moving."),
+            "fallback": {"headline": "Unblock {entity}'s contract in legal",
+                         "situation": "With legal — quiet {days}d"}},
+        "timeline_slip": {
+            "artifact_kind": "draft_reengage",
+            "render_hint": ("Headline: a direct order to re-anchor the {entity} timeline. Situation: "
+                            "they signalled the date is moving. Artifact: a note that reconfirms the "
+                            "value of moving now and proposes a concrete revised milestone, so the "
+                            "deal keeps urgency."),
+            "fallback": {"headline": "Re-anchor the {entity} timeline",
+                         "situation": "Timeline slipping — reset the plan"}},
+        "demo_requested": {
+            "artifact_kind": "draft_advance",
+            "render_hint": ("Headline: a direct order to get {entity} into a demo now — speed-to-demo "
+                            "wins. Situation: they asked to see it, ball with you. Artifact: a short "
+                            "note offering two concrete slots and what the demo will cover for their "
+                            "use-case."),
+            "fallback": {"headline": "Book {entity}'s demo now",
+                         "situation": "They asked to see it — move fast"}},
     },
 
     # L2 extraction whitelist + L1 hints (domain vocabulary lives here, not in the engine)
@@ -325,7 +393,8 @@ SALES_V1 = {
                          "competitor_in_live_deal", "going_dark_after_proposal",
                          "deal_sentiment_negative", "deal_health",
                          "pricing_objection", "verbal_yes_not_closed", "contract_requested",
-                         "security_review_pending", "champion_left", "budget_freeze"],
+                         "security_review_pending", "champion_left", "budget_freeze",
+                         "discount_pressure", "legal_in_review", "timeline_slip", "demo_requested"],
     },
     "capture": {"classifier_hints": "sales: deals, pricing, proposals, demos, commitments, follow-ups"},
 }

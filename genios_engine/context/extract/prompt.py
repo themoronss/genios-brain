@@ -28,10 +28,22 @@ Return EXACTLY this shape:
     {{"text": "the question", "directed_at": "us", "evidence_text": "exact substring"}}
   ],
   "observations": [
-    {{"kind": "budget_approved|pricing_discussed|deal_risk|meeting_request|objection|...",
+    {{"kind": "<one CANONICAL signal from the SIGNAL KINDS list below>",
       "evidence_text": "exact substring"}}
   ]
 }}
+
+SIGNAL KINDS — for observations.kind use these EXACT strings (emit only when the message clearly
+states it; omit if unsure — a wrong signal is worse than none). This is how the system detects
+sales + relationship moments:
+  Buying:    budget_approved · verbal_yes · next_step_agreed · contract_requested · demo_requested ·
+             security_review_started · stakeholder_added · pricing_discussed · proposal_sent
+  Risk:      competitor · discount_pressure · budget_freeze · champion_change · legal_review ·
+             timeline_slip · going_dark · closed_lost_mention
+  Objection: objection · objection_price · objection_timing · objection_security ·
+             objection_authority · objection_integration
+  Sentiment: positive_reply · negative_reply · price_pushback
+  General:   meeting_request · followup_sent · introduction
 
 Hard rules:
 - evidence_text MUST be an EXACT substring copied verbatim from the message. Never paraphrase.

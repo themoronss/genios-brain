@@ -8,7 +8,7 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.0.0",
+    "version": "1.1.0",              # 1.1.0 +intro_followup
     "requires": {"engine": ">=0.1.0"},
 
     "scoring_defaults": {
@@ -54,6 +54,16 @@ GENERAL_V1 = {
          "urgency": {"type": "elapsed", "path": "meeting.start_at", "h": 1},
          "reason_code": "meeting_no_followup", "play": "send_recap", "cooldown_hours": 72,
          "linked_deal": False, "evidence_fields": ["meeting.status", "meeting.start_at"]},
+
+        # intro follow-up (v1.1.0) — someone made an introduction and no follow-up has gone out. A
+        # warm intro is the cheapest pipeline there is and the easiest to waste by going silent.
+        {"id": "intro_followup", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "introduction"},
+                  {"no_obs": "followup_sent"},
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 1}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
+         "reason_code": "intro_followup", "play": "reply", "cooldown_hours": 72,
+         "linked_deal": False, "evidence_fields": ["thread.last_inbound"]},
     ],
 
     "plays": {
@@ -98,13 +108,21 @@ GENERAL_V1 = {
                             "how long since the meeting. Artifact: a crisp recap + next step."),
             "fallback": {"headline": "Send {entity} a recap now",
                          "situation": "Met {days}d ago — nothing sent since"}},
+        "intro_followup": {
+            "artifact_kind": "draft_reply",
+            "render_hint": ("Headline: a direct order to follow up on the introduction to {entity} "
+                            "now, naming them. Situation: you were introduced, nothing's gone back "
+                            "yet. Artifact: a warm, concrete note that thanks the connector, opens "
+                            "the conversation, and proposes one clear next step."),
+            "fallback": {"headline": "Follow up on the {entity} intro now",
+                         "situation": "Introduced {days}d ago — no reply sent yet"}},
     },
 
     "schema": {
         "fields": ["commitment.due_at", "commitment.action", "thread.last_inbound",
                    "thread.ball_in_court", "meeting.status", "meeting.start_at"],
         "signal_vocab": ["commitment_overdue", "unanswered_email", "champion_quiet",
-                         "meeting_no_followup"],
+                         "meeting_no_followup", "intro_followup"],
     },
     "capture": {"classifier_hints": "general: any relationship — overdue promises, unanswered "
                                     "messages, quiet contacts, meetings without follow-up"},
