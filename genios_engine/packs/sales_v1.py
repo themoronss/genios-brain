@@ -5,8 +5,11 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.4.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
+    "version": "1.5.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
+                                      # · 1.5.0 deep lifecycle corpus (pricing_objection, verbal_yes_not_closed,
+                                      #   contract_requested, security_review_pending, champion_left, budget_freeze)
+                                      #   + obs-kind normalizer (deterministic firing)
     "requires": {"engine": ">=0.1.0"},
 
     # L3 scoring configuration (was hardcoded in the engine — now pack data)
@@ -105,6 +108,62 @@ SALES_V1 = {
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 6},
          "reason_code": "deal_sentiment_negative", "play": "re_engage", "cooldown_hours": 120,
          "linked_deal": True, "evidence_fields": ["derived.sentiment"]},
+
+        # ── deep lifecycle rules (v1.5.0) — obs-driven, deterministic via the L2 obs-kind normalizer
+        #    (context.pipeline.norm_obs_kind). Person-scoped: fire on the contact, no CRM edges
+        #    needed, so they work the day extraction runs. Full sales lifecycle coverage. ──
+
+        # pricing objection — a price concern is on the table and the ball is with us: the moment to
+        # respond specifically, before it becomes a lost-reason.
+        {"id": "pricing_objection", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "objection_price"},
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
+         "reason_code": "pricing_objection", "play": "handle_objection", "cooldown_hours": 48,
+         "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
+
+        # verbal yes, not closed — they signalled a yes / next step but nothing's been sent to lock
+        # it. Close the loop while intent is hot.
+        {"id": "verbal_yes_not_closed", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "verbal_yes"},
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 3},
+         "reason_code": "verbal_yes_not_closed", "play": "advance_deal", "cooldown_hours": 72,
+         "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
+
+        # contract requested — they asked for the contract / MSA / order form. Highest-intent signal
+        # in the pipeline: send it today.
+        {"id": "contract_requested", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "contract_requested"},
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
+         "reason_code": "contract_requested", "play": "advance_deal", "cooldown_hours": 48,
+         "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
+
+        # security review pending — a security questionnaire / vendor review is the gate; a stalled
+        # review kills more deals than price. Keep it moving.
+        {"id": "security_review_pending", "level": "prescriptive", "scope": "person",
+         "when": [{"has_obs": "security_review_started"},
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 3}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
+         "reason_code": "security_review_pending", "play": "follow_up", "cooldown_hours": 96,
+         "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
+
+        # champion changed / left — the person driving the deal is moving on. Re-thread to another
+        # stakeholder before the deal loses its internal sponsor.
+        {"id": "champion_left", "level": "predictive", "scope": "person",
+         "when": [{"has_obs": "champion_change"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 6},
+         "reason_code": "champion_left", "play": "multi_thread", "cooldown_hours": 168,
+         "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
+
+        # budget freeze — spending is on hold. Don't push; nurture so we're first when it thaws.
+        # Slow-burn (long half-life) + long cooldown — a heads-up, not a nag.
+        {"id": "budget_freeze", "level": "predictive", "scope": "person",
+         "when": [{"has_obs": "budget_freeze"}],
+         "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 12},
+         "reason_code": "budget_freeze", "play": "re_engage", "cooldown_hours": 240,
+         "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
     ],
 
     # plays — the artifact L5 renders + the graph event that marks success (D8/D9). Read-only:
@@ -203,6 +262,55 @@ SALES_V1 = {
                             "the biggest driver first."),
             "fallback": {"headline": "Review {entity} deal now",
                          "situation": "At risk: {concerns} · {stage} · {money}"}},
+        # ── deep lifecycle templates (v1.5.0) ──
+        "pricing_objection": {
+            "artifact_kind": "draft_objection_reply",
+            "render_hint": ("Headline: a direct order to answer {entity}'s price concern now, "
+                            "naming them. Situation: the price objection they raised, how long "
+                            "unanswered. Artifact: a concise reply that reframes value (not just "
+                            "discounts), acknowledges the concern, and proposes a next step."),
+            "fallback": {"headline": "Answer {entity}'s price concern now",
+                         "situation": "Price objection open — ball with you"}},
+        "verbal_yes_not_closed": {
+            "artifact_kind": "draft_advance",
+            "render_hint": ("Headline: a direct order to lock the deal with {entity} — they said "
+                            "yes but nothing's been sent. Situation: what they agreed to. Artifact: "
+                            "a short note that sends the concrete next step (order form / kickoff / "
+                            "contract) to convert the verbal yes."),
+            "fallback": {"headline": "Lock the deal with {entity}",
+                         "situation": "Verbal yes — nothing sent to close it yet"}},
+        "contract_requested": {
+            "artifact_kind": "draft_advance",
+            "render_hint": ("Headline: a direct order to send {entity} the contract today — highest "
+                            "intent. Situation: they asked for the contract/MSA/order form. "
+                            "Artifact: a brief covering note to send with the agreement, restating "
+                            "terms and the path to signature."),
+            "fallback": {"headline": "Send {entity} the contract today",
+                         "situation": "They asked for it — don't stall the close"}},
+        "security_review_pending": {
+            "artifact_kind": "draft_followup",
+            "render_hint": ("Headline: a direct order to unblock {entity}'s security review. "
+                            "Situation: the review is the gate, quiet {days}d. Artifact: a note "
+                            "offering the security package (SOC2/DPA/questionnaire) and a named "
+                            "point of contact to keep it moving."),
+            "fallback": {"headline": "Unblock {entity}'s security review",
+                         "situation": "Review is the gate — quiet {days}d"}},
+        "champion_left": {
+            "artifact_kind": "draft_multithread",
+            "render_hint": ("Headline: a direct order to re-thread the {entity} deal — the champion "
+                            "is moving on. Situation: the sponsor change, the key-person risk. "
+                            "Artifact: a warm note asking the outgoing champion for a handover intro "
+                            "to their successor / another stakeholder."),
+            "fallback": {"headline": "Re-thread the {entity} deal now",
+                         "situation": "Champion moving on — secure a new sponsor"}},
+        "budget_freeze": {
+            "artifact_kind": "draft_reengage",
+            "render_hint": ("Headline: a direct order to nurture {entity} through the budget freeze "
+                            "— stay top-of-mind, don't push. Situation: spending on hold. Artifact: "
+                            "a light, value-led touch (a relevant resource / a check-in on the thaw "
+                            "date) that keeps us first in line, no hard ask."),
+            "fallback": {"headline": "Nurture {entity} through the freeze",
+                         "situation": "Budget on hold — stay first in line"}},
     },
 
     # L2 extraction whitelist + L1 hints (domain vocabulary lives here, not in the engine)
@@ -215,7 +323,9 @@ SALES_V1 = {
         "signal_vocab": ["stalled_deal", "objection_open",
                          "buying_signal", "cooling_deal", "single_threaded_deal",
                          "competitor_in_live_deal", "going_dark_after_proposal",
-                         "deal_sentiment_negative", "deal_health"],
+                         "deal_sentiment_negative", "deal_health",
+                         "pricing_objection", "verbal_yes_not_closed", "contract_requested",
+                         "security_review_pending", "champion_left", "budget_freeze"],
     },
     "capture": {"classifier_hints": "sales: deals, pricing, proposals, demos, commitments, follow-ups"},
 }

@@ -17,7 +17,7 @@ from .composer import COMPOSITE_RULE_ID as _COMPOSITE_RULE_ID
 from .composer import compose_deal_health
 from .engine import NodeContext, evaluate, score_rule
 from .rules import rule_from_dict, rules_for_scope
-from .signals_derived import sentiment_facts
+from .signals_derived import deal_facts, sentiment_facts
 
 # cross-entity condition keys — presence in ANY effective rule means we must load neighbourhoods.
 _CROSS_ENTITY_KEYS = {"neighbor_has_obs", "neighbor_no_obs", "neighbor_fact"}
@@ -232,6 +232,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         ctx.baselines = baselines
         ctx.facts.update(derived)                          # derived.momentum / derived.engagement
         ctx.facts.update(sentiment_facts(ctx.obs))         # derived.sentiment / obs_pos / obs_neg
+        if nd.node_type == "deal":                         # F1: deal.status/value from deal.stage/amount
+            ctx.facts.update(deal_facts(ctx.facts))
         if need_neighbors:
             ctx.edge_count, ctx.neighbor_obs, ctx.neighbor_facts = \
                 _neighborhood(nd.node_id, nbr_adj, nbr_obs_idx, nbr_fact_idx)

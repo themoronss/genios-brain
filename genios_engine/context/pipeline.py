@@ -83,6 +83,54 @@ def _norm_email(email: str | None) -> str | None:
     return f"{local}@{dom}" if local and dom else None
 
 
+# F2 — obs-kind normalizer. The LLM emits free-form observation kinds; sales rules read exact
+# canonical strings (has_obs "competitor"/"objection_price"/…). Mapping synonyms → canonical HERE
+# (at commit) makes the deep sales corpus fire deterministically instead of by LLM lottery, and
+# works on both new events and a cache-replay rebuild. Unknown kinds pass through unchanged
+# (stored under their own name — never dropped). Canonical set mirrors signals_derived POS/NEG_OBS.
+_OBS_CANON = {
+    # buying
+    "budget_approved": "budget_approved", "budget_confirmed": "budget_approved",
+    "has_budget": "budget_approved", "budget_available": "budget_approved",
+    "verbal_yes": "verbal_yes", "verbal_commitment": "verbal_yes", "agreed_to_proceed": "next_step_agreed",
+    "next_step_agreed": "next_step_agreed", "next_steps_agreed": "next_step_agreed",
+    "contract_requested": "contract_requested", "send_contract": "contract_requested",
+    "msa_requested": "contract_requested", "order_form_requested": "contract_requested",
+    "security_review_started": "security_review_started", "security_review": "security_review_started",
+    "security_questionnaire": "security_review_started", "vendor_review": "security_review_started",
+    "stakeholder_added": "stakeholder_added", "looping_in": "stakeholder_added", "new_stakeholder": "stakeholder_added",
+    "demo_requested": "demo_requested", "demo_request": "demo_requested",
+    # stage / pricing
+    "pricing_discussed": "pricing_discussed", "pricing_shared": "pricing_discussed",
+    "proposal_sent": "proposal_sent", "quote_sent": "proposal_sent", "proposal_shared": "proposal_sent",
+    # risk
+    "competitor": "competitor", "competitor_mention": "competitor", "competitor_mentioned": "competitor",
+    "other_vendor": "competitor", "rival": "competitor", "alternative_vendor": "competitor",
+    "discount_pressure": "discount_pressure", "discount": "discount_pressure", "price_reduction_request": "discount_pressure",
+    "budget_freeze": "budget_freeze", "budget_frozen": "budget_freeze", "spending_freeze": "budget_freeze", "budget_on_hold": "budget_freeze",
+    "champion_change": "champion_change", "champion_left": "champion_change",
+    "champion_leaving": "champion_change", "stakeholder_left": "champion_change",
+    "legal_review": "legal_review", "redlines": "legal_review", "legal_in_review": "legal_review", "contract_in_legal": "legal_review",
+    "timeline_slip": "timeline_slip", "timeline_delay": "timeline_slip", "pushed_timeline": "timeline_slip",
+    "going_dark": "going_dark", "closed_lost_mention": "closed_lost_mention", "closed_lost": "closed_lost_mention",
+    # objection (typed)
+    "objection": "objection", "concern": "objection",
+    "objection_price": "objection_price", "price_objection": "objection_price", "too_expensive": "objection_price",
+    "objection_timing": "objection_timing", "timing_objection": "objection_timing",
+    "objection_security": "objection_security", "objection_authority": "objection_authority",
+    "objection_integration": "objection_integration",
+    # sentiment
+    "positive_reply": "positive_reply", "negative_reply": "negative_reply", "price_pushback": "price_pushback",
+    "buying_intent": "buying_intent", "churn_risk": "churn_risk",
+}
+
+
+def norm_obs_kind(kind) -> str:
+    """Synonym → canonical obs kind. Lowercased, spaces/hyphens → underscores; unknown kinds kept."""
+    k = str(kind or "note").strip().lower().replace(" ", "_").replace("-", "_")
+    return _OBS_CANON.get(k, k)
+
+
 @dataclass
 class L2Result:
     event_id: str
@@ -291,7 +339,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 fact_n += 1
         for o in obs:
             store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
-                                    kind=str(o.get("kind") or "note"), confidence=ex.relevance,
+                                    kind=norm_obs_kind(o.get("kind")), confidence=ex.relevance,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"text": o.get("evidence_text")}, source=source)
             obs_n += 1
