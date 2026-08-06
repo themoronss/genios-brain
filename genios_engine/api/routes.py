@@ -9,10 +9,10 @@ from genios_engine.capture.coverage.model import capability_of, compute_coverage
 from genios_engine.capture.landing.repository import InMemorySourceEventRepository
 from genios_engine.capture.pipeline import capture_event
 from genios_engine.contracts.connection import Connection
-from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES, AgentEvent,
-                                            HumanEvent)
+from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES, HUMAN_API_SCOPES,
+                                            AgentEvent, HumanEvent)
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
-                                          require_internal, require_scope)
+                                          require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_agent_event_store,
@@ -205,7 +205,9 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err, "orgs": len(orgs)}
 
 
-_last_calibration_at = None            # in-process weekly gate for L6 (module-level; resets on restart)
+# Retained as a compatibility diagnostic only. Calibration authority is the durable
+# ``calibration_runs`` uniqueness key; process memory never decides whether tuning may repeat.
+_last_calibration_at = None
 
 
 def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
@@ -215,7 +217,6 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     auto-mute → bounded nudges) weekly, per active pack per org. Without this, snoozed cards were a
     black hole, expired cards never cleared, and the self-tuning loop stayed inert (built, unscheduled)."""
     from datetime import datetime, timedelta, timezone
-    global _last_calibration_at
     now = datetime.now(timezone.utc)
     sync = run_sync_sweep(mode=mode, limit=limit)
     try:
@@ -223,8 +224,8 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     except Exception:                                        # noqa: BLE001 — never kill the heartbeat
         _log.exception("card lifecycle sweep failed")
         lifecycle = {"error": True}
-    # retention clocks, ENFORCED: raw payloads (30d) + prepared text (180d). purge_expired
-    # existed and was never scheduled — the "short TTL" deletion promise was unmet in prod.
+    # retention clocks, ENFORCED: raw payloads (30d), prepared text (180d), and bounded Layer 4
+    # context payloads. Hash/provenance rows remain after the L4 payload expires, but replay closes.
     retention = {}
     for name, store in (("raw_payloads", _payload_store), ("prepared_content", _prepared_store)):
         try:
@@ -233,6 +234,14 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for %s", name)
             retention[name] = "error"
+    if _graph is not None:
+        try:
+            from genios_engine.reason.store import ReasoningStore
+            retention["reasoning_context_payloads"] = ReasoningStore(
+                engine=_graph.engine).purge_expired_context_payloads(eval_time=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for reasoning_context_payloads")
+            retention["reasoning_context_payloads"] = "error"
     # L6 distribution: enqueue new high/critical cards + the daily digest per org with an
     # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
     # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
@@ -245,10 +254,11 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             _log.exception("distribution pass failed")
             distribution = {"error": True}
     calibration = None
-    if _last_calibration_at is None or (now - _last_calibration_at) >= timedelta(days=7):
+    if _graph is not None:
         from genios_engine.feedback.calibrate import run_calibration
         orgs = {c.org_id for c in _connections.list_active()}
         runs = 0
+        already_ran = 0
         for org in orgs:                                     # weekly: precision + auto-mute + nudges
             try:
                 with _graph.engine.connect() as c:
@@ -256,15 +266,47 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                         "select pack_id from tenant_packs where org_id=:o and state='active'"),
                         {"o": org})]
                 for pid in (packs or ["sales"]):
-                    run_calibration(_graph, org, registry=_registry, pack_id=pid)
-                    runs += 1
+                    result = run_calibration(_graph, org, registry=_registry, pack_id=pid,
+                                             eval_time=now)
+                    runs += int(bool(result.get("applied")))
+                    already_ran += int(bool(result.get("already_ran")))
             except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
                 _log.exception("calibration failed org=%s", org)
-        _last_calibration_at = now
-        calibration = {"orgs": len(orgs), "pack_runs": runs}
-        _log.info("weekly calibration pass complete: %d org(s), %d pack-run(s)", len(orgs), runs)
+        calibration = {"orgs": len(orgs), "pack_runs": runs,
+                       "already_ran": already_ran}
+        _log.info("calibration pass complete: %d org(s), %d applied pack-run(s)", len(orgs), runs)
+    # L2 GRAPH MAINTENANCE — entity lifecycle + a health measurement, per org.
+    #
+    # Here rather than in the L2 drain because both are O(graph), not O(event): running
+    # them per event would make every email pay for a whole-tenant scan. Health is
+    # recorded rather than just returned, because one number says little and the same
+    # number falling over three weeks says a connector broke, a merge went wrong, or
+    # correlation stopped reaching anything.
+    graph_maintenance = None
+    if _graph is not None:
+        from genios_engine.context.health import (compute_health, purge_old_health,
+                                                   refresh_node_lifecycle)
+        orgs = {c.org_id for c in _connections.list_active()}
+        checked = 0
+        unhealthy = []
+        for org in orgs:
+            try:
+                refresh_node_lifecycle(_graph, org, eval_time=now)
+                health = compute_health(_graph, org, eval_time=now)
+                purge_old_health(_graph, org)
+                checked += 1
+                if health.overall < 80:
+                    unhealthy.append({"org_id": org, "overall": health.overall,
+                                      "issues": [i["kind"] for i in health.issues]})
+            except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
+                _log.exception("graph maintenance failed org=%s", org)
+        graph_maintenance = {"orgs_checked": checked, "unhealthy": unhealthy}
+        if unhealthy:
+            _log.warning("graph health below threshold for %d org(s): %s",
+                         len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
-            "distribution": distribution, "calibration": calibration}
+            "distribution": distribution, "calibration": calibration,
+            "graph_maintenance": graph_maintenance}
 
 
 @router.post("/ingest/all")
@@ -397,6 +439,8 @@ def workspace_kill(action: str, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     for this org 503s (checked in get_current_org, cache-invalidated for immediate effect); resume
     lifts it. Uses get_auth_ctx (NOT get_current_org) so a paused owner can still call resume.
     Complements per-source pause (/connections/{id}/pause) and the global kill."""
+    if ctx.scopes is not None:
+        raise HTTPException(403, "owner credential required")
     org_id = ctx.org_id
     enabled = {"pause": False, "resume": True}.get(action)
     if enabled is None:
@@ -748,11 +792,12 @@ async def composio_webhook(request: Request,
 
 # ── L2 context graph ─────────────────────────────────────────────────────────────
 @router.post("/context/process")
-def context_process(limit: int = 50, org_id: str = Depends(get_current_org)) -> dict:
+def context_process(limit: int = 50, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """L1→L2 handoff for the authed tenant (org from credential — an unauthenticated caller can
     no longer trigger Haiku spend). limit clamped so it can't be driven unbounded."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured (needs DATABASE_URL)")
+    org_id = ctx.org_id
     limit = max(1, min(int(limit), 200))
     from genios_engine.context.runner import process_pending
     return process_pending(org_id=org_id, store=_graph, llm=_llm,
@@ -760,10 +805,11 @@ def context_process(limit: int = 50, org_id: str = Depends(get_current_org)) -> 
 
 
 @router.post("/context/reason")
-def context_reason(org_id: str = Depends(get_current_org)) -> dict:
+def context_reason(ctx: AuthCtx = Depends(require_owner)) -> dict:
     """L3: evaluate deterministic rules over the authed tenant's graph → scored signals (no LLM)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
+    org_id = ctx.org_id
     from genios_engine.reason.runner import run_all as run_l3
     return run_l3(org_id=org_id, store=_graph, registry=_registry)
 
@@ -790,10 +836,31 @@ def context_signals(status: str = "open", org_id: str = Depends(get_current_org)
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
     with _graph.engine.connect() as c:
-        rows = c.execute(text(
-            "select signal_id, rule_id, subject_node_id, score, reason_code, play, "
-            "score_inputs, evidence from signals where org_id=:o and status=:s "
-            "order by score desc"), {"o": org_id, "s": status}).fetchall()
+        if status == "open":
+            from genios_engine.reason.authority import (
+                AUTHORITATIVE_REASON_CODE_SQL,
+                AUTHORITATIVE_SCORE_INPUTS_SQL,
+                AUTHORITATIVE_SCORE_SQL,
+                AUTHORITATIVE_SIGNAL_JOINS,
+                AUTHORITATIVE_SIGNAL_PREDICATE,
+                authority_time,
+            )
+            rows = c.execute(text(
+                "select s.signal_id, regexp_replace(rr.capability_id, '^.*\\.', '') "
+                "as rule_id, s.subject_node_id, " + AUTHORITATIVE_SCORE_SQL + " as score, "
+                + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code, "
+                "selected_rc.play_id as play, " + AUTHORITATIVE_SCORE_INPUTS_SQL +
+                " as score_inputs, selected_rc.evidence_refs as evidence "
+                "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+                " where s.org_id=:o and s.status='open' and " +
+                AUTHORITATIVE_SIGNAL_PREDICATE +
+                " order by selected_rc.final_utility_bp desc, s.signal_id"),
+                {"o": org_id, "authority_time": authority_time()}).fetchall()
+        else:
+            rows = c.execute(text(
+                "select signal_id, rule_id, subject_node_id, score, reason_code, play, "
+                "score_inputs, evidence from signals where org_id=:o and status=:s "
+                "order by score desc"), {"o": org_id, "s": status}).fetchall()
     return {"signals": [dict(r._mapping) for r in rows]}
 
 
@@ -1270,10 +1337,12 @@ def context_lifecycle(limit: int = 50, org_id: str = Depends(get_current_org)) -
 
 # ── human / agent events ─────────────────────────────────────────────────────────
 @router.post("/human-events")
-def human_event(ev: HumanEvent, org_id: str = Depends(get_current_org)) -> dict:
+def human_event(ev: HumanEvent, ctx: AuthCtx = Depends(require_owner)) -> dict:
     if not ev.is_known_type():
         raise HTTPException(422, f"unknown human event type: {ev.type}")
-    ev.org_id = org_id                  # bind to the authed tenant — body value never trusted
+    org_id = ctx.org_id
+    ev.org_id = org_id                  # bind tenant + actor to the owner credential
+    ev.actor_id = ctx.actor_id or "org_owner"
     _human_events.add(ev)               # the correction ledger (kept — audit/undo reads it)
     # ONE DOOR: the event also enters the graph's world as a SourceEvent, so L2 actually
     # learns what the human said (before: side table only, the twin never saw it).
@@ -1291,10 +1360,11 @@ class RegisterAgent(BaseModel):
 
 
 @router.post("/agents/register")
-def register_agent(body: RegisterAgent, org_id: str = Depends(get_current_org)) -> dict:
+def register_agent(body: RegisterAgent, ctx: AuthCtx = Depends(require_owner)) -> dict:
     # Only an authenticated tenant (owner session) may mint an agent for ITS OWN org. A grant may
     # be an L1 outcome action OR an L5 Agent-API scope (§5.16) — a key can carry either.
-    allowed = AGENT_ACTIONS | AGENT_API_SCOPES
+    org_id = ctx.org_id
+    allowed = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES
     bad = [a for a in body.allowed_actions if a not in allowed]
     if bad:
         raise HTTPException(422, f"unknown actions/scopes: {bad}")
@@ -1332,6 +1402,14 @@ def _owns_card(card_id: str, org_id: str) -> dict:
     return card
 
 
+def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
+    """Assert tenant ownership and that the originating Layer 4 authority is still live."""
+    card = _card_store.get_authoritative_card(card_id, org_id)
+    if card is None:
+        raise HTTPException(404, "card not found or no longer actionable")
+    return card
+
+
 @router.post("/deliver/build")
 def deliver_build(org_id: str = Depends(get_current_org)) -> dict:
     """E0→E1→E3→persist: turn THIS tenant's open, un-carded gated signals into cards (idempotent)."""
@@ -1349,22 +1427,24 @@ def cards_sweep(_internal: None = Depends(require_internal)) -> dict:
 
 
 @router.post("/feedback/calibrate")
-def feedback_calibrate(org_id: str = Depends(get_current_org)) -> dict:
-    """L6 weekly job for the authenticated tenant: 28-day per-rule precision → auto-mute harmful
-    rules (armed day one) / un-mute recovered ones. Labels → counters → protection."""
+def feedback_calibrate(pack_id: str = "sales",
+                       org_id: str = Depends(get_current_org)) -> dict:
+    """Tenant-safe calibration preview. Mutation is scheduler/internal-only and durably claimed."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
-    from genios_engine.feedback.calibrate import run_calibration
-    return run_calibration(_graph, org_id, registry=_registry)
+    from genios_engine.feedback.calibrate import precision_28d
+    return {"org_id": org_id, "pack_id": pack_id, "applied": False,
+            "preview": precision_28d(_graph, org_id, pack_id=pack_id)}
 
 
 @router.get("/feedback/precision")
-def feedback_precision(org_id: str = Depends(get_current_org)) -> dict:
+def feedback_precision(pack_id: str = "sales",
+                       org_id: str = Depends(get_current_org)) -> dict:
     """The per-rule 28-day precision counters L6 reads (transparency — the moat is a table)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from genios_engine.feedback.calibrate import precision_28d
-    return {"rules": precision_28d(_graph, org_id)}
+    return {"pack_id": pack_id, "rules": precision_28d(_graph, org_id, pack_id=pack_id)}
 
 
 @router.post("/retention/purge")
@@ -1376,23 +1456,31 @@ def retention_purge(_internal: None = Depends(require_internal)) -> dict:
 
 
 @router.get("/cards")
-def list_cards(assignee: str | None = None, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+def list_cards(assignee: str | None = None,
+               ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """Dashboard queue read. org from credential; admin (all queues) only for an owner session
     (JWT / full-scope key), never a caller-supplied flag."""
     _require_l5()
     admin = ctx.scopes is None                       # owner/dashboard session sees all queues
-    return {"cards": _card_store.queue(ctx.org_id, assignee=assignee, admin=admin)}
+    effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    return {"cards": _card_store.queue(
+        ctx.org_id, assignee=effective_assignee, admin=admin)}
 
 
 @router.get("/cards/{card_id}")
-def get_card(card_id: str, org_id: str = Depends(get_current_org)) -> dict:
+def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """Full card.v1 — only if it belongs to the authenticated tenant."""
     _require_l5()
-    return _owns_card(card_id, org_id)
+    card = _owns_authoritative_card(card_id, ctx.org_id)
+    actor_id = ctx.actor_id or ctx.agent_id
+    if (ctx.scopes is not None and card.get("assignee") is not None
+            and card.get("assignee") not in {actor_id, ctx.agent_id}):
+        raise HTTPException(403, "card is assigned to a different seat")
+    return card
 
 
 class CardAction(BaseModel):
-    actor: str                              # the seat pressing the button
+    actor: str | None = None                # legacy input; authenticated identity always wins
     action: str                             # run_play | do_it_myself | snooze | wrong | requeue
     reason: str | None = None               # optional, for 'wrong'
     snooze_option: str | None = None        # 4h | tomorrow_09 | 3d | custom
@@ -1400,18 +1488,22 @@ class CardAction(BaseModel):
 
 
 @router.post("/cards/{card_id}/action")
-def card_action(card_id: str, body: CardAction, org_id: str = Depends(get_current_org)) -> dict:
+def card_action(card_id: str, body: CardAction,
+                ctx: AuthCtx = Depends(require_scope("cards.act"))) -> dict:
     """E8 · the round trip. Card must belong to the authed tenant. Every button + requeue lands
     as an L1 human event, a card_event and a lifecycle transition."""
     _require_l5()
-    _owns_card(card_id, org_id)
+    org_id = ctx.org_id
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     from genios_engine.deliver.actions import ingest_action
     out = ingest_action(card_store=_card_store, graph=_graph, org_id=org_id,
-                        card_id=card_id, actor=body.actor, action=body.action,
+                        card_id=card_id, actor=actor_id, action=body.action,
                         reason=body.reason, snooze_option=body.snooze_option,
-                        custom_until=body.custom_until)
+                        custom_until=body.custom_until,
+                        allow_any_assignee=ctx.scopes is None)
     if not out.get("ok"):
-        raise HTTPException(404 if out.get("error") == "orphan_action" else 422, out.get("error"))
+        status = 403 if out.get("error") == "assigned_to_different_seat" else 422
+        raise HTTPException(status, out)
     return out
 
 
@@ -1421,26 +1513,31 @@ class ContextMatch(BaseModel):
 
 
 @router.post("/context/match")
-def context_match(body: ContextMatch, org_id: str = Depends(get_current_org)) -> dict:
+def context_match(body: ContextMatch,
+                  ctx: AuthCtx = Depends(require_scope("cards.act"))) -> dict:
     """E7 round trip (§5.14). On-device matcher sends exactly {card_id, matched_tag}; card must
     belong to the authed tenant. Law 5: the server never learns what the user looked at."""
     _require_l5()
-    card = _owns_card(body.card_id, org_id)
-    if body.matched_tag not in (card.get("context_tags") or []):
-        raise HTTPException(422, "matched_tag is not one of this card's context_tags")
-    # only surface a card that is still live — never resurrect an acted/expired/resolved one
-    surfaced = _card_store.transition(body.card_id, org_id, "surfaced", "card.surfaced",
-                                      cause="context_match", detail={"tag": body.matched_tag},
-                                      allowed_from=("queued", "snoozed", "claimed", "surfaced"))
-    return {"surfaced": surfaced, "card_id": body.card_id, "cause": "context_match"}
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    result = _card_store.surface_context_match(
+        ctx.org_id, body.card_id, body.matched_tag, actor_id=actor_id,
+        allow_any_assignee=ctx.scopes is None)
+    if not result.get("ok"):
+        status = 403 if result.get("error") == "assigned_to_different_seat" else 422
+        raise HTTPException(status, result)
+    return {**result, "cause": "context_match"}
 
 
 @router.get("/digest")
-def digest(assignee: str | None = None, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+def digest(assignee: str | None = None,
+           ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """The 08:30 morning summary (§5.15), scoped to the authenticated tenant."""
     _require_l5()
     from genios_engine.deliver.digest import build_digest
-    return build_digest(_card_store, ctx.org_id, assignee=assignee, admin=ctx.scopes is None)
+    admin = ctx.scopes is None
+    effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    return build_digest(
+        _card_store, ctx.org_id, assignee=effective_assignee, admin=admin)
 
 
 class Seat(BaseModel):
@@ -1450,16 +1547,34 @@ class Seat(BaseModel):
 
 
 @router.post("/seats")
-def upsert_seat(body: Seat, org_id: str = Depends(get_current_org)) -> dict:
+def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Seed a seat for the authenticated tenant (org from credential, never from the body)."""
     _require_l5()
+    org_id = ctx.org_id
+    if body.role not in {"admin", "member"}:
+        raise HTTPException(422, "role must be admin or member")
+    seat_id = body.seat_id.strip()
+    if not seat_id or len(seat_id) > 128:
+        raise HTTPException(422, "seat_id must be between 1 and 128 characters")
     from sqlalchemy import text
     with _card_store.engine.begin() as c:
+        tier = str(c.execute(text(
+            "select subscription_tier from orgs where id=:o for share"),
+            {"o": org_id}).scalar() or "trial").lower()
+        seat_limit = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}.get(tier, 2)
+        exists = c.execute(text(
+            "select 1 from org_seats where org_id=:o and seat_id=:s"),
+            {"o": org_id, "s": seat_id}).first() is not None
+        active = int(c.execute(text(
+            "select count(*) from org_seats where org_id=:o and active"),
+            {"o": org_id}).scalar() or 0)
+        if not exists and active >= seat_limit:
+            raise HTTPException(409, f"seat limit reached for the {tier} plan ({seat_limit})")
         c.execute(text("insert into org_seats (org_id, seat_id, email, role, active) "
                        "values (:o,:s,:e,:r,true) on conflict (org_id, seat_id) do update set "
                        "email=excluded.email, role=excluded.role, active=true"),
-                  {"o": org_id, "s": body.seat_id, "e": body.email, "r": body.role})
-    return {"upserted": True, "seat_id": body.seat_id, "role": body.role}
+                  {"o": org_id, "s": seat_id, "e": body.email, "r": body.role})
+    return {"upserted": True, "seat_id": seat_id, "role": body.role}
 
 
 # ── L5 · Agent API (§5.16) · metered read-and-claim; execution stays client-side ────

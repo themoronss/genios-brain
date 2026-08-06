@@ -92,6 +92,7 @@ def new_api_key() -> tuple[str, str, str]:
 class AuthCtx:
     org_id: str
     agent_id: str | None = None
+    actor_id: str | None = None
     scopes: list[str] | None = None      # None = full owner scope (dashboard JWT / legacy key)
     plan_status: str = "active"
     source: str = "legacy"               # jwt | api_key | legacy
@@ -143,7 +144,8 @@ def verify_bearer(token: str) -> AuthCtx:
             ok = c.execute(text("select 1 from orgs where id=:o"), {"o": org_id}).first()
         if ok is None:
             raise HTTPException(401, {"code": "TOKEN_REVOKED", "message": "Session no longer valid."})
-        return AuthCtx(org_id=org_id, scopes=None, source="jwt")
+        return AuthCtx(org_id=org_id, actor_id=str(payload.get("email") or "org_owner"),
+                       scopes=None, source="jwt")
 
     # Path 2 — gn_live_ API key
     if not token.startswith("gn_live_"):
@@ -157,6 +159,7 @@ def verify_bearer(token: str) -> AuthCtx:
         if blob.get("plan_status") == "suspended":
             raise HTTPException(403, {"error": "ACCOUNT_SUSPENDED"})
         return AuthCtx(org_id=blob["org_id"], agent_id=blob.get("agent_id"),
+                       actor_id=blob.get("actor_id") or blob.get("agent_id") or "scoped_api_key",
                        scopes=blob.get("scopes"), plan_status=blob.get("plan_status", "active"),
                        source="api_key")
 
@@ -171,14 +174,17 @@ def verify_bearer(token: str) -> AuthCtx:
             if row2 is None:
                 cache.set_json(f"apikey:{hashed}", 30, {"org_id": "", "plan_status": "invalid"})
                 raise HTTPException(401, "Invalid API key")
-            ctx = AuthCtx(org_id=row2.org_id, scopes=None, plan_status=row2.plan_status or "active",
-                          source="legacy")
+            ctx = AuthCtx(org_id=row2.org_id, actor_id="org_primary_key", scopes=None,
+                          plan_status=row2.plan_status or "active", source="legacy")
         else:
             c.execute(text("update api_keys set last_used_at=now() where key_hash=:h"), {"h": hashed})
-            ctx = AuthCtx(org_id=row.org_id, agent_id=row.agent_id, scopes=list(row.scopes or []),
+            ctx = AuthCtx(org_id=row.org_id, agent_id=row.agent_id,
+                          actor_id=row.agent_id or f"api_key:{hashed[:12]}",
+                          scopes=list(row.scopes or []),
                           plan_status=row.plan_status or "active", source="api_key")
     cache.set_json(f"apikey:{hashed}", _API_KEY_CACHE_TTL,
-                   {"org_id": ctx.org_id, "agent_id": ctx.agent_id, "scopes": ctx.scopes,
+                   {"org_id": ctx.org_id, "agent_id": ctx.agent_id,
+                    "actor_id": ctx.actor_id, "scopes": ctx.scopes,
                     "plan_status": ctx.plan_status})
     if ctx.plan_status == "suspended":
         raise HTTPException(403, {"error": "ACCOUNT_SUSPENDED"})
@@ -231,8 +237,14 @@ def check_org_kill(org_id: str) -> None:
 
 
 def get_current_org(ctx: AuthCtx = Depends(get_auth_ctx)) -> str:
-    """The org_id, resolved from the credential. Endpoints use this INSTEAD of an org_id query
-    param, so a caller can only ever touch their own tenant. Also enforces the per-org kill."""
+    """Resolve an owner tenant for legacy/dashboard routes.
+
+    Scoped credentials are deny-by-default here.  A route intentionally exposed to an agent or
+    extension must name its grant with ``require_scope``; otherwise a read-only key could inherit
+    every historical dashboard mutation merely because both credentials belong to one tenant.
+    """
+    if ctx.scopes is not None:
+        raise HTTPException(403, "explicit scoped endpoint required for this credential")
     check_org_kill(ctx.org_id)
     return ctx.org_id
 
@@ -242,8 +254,17 @@ def require_scope(scope: str):
     def _dep(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
         if not ctx.has_scope(scope):
             raise HTTPException(403, f"scope '{scope}' not granted")
+        check_org_kill(ctx.org_id)
         return ctx
     return _dep
+
+
+def require_owner(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """Owner-only mutation boundary. Scoped keys cannot mint or revoke their way to more power."""
+    if ctx.scopes is not None:
+        raise HTTPException(403, "owner credential required")
+    check_org_kill(ctx.org_id)
+    return ctx
 
 
 def require_internal(x_internal_token: str | None = Header(None)) -> None:

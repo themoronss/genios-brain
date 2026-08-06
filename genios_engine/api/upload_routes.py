@@ -18,6 +18,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.capture.internal_knowledge import (authority_rank_for, is_canon,
+                                                      normalize_kind)
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.ids import new_id
@@ -78,16 +80,29 @@ def _chunk(text_content: str) -> list[str]:
     return [t[i:i + CHUNK_CHARS] for i in range(0, len(t), CHUNK_CHARS)][:MAX_CHUNKS]
 
 
-def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str, uploader_email: str) -> None:
+def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
+                uploader_email: str, internal_kind: str | None = None) -> None:
     """One upload chunk → THE ONE DOOR (capture_event via intake): deduped, traced,
     W-05-whitelisted, payload + prepared text persisted — identical to a connector sync.
     (Was a hand-rolled SQL insert that skipped the gate, the trace and the seam.)
     source/object_type ('upload','document_chunk') miss the structured registry, so the
-    chunk takes the LLM extraction lane."""
+    chunk takes the LLM extraction lane.
+
+    A tag that names one of INTERNAL_KINDS makes the file COMPANY CANON: the chunks land
+    in the `internal` family at authority rank 4, so an uploaded price list outranks what
+    a billing system inferred. An unrecognised tag stays an ordinary label and the chunk
+    keeps observed authority — the id shape is untouched either way, so `_ingest`'s
+    reconciliation prefix still matches."""
     from genios_engine.capture.intake import ingest_manual
     ingest_manual(org_id=org_id, source="upload", object_type="document_chunk",
                   source_object_id=f"{file_id}:chunk_{idx}", body=body, subject=subject,
                   actor_type="internal_user", actor_email=uploader_email,
+                  internal_kind=internal_kind,
+                  # One canon node per FILE, not per chunk. Keying on the event would give
+                  # a 30-chunk pricing PDF thirty separate "Pricing" entities, each holding
+                  # a slice of one document — the graph would look like thirty price lists.
+                  raw_extra=({"knowledge_key": file_id, "title": subject}
+                             if internal_kind else None),
                   repo=_repo, payload_store=_payloads, prepared_store=_prepared,
                   trace_repo=_trace_repo, connection_id="upload")
 
@@ -138,7 +153,14 @@ def _row(r) -> dict:
         "entities_count": int(r.entities_count or 0),
         "contacts_count": int(r.entities_count or 0),   # UI maps contacts→entities
         "progress": _PROGRESS.get(r.status, 0),
-        "error": r.error, "authority": 1.0,
+        "error": r.error,
+        # Reported, not asserted. This was a hardcoded 1.0 on every row while the facts
+        # underneath all landed at rank 2 — the UI claimed an authority the graph did not
+        # honour, on a 0–1 scale nothing else in the API uses. Now it is the real rank,
+        # matching /entity and the fact read models (2 observed · 4 company canon).
+        "authority": authority_rank_for(r.tag),
+        "internal_kind": normalize_kind(r.tag),
+        "is_canon": is_canon(r.tag),
     }
 
 
@@ -175,17 +197,28 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
         uploader = c.execute(text("select email from orgs where id=:o"), {"o": org}).scalar()
     uploader = uploader or f"owner@{org}"
 
-    with _graph.engine.begin() as c:
-        c.execute(text(
-            "insert into resource_uploads (file_id, org_id, file_name, file_type, file_size_bytes, "
-            "storage_path, tag, status, source_item_prefix, chunks, error, uploaded_by) "
-            "values (:fid,:o,:fn,:ft,:sz,:sp,:tag,:st,:pref,:ch,:err,:by)"),
-            {"fid": file_id, "o": org, "fn": name, "ft": _ext(name), "sz": len(data),
-             "sp": storage_path, "tag": tag, "st": status, "pref": prefix, "ch": len(chunks),
-             "err": err, "by": uploader})
+    try:
+        with _graph.engine.begin() as c:
+            c.execute(text(
+                "insert into resource_uploads (file_id, org_id, file_name, file_type, "
+                "file_size_bytes, storage_path, tag, status, source_item_prefix, chunks, error, "
+                "uploaded_by) values (:fid,:o,:fn,:ft,:sz,:sp,:tag,:st,:pref,:ch,:err,:by)"),
+                {"fid": file_id, "o": org, "fn": name, "ft": _ext(name), "sz": len(data),
+                 "sp": storage_path, "tag": tag, "st": status, "pref": prefix, "ch": len(chunks),
+                 "err": err, "by": uploader})
+    except Exception:
+        # In particular, an account deletion may revoke the org while this upload waits on its FK
+        # lock. Never leave the bytes orphaned when the metadata insert cannot commit.
+        if storage_path:
+            try:
+                Path(storage_path).unlink(missing_ok=True)
+            except OSError:
+                _log.exception("failed to clean upload after metadata insert failure: %s", file_id)
+        raise
 
+    kind = normalize_kind(tag)          # a canon tag promotes the whole file to rank 4
     for i, ch in enumerate(chunks):
-        _emit_chunk(org, file_id, i, name, ch, uploader)
+        _emit_chunk(org, file_id, i, name, ch, uploader, internal_kind=kind)
     if chunks:
         background_tasks.add_task(_ingest, org, file_id, prefix)
 
@@ -222,6 +255,10 @@ def delete_upload(org_id: str, file_id: str, org: str = Depends(_org)) -> dict:
             # remove the facts learned from THIS file + its capture artifacts (raw payload,
             # prepared text, observations). Shared graph_nodes are left in place (they may
             # be referenced by other sources).
+            # Lock/bump the tenant graph version in this SAME transaction before changing
+            # graph state. Layer 4 holds a shared lock on this row while publishing decisions,
+            # so an erasure can never commit halfway through a reasoning emission window.
+            _graph.bump_version(c, org)
             c.execute(text("delete from graph_facts where org_id=:o and created_by_event_id = any(:e)"),
                       {"o": org, "e": evids})
             c.execute(text("delete from graph_observations where org_id=:o "

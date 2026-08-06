@@ -9,18 +9,22 @@ never learned what users explicitly told it."""
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 
 from genios_engine.capture.connectors.base import RawObject
+from genios_engine.capture.internal_knowledge import INTERNAL_KINDS, normalize_kind
 from genios_engine.capture.pipeline import CaptureResult, capture_event
 from genios_engine.contracts.events import AgentEvent, HumanEvent
+from genios_engine.platform.canonical import semantic_hash
 
 
 def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_id: str,
                   body: str, subject: str | None = None,
                   actor_type: str = "internal_user", actor_email: str | None = None,
                   occurred_at: datetime | None = None,
-                  raw_extra: dict | None = None,
+                  raw_extra: dict | None = None, internal_kind: str | None = None,
+                  content_version: str | None = None,
                   repo, payload_store=None, prepared_store=None, trace_repo=None,
                   connection_id: str = "manual") -> CaptureResult:
     """One deliberately-provided object → the full L1 pipeline. Idempotent via the
@@ -29,11 +33,61 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
         source=source, object_type=object_type, source_object_id=source_object_id,
         occurred_at=occurred_at or datetime.now(timezone.utc),
         actor_type=actor_type, actor_email=actor_email,
+        internal_kind=internal_kind, content_version=content_version,
         raw={"body": body or "", "subject": subject or "", **(raw_extra or {})},
     )
     return capture_event(raw, org_id=org_id, connection_id=connection_id, repo=repo,
                          payload_store=payload_store, prepared_store=prepared_store,
                          trace_repo=trace_repo)
+
+
+def ingest_internal_knowledge(*, org_id: str, kind: str, title: str, body: str,
+                              key: str | None = None, author_email: str | None = None,
+                              occurred_at: datetime | None = None,
+                              repo, payload_store=None, prepared_store=None,
+                              trace_repo=None) -> CaptureResult:
+    """The company writing down something about ITSELF → the one door, at canon authority.
+
+    `kind` must be one of internal_knowledge.INTERNAL_KINDS; anything else is refused
+    here rather than silently demoted downstream, because the caller asked for canon and
+    a typo would quietly hand it observed authority instead.
+
+    SUPERSEDES, not append. The dedup key is (key, semantic hash of the content):
+
+      * re-submitting identical content       → same key → duplicate, no re-land
+      * editing the policy and re-submitting  → new hash → new key → it re-lands and
+        the graph updates, exactly like a CRM deal whose stage changed
+
+    `key` defaults to a slug of the title, so "Refund Policy" edited twice is ONE
+    evolving assertion rather than three competing ones. Pass an explicit key when the
+    title itself changes but the subject does not.
+    """
+    canonical = normalize_kind(kind)
+    if canonical is None:
+        raise ValueError(
+            f"unknown internal knowledge kind {kind!r}; expected one of "
+            f"{', '.join(sorted(INTERNAL_KINDS))}")
+    body = (body or "").strip()
+    if not body:
+        raise ValueError("internal knowledge needs a body — an empty assertion is not canon")
+    subject = (title or "").strip() or canonical
+    slug = key or _slug(subject)
+    return ingest_manual(
+        org_id=org_id, source="internal", object_type=canonical,
+        source_object_id=f"{canonical}:{slug}",
+        content_version=semantic_hash({"title": subject, "body": body}),
+        body=body, subject=subject,
+        actor_type="internal_user", actor_email=author_email,
+        occurred_at=occurred_at, internal_kind=canonical,
+        raw_extra={"internal_kind": canonical, "title": subject, "knowledge_key": slug},
+        repo=repo, payload_store=payload_store, prepared_store=prepared_store,
+        trace_repo=trace_repo, connection_id="knowledge")
+
+
+def _slug(text: str) -> str:
+    """Title → a stable identity for the assertion. Case and punctuation must not fork
+    one policy into two ('Refund policy' and 'refund-policy' are the same statement)."""
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:80] or "untitled"
 
 
 def _dict_text(d: dict) -> str:

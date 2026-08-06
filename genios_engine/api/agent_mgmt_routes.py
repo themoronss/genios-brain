@@ -16,7 +16,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.platform.auth import get_current_org, hash_key, invalidate_key_cache
+from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, hash_key, invalidate_key_cache,
+                                         require_owner)
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.wiring import make_graph_store
 
@@ -58,7 +59,8 @@ def _summary(c, r, org_id: str) -> dict:
 
 
 @router.get("/v1/agents")
-def list_agents(org_id: str = Depends(get_current_org)) -> dict:
+def list_agents(ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _graph.engine.connect() as c:
         rows = c.execute(text(
             "select agent_id, name, description, status, scope, scope_version, is_default, "
@@ -70,9 +72,10 @@ def list_agents(org_id: str = Depends(get_current_org)) -> dict:
 
 
 @router.get("/v1/agents/me")
-def whoami(org_id: str = Depends(get_current_org)) -> dict:
-    # A dashboard (owner) session is not itself a scoped agent.
-    return {"org_id": org_id, "agent_id": None, "scope_source": "owner", "scope": dict(_DEFAULT_SCOPE)}
+def whoami(ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+    return {"org_id": ctx.org_id, "agent_id": ctx.agent_id,
+            "scope_source": "owner" if ctx.scopes is None else "credential",
+            "scope": dict(_DEFAULT_SCOPE) if ctx.scopes is None else None}
 
 
 class CreateAgent(BaseModel):
@@ -105,7 +108,8 @@ def _clean_webhook_url(url: str | None) -> str | None:
 
 
 @router.post("/v1/agents")
-def create_agent(body: CreateAgent, org_id: str = Depends(get_current_org)) -> dict:
+def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     aid = (body.agent_id or "").strip()
     if not aid or len(aid) < 2:
         raise HTTPException(422, {"error": "invalid_agent_id", "message": "agent_id required (≥2 chars)"})
@@ -157,7 +161,8 @@ def _get_agent(c, org_id: str, aid: str):
 
 
 @router.get("/v1/agents/{aid}")
-def get_agent(aid: str, org_id: str = Depends(get_current_org)) -> dict:
+def get_agent(aid: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _graph.engine.connect() as c:
         r = _get_agent(c, org_id, aid)
         base = _summary(c, r, org_id)
@@ -173,7 +178,9 @@ class ScopeUpdate(BaseModel):
 
 
 @router.patch("/v1/agents/{aid}/scope")
-def edit_scope(aid: str, body: ScopeUpdate, org_id: str = Depends(get_current_org)) -> dict:
+def edit_scope(aid: str, body: ScopeUpdate,
+               ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     scope = _scope(body.scope)
     with _graph.engine.begin() as c:
         _get_agent(c, org_id, aid)
@@ -189,9 +196,11 @@ class WebhookUpdate(BaseModel):
 
 
 @router.patch("/v1/agents/{aid}/webhook")
-def set_webhook(aid: str, body: WebhookUpdate, org_id: str = Depends(get_current_org)) -> dict:
+def set_webhook(aid: str, body: WebhookUpdate,
+                ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Register / rotate / clear an agent's proactive-push webhook. Setting a URL mints a fresh
     signing secret returned ONCE (rotating the URL rotates the secret). Empty → poll-only."""
+    org_id = ctx.org_id
     url = _clean_webhook_url(body.webhook_url)
     with _graph.engine.begin() as c:
         _get_agent(c, org_id, aid)
@@ -217,7 +226,9 @@ class KeyRotate(BaseModel):
 
 
 @router.post("/v1/agents/{aid}/keys")
-def rotate_key(aid: str, body: KeyRotate, org_id: str = Depends(get_current_org)) -> dict:
+def rotate_key(aid: str, body: KeyRotate,
+               ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     raw, prefix, key_hash = _mint_key()
     with _graph.engine.begin() as c:
         old = _get_agent(c, org_id, aid)
@@ -240,7 +251,8 @@ def rotate_key(aid: str, body: KeyRotate, org_id: str = Depends(get_current_org)
 
 
 @router.delete("/v1/agents/{aid}")
-def archive_agent(aid: str, org_id: str = Depends(get_current_org)) -> dict:
+def archive_agent(aid: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _graph.engine.begin() as c:
         _get_agent(c, org_id, aid)
         hashes = [r.key_hash for r in c.execute(text(
@@ -258,7 +270,9 @@ def archive_agent(aid: str, org_id: str = Depends(get_current_org)) -> dict:
 
 
 @router.get("/v1/agents/{aid}/audit")
-def agent_audit(aid: str, limit: int = 50, org_id: str = Depends(get_current_org)) -> dict:
+def agent_audit(aid: str, limit: int = 50,
+                ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _graph.engine.connect() as c:
         _get_agent(c, org_id, aid)
         rows = c.execute(text(
@@ -276,7 +290,8 @@ def agent_audit(aid: str, limit: int = 50, org_id: str = Depends(get_current_org
 
 
 @router.get("/v1/agents/{aid}/grants")
-def get_grants(aid: str, org_id: str = Depends(get_current_org)) -> dict:
+def get_grants(aid: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _graph.engine.connect() as c:
         _get_agent(c, org_id, aid)
         granted = [dict(r) for r in c.execute(text(
@@ -301,7 +316,9 @@ class GrantsSet(BaseModel):
 
 
 @router.put("/v1/agents/{aid}/grants")
-def set_grants(aid: str, body: GrantsSet, org_id: str = Depends(get_current_org)) -> dict:
+def set_grants(aid: str, body: GrantsSet,
+               ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _graph.engine.begin() as c:
         _get_agent(c, org_id, aid)
         c.execute(text("delete from agent_grants where org_id=:o and agent_id=:a"),

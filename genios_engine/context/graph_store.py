@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.context.identity import register_node_identity
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
 
@@ -80,6 +81,13 @@ class GraphStore:
                 "select node_id from graph_nodes where org_id=:o and canonical_key=:k "
                 "and valid_to is null limit 1"), {"o": org_id, "k": canonical_key}).first()
             if row:
+                # Re-register on every sighting, not just at creation: a node's display
+                # name usually arrives AFTER its anchor did (an email gives you acme.io
+                # today and the words "Acme Technologies" next week), and that later name
+                # is exactly the key a prose mention needs to find it by.
+                register_node_identity(conn, org_id=org_id, node_id=row.node_id,
+                                       node_type=node_type, canonical_key=canonical_key,
+                                       display_name=display_name, event_id=event_id)
                 return row.node_id
         node_id = new_id("node")
         conn.execute(text(
@@ -88,6 +96,12 @@ class GraphStore:
             "values (:id, 1, :o, :nt, :k, :dn, :st, :ev)"),
             {"id": node_id, "o": org_id, "nt": node_type, "k": canonical_key,
              "dn": display_name, "st": "strong" if canonical_key else "weak", "ev": event_id})
+        # Claim the keys this node can be found by. A key already held by ANOTHER node
+        # raises a merge proposal and changes nothing — the first claimant keeps it, so
+        # lookups stay stable while a human decides.
+        register_node_identity(conn, org_id=org_id, node_id=node_id, node_type=node_type,
+                               canonical_key=canonical_key, display_name=display_name,
+                               event_id=event_id)
         return node_id
 
     def map_identity(self, conn, *, org_id: str, source: str, source_object_id: str,

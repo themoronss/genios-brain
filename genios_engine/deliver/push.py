@@ -3,17 +3,22 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+from datetime import datetime, timezone
 
 from sqlalchemy import text
 
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
+from genios_engine.reason.authority import (
+    AUTHORITATIVE_SCORE_SQL,
+    AUTHORITATIVE_SIGNAL_JOINS,
+    AUTHORITATIVE_SIGNAL_PREDICATE,
+)
 
 # Outbound delivery to agents (GeniOS -> executor). Two flavours, one transport:
 #   • push_card_to_agents   — proactive "here's a new signal" (fired by L5 when a card is emitted).
-#   • push_action_to_agents — "please ACT on this" hand-off (fired by the extension's Act button).
-# Body == the /v1/signals poll projection (+ an action block for hand-off), so push and poll are
-# interchangeable. HMAC-SHA256 signed (X-Genios-Signature). Executor-AGNOSTIC: delivers to ANY agent
+# Body == the /v1/signals poll projection, so push and poll are interchangeable. HMAC-SHA256 signed
+# (X-Genios-Signature). Proactive delivery is executor-agnostic and carries no execution request.
 # in the org that registered a webhook (Hermes or the client's own tool) — GeniOS never executes
 # itself. Best-effort: a slow/dead webhook is swallowed-and-logged, never blocks the caller. Uses only
 # `store.engine`, so any store (CardStore or GraphStore) works.
@@ -26,6 +31,7 @@ def _active_agent_webhooks(conn, org_id: str) -> list[dict]:
     rows = conn.execute(text(
         "select agent_id, webhook_url, webhook_secret from agent_registry "
         "where org_id=:o and coalesce(status,'active')='active' "
+        "and 'signals.read'=any(coalesce(allowed_actions,array[]::text[])) "
         "and webhook_url is not null and webhook_url <> ''"), {"o": org_id}).mappings().all()
     return [dict(r) for r in rows]
 
@@ -33,10 +39,21 @@ def _active_agent_webhooks(conn, org_id: str) -> list[dict]:
 def _card_projection(conn, org_id: str, card_id: str) -> dict | None:
     """Exactly the poll_signals shape (deliver/agent_api.py) — push == poll."""
     r = conn.execute(text(
-        "select signal_id, card_id, urgency_band, headline, situation, score, score_block, "
-        "state, created_at from cards where org_id=:o and card_id=:c"),
-        {"o": org_id, "c": card_id}).mappings().first()
+        "select k.signal_id, k.card_id, k.urgency_band, k.headline, k.situation, "
+        + AUTHORITATIVE_SCORE_SQL + " as score, k.score_block, k.state, k.created_at "
+        "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+        + AUTHORITATIVE_SIGNAL_JOINS +
+        " where k.org_id=:o and k.card_id=:c and s.status='open' "
+        "and k.state in ('queued','surfaced','snoozed','delivered') "
+        "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE),
+        {"o": org_id, "c": card_id,
+         "authority_time": datetime.now(timezone.utc)}).mappings().first()
     return dict(r) if r else None
+
+
+def authoritative_card_projection(store, org_id: str, card_id: str) -> dict | None:
+    with store.engine.connect() as c:
+        return _card_projection(c, org_id, card_id)
 
 
 def _log_event(store, card_id: str, org_id: str, agent_id: str, kind: str,
@@ -67,6 +84,14 @@ def _deliver(store, org_id: str, event_type: str, payload: dict, card_id: str, l
     body = json.dumps({"type": event_type, "org_id": org_id, **payload}, default=str).encode()
     delivered = 0
     for a in agents:
+        # Recheck immediately before every irreversible network dispatch. A graph/config/pack/
+        # expiry transition during rendering or fan-out invalidates the remaining deliveries.
+        with store.engine.connect() as c:
+            live = _card_projection(c, org_id, card_id)
+        projected = payload.get("signal") if isinstance(payload, dict) else None
+        if (live is None or not isinstance(projected, dict)
+                or live.get("signal_id") != projected.get("signal_id")):
+            break
         secret = a.get("webhook_secret") or ""
         sig = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
         headers = {
@@ -94,8 +119,7 @@ def _deliver(store, org_id: str, event_type: str, payload: dict, card_id: str, l
 def push_card_to_agents(store, org_id: str, card_id: str) -> int:
     """Proactive: fan a freshly-emitted card out to every active agent with a webhook. Org-wide,
     independent of human seat routing. Returns the count that acknowledged (2xx). Never raises."""
-    with store.engine.connect() as c:
-        proj = _card_projection(c, org_id, card_id)
+    proj = authoritative_card_projection(store, org_id, card_id)
     if proj is None:
         return 0
     return _deliver(store, org_id, "signal.created", {"signal": proj}, card_id, "card.pushed")
@@ -103,12 +127,9 @@ def push_card_to_agents(store, org_id: str, card_id: str) -> int:
 
 def push_action_to_agents(store, org_id: str, card_id: str,
                           draft: str | None = None, instruction: str | None = None) -> int:
-    """Hand-off: ask the org's connected executor(s) to ACT on this card (optionally with a reviewed
-    draft). Executor-agnostic — any agent with a webhook. Returns the count that acknowledged."""
-    with store.engine.connect() as c:
-        proj = _card_projection(c, org_id, card_id)
-    if proj is None:
-        return 0
-    return _deliver(store, org_id, "action.requested",
-                    {"signal": proj, "action": {"draft": draft, "instruction": instruction}},
-                    card_id, "card.handoff")
+    """External actions require a single-executor transactional approval protocol.
+
+    Kept as an explicit fail-closed shim for older callers; no network request is made.
+    """
+    del store, org_id, card_id, draft, instruction
+    raise RuntimeError("external action push is disabled")

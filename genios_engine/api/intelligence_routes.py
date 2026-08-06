@@ -7,19 +7,29 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.platform.auth import get_current_org
+from genios_engine.platform.auth import AuthCtx, get_current_org, require_scope
 from genios_engine.platform.cache import get_cache
+from genios_engine.platform.canonical import stable_id
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_graph_store, make_llm_client,
                                            make_pack_registry)
 from genios_engine.reason.intelligence import (current_graph_version, normalize_question,
                                                run_query)
+from genios_engine.reason.authority import (
+    AUTHORITATIVE_REASON_CODE_SQL,
+    AUTHORITATIVE_SCORE_SQL,
+    AUTHORITATIVE_SIGNAL_JOINS,
+    AUTHORITATIVE_SIGNAL_PREDICATE,
+    authority_time,
+)
+from genios_engine.reason.store import ReasoningStore
 
 router = APIRouter()
 _log = get_logger("intelligence")
@@ -37,12 +47,88 @@ class QueryBody(BaseModel):
 
 
 # bump when the reasoning logic changes so the decision cache doesn't serve pre-upgrade envelopes.
-_REASONER_VERSION = "r3-foresight"   # bump invalidates the decision cache when reasoning changes
+_REASONER_VERSION = "r4-deterministic-authority"
 
 
-def _cache_key(org_id: str, module_id: str, question: str, gv: int) -> str:
-    raw = f"{org_id}|{module_id}|{normalize_question(question)}|{gv}|{_REASONER_VERSION}"
+def _cache_key(org_id: str, module_id: str, question: str, gv: int,
+               extra_facts: dict | None = None, config_snapshot_id: str | None = None,
+               variant: str = "query", authority_epoch: str = "none") -> str:
+    facts = json.dumps(extra_facts or {}, sort_keys=True, separators=(",", ":"), default=str)
+    raw = (f"{org_id}|{module_id}|{normalize_question(question)}|{gv}|{authority_epoch}|"
+           f"{config_snapshot_id or 'none'}|{variant}|{facts}|{_REASONER_VERSION}")
     return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _authority_epoch(org_id: str, evaluation_time: datetime | None = None) -> str:
+    """Content hash of the exact, total-ordered authoritative signal set."""
+    as_of = authority_time(evaluation_time)
+    with _graph.engine.begin() as c:
+        rows = c.execute(text(
+            "select s.signal_id, s.reasoning_run_id, s.reasoning_candidate_id, "
+            "s.reasoning_decision_hash, s.config_snapshot_id, selected_rc.play_id, "
+            "selected_rc.final_utility_bp, s.authority_expires_at "
+            "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            " where s.org_id=:o and s.status='open' and " +
+            AUTHORITATIVE_SIGNAL_PREDICATE +
+            " order by s.signal_id, s.reasoning_run_id, s.reasoning_candidate_id"),
+            {"o": org_id, "authority_time": as_of}).mappings().all()
+    encoded = json.dumps([dict(row) for row in rows], sort_keys=True, separators=(",", ":"),
+                         default=str, allow_nan=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _require_stable_query_inputs(*, org_id: str, module_id: str, graph_version: int,
+                                 authority_epoch: str,
+                                 config_snapshot_id: str | None) -> None:
+    """Reject a mixed read if graph, signal authority, or config changed mid-query."""
+    if current_graph_version(_graph, org_id) != graph_version:
+        raise HTTPException(409, "the context graph changed while reasoning; please retry")
+    if _authority_epoch(org_id) != authority_epoch:
+        raise HTTPException(409, "recommendation authority changed while reasoning; please retry")
+    if _registry is not None:
+        _effective, current_snapshot_id = _registry.effective(org_id, module_id)
+        if current_snapshot_id != config_snapshot_id:
+            raise HTTPException(409, "the effective configuration changed while reasoning; please retry")
+
+
+def _persist_decision_envelope(*, org_id: str, module_id: str, question: str,
+                               envelope: dict, graph_version: int, cache_key: str,
+                               triggered_by: str) -> None:
+    """Durably bind the exact returned envelope to its content-derived decision id.
+
+    ``ON CONFLICT DO NOTHING`` is safe only when the held row is byte-for-byte the same semantic
+    envelope.  We therefore read it back in the same transaction and fail closed on any collision
+    (including a theoretically impossible cross-tenant collision).
+    """
+    encoded = json.dumps(envelope, sort_keys=True, separators=(",", ":"), default=str,
+                         allow_nan=False)
+    try:
+        with _graph.engine.begin() as c:
+            c.execute(text(
+                "insert into decisions (decision_id, org_id, module_id, question, envelope, "
+                "confidence, route, graph_version, cache_key, triggered_by) "
+                "values (:d, :o, :m, :q, cast(:e as jsonb), :c, :r, :gv, :k, :t) "
+                "on conflict (decision_id) do nothing"),
+                {"d": envelope["decision_id"], "o": org_id, "m": module_id, "q": question,
+                 "e": encoded, "c": envelope["confidence"], "r": envelope["route"],
+                 "gv": graph_version, "k": cache_key, "t": triggered_by})
+            held = c.execute(text(
+                "select org_id, module_id, question, envelope, graph_version, cache_key, "
+                "triggered_by from decisions where decision_id=:d"),
+                {"d": envelope["decision_id"]}).first()
+            if held is None:
+                raise RuntimeError("decision insert was not observable")
+            held_env = held.envelope if isinstance(held.envelope, dict) else json.loads(held.envelope)
+            held_encoded = json.dumps(held_env, sort_keys=True, separators=(",", ":"),
+                                      default=str, allow_nan=False)
+            if (held.org_id != org_id or held.module_id != module_id or held.question != question
+                    or int(held.graph_version or 0) != int(graph_version)
+                    or held.cache_key != cache_key or held.triggered_by != triggered_by
+                    or held_encoded != encoded):
+                raise RuntimeError("decision id is already bound to different semantics")
+    except Exception as exc:      # authoritative Layer 4 output must have a durable exact trace
+        _log.exception("decision persist failed for %s", org_id)
+        raise HTTPException(503, "decision could not be recorded safely; please retry") from exc
 
 
 # L7 spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
@@ -88,14 +174,23 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     if not question:
         raise HTTPException(422, "query.question is required")
     module_id = body.module_id or "sales"
+    evaluation_time = datetime.now(timezone.utc)
     gv = current_graph_version(_graph, org_id)
-    ckey = _cache_key(org_id, module_id, question, gv)
+    config_snapshot_id = None
+    if _registry is not None:
+        _effective, config_snapshot_id = _registry.effective(org_id, module_id)
+    authority_epoch = _authority_epoch(org_id, evaluation_time)
+    ckey = _cache_key(org_id, module_id, question, gv, body.facts or {}, config_snapshot_id,
+                      authority_epoch=authority_epoch)
 
     # decision cache — same question, unchanged graph → return the stored Envelope, no LLM.
     with _graph.engine.connect() as c:
         hit = c.execute(text("select envelope from decisions where org_id=:o and cache_key=:k "
                              "order by created_at desc limit 1"), {"o": org_id, "k": ckey}).first()
     if hit is not None:
+        _require_stable_query_inputs(
+            org_id=org_id, module_id=module_id, graph_version=gv,
+            authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
         env = hit.envelope if isinstance(hit.envelope, dict) else json.loads(hit.envelope)
         env["cached"] = True
         return env
@@ -103,7 +198,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
-                         registry=_registry, graph_version=gv)
+                         registry=_registry, graph_version=gv, eval_time=evaluation_time)
 
     # record LLM spend (only the final-synthesis call, if it ran)
     if res is not None:
@@ -114,18 +209,13 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         except Exception:      # noqa: BLE001 — never let cost logging break the answer
             _log.warning("intelligence cost log failed for %s", org_id)
 
-    # persist the decision (for explain / feedback / cache)
-    try:
-        with _graph.engine.begin() as c:
-            c.execute(text(
-                "insert into decisions (decision_id, org_id, module_id, question, envelope, "
-                "confidence, route, graph_version, cache_key, triggered_by) "
-                "values (:d, :o, :m, :q, cast(:e as jsonb), :c, :r, :gv, :k, 'query')"),
-                {"d": env["decision_id"], "o": org_id, "m": module_id, "q": question,
-                 "e": json.dumps(env, default=str), "c": env["confidence"], "r": env["route"],
-                 "gv": gv, "k": ckey})
-    except Exception:      # noqa: BLE001 — a persistence failure must not lose the answer
-        _log.warning("decision persist failed for %s", org_id)
+    _require_stable_query_inputs(
+        org_id=org_id, module_id=module_id, graph_version=gv,
+        authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
+
+    _persist_decision_envelope(
+        org_id=org_id, module_id=module_id, question=question, envelope=env,
+        graph_version=gv, cache_key=ckey, triggered_by="query")
 
     return env
 
@@ -221,38 +311,65 @@ def _action_label(actions) -> str | None:
 
 
 @router.get("/v1/insights")
-def list_insights(limit: int = 50, state: str = "open", org_id: str = Depends(get_current_org)) -> dict:
+def list_insights(limit: int = 50, state: str = "open",
+                  ctx: AuthCtx = Depends(require_scope("insights.read"))) -> dict:
     """Extension feed. state=open (default) → cards needing action; state=resolved → acted/resolved
     (the inbox's Resolved tab). Same card shape either way."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
+    org_id = ctx.org_id
     states = _RESOLVED_STATES if state == "resolved" else _OPEN_STATES
-    with _graph.engine.connect() as c:
+    with _graph.engine.begin() as c:
         # join through the signal to the subject node → the contact/deal NAME the extension needs for
         # page-matching + resolving Draft/Advice. Left joins so a card without a node still returns.
-        rows = c.execute(text(
-            "select k.card_id, k.headline, k.situation, k.score, k.domain, k.urgency_band, "
-            "k.context_tags, k.created_at, k.actions, n.display_name as entity, s.reason_code "
-            "from cards k left join signals s on s.signal_id=k.signal_id "
-            "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
-            "and n.valid_to is null "
-            "where k.org_id=:o and k.state = any(:states) "
-            "order by k.score desc nulls last, k.created_at desc limit :l"),
-            {"o": org_id, "states": list(states), "l": max(1, min(int(limit), 100))}).fetchall()
-    # L6 impressions — log card.surfaced ONCE per shown card (deterministic id + dedup) so the
-    # calibration precision loop has impressions to reach eligibility. Open feed only (not Resolved).
-    if state != "resolved" and rows:
-        try:
-            with _graph.engine.begin() as c:
+        params = {"o": org_id, "states": list(states),
+                  "l": max(1, min(int(limit), 100))}
+        seat_filter = ""
+        if ctx.scopes is not None:
+            params["assignee"] = ctx.actor_id or ctx.agent_id
+            seat_filter = " and k.assignee=:assignee "
+        if state == "resolved":
+            # Resolved is an audit/history tab, not an execution surface. Its records intentionally
+            # survive decision expiry and later graph/config changes.
+            rows = c.execute(text(
+                "select k.card_id, k.headline, k.situation, k.score, k.domain, k.urgency_band, "
+                "k.context_tags, k.created_at, k.actions, n.display_name as entity, s.reason_code "
+                "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+                "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
+                "and n.valid_to is null where k.org_id=:o and k.state = any(:states) " +
+                seat_filter +
+                "order by k.score desc nulls last, k.created_at desc, k.card_id limit :l"),
+                params).fetchall()
+        else:
+            params["authority_time"] = datetime.now(timezone.utc)
+            c.execute(text(
+                "select graph_version from graph_versions where org_id=:o for share"),
+                {"o": org_id})
+            rows = c.execute(text(
+                "select k.card_id, k.headline, k.situation, " + AUTHORITATIVE_SCORE_SQL +
+                " as score, k.domain, k.urgency_band, k.context_tags, k.created_at, k.actions, "
+                "n.display_name as entity, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
+                "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
+                AUTHORITATIVE_SIGNAL_JOINS +
+                "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
+                "and n.valid_to is null "
+                "where k.org_id=:o and k.state = any(:states) and s.status='open' " +
+                seat_filter +
+                "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE + " "
+                "order by selected_rc.final_utility_bp desc, k.created_at desc, "
+                "k.card_id limit :l for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,"
+                "authority_cfg,authority_pack"),
+                params).fetchall()
+            # The impression and its current authority/state proof commit together. It is an
+            # audited learning input, not a best-effort analytics ping.
+            if rows:
                 c.execute(text(
                     "insert into card_events (id, card_id, org_id, kind, cause, actor_id) "
                     "select 'cevs_' || k.card_id, k.card_id, :o, 'card.surfaced', 'pull', 'extension' "
                     "from cards k where k.org_id=:o and k.card_id = any(:ids) "
-                    "and not exists (select 1 from card_events ce where ce.card_id=k.card_id "
-                    "                and ce.kind='card.surfaced') on conflict do nothing"),
+                    "and not exists (select 1 from card_events ce where ce.org_id=k.org_id "
+                    "and ce.card_id=k.card_id and ce.kind='card.surfaced') on conflict do nothing"),
                     {"o": org_id, "ids": [r.card_id for r in rows]})
-        except Exception:      # noqa: BLE001 — impressions are best-effort, never block the feed
-            pass
     insights = []
     for r in rows:
         head, sit = (r.headline or "Recommendation"), (r.situation or "")
@@ -312,10 +429,75 @@ def explain_decision(decision_id: str, org_id: str = Depends(get_current_org)) -
         raise HTTPException(404, "decision not found")
     env = row.envelope if isinstance(row.envelope, dict) else json.loads(row.envelope)
     deriv = env.get("derivation", []) or []
+    run_ids = tuple(dict.fromkeys(d.get("reasoning_run_id") for d in deriv
+                                  if d.get("reasoning_run_id")))
+    bundles: list[tuple[str, dict]] = []
+    missing_run_ids: list[str] = []
+    reasoning_store = ReasoningStore(engine=_graph.engine)
+    for run_id in run_ids:
+        try:
+            bundle = reasoning_store.load_bundle(org_id=org_id, run_id=run_id)
+            if bundle is None:
+                missing_run_ids.append(run_id)
+            else:
+                bundles.append((run_id, bundle))
+        except Exception:  # legacy decisions remain explainable from their stored envelope
+            missing_run_ids.append(run_id)
+            _log.warning("reasoning trace load failed for %s:%s", org_id, run_id)
     rules = [{"id": d.get("rule_id"), "priority": i + 1,
-              "matched_facts": d.get("matched_facts", {}), "conclusion": d.get("conclusion", "")}
+              "matched_facts": d.get("matched_facts", {}), "conclusion": d.get("conclusion", ""),
+              "reasoning_run_id": d.get("reasoning_run_id")}
              for i, d in enumerate(deriv)]
+    if bundles:
+        run_views = []
+        all_sources = []
+        all_checks = []
+        confidence_by_run = {}
+        for run_id, bundle in bundles:
+            results = bundle.get("reasoner_results") or []
+            checks = bundle.get("candidate_checks") or []
+            source_manifest = (bundle.get("context_snapshot") or {}).get("source_manifest") or []
+            decision_path = " → ".join(item.get("reasoner_id", "") for item in results)
+            confidence_bp = int((bundle.get("output") or {}).get("confidence_bp") or 0)
+            confidence_by_run[run_id] = confidence_bp
+            tagged_sources = [({**item, "reasoning_run_id": run_id}
+                               if isinstance(item, dict)
+                               else {"value": item, "reasoning_run_id": run_id})
+                              for item in source_manifest]
+            tagged_checks = [({**item, "reasoning_run_id": run_id}
+                              if isinstance(item, dict)
+                              else {"value": item, "reasoning_run_id": run_id})
+                             for item in checks]
+            all_sources.extend(tagged_sources)
+            all_checks.extend(tagged_checks)
+            run_views.append({
+                "reasoning_run_id": run_id,
+                "decision_path": decision_path,
+                "source_facts": source_manifest,
+                "confidence_basis_points": confidence_bp,
+                "constraints_checked": checks,
+            })
+        paths = [view["decision_path"] for view in run_views]
+        aggregate_path = (paths[0] if len(paths) == 1 else " | ".join(
+            f"{view['reasoning_run_id']}[{view['decision_path']}]" for view in run_views))
+        response = {
+            "decision_id": decision_id, "org_id": org_id,
+            "reasoning_run_ids": list(run_ids), "reasoning_runs": run_views,
+            "missing_reasoning_run_ids": missing_run_ids,
+            "decision_path": aggregate_path, "source_facts": all_sources,
+            "rules_fired": rules, "edge_path": [],
+            # The public envelope confidence is the deterministic aggregate used by the query
+            # adapter.  Per-run basis points remain explicit; we never invent a multi-run formula.
+            "confidence_overall": env.get("confidence", 0),
+            "confidence_breakdown": {"deterministic_basis_points_by_run": confidence_by_run},
+            "constraints_checked": all_checks, "as_of": env.get("as_of", {}),
+        }
+        if len(run_ids) == 1:  # backward-compatible singular alias only when it is unambiguous
+            response["reasoning_run_id"] = run_ids[0]
+        return response
     return {"decision_id": decision_id, "org_id": org_id,
+            "reasoning_run_ids": list(run_ids), "reasoning_runs": [],
+            "missing_reasoning_run_ids": missing_run_ids,
             "decision_path": " → ".join(d.get("conclusion", "") for d in deriv) or "direct",
             "source_facts": [], "rules_fired": rules, "edge_path": [],
             "confidence_overall": env.get("confidence", 0),
@@ -341,32 +523,146 @@ _FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant"}
 
 
 @router.post("/v1/intelligence/feedback")
-def intelligence_feedback(body: FeedbackBody, org_id: str = Depends(get_current_org)) -> dict:
+def intelligence_feedback(
+        body: FeedbackBody,
+        ctx: AuthCtx = Depends(require_scope("feedback.write"))) -> dict:
     """Human feedback on a recommendation. For an insight (a card) it logs a card_event in the
     canonical shape the L6 calibration loop reads (cause + reason) — repeated 'wrong' auto-mutes the
     rule. Returns the correction id."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
-    fid = new_id("fb")
+    if body.action not in _FB_CAUSE:
+        raise HTTPException(422, "unsupported feedback action")
+    if not body.insight_id or body.decision_id is not None:
+        raise HTTPException(
+            422,
+            "feedback requires exactly one supported target: insight_id",
+        )
+    org_id = ctx.org_id
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    fid = stable_id("fb", {
+        "org_id": org_id,
+        "card_id": body.insight_id or "",
+        "decision_id": body.decision_id or "",
+    })
     routed = False
+    changed = False
+    verdict_version = None
     if body.insight_id:      # an insight IS a card → feed L6 through the card_events ledger
+        detail = dict(body.edit_diff or {})
+        if body.action in _FB_REASON:
+            detail["reason"] = _FB_REASON[body.action]     # → precision denominator (rel_wrong)
         try:
-            detail = dict(body.edit_diff or {})
-            if body.action in _FB_REASON:
-                detail["reason"] = _FB_REASON[body.action]     # → precision denominator (rel_wrong)
-            with _graph.engine.begin() as c:
-                c.execute(text(
-                    "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
-                    "values (:i, :c, :o, 'human.card_action', :cause, :a, cast(:d as jsonb))"),
-                    {"i": new_id("cev"), "c": body.insight_id, "o": org_id,
-                     "cause": _FB_CAUSE.get(body.action, body.action), "a": body.user_id or "user",
-                     "d": json.dumps(detail, default=str)})
-            routed = True
-        except Exception:      # noqa: BLE001
-            _log.warning("feedback card_event failed for %s", org_id)
+            encoded_detail = json.dumps(
+                detail, sort_keys=True, separators=(",", ":"), default=str, allow_nan=False)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(422, "feedback detail must be valid finite JSON") from exc
+        if len(encoded_detail.encode("utf-8")) > 16_384:
+            raise HTTPException(413, "feedback detail is too large")
+        as_of = authority_time()
+        with _graph.engine.begin() as c:
+            # Feedback changes future scoring. Bind it to a currently actionable audited card and
+            # hold the graph/config proof stable until the idempotent ledger write commits.
+            c.execute(text(
+                "select graph_version from graph_versions where org_id=:o for share"),
+                {"o": org_id})
+            card = c.execute(text(
+                "select k.card_id, k.assignee, authority_cfg.pack_id, "
+                "authority_cfg.effective->>'version' as pack_version, "
+                "s.authority_pack_revision, "
+                "rr.capability_id, rr.capability_version, "
+                "regexp_replace(rr.capability_id, '^.*\\.', '') as rule_id "
+                "from cards k "
+                "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+                + AUTHORITATIVE_SIGNAL_JOINS +
+                " where k.card_id=:card and k.org_id=:o "
+                "and k.state in ('queued','surfaced','snoozed','delivered') "
+                "and k.expires_at > :authority_time and s.status='open' and "
+                + AUTHORITATIVE_SIGNAL_PREDICATE +
+                " for update of k, s for share of rr, ro, selected_rc, rcap, authority_ctx, "
+                "authority_cfg, authority_pack"),
+                {"card": body.insight_id, "o": org_id,
+                 "authority_time": as_of}).first()
+            if card is None:
+                raise HTTPException(409, "insight is expired, claimed, revoked, or unauthorized")
+            if (ctx.scopes is not None and card.assignee is not None
+                    and card.assignee not in {actor_id, ctx.agent_id}):
+                raise HTTPException(403, "insight is assigned to a different seat")
+
+            cause = _FB_CAUSE[body.action]
+            # Timing feedback is deliberately not a verdict on the rule. Keep one idempotent
+            # audit event, but do not put it into the calibration cohort.
+            if cause == "snooze":
+                event_id = stable_id("cev", {
+                    "org_id": org_id, "card_id": body.insight_id,
+                    "source": "intelligence.feedback", "action": body.action,
+                })
+                inserted = c.execute(text(
+                    "insert into card_events "
+                    "(id,card_id,org_id,kind,cause,actor_id,detail) "
+                    "values (:id,:card,:o,'human.feedback_signal',:cause,:actor,cast(:d as jsonb)) "
+                    "on conflict (id) do nothing returning id"),
+                    {"id": event_id, "card": body.insight_id, "o": org_id,
+                     "cause": cause, "actor": actor_id, "d": encoded_detail}).first()
+                fid = event_id
+                changed = inserted is not None
+            else:
+                reason = detail.get("reason") if cause == "wrong" else None
+                inserted = c.execute(text(
+                    "insert into card_feedback_verdicts "
+                    "(feedback_id,org_id,card_id,pack_id,pack_version,authority_pack_revision,"
+                    "capability_id,"
+                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version) "
+                    "values (:id,:o,:card,:p,:pv,:pr,:cap,:capv,:r,:cause,:reason,"
+                    "cast(:d as jsonb),:actor,1) "
+                    "on conflict (org_id,card_id) do nothing returning verdict_version"),
+                    {"id": fid, "o": org_id, "card": body.insight_id,
+                     "p": card.pack_id, "pv": card.pack_version,
+                     "pr": int(card.authority_pack_revision),
+                     "cap": card.capability_id, "capv": card.capability_version,
+                     "r": card.rule_id, "cause": cause, "reason": reason,
+                     "d": encoded_detail, "actor": actor_id}).first()
+                if inserted is not None:
+                    verdict_version = int(inserted.verdict_version)
+                    changed = True
+                else:
+                    updated = c.execute(text(
+                        "update card_feedback_verdicts set cause=:cause,reason=:reason,"
+                        "detail=cast(:d as jsonb),actor_id=:actor,"
+                        "verdict_version=verdict_version+1,occurred_at=clock_timestamp() "
+                        "where org_id=:o and card_id=:card and "
+                        "(cause,reason,detail) is distinct from "
+                        "(:cause,:reason,cast(:d as jsonb)) returning verdict_version"),
+                        {"o": org_id, "card": body.insight_id, "cause": cause,
+                         "reason": reason, "d": encoded_detail, "actor": actor_id}).first()
+                    if updated is not None:
+                        verdict_version = int(updated.verdict_version)
+                        changed = True
+                    else:
+                        existing = c.execute(text(
+                            "select feedback_id,verdict_version from card_feedback_verdicts "
+                            "where org_id=:o and card_id=:card"),
+                            {"o": org_id, "card": body.insight_id}).first()
+                        if existing is None:
+                            raise RuntimeError("feedback verdict disappeared while card was locked")
+                        fid = existing.feedback_id
+                        verdict_version = int(existing.verdict_version)
+                if changed:
+                    revision_id = stable_id("fbrev", {
+                        "feedback_id": fid, "verdict_version": verdict_version})
+                    c.execute(text(
+                        "insert into card_feedback_revisions "
+                        "(revision_id,feedback_id,org_id,card_id,verdict_version,cause,reason,"
+                        "detail,actor_id) values (:rid,:fid,:o,:card,:v,:cause,:reason,"
+                        "cast(:d as jsonb),:actor)"),
+                        {"rid": revision_id, "fid": fid, "o": org_id,
+                         "card": body.insight_id, "v": verdict_version, "cause": cause,
+                         "reason": reason, "d": encoded_detail, "actor": actor_id})
+        routed = True
     return {"feedback_id": fid,
             "correction_id": fid if body.action in ("thumbs_down", "never_show", "edit") else None,
-            "routed_to_g_i_3": routed}
+            "routed_to_g_i_3": routed, "changed": changed,
+            "verdict_version": verdict_version}
 
 
 # ── extension parity: auth-derived-org /v1/* wrappers (the extension auths with an API key, so it
@@ -392,18 +688,43 @@ def _card_event(org_id: str, card_id: str, kind: str, detail: dict) -> bool:
 
 
 @router.post("/v1/insights/{insight_id}/dismiss")
-def dismiss_insight(insight_id: str, org_id: str = Depends(get_current_org)) -> dict:
+def dismiss_insight(insight_id: str,
+                    ctx: AuthCtx = Depends(require_scope("cards.act"))) -> dict:
     """Extension dismiss — expire the card + log the event (feeds L6's ignore-rate)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
+    org_id = ctx.org_id
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    as_of = authority_time()
     with _graph.engine.begin() as c:
-        res = c.execute(text("update cards set state='expired' where card_id=:c and org_id=:o "
-                             "and state in ('queued','surfaced','snoozed','delivered')"),
-                        {"c": insight_id, "o": org_id})
-        found = c.execute(text("select 1 from cards where card_id=:c and org_id=:o"),
-                          {"c": insight_id, "o": org_id}).first() is not None
-    _card_event(org_id, insight_id, "card.dismissed", {"via": "extension"})
-    return {"ok": found, "dismissed": bool(res.rowcount)}
+        c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                  {"o": org_id})
+        card = c.execute(text(
+            "select k.assignee from cards k join signals s "
+            "on s.signal_id=k.signal_id and s.org_id=k.org_id " +
+            AUTHORITATIVE_SIGNAL_JOINS +
+            "where k.card_id=:card and k.org_id=:o and s.status='open' "
+            "and k.state in ('queued','surfaced','snoozed','delivered') "
+            "and k.expires_at>:authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE +
+            " for update of k,s for share of rr,ro,selected_rc,rcap,authority_ctx,"
+            "authority_cfg,authority_pack"),
+            {"card": insight_id, "o": org_id, "authority_time": as_of}).first()
+        if card is None:
+            raise HTTPException(409, "insight is no longer actionable")
+        if (ctx.scopes is not None and card.assignee is not None
+                and card.assignee not in {actor_id, ctx.agent_id}):
+            raise HTTPException(403, "insight is assigned to a different seat")
+        c.execute(text(
+            "update cards set state='expired' where card_id=:card and org_id=:o"),
+            {"card": insight_id, "o": org_id})
+        event_id = stable_id("cev", {"org_id": org_id, "card_id": insight_id,
+                                     "kind": "card.dismissed"})
+        c.execute(text(
+            "insert into card_events (id,card_id,org_id,kind,cause,actor_id,detail) "
+            "values (:id,:card,:o,'card.dismissed','extension',:actor,"
+            "'{\"via\":\"extension\"}'::jsonb) on conflict (id) do nothing"),
+            {"id": event_id, "card": insight_id, "o": org_id, "actor": actor_id})
+    return {"ok": True, "dismissed": True}
 
 
 class OutcomeBody(BaseModel):
@@ -412,9 +733,30 @@ class OutcomeBody(BaseModel):
 
 @router.post("/v1/insights/{insight_id}/outcome")
 def insight_outcome(insight_id: str, body: OutcomeBody,
-                    org_id: str = Depends(get_current_org)) -> dict:
-    ok = _card_event(org_id, insight_id, "outcome", {"outcome": body.outcome, "via": "extension"})
-    return {"ok": ok, "outcome": body.outcome}
+                    ctx: AuthCtx = Depends(require_scope("feedback.write"))) -> dict:
+    org_id = ctx.org_id
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    outcome = body.outcome.strip()
+    if not outcome or len(outcome) > 128:
+        raise HTTPException(422, "outcome must be between 1 and 128 characters")
+    with _graph.engine.begin() as c:
+        card = c.execute(text(
+            "select assignee from cards where card_id=:card and org_id=:o for share"),
+            {"card": insight_id, "o": org_id}).first()
+        if card is None:
+            raise HTTPException(404, "insight not found")
+        if (ctx.scopes is not None and card.assignee is not None
+                and card.assignee not in {actor_id, ctx.agent_id}):
+            raise HTTPException(403, "insight is assigned to a different seat")
+        event_id = stable_id("cev", {"org_id": org_id, "card_id": insight_id,
+                                     "kind": "outcome", "outcome": outcome})
+        c.execute(text(
+            "insert into card_events (id,card_id,org_id,kind,cause,actor_id,detail) "
+            "values (:id,:card,:o,'outcome','extension',:actor,cast(:d as jsonb)) "
+            "on conflict (id) do nothing"),
+            {"id": event_id, "card": insight_id, "o": org_id, "actor": actor_id,
+             "d": json.dumps({"outcome": outcome, "via": "extension"})})
+    return {"ok": True, "outcome": outcome, "event_id": event_id}
 
 
 class HandoffBody(BaseModel):
@@ -424,26 +766,18 @@ class HandoffBody(BaseModel):
 
 @router.post("/v1/insights/{insight_id}/handoff")
 def handoff_insight(insight_id: str, body: HandoffBody | None = None,
-                    org_id: str = Depends(get_current_org)) -> dict:
-    """Hand this decision off to the org's connected EXECUTOR to act on (GeniOS advises; it never
-    executes itself). Executor-agnostic: delivers to any agent in the org that registered a webhook
-    (Hermes or the client's own tool), reusing the signed push transport. If none is connected,
-    executors_notified=0 and the client should fall back to drafting."""
-    if _graph is None:
-        raise HTTPException(400, "graph store not configured")
-    with _graph.engine.connect() as c:
-        owns = c.execute(text("select 1 from cards where card_id=:c and org_id=:o"),
-                         {"c": insight_id, "o": org_id}).first()
-    if owns is None:
-        raise HTTPException(404, "insight not found")
-    from genios_engine.deliver.push import push_action_to_agents
-    draft = body.draft if body else None
-    instruction = body.instruction if body else None
-    delivered = push_action_to_agents(_graph, org_id, insight_id, draft=draft, instruction=instruction)
-    _card_event(org_id, insight_id, "card.handoff",
-                {"executors_notified": delivered, "has_draft": bool(draft), "via": "extension"})
-    return {"handed_off": delivered > 0, "executors_notified": delivered,
-            "note": None if delivered else "No executor connected — draft it instead."}
+                    ctx: AuthCtx = Depends(require_scope("actions.handoff"))) -> dict:
+    """Fail-closed boundary for external execution.
+
+    The former implementation broadcast caller-authored instructions to every webhook and could
+    duplicate irreversible work on retry. Handoff stays disabled until a single-agent claim,
+    approval artifact and transactional outbox/idempotency protocol are implemented.
+    """
+    del insight_id, body, ctx
+    raise HTTPException(
+        501,
+        "executor handoff is disabled until the idempotent single-executor approval protocol is available",
+    )
 
 
 @router.get("/v1/morning-brief")
@@ -488,14 +822,16 @@ def _resolve_contact_facts(org_id: str, contact: str):
             "select node_id, display_name, node_type from graph_nodes where org_id=:o "
             "and valid_to is null and (lower(display_name)=lower(:n) or lower(canonical_key)=lower(:n) "
             "or display_name ilike :like) order by (lower(display_name)=lower(:n)) desc, "
-            "length(display_name) asc limit 1"),
+            "length(display_name) asc, lower(display_name) asc, node_id asc limit 1"),
             {"o": org_id, "n": contact, "like": f"%{contact}%"}).first()
         facts = {}
         if node is not None:
             for f in c.execute(text("select field, value from graph_facts where org_id=:o "
                                     "and subject_node_id=:n and valid_to is null and status='active' "
-                                    "limit 20"), {"o": org_id, "n": node.node_id}):
-                facts[f.field] = str(f.value).strip('"')
+                                    "order by occurred_at desc nulls last, field asc, "
+                                    "fact_version_id asc limit 20"),
+                               {"o": org_id, "n": node.node_id}):
+                facts.setdefault(f.field, str(f.value).strip('"'))
     return node, facts
 
 
@@ -524,11 +860,36 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
     in the insight shape the extension card renders. `deep=true` uses a stronger model (Sonnet)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
+    evaluation_time = datetime.now(timezone.utc)
     gv = current_graph_version(_graph, org_id)
     q = (situation or "").strip() or f"What is the next best action for {contact}?"
-    llm = (_deep_llm() or _llm) if deep else _llm       # deep → Sonnet (was a silent no-op)
-    env, res = run_query(org_id=org_id, module_id="sales", question=f"{q} (contact: {contact})",
-                         extra_facts={}, store=_graph, llm=llm, registry=_registry, graph_version=gv)
+    full_question = f"{q} (contact: {contact})"
+    config_snapshot_id = None
+    if _registry is not None:
+        _effective, config_snapshot_id = _registry.effective(org_id, "sales")
+    authority_epoch = _authority_epoch(org_id, evaluation_time)
+    ckey = _cache_key(
+        org_id, "sales", full_question, gv, {}, config_snapshot_id,
+        variant="analyze:deep" if deep else "analyze:standard",
+        authority_epoch=authority_epoch)
+    with _graph.engine.connect() as c:
+        hit = c.execute(text("select envelope from decisions where org_id=:o and cache_key=:k "
+                             "order by created_at desc limit 1"), {"o": org_id, "k": ckey}).first()
+    res = None
+    needs_persist = False
+    if hit is not None:
+        _require_stable_query_inputs(
+            org_id=org_id, module_id="sales", graph_version=gv,
+            authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
+        env = hit.envelope if isinstance(hit.envelope, dict) else json.loads(hit.envelope)
+    else:
+        _enforce_query_budget(org_id)
+        llm = (_deep_llm() or _llm) if deep else _llm       # deep → Sonnet
+        env, res = run_query(
+            org_id=org_id, module_id="sales", question=full_question, extra_facts={},
+            store=_graph, llm=llm, registry=_registry, graph_version=gv,
+            triggered_by="analyze", eval_time=evaluation_time)
+        needs_persist = True
     if res is not None:
         try:
             _graph.record_cost(org_id=org_id, model=res.model, purpose="intelligence_analyze",
@@ -536,6 +897,13 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001
             pass
+    _require_stable_query_inputs(
+        org_id=org_id, module_id="sales", graph_version=gv,
+        authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
+    if needs_persist:
+        _persist_decision_envelope(
+            org_id=org_id, module_id="sales", question=full_question, envelope=env,
+            graph_version=gv, cache_key=ckey, triggered_by="analyze")
     # real provenance: which connected tool(s) actually fed THIS contact's facts (was hardcoded "Gmail")
     _node, _ = _resolve_contact_facts(org_id, contact)
     src_tools: list[str] = []
@@ -548,7 +916,8 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
                     "select distinct sr.source from graph_source_refs sr join graph_facts f "
                     "on f.fact_version_id=sr.fact_version_id and f.org_id=sr.org_id "
                     "where sr.org_id=:o and f.subject_node_id=:n and f.valid_to is null "
-                    "and sr.source is not null limit 5"), {"o": org_id, "n": _node.node_id})]
+                    "and sr.source is not null order by sr.source asc limit 5"),
+                    {"o": org_id, "n": _node.node_id})]
         except Exception:      # noqa: BLE001
             pass
     src_tools = [s for s in src_tools if s] or ["Gmail"]

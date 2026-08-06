@@ -2,10 +2,10 @@
 And the L6-01 lock: every state the engine writes is visible in the feed."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
-from genios_engine.deliver.outbox import (BACKOFF_MINUTES, digest_card_id,
+from genios_engine.deliver.outbox import (BACKOFF_MINUTES, _current_digest_payload, digest_card_id,
                                           next_attempt_delay)
 
 
@@ -22,6 +22,21 @@ def test_digest_dedup_key_is_one_per_day():
     b = digest_card_id(date(2026, 8, 6))
     c = digest_card_id(date(2026, 8, 7))
     assert a == b == "digest:2026-08-06" and a != c
+
+
+def test_digest_payload_is_regenerated_from_current_authority_at_send_time(monkeypatch):
+    now = datetime(2026, 8, 6, 8, 30, tzinfo=timezone.utc)
+    calls = []
+    monkeypatch.setattr(
+        "genios_engine.executive.summary.build_summary",
+        lambda store, org_id, horizon, eval_time: calls.append(
+            (store.engine, org_id, horizon, eval_time)) or {"one_line": "Current"})
+    monkeypatch.setattr(
+        "genios_engine.deliver.outbox.format_digest_message", lambda value: value)
+    engine = object()
+
+    assert _current_digest_payload(engine, "org_1", now) == {"one_line": "Current"}
+    assert calls == [(engine, "org_1", "one_minute", now)]
 
 
 def test_feed_shows_every_engine_written_open_state():

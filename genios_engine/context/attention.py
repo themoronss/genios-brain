@@ -1,6 +1,7 @@
 """The Attention component — "look here first", precomputed per node.
 
-CONSTITUTIONAL RULE (enforced by tests/test_attention_never_gates.py): attention may
+CONSTITUTIONAL RULE (enforced by tests/test_attention.py::test_attention_never_gates_evaluation):
+attention may
 ORDER and BUDGET retrieval; it may NEVER gate evaluation. If evaluation scope were ever
 narrowed by attention, the loop closes into self-reinforcing starvation — a low-attention
 node is never evaluated, so it never produces signals, so its attention never rises.

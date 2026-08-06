@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from genios_engine.capture.connectors.base import SourceConnector
+from genios_engine.capture.source_registry import BUILDABLE_SOURCES
 from genios_engine.capture.landing.repository import (InMemorySourceEventRepository,
                                                       SourceEventRepository)
 from genios_engine.platform.config import get_settings
@@ -21,11 +22,21 @@ def make_repo() -> SourceEventRepository:
 # Source types make_connector_for can actually build. The integrations UI reads this
 # so a "Connect" button never starts an OAuth flow that ends in a 502 — advertising a
 # connector that raises ValueError was a customer-visible lie.
-IMPLEMENTED_SOURCE_TYPES: frozenset[str] = frozenset({
-    "postgres", "database", "mysql",
-    "gmail",
-    "gcal", "calendar", "google_calendar",
-    "notion",
+#
+# Derived from the source registry (`buildable=True`) rather than hand-listed here: a
+# second hand-maintained list of sources is exactly how this drifted out of step with
+# the family taxonomy and the coverage capabilities. Adding a connector means flipping
+# `buildable` on its descriptor AND wiring the branch in make_connector_for below —
+# tests/test_source_registry.py asserts those two agree.
+IMPLEMENTED_SOURCE_TYPES: frozenset[str] = BUILDABLE_SOURCES
+
+# The dispatch table make_connector_for branches on, as DATA so it can be compared with
+# the registry. In dev (no Composio key) the function falls back to a fake connector for
+# every source_type, so a test cannot discover the real dispatch by calling it — these
+# two names make the agreement checkable instead of hopeful.
+DIRECT_SOURCE_TYPES: frozenset[str] = frozenset({"postgres", "database", "mysql"})
+COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
+    "gmail", "gcal", "calendar", "google_calendar", "notion",
     "gdrive", "drive", "google_drive",
 })
 
@@ -37,7 +48,7 @@ def make_connector_for(connection) -> SourceConnector:
     s = get_settings()
     st = connection.source_type
     # Client's own database — no Composio; read-only pull → structured route.
-    if st in ("postgres", "database", "mysql"):
+    if st in DIRECT_SOURCE_TYPES:
         from genios_engine.capture.connectors.database import ClientDatabaseConnector
         cfg = connection.config or {}
         return ClientDatabaseConnector(

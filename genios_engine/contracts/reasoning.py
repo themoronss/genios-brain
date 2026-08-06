@@ -13,6 +13,13 @@ from typing import Any
 from genios_engine.platform.canonical import canonicalize, semantic_hash, stable_id
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,191}$")
+_HASH = re.compile(r"^[0-9a-f]{64}$")
+SUPPORTED_CAPABILITY_POLICIES = frozenset({
+    "read_only",
+    "human_approval_required",
+    "evidence_required",
+    "no_unverified_recipient",
+})
 
 
 def _text(value: Any, label: str) -> str:
@@ -41,6 +48,13 @@ def _bp(value: Any, label: str) -> int:
     if not 0 <= value <= 10_000:
         raise ValueError(f"{label} must be between 0 and 10000")
     return value
+
+
+def _hash64(value: Any, label: str) -> str:
+    result = _text(value, label)
+    if not _HASH.fullmatch(result):
+        raise ValueError(f"{label} must be a lowercase SHA-256 hash")
+    return result
 
 
 def _freeze(value: Any) -> Any:
@@ -123,6 +137,7 @@ class EvidenceRef:
     evidence_id: str
     field: str
     value: Any
+    context_scope: str = "root"
     source_ref_id: str | None = None
     fact_version_id: str | None = None
     occurred_at: datetime | None = None
@@ -133,11 +148,16 @@ class EvidenceRef:
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_id", _identifier(self.evidence_id, "evidence_id"))
         object.__setattr__(self, "field", _identifier(self.field, "evidence field"))
-        canonicalize(self.value)
+        object.__setattr__(self, "value", _freeze(self.value))
+        scope = _identifier(self.context_scope, "evidence context_scope")
+        if scope not in {"root", "neighbor"}:
+            raise ValueError("evidence context_scope must be root or neighbor")
+        object.__setattr__(self, "context_scope", scope)
         if self.occurred_at is not None:
             object.__setattr__(self, "occurred_at", _aware(self.occurred_at, "occurred_at"))
         object.__setattr__(self, "confidence_bp", _bp(self.confidence_bp, "confidence_bp"))
-        if not 1 <= int(self.authority_rank) <= 4:
+        if isinstance(self.authority_rank, bool) or not isinstance(self.authority_rank, int) \
+                or not 1 <= self.authority_rank <= 4:
             raise ValueError("authority_rank must be between 1 and 4")
 
 
@@ -166,12 +186,12 @@ class ContextSnapshot:
             self.root_entity_type, "root_entity_type"))
         object.__setattr__(self, "selector_version", _identifier(
             self.selector_version, "selector_version"))
-        if isinstance(self.graph_version, bool) or int(self.graph_version) < 0:
+        if isinstance(self.graph_version, bool) or not isinstance(self.graph_version, int) \
+                or self.graph_version < 0:
             raise ValueError("graph_version must be a non-negative integer")
-        if isinstance(self.edge_count, bool) or int(self.edge_count) < 0:
+        if isinstance(self.edge_count, bool) or not isinstance(self.edge_count, int) \
+                or self.edge_count < 0:
             raise ValueError("edge_count must be a non-negative integer")
-        object.__setattr__(self, "graph_version", int(self.graph_version))
-        object.__setattr__(self, "edge_count", int(self.edge_count))
         object.__setattr__(self, "evaluation_time", _aware(
             self.evaluation_time, "evaluation_time"))
         object.__setattr__(self, "facts", _mapping(self.facts))
@@ -187,6 +207,25 @@ class ContextSnapshot:
         evidence_ids = [item.evidence_id for item in self.evidence]
         if len(evidence_ids) != len(set(evidence_ids)):
             raise ValueError("duplicate evidence_id")
+        for item in self.evidence:
+            source = self.facts if item.context_scope == "root" else self.neighbor_facts
+            if item.field not in source:
+                raise ValueError(
+                    f"evidence {item.evidence_id} field is absent from its context scope")
+            record = source[item.field]
+            if isinstance(record, Mapping) and "value" in record:
+                actual = record["value"]
+            elif isinstance(record, Mapping) and "value_bp" in record:
+                actual = record["value_bp"]
+            else:
+                actual = record
+            matches = semantic_hash(actual) == semantic_hash(item.value)
+            if not matches and isinstance(actual, (tuple, list)):
+                matches = any(semantic_hash(member) == semantic_hash(item.value)
+                              for member in actual)
+            if not matches:
+                raise ValueError(
+                    f"evidence {item.evidence_id} value does not match its context fact")
 
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"org_id": self.org_id, "graph_version": self.graph_version,
@@ -255,11 +294,15 @@ class ReasonerSpec:
             _strings(self.dependencies)))))
         object.__setattr__(self, "required_fields", tuple(sorted(set(
             _strings(self.required_fields)))))
-        if isinstance(self.latency_budget_ms, bool) or not 1 <= int(self.latency_budget_ms) <= 60_000:
+        if isinstance(self.latency_budget_ms, bool) or not isinstance(self.latency_budget_ms, int) \
+                or not 1 <= self.latency_budget_ms <= 60_000:
             raise ValueError("latency_budget_ms must be between 1 and 60000")
-        object.__setattr__(self, "latency_budget_ms", int(self.latency_budget_ms))
         if not isinstance(self.failure_policy, FailurePolicy):
             object.__setattr__(self, "failure_policy", FailurePolicy(self.failure_policy))
+        if not isinstance(self.gating, bool):
+            raise TypeError("gating must be boolean")
+        if self.gating and self.failure_policy != FailurePolicy.REQUIRED:
+            raise ValueError("gating reasoners must use required fail-closed policy")
         object.__setattr__(self, "config", _mapping(self.config))
 
 
@@ -289,14 +332,16 @@ class PlayDefinition:
             raise ValueError("a play requires at least one step")
         object.__setattr__(self, "preconditions", tuple(_mapping(item)
                                                          for item in self.preconditions))
+        if not isinstance(self.read_only, bool):
+            raise TypeError("read_only must be boolean")
         for name in ("impact_bp", "success_probability_bp", "effort_bp", "risk_bp"):
             object.__setattr__(self, name, _bp(getattr(self, name), name))
         object.__setattr__(self, "tags", tuple(sorted(set(_strings(self.tags)))))
         object.__setattr__(self, "success_events", tuple(sorted(set(
             _strings(self.success_events)))))
-        if isinstance(self.window_days, bool) or not 1 <= int(self.window_days) <= 365:
+        if isinstance(self.window_days, bool) or not isinstance(self.window_days, int) \
+                or not 1 <= self.window_days <= 365:
             raise ValueError("window_days must be between 1 and 365")
-        object.__setattr__(self, "window_days", int(self.window_days))
         object.__setattr__(self, "metadata", _mapping(self.metadata))
 
 
@@ -314,6 +359,7 @@ class CapabilityManifest:
     ranking_weights: Mapping[str, int] = field(default_factory=lambda: {
         "impact": 35, "success": 30, "urgency": 20, "effort": 10, "risk": 5})
     policies: tuple[str, ...] = ("read_only",)
+    live_delivery_enabled: bool = True
     do_nothing_consequence: str = "The condition may remain unresolved."
     expiry_hours: int = 168
     metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -325,6 +371,9 @@ class CapabilityManifest:
         object.__setattr__(self, "domain", _identifier(self.domain, "domain"))
         object.__setattr__(self, "root_entity_type", _identifier(
             self.root_entity_type, "root_entity_type"))
+        object.__setattr__(self, "reasoners", tuple(self.reasoners))
+        object.__setattr__(self, "plays", tuple(self.plays))
+        object.__setattr__(self, "intelligence_objects", tuple(self.intelligence_objects))
         if not self.reasoners:
             raise ValueError("capability requires at least one reasoner")
         if not self.plays:
@@ -351,12 +400,33 @@ class CapabilityManifest:
         if sum(weights.values()) != 100:
             raise ValueError("ranking_weights must sum to 100")
         object.__setattr__(self, "ranking_weights", _mapping(weights))
-        object.__setattr__(self, "policies", tuple(sorted(set(_strings(self.policies)))))
+        policies = tuple(sorted(set(_strings(self.policies))))
+        unknown_policies = sorted(set(policies) - SUPPORTED_CAPABILITY_POLICIES)
+        if unknown_policies:
+            raise ValueError(
+                "unsupported capability policies: " + ", ".join(unknown_policies))
+        requires_constraint = bool(policies) or any(play.preconditions for play in self.plays)
+        constraint_spec = next((item for item in self.reasoners
+                                if item.reasoner_id == "core.constraint"), None)
+        if (requires_constraint and (constraint_spec is None
+                                     or constraint_spec.failure_policy != FailurePolicy.REQUIRED)):
+            raise ValueError(
+                "capability policies and play preconditions require a required core.constraint")
+        if "no_unverified_recipient" in policies:
+            for play in self.plays:
+                if ("external_recipient_required" not in play.metadata
+                        or not isinstance(play.metadata["external_recipient_required"], bool)):
+                    raise ValueError(
+                        "no_unverified_recipient requires every play to declare the boolean "
+                        f"external_recipient_required effect: {play.play_id}")
+        object.__setattr__(self, "policies", policies)
+        if not isinstance(self.live_delivery_enabled, bool):
+            raise TypeError("live_delivery_enabled must be boolean")
         object.__setattr__(self, "do_nothing_consequence", _text(
             self.do_nothing_consequence, "do_nothing_consequence"))
-        if isinstance(self.expiry_hours, bool) or not 1 <= int(self.expiry_hours) <= 8_760:
+        if isinstance(self.expiry_hours, bool) or not isinstance(self.expiry_hours, int) \
+                or not 1 <= self.expiry_hours <= 8_760:
             raise ValueError("expiry_hours must be between 1 and 8760")
-        object.__setattr__(self, "expiry_hours", int(self.expiry_hours))
         object.__setattr__(self, "metadata", _mapping(self.metadata))
 
     def to_semantic_dict(self) -> dict[str, Any]:
@@ -366,6 +436,7 @@ class CapabilityManifest:
                 "required_fields": self.required_fields,
                 "intelligence_objects": self.intelligence_objects,
                 "ranking_weights": self.ranking_weights, "policies": self.policies,
+                "live_delivery_enabled": self.live_delivery_enabled,
                 "do_nothing_consequence": self.do_nothing_consequence,
                 "expiry_hours": self.expiry_hours, "metadata": self.metadata}
 
@@ -404,10 +475,31 @@ class ReasoningRequest:
             raise ValueError("capability root type does not match context")
         if not isinstance(self.mode, ExecutionMode):
             object.__setattr__(self, "mode", ExecutionMode(self.mode))
-        if self.request_id is None:
-            object.__setattr__(self, "request_id", stable_id("req", self.to_semantic_dict()))
+        for name in ("trigger_ref", "config_snapshot_id"):
+            if getattr(self, name) is not None:
+                object.__setattr__(self, name, _identifier(getattr(self, name), name))
+        # Policies are capability-local in v1. Their exact bytes already live inside the immutable
+        # manifest, so derive a content address instead of accepting an opaque, unverifiable ID.
+        expected_policy_id = stable_id("policy", {
+            "capability_id": self.capability.capability_id,
+            "capability_version": self.capability.version,
+            "policies": self.capability.policies,
+        })
+        if self.policy_snapshot_id is None:
+            object.__setattr__(self, "policy_snapshot_id", expected_policy_id)
         else:
-            object.__setattr__(self, "request_id", _identifier(self.request_id, "request_id"))
+            supplied_policy_id = _identifier(self.policy_snapshot_id, "policy_snapshot_id")
+            if supplied_policy_id != expected_policy_id:
+                raise ValueError("policy_snapshot_id does not match capability policy bytes")
+            object.__setattr__(self, "policy_snapshot_id", supplied_policy_id)
+        expected_request_id = stable_id("req", self.to_semantic_dict())
+        if self.request_id is None:
+            object.__setattr__(self, "request_id", expected_request_id)
+        else:
+            supplied_request_id = _identifier(self.request_id, "request_id")
+            if supplied_request_id != expected_request_id:
+                raise ValueError("request_id does not match request content")
+            object.__setattr__(self, "request_id", supplied_request_id)
 
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"org_id": self.org_id,
@@ -435,7 +527,12 @@ class Finding:
     def __post_init__(self) -> None:
         object.__setattr__(self, "finding_id", _identifier(self.finding_id, "finding_id"))
         object.__setattr__(self, "kind", _identifier(self.kind, "finding kind"))
+        if self.matched is not None and not isinstance(self.matched, bool):
+            raise TypeError("finding matched must be boolean or None")
         object.__setattr__(self, "metrics", _mapping(self.metrics))
+        for name, value in self.metrics.items():
+            if name.endswith("_bp"):
+                _bp(value, f"finding metrics.{name}")
         object.__setattr__(self, "evidence_ids", tuple(sorted(set(
             _strings(self.evidence_ids)))))
         object.__setattr__(self, "reason_codes", tuple(sorted(set(
@@ -453,9 +550,9 @@ class CandidateAdjustment:
     def __post_init__(self) -> None:
         object.__setattr__(self, "play_id", _identifier(self.play_id, "play_id"))
         object.__setattr__(self, "component", _identifier(self.component, "component"))
-        if isinstance(self.delta_bp, bool) or not -10_000 <= int(self.delta_bp) <= 10_000:
+        if isinstance(self.delta_bp, bool) or not isinstance(self.delta_bp, int) \
+                or not -10_000 <= self.delta_bp <= 10_000:
             raise ValueError("delta_bp must be between -10000 and 10000")
-        object.__setattr__(self, "delta_bp", int(self.delta_bp))
         object.__setattr__(self, "reason_code", _identifier(
             self.reason_code, "reason_code"))
         object.__setattr__(self, "evidence_ids", tuple(sorted(set(
@@ -513,7 +610,15 @@ class ReasonerResult:
             self.reasoner_version, "reasoner_version"))
         if not isinstance(self.status, ResultStatus):
             object.__setattr__(self, "status", ResultStatus(self.status))
+        if self.matched is not None and not isinstance(self.matched, bool):
+            raise TypeError("reasoner matched must be boolean or None")
         object.__setattr__(self, "metrics", _mapping(self.metrics))
+        for name, value in self.metrics.items():
+            if name.endswith("_bp"):
+                _bp(value, f"reasoner metrics.{name}")
+        object.__setattr__(self, "findings", tuple(self.findings))
+        object.__setattr__(self, "adjustments", tuple(self.adjustments))
+        object.__setattr__(self, "checks", tuple(self.checks))
         object.__setattr__(self, "evidence_ids", tuple(sorted(set(
             _strings(self.evidence_ids)))))
         object.__setattr__(self, "missing_fields", tuple(sorted(set(
@@ -521,6 +626,11 @@ class ReasonerResult:
         object.__setattr__(self, "reason_codes", tuple(sorted(set(
             _strings(self.reason_codes)))))
         object.__setattr__(self, "diagnostics", _mapping(self.diagnostics))
+        if self.status != ResultStatus.COMPLETED and (
+                self.matched is not None or self.metrics or self.findings or self.adjustments
+                or self.checks or self.evidence_ids):
+            raise ValueError(
+                "non-completed reasoner results cannot carry decision effects or evidence")
 
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"reasoner_id": self.reasoner_id, "reasoner_version": self.reasoner_version,
@@ -559,9 +669,16 @@ class DecisionCandidate:
         for key, value in components.items():
             components[key] = _bp(value, f"score_components.{key}")
         object.__setattr__(self, "score_components", _mapping(components))
+        object.__setattr__(self, "checks", tuple(self.checks))
+        if any(check.play_id != self.play_id for check in self.checks):
+            raise ValueError("candidate checks must reference their candidate play")
         if self.rank_position is not None and (isinstance(self.rank_position, bool)
-                                               or int(self.rank_position) <= 0):
+                                               or not isinstance(self.rank_position, int)
+                                               or self.rank_position <= 0):
             raise ValueError("rank_position must be positive")
+        if (self.disposition == CandidateDisposition.ELIMINATED
+                and self.rank_position is not None):
+            raise ValueError("eliminated candidates cannot have a rank")
         object.__setattr__(self, "evidence_ids", tuple(sorted(set(
             _strings(self.evidence_ids)))))
         object.__setattr__(self, "parameters", _mapping(self.parameters))
@@ -594,6 +711,21 @@ class StepTrace:
     reason_codes: tuple[str, ...] = ()
     missing_fields: tuple[str, ...] = ()
 
+    def __post_init__(self) -> None:
+        if isinstance(self.ordinal, bool) or not isinstance(self.ordinal, int) or self.ordinal <= 0:
+            raise ValueError("trace ordinal must be a positive integer")
+        object.__setattr__(self, "reasoner_id", _identifier(self.reasoner_id, "reasoner_id"))
+        object.__setattr__(self, "reasoner_version", _identifier(
+            self.reasoner_version, "reasoner_version"))
+        if not isinstance(self.status, ResultStatus):
+            object.__setattr__(self, "status", ResultStatus(self.status))
+        object.__setattr__(self, "input_hash", _hash64(self.input_hash, "input_hash"))
+        object.__setattr__(self, "output_hash", _hash64(self.output_hash, "output_hash"))
+        object.__setattr__(self, "reason_codes", tuple(sorted(set(
+            _strings(self.reason_codes)))))
+        object.__setattr__(self, "missing_fields", tuple(sorted(set(
+            _strings(self.missing_fields)))))
+
 
 @dataclass(frozen=True, slots=True)
 class ReasoningDecision:
@@ -612,20 +744,50 @@ class ReasoningDecision:
     def __post_init__(self) -> None:
         if not isinstance(self.outcome, DecisionOutcome):
             object.__setattr__(self, "outcome", DecisionOutcome(self.outcome))
+        object.__setattr__(self, "capability_id", _identifier(
+            self.capability_id, "capability_id"))
+        object.__setattr__(self, "capability_version", _identifier(
+            self.capability_version, "capability_version"))
+        object.__setattr__(self, "context_snapshot_id", _identifier(
+            self.context_snapshot_id, "context_snapshot_id"))
+        object.__setattr__(self, "candidates", tuple(self.candidates))
+        if self.selected_candidate_id is not None:
+            object.__setattr__(self, "selected_candidate_id", _identifier(
+                self.selected_candidate_id, "selected_candidate_id"))
         object.__setattr__(self, "confidence_bp", _bp(self.confidence_bp, "confidence_bp"))
         object.__setattr__(self, "uncertainty", tuple(sorted(set(_strings(self.uncertainty)))))
+        object.__setattr__(self, "do_nothing_consequence", _text(
+            self.do_nothing_consequence, "do_nothing_consequence"))
         object.__setattr__(self, "expires_at", _aware(self.expires_at, "expires_at"))
+        if self.outcome_window_days is not None and (
+                isinstance(self.outcome_window_days, bool)
+                or not isinstance(self.outcome_window_days, int)
+                or not 1 <= self.outcome_window_days <= 365):
+            raise ValueError("outcome_window_days must be between 1 and 365")
         ids = [candidate.candidate_id for candidate in self.candidates]
         if len(ids) != len(set(ids)):
             raise ValueError("duplicate decision candidate")
+        eligible = [candidate for candidate in self.candidates
+                    if candidate.disposition == CandidateDisposition.ELIGIBLE]
+        ranks = [candidate.rank_position for candidate in eligible]
+        if any(rank is None for rank in ranks) or sorted(ranks) != list(
+                range(1, len(ranks) + 1)):
+            raise ValueError("eligible candidate ranks must be contiguous from one")
         if self.outcome == DecisionOutcome.DECISION:
             if self.selected_candidate_id is None or self.selected_candidate_id not in ids:
                 raise ValueError("decision outcome requires a selected eligible candidate")
             selected = next(c for c in self.candidates if c.candidate_id == self.selected_candidate_id)
             if selected.disposition != CandidateDisposition.ELIGIBLE:
                 raise ValueError("selected candidate must be eligible")
+            if selected.rank_position != 1:
+                raise ValueError("selected candidate must be ranked first")
         elif self.selected_candidate_id is not None:
             raise ValueError("non-decision outcome cannot select a candidate")
+        if self.outcome == DecisionOutcome.BLOCKED and eligible:
+            raise ValueError("blocked outcome cannot contain eligible candidates")
+        if self.outcome in {DecisionOutcome.NO_ACTION, DecisionOutcome.INSUFFICIENT_CONTEXT,
+                            DecisionOutcome.FAILED} and self.candidates:
+            raise ValueError(f"{self.outcome.value} outcome cannot contain candidates")
 
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"outcome": self.outcome, "capability_id": self.capability_id,
@@ -658,6 +820,26 @@ class ReasoningTrace:
     reasoner_plan: tuple[str, ...]
     steps: tuple[StepTrace, ...]
     decision_hash: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "run_id", _identifier(self.run_id, "run_id"))
+        object.__setattr__(self, "request_hash", _hash64(self.request_hash, "request_hash"))
+        object.__setattr__(self, "capability_snapshot_id", _identifier(
+            self.capability_snapshot_id, "capability_snapshot_id"))
+        object.__setattr__(self, "context_snapshot_id", _identifier(
+            self.context_snapshot_id, "context_snapshot_id"))
+        object.__setattr__(self, "orchestrator_version", _identifier(
+            self.orchestrator_version, "orchestrator_version"))
+        if not isinstance(self.mode, ExecutionMode):
+            object.__setattr__(self, "mode", ExecutionMode(self.mode))
+        object.__setattr__(self, "reasoner_plan", tuple(_strings(self.reasoner_plan)))
+        object.__setattr__(self, "steps", tuple(self.steps))
+        object.__setattr__(self, "decision_hash", _hash64(
+            self.decision_hash, "decision_hash"))
+        if tuple(step.ordinal for step in self.steps) != tuple(range(1, len(self.steps) + 1)):
+            raise ValueError("trace step ordinals must be contiguous from one")
+        if tuple(step.reasoner_id for step in self.steps) != self.reasoner_plan:
+            raise ValueError("trace steps must match the declared reasoner plan")
 
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"request_hash": self.request_hash,

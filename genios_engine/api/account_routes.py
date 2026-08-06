@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import secrets
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -238,26 +239,68 @@ def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict
 
 
 # ── destructive: wipe graph / delete account ─────────────────────────────────
-# Every org_id-carrying table with derived/customer content belongs here — a table
-# missing from this list survives account deletion, which is a broken promise.
-# raw_payloads + prepared_content hold email-derived text (the worst to leak).
+# Reset removes the tenant's learned/runtime state while preserving account configuration,
+# connected sources, seats, billing ledgers, policies, and channels. Uploaded files are removed
+# too: retaining an ``indexed`` file after deleting every derived event/fact would be a false and
+# unrecoverable UI state (the upload API has no re-index-existing-file operation).
+# Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
-    "cards", "card_events", "signals", "signal_suppression_log", "decisions",
-    "graph_facts", "graph_edges", "graph_observations", "graph_source_refs", "graph_nodes",
-    "graph_versions", "baselines", "raw_payloads", "prepared_content",
+    "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
+    "card_feedback_verdicts", "card_events", "cards", "signals",
+    # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
+    # config; context references capability. Payloads are explicit as defense in depth even though
+    # the context FK also cascades them.
+    "reasoning_runs", "reasoning_context_payloads", "reasoning_context_snapshots",
+    "reasoning_capability_snapshots", "config_snapshots",
+    "signal_suppression_log", "decisions", "approvals_queue",
+    "rule_mutes", "calibration_nudges", "calibration_runs", "macv_ledger",
+    "context_attention", "context_read_models", "graph_change_outbox",
+    "discrepancies", "merge_history", "merge_proposals",
+    "graph_source_refs", "graph_facts", "graph_edges", "graph_observations",
+    "source_identity_map", "graph_nodes", "graph_versions", "baselines",
+    "raw_payloads", "prepared_content", "document_jobs", "resource_uploads",
     "l2_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
-    "l1_sync_runs", "source_events", "agent_events", "human_events",
+    "source_coverage", "sync_cursors", "l1_sync_runs", "source_events",
+    "agent_events", "human_events",
 ]
+
+_UPLOAD_ROOT = (Path(__file__).resolve().parents[2] / "uploads").resolve()
+
+
+def _lock_erasure_authority(c, org: str) -> None:
+    """Serialize erasure against reasoning publication and every action/claim boundary."""
+    c.execute(text("select graph_version from graph_versions where org_id=:o for update"),
+              {"o": org})
+    c.execute(text("select pack_id from tenant_packs where org_id=:o for update"), {"o": org})
+
+
+def _remove_upload_files(paths) -> int:
+    """Delete only files rooted in GeniOS's upload directory; fail the erasure on any ambiguity."""
+    removed = 0
+    for raw_path in sorted({str(path) for path in paths if path}):
+        try:
+            resolved = Path(raw_path).resolve(strict=False)
+        except (OSError, RuntimeError) as exc:
+            raise HTTPException(503, "account upload erasure could not be completed safely") from exc
+        if resolved == _UPLOAD_ROOT or _UPLOAD_ROOT not in resolved.parents:
+            raise HTTPException(503, "account upload erasure refused an unsafe storage path")
+        try:
+            existed = resolved.exists()
+            resolved.unlink(missing_ok=True)
+            removed += int(existed)
+        except OSError as exc:
+            raise HTTPException(503, "account upload erasure could not be completed") from exc
+    return removed
 
 
 def _wipe(c, org: str) -> dict:
     wiped = {}
     for tbl in _ORG_SCOPED_TABLES:
-        try:
-            res = c.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
-            wiped[tbl] = res.rowcount
-        except Exception:      # noqa: BLE001 — table may not carry org_id in every deployment
-            _log.warning("wipe skipped table %s for %s", tbl, org)
+        # The application boots only after all migrations succeed. An erasure that cannot delete a
+        # required table must fail visibly and roll back; swallowing a PostgreSQL statement error
+        # leaves the transaction aborted and makes a partial-delete response dangerously false.
+        res = c.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
+        wiped[tbl] = res.rowcount
     return wiped
 
 
@@ -266,20 +309,35 @@ def reset_graph(org_id: str, org: str = Depends(_org)) -> dict:
     """Wipe this org's learned graph + signals + cards (keeps the account, connections, tasks).
     User-initiated from Settings with an explicit confirm."""
     with _graph.engine.begin() as c:
+        _lock_erasure_authority(c, org)
+        upload_paths = [row.storage_path for row in c.execute(text(
+            "select storage_path from resource_uploads where org_id=:o "
+            "and storage_path is not null"), {"o": org})]
+        removed_files = _remove_upload_files(upload_paths)
         wiped = _wipe(c, org)
-    return {"wiped": True, "rows": wiped}
+        # Learned offsets live inside the retained tenant-pack row, not a learning ledger. Clear
+        # them under the same pack lock and revoke all prior signal authority in one epoch bump.
+        c.execute(text(
+            "update tenant_packs set lvl3_config='{}'::jsonb, "
+            "authority_revision=authority_revision+1,updated_at=clock_timestamp() "
+            "where org_id=:o"), {"o": org})
+    return {"wiped": True, "rows": wiped, "upload_files_removed": removed_files}
 
 
 @router.delete("/api/org/{org_id}/account")
 def delete_account(org_id: str, org: str = Depends(_org)) -> dict:
     """Full account deletion — wipe all org data, then remove the org (cascades api_keys). Irreversible."""
     with _graph.engine.begin() as c:
+        held = c.execute(text("select id from orgs where id=:o for update"), {"o": org}).first()
+        if held is None:
+            raise HTTPException(404, "org not found")
+        _lock_erasure_authority(c, org)
+        upload_paths = [row.storage_path for row in c.execute(text(
+            "select storage_path from resource_uploads where org_id=:o and storage_path is not null "),
+            {"o": org})]
+        removed_files = _remove_upload_files(upload_paths)
         _wipe(c, org)
-        for tbl in ("connections", "user_tasks", "org_members", "org_invites", "api_keys",
-                    "tenant_packs", "agent_registry", "agent_grants"):
-            try:
-                c.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
-            except Exception:      # noqa: BLE001
-                pass
-        c.execute(text("delete from orgs where id=:o"), {"o": org})
-    return {"deleted": True}
+        deleted = c.execute(text("delete from orgs where id=:o"), {"o": org})
+        if deleted.rowcount != 1:
+            raise RuntimeError("account erasure did not delete exactly one organization")
+    return {"deleted": True, "upload_files_removed": removed_files}

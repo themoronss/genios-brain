@@ -130,7 +130,13 @@ def load_preventive(store, org_id: str, *, registry=None,
     (rule, node) that ALREADY has an open signal — a warning about something that has
     fired is not preventive, it's an echo."""
     from sqlalchemy import text
-    eval_time = eval_time or datetime.now(timezone.utc)
+    from genios_engine.executive.authority import (
+        AUTHORITATIVE_SIGNAL_JOINS,
+        AUTHORITATIVE_SIGNAL_PREDICATE,
+        EXECUTIVE_RULE_ID_SQL,
+        authority_time,
+    )
+    eval_time = authority_time(eval_time)
     rules: list[dict] = []
     if registry is not None:
         try:
@@ -143,6 +149,9 @@ def load_preventive(store, org_id: str, *, registry=None,
         return []
 
     with store.engine.connect() as c:
+        c.execute(text(
+            "select graph_version from graph_versions where org_id=:o for share"),
+            {"o": org_id})
         facts_by_node: dict[str, dict] = {}
         for r in c.execute(text(
                 "select subject_node_id nid, field, value from graph_facts "
@@ -153,8 +162,12 @@ def load_preventive(store, org_id: str, *, registry=None,
                 "where org_id=:o and status='active'"), {"o": org_id}):
             facts_by_node.setdefault(r.nid, {}).setdefault("_obs_kinds", set()).add(r.kind)
         already = {(r.rule_id, r.subject_node_id) for r in c.execute(text(
-            "select rule_id, subject_node_id from signals where org_id=:o and status='open'"),
-            {"o": org_id})}
+            "select " + EXECUTIVE_RULE_ID_SQL + " as rule_id, "
+            "rr.root_node_id as subject_node_id from signals s "
+            + AUTHORITATIVE_SIGNAL_JOINS +
+            "where s.org_id=:o and s.status='open' and "
+            + AUTHORITATIVE_SIGNAL_PREDICATE),
+            {"o": org_id, "authority_time": eval_time})}
         names = {r.node_id: r.display_name for r in c.execute(text(
             "select node_id, display_name from graph_nodes where org_id=:o and valid_to is null"),
             {"o": org_id})}

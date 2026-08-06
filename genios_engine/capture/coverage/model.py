@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from genios_engine.capture.source_registry import PROVIDER_CAPABILITY as _REGISTRY_CAPABILITY
+
 # Coverage / context-readiness. Absence of data must never be read as negative
 # evidence — downstream layers get explicit readiness predicates instead.
 # Packs declare CAPABILITIES (not vendor names); providers satisfy capabilities.
@@ -15,15 +17,11 @@ PACK_REQUIREMENTS: dict[str, dict[str, list[str]]] = {
                 "recommended": ["document_store"]},
 }
 
-PROVIDER_CAPABILITY: dict[str, str] = {
-    "gmail": "communication", "outlook": "communication", "slack": "communication",
-    "gcal": "calendar", "mscal": "calendar",
-    "hubspot": "crm", "salesforce": "crm",
-    "zendesk": "support_desk", "intercom": "support_desk",
-    "stripe": "finance", "razorpay": "finance",
-    "gdrive": "document_store", "notion": "document_store",
-    "postgres": "product_usage", "mixpanel": "product_usage",
-}
+# Derived from the source registry, not hand-listed: this list drifting from the family
+# taxonomy is why `stripe` had a capability but no family. Alias ids resolve too, so a
+# connection stored as source_type='google_calendar' now counts toward `calendar`
+# coverage — hand-listing only the canonical id silently under-reported it.
+PROVIDER_CAPABILITY: dict[str, str] = _REGISTRY_CAPABILITY
 
 # Which readiness predicate each capability unlocks (absence ≠ negative fact).
 _READINESS = {

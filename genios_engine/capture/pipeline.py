@@ -98,6 +98,7 @@ def _build_gated_event(event: SourceEvent, prepared: PreparedContent | None,
         domain_hints=hints,
         linkage_hints=links,
         triage_lane=lane,
+        internal_kind=event.internal_kind,
         versions={
             "preprocessor": prepared.preprocessor_version if prepared else None,
             "gate_rules": "gate-1",

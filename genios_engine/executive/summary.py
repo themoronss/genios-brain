@@ -7,33 +7,54 @@ Numbers are counted, never estimated; an empty morning says "nothing needs you",
 because a fabricated urgency costs the credibility of every real one."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import text
 
+from genios_engine.executive.authority import (
+    AUTHORITATIVE_REASON_CODE_SQL,
+    AUTHORITATIVE_SCORE_SQL,
+    AUTHORITATIVE_SIGNAL_JOINS,
+    AUTHORITATIVE_SIGNAL_PREDICATE,
+    EXECUTIVE_ATTENTION_AUTHORITY_JOIN,
+    EXECUTIVE_ATTENTION_SCORE_SQL,
+    authority_time,
+)
 
-def _counts(store, org_id: str) -> dict:
+
+def _counts(store, org_id: str, eval_time: datetime) -> dict:
     with store.engine.connect() as c:
-        sig = c.execute(text(
-            "select count(*) total, count(*) filter (where score >= 70) high "
-            "from signals where org_id=:o and status='open'"), {"o": org_id}).first()
+        c.execute(text(
+            "select graph_version from graph_versions where org_id=:o for share"),
+            {"o": org_id})
         top = c.execute(text(
-            "select s.reason_code, s.score, n.display_name from signals s "
-            "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=s.org_id "
-            "and n.valid_to is null "
-            "where s.org_id=:o and s.status='open' order by s.score desc limit 5"),
-            {"o": org_id}).fetchall()
+            "select " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code, "
+            + AUTHORITATIVE_SCORE_SQL + " as score, n.display_name, "
+            "count(*) over () as total, "
+            "count(*) filter (where " + AUTHORITATIVE_SCORE_SQL + " >= 70) "
+            "over () as high from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            "left join graph_nodes n on n.node_id=rr.root_node_id and n.org_id=s.org_id "
+            "and n.valid_to is null where s.org_id=:o and s.status='open' and "
+            + AUTHORITATIVE_SIGNAL_PREDICATE + " "
+            "order by selected_rc.final_utility_bp desc, rr.completed_at desc, "
+            "rr.capability_id asc, rr.root_node_id asc, s.signal_id asc limit 5"),
+            {"o": org_id, "authority_time": eval_time}).fetchall()
         conflicts = c.execute(text(
             "select count(*) from discrepancies where org_id=:o and status='open'"),
             {"o": org_id}).scalar()
         overdue = c.execute(text(
             "select count(*) from graph_facts where org_id=:o and field='commitment.due_at' "
             "and valid_to is null and status='active' "
-            "and (value #>> '{}')::timestamptz < now()"), {"o": org_id}).scalar()
+            "and (value #>> '{}')::timestamptz < :evaluation_time"),
+            {"o": org_id, "evaluation_time": eval_time}).scalar()
         attention = c.execute(text(
-            "select count(*) from context_attention where org_id=:o "
-            "and band in ('high','critical')"), {"o": org_id}).scalar()
-    return {"open": int(sig.total or 0), "high": int(sig.high or 0),
+            "select count(*) from (select " + EXECUTIVE_ATTENTION_SCORE_SQL + " as score "
+            "from context_attention a " + EXECUTIVE_ATTENTION_AUTHORITY_JOIN +
+            "where a.org_id=:o) executive_attention where executive_attention.score >= 50"),
+            {"o": org_id, "authority_time": eval_time}).scalar()
+    total = top[0].total if top else 0
+    high = top[0].high if top else 0
+    return {"open": int(total or 0), "high": int(high or 0),
             "top": [{"reason": t.reason_code, "score": int(t.score),
                      "entity": t.display_name} for t in top],
             "conflicts": int(conflicts or 0), "overdue_commitments": int(overdue or 0),
@@ -42,8 +63,8 @@ def _counts(store, org_id: str) -> dict:
 
 def build_summary(store, org_id: str, horizon: str = "one_line",
                   eval_time: datetime | None = None) -> dict:
-    eval_time = eval_time or datetime.now(timezone.utc)
-    k = _counts(store, org_id)
+    eval_time = authority_time(eval_time)
+    k = _counts(store, org_id, eval_time)
     top = k["top"][0] if k["top"] else None
 
     if top is None:

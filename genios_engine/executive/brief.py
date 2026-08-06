@@ -13,13 +13,25 @@ schedule. who/when/where is Layer 6's job."""
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import text
 
+from genios_engine.executive.authority import (
+    AUTHORITATIVE_REASON_CODE_SQL,
+    AUTHORITATIVE_SCORE_INPUTS_SQL,
+    AUTHORITATIVE_SCORE_SQL,
+    AUTHORITATIVE_SIGNAL_JOINS,
+    AUTHORITATIVE_SIGNAL_PREDICATE,
+    EXECUTIVE_LEVEL_SQL,
+    EXECUTIVE_RULE_ID_SQL,
+    authoritative_play_win_rates,
+    authority_time,
+)
 from genios_engine.executive.modes import mode_of_signal
 from genios_engine.executive.validate import validate_text
 from genios_engine.executive.verbs import band_of, select_verb
+from genios_engine.reason.foresight import play_stat_key
 
 BRIEF_VERSION = "brief.v1"
 MIN_PLAY_N = 5                     # Law 08: below this, a play is "new", never a percentage
@@ -79,7 +91,12 @@ def compose_brief(*, signal: dict, facts: dict, entity_name: str | None,
     play_id = signal.get("play")
     play = None
     if play_id:
-        st = (play_stats or {}).get(play_id) or {}
+        stat_key = play_stat_key(
+            str(signal.get("pack_id") or ""),
+            str(signal.get("pack_version") or ""),
+            str(play_id),
+        )
+        st = (play_stats or {}).get(stat_key) or {}
         n = int(st.get("n") or 0)
         play = {"play_id": play_id,
                 "measured": ({"win_rate_lb_pct": int(round(float(st.get("rate_lb", 0)) * 100)),
@@ -134,36 +151,50 @@ def compose_brief(*, signal: dict, facts: dict, entity_name: str | None,
 # ── store-reading loader (org-scoped; SELECTs only stable pre-L4 columns) ─────────
 def load_briefs(store, org_id: str, *, registry=None, limit: int = 20,
                 eval_time: datetime | None = None) -> list[dict]:
-    """Open signals → ranked briefs. Reads only columns that exist since 0005 so it
-    keeps working regardless of the in-flight L4 signal-table extensions."""
-    eval_time = eval_time or datetime.now(timezone.utc)
-    scoring_cfg, templates = {}, {}
-    if registry is not None:
-        try:
-            effective, _sid = registry.effective(org_id)
-            if effective:
-                scoring_cfg = effective.get("scoring", {}) or {}
-                templates = effective.get("templates", {}) or {}
-        except Exception:      # noqa: BLE001 — pack config is an enricher, never a blocker
-            pass
+    """Authoritative open decisions → ranked briefs at one explicit evaluation time.
+
+    ``registry`` remains in the public API for compatibility, but current registry state is
+    intentionally not used: every brief is rendered from the exact config snapshot bound to
+    its audited decision.
+    """
+    eval_time = authority_time(eval_time)
+    _ = registry
 
     play_stats = {}
     try:
-        from genios_engine.reason.foresight import play_win_rates
-        play_stats = play_win_rates(store, org_id) or {}
+        play_stats = authoritative_play_win_rates(store, org_id, eval_time=eval_time) or {}
     except Exception:      # noqa: BLE001 — adaptive stats are an enricher
         play_stats = {}
 
     with store.engine.connect() as c:
+        c.execute(text(
+            "select graph_version from graph_versions where org_id=:o for share"),
+            {"o": org_id})
         sigs = c.execute(text(
-            "select s.signal_id, s.rule_id, s.level, s.subject_node_id, s.score, "
-            "s.score_inputs, s.reason_code, s.evidence, s.play, s.eval_time, "
-            "n.display_name "
-            "from signals s left join graph_nodes n on n.node_id=s.subject_node_id "
+            "select s.signal_id, " + EXECUTIVE_RULE_ID_SQL + " as rule_id, "
+            + EXECUTIVE_LEVEL_SQL + " as level, rr.root_node_id as subject_node_id, "
+            + AUTHORITATIVE_SCORE_SQL + " as score, "
+            + AUTHORITATIVE_SCORE_INPUTS_SQL + " as score_inputs, "
+            + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code, "
+            "coalesce(authority_payload.payload->'evidence', selected_rc.evidence_refs) "
+            "as evidence, selected_rc.play_id as play, "
+            "authority_cfg.pack_id as pack_id, "
+            "authority_cfg.effective->>'version' as pack_version, "
+            "rr.evaluation_time as eval_time, rr.config_snapshot_id, "
+            "authority_cfg.effective->'scoring' as scoring_cfg, "
+            "authority_cfg.effective->'templates' as templates, n.display_name "
+            "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            "left join reasoning_context_payloads authority_payload "
+            "on authority_payload.org_id=authority_ctx.org_id and "
+            "authority_payload.context_snapshot_id=authority_ctx.context_snapshot_id "
+            "left join graph_nodes n on n.node_id=rr.root_node_id "
             "and n.org_id=s.org_id and n.valid_to is null "
-            "where s.org_id=:o and s.status='open' "
-            "order by s.score desc, s.created_at desc limit :l"),
-            {"o": org_id, "l": max(1, min(int(limit), 100))}).fetchall()
+            "where s.org_id=:o and s.status='open' and "
+            + AUTHORITATIVE_SIGNAL_PREDICATE + " "
+            "order by selected_rc.final_utility_bp desc, rr.completed_at desc, "
+            "rr.capability_id asc, rr.root_node_id asc, s.signal_id asc limit :l"),
+            {"o": org_id, "l": max(1, min(int(limit), 100)),
+             "authority_time": eval_time}).fetchall()
         node_ids = list({r.subject_node_id for r in sigs})
         facts_by_node: dict[str, dict] = {}
         if node_ids:
@@ -188,5 +219,7 @@ def load_briefs(store, org_id: str, *, registry=None, limit: int = 20,
         out.append(compose_brief(
             signal=sig, facts=facts_by_node.get(r.subject_node_id, {}),
             entity_name=r.display_name, play_stats=play_stats,
-            templates=templates, scoring_cfg=scoring_cfg, eval_time=eval_time))
+            templates=(r.templates if isinstance(r.templates, dict) else {}),
+            scoring_cfg=(r.scoring_cfg if isinstance(r.scoring_cfg, dict) else {}),
+            eval_time=eval_time))
     return out

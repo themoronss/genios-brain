@@ -32,5 +32,8 @@ class GatedEvent(BaseModel):
     linkage_hints: list[dict[str, Any]] = Field(default_factory=list)
     triage_lane: str = "P2"
     coverage_ready: bool | None = None
+    # Company canon (capture.internal_knowledge.INTERNAL_KINDS) — the authority this
+    # event carries into the graph. None = observed traffic, ordinary rank.
+    internal_kind: str | None = None
     versions: dict[str, Any] = Field(default_factory=dict)
-    schema_version: int = 1
+    schema_version: int = 2                  # v2: + internal_kind (additive only)

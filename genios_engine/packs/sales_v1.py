@@ -5,12 +5,14 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.7.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
+    "version": "1.8.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
                                       # · 1.5.0 deep lifecycle corpus (pricing_objection, verbal_yes_not_closed,
                                       #   contract_requested, security_review_pending, champion_left, budget_freeze)
                                       #   + obs-kind normalizer · 1.6.0 +discount_pressure, legal_in_review,
                                       #   timeline_slip, demo_requested (18 rules) + enriched extraction vocab
+                                      # · 1.8.0 L5 execution block: escalation ladder, reminder
+                                      #   cadence, interruption budget — all tenant-tunable
     "requires": {"engine": ">=0.1.0"},
 
     # L3 scoring configuration (was hardcoded in the engine — now pack data)
@@ -33,6 +35,47 @@ SALES_V1 = {
         # = standard, [high,critical) = high, ≥critical = critical. Small-deal tenants can't reach
         # critical (I floored at 50 → S_max 83); kept at 85, documented, tunable without a deploy.
         "bands": {"high": 70, "critical": 85},
+
+        # L5 Executive Engine — how a recommendation becomes a tracked commitment. Pack DATA, so
+        # a tenant retunes escalation and interruption through LVL2/LVL3 merge, pins and
+        # guardrails like everything else here; the engine ships identical defaults so an
+        # untuned pack behaves exactly as if this block were absent.
+        "execution": {
+            "planning": {
+                # How soon the FIRST action is due, by urgency band. Urgency shapes when work
+                # starts; the play's window_days shapes when it must finish. Conflating them is
+                # how a fortnight-long commitment ends up demanded by this afternoon.
+                "first_action_hours": {"critical": 4, "high": 24, "standard": 72},
+                "max_actions": 12,
+            },
+            "communication": {
+                # Interruption is a budget, not a feature. Raising interrupt_band to 'critical'
+                # is the one dial to reach for when a tenant says "too noisy".
+                "interrupt_band": "critical",
+                "push_band": "high",
+                # A 92-score conclusion the reasoner is 40% sure of should arrive calmly.
+                "interrupt_min_confidence_bp": 6_000,
+            },
+            "escalation": {
+                # Days from creation, not from the deadline: the useful intervention is early.
+                # Scaled by band — critical work runs the same ladder at half the delay.
+                "ladder": [
+                    {"day": 1, "action": "notify", "audience": "owner", "interrupt": False},
+                    {"day": 3, "action": "remind", "audience": "owner", "interrupt": True},
+                    {"day": 7, "action": "escalate", "audience": "manager", "interrupt": False},
+                    {"day": 14, "action": "critical", "audience": "executive",
+                     "interrupt": True},
+                ],
+                "band_multiplier_bp": {"critical": 5_000, "high": 7_500, "standard": 10_000},
+            },
+            "reminder": {
+                "min_interval_hours": 20,   # never twice inside a working day
+                "max_reminders": 4,         # then escalation owns it — a fifth nudge gets muted
+                "untouched_hours": 24,
+                "deadline_warning_bp": 7_500,   # three quarters of the window burned
+            },
+            "monitor": {"stall_bp": 3_000, "stall_floor_hours": 12},
+        },
     },
 
     "rules": [

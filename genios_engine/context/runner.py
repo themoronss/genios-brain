@@ -69,7 +69,9 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
         res = commit_structured(store, org_id=org_id, event_id=row.event_id, source=row.source,
                                 source_object_id=row.source_object_id, structured_fields=fields,
                                 node_type=mapping.node_type, occurred_at=row.occurred_at,
-                                display_name=display_name, relations=relations)
+                                display_name=display_name, relations=relations,
+                                internal_emails=internal_emails,
+                                domain_hints=getattr(row, "domain_hints", None))
         store.cache_set(processing_key=f"struct:{row.event_id}", org_id=org_id,
                         event_id=row.event_id, output={"structured": True},
                         input_tokens=0, output_tokens=0, model="structured")
@@ -84,7 +86,11 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
                         occurred_at=row.occurred_at, llm=llm, store=store,
-                        is_inbound=is_inbound, internal_emails=internal_emails)
+                        is_inbound=is_inbound, internal_emails=internal_emails,
+                        internal_kind=getattr(row, "internal_kind", None),
+                        thread_id=getattr(row, "parent_object_id", None),
+                        domain_hints=getattr(row, "domain_hints", None),
+                        canon_meta=raw)
     return res.outcome, res.primary_node
 
 
@@ -95,7 +101,9 @@ def _pull(store: GraphStore, org_id: str, limit: int):
     with store.engine.connect() as c:
         return c.execute(text(
             "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
-            "se.occurred_at, se.source_object_id, se.triage_lane, rp.enc_content, "
+            "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
+            "se.parent_object_id, se.domain_hints, "
+            "rp.enc_content, "
             "pc.clean_text as prepared_text "
             "from source_events se "
             "join raw_payloads rp on rp.event_id = se.event_id "
@@ -183,5 +191,19 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             attention_rows = refresh_attention(store, org_id)
         except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
             pass
+
+    # Situations are rebuilt AFTER attention, from correlations the drain just extended.
+    # Every value is derived, so a failure here costs a refresh cycle, not data — the
+    # next drain recomputes it. Never fatal: a situation view being briefly stale must
+    # not stop events from landing.
+    situation_rows = 0
+    if done or affected:
+        try:
+            from genios_engine.context.situations import refresh_situations
+            situation_rows = refresh_situations(store, org_id)
+        except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "situation refresh failed for org=%s", org_id)
     return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected),
-            "attention_rows": attention_rows}
+            "attention_rows": attention_rows, "situation_rows": situation_rows}

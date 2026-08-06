@@ -81,7 +81,10 @@ def test_subject_line_pii_is_masked_in_prepared_text():
 def test_source_family_stamped_on_envelope():
     res, _, _ = _capture(_raw(oid="m4"))
     assert res.event.source_family == "communication"
-    assert res.event.schema_version == 2
+    # v2 added source_family, v3 added internal_kind. Both additive: an ordinary observed
+    # event carries no kind and is otherwise byte-identical to what v2 produced.
+    assert res.event.schema_version == 3
+    assert res.event.internal_kind is None
     assert family_of("notion") == "knowledge"
     assert family_of("human") == "human_input"
     assert family_of("agent") == "ai_generated"

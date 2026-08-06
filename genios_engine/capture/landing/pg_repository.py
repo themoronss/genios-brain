@@ -13,13 +13,14 @@ _INSERT = text(
       (event_id, org_id, connection_id, source, source_family, object_type,
        source_object_id, parent_object_id, dedup_key, actor, occurred_at, captured_at,
        sync_mode, payload_ref, capture_confidence, schema_version, outcome,
-       route, triage_lane, domain_hints, linkage_hints)
+       route, triage_lane, domain_hints, linkage_hints, internal_kind)
     values
       (:event_id, :org_id, :connection_id, :source, :source_family, :object_type,
        :source_object_id, :parent_object_id, :dedup_key, cast(:actor as jsonb),
        :occurred_at, :captured_at, :sync_mode, :payload_ref, :capture_confidence,
        :schema_version, :outcome,
-       :route, :triage_lane, cast(:domain_hints as jsonb), cast(:linkage_hints as jsonb))
+       :route, :triage_lane, cast(:domain_hints as jsonb), cast(:linkage_hints as jsonb),
+       :internal_kind)
     on conflict (org_id, dedup_key) do nothing
     """
 )
@@ -29,9 +30,10 @@ _EXISTS = text("select 1 from source_events where org_id=:o and dedup_key=:d lim
 class PostgresSourceEventRepository:
     """Real Supabase/Postgres storage behind the SourceEventRepository interface.
     Dedup uniqueness is enforced by the DB index; insert is on-conflict-do-nothing.
-    Persists the full seam: envelope v2 (source_family) + the gate/triage decision
-    (route, triage_lane, domain_hints, linkage_hints) that L2 reads instead of
-    re-deriving."""
+    Persists the full seam: envelope v3 (source_family, internal_kind) + the gate/triage
+    decision (route, triage_lane, domain_hints, linkage_hints) that L2 reads instead of
+    re-deriving. internal_kind carries AUTHORITY across the seam — without it persisted,
+    company canon would arrive at L2 indistinguishable from a stranger's email."""
 
     def __init__(self, database_url: str) -> None:
         self._engine = get_engine(database_url)
@@ -58,4 +60,5 @@ class PostgresSourceEventRepository:
                 "route": route, "triage_lane": triage_lane,
                 "domain_hints": json.dumps(domain_hints, default=str) if domain_hints is not None else None,
                 "linkage_hints": json.dumps(linkage_hints, default=str) if linkage_hints is not None else None,
+                "internal_kind": event.internal_kind,
             })
