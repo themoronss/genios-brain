@@ -85,15 +85,10 @@ def _company_domain(email: str | None) -> str | None:
     return None if (not dom or dom in _PERSONAL_DOMAINS) else dom
 
 
-def _norm_email(email: str | None) -> str | None:
-    """P5 — canonical email key: lowercase + trim + strip a +tag suffix from the local part, so
-    priya+vendors@x.com and priya@x.com resolve to ONE person node. None for malformed input.
-    Merge stays deterministic (exact key only); no fuzzy-name merge is ever done."""
-    if not email or "@" not in email:
-        return None
-    local, _, dom = str(email).strip().lower().partition("@")
-    local = local.split("+", 1)[0]
-    return f"{local}@{dom}" if local and dom else None
+# P5 — canonical email key. ONE definition for the whole system (platform.identity):
+# the structured lane (calendar attendees, CRM contacts) and this pipeline must mint
+# byte-identical person keys or the same human splits into strangers per tool.
+from genios_engine.platform.identity import norm_email as _norm_email  # noqa: E402
 
 
 # F2 — obs-kind normalizer. The LLM emits free-form observation kinds; sales rules read exact

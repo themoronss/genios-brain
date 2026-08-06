@@ -66,6 +66,14 @@ register(StructuredMapping(
             FieldMap("amount", "deal.amount", "number"),
             FieldMap("closedate", "deal.close_date", "timestamp")],
     intent="pipeline_update", name_field="deal.title", tags=["stage_change"],
+    # THE CROSS-TOOL BRIDGE. Without these, a CRM deal was an ISLAND — zero edges to
+    # any person — so every neighbor rule (cooling_deal, competitor_in_live_deal,
+    # deal_sentiment_negative) was structurally unable to fire across tools, and
+    # single_threaded_deal fired on EVERY deal (edge_count 0). Contact emails, when
+    # present in the payload (either field shape), become person edges whose
+    # canonical keys MERGE with email/calendar-derived persons. Absent field = no-op.
+    relations=[RelationMap("contact_email", "person", "involves", "in", "email"),
+               RelationMap("contacts", "person", "involves", "in", "email")],
     emit_on_change=["dealstage", "amount"]))
 
 register(StructuredMapping(

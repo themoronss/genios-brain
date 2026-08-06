@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from genios_engine.platform.identity import norm_email
+
 from .registry import StructuredMapping
 
 # personal mailbox domains — an attendee here is a person, never evidence of a company
@@ -31,8 +33,9 @@ def _emails_from(value: Any) -> list[tuple[str, str | None]]:
             email, name = it.get("email") or it.get("address"), it.get("displayName") or it.get("name")
         else:
             continue
-        if email and "@" in str(email):
-            out.append((str(email).strip().lower(), name))
+        canonical = norm_email(email)
+        if canonical:
+            out.append((canonical, name))
     return out
 
 
