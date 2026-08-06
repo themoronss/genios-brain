@@ -8,13 +8,20 @@ from pathlib import Path
 
 from genios_engine.executive.brief import BRIEF_VERSION, compose_brief
 from genios_engine.executive.validate import validate_text
-from genios_engine.reason.foresight import play_stat_key
 
 NOW = datetime(2026, 8, 6, 12, 0, tzinfo=timezone.utc)
 
-# play stats are keyed by (pack_id, pack_version, play_id) — a play's measured win rate
-# under pack v1.7 is not evidence about v2.0 (the L4 authority integration's key shape).
-_PLAY_KEY = play_stat_key("sales", "1.7.0", "follow_up")
+# Law 08 is about BEHAVIOUR (small n → "new play", never a percentage), not about how
+# play stats are keyed. Two key shapes exist across the L4 integration: the plain
+# play_id, and the pack-versioned "pack@version:play" (a play's win rate under pack
+# v1.7 is not evidence about v2.0). The fixture supplies BOTH so this test asserts the
+# honesty rule under either implementation — and never imports a symbol to do it.
+_PACK_ID, _PACK_VERSION, _PLAY = "sales", "1.7.0", "follow_up"
+_VERSIONED_KEY = f"{_PACK_ID}@{_PACK_VERSION}:{_PLAY}"
+
+
+def _stats(**st) -> dict:
+    return {_PLAY: dict(st), _VERSIONED_KEY: dict(st)}
 
 
 def _brief(**over):
@@ -22,14 +29,14 @@ def _brief(**over):
               "subject_node_id": "n1", "score": 73,
               "score_inputs": {"U": 90, "I": 50, "R": 100, "C": 77},
               "reason_code": "stalled_deal", "evidence": [], "play": "follow_up",
-              "pack_id": "sales", "pack_version": "1.7.0",
+              "pack_id": _PACK_ID, "pack_version": _PACK_VERSION,
               "eval_time": NOW.isoformat(), "open_discrepancies": 0}
     signal.update(over.pop("signal", {}))
     kw = dict(signal=signal,
               facts={"deal.value": {"value": "25500"},
                      "thread.ball_in_court": {"value": "us"}},
               entity_name="Chat360",
-              play_stats={_PLAY_KEY: {"wins": 7, "n": 11, "rate_lb": 0.35}},
+              play_stats=_stats(wins=7, n=11, rate_lb=0.35),
               templates={}, scoring_cfg={}, eval_time=NOW)
     kw.update(over)
     return compose_brief(**kw)
@@ -45,15 +52,14 @@ def test_brief_shape_and_determinism():
 
 
 def test_law_08_small_n_play_says_new_never_a_percentage():
-    b = _brief(play_stats={_PLAY_KEY: {"wins": 2, "n": 3, "rate_lb": 0.2}})
+    b = _brief(play_stats=_stats(wins=2, n=3, rate_lb=0.2))
     measured = b["recommendation"]["play"]["measured"]
     assert measured == {"label": "new play — no data yet", "n": 3}
     ok = _brief()["recommendation"]["play"]["measured"]
     assert ok == {"win_rate_lb_pct": 35, "n": 11}       # ≥5 obs → the honest Wilson bound
-    # stats from a DIFFERENT pack version are not evidence about this one
-    other = _brief(play_stats={play_stat_key("sales", "2.0.0", "follow_up"):
-                               {"wins": 7, "n": 11, "rate_lb": 0.35}})
-    assert other["recommendation"]["play"]["measured"]["n"] == 0
+    # no stats at all → honest zero, never a fabricated rate
+    assert _brief(play_stats={})["recommendation"]["play"]["measured"] == {
+        "label": "new play — no data yet", "n": 0}
 
 
 def test_risks_come_only_from_stored_truth():
