@@ -10,6 +10,7 @@ from genios_engine.api.agent_mgmt_routes import router as agent_mgmt_router
 from genios_engine.api.approval_routes import router as approval_router
 from genios_engine.api.audit_routes import router as audit_router
 from genios_engine.api.auth_routes import router as auth_router
+from genios_engine.api.channel_routes import router as channel_router
 from genios_engine.api.executive_routes import router as executive_router
 from genios_engine.api.expertise_routes import router as expertise_router
 from genios_engine.api.intelligence_routes import router as intelligence_router
@@ -62,6 +63,7 @@ app.include_router(router)
 app.include_router(workspace_router)
 app.include_router(intelligence_router)
 app.include_router(executive_router)
+app.include_router(channel_router)
 app.include_router(expertise_router)
 app.include_router(agent_mgmt_router)
 app.include_router(account_router)

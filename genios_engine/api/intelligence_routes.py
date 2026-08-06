@@ -141,7 +141,11 @@ def _insight_type(band: str | None) -> str:
     return "risk" if (band or "").lower() in ("now", "urgent", "high", "today") else "opportunity"
 
 
-_OPEN_STATES = ("queued", "delivered", "snoozed")
+# 'surfaced' and 'claimed' ARE open states — the engine writes them on every push and
+# agent claim, and this tuple once omitted them: pushed HIGH/CRITICAL cards (the ones
+# that matter most) were invisible in the feed while low-priority queued ones showed.
+# 'delivered' is kept for legacy rows.
+_OPEN_STATES = ("queued", "surfaced", "delivered", "snoozed", "claimed")
 _RESOLVED_STATES = ("acted", "resolved")
 # A card is "reply-shaped" (Draft-able) when it's about a specific person AND the wording is about
 # owing/sending a message — vs a risk/advice card, which gets Advice, not a pointless draft.

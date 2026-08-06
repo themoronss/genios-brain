@@ -233,6 +233,25 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for %s", name)
             retention[name] = "error"
+    if _graph is not None:
+        try:
+            from genios_engine.reason.store import ReasoningStore
+            retention["reasoning_context_payloads"] = ReasoningStore(
+                engine=_graph.engine).purge_expired_context_payloads(eval_time=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for reasoning_context_payloads")
+            retention["reasoning_context_payloads"] = "error"
+    # L6 distribution: enqueue new high/critical cards + the daily digest per org with an
+    # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
+    # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
+    distribution = {}
+    if _graph is not None:
+        try:
+            from genios_engine.deliver.outbox import run_distribution
+            distribution = run_distribution(_graph.engine)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("distribution pass failed")
+            distribution = {"error": True}
     calibration = None
     if _last_calibration_at is None or (now - _last_calibration_at) >= timedelta(days=7):
         from genios_engine.feedback.calibrate import run_calibration
@@ -253,7 +272,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         calibration = {"orgs": len(orgs), "pack_runs": runs}
         _log.info("weekly calibration pass complete: %d org(s), %d pack-run(s)", len(orgs), runs)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
-            "calibration": calibration}
+            "distribution": distribution, "calibration": calibration}
 
 
 @router.post("/ingest/all")
