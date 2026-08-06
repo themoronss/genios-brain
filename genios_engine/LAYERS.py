@@ -27,7 +27,8 @@ LAYERS: dict[str, int] = {
     "context": 2,      # Context Intelligence — the live digital twin
     "packs": 3,        # Domain Expertise — packs are one mechanism inside it
     "reason": 4,       # Reasoning Engine — deterministic cognition
-    "deliver": 6,      # Intelligence Distribution (+ executive, until extracted)
+    "executive": 5,    # Executive Intelligence — decision intelligence ONLY
+    "deliver": 6,      # Intelligence Distribution (who/when/where — never what/why)
     "feedback": 7,     # Learning Engine
 }
 
