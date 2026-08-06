@@ -126,6 +126,22 @@ class GraphStore:
             new_occurred_at=occurred_at, replay=replay)
 
         if action == "noop":
+            # CORROBORATION — the cross-intelligence write. A second source asserting the
+            # SAME value is not "nothing happened": it is independent confirmation, and it
+            # is what the scoring ladder (one:60 / two:85 / three+:100) and engine's
+            # src_count read. This branch used to return None before any ref was written,
+            # so src_count could never exceed 1 and the whole ladder was dead code —
+            # email + CRM agreeing looked identical to email alone. The ref attaches to
+            # the HELD (current) version; deduped per event so a re-sync doesn't inflate;
+            # distinct-source counting downstream handles same-source repeats.
+            already = conn.execute(text(
+                "select 1 from graph_source_refs where fact_version_id=:fv "
+                "and event_id=:e limit 1"),
+                {"fv": held.fact_version_id, "e": event_id}).first()
+            if already is None:
+                self._write_ref(conn, org_id=org_id, fact_version_id=held.fact_version_id,
+                                event_id=event_id, source=source,
+                                evidence={**(evidence or {}), "corroborates": True})
             return None
         if action == "discrepancy":
             # held keeps its OWN value (the system-of-record), challenger carries the new one.
