@@ -65,6 +65,19 @@ def test_html_is_stripped_at_ingestion():
     assert "<" not in text and "Hello" in text and "Priya" in text
 
 
+def test_subject_line_pii_is_masked_in_prepared_text():
+    """The subject is part of the prose and is masked WITH the body. (Regression: the
+    seam once persisted body-only prepared text and L2 prepended the RAW subject —
+    unmasked subject-line PII reached the LLM.)"""
+    res, _, prepared = _capture(_raw(
+        oid="m-pii", body="details attached",
+        subject="Re: KYC — Aadhaar 1234 5678 9012"))
+    text = prepared.get_text(org_id="org_a", event_id=res.event.event_id)
+    assert "1234 5678 9012" not in text          # masked
+    assert "KYC" in text                          # subject prose survives
+    assert "details attached" in text             # body present too
+
+
 def test_source_family_stamped_on_envelope():
     res, _, _ = _capture(_raw(oid="m4"))
     assert res.event.source_family == "communication"

@@ -147,12 +147,16 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # preprocess (unstructured text only; structured events carry typed fields).
     # HTML is stripped HERE (heavy at ingestion): the gate's OOO/empty checks and the
     # persisted seam text both want prose, and L2 used to re-strip it per event.
+    # SUBJECT IS PART OF THE PROSE and is masked WITH the body — prepending a raw
+    # subject downstream would leak unmasked PII from subject lines to the LLM.
     # Offset map note: src coordinates refer to the stripped text, not raw HTML bytes.
     prepared: PreparedContent | None = None
     if not is_structured:
         source_text = raw.raw.get("body") or raw.raw.get("snippet") or ""
         stripped = extract_native_text(mime="text/html", data=source_text) or source_text
-        prepared = preprocess(stripped, event_id=event.event_id, mask_phone=mask_phone)
+        subject = str(raw.raw.get("subject") or "")
+        full_text = (subject + "\n\n" + stripped) if subject else stripped
+        prepared = preprocess(full_text, event_id=event.event_id, mask_phone=mask_phone)
         trace.record("preprocess", "pass", language=prepared.language,
                      masked=len(prepared.masked_spans),
                      protected=len(prepared.protected_spans))

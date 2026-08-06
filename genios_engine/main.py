@@ -21,6 +21,17 @@ from genios_engine.platform.config import get_settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # MIGRATE FIRST, fail fast. Code and schema deploy together now: new code names
+    # columns/tables its migrations create, so serving requests before migrating meant
+    # every capture insert + the L2 drain erroring until someone ran migrate by hand.
+    # The schema_migrations ledger makes this a cheap no-op when nothing is pending,
+    # and a loud crash (restart + retry) beats silently serving broken SQL.
+    if get_settings().use_real_db:
+        from genios_engine.platform.migrate import apply_migrations
+        applied = apply_migrations()
+        if applied:
+            import logging
+            logging.getLogger("genios.boot").info("migrations applied at boot: %s", applied)
     # Start the in-process auto-sync scheduler (cross-org L1→L2/L3/L5 sweep every N hours). Only when
     # a real DB is configured — no point sweeping in-memory dev. Disable via GENIOS_SCHEDULER_ENABLED.
     from genios_engine.platform.scheduler import start_scheduler, stop_scheduler

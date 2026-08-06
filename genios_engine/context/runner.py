@@ -36,12 +36,11 @@ _DONE_OUTCOMES = {"committed_structured", "committed", "committed_structural",
 
 def _clean_for_llm(raw: dict, event_id: str, prepared_text: str | None = None) -> str:
     """Prefer the SEAM: L1 already computed the PII-masked prepared text (+offset map)
-    at ingestion and persisted it to prepared_content — re-deriving it here both wasted
-    the work and produced a second, subtly different text (no offset map, no mask
-    parity). Fallback to re-derivation only for pre-seam rows."""
+    at ingestion — subject INCLUDED, masked with the body — and persisted it to
+    prepared_content. Used as-is: prepending the raw subject here would reintroduce
+    unmasked subject-line PII to the LLM. Fallback re-derivation only for pre-seam rows."""
     if prepared_text:
-        subject = raw.get("subject") or ""
-        return (subject + "\n\n" + prepared_text) if subject else prepared_text
+        return prepared_text
     body = raw.get("body") or raw.get("snippet") or ""
     stripped = extract_native_text(mime="text/html", data=body) or body
     prepared = preprocess((raw.get("subject") or "") + "\n\n" + stripped,
