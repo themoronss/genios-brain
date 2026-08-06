@@ -20,7 +20,14 @@ SALES_V1 = {
         "corroboration": {"one": 60, "two": 85, "three_plus": 100, "rank3_full": True},
         "gate": {"s_min": 55, "c_min": 60},                  # c_min ≥ 50 guardrail
         "budget_per_user_day": 7,                            # ≤ 15 guardrail
-        "impact": {"i_floor": 40, "i_floor_scope": "deal_linked", "p90_default": 50000},
+        # i_floor is what a DEAL-LINKED rule scores when the deal's value is unknown.
+        # 40 read the missing value as "assume a median deal" — but combined with the
+        # gate it meant unknown-value deals could never clear s_min, i.e. the whole
+        # no-CRM tenant saw nothing. Unknown is not small: the cost of missing a real
+        # stalled deal dwarfs the cost of one extra card in a 7/day budget that is
+        # ranked anyway. 55 = "assume it matters until we learn otherwise"; a known
+        # value always overrides it. See tests/test_corpus_can_fire.py.
+        "impact": {"i_floor": 55, "i_floor_scope": "deal_linked", "p90_default": 50000},
         "r_half_life": {"countdown_h": 24, "elapsed_h": 72},
         # L5 band cuts (spec §5.11 Finding B — must be pack data, not engine constants). S<high
         # = standard, [high,critical) = high, ≥critical = critical. Small-deal tenants can't reach

@@ -53,10 +53,18 @@ RELEVANCE_FLOOR = 0.35
 # The constitution's line ("the model extracts, it never decides") was broken here for
 # months: fact confidence was ex.relevance (an LLM float), which flowed into engine
 # ext_conf → C → the c_min gate — a language model's mood decided whether signals fired.
-# Now: confidence = what KIND of source asserted it (human 1.0, system-of-record 0.9,
-# grounded extraction 0.7, weak inference 0.4). The LLM's relevance is stored SEPARATELY
-# on the fact (relevance column) and may rank; it may never gate.
-FACT_CONF_BY_RANK = {4: 1.00, 3: 0.90, 2: 0.70, 1: 0.40}
+# Now: confidence = what KIND of source asserted it. The LLM's relevance is stored
+# SEPARATELY on the fact (relevance column) and may rank; it may never gate.
+#
+# Calibration of rank 2 (the common case — an email-derived extraction): a rank-2 fact
+# has PASSED the B4 evidence guard, i.e. the extraction quoted a verbatim substring of
+# the source. We therefore know the source said it; only the interpretation carries
+# risk. 0.85 encodes that: materially below a human correction (1.0) or a system of
+# record (0.9), far above weak inference (0.4). The first draft used 0.70, which was
+# picked by feel and — with the pack's impact floor — put the ENTIRE email-derived
+# corpus permanently below the gate. tests/test_corpus_can_fire.py locks the property
+# so a future change to this table cannot silently kill the rules again.
+FACT_CONF_BY_RANK = {4: 1.00, 3: 0.90, 2: 0.85, 1: 0.40}
 PROMPT_VERSION = "b3-2"          # b3-2: enriched observations with the canonical SIGNAL KINDS vocab
                                 # (deep sales+general detection). Bump invalidates the extraction
                                 # cache → new events extract rich for free; existing backlog gets
