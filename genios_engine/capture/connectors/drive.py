@@ -52,8 +52,15 @@ class ComposioDriveConnector:
             args["pageToken"] = page_token
         return self._x.execute("GOOGLEDRIVE_LIST_FILES", args)
 
-    def _to_batch(self, data: dict) -> SourceBatch:
+    def _to_batch(self, data: dict, since: datetime | None = None) -> SourceBatch:
         files = data.get("files") or data.get("items") or []
+        if since is not None:
+            # Filter on modifiedTime BEFORE _to_raw — _to_raw downloads + extracts each
+            # file, so skipping here is what stops every 6-hourly sweep from re-downloading
+            # the entire Drive (`since` was previously ignored). Metadata-only compare;
+            # dedup_key/content_version untouched.
+            files = [f for f in files if isinstance(f, dict)
+                     and _parse_ts(f.get("modifiedTime")) > since]
         objs = [self._to_raw(f) for f in files if isinstance(f, dict)]
         return SourceBatch(objects=[o for o in objs if o], next_cursor=data.get("nextPageToken"))
 
@@ -87,7 +94,7 @@ class ComposioDriveConnector:
 
     def incremental_changes(self, cursor: str | None = None, limit: int = 50,
                             since: datetime | None = None) -> SourceBatch:
-        return self._to_batch(self._list(limit=limit, page_token=cursor))
+        return self._to_batch(self._list(limit=limit, page_token=cursor), since=since)
 
     def fetch_content(self, object_ref: str) -> dict[str, Any]:
         return self._x.execute("GOOGLEDRIVE_DOWNLOAD_FILE", {"file_id": object_ref})

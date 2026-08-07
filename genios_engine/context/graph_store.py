@@ -170,6 +170,11 @@ class GraphStore:
         if action == "supersede":
             conn.execute(text("update graph_facts set valid_to=now(), status='superseded' "
                               "where fact_version_id=:fv"), {"fv": held.fact_version_id})
+            # The field has been authoritatively re-decided → any open discrepancy recorded
+            # against the OLD value is settled. This is what lets `consistency` recover
+            # instead of falling forever.
+            self.resolve_discrepancies(conn, org_id=org_id, subject_node_id=subject_node_id,
+                                       field=field)
 
         status = "historical" if action == "historical" else "active"
         fv = new_id("factv")
@@ -188,11 +193,34 @@ class GraphStore:
         return fv
 
     def write_discrepancy(self, conn, *, org_id, subject_node_id, field, held, challenger) -> None:
-        conn.execute(text(
-            "insert into discrepancies (id, org_id, subject_node_id, field, held, challenger) "
-            "values (:id, :o, :s, :f, cast(:h as jsonb), cast(:c as jsonb))"),
-            {"id": new_id("disc"), "o": org_id, "s": subject_node_id, "f": field,
-             "h": json.dumps(held, default=str), "c": json.dumps(challenger, default=str)})
+        """One OPEN discrepancy per (subject, field). A field is either contested or not, and
+        `consistency` scores the COUNT of contested fields — so inserting a fresh row for
+        every disagreeing event let a SINGLE recurring conflict (the same stale email
+        re-arriving) stack to 3+ and pin the entity's consistency to 0 permanently. If an
+        open row already exists for this field, refresh it to the latest disagreement
+        instead of stacking a duplicate."""
+        payload = {"o": org_id, "s": subject_node_id, "f": field,
+                   "h": json.dumps(held, default=str), "c": json.dumps(challenger, default=str)}
+        updated = conn.execute(text(
+            "update discrepancies set held=cast(:h as jsonb), challenger=cast(:c as jsonb) "
+            "where org_id=:o and subject_node_id=:s and field=:f and status='open'"),
+            payload).rowcount
+        if not updated:
+            conn.execute(text(
+                "insert into discrepancies (id, org_id, subject_node_id, field, held, challenger) "
+                "values (:id, :o, :s, :f, cast(:h as jsonb), cast(:c as jsonb))"),
+                {"id": new_id("disc"), **payload})
+
+    def resolve_discrepancies(self, conn, *, org_id, subject_node_id, field) -> int:
+        """Close open discrepancies on a field once it has been authoritatively re-decided.
+        Without this `consistency` only ever falls: it is what lets a situation RECOVER
+        after the sources agree again. Called on supersede — the field's state has moved
+        on, so a disagreement recorded against the OLD held value is settled. Returns the
+        number closed."""
+        return conn.execute(text(
+            "update discrepancies set status='resolved' where org_id=:o "
+            "and subject_node_id=:s and field=:f and status='open'"),
+            {"o": org_id, "s": subject_node_id, "f": field}).rowcount or 0
 
     def write_observation(self, conn, *, org_id: str, subject_node_id: str | None,
                           kind: str, confidence: float, occurred_at: datetime | None,

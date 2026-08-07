@@ -39,18 +39,22 @@ _NODE_REFERENCES: tuple[tuple[str, str], ...] = (
     ("graph_observations", "subject_node_id"),
     ("graph_aliases", "node_id"),
     ("source_identity_map", "node_id"),
-    ("context_attention", "node_id"),
-    ("merge_proposals", "left_node_id"),
-    ("merge_proposals", "right_node_id"),
     # Safe in the generic loop: uniqueness here is on (org, correlation_id), not on the
     # anchor, so two situations pointing at the survivor cannot collide. By the time this
     # runs, _merge_correlations has already removed the situations whose correlation was
     # folded — only genuinely repointed ones are left.
     ("context_situations", "anchor_node_id"),
 )
-# context_correlations.anchor_node_id is DELIBERATELY absent: a blind update there trips
-# `unique (org, anchor, domain, generation)`. _merge_correlations handles it by folding
-# the two groups together instead. Adding it here would abort the whole merge.
+# Three tables are DELIBERATELY absent from the generic loop because a blind update trips
+# a unique constraint and aborts the whole merge — Postgres will not warn, the human just
+# gets a 500 and the duplicates persist:
+#   context_correlations.anchor_node_id — `unique (org, anchor, domain, generation)`.
+#     Folded by _merge_correlations instead.
+#   context_attention (org_id, node_id) PRIMARY KEY — two attention rows would collapse
+#     onto the survivor. Handled by _merge_attention (delete; it is a derived score L2
+#     recomputes each drain, so it does not need repointing).
+#   merge_proposals — `unique (org, left, right) where status='open'`. Two open proposals
+#     sharing the merged node would collide. Handled by _merge_proposals.
 _CORRELATION_HANDLED_SEPARATELY = ("context_correlations", "anchor_node_id")
 
 
@@ -164,6 +168,47 @@ def _merge_correlations(conn, org_id: str, survivor_id: str, merged_id: str) -> 
             "correlation_members_moved": moved_members}
 
 
+def _merge_attention(conn, org_id: str, survivor_id: str, merged_id: str) -> dict:
+    """context_attention is keyed `primary key (org_id, node_id)`, so repointing the
+    merged row onto the survivor collides whenever both nodes were scored — which is the
+    normal case, since attention runs over exactly the person/deal nodes that get merged.
+
+    Attention is a DERIVED score L2 recomputes at the end of every drain, not source
+    truth. So the merged node's row is simply deleted (it is closing; the row would
+    otherwise orphan on a closed node). The survivor's row is left as-is and refreshes on
+    the next drain that touches it — advisory ordering, never a gate, so brief staleness
+    is harmless. Nothing to snapshot: reverse_merge lets the next refresh rebuild it.
+    """
+    deleted = conn.execute(text(
+        "delete from context_attention where org_id=:o and node_id=:m"),
+        {"o": org_id, "m": merged_id}).rowcount
+    return {"attention_rows_deleted": deleted}
+
+
+def _merge_proposals(conn, org_id: str, survivor_id: str, merged_id: str) -> dict:
+    """merge_proposals carries `unique (org, left, right) where status='open'`. Repointing
+    the merged node onto the survivor in the generic loop aborts the merge the moment two
+    OPEN proposals share it — e.g. (merged, X) and (survivor, X) collapse to one pair.
+
+    Fix: close every OPEN proposal naming the merged node FIRST. The (survivor, merged)
+    pair is resolved by definition, and any other open pair involving merged is re-raised
+    against the survivor later if identity still warrants it. Closing them removes them
+    from the partial unique index, so no collision is possible. Historical (merged/
+    rejected) rows are NOT in that index, so they can be repointed freely — and keeping a
+    rejected pair rejected against the survivor is the correct audit outcome.
+    """
+    closed = conn.execute(text(
+        "update merge_proposals set status='merged' where org_id=:o and status='open' "
+        "and (left_node_id=:m or right_node_id=:m)"),
+        {"o": org_id, "m": merged_id}).rowcount
+    repointed = 0
+    for column in ("left_node_id", "right_node_id"):
+        repointed += conn.execute(text(
+            f"update merge_proposals set {column}=:s where org_id=:o and {column}=:m"),
+            {"s": survivor_id, "o": org_id, "m": merged_id}).rowcount
+    return {"proposals_closed": closed, "proposals_repointed": repointed}
+
+
 def _resolve_duplicate_facts(conn, org_id: str, survivor_id: str) -> int:
     """Invariant 1. After repointing, one (subject, field) can hold several active facts.
 
@@ -244,10 +289,12 @@ def apply_merge(conn, *, org_id: str, survivor_node_id: str, merged_node_id: str
     if snapshots["survivor"]["node"] is None:
         raise ValueError(f"node {survivor_node_id} is not an open node in this org")
 
-    # Situations FIRST and separately: a blind repoint of anchor_node_id trips the
-    # unique index the moment both nodes hold a situation in the same domain, which is
-    # exactly what happens when the two nodes really were one customer.
+    # Constrained tables FIRST and separately: a blind repoint trips a unique index the
+    # moment both nodes hold a row for the same key — exactly what happens when the two
+    # nodes really were one customer. Each of these would otherwise abort the whole merge.
     correlation_result = _merge_correlations(conn, org_id, survivor_node_id, merged_node_id)
+    attention_result = _merge_attention(conn, org_id, survivor_node_id, merged_node_id)
+    proposal_result = _merge_proposals(conn, org_id, survivor_node_id, merged_node_id)
 
     moved: dict[str, int] = {}
     for table, column in _NODE_REFERENCES:
@@ -267,6 +314,8 @@ def apply_merge(conn, *, org_id: str, survivor_node_id: str, merged_node_id: str
         "duplicate_edges_closed": _dedupe_edges(conn, org_id, survivor_node_id),
         "facts_superseded": _resolve_duplicate_facts(conn, org_id, survivor_node_id),
         **correlation_result,
+        **attention_result,
+        **proposal_result,
     }
 
     # The merged node is CLOSED, never deleted: its id may already appear in a delivery
@@ -284,14 +333,12 @@ def apply_merge(conn, *, org_id: str, survivor_node_id: str, merged_node_id: str
                             default=str),
          "why": reason})
     if proposal_id:
+        # Defensive/explicit: _merge_proposals already closed every open proposal naming
+        # the merged node (including this pair). Harmless if it ran; keeps the acted-on
+        # proposal_id resolved even if it named the pair by an unusual ordering.
         conn.execute(text(
             "update merge_proposals set status='merged' where org_id=:o and id=:id"),
             {"o": org_id, "id": proposal_id})
-    # Any other OPEN proposal naming the merged node now names the survivor on both
-    # sides (it was repointed above) — a proposal to merge a node with itself. Close it.
-    conn.execute(text(
-        "update merge_proposals set status='merged' where org_id=:o and status='open' "
-        "and left_node_id = right_node_id"), {"o": org_id})
 
     return {"merge_id": history_id, "survivor": survivor_node_id,
             "merged": merged_node_id, "moved": moved, "repairs": repairs}

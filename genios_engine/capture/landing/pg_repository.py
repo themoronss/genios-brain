@@ -24,6 +24,21 @@ _INSERT = text(
     on conflict (org_id, dedup_key) do nothing
     """
 )
+def _dump_list(items: list | None) -> str | None:
+    """Serialize a hint list to JSON text for a jsonb column. Items may be pydantic
+    models (DomainHint) or plain dicts — model_dump() first so the stored shape is a
+    real object ({"domain": "sales", ...}), NOT its str() repr. Storing the repr was a
+    silent correctness bug: L2's resolve_domain reads .domain off each item and a string
+    has none, so every event fell back to the `general` domain and domain-scoped
+    correlation never happened on Postgres (the in-memory path kept the objects, so no
+    test caught it)."""
+    if items is None:
+        return None
+    return json.dumps(
+        [i.model_dump(mode="json") if hasattr(i, "model_dump") else i for i in items]
+    )
+
+
 _EXISTS = text("select 1 from source_events where org_id=:o and dedup_key=:d limit 1")
 
 
@@ -58,7 +73,7 @@ class PostgresSourceEventRepository:
                 "capture_confidence": event.capture_confidence,
                 "schema_version": event.schema_version, "outcome": outcome,
                 "route": route, "triage_lane": triage_lane,
-                "domain_hints": json.dumps(domain_hints, default=str) if domain_hints is not None else None,
-                "linkage_hints": json.dumps(linkage_hints, default=str) if linkage_hints is not None else None,
+                "domain_hints": _dump_list(domain_hints),
+                "linkage_hints": _dump_list(linkage_hints),
                 "internal_kind": event.internal_kind,
             })

@@ -159,11 +159,37 @@ def test_nothing_in_this_module_merges_anything() -> None:
 
 def test_merging_repoints_every_table_that_names_a_node() -> None:
     """A table left out leaves rows pointing at a closed node: invisible in the UI,
-    still returned by anything that joins on node_id."""
+    still returned by anything that joins on node_id.
+
+    The node-owning tables go through the generic repoint loop. Three tables carry a
+    unique constraint that a blind repoint would abort on, so they are cleared by
+    dedicated helpers instead (folded / deleted / closed) — but every one is still
+    ACCOUNTED FOR, which is what this guard checks: no table silently forgotten."""
+    import inspect
+
+    from genios_engine.context import merge
     from genios_engine.context.merge import _NODE_REFERENCES
     referenced = {table for table, _ in _NODE_REFERENCES}
     assert {"graph_facts", "graph_observations", "graph_aliases",
-            "source_identity_map", "context_attention"} <= referenced
+            "source_identity_map", "context_situations"} <= referenced
+
+    # Constrained tables handled separately, but the merged node's rows are still cleared.
+    source = inspect.getsource(merge)
+    assert "delete from context_attention" in source        # _merge_attention
+    assert "merge_proposals set status='merged'" in source  # _merge_proposals
+    assert "context_correlations" in source                 # _merge_correlations
+
+
+def test_constrained_tables_stay_out_of_the_blind_repoint_loop() -> None:
+    """context_attention (PK org,node) and merge_proposals (unique open pair) abort the
+    whole merge if repointed blindly — the human clicks 'merge' and gets a 500 while the
+    duplicates persist. They must be handled by helpers, never re-added to the generic
+    loop; this guard fails loudly if someone puts them back."""
+    from genios_engine.context.merge import _NODE_REFERENCES
+    tables = {table for table, _ in _NODE_REFERENCES}
+    assert "context_attention" not in tables
+    assert "merge_proposals" not in tables
+    assert "context_correlations" not in tables
 
 
 def test_merge_repairs_both_invariants_it_can_break() -> None:
