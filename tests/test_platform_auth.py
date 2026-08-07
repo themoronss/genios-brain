@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import pytest
+from fastapi import HTTPException
+
 from genios_engine.capture.events_store import InMemoryAgentRegistryStore
 from genios_engine.contracts.events import AGENT_ACTIONS, AGENT_API_SCOPES
-from genios_engine.platform.auth import (AuthCtx, hash_key, hash_password, jwt_decode,
-                                         jwt_encode, new_api_key, verify_password,
+from genios_engine.platform.auth import (AuthCtx, get_current_org, hash_key, hash_password,
+                                         jwt_decode, jwt_encode, new_api_key, verify_password,
                                          verify_webhook_hmac)
 from genios_engine.platform.cache import NullCache, get_cache, l2key, okey
 
@@ -76,6 +79,25 @@ def test_authctx_scope_semantics():
     scoped = AuthCtx(org_id="o", scopes=["signals.read"])
     assert owner.has_scope("anything") is True
     assert scoped.has_scope("signals.read") and not scoped.has_scope("signals.claim")
+
+
+def test_legacy_org_dependency_denies_scoped_keys_by_default(monkeypatch):
+    monkeypatch.setattr("genios_engine.platform.auth.check_org_kill", lambda _org_id: None)
+
+    assert get_current_org(AuthCtx(org_id="o", scopes=None)) == "o"
+    with pytest.raises(HTTPException) as exc:
+        get_current_org(AuthCtx(org_id="o", scopes=["cards.read"]))
+    assert exc.value.status_code == 403
+    assert "explicit scoped endpoint" in str(exc.value.detail)
+
+
+def test_workspace_kill_switch_rejects_scoped_keys_before_mutation():
+    from genios_engine.api.routes import workspace_kill
+
+    with pytest.raises(HTTPException) as exc:
+        workspace_kill("pause", AuthCtx(org_id="o", scopes=["cards.read"]))
+    assert exc.value.status_code == 403
+    assert exc.value.detail == "owner credential required"
 
 
 def test_webhook_hmac_verify():

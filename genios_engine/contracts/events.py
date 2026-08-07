@@ -52,3 +52,9 @@ AGENT_ACTIONS = {
 # L5 Agent API grants (§5.16) — a SEPARATE scope family from the L1 outcome-event actions above.
 # The $15/agent read-and-claim surface is authorized by these; the L1 event-write grant is distinct.
 AGENT_API_SCOPES = {"signals.read", "artifacts.read", "signals.claim", "signals.result"}
+
+# Human interaction grants are separate from both executor outcomes and agent polling. A key that
+# can merely read signals must never be able to train org-wide calibration or request execution.
+HUMAN_API_SCOPES = {
+    "insights.read", "cards.read", "feedback.write", "cards.act", "actions.handoff",
+}

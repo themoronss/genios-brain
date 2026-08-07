@@ -22,6 +22,11 @@ class RawObject:
     # object re-lands and updates the graph. Email/message leave it None → stable dedup (an
     # email never edits). Without this, deal.stage froze at its first-seen value forever.
     content_version: str | None = None
+    # Set ONLY when the company is deliberately asserting something about itself (a
+    # written policy, an upload tagged `pricing`). One of internal_knowledge.INTERNAL_KINDS.
+    # It promotes the event's family to `internal` and its facts to authority rank 4 —
+    # so company canon outranks a third-party system of record. None for observed traffic.
+    internal_kind: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 

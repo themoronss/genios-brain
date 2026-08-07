@@ -34,7 +34,13 @@ _DONE_OUTCOMES = {"committed_structured", "committed", "committed_structural",
                   "no_op", "committed_facts", "committed_observation"}
 
 
-def _clean_for_llm(raw: dict, event_id: str) -> str:
+def _clean_for_llm(raw: dict, event_id: str, prepared_text: str | None = None) -> str:
+    """Prefer the SEAM: L1 already computed the PII-masked prepared text (+offset map)
+    at ingestion — subject INCLUDED, masked with the body — and persisted it to
+    prepared_content. Used as-is: prepending the raw subject here would reintroduce
+    unmasked subject-line PII to the LLM. Fallback re-derivation only for pre-seam rows."""
+    if prepared_text:
+        return prepared_text
     body = raw.get("body") or raw.get("snippet") or ""
     stripped = extract_native_text(mime="text/html", data=body) or body
     prepared = preprocess((raw.get("subject") or "") + "\n\n" + stripped,
@@ -63,35 +69,51 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
         res = commit_structured(store, org_id=org_id, event_id=row.event_id, source=row.source,
                                 source_object_id=row.source_object_id, structured_fields=fields,
                                 node_type=mapping.node_type, occurred_at=row.occurred_at,
-                                display_name=display_name, relations=relations)
+                                display_name=display_name, relations=relations,
+                                internal_emails=internal_emails,
+                                domain_hints=getattr(row, "domain_hints", None))
         store.cache_set(processing_key=f"struct:{row.event_id}", org_id=org_id,
                         event_id=row.event_id, output={"structured": True},
                         input_tokens=0, output_tokens=0, model="structured")
         return "committed_structured", res.node_id
     if llm is None:
         return "skipped_no_llm", None
-    content = _clean_for_llm(raw, row.event_id)      # unstructured lane (B3, LLM)
+    content = _clean_for_llm(raw, row.event_id,      # unstructured lane (B3, LLM)
+                             prepared_text=getattr(row, "prepared_text", None))
     is_inbound = "SENT" not in (raw.get("labelIds") or [])   # direction → thread state
     # recipients (To + Cc, captured in L1) → sender↔recipient correspondence edges in L2
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
                         occurred_at=row.occurred_at, llm=llm, store=store,
-                        is_inbound=is_inbound, internal_emails=internal_emails)
+                        is_inbound=is_inbound, internal_emails=internal_emails,
+                        internal_kind=getattr(row, "internal_kind", None),
+                        thread_id=getattr(row, "parent_object_id", None),
+                        domain_hints=getattr(row, "domain_hints", None),
+                        canon_meta=raw)
     return res.outcome, res.primary_node
 
 
 def _pull(store: GraphStore, org_id: str, limit: int):
+    """Drain order = L1's triage lane FIRST (P0 preempts P3 — the lane was computed at
+    ingestion and previously thrown away), then arrival time. Prepared text rides along
+    from the seam so processing doesn't re-derive it."""
     with store.engine.connect() as c:
         return c.execute(text(
             "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
-            "se.occurred_at, se.source_object_id, rp.enc_content "
-            "from source_events se join raw_payloads rp on rp.event_id = se.event_id "
+            "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
+            "se.parent_object_id, se.domain_hints, "
+            "rp.enc_content, "
+            "pc.clean_text as prepared_text "
+            "from source_events se "
+            "join raw_payloads rp on rp.event_id = se.event_id "
+            "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
             "where se.org_id=:o and se.outcome='emitted' "
             "and se.event_id not in (select event_id from l2_extraction_results where org_id=:o) "
             "and se.event_id not in (select event_id from l2_processing_runs "
             "                        where org_id=:o and status in ('done','parked')) "
-            "order by se.occurred_at asc limit :lim"), {"o": org_id, "lim": limit}).fetchall()
+            "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
+            "limit :lim"), {"o": org_id, "lim": limit}).fetchall()
 
 
 def _record_done(store, org_id: str, event_id: str) -> None:
@@ -159,4 +181,29 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
 
     for node_id in affected:                          # B9 rebuild affected read models
         build_entity_360(store, org_id=org_id, node_id=node_id)
-    return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected)}
+    # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh
+    # when anything changed (recency decays even for untouched nodes, and it is a few
+    # bulk queries, not per-node round-trips).
+    attention_rows = 0
+    if done or affected:
+        try:
+            from genios_engine.context.attention import refresh_attention
+            attention_rows = refresh_attention(store, org_id)
+        except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
+            pass
+
+    # Situations are rebuilt AFTER attention, from correlations the drain just extended.
+    # Every value is derived, so a failure here costs a refresh cycle, not data — the
+    # next drain recomputes it. Never fatal: a situation view being briefly stale must
+    # not stop events from landing.
+    situation_rows = 0
+    if done or affected:
+        try:
+            from genios_engine.context.situations import refresh_situations
+            situation_rows = refresh_situations(store, org_id)
+        except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "situation refresh failed for org=%s", org_id)
+    return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected),
+            "attention_rows": attention_rows, "situation_rows": situation_rows}

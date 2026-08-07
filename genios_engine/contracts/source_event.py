@@ -38,6 +38,7 @@ class SourceEvent(BaseModel):
     org_id: str
     connection_id: str
     source: str
+    source_family: str = "unclassified"     # one of capture.source_families.FAMILIES
     object_type: str
     source_object_id: str
     parent_object_id: str | None = None
@@ -48,4 +49,9 @@ class SourceEvent(BaseModel):
     sync_mode: SyncMode = SyncMode.incremental
     payload_ref: str | None = None          # -> raw_payloads (encrypted + TTL)
     capture_confidence: float = 1.0
-    schema_version: int = 1
+    # Company canon: the org deliberately asserting something about itself. One of
+    # capture.internal_knowledge.INTERNAL_KINDS, else None. Carries the event's AUTHORITY
+    # to L2 — provenance is L1's to know, so L2 honours this instead of guessing from the
+    # source name. See capture.internal_knowledge for why canon sits above rank 3.
+    internal_kind: str | None = None
+    schema_version: int = 3                 # v3: + internal_kind (additive only)

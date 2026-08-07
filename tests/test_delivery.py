@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 from genios_engine.deliver.actions import BUTTONS, snooze_until
 from genios_engine.deliver.bands import band
+from genios_engine.deliver.card_builder import _why
+from genios_engine.deliver.store import CardStore
 from genios_engine.deliver.render import (HEADLINE_CAP, SITUATION_CAP, _fallback,
                                           invention_ok, render_copy, _corpus)
 from genios_engine.deliver.slots import compute_slots
@@ -132,3 +136,101 @@ def test_snooze_options():
     assert snooze_until("3d", NOW) == NOW + timedelta(days=3)
     assert snooze_until("tomorrow_09", NOW).hour == 9
     assert "requeue" in BUTTONS and "wrong" in BUTTONS
+
+
+def test_card_why_never_pads_a_decision_with_unrelated_live_facts():
+    why = _why(
+        [{"field": "deal.status", "value": "open"}],
+        {"deal.status": {"value": "open"}, "deal.value": {"value": 900_000}},
+    )
+
+    assert why == [{"field": "deal.status", "value": "open", "source": "crm"}]
+
+
+def test_card_build_lease_is_durable_bounded_and_owner_released():
+    calls = []
+
+    class _Result:
+        def __init__(self, *, first=None, rowcount=0):
+            self._first = first
+            self.rowcount = rowcount
+
+        def first(self):
+            return self._first
+
+    class _Connection:
+        def execute(self, statement, params=None):
+            sql, values = str(statement), dict(params or {})
+            calls.append((sql, values))
+            if "insert into card_build_claims" in sql:
+                return _Result(first=SimpleNamespace(claim_token=values["token"]))
+            return _Result(rowcount=1)
+
+    class _Engine:
+        @contextmanager
+        def begin(self):
+            yield _Connection()
+
+    store = CardStore.__new__(CardStore)
+    store._engine = _Engine()
+    token = store.claim_build("org_1", "sig_1", eval_time=NOW)
+    assert token and store.release_build("org_1", "sig_1", token) is True
+    claim_sql, claim_params = calls[0]
+    assert "not exists (select 1 from cards" in claim_sql.lower()
+    assert "card_build_claims.expires_at<=:now" in claim_sql.lower()
+    assert claim_params["expires"] == NOW + timedelta(minutes=15)
+    release_sql, release_params = calls[1]
+    assert "claim_token=:token" in release_sql.lower()
+    assert release_params["token"] == token
+
+
+def test_card_insert_is_fenced_by_the_current_build_lease():
+    calls = []
+
+    class _Result:
+        def first(self):
+            return None
+
+    class _Connection:
+        def execute(self, statement, params=None):
+            calls.append((str(statement), dict(params or {})))
+            return _Result()
+
+    class _Engine:
+        @contextmanager
+        def begin(self):
+            yield _Connection()
+
+    store = CardStore.__new__(CardStore)
+    store._engine = _Engine()
+    card_id, created = store.insert_card(
+        {"org_id": "org_1", "signal_id": "sig_1", "_authority_time": NOW},
+        {},
+        build_claim_token="stale_or_foreign_token",
+    )
+
+    assert (card_id, created) == (None, False)
+    assert len(calls) == 1
+    lease_sql, lease_params = calls[0]
+    assert "claim_token=:token" in lease_sql.lower()
+    assert "expires_at>:authority_time" in lease_sql.lower()
+    assert "for update" in lease_sql.lower()
+    assert lease_params["token"] == "stale_or_foreign_token"
+
+
+def test_worker_without_card_build_lease_never_invokes_renderer(monkeypatch):
+    from genios_engine.deliver import pipeline
+
+    rendered = []
+    monkeypatch.setattr(pipeline, "ensure_default", lambda *_args: None)
+    monkeypatch.setattr(pipeline, "_open_signals_without_cards", lambda *_args: [{
+        "signal_id": "sig_1", "effective_config": {},
+    }])
+    monkeypatch.setattr(pipeline, "render_copy", lambda **_kwargs: rendered.append(True))
+    store = SimpleNamespace(claim_build=lambda *_args, **_kwargs: None)
+
+    result = pipeline.build_cards_for_org(
+        graph=object(), card_store=store, org_id="org_1", registry=object(), eval_time=NOW)
+
+    assert result["build_in_progress"] == 1
+    assert rendered == []

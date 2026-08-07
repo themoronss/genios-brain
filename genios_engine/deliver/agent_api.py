@@ -6,6 +6,11 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.platform.ids import new_id
+from genios_engine.reason.authority import (
+    AUTHORITATIVE_SCORE_SQL,
+    AUTHORITATIVE_SIGNAL_JOINS,
+    AUTHORITATIVE_SIGNAL_PREDICATE,
+)
 
 # E9 · Agent API Gateway (§5.16) — the $15/agent metered read-and-claim surface. Same intelligence,
 # its own identity, honest failures. Execution stays on the customer's side: GeniOS hands over the
@@ -29,13 +34,18 @@ def _period(eval_time: datetime) -> str:
 def poll_signals(store, org_id: str, agent_id: str, *, since=None, eval_time=None) -> list[dict]:
     """GET /v1/signals?status=delivered — un-resolved cards' signals + presentation, machine-readable."""
     eval_time = eval_time or datetime.now(timezone.utc)
-    q = ("select k.signal_id, k.card_id, k.urgency_band, k.headline, k.situation, k.score, "
+    q = ("select k.signal_id, k.card_id, k.urgency_band, k.headline, k.situation, "
+         + AUTHORITATIVE_SCORE_SQL + " as score, "
          "k.score_block, k.state, k.created_at from cards k "
-         "where k.org_id=:o and k.state in ('queued','surfaced','snoozed')")
-    params = {"o": org_id}
+         "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+         + AUTHORITATIVE_SIGNAL_JOINS +
+         " where k.org_id=:o and k.state in ('queued','surfaced','snoozed') "
+         "and k.expires_at > :authority_time and s.status='open' and "
+         + AUTHORITATIVE_SIGNAL_PREDICATE)
+    params = {"o": org_id, "authority_time": eval_time}
     if since is not None:
         q += " and k.created_at > :since"; params["since"] = since
-    q += " order by k.score desc"
+    q += " order by selected_rc.final_utility_bp desc, k.card_id"
     with store.engine.begin() as c:
         rows = [dict(r) for r in c.execute(text(q), params).mappings()]
         _meter(c, org_id, agent_id, "reads", _period(eval_time))
@@ -46,9 +56,16 @@ def get_artifact(store, org_id: str, signal_id: str, agent_id: str, *, eval_time
     """GET /v1/signals/{id}/artifact — the pre-rendered draft (a DB read; pure margin by design)."""
     eval_time = eval_time or datetime.now(timezone.utc)
     with store.engine.begin() as c:
-        r = c.execute(text("select artifact, headline, situation, render_mode from cards "
-                           "where org_id=:o and signal_id=:s"),
-                      {"o": org_id, "s": signal_id}).mappings().first()
+        r = c.execute(text(
+            "select k.artifact, k.headline, k.situation, k.render_mode from cards k "
+            "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+            + AUTHORITATIVE_SIGNAL_JOINS +
+            " where k.org_id=:o and k.signal_id=:s "
+            "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "
+            "and k.expires_at > :authority_time and s.status='open' and "
+            + AUTHORITATIVE_SIGNAL_PREDICATE),
+            {"o": org_id, "s": signal_id,
+             "authority_time": eval_time}).mappings().first()
         _meter(c, org_id, agent_id, "reads", _period(eval_time))
     return dict(r) if r else None
 
@@ -57,11 +74,30 @@ def claim(store, org_id: str, signal_id: str, agent_id: str, *, eval_time=None) 
     """POST /v1/signals/{id}/claim — lock 15 min. Double claim → 409 with holder + expiry (V-07)."""
     eval_time = eval_time or datetime.now(timezone.utc)
     with store.engine.begin() as c:
-        card = c.execute(text("select card_id, state from cards where org_id=:o and signal_id=:s"),
-                         {"o": org_id, "s": signal_id}).mappings().first()
+        # A successful claim is the authorization handed to an external executor. Keep both the
+        # graph epoch and every row participating in the authority proof stable until that claim
+        # and its card transition commit; otherwise a graph or pack revocation could land between
+        # the SELECT and the grant.
+        c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                  {"o": org_id})
+        card = c.execute(text(
+            "select k.card_id, k.state, k.expires_at, "
+            "(rcap.manifest->'policies') ? 'human_approval_required' as approval_required "
+            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+            + AUTHORITATIVE_SIGNAL_JOINS +
+            " where k.org_id=:o and k.signal_id=:s "
+            "and k.state in ('queued','surfaced','snoozed','delivered','claimed') "
+            "and k.expires_at > :authority_time and s.status='open' and "
+            + AUTHORITATIVE_SIGNAL_PREDICATE +
+            " for update of k, s for share of rr, ro, selected_rc, rcap, authority_ctx, "
+            "authority_cfg, authority_pack"),
+            {"o": org_id, "s": signal_id,
+             "authority_time": eval_time}).mappings().first()
         if card is None:
             return {"ok": False, "status": 404, "error": "no_card"}
-        expires = eval_time + timedelta(minutes=CLAIM_MINUTES)
+        if card["approval_required"]:
+            return {"ok": False, "status": 403, "error": "human_approval_required"}
+        expires = min(eval_time + timedelta(minutes=CLAIM_MINUTES), card["expires_at"])
         # Atomic claim: the conditional DO UPDATE runs under the row lock the INSERT..ON CONFLICT
         # takes, so it wins ONLY if the existing lock is released/resulted/expired — or it's our
         # own re-claim. Two concurrent claimants no longer both win (was a TOCTOU: check-then-upsert
@@ -80,8 +116,12 @@ def claim(store, org_id: str, signal_id: str, agent_id: str, *, eval_time=None) 
                              {"s": signal_id}).mappings().first()
             return {"ok": False, "status": 409, "code": "V-07",
                     "holder": held["agent_id"], "expires_at": held["expires_at"].isoformat()}
-        c.execute(text("update cards set state='claimed' where card_id=:c and state in "
-                       "('queued','surfaced','snoozed')"), {"c": card["card_id"]})
+        moved = c.execute(text(
+            "update cards set state='claimed' where card_id=:c and org_id=:o and state in "
+            "('queued','surfaced','snoozed','delivered','claimed')"),
+            {"c": card["card_id"], "o": org_id})
+        if moved.rowcount != 1:
+            return {"ok": False, "status": 409, "error": "card_not_claimable"}
         c.execute(text("insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
                        "values (:id,:c,:o,'agent.claim',:a,:a,cast(:d as jsonb))"),
                   {"id": new_id("cev"), "c": card["card_id"], "o": org_id, "a": agent_id,
@@ -95,34 +135,82 @@ def result(store, org_id: str, signal_id: str, agent_id: str, status: str, *,
     """POST /v1/signals/{id}/result — done | failed. done resolves; failed keeps it OPEN and
     re-surfaces to the human with the agent's failure detail (Law: honest failures). Late result
     on a resolved signal is a counted no-op (V-08), never an error loop."""
+    if status not in {"done", "failed"}:
+        return {"ok": False, "status": 422, "error": "invalid_result_status"}
     eval_time = eval_time or datetime.now(timezone.utc)
+    encoded_detail = json.dumps(detail or {}, default=str)
     with store.engine.begin() as c:
-        card = c.execute(text("select card_id, state from cards where org_id=:o and signal_id=:s"),
-                         {"o": org_id, "s": signal_id}).mappings().first()
-        if card is None:
-            return {"ok": False, "status": 404, "error": "no_card"}
+        # A result is authority-bearing: only the agent holding this tenant's live claim may
+        # submit one. Locking the claim first also makes duplicate/replayed result callbacks
+        # deterministic instead of allowing one agent to release another agent's lock.
+        claim_row = c.execute(text(
+            "select card_id, expires_at, released_at, result from agent_claims "
+            "where org_id=:o and signal_id=:s and agent_id=:a for update"),
+            {"o": org_id, "s": signal_id, "a": agent_id}).mappings().first()
+        if claim_row is None:
+            return {"ok": False, "status": 403, "error": "claim_not_owned"}
+        if claim_row["result"] is not None or claim_row["released_at"] is not None:
+            return {"ok": True, "status": 200, "note": "result_already_recorded"}
+        if claim_row["expires_at"] <= eval_time:
+            return {"ok": False, "status": 409, "error": "claim_expired"}
+
+        # Graph mutations take an exclusive lock on this tenant row while bumping the version.
+        # Keep the shared lock until the result, card, signal and audit event commit together.
+        c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                  {"o": org_id})
         _meter(c, org_id, agent_id, "results", _period(eval_time))
-        sig = c.execute(text("select status from signals where signal_id=:s"),
-                        {"s": signal_id}).mappings().first()
-        if sig and sig["status"] not in ("open", "snoozed"):
-            c.execute(text("update agent_claims set result=:r, result_detail=cast(:d as jsonb), "
-                           "released_at=:t where signal_id=:s"),
-                      {"r": status, "d": json.dumps(detail or {}, default=str),
-                       "t": eval_time, "s": signal_id})
+
+        card = c.execute(text(
+            "select k.card_id, k.state from cards k "
+            "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+            + AUTHORITATIVE_SIGNAL_JOINS +
+            " where k.card_id=:card and k.org_id=:o and k.signal_id=:s "
+            "and k.state='claimed' and k.expires_at > :authority_time "
+            "and s.status='open' and " + AUTHORITATIVE_SIGNAL_PREDICATE +
+            " for update of k, s for share of rr, ro, selected_rc, rcap, authority_ctx, "
+            "authority_cfg, authority_pack"),
+            {"card": claim_row["card_id"], "o": org_id, "s": signal_id,
+             "authority_time": eval_time}).mappings().first()
+        if card is None:
+            # The agent may have performed the external action just before a human resolved the
+            # card, a pack was revoked, the graph changed, or the decision expired. Preserve the
+            # honest result on this agent's claim, but never let stale authority mutate L4/L5.
+            c.execute(text(
+                "update agent_claims set result=:r, result_detail=cast(:d as jsonb), "
+                "released_at=:t where org_id=:o and signal_id=:s and agent_id=:a "),
+                {"r": status, "d": encoded_detail, "t": eval_time, "o": org_id,
+                 "s": signal_id, "a": agent_id})
+            c.execute(text(
+                "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
+                "values (:id,:c,:o,'agent.result.late',:cause,:a,cast(:d as jsonb))"),
+                {"id": new_id("cev"), "c": claim_row["card_id"], "o": org_id,
+                 "cause": status, "a": agent_id, "d": encoded_detail})
             return {"ok": True, "status": 200, "note": "late_result_noop", "code": "V-08"}
-        c.execute(text("update agent_claims set result=:r, result_detail=cast(:d as jsonb), "
-                       "released_at=:t where signal_id=:s"),
-                  {"r": status, "d": json.dumps(detail or {}, default=str),
-                   "t": eval_time, "s": signal_id})
+
+        c.execute(text(
+            "update agent_claims set result=:r, result_detail=cast(:d as jsonb), released_at=:t "
+            "where org_id=:o and signal_id=:s and agent_id=:a and result is null "
+            "and released_at is null"),
+            {"r": status, "d": encoded_detail, "t": eval_time, "o": org_id,
+             "s": signal_id, "a": agent_id})
         if status == "done":
-            c.execute(text("update cards set state='acted' where card_id=:c"), {"c": card["card_id"]})
-            c.execute(text("update signals set status='acted' where signal_id=:s"), {"s": signal_id})
+            c.execute(text(
+                "update cards set state='acted', resolved_at=:t where card_id=:c and org_id=:o "
+                "and state='claimed'"),
+                {"t": eval_time, "c": card["card_id"], "o": org_id})
+            c.execute(text(
+                "update signals set status='acted' where signal_id=:s and org_id=:o "
+                "and status='open'"),
+                {"s": signal_id, "o": org_id})
             kind, cause = "agent.result", "done"
         else:                                        # failed → re-surface to the human, keep open
-            c.execute(text("update cards set state='surfaced' where card_id=:c"), {"c": card["card_id"]})
+            c.execute(text(
+                "update cards set state='surfaced', snooze_until=null where card_id=:c "
+                "and org_id=:o and state='claimed'"),
+                {"c": card["card_id"], "o": org_id})
             kind, cause = "agent.result", "failed"
         c.execute(text("insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
                        "values (:id,:c,:o,:k,:cause,:a,cast(:d as jsonb))"),
                   {"id": new_id("cev"), "c": card["card_id"], "o": org_id, "k": kind, "cause": cause, "a": agent_id,
-                   "d": json.dumps(detail or {}, default=str)})
+                   "d": encoded_detail})
     return {"ok": True, "status": 200, "result": status}

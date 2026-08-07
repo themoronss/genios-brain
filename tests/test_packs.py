@@ -20,10 +20,26 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.7.0"
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.8.0"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
-            "bands"} <= SC.keys()
+            "bands", "execution"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100
+
+
+def test_execution_block_is_readable_by_every_l5_unit():
+    """The L5 tunables are pack data, so they merge, pin and guardrail like everything else in
+    scoring_defaults. This proves the shipped block is one the engine actually consumes rather
+    than a hopeful dict nobody reads."""
+    from datetime import timedelta
+
+    from genios_engine.executive.escalation import build_ladder
+    from genios_engine.executive.execution import execution_config
+
+    block = execution_config({"scoring": SC})
+    assert set(block) == {"planning", "communication", "escalation", "reminder", "monitor"}
+    ladder = build_ladder(eval_time=NOW, expires_at=NOW + timedelta(days=60), band="standard",
+                          cfg=block["escalation"])
+    assert [step.day_offset for step in ladder] == [1, 3, 7, 14]
 
 
 def test_bands_are_ordered_and_in_manifest():

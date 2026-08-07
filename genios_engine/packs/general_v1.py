@@ -20,7 +20,11 @@ GENERAL_V1 = {
         # counts every signal regardless of pack), so matching numbers keeps the cap at 7/day
         # combined, not 7+7.
         "budget_per_user_day": 7,
-        "impact": {"i_floor": 40, "i_floor_scope": "deal_linked", "p90_default": 50000},
+        # matched to sales_v1 deliberately — one org's cards are ranked against each
+        # other in a shared 7/day budget, so a different floor here would silently make
+        # general-pack cards lose (or win) every tie on scale alone. See sales_v1 for
+        # why unknown deal value floors at 55.
+        "impact": {"i_floor": 55, "i_floor_scope": "deal_linked", "p90_default": 50000},
         "r_half_life": {"countdown_h": 24, "elapsed_h": 72},
         "bands": {"high": 70, "critical": 85},
     },

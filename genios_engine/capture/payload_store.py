@@ -15,7 +15,7 @@ class RawPayloadStore(Protocol):
     is what keeps L1 a filter, not a data warehouse."""
 
     def put(self, *, payload_id: str, org_id: str, event_id: str, content: str,
-            content_type: str = "application/json", ttl_days: int = 7) -> None: ...
+            content_type: str = "application/json", ttl_days: int = 30) -> None: ...
 
 
 class InMemoryRawPayloadStore:
@@ -23,7 +23,7 @@ class InMemoryRawPayloadStore:
         self.payloads: dict[str, dict] = {}
 
     def put(self, *, payload_id, org_id, event_id, content,
-            content_type="application/json", ttl_days=7):
+            content_type="application/json", ttl_days=30):
         self.payloads[payload_id] = {"org_id": org_id, "event_id": event_id,
                                      "content": content, "content_type": content_type}
 
@@ -43,7 +43,7 @@ class PostgresRawPayloadStore:
         self._key = crypto_key
 
     def put(self, *, payload_id, org_id, event_id, content,
-            content_type="application/json", ttl_days=7):
+            content_type="application/json", ttl_days=30):
         expires = datetime.now(timezone.utc) + timedelta(days=ttl_days)
         with self._engine.begin() as conn:
             conn.execute(_INSERT, {

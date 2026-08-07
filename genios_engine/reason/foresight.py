@@ -12,8 +12,14 @@ never a fabricated certainty."""
 from __future__ import annotations
 
 import math
+from datetime import datetime
 
 from sqlalchemy import text
+
+from genios_engine.reason.authority import (
+    AUDITED_CARD_JUDGMENTS_CTES,
+    authority_time,
+)
 
 # how much each open concern moves a deal's close-probability off the base rate (bounded, additive).
 # Negative = drag, positive = lift. Constants are HYPs — tune from outcomes, not vibes.
@@ -28,14 +34,40 @@ _BASE_RATE_PRIOR = 0.20          # cold-start close rate before this tenant has 
 _MIN_CLOSED = 5                  # below this, lean on the prior (blended), don't trust the raw rate
 
 
+def _finite(name: str, value) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a finite number")
+    try:
+        out = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite number") from exc
+    if not math.isfinite(out):
+        raise ValueError(f"{name} must be finite")
+    return out
+
+
+def _count(name: str, value) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{name} must be an integer")
+    return value
+
+
 def wilson_lower_bound(successes: int, n: int, z: float = 1.96) -> float:
     """Lower bound of the Wilson score interval — a small sample can't claim a high rate. n=0 → 0."""
-    if n <= 0:
+    wins = _count("successes", successes)
+    sample_size = _count("n", n)
+    z_score = _finite("z", z)
+    if sample_size < 0 or wins < 0 or wins > sample_size:
+        raise ValueError("counts must satisfy 0 <= successes <= n")
+    if z_score <= 0:
+        raise ValueError("z must be greater than zero")
+    if sample_size == 0:
         return 0.0
-    p = successes / n
-    denom = 1 + z * z / n
-    centre = p + z * z / (2 * n)
-    margin = z * math.sqrt((p * (1 - p) + z * z / (4 * n)) / n)
+    p = wins / sample_size
+    denom = 1 + z_score * z_score / sample_size
+    centre = p + z_score * z_score / (2 * sample_size)
+    margin = z_score * math.sqrt(
+        (p * (1 - p) + z_score * z_score / (4 * sample_size)) / sample_size)
     return max(0.0, (centre - margin) / denom)
 
 
@@ -71,9 +103,17 @@ def tenant_close_base_rate(store, org_id: str) -> dict:
 def deal_close_probability(base_rate: float, signal_reason_codes) -> dict:
     """Base rate ± the open concerns/opportunities on THIS deal, bounded. Returns {probability,
     slip_risk, drivers} — slip_risk = 1 − probability (the "will this slip" framing)."""
-    prob = float(base_rate)
+    prob = min(1.0, max(0.0, _finite("base_rate", base_rate)))
+    if isinstance(signal_reason_codes, (str, bytes)) or signal_reason_codes is None:
+        raise ValueError("signal_reason_codes must be an iterable of reason-code strings")
     drivers = []
+    seen: set[str] = set()
     for rc in signal_reason_codes:
+        if not isinstance(rc, str):
+            raise ValueError("each signal reason code must be a string")
+        if rc in seen:
+            continue
+        seen.add(rc)
         w = _SIGNAL_WEIGHTS.get(rc)
         if w:
             prob += w
@@ -82,22 +122,32 @@ def deal_close_probability(base_rate: float, signal_reason_codes) -> dict:
     return {"probability": prob, "slip_risk": round(1 - prob, 3), "drivers": drivers}
 
 
-def play_win_rates(store, org_id: str) -> dict:
+def play_win_rates(store, org_id: str, *, eval_time: datetime | None = None) -> dict:
     """Per-play Wilson lower-bound win rate from card outcomes. A play "wins" when its card was acted
     on (run_play / do_it_myself); it "loses" on a relevance-wrong. Timing/snooze are excluded (they
     aren't judgments of the play). Returns {play: {wins, n, rate_lb}} — the recommender's trust map."""
     rates: dict = {}
+    as_of = authority_time(eval_time)
     with store.engine.connect() as c:
         rows = c.execute(text(
-            "select s.play, "
-            "  count(*) filter (where ce.cause in ('run_play','do_it_myself')) as wins, "
-            "  count(*) filter (where ce.cause in ('run_play','do_it_myself') "
-            "                    or (ce.cause='wrong' and (ce.detail->>'reason') "
-            "                        in ('not_relevant','wrong_facts'))) as n "
-            "from card_events ce join cards k on k.card_id=ce.card_id "
-            "join signals s on s.signal_id=k.signal_id "
-            "where ce.org_id=:o and s.play is not null group by s.play"), {"o": org_id}).fetchall()
+            "with " + AUDITED_CARD_JUDGMENTS_CTES + " "
+            "select pack_id, pack_version, play, count(*) filter (where cause in "
+            "('run_play','do_it_myself')) as wins, "
+            "count(*) filter (where cause in ('run_play','do_it_myself') or "
+            "(cause='wrong' and (detail->>'reason') in "
+            "('not_relevant','wrong_facts'))) as n "
+            "from canonical_judgments group by pack_id, pack_version, play "
+            "order by pack_id, pack_version, play"),
+            {"o": org_id, "as_of": as_of}).fetchall()
     for r in rows:
         wins, n = int(r.wins), int(r.n)
-        rates[r.play] = {"wins": wins, "n": n, "rate_lb": round(wilson_lower_bound(wins, n), 3)}
+        key = play_stat_key(r.pack_id, r.pack_version, r.play)
+        rates[key] = {"pack_id": r.pack_id, "pack_version": r.pack_version,
+                      "play_id": r.play, "wins": wins, "n": n,
+                      "rate_lb": round(wilson_lower_bound(wins, n), 3)}
     return rates
+
+
+def play_stat_key(pack_id: str, pack_version: str, play_id: str) -> str:
+    """Unambiguous measured-play identity for JSON-safe dictionaries."""
+    return f"{pack_id}@{pack_version}:{play_id}"

@@ -6,11 +6,53 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.context.identity import register_node_identity
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
 
 # B7 commit layer — every graph write goes through here. Versioned + evidence-linked +
 # transactional (all writes + version bump + change outbox in ONE transaction).
+
+
+def _ts(v) -> datetime | None:
+    """Normalize to a tz-aware UTC datetime for safe comparison (naive → assume UTC)."""
+    if isinstance(v, str):
+        try:
+            v = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if isinstance(v, datetime):
+        return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+    return None
+
+
+def fact_write_action(*, held_value_json: str | None, held_rank: int | None,
+                      held_occurred_at, new_value_json: str, new_rank: int,
+                      new_occurred_at, replay: bool = False) -> str:
+    """The write_fact decision, as a pure function → 'insert' | 'noop' | 'historical' |
+    'discrepancy' | 'supersede'.
+
+    The load-bearing rule is 'historical': a fact whose occurred_at is OLDER than the held
+    row's may never overwrite current state. Without this, any backfill/re-extract replays
+    a 2024 `thread.ball_in_court=us` over today's `them` and the correct value is already
+    stamped superseded — an unrecoverable corruption. Order of checks matters: staleness is
+    decided BEFORE authority, so replaying old low-rank mail doesn't spray discrepancies
+    against current system-of-record values either.
+
+    replay=True is the belt-and-braces mode for deliberate reprocessing: it may fill a
+    missing fact but NEVER supersedes an active one, regardless of timestamps."""
+    if held_value_json is None:
+        return "insert"
+    if held_value_json == new_value_json:
+        return "noop"
+    ho, no = _ts(held_occurred_at), _ts(new_occurred_at)
+    if ho is not None and no is not None and no < ho:
+        return "historical"                       # out-of-order → record, never overwrite
+    if replay:
+        return "historical"                       # replay may fill gaps, never flip state
+    if held_rank is not None and new_rank < held_rank:
+        return "discrepancy"                      # lower authority disagrees → flag, keep held
+    return "supersede"
 
 
 class GraphStore:
@@ -39,6 +81,13 @@ class GraphStore:
                 "select node_id from graph_nodes where org_id=:o and canonical_key=:k "
                 "and valid_to is null limit 1"), {"o": org_id, "k": canonical_key}).first()
             if row:
+                # Re-register on every sighting, not just at creation: a node's display
+                # name usually arrives AFTER its anchor did (an email gives you acme.io
+                # today and the words "Acme Technologies" next week), and that later name
+                # is exactly the key a prose mention needs to find it by.
+                register_node_identity(conn, org_id=org_id, node_id=row.node_id,
+                                       node_type=node_type, canonical_key=canonical_key,
+                                       display_name=display_name, event_id=event_id)
                 return row.node_id
         node_id = new_id("node")
         conn.execute(text(
@@ -47,6 +96,12 @@ class GraphStore:
             "values (:id, 1, :o, :nt, :k, :dn, :st, :ev)"),
             {"id": node_id, "o": org_id, "nt": node_type, "k": canonical_key,
              "dn": display_name, "st": "strong" if canonical_key else "weak", "ev": event_id})
+        # Claim the keys this node can be found by. A key already held by ANOTHER node
+        # raises a merge proposal and changes nothing — the first claimant keeps it, so
+        # lookups stay stable while a human decides.
+        register_node_identity(conn, org_id=org_id, node_id=node_id, node_type=node_type,
+                               canonical_key=canonical_key, display_name=display_name,
+                               event_id=event_id)
         return node_id
 
     def map_identity(self, conn, *, org_id: str, source: str, source_object_id: str,
@@ -60,39 +115,74 @@ class GraphStore:
     def write_fact(self, conn, *, org_id: str, subject_node_id: str, field: str,
                    value: Any, value_type: str, confidence: float,
                    occurred_at: datetime | None, event_id: str,
-                   evidence: dict, source: str | None, authority_rank: int = 1) -> str | None:
-        """B6/B7: authority-aware, no-op-aware, versioned. Returns the new fact_version_id,
-        or None when the write was a no-op or opened a discrepancy (held value kept)."""
+                   evidence: dict, source: str | None, authority_rank: int = 1,
+                   relevance: float | None = None,
+                   replay: bool = False) -> str | None:
+        """B6/B7: authority-aware, no-op-aware, out-of-order-aware, versioned. The decision
+        itself lives in fact_write_action() (pure, tested). Returns the new fact_version_id,
+        or None on no-op / discrepancy (held value kept). An out-of-order write (older
+        occurred_at than the held row, or any conflicting write under replay=True) lands as
+        status='historical' — preserved with provenance, never the active value."""
         held = conn.execute(text(
-            "select fact_version_id, value, authority_rank from graph_facts where org_id=:o "
-            "and subject_node_id=:s and field=:f and valid_to is null and status='active' "
+            "select fact_version_id, value, authority_rank, occurred_at from graph_facts "
+            "where org_id=:o and subject_node_id=:s and field=:f "
+            "and valid_to is null and status='active' "
             "limit 1"), {"o": org_id, "s": subject_node_id, "f": field}).first()
         new_val = json.dumps(value, default=str)
+        held_val = None
         if held is not None:
             held_val = held.value if isinstance(held.value, str) else json.dumps(held.value, default=str)
-            if held_val == new_val:
-                return None                          # no-op: same value → no new version
-            if authority_rank < held.authority_rank:  # lower authority disagrees → discrepancy
-                # held keeps its OWN value (the system-of-record), challenger carries the new one.
-                # (Was a bug: both sides recorded the challenger value → 'paid vs paid', real
-                #  conflict lost — e.g. Stripe 'paid' R3 vs email 'unpaid' R2.)
-                held_value = json.loads(held_val)
-                self.write_discrepancy(conn, org_id=org_id, subject_node_id=subject_node_id,
-                                       field=field,
-                                       held={"value": held_value, "rank": held.authority_rank},
-                                       challenger={"value": value, "rank": authority_rank,
-                                                   "source": source, "event_id": event_id})
-                return None
+
+        action = fact_write_action(
+            held_value_json=held_val, held_rank=held.authority_rank if held else None,
+            held_occurred_at=held.occurred_at if held else None,
+            new_value_json=new_val, new_rank=authority_rank,
+            new_occurred_at=occurred_at, replay=replay)
+
+        if action == "noop":
+            # CORROBORATION — the cross-intelligence write. A second source asserting the
+            # SAME value is not "nothing happened": it is independent confirmation, and it
+            # is what the scoring ladder (one:60 / two:85 / three+:100) and engine's
+            # src_count read. This branch used to return None before any ref was written,
+            # so src_count could never exceed 1 and the whole ladder was dead code —
+            # email + CRM agreeing looked identical to email alone. The ref attaches to
+            # the HELD (current) version; deduped per event so a re-sync doesn't inflate;
+            # distinct-source counting downstream handles same-source repeats.
+            already = conn.execute(text(
+                "select 1 from graph_source_refs where fact_version_id=:fv "
+                "and event_id=:e limit 1"),
+                {"fv": held.fact_version_id, "e": event_id}).first()
+            if already is None:
+                self._write_ref(conn, org_id=org_id, fact_version_id=held.fact_version_id,
+                                event_id=event_id, source=source,
+                                evidence={**(evidence or {}), "corroborates": True})
+            return None
+        if action == "discrepancy":
+            # held keeps its OWN value (the system-of-record), challenger carries the new one.
+            # (Was a bug: both sides recorded the challenger value → 'paid vs paid', real
+            #  conflict lost — e.g. Stripe 'paid' R3 vs email 'unpaid' R2.)
+            self.write_discrepancy(conn, org_id=org_id, subject_node_id=subject_node_id,
+                                   field=field,
+                                   held={"value": json.loads(held_val), "rank": held.authority_rank},
+                                   challenger={"value": value, "rank": authority_rank,
+                                               "source": source, "event_id": event_id})
+            return None
+        if action == "supersede":
             conn.execute(text("update graph_facts set valid_to=now(), status='superseded' "
                               "where fact_version_id=:fv"), {"fv": held.fact_version_id})
+
+        status = "historical" if action == "historical" else "active"
         fv = new_id("factv")
         conn.execute(text(
             "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, "
-            "value, value_type, status, authority_rank, confidence, occurred_at, created_by_event_id) "
-            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, 'active', :ar, :c, :oc, :ev)"),
+            "value, value_type, status, authority_rank, confidence, relevance, occurred_at, "
+            "created_by_event_id"
+            + (", valid_to" if status == "historical" else "") + ") "
+            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, :st, :ar, :c, :rel, :oc, :ev"
+            + (", now()" if status == "historical" else "") + ")"),
             {"fv": fv, "fid": new_id("fact"), "o": org_id, "s": subject_node_id, "f": field,
-             "val": new_val, "vt": value_type, "ar": authority_rank, "c": confidence,
-             "oc": occurred_at, "ev": event_id})
+             "val": new_val, "vt": value_type, "st": status, "ar": authority_rank,
+             "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id})
         self._write_ref(conn, org_id=org_id, fact_version_id=fv, event_id=event_id,
                         source=source, evidence=evidence)
         return fv
@@ -133,12 +223,24 @@ class GraphStore:
             "and from_node_id=:f and to_node_id=:tn and valid_to is null limit 1"),
             {"o": org_id, "t": edge_type, "f": from_node_id, "tn": to_node_id}).first()
         if held is not None:
+            # Relationship DEPTH: a repeat interaction is not a no-op — it bumps the
+            # edge's interaction_count and advances last_seen_at. This is the difference
+            # between a relationship graph and a boolean adjacency list (and the
+            # substrate relationship_stage / attention read). Still returns None:
+            # no new edge VERSION was created.
+            conn.execute(text(
+                "update graph_edges set interaction_count = coalesce(interaction_count,1) + 1, "
+                "last_seen_at = greatest(coalesce(last_seen_at, valid_from, now()), "
+                "coalesce(cast(:oc as timestamptz), now())) "
+                "where edge_version_id=:ev"),
+                {"ev": held.edge_version_id, "oc": occurred_at})
             return None
         edge_version_id = new_id("edgev")
         conn.execute(text(
             "insert into graph_edges (edge_version_id, edge_id, org_id, edge_type, from_node_id, "
-            "to_node_id, authority_rank, confidence, valid_from, created_by_event_id) "
-            "values (:ev, :eid, :o, :t, :f, :tn, :ar, :c, coalesce(:vf, now()), :e)"),
+            "to_node_id, authority_rank, confidence, valid_from, last_seen_at, created_by_event_id) "
+            "values (:ev, :eid, :o, :t, :f, :tn, :ar, :c, coalesce(:vf, now()), "
+            "coalesce(:vf, now()), :e)"),
             {"ev": edge_version_id, "eid": new_id("edge"), "o": org_id, "t": edge_type,
              "f": from_node_id, "tn": to_node_id, "ar": authority_rank, "c": confidence,
              "vf": occurred_at, "e": event_id})
@@ -165,16 +267,18 @@ class GraphStore:
              "p": json.dumps(payload, default=str)})
 
     # ── extraction replay cache + cost ─────────────────────────────────────────
-    def cache_get(self, processing_key: str, *, org_id: str | None = None) -> dict | None:
-        # org_id filter is defense-in-depth: the key is already org-scoped, but this guarantees a
-        # row can only ever be read back by the tenant that wrote it (no cross-tenant cache read).
-        q = "select output from l2_extraction_results where processing_key=:k"
-        params = {"k": processing_key}
-        if org_id is not None:
-            q += " and org_id=:o"
-            params["o"] = org_id
+    def cache_get(self, processing_key: str, *, org_id: str) -> dict | None:
+        # org_id is REQUIRED (no default): the key is already org-scoped, but this guarantees a
+        # row can only ever be read back by the tenant that wrote it. It was optional once —
+        # which meant every future caller (backfills, bulk loaders) was one omitted kwarg away
+        # from a silent cross-tenant cache read that no test would catch.
+        if not org_id:
+            raise ValueError("cache_get requires a non-empty org_id (tenant isolation)")
         with self._engine.connect() as c:
-            r = c.execute(text(q), params).first()
+            r = c.execute(text(
+                "select output from l2_extraction_results "
+                "where processing_key=:k and org_id=:o"),
+                {"k": processing_key, "o": org_id}).first()
         if not r:
             return None
         return r.output if isinstance(r.output, dict) else json.loads(r.output)

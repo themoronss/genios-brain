@@ -46,6 +46,13 @@ _EXTRACTABLE_ATTACHMENT_MIMES = {
     "text/plain", "text/markdown",
 }
 
+# Headers that mark automated / bulk / mailing-list mail. Surfaced into raw["headers"] so the gate's
+# N-01 (Auto-Submitted), N-02 (List-Unsubscribe) and N-04 (Precedence) rules can actually FIRE — the
+# connector never built this dict, so those three rules were dead and bulk mail slipped L1 to L2,
+# wasting an LLM call before being classified as noise. List-Id/List-Post/Feedback-ID = strong ESP markers.
+_NOISE_HEADERS = ("Auto-Submitted", "Precedence", "List-Unsubscribe",
+                  "List-Id", "List-Post", "Feedback-ID")
+
 # First-ever backfill window on a fresh connect. Kept SHORT (1 month) so onboarding is fast — a
 # Composio list page (~100 emails) is ~26s, so fewer days = fewer pages = quicker first sync.
 # Steady-state incremental sync resumes from the watermark and only pulls new mail regardless.
@@ -187,6 +194,29 @@ class ComposioGmailConnector:
         d = r.get("data", r) if isinstance(r, dict) else {}
         return _b64url(d.get("data") or d.get("attachmentData") or d.get("body") if isinstance(d, dict) else "")
 
+    def _attachment_stub(self, *, mid: str, att: dict, idx: int, occurred, sender_email,
+                         to_emails, cc_emails, status: str) -> RawObject:
+        """A NAMED attachment we could not extract — an unsupported type, or a failed download.
+        Emit it anyway with an empty body + a document status so the gate PARKS it (DOC-02
+        unsupported / DOC-05 fetch_failed — reviewable, and a failed download is retryable),
+        instead of silently dropping a real file. has_attachment=True keeps it out of the
+        N-10 empty-drop. Store-don't-delete."""
+        return RawObject(
+            source="gmail", object_type="email_attachment",
+            source_object_id=f"{mid}::{att.get('attachmentId') or att.get('filename') or idx}",
+            occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
+            parent_object_id=mid,
+            raw={
+                "subject": att.get("filename") or "attachment",
+                "body": "",
+                "mime": att.get("mime"),
+                "has_attachment": True,
+                "document": {"status": status, "native_parse_used": False, "ocr_used": False,
+                             "ocr_engine": None, "ocr_pages": 0, "avg_confidence": 0.0},
+                "to": to_emails, "cc": cc_emails,
+            },
+        )
+
     @staticmethod
     def _walk(payload: Any, texts: list, atts: list) -> None:
         """Recursively collect (mime, bytes) text bodies and attachment part-refs from a Gmail
@@ -267,6 +297,9 @@ class ComposioGmailConnector:
         subject = pick("subject") or _header(src, "Subject") or _header(m, "Subject")
         thread = pick("threadId", "thread_id")
         labels = pick("labelIds", "labels") or []
+        # noise-relevant headers → without this dict the gate's N-01/N-02/N-04 rules never fired on
+        # real Gmail, so bulk/automated mail wasted an L2 LLM call before being dropped as noise.
+        headers = {h: v for h in _NOISE_HEADERS if (v := (_header(src, h) or _header(m, h)))}
 
         # walk MIME → full body text + attachment refs
         texts: list = []
@@ -289,6 +322,7 @@ class ComposioGmailConnector:
                 "body": body,                 # FULL text now → preprocess → L2
                 "snippet": snippet,
                 "labelIds": labels,
+                "headers": headers,            # revives the header-based noise rules (N-01/02/04)
                 "to": to_emails, "cc": cc_emails,
                 "has_attachment": bool(atts),  # keeps attachment-only emails out of the N-10 drop
             },
@@ -302,10 +336,23 @@ class ComposioGmailConnector:
             # speed fix): only PDFs/Office/txt, or images when OCR is on, are worth fetching.
             worth = mime in _EXTRACTABLE_ATTACHMENT_MIMES or (self._ocr and mime.startswith("image/"))
             if not worth:
+                # Don't SILENTLY vanish a real named file. Inline signature images / tracking
+                # pixels (image001.png, gifs) are true noise → skip; a .csv / .zip / screenshot
+                # invoice lands as a stub that PARKS (DOC-02, reviewable). Store-don't-delete.
+                fn = (a.get("filename") or "").lower()
+                if mime == "image/gif" or re.match(r"image\d{3}\.\w+$", fn):
+                    continue
+                objs.append(self._attachment_stub(
+                    mid=mid, att=a, idx=i, occurred=occurred, sender_email=sender_email,
+                    to_emails=to_emails, cc_emails=cc_emails, status="unsupported"))
                 continue
             raw_bytes = _b64url(a.get("data")) if a.get("data") else \
                 self._attachment_bytes(mid, a.get("attachmentId"))
             if not raw_bytes:
+                # a file we WANTED (pdf/docx/…) whose download failed → park + retry, never lose it
+                objs.append(self._attachment_stub(
+                    mid=mid, att=a, idx=i, occurred=occurred, sender_email=sender_email,
+                    to_emails=to_emails, cc_emails=cc_emails, status="fetch_failed"))
                 continue
             r = process_document(mime=a.get("mime") or "", data=raw_bytes,
                                  filename=a.get("filename") or "", ocr=self._ocr)

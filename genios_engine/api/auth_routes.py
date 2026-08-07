@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.contracts.events import AGENT_ACTIONS, AGENT_API_SCOPES
+from genios_engine.contracts.events import AGENT_ACTIONS, AGENT_API_SCOPES, HUMAN_API_SCOPES
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, hash_key,
                                          hash_password, invalidate_key_cache, jwt_encode,
-                                         new_api_key, verify_password)
+                                         new_api_key, require_owner, verify_password)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
@@ -20,7 +20,7 @@ from genios_engine.platform.ids import new_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 JWT_TTL_SECONDS = 7 * 24 * 3600
-GRANTABLE = AGENT_ACTIONS | AGENT_API_SCOPES
+GRANTABLE = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES
 
 
 def _engine():
@@ -85,13 +85,14 @@ def login(body: Login) -> dict:
 class MintKey(BaseModel):
     name: str = "key"
     agent_id: str | None = None
-    scopes: list[str]                    # subset of AGENT_ACTIONS ∪ AGENT_API_SCOPES
+    scopes: list[str]                    # subset of the controlled grant vocabulary
 
 
 @router.post("/keys")
-def mint_key(body: MintKey, org_id: str = Depends(get_current_org)) -> dict:
+def mint_key(body: MintKey, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Mint a scoped gn_live_ key for the authenticated tenant. This is the 'pick scope → get
     key → key carries that scope' flow. Raw key returned ONCE."""
+    org_id = ctx.org_id
     bad = [s for s in body.scopes if s not in GRANTABLE]
     if bad:
         raise HTTPException(422, f"unknown scopes: {bad}")
@@ -106,7 +107,8 @@ def mint_key(body: MintKey, org_id: str = Depends(get_current_org)) -> dict:
 
 
 @router.get("/keys")
-def list_keys(org_id: str = Depends(get_current_org)) -> dict:
+def list_keys(ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _engine().connect() as c:
         rows = c.execute(text("select id, key_prefix, name, agent_id, scopes, is_active, "
                               "created_at, last_used_at from api_keys where org_id=:o "
@@ -115,7 +117,8 @@ def list_keys(org_id: str = Depends(get_current_org)) -> dict:
 
 
 @router.delete("/keys/{key_id}")
-def revoke_key(key_id: str, org_id: str = Depends(get_current_org)) -> dict:
+def revoke_key(key_id: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    org_id = ctx.org_id
     with _engine().begin() as c:
         row = c.execute(text("select key_hash from api_keys where id=:id and org_id=:o"),
                         {"id": key_id, "o": org_id}).first()

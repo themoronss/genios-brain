@@ -1,49 +1,40 @@
 from __future__ import annotations
 
-from datetime import timedelta
-
 from sqlalchemy import text
 
-# E3 · Delivery Router (§5.13). One card, one owner, one push — deterministic and ordered:
+from genios_engine.executive.assignment import PgSeatDirectory, resolve_owner
+
+# E3 · Delivery Router (§5.13) — now a THIN DELEGATION.
+#
+# The ownership rules used to live here, which made Layer 6 the authority on who owns a
+# recommendation. That was the wrong home: Layer 6 answers *how intelligence travels*, and who
+# holds a commitment is part of the commitment itself, not part of its transport. The rules moved
+# down to executive/assignment.py (Layer 5) and this module now calls them.
+#
+# The direction is legal and deliberate: deliver (6) may import executive (5); executive may never
+# import deliver. tests/test_layer_topology.py enforces it, and executive/validate.py already
+# documents the same pattern for the render validators.
+#
+# Behaviour is unchanged — same three ordered rules, same reason codes:
 #   rule 1  entity relationship/deal owner → that seat
 #   rule 2  else the triggering commitment's actor, IFF internal AND an active seat
 #   rule 3  else the admin queue, visible as 'unrouted' (never a silent drop)
-# Budget (7/day) is evaluated per assignee at delivery time; a reassigned card counts against the
-# new owner only. 'unrouted' cards don't consume anyone's budget until an admin claims them.
+#
+# Budget (7/day) stays here. It is genuinely a distribution concern: it caps how many pushes one
+# person receives in a day, which is a property of the channel's politeness, not of who owns what.
 
 
-def _active_seat(c, org_id, seat_ref) -> str | None:
-    """seat_ref may be a seat_id or an email; return the seat_id iff it is an active seat."""
-    if not seat_ref:
-        return None
-    r = c.execute(text(
-        "select seat_id from org_seats where org_id=:o and active "
-        "and (seat_id=:s or lower(email)=lower(:s)) limit 1"),
-        {"o": org_id, "s": str(seat_ref)}).first()
-    return r.seat_id if r else None
+def resolve_assignee(store, org_id: str, node_facts: dict,
+                     node_attrs: dict) -> tuple[str | None, str]:
+    """Return (seat_id | None, resolved_rule). None → admin queue / unrouted.
 
-
-def resolve_assignee(store, org_id: str, node_facts: dict, node_attrs: dict) -> tuple[str | None, str]:
-    """Return (seat_id | None, resolved_rule). None → admin queue / unrouted."""
-    def fval(field):
-        f = node_facts.get(field)
-        return f.get("value") if isinstance(f, dict) else None
-
+    Kept as a function rather than replaced at every call site so the Layer 6 pipeline reads the
+    same as it did before. The tuple shape is what card_builder and the tests already expect.
+    """
     with store.engine.connect() as c:
-        # rule 1 — explicit deal/relationship owner (owner is authoritative even if off-seat,
-        # but we only auto-push to an ACTIVE seat; an off-seat owner falls through to admin).
-        owner = fval("deal.owner") or fval("relationship.owner") or (node_attrs or {}).get("owner")
-        seat = _active_seat(c, org_id, owner)
-        if seat:
-            return seat, "rule1_owner"
-
-        # rule 2 — commitment actor, only if internal AND an active seat (Finding C precision fix)
-        actor = fval("commitment.actor")
-        seat = _active_seat(c, org_id, actor)
-        if seat:
-            return seat, "rule2_actor"
-
-    return None, "rule3_unrouted"
+        assignment = resolve_owner(facts=node_facts, attrs=node_attrs,
+                                   directory=PgSeatDirectory(conn=c, org_id=org_id))
+    return assignment.seat_id, assignment.reason_code
 
 
 def budget_full(store, org_id: str, assignee: str | None, eval_time, budget_per_day: int) -> bool:

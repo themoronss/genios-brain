@@ -45,8 +45,15 @@ class ComposioNotionConnector:
         md = data.get("markdown") or data.get("content") or data.get("text") or ""
         return md if isinstance(md, str) else ""
 
-    def _to_batch(self, data: dict) -> SourceBatch:
+    def _to_batch(self, data: dict, since: datetime | None = None) -> SourceBatch:
         results = data.get("results") or data.get("pages") or []
+        if since is not None:
+            # honour the watermark BEFORE fetching content: _to_raw pulls each page's
+            # full markdown, so filtering here is what stops every 6-hourly sweep from
+            # re-downloading the whole workspace (`since` was previously ignored).
+            # Metadata-only compare; dedup_key/content_version are untouched.
+            results = [p for p in results if isinstance(p, dict)
+                       and _parse_ts(p.get("last_edited_time")) > since]
         objs = [self._to_raw(p) for p in results if isinstance(p, dict)]
         cursor = data.get("next_cursor") if data.get("has_more") else None
         return SourceBatch(objects=[o for o in objs if o], next_cursor=cursor)
@@ -61,6 +68,9 @@ class ComposioNotionConnector:
             occurred_at=_parse_ts(page.get("last_edited_time")),
             actor_email=((page.get("last_edited_by") or {}).get("email")),
             actor_type="internal_user",
+            # last_edited_time bumps on every edit → new content_version → an edited page re-lands
+            # and its body updates, instead of being deduped to the first version seen.
+            content_version=str(page.get("last_edited_time")) if page.get("last_edited_time") else None,
             raw={"subject": _title(page), "body": body, "url": page.get("url")},
         )
 
@@ -73,7 +83,7 @@ class ComposioNotionConnector:
 
     def incremental_changes(self, cursor: str | None = None, limit: int = 50,
                             since: datetime | None = None) -> SourceBatch:
-        return self._to_batch(self._search(limit=limit, page_token=cursor))
+        return self._to_batch(self._search(limit=limit, page_token=cursor), since=since)
 
     def fetch_content(self, object_ref: str) -> dict[str, Any]:
         return {"body": self._markdown(object_ref)}

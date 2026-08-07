@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -51,12 +52,18 @@ def _parse_ts(v) -> datetime | None:
 
 def _num(v):
     try:
-        return float(v)
-    except (TypeError, ValueError):
+        n = float(v)
+    except (TypeError, ValueError, OverflowError):
         return None
+    return n if math.isfinite(n) else None
 
 
 def _cmp(a, op, b) -> bool:
+    # A non-finite numeric fact is malformed, not a valid categorical value. In particular,
+    # `nan != threshold` would otherwise be True and could fire a rule on corrupt input.
+    if ((isinstance(a, (int, float)) and not isinstance(a, bool) and _num(a) is None)
+            or (isinstance(b, (int, float)) and not isinstance(b, bool) and _num(b) is None)):
+        return False
     if op == "=":
         return a == b
     if op == "!=":
@@ -133,13 +140,18 @@ def _freshness(occurred_at, eval_time, *, half_life_days: float = 30.0) -> float
     """Data-age decay of the trigger fact: today ≈ 1.0, an old fact decays toward 0. Feeds the
     30%-freshness slot of the confidence term (was hardcoded 1.0 — stale data scored as if fresh)."""
     if occurred_at is None:
+        # Preserve the v0.3 treatment for derived/legacy facts that have no separate observation
+        # timestamp. Explicitly malformed or future timestamps below fail closed instead.
         return 1.0
-    try:
-        import math
-        age_days = max(0.0, (eval_time - occurred_at).total_seconds() / 86400.0)
-        return math.exp(-age_days / max(1.0, half_life_days))
-    except (TypeError, ValueError):
-        return 1.0
+    occurred = _parse_ts(occurred_at)
+    evaluated = _parse_ts(eval_time)
+    half_life = _num(half_life_days)
+    if occurred is None or evaluated is None or half_life is None or half_life <= 0:
+        return 0.0
+    age_days = (evaluated - occurred).total_seconds() / 86400.0
+    if not math.isfinite(age_days) or age_days < 0:
+        return 0.0
+    return math.exp(-age_days / max(1.0, half_life))
 
 
 def score_rule(ctx: NodeContext, rule: Rule, eval_time: datetime,

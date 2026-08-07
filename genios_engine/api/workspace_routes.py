@@ -386,6 +386,9 @@ def update_commitment(org_id: str, commitment_id: str, req: CommitmentUpdate,
         if row is None:
             raise HTTPException(404, "commitment not found")
         if req.status in ("fulfilled", "not_a_commitment", "dropped"):
+            # Bump first, inside the same transaction, so Layer 4's shared version lock
+            # serializes this human mutation against recommendation publication.
+            g.bump_version(conn, org)
             conn.execute(text("update graph_facts set valid_to=now(), status='superseded' "
                               "where fact_version_id=:fv"), {"fv": row.fact_version_id})
         elif req.due_date:
@@ -393,6 +396,7 @@ def update_commitment(org_id: str, commitment_id: str, req: CommitmentUpdate,
                 due = datetime.fromisoformat(req.due_date.replace("Z", "+00:00"))
             except ValueError:
                 due = None
+            g.bump_version(conn, org)
             g.write_fact(conn, org_id=org, subject_node_id=commitment_id, field="commitment.due_at",
                          value=req.due_date, value_type="timestamp", confidence=1.0, occurred_at=due,
                          event_id=new_id("human"), evidence={"edited_by": "user"}, source="human",

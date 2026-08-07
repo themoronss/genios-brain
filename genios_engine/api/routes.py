@@ -9,10 +9,10 @@ from genios_engine.capture.coverage.model import capability_of, compute_coverage
 from genios_engine.capture.landing.repository import InMemorySourceEventRepository
 from genios_engine.capture.pipeline import capture_event
 from genios_engine.contracts.connection import Connection
-from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES, AgentEvent,
-                                            HumanEvent)
+from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES, HUMAN_API_SCOPES,
+                                            AgentEvent, HumanEvent)
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
-                                          require_internal, require_scope)
+                                          require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_agent_event_store,
@@ -22,7 +22,7 @@ from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_document_job_store, make_graph_store,
                                            make_human_event_store, make_llm_client,
                                            make_pack_registry, make_parked_store,
-                                           make_payload_store,
+                                           make_payload_store, make_prepared_store,
                                            make_relevance_classifier, make_repo,
                                            make_trace_repo)
 
@@ -33,6 +33,7 @@ router = APIRouter()
 _repo = make_repo()
 _trace_repo = make_trace_repo()
 _payload_store = make_payload_store()
+_prepared_store = make_prepared_store()
 _connections = make_connection_store()
 _parked = make_parked_store()
 _cursors = make_cursor_store()
@@ -85,6 +86,53 @@ def list_connections(org_id: str = Depends(get_current_org)) -> dict:
 # ── ingestion ────────────────────────────────────────────────────────────────────
 _log = get_logger("genios.api")
 
+# known-sender resolver: "is this email already a person in the org's graph?" feeds the
+# gate's W-01 whitelist so mail from known contacts is never N-code dropped. The resolver
+# param existed in run_sync since day one — it was simply never passed, so W-01 never
+# fired in production. Cached per org (5 min) — one query per sync, not per email.
+_SENDER_CACHE: dict[str, tuple[float, frozenset]] = {}
+_SENDER_TTL_S = 300.0
+
+
+def _sender_resolver_for(org_id: str):
+    if _graph is None:
+        return None
+
+    def _known(raw) -> bool:
+        email = (getattr(raw, "actor_email", None) or "").strip().lower()
+        if not email:
+            return False
+        import time
+        now = time.time()
+        hit = _SENDER_CACHE.get(org_id)
+        if hit is None or now - hit[0] > _SENDER_TTL_S:
+            from sqlalchemy import text
+            with _graph.engine.connect() as c:
+                rows = c.execute(text(
+                    "select canonical_key from graph_nodes where org_id=:o "
+                    "and node_type='person' and valid_to is null"), {"o": org_id}).fetchall()
+            hit = (now, frozenset(r.canonical_key for r in rows if r.canonical_key))
+            _SENDER_CACHE[org_id] = hit
+        return email in hit[1]
+    return _known
+
+
+def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary) -> None:
+    """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop."""
+    if _graph is None:
+        return
+    from sqlalchemy import text
+
+    from genios_engine.platform.ids import new_id
+    with _graph.engine.begin() as c:
+        c.execute(text(
+            "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
+            "scanned, emitted, dropped, parked, duplicate, quarantined) "
+            "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu)"),
+            {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
+             "sc": summary.scanned, "em": summary.emitted, "dr": summary.dropped,
+             "pa": summary.parked, "du": summary.duplicate, "qu": summary.quarantined})
+
 
 def _run_l2(org_id: str) -> None:
     """Background L2 + L3 + L5 pass for one org. In-process (no Celery/Upstash). Wrapped so a
@@ -112,8 +160,12 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
         run_sync(make_connector_for(connection), org_id=connection.org_id,
                  connection_id=connection.connection_id, repo=_repo, mode=mode, limit=limit,
                  parked_store=_parked, relevance=make_relevance_classifier(),
-                 trace_repo=_trace_repo, payload_store=_payload_store, cursor_store=_cursors,
-                 document_job_store=_documents, source=connection.source_type, max_pages=20)
+                 trace_repo=_trace_repo, payload_store=_payload_store,
+                 prepared_store=_prepared_store,
+                 sender_resolver=_sender_resolver_for(connection.org_id),
+                 cursor_store=_cursors,
+                 document_job_store=_documents, source=connection.source_type, max_pages=20,
+                 run_ledger=_run_ledger)
     except Exception:
         _log.exception("L1 sync failed for org_id=%s connection_id=%s",
                        connection.org_id, connection.connection_id)
@@ -135,8 +187,12 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
         try:
             run_sync(make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
-                     trace_repo=_trace_repo, payload_store=_payload_store, cursor_store=_cursors,
-                     document_job_store=_documents, source=conn.source_type, max_pages=20)
+                     trace_repo=_trace_repo, payload_store=_payload_store,
+                     prepared_store=_prepared_store,
+                     sender_resolver=_sender_resolver_for(conn.org_id),
+                     cursor_store=_cursors,
+                     document_job_store=_documents, source=conn.source_type, max_pages=20,
+                     run_ledger=_run_ledger)
             l1_ok += 1
         except Exception:
             l1_err += 1
@@ -149,7 +205,9 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err, "orgs": len(orgs)}
 
 
-_last_calibration_at = None            # in-process weekly gate for L6 (module-level; resets on restart)
+# Retained as a compatibility diagnostic only. Calibration authority is the durable
+# ``calibration_runs`` uniqueness key; process memory never decides whether tuning may repeat.
+_last_calibration_at = None
 
 
 def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
@@ -159,7 +217,6 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     auto-mute → bounded nudges) weekly, per active pack per org. Without this, snoozed cards were a
     black hole, expired cards never cleared, and the self-tuning loop stayed inert (built, unscheduled)."""
     from datetime import datetime, timedelta, timezone
-    global _last_calibration_at
     now = datetime.now(timezone.utc)
     sync = run_sync_sweep(mode=mode, limit=limit)
     try:
@@ -167,11 +224,41 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     except Exception:                                        # noqa: BLE001 — never kill the heartbeat
         _log.exception("card lifecycle sweep failed")
         lifecycle = {"error": True}
+    # retention clocks, ENFORCED: raw payloads (30d), prepared text (180d), and bounded Layer 4
+    # context payloads. Hash/provenance rows remain after the L4 payload expires, but replay closes.
+    retention = {}
+    for name, store in (("raw_payloads", _payload_store), ("prepared_content", _prepared_store)):
+        try:
+            if hasattr(store, "purge_expired"):
+                retention[name] = store.purge_expired()
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for %s", name)
+            retention[name] = "error"
+    if _graph is not None:
+        try:
+            from genios_engine.reason.store import ReasoningStore
+            retention["reasoning_context_payloads"] = ReasoningStore(
+                engine=_graph.engine).purge_expired_context_payloads(eval_time=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for reasoning_context_payloads")
+            retention["reasoning_context_payloads"] = "error"
+    # L6 distribution: enqueue new high/critical cards + the daily digest per org with an
+    # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
+    # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
+    distribution = {}
+    if _graph is not None:
+        try:
+            from genios_engine.deliver.outbox import run_distribution
+            distribution = run_distribution(_graph.engine)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("distribution pass failed")
+            distribution = {"error": True}
     calibration = None
-    if _last_calibration_at is None or (now - _last_calibration_at) >= timedelta(days=7):
+    if _graph is not None:
         from genios_engine.feedback.calibrate import run_calibration
         orgs = {c.org_id for c in _connections.list_active()}
         runs = 0
+        already_ran = 0
         for org in orgs:                                     # weekly: precision + auto-mute + nudges
             try:
                 with _graph.engine.connect() as c:
@@ -179,14 +266,47 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                         "select pack_id from tenant_packs where org_id=:o and state='active'"),
                         {"o": org})]
                 for pid in (packs or ["sales"]):
-                    run_calibration(_graph, org, registry=_registry, pack_id=pid)
-                    runs += 1
+                    result = run_calibration(_graph, org, registry=_registry, pack_id=pid,
+                                             eval_time=now)
+                    runs += int(bool(result.get("applied")))
+                    already_ran += int(bool(result.get("already_ran")))
             except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
                 _log.exception("calibration failed org=%s", org)
-        _last_calibration_at = now
-        calibration = {"orgs": len(orgs), "pack_runs": runs}
-        _log.info("weekly calibration pass complete: %d org(s), %d pack-run(s)", len(orgs), runs)
-    return {"sync": sync, "lifecycle": lifecycle, "calibration": calibration}
+        calibration = {"orgs": len(orgs), "pack_runs": runs,
+                       "already_ran": already_ran}
+        _log.info("calibration pass complete: %d org(s), %d applied pack-run(s)", len(orgs), runs)
+    # L2 GRAPH MAINTENANCE — entity lifecycle + a health measurement, per org.
+    #
+    # Here rather than in the L2 drain because both are O(graph), not O(event): running
+    # them per event would make every email pay for a whole-tenant scan. Health is
+    # recorded rather than just returned, because one number says little and the same
+    # number falling over three weeks says a connector broke, a merge went wrong, or
+    # correlation stopped reaching anything.
+    graph_maintenance = None
+    if _graph is not None:
+        from genios_engine.context.health import (compute_health, purge_old_health,
+                                                   refresh_node_lifecycle)
+        orgs = {c.org_id for c in _connections.list_active()}
+        checked = 0
+        unhealthy = []
+        for org in orgs:
+            try:
+                refresh_node_lifecycle(_graph, org, eval_time=now)
+                health = compute_health(_graph, org, eval_time=now)
+                purge_old_health(_graph, org)
+                checked += 1
+                if health.overall < 80:
+                    unhealthy.append({"org_id": org, "overall": health.overall,
+                                      "issues": [i["kind"] for i in health.issues]})
+            except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
+                _log.exception("graph maintenance failed org=%s", org)
+        graph_maintenance = {"orgs_checked": checked, "unhealthy": unhealthy}
+        if unhealthy:
+            _log.warning("graph health below threshold for %d org(s): %s",
+                         len(unhealthy), unhealthy)
+    return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
+            "distribution": distribution, "calibration": calibration,
+            "graph_maintenance": graph_maintenance}
 
 
 @router.post("/ingest/all")
@@ -206,8 +326,11 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                                connection_id=conn.connection_id, repo=_repo, mode=mode,
                                limit=limit, parked_store=_parked, relevance=rc,
                                trace_repo=_trace_repo, payload_store=_payload_store,
+                               prepared_store=_prepared_store,
+                               sender_resolver=_sender_resolver_for(conn.org_id),
                                cursor_store=_cursors, document_job_store=_documents,
-                               source=conn.source_type, max_pages=20)
+                               source=conn.source_type, max_pages=20,
+                               run_ledger=_run_ledger)
         except Exception as e:                   # one bad source never kills the rest
             per.append({"org_id": conn.org_id, "source": conn.source_type, "error": str(e)[:120]})
             continue
@@ -245,6 +368,34 @@ def sync_one(connection_id: str, background_tasks: BackgroundTasks,
     background_tasks.add_task(_sync_connection, conn, mode, limit)
     return {"scheduled": True, "connection_id": connection_id, "org_id": conn.org_id,
             "note": "L1 sync + L2 running in the background; this returned immediately"}
+
+
+@router.post("/connections/{connection_id}/backfill")
+def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
+                        limit: int = 100, org_id: str = Depends(get_current_org)) -> dict:
+    """Drain a connection's FULL history in the background — the older tail an incremental sync skips
+    on a huge first connect (newest-first watermark + max_pages). OWNER-triggered, not automatic:
+    it can pull thousands of items and each drives L2 extraction, so it is a deliberate cost choice."""
+    conn = _connections.get(connection_id)
+    if conn is None or conn.org_id != org_id:
+        raise HTTPException(404, "connection not found")
+
+    def _run() -> None:
+        from genios_engine.capture.acquire.sync_runner import backfill_drain
+        try:
+            summary = backfill_drain(
+                make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
+                repo=_repo, source=conn.source_type, limit=limit, trace_repo=_trace_repo,
+                payload_store=_payload_store, prepared_store=_prepared_store,
+                document_job_store=_documents)
+            _log.info("backfill drain done org=%s conn=%s scanned=%s",
+                      conn.org_id, connection_id, summary.scanned)
+        except Exception:                                # a drain failure must not crash the worker
+            _log.exception("backfill drain failed org=%s conn=%s", conn.org_id, connection_id)
+
+    background_tasks.add_task(_run)
+    return {"started": True, "connection_id": connection_id,
+            "note": "full-history backfill draining in the background (older tail incremental skips)"}
 
 
 @router.post("/dev/ingest-sample")
@@ -291,9 +442,23 @@ def recover_parked(event_id: str, org_id: str = Depends(get_current_org)) -> dic
     return {"event_id": event_id, "status": "recovered", "reinjected": reinjected}
 
 
+def _company_knowledge_count(org_id: str) -> int:
+    """Distinct company-knowledge assertions this org has WRITTEN (non-app evidence: policies,
+    pricing, SOPs — source='internal'). Surfaced in coverage so written canon is visible evidence,
+    not an ignored 'not connected'. Returns 0 (never an error) when there is no graph/DB."""
+    if _graph is None:
+        return 0
+    from sqlalchemy import text
+    with _graph.engine.connect() as c:
+        return int(c.execute(text(
+            "select count(distinct source_object_id) from source_events "
+            "where org_id=:o and source='internal'"), {"o": org_id}).scalar() or 0)
+
+
 @router.get("/coverage")
 def coverage(domain: str = "sales", org_id: str = Depends(get_current_org)) -> dict:
-    return compute_coverage(domain, _connected_capabilities(org_id))
+    return compute_coverage(domain, _connected_capabilities(org_id),
+                            company_knowledge_count=_company_knowledge_count(org_id))
 
 
 # ── connection lifecycle ─────────────────────────────────────────────────────────
@@ -316,6 +481,8 @@ def workspace_kill(action: str, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     for this org 503s (checked in get_current_org, cache-invalidated for immediate effect); resume
     lifts it. Uses get_auth_ctx (NOT get_current_org) so a paused owner can still call resume.
     Complements per-source pause (/connections/{id}/pause) and the global kill."""
+    if ctx.scopes is not None:
+        raise HTTPException(403, "owner credential required")
     org_id = ctx.org_id
     enabled = {"pause": False, "resume": True}.get(action)
     if enabled is None:
@@ -344,6 +511,11 @@ class InitiateConnect(BaseModel):
 def connect_initiate(body: InitiateConnect, org_id: str = Depends(get_current_org)) -> dict:
     """Authenticated tenant starts OAuth for a tool → Composio redirect URL. After authorizing,
     add a /connections row with the same user_id."""
+    from genios_engine.platform.wiring import IMPLEMENTED_SOURCE_TYPES
+    if body.source_type not in IMPLEMENTED_SOURCE_TYPES:
+        raise HTTPException(400, f"'{body.source_type}' is not available yet — no connector is "
+                                 "implemented for it. Connecting would authorize data GeniOS "
+                                 "cannot ingest.")
     s = get_settings()
     if not s.use_real_composio:
         raise HTTPException(400, "Composio not configured")
@@ -390,6 +562,12 @@ def tool_connect_redirect(tool: str, org_id: str, callback: str | None = None):
     s = get_settings()
     if not s.use_real_composio:
         raise HTTPException(400, "Composio not configured — set GENIOS_COMPOSIO_API_KEY in the engine .env")
+    # Stop the 502 lie: never START an OAuth flow for a source make_connector_for can't
+    # build — the user would grant real data access and every later sync would crash.
+    from genios_engine.platform.wiring import IMPLEMENTED_SOURCE_TYPES
+    if tool.lower() not in IMPLEMENTED_SOURCE_TYPES:
+        raise HTTPException(400, f"'{tool}' is not available yet — its connector is not "
+                                 "implemented. Coming soon; nothing was authorized.")
     slug = _TOOLKIT_SLUGS.get(tool.lower(), tool.lower())
     from composio import Composio
     comp = Composio(api_key=s.composio_api_key)
@@ -555,8 +733,10 @@ def _sync_source(org_id: str, source_type: str, limit: int):
     return run_sync(make_connector_for(conn), org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
                     relevance=make_relevance_classifier(), trace_repo=_trace_repo,
-                    payload_store=_payload_store, cursor_store=_cursors,
-                    document_job_store=_documents, source=source_type, max_pages=3)
+                    payload_store=_payload_store, prepared_store=_prepared_store,
+                    sender_resolver=_sender_resolver_for(org_id), cursor_store=_cursors,
+                    document_job_store=_documents, source=source_type, max_pages=3,
+                    run_ledger=_run_ledger)
 
 
 @router.post("/integrations/{tool}/sync")
@@ -640,12 +820,15 @@ async def composio_webhook(request: Request,
     conn = next((c for c in _connections.list_active() if c.composio_user_id == user_id), None)
     if conn is None:
         raise HTTPException(404, "no active connection for this user_id")
-    from genios_engine.capture.connectors.composio import ComposioGmailConnector
-    msg = data.get("message") or data.get("email") or data
-    raw_obj = (ComposioGmailConnector(api_key="", user_id="")._to_raw(msg)
-               if isinstance(msg, dict) else None)
+    from genios_engine.capture.connectors.dispatch import webhook_to_raw
+    try:
+        raw_obj = webhook_to_raw(conn.source_type, data,
+                                 connector_factory=lambda: make_connector_for(conn))
+    except Exception:                                    # a foreign/bad payload must never 500 the webhook
+        _log.exception("webhook parse failed org=%s source=%s", conn.org_id, conn.source_type)
+        raw_obj = None
     if raw_obj is None:
-        return {"ingested": False, "reason": "unmapped payload"}
+        return {"ingested": False, "reason": "unmapped payload", "source": conn.source_type}
     res = capture_event(raw_obj, org_id=conn.org_id, connection_id=conn.connection_id,
                         repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
                         document_job_store=_documents)
@@ -654,11 +837,12 @@ async def composio_webhook(request: Request,
 
 # ── L2 context graph ─────────────────────────────────────────────────────────────
 @router.post("/context/process")
-def context_process(limit: int = 50, org_id: str = Depends(get_current_org)) -> dict:
+def context_process(limit: int = 50, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """L1→L2 handoff for the authed tenant (org from credential — an unauthenticated caller can
     no longer trigger Haiku spend). limit clamped so it can't be driven unbounded."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured (needs DATABASE_URL)")
+    org_id = ctx.org_id
     limit = max(1, min(int(limit), 200))
     from genios_engine.context.runner import process_pending
     return process_pending(org_id=org_id, store=_graph, llm=_llm,
@@ -666,10 +850,11 @@ def context_process(limit: int = 50, org_id: str = Depends(get_current_org)) -> 
 
 
 @router.post("/context/reason")
-def context_reason(org_id: str = Depends(get_current_org)) -> dict:
+def context_reason(ctx: AuthCtx = Depends(require_owner)) -> dict:
     """L3: evaluate deterministic rules over the authed tenant's graph → scored signals (no LLM)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
+    org_id = ctx.org_id
     from genios_engine.reason.runner import run_all as run_l3
     return run_l3(org_id=org_id, store=_graph, registry=_registry)
 
@@ -696,10 +881,31 @@ def context_signals(status: str = "open", org_id: str = Depends(get_current_org)
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
     with _graph.engine.connect() as c:
-        rows = c.execute(text(
-            "select signal_id, rule_id, subject_node_id, score, reason_code, play, "
-            "score_inputs, evidence from signals where org_id=:o and status=:s "
-            "order by score desc"), {"o": org_id, "s": status}).fetchall()
+        if status == "open":
+            from genios_engine.reason.authority import (
+                AUTHORITATIVE_REASON_CODE_SQL,
+                AUTHORITATIVE_SCORE_INPUTS_SQL,
+                AUTHORITATIVE_SCORE_SQL,
+                AUTHORITATIVE_SIGNAL_JOINS,
+                AUTHORITATIVE_SIGNAL_PREDICATE,
+                authority_time,
+            )
+            rows = c.execute(text(
+                "select s.signal_id, regexp_replace(rr.capability_id, '^.*\\.', '') "
+                "as rule_id, s.subject_node_id, " + AUTHORITATIVE_SCORE_SQL + " as score, "
+                + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code, "
+                "selected_rc.play_id as play, " + AUTHORITATIVE_SCORE_INPUTS_SQL +
+                " as score_inputs, selected_rc.evidence_refs as evidence "
+                "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+                " where s.org_id=:o and s.status='open' and " +
+                AUTHORITATIVE_SIGNAL_PREDICATE +
+                " order by selected_rc.final_utility_bp desc, s.signal_id"),
+                {"o": org_id, "authority_time": authority_time()}).fetchall()
+        else:
+            rows = c.execute(text(
+                "select signal_id, rule_id, subject_node_id, score, reason_code, play, "
+                "score_inputs, evidence from signals where org_id=:o and status=:s "
+                "order by score desc"), {"o": org_id, "s": status}).fetchall()
     return {"signals": [dict(r._mapping) for r in rows]}
 
 
@@ -1015,7 +1221,9 @@ def metrics_headline(org_id: str = Depends(get_current_org)) -> dict:
 
 @router.get("/context/overview")
 def context_overview(org_id: str = Depends(get_current_org)) -> dict:
-    """Context page health cards — fact totals + avg confidence + recent graph changes."""
+    """Context page health cards — fact totals + avg confidence + recent graph changes.
+    conflictsDetected is the REAL open-discrepancy count (was hardcoded 0 while the
+    conflict detector ran and wrote rows nobody read)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
@@ -1023,44 +1231,104 @@ def context_overview(org_id: str = Depends(get_current_org)) -> dict:
         row = c.execute(text("select count(*) n, coalesce(avg(confidence),0) a from graph_facts "
                              "where org_id=:o and valid_to is null and status='active'"),
                         {"o": org_id}).first()
+        conflicts = c.execute(text(
+            "select count(*) from discrepancies where org_id=:o and status='open'"),
+            {"o": org_id}).scalar()
         recent = c.execute(text("select field, subject_node_id, created_at from graph_facts "
                                 "where org_id=:o and valid_to is null order by created_at desc "
                                 "limit 10"), {"o": org_id}).fetchall()
     return {"healthCards": {"totalFacts": int(row.n), "avgConfidence": round(float(row.a), 3),
-                            "factsDecaying": 0, "conflictsDetected": 0},
+                            "factsDecaying": 0, "conflictsDetected": int(conflicts or 0)},
             "recentEvents": [{"eventType": r.field, "eventData": {"node": r.subject_node_id},
                               "createdAt": r.created_at.isoformat() if r.created_at else ""}
                              for r in recent]}
 
 
-@router.get("/context/facts")
-def context_facts(limit: int = 100, offset: int = 0,
-                  org_id: str = Depends(get_current_org)) -> dict:
-    """Per-entity fact summary with derived scores (the Context 'Facts' tab)."""
+@router.get("/context/discrepancies")
+def context_discrepancies(limit: int = 50, org_id: str = Depends(get_current_org)) -> dict:
+    """Open conflicts: a lower-authority source disagreed with the held value (e.g. an
+    email says unpaid, Stripe says paid). The detector always wrote these; this is the
+    first surface that reads them. The flag is product — 'which one is true?' is a card."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
+    limit = max(1, min(int(limit), 200))
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select d.id, d.subject_node_id, d.field, d.held, d.challenger, d.created_at, "
+            "n.display_name from discrepancies d "
+            "left join graph_nodes n on n.node_id=d.subject_node_id and n.org_id=d.org_id "
+            "and n.valid_to is null "
+            "where d.org_id=:o and d.status='open' order by d.created_at desc limit :l"),
+            {"o": org_id, "l": limit}).fetchall()
+    import json as _json
+
+    def _j(v):
+        return v if isinstance(v, dict) else (_json.loads(v) if v else {})
+    return {"discrepancies": [
+        {"id": r.id, "entity": r.display_name, "entity_id": r.subject_node_id,
+         "field": r.field, "held": _j(r.held), "challenger": _j(r.challenger),
+         "detected_at": r.created_at.isoformat() if r.created_at else None}
+        for r in rows]}
+
+
+def _stage_from_age(last_at, now) -> str:
+    """Deterministic relationship stage from the last real activity. Honest bands:
+    <14d active · 14–45d cooling · >45d dormant · never → new."""
+    if last_at is None:
+        return "new"
+    if last_at.tzinfo is None:
+        from datetime import timezone as _tz
+        last_at = last_at.replace(tzinfo=_tz.utc)
+    age_d = (now - last_at).total_seconds() / 86400.0
+    return "active" if age_d < 14 else ("cooling" if age_d <= 45 else "dormant")
+
+
+@router.get("/context/facts")
+def context_facts(limit: int = 100, offset: int = 0,
+                  org_id: str = Depends(get_current_org)) -> dict:
+    """Per-entity fact summary (the Context 'Facts' tab). Every number is REAL or null —
+    this endpoint used to ship invented constants (stage 'active' for everyone,
+    freshness 1.0, consistency 1.0, sentiment 0), which is a trust liability on the one
+    page that exists to show what the twin knows. Ordered by attention when present."""
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from datetime import datetime, timezone
+
+    from sqlalchemy import text
     limit = max(1, min(int(limit), 500))
+    now = datetime.now(timezone.utc)
     with _graph.engine.connect() as c:
         rows = c.execute(text(
             "select n.node_id, n.node_type, n.display_name, n.canonical_key, "
             "count(f.fact_version_id) fc, coalesce(avg(f.confidence),0) conf, "
-            "coalesce(max(f.authority_rank),1) auth, max(f.occurred_at) last_at "
-            "from graph_nodes n left join graph_facts f on f.subject_node_id=n.node_id "
+            "coalesce(max(f.authority_rank),1) auth, max(f.occurred_at) last_at, "
+            "a.score as attention_score, a.band as attention_band "
+            "from graph_nodes n "
+            "left join graph_facts f on f.subject_node_id=n.node_id "
             "and f.org_id=n.org_id and f.valid_to is null and f.status='active' "
+            "left join context_attention a on a.node_id=n.node_id and a.org_id=n.org_id "
             "where n.org_id=:o and n.valid_to is null "
-            "group by n.node_id, n.node_type, n.display_name, n.canonical_key "
-            "order by last_at desc nulls last, fc desc limit :l offset :off"),
+            "group by n.node_id, n.node_type, n.display_name, n.canonical_key, a.score, a.band "
+            "order by a.score desc nulls last, last_at desc nulls last, fc desc "
+            "limit :l offset :off"),
             {"o": org_id, "l": limit, "off": offset}).fetchall()
         total = c.execute(text("select count(*) from graph_nodes where org_id=:o and valid_to is null"),
                           {"o": org_id}).scalar()
     facts = [{"id": r.node_id, "entity": r.display_name,
               "email": r.canonical_key if r.node_type == "person" else None, "company": None,
-              "entity_type": r.node_type, "relationship_stage": "active", "freshness": 1.0,
-              "confidence": round(float(r.conf), 3), "consistency": 1.0, "authority": int(r.auth),
+              "entity_type": r.node_type,
+              "relationship_stage": _stage_from_age(r.last_at, now),
+              "freshness": None,                       # honest: not computed yet
+              "confidence": round(float(r.conf), 3),
+              "consistency": None,                     # honest: not computed yet
+              "authority": int(r.auth),
               "context": round(float(r.conf), 3),
+              "attention": int(r.attention_score) if r.attention_score is not None else None,
+              "attention_band": r.attention_band,
               "last_confirmed": r.last_at.isoformat() if r.last_at else None,
-              "interaction_count": int(r.fc), "sentiment_avg": 0, "topics": []} for r in rows]
+              "interaction_count": int(r.fc), "sentiment_avg": None, "topics": []}
+             for r in rows]
     return {"facts": facts, "total": int(total or 0)}
 
 
@@ -1114,12 +1382,20 @@ def context_lifecycle(limit: int = 50, org_id: str = Depends(get_current_org)) -
 
 # ── human / agent events ─────────────────────────────────────────────────────────
 @router.post("/human-events")
-def human_event(ev: HumanEvent, org_id: str = Depends(get_current_org)) -> dict:
+def human_event(ev: HumanEvent, ctx: AuthCtx = Depends(require_owner)) -> dict:
     if not ev.is_known_type():
         raise HTTPException(422, f"unknown human event type: {ev.type}")
-    ev.org_id = org_id                  # bind to the authed tenant — body value never trusted
-    _human_events.add(ev)
-    return {"accepted": True, "type": ev.type}
+    org_id = ctx.org_id
+    ev.org_id = org_id                  # bind tenant + actor to the owner credential
+    ev.actor_id = ctx.actor_id or "org_owner"
+    _human_events.add(ev)               # the correction ledger (kept — audit/undo reads it)
+    # ONE DOOR: the event also enters the graph's world as a SourceEvent, so L2 actually
+    # learns what the human said (before: side table only, the twin never saw it).
+    from genios_engine.capture.intake import ingest_human_event
+    res = ingest_human_event(ev, repo=_repo, payload_store=_payload_store,
+                             prepared_store=_prepared_store, trace_repo=_trace_repo)
+    return {"accepted": True, "type": ev.type, "event_id": res.event.event_id,
+            "outcome": res.outcome}
 
 
 class RegisterAgent(BaseModel):
@@ -1129,10 +1405,11 @@ class RegisterAgent(BaseModel):
 
 
 @router.post("/agents/register")
-def register_agent(body: RegisterAgent, org_id: str = Depends(get_current_org)) -> dict:
+def register_agent(body: RegisterAgent, ctx: AuthCtx = Depends(require_owner)) -> dict:
     # Only an authenticated tenant (owner session) may mint an agent for ITS OWN org. A grant may
     # be an L1 outcome action OR an L5 Agent-API scope (§5.16) — a key can carry either.
-    allowed = AGENT_ACTIONS | AGENT_API_SCOPES
+    org_id = ctx.org_id
+    allowed = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES
     bad = [a for a in body.allowed_actions if a not in allowed]
     if bad:
         raise HTTPException(422, f"unknown actions/scopes: {bad}")
@@ -1146,8 +1423,14 @@ def agent_event(ev: AgentEvent, x_agent_key: str = Header(...)) -> dict:
         raise HTTPException(422, f"unknown action_taken: {ev.action_taken}")
     if not _agent_registry.verify(ev.org_id, ev.agent_id, x_agent_key, ev.action_taken):
         raise HTTPException(401, "agent key invalid or action not allowed for this agent")
-    is_new = _agent_events.add(ev)
-    return {"accepted": True, "duplicate": not is_new, "action": ev.action_taken}
+    is_new = _agent_events.add(ev)      # the outcome ledger (kept — idempotency reads it)
+    # ONE DOOR: the agent's completed action becomes a SourceEvent too, so GeniOS never
+    # recommends what an agent already did. Dedup rides the agent's idempotency key.
+    from genios_engine.capture.intake import ingest_agent_event
+    res = ingest_agent_event(ev, repo=_repo, payload_store=_payload_store,
+                             prepared_store=_prepared_store, trace_repo=_trace_repo)
+    return {"accepted": True, "duplicate": not is_new, "action": ev.action_taken,
+            "event_id": res.event.event_id, "outcome": res.outcome}
 
 
 # ── L5 delivery · cards ───────────────────────────────────────────────────────────
@@ -1161,6 +1444,14 @@ def _owns_card(card_id: str, org_id: str) -> dict:
     card = _card_store.get_card(card_id)
     if card is None or card["org_id"] != org_id:
         raise HTTPException(404, "card not found")
+    return card
+
+
+def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
+    """Assert tenant ownership and that the originating Layer 4 authority is still live."""
+    card = _card_store.get_authoritative_card(card_id, org_id)
+    if card is None:
+        raise HTTPException(404, "card not found or no longer actionable")
     return card
 
 
@@ -1181,22 +1472,24 @@ def cards_sweep(_internal: None = Depends(require_internal)) -> dict:
 
 
 @router.post("/feedback/calibrate")
-def feedback_calibrate(org_id: str = Depends(get_current_org)) -> dict:
-    """L6 weekly job for the authenticated tenant: 28-day per-rule precision → auto-mute harmful
-    rules (armed day one) / un-mute recovered ones. Labels → counters → protection."""
+def feedback_calibrate(pack_id: str = "sales",
+                       org_id: str = Depends(get_current_org)) -> dict:
+    """Tenant-safe calibration preview. Mutation is scheduler/internal-only and durably claimed."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
-    from genios_engine.feedback.calibrate import run_calibration
-    return run_calibration(_graph, org_id, registry=_registry)
+    from genios_engine.feedback.calibrate import precision_28d
+    return {"org_id": org_id, "pack_id": pack_id, "applied": False,
+            "preview": precision_28d(_graph, org_id, pack_id=pack_id)}
 
 
 @router.get("/feedback/precision")
-def feedback_precision(org_id: str = Depends(get_current_org)) -> dict:
+def feedback_precision(pack_id: str = "sales",
+                       org_id: str = Depends(get_current_org)) -> dict:
     """The per-rule 28-day precision counters L6 reads (transparency — the moat is a table)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from genios_engine.feedback.calibrate import precision_28d
-    return {"rules": precision_28d(_graph, org_id)}
+    return {"pack_id": pack_id, "rules": precision_28d(_graph, org_id, pack_id=pack_id)}
 
 
 @router.post("/retention/purge")
@@ -1208,23 +1501,31 @@ def retention_purge(_internal: None = Depends(require_internal)) -> dict:
 
 
 @router.get("/cards")
-def list_cards(assignee: str | None = None, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+def list_cards(assignee: str | None = None,
+               ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """Dashboard queue read. org from credential; admin (all queues) only for an owner session
     (JWT / full-scope key), never a caller-supplied flag."""
     _require_l5()
     admin = ctx.scopes is None                       # owner/dashboard session sees all queues
-    return {"cards": _card_store.queue(ctx.org_id, assignee=assignee, admin=admin)}
+    effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    return {"cards": _card_store.queue(
+        ctx.org_id, assignee=effective_assignee, admin=admin)}
 
 
 @router.get("/cards/{card_id}")
-def get_card(card_id: str, org_id: str = Depends(get_current_org)) -> dict:
+def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """Full card.v1 — only if it belongs to the authenticated tenant."""
     _require_l5()
-    return _owns_card(card_id, org_id)
+    card = _owns_authoritative_card(card_id, ctx.org_id)
+    actor_id = ctx.actor_id or ctx.agent_id
+    if (ctx.scopes is not None and card.get("assignee") is not None
+            and card.get("assignee") not in {actor_id, ctx.agent_id}):
+        raise HTTPException(403, "card is assigned to a different seat")
+    return card
 
 
 class CardAction(BaseModel):
-    actor: str                              # the seat pressing the button
+    actor: str | None = None                # legacy input; authenticated identity always wins
     action: str                             # run_play | do_it_myself | snooze | wrong | requeue
     reason: str | None = None               # optional, for 'wrong'
     snooze_option: str | None = None        # 4h | tomorrow_09 | 3d | custom
@@ -1232,18 +1533,22 @@ class CardAction(BaseModel):
 
 
 @router.post("/cards/{card_id}/action")
-def card_action(card_id: str, body: CardAction, org_id: str = Depends(get_current_org)) -> dict:
+def card_action(card_id: str, body: CardAction,
+                ctx: AuthCtx = Depends(require_scope("cards.act"))) -> dict:
     """E8 · the round trip. Card must belong to the authed tenant. Every button + requeue lands
     as an L1 human event, a card_event and a lifecycle transition."""
     _require_l5()
-    _owns_card(card_id, org_id)
+    org_id = ctx.org_id
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     from genios_engine.deliver.actions import ingest_action
     out = ingest_action(card_store=_card_store, graph=_graph, org_id=org_id,
-                        card_id=card_id, actor=body.actor, action=body.action,
+                        card_id=card_id, actor=actor_id, action=body.action,
                         reason=body.reason, snooze_option=body.snooze_option,
-                        custom_until=body.custom_until)
+                        custom_until=body.custom_until,
+                        allow_any_assignee=ctx.scopes is None)
     if not out.get("ok"):
-        raise HTTPException(404 if out.get("error") == "orphan_action" else 422, out.get("error"))
+        status = 403 if out.get("error") == "assigned_to_different_seat" else 422
+        raise HTTPException(status, out)
     return out
 
 
@@ -1253,26 +1558,31 @@ class ContextMatch(BaseModel):
 
 
 @router.post("/context/match")
-def context_match(body: ContextMatch, org_id: str = Depends(get_current_org)) -> dict:
+def context_match(body: ContextMatch,
+                  ctx: AuthCtx = Depends(require_scope("cards.act"))) -> dict:
     """E7 round trip (§5.14). On-device matcher sends exactly {card_id, matched_tag}; card must
     belong to the authed tenant. Law 5: the server never learns what the user looked at."""
     _require_l5()
-    card = _owns_card(body.card_id, org_id)
-    if body.matched_tag not in (card.get("context_tags") or []):
-        raise HTTPException(422, "matched_tag is not one of this card's context_tags")
-    # only surface a card that is still live — never resurrect an acted/expired/resolved one
-    surfaced = _card_store.transition(body.card_id, org_id, "surfaced", "card.surfaced",
-                                      cause="context_match", detail={"tag": body.matched_tag},
-                                      allowed_from=("queued", "snoozed", "claimed", "surfaced"))
-    return {"surfaced": surfaced, "card_id": body.card_id, "cause": "context_match"}
+    actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    result = _card_store.surface_context_match(
+        ctx.org_id, body.card_id, body.matched_tag, actor_id=actor_id,
+        allow_any_assignee=ctx.scopes is None)
+    if not result.get("ok"):
+        status = 403 if result.get("error") == "assigned_to_different_seat" else 422
+        raise HTTPException(status, result)
+    return {**result, "cause": "context_match"}
 
 
 @router.get("/digest")
-def digest(assignee: str | None = None, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+def digest(assignee: str | None = None,
+           ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """The 08:30 morning summary (§5.15), scoped to the authenticated tenant."""
     _require_l5()
     from genios_engine.deliver.digest import build_digest
-    return build_digest(_card_store, ctx.org_id, assignee=assignee, admin=ctx.scopes is None)
+    admin = ctx.scopes is None
+    effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    return build_digest(
+        _card_store, ctx.org_id, assignee=effective_assignee, admin=admin)
 
 
 class Seat(BaseModel):
@@ -1282,16 +1592,34 @@ class Seat(BaseModel):
 
 
 @router.post("/seats")
-def upsert_seat(body: Seat, org_id: str = Depends(get_current_org)) -> dict:
+def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Seed a seat for the authenticated tenant (org from credential, never from the body)."""
     _require_l5()
+    org_id = ctx.org_id
+    if body.role not in {"admin", "member"}:
+        raise HTTPException(422, "role must be admin or member")
+    seat_id = body.seat_id.strip()
+    if not seat_id or len(seat_id) > 128:
+        raise HTTPException(422, "seat_id must be between 1 and 128 characters")
     from sqlalchemy import text
     with _card_store.engine.begin() as c:
+        tier = str(c.execute(text(
+            "select subscription_tier from orgs where id=:o for share"),
+            {"o": org_id}).scalar() or "trial").lower()
+        seat_limit = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}.get(tier, 2)
+        exists = c.execute(text(
+            "select 1 from org_seats where org_id=:o and seat_id=:s"),
+            {"o": org_id, "s": seat_id}).first() is not None
+        active = int(c.execute(text(
+            "select count(*) from org_seats where org_id=:o and active"),
+            {"o": org_id}).scalar() or 0)
+        if not exists and active >= seat_limit:
+            raise HTTPException(409, f"seat limit reached for the {tier} plan ({seat_limit})")
         c.execute(text("insert into org_seats (org_id, seat_id, email, role, active) "
                        "values (:o,:s,:e,:r,true) on conflict (org_id, seat_id) do update set "
                        "email=excluded.email, role=excluded.role, active=true"),
-                  {"o": org_id, "s": body.seat_id, "e": body.email, "r": body.role})
-    return {"upserted": True, "seat_id": body.seat_id, "role": body.role}
+                  {"o": org_id, "s": seat_id, "e": body.email, "r": body.role})
+    return {"upserted": True, "seat_id": seat_id, "role": body.role}
 
 
 # ── L5 · Agent API (§5.16) · metered read-and-claim; execution stays client-side ────

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -64,21 +64,22 @@ def _real_sources(store, org_id: str, node_id: str) -> set[str]:
     return {r.source for r in rows if r.source}
 
 
-def _why(evidence: list, facts: dict) -> list[dict]:
-    """Evidence chain: field + value + source. ≥2 inline (Law 2 · no naked cards). Pads from
-    the node's other active facts if the rule carried fewer than two."""
+def _why(evidence: list, _facts: dict) -> list[dict]:
+    """Project only evidence that the immutable reasoning context actually bound.
+
+    A short evidence chain must stay short and honest. Unrelated current graph facts cannot be
+    promoted into post-hoc reasons merely to satisfy a presentation count.
+    """
     out = []
     for e in (evidence or []):
+        if isinstance(e, str):
+            out.append({"evidence_id": e, "source": "reasoning_trace"})
+            continue
+        if not isinstance(e, dict):
+            continue
         field = e.get("field", "")
         out.append({"field": field, "value": e.get("value"),
                     "source": _SOURCE.get(field.split(".")[0], "graph")})
-    if len(out) < 2:
-        for field, f in facts.items():
-            if field not in {e["field"] for e in out}:
-                out.append({"field": field, "value": f.get("value"),
-                            "source": _SOURCE.get(field.split(".")[0], "graph")})
-            if len(out) >= 2:
-                break
     return out
 
 
@@ -110,12 +111,13 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
     assignee, rule = resolve_assignee(store, org_id, facts, attrs)
     slots = compute_slots(reason_code, name, facts, eval_time)
 
-    # composite deal-health (C3): the member concerns live in the signal's evidence (field='signal').
-    # Surface them as a `concerns` slot + a grounded fact so the renderer can COMPOSE them into one
-    # verdict ("X at risk: quiet + objection + competitor") — and the invention guard allows the words.
+    # Composite deal-health (C3): member concerns come from the immutable context payload bound to
+    # the selected run, never from the mutable signal projection. Surface them as a `concerns` slot
+    # and grounded fact so the renderer can compose the audited verdict.
     if reason_code == "deal_health":
-        codes = [e.get("value") for e in (signal.get("evidence") or [])
-                 if isinstance(e, dict) and e.get("field") == "signal"]
+        codes = [member.get("reason_code") for member in
+                 (signal.get("composite_members") or ()) if isinstance(member, dict)]
+        codes = list(dict.fromkeys(code for code in codes if code))
         if codes:
             concerns = ", ".join(str(c).replace("_", " ") for c in codes)
             slots["concerns"] = concerns
@@ -133,6 +135,20 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         {"type": "wrong", "reasons": ["not_relevant", "bad_timing", "wrong_facts"]},
     ]
     score_inputs = signal.get("score_inputs") or {}
+    card_expires_at = eval_time + timedelta(days=EXPIRY_DAYS)
+    decision_expires_at = signal.get("decision_expires_at")
+    if isinstance(decision_expires_at, str):
+        try:
+            decision_expires_at = datetime.fromisoformat(
+                decision_expires_at.replace("Z", "+00:00"))
+        except ValueError:
+            decision_expires_at = None
+    if isinstance(decision_expires_at, datetime):
+        if decision_expires_at.tzinfo is None or decision_expires_at.utcoffset() is None:
+            raise ValueError("decision_expires_at must be timezone-aware")
+        card_expires_at = min(card_expires_at,
+                              decision_expires_at.astimezone(timezone.utc))
+
     return {
         "signal_id": signal["signal_id"], "org_id": org_id, "subject_node_id": node_id,
         "domain": effective.get("pack_id", "sales"), "level": signal.get("level", "prescriptive"),
@@ -144,7 +160,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         "context_tags": _context_tags(node_type, attrs, facts, sources),
         "config_snapshot_id": signal.get("config_snapshot_id"),
         "template_version": (effective.get("templates", {}) or {}).get("_version"),
-        "expires_at": eval_time + timedelta(days=EXPIRY_DAYS),
+        "expires_at": card_expires_at,
         # carried forward to E1 (not persisted as-is)
         "_reason_code": reason_code, "_template": template, "_facts": facts, "_slots": slots,
     }

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
 from genios_engine.context.extract.extractor import Extraction, extract
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.guard import _norm, keep_grounded
+from genios_engine.context.correlation import correlate_event
+from genios_engine.context.canon import register_canon_node, resolve_canon_mention
+from genios_engine.context.identity import (observe_person_name, resolve_company_mention,
+                                            resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
 
 _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
@@ -47,6 +53,23 @@ def parse_due(text: str | None, base: datetime) -> datetime | None:
 # Downstream RANKING reference only (NOT a commit gate): facts below this relevance are low-priority
 # for surfacing, but are still stored and queryable.
 RELEVANCE_FLOOR = 0.35
+
+# Deterministic fact confidence by authority rank — the ONLY confidence the L3 gate reads.
+# The constitution's line ("the model extracts, it never decides") was broken here for
+# months: fact confidence was ex.relevance (an LLM float), which flowed into engine
+# ext_conf → C → the c_min gate — a language model's mood decided whether signals fired.
+# Now: confidence = what KIND of source asserted it. The LLM's relevance is stored
+# SEPARATELY on the fact (relevance column) and may rank; it may never gate.
+#
+# Calibration of rank 2 (the common case — an email-derived extraction): a rank-2 fact
+# has PASSED the B4 evidence guard, i.e. the extraction quoted a verbatim substring of
+# the source. We therefore know the source said it; only the interpretation carries
+# risk. 0.85 encodes that: materially below a human correction (1.0) or a system of
+# record (0.9), far above weak inference (0.4). The first draft used 0.70, which was
+# picked by feel and — with the pack's impact floor — put the ENTIRE email-derived
+# corpus permanently below the gate. tests/test_corpus_can_fire.py locks the property
+# so a future change to this table cannot silently kill the rules again.
+FACT_CONF_BY_RANK = {4: 1.00, 3: 0.90, 2: 0.85, 1: 0.40}
 PROMPT_VERSION = "b3-2"          # b3-2: enriched observations with the canonical SIGNAL KINDS vocab
                                 # (deep sales+general detection). Bump invalidates the extraction
                                 # cache → new events extract rich for free; existing backlog gets
@@ -75,15 +98,10 @@ def _company_domain(email: str | None) -> str | None:
     return None if (not dom or dom in _PERSONAL_DOMAINS) else dom
 
 
-def _norm_email(email: str | None) -> str | None:
-    """P5 — canonical email key: lowercase + trim + strip a +tag suffix from the local part, so
-    priya+vendors@x.com and priya@x.com resolve to ONE person node. None for malformed input.
-    Merge stays deterministic (exact key only); no fuzzy-name merge is ever done."""
-    if not email or "@" not in email:
-        return None
-    local, _, dom = str(email).strip().lower().partition("@")
-    local = local.split("+", 1)[0]
-    return f"{local}@{dom}" if local and dom else None
+# P5 — canonical email key. ONE definition for the whole system (platform.identity):
+# the structured lane (calendar attendees, CRM contacts) and this pipeline must mint
+# byte-identical person keys or the same human splits into strangers per tool.
+from genios_engine.platform.identity import norm_email as _norm_email  # noqa: E402
 
 
 # F2 — obs-kind normalizer. The LLM emits free-form observation kinds; sales rules read exact
@@ -153,6 +171,7 @@ class L2Result:
     graph_version: int | None = None
     cached: bool = False
     primary_node: str | None = None
+    correlations: int = 0
 
 
 def _from_cache(d: dict) -> Extraction:
@@ -171,6 +190,16 @@ def _to_cache(ex: Extraction) -> dict:
             "observations": ex.observations}
 
 
+def _claim_evidence(fact: dict, internal_kind: str | None) -> dict:
+    """Evidence for one extracted claim. A canon fact records WHICH kind of company
+    statement it came from, so a rank-4 value can be traced back to the policy that
+    asserted it rather than just appearing authoritative."""
+    evidence = {"text": fact.get("evidence_text")}
+    if internal_kind:
+        evidence["internal_kind"] = internal_kind
+    return evidence
+
+
 def _resolve_subject(name, name_to_node: dict, fallback: str | None) -> str | None:
     if name and _norm(str(name)) in name_to_node:
         return name_to_node[_norm(str(name))]
@@ -181,7 +210,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   llm: LLMClient, store: GraphStore, is_inbound: bool = False,
                   recipient_emails: list[str] | None = None,
-                  internal_emails: frozenset[str] | None = None) -> L2Result:
+                  internal_emails: frozenset[str] | None = None,
+                  internal_kind: str | None = None,
+                  thread_id: str | None = None,
+                  domain_hints: list | None = None,
+                  canon_meta: dict | None = None) -> L2Result:
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -211,6 +244,15 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
     #     and queryable, never deleted.
     is_noise = ex.noise_type in _NOISE_TYPES
 
+    # AUTHORITY comes from L1, which is the layer that knows PROVENANCE. Company canon
+    # (a written policy, an upload tagged `pricing`) enters at rank 4 — above a system of
+    # record — while observed traffic stays at rank 2. Before this, both landed at 2, so
+    # a Stripe row outranked the company's own pricing sheet.
+    # Only the EXTRACTED CLAIMS take this rank. Facts derived from email mechanics
+    # (thread.ball_in_court, correspondence edges) stay at 2: those describe the mailbox,
+    # not something the org asserted, and they never occur on a canon event anyway.
+    claim_rank = authority_rank_for(internal_kind)
+
     # B4 guard — keep candidates that quote the source (anti-hallucination — so garbage doesn't
     # enter, but nothing relevant is dropped by a relevance score).
     ents = keep_grounded(content, ex.entity_mentions)
@@ -224,11 +266,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         edge_n = 0
         obs_n = 0
 
+        # Which nodes this event was ABOUT, and which of them are US. Correlation anchors
+        # a situation on the COUNTERPARTY: anchoring on our own company would file every
+        # outbound email under one enormous "us" group and correlate nothing.
+        touched: dict[str, str] = {}
+        internal_nodes: set[str] = set()
+
         def _person(email: str) -> str:
-            return store.find_or_create_node(
+            key = _norm_email(email) or email.strip().lower()
+            node = store.find_or_create_node(
                 conn, org_id=org_id, node_type="person",
-                canonical_key=(_norm_email(email) or email.strip().lower()),
-                display_name=email, event_id=event_id)
+                canonical_key=key, display_name=email, event_id=event_id)
+            touched[node] = "person"
+            if key in internal_set:
+                internal_nodes.add(node)
+            return node
 
         def _works_at(email: str, person_node: str) -> None:
             """person → works_at → company(domain). Groups everyone at 3one4/kurral/… together."""
@@ -239,6 +291,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             company = store.find_or_create_node(
                 conn, org_id=org_id, node_type="company", canonical_key=dom,
                 display_name=dom, event_id=event_id)
+            touched[company] = "company"
+            # A company reached through one of OUR OWN seats is us, not a counterparty.
+            # Without this, every outbound email anchors on our own domain and the whole
+            # org collapses into one situation containing everything.
+            if (_norm_email(email) or "") in internal_set:
+                internal_nodes.add(company)
             if store.write_edge(conn, org_id=org_id, edge_type="works_at",
                                 from_node_id=person_node, to_node_id=company, confidence=0.9,
                                 occurred_at=occurred_at, event_id=event_id,
@@ -249,6 +307,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
         sender_node = None
+
+        # CANON — company knowledge becomes a node of its own, so the facts in a refund
+        # policy are facts about the Refund Policy rather than about the colleague who
+        # typed it. Without this the most authoritative material in the system was also
+        # the least connected: filed under an internal seat, which correlation excludes,
+        # so it reached no situation at all.
+        canon_node = None
+        if internal_kind:
+            raw_extra = canon_meta or {}
+            canon_node = register_canon_node(
+                conn, store, org_id=org_id, kind=internal_kind,
+                title=raw_extra.get("title") or "",
+                knowledge_key=raw_extra.get("knowledge_key") or event_id,
+                event_id=event_id)
+            touched[canon_node] = internal_kind
         # P2 — a NODE means a real relationship. A noise sender (newsletter/automated/spam) does
         # NOT become a person/company node; the email stays in the L1 ledger (recoverable), out of
         # the graph. A real sender (incl. a personal 1:1) still anchors its facts/observations.
@@ -290,17 +363,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # because nothing ever flipped ball_in_court back — the "still shows as unanswered
                 # after I replied" bug. Skipped for internal teammates (not a prospect thread) and
                 # for noise (an outbound auto-reply doesn't count as answering).
+                # Confidence is deterministic (rank 2 = grounded event): whether WE replied is a
+                # fact of the mailbox, not a function of how interesting the LLM found the email.
                 if (not is_inbound and not is_noise and occurred_at is not None
                         and rn_email not in internal_set):
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.last_outbound", value=occurred_at.isoformat(),
-                                     value_type="timestamp", confidence=max(ex.relevance, 0.05),
+                                     value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                                     relevance=ex.relevance,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence={"derived": "outbound event"}, source=source,
                                      authority_rank=2)
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.ball_in_court", value="them", value_type="enum",
-                                     confidence=max(ex.relevance, 0.05), occurred_at=occurred_at,
+                                     confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                                     occurred_at=occurred_at,
                                      event_id=event_id, evidence={"derived": "we replied"},
                                      source=source, authority_rank=2)
 
@@ -322,8 +399,53 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 name_to_node[_norm(email)] = nid
                 if name:
                     name_to_node[_norm(str(name))] = nid
+                    observe_person_name(conn, org_id=org_id, node_id=nid, name=str(name),
+                                        event_id=event_id)
                 if not is_noise:
                     _works_at(email, nid)                    # affiliation from a real anchor
+            elif etype == "company" and name and (
+                    known := resolve_company_mention(conn, org_id=org_id, name=str(name))):
+                # ALREADY ANCHORED. "Acme" in prose reaching the company node built from
+                # acme.io — the mention is the same company we already know, so facts
+                # about it attach THERE instead of piling onto whoever sent the email.
+                # This is the anchor rule holding, not bending: no node is created, and
+                # a name nothing is anchored under still falls through to an observation.
+                name_to_node[_norm(str(name))] = known
+                touched[known] = "company"
+                nodes += 1
+            elif etype == "person" and name and (person_hit := resolve_person_name(
+                    conn, org_id=org_id, name=str(name))):
+                # A person named in prose without an email — "Rohit said yes" — reaching the person we
+                # already know by that name. Completes observe_person_name's intent: the write side
+                # recorded the name-alias, this is the read side that was MISSING (so a name-only mention
+                # linked to nobody and piled onto the sender). Same-name people share one key → resolves
+                # to the first-anchored holder; never creates a node, never merges.
+                name_to_node[_norm(str(name))] = person_hit
+                touched.setdefault(person_hit, "person")
+                nodes += 1
+            elif name and (canon_hit := resolve_canon_mention(conn, org_id=org_id,
+                                                              name=str(name))):
+                # A named piece of company knowledge — "Project Phoenix" in a Slack
+                # message reaching the project brief someone uploaded.
+                #
+                # Matched by NAME, not by entity type, and that is forced rather than
+                # chosen: the extraction prompt never asks for a "project" type and
+                # _NODE_TYPES has no entry for one, so a type-based lookup would silently
+                # never fire.
+                #
+                # Checked AFTER the company branch on purpose. Canon titles live in their
+                # own alias namespace, so a project called "Acme" and the customer called
+                # "Acme" cannot contend for one key — but when a name could mean either,
+                # the customer wins: its alias is derived from a real email domain, which
+                # is harder evidence than a title someone typed.
+                #
+                # The node TYPE is carried through, not invented. Correlation anchors on
+                # type, so a placeholder here would resolve the mention correctly and then
+                # anchor nothing — built, and silently inert.
+                canon_id, canon_type = canon_hit
+                name_to_node[_norm(str(name))] = canon_id
+                touched.setdefault(canon_id, canon_type)
+                nodes += 1
             elif name and sender_node:                       # anchorless mention → context on sender
                 store.write_observation(
                     conn, org_id=org_id, subject_node_id=sender_node,
@@ -333,75 +455,159 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     source=source)
                 obs_n += 1
                 name_to_node.setdefault(_norm(str(name)), sender_node)
+        # The subject extracted CONTENT attaches to. Canon documents own their own
+        # content; ordinary mail still attaches to its sender. Network edges below are
+        # deliberately NOT rerouted — who corresponded with whom is a fact about people,
+        # not about a document.
+        content_subject = canon_node or sender_node
         fact_n = 0
         for f in facts:
-            subj = _resolve_subject(f.get("subject"), name_to_node, sender_node)
+            subj = _resolve_subject(f.get("subject"), name_to_node, content_subject)
             if subj is None:
                 continue
             wrote = store.write_fact(conn, org_id=org_id, subject_node_id=subj,
                                      field=str(f.get("field") or "note"), value=f.get("value"),
-                                     value_type="string", confidence=ex.relevance,
+                                     value_type="string",
+                                     confidence=FACT_CONF_BY_RANK[claim_rank],
+                                     relevance=ex.relevance,
                                      occurred_at=occurred_at, event_id=event_id,
-                                     evidence={"text": f.get("evidence_text")}, source=source,
-                                     authority_rank=2)   # R2: direct evidence-backed
+                                     evidence=_claim_evidence(f, internal_kind),
+                                     source=source,
+                                     # R2 evidence-backed · R4 company canon
+                                     authority_rank=claim_rank)
             if wrote:
                 fact_n += 1
+        # observation hygiene: one email quoting the same moment twice must not commit the
+        # same (kind, evidence) twice — duplicates double-count in derived sentiment.
+        seen_obs: set[tuple[str, str]] = set()
         for o in obs:
-            store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
-                                    kind=norm_obs_kind(o.get("kind")), confidence=ex.relevance,
+            kind = norm_obs_kind(o.get("kind"))
+            key = (kind, str(o.get("evidence_text") or ""))
+            if key in seen_obs:
+                continue
+            seen_obs.add(key)
+            store.write_observation(conn, org_id=org_id, subject_node_id=content_subject,
+                                    kind=kind, confidence=ex.relevance,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"text": o.get("evidence_text")}, source=source)
+            obs_n += 1
+        # INTENT, finally committed: the LLM already extracts open questions — the pipeline
+        # parsed and DROPPED them for months. A question directed at us is the strongest
+        # "they expect an answer" signal the twin can hold.
+        for q in keep_grounded(content, ex.questions):
+            key = ("question", str(q.get("evidence_text") or ""))
+            if key in seen_obs or content_subject is None:
+                continue
+            seen_obs.add(key)
+            store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
+                                    kind="question", confidence=ex.relevance,
+                                    occurred_at=occurred_at, event_id=event_id,
+                                    evidence={"text": q.get("evidence_text"),
+                                              "directed_at": q.get("directed_at")},
+                                    source=source)
             obs_n += 1
 
         # per-email relevance recorded as an append-only signal so L3/queries can RANK — the
         # "score, don't delete" record: even a low-relevance email leaves its score, never a gap.
+        # domains (which business areas the email touches) ride along — extracted since day
+        # one, dropped until now.
         if sender_node:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
                 kind=("email_noise:" + ex.noise_type) if is_noise else "email_relevance",
                 confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
-                evidence={"relevance": ex.relevance, "noise_type": ex.noise_type}, source=source)
+                evidence={"relevance": ex.relevance, "noise_type": ex.noise_type,
+                          "domains": ex.domains}, source=source)
             obs_n += 1
 
         # thread state (direction-derived, deterministic) → feeds L3's unanswered_email.
         # Skip for noise (a newsletter doesn't put the ball in our court) and for internal
         # teammates (an internal reply isn't a prospect thread we owe an external reply on).
-        # Confidence = this email's actual relevance (was hardcoded 1.0) — so a low-relevance
-        # inbound message (off-topic, low-signal) scores a low C in L3 and can miss the gate,
-        # instead of nagging with the same urgency as a real stalled prospect thread.
+        # Confidence is deterministic rank-2 (the mailbox is certain the message arrived);
+        # the email's LLM relevance is stored on the fact's relevance column for RANKING —
+        # it no longer decides whether the signal clears the c_min gate (D3).
         if (is_inbound and sender_node and occurred_at is not None and not is_noise
                 and sender_norm not in internal_set):
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
-                             value_type="timestamp", confidence=max(ex.relevance, 0.05),
+                             value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                             relevance=ex.relevance,
                              occurred_at=occurred_at, event_id=event_id,
                              evidence={"derived": "inbound event"},
                              source=source, authority_rank=2)
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.ball_in_court", value="us", value_type="enum",
-                             confidence=max(ex.relevance, 0.05), occurred_at=occurred_at,
+                             confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                             occurred_at=occurred_at,
                              event_id=event_id, evidence={"derived": "last message inbound"},
                              source=source, authority_rank=2)
 
-        # commitments → commitment.due_at (best-effort due) → feeds L3's commitment rules.
-        # Stored for every email (confidence = relevance), never gated away.
+        # commitments → FIRST-CLASS nodes. A commitment is the highest-value extracted
+        # object in the system, and it used to be one colliding fact field on the person:
+        # facts key on (subject, field), so the SECOND promise silently superseded the
+        # first — a person could hold exactly one commitment. Data loss, fixed.
+        # Each commitment now gets its own node (deterministic canonical key: who +
+        # normalized text + due date), an owns-edge from the actor, and its own facts.
+        # DUAL-WRITE strangler: the legacy person-level commitment.due_at keeps being
+        # written (latest wins, as before) so general_v1's commitment_overdue rule keeps
+        # firing unchanged; commitment-scoped rules migrate to the nodes later.
         for cm in keep_grounded(content, ex.commitments):
             subj = _resolve_subject(cm.get("actor"), name_to_node, sender_node)
             due = parse_due(cm.get("due_text"), occurred_at) if occurred_at else None
             if subj and due:
+                cm_text = str(cm.get("evidence_text") or "").strip()
+                ck = "commitment:" + hashlib.sha1(
+                    f"{subj}:{_norm(cm_text)}:{due.date().isoformat()}".encode()).hexdigest()[:20]
+                cnode = store.find_or_create_node(
+                    conn, org_id=org_id, node_type="commitment", canonical_key=ck,
+                    display_name=(cm_text[:80] or "commitment"), event_id=event_id)
+                if store.write_edge(conn, org_id=org_id, edge_type="owns",
+                                    from_node_id=subj, to_node_id=cnode, confidence=0.9,
+                                    occurred_at=occurred_at, event_id=event_id,
+                                    evidence={"derived": "commitment actor"}, source=source,
+                                    authority_rank=2):
+                    edge_n += 1
+                for fld, val, vt in (("commitment.due_at", due.isoformat(), "timestamp"),
+                                     ("commitment.text", cm_text, "string"),
+                                     ("commitment.status", "open", "enum")):
+                    store.write_fact(conn, org_id=org_id, subject_node_id=cnode,
+                                     field=fld, value=val, value_type=vt,
+                                     confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                                     occurred_at=due if fld == "commitment.due_at" else occurred_at,
+                                     event_id=event_id,
+                                     evidence={"text": cm.get("evidence_text")},
+                                     source=source, authority_rank=2)
+                # legacy dual-write (person-level; latest wins — pre-existing shape)
                 store.write_fact(conn, org_id=org_id, subject_node_id=subj,
                                  field="commitment.due_at", value=due.isoformat(),
-                                 value_type="timestamp", confidence=ex.relevance, occurred_at=due,
+                                 value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                                 relevance=ex.relevance, occurred_at=due,
                                  event_id=event_id, evidence={"text": cm.get("evidence_text")},
                                  source=source, authority_rank=2)
 
+        # CORRELATION — the last thing in the same transaction, because a situation must
+        # never reference nodes that rolled back. Anchors are the COUNTERPARTY only: our
+        # own seats and our own company are removed, or every outbound email would file
+        # under one enormous "us" situation containing the whole company.
+        # Noise is excluded for the same reason it gets no network edges: a newsletter
+        # naming one of your contacts is not part of that customer's situation. The
+        # mention loop still creates the node and keeps every fact — this skips only the
+        # grouping, so nothing is lost, it just stops a marketing blast from becoming
+        # evidence in a live deal.
+        correlations = [] if is_noise else correlate_event(
+            conn, org_id=org_id, event_id=event_id, occurred_at=occurred_at,
+            thread_id=thread_id,
+            node_types={n: t for n, t in touched.items() if n not in internal_nodes},
+            domain_hints=domain_hints)
+
         store.write_change(conn, org_id=org_id, graph_version=version, cause_event_id=event_id,
                            payload={"nodes": nodes, "edges": edge_n, "facts": fact_n,
-                                    "observations": obs_n})
+                                    "observations": obs_n,
+                                    "correlations": len(correlations)})
 
     # Everything readable is stored (facts tagged with relevance as confidence); nothing is
     # deleted by a relevance score. Ranking happens downstream (L3/queries), not by dropping here.
     return L2Result(event_id, "committed", ex.relevance, nodes=nodes, facts=fact_n,
                     observations=obs_n, input_tokens=ex.input_tokens,
                     output_tokens=ex.output_tokens, graph_version=version, cached=is_cached,
-                    primary_node=sender_node)
+                    primary_node=sender_node, correlations=len(correlations))

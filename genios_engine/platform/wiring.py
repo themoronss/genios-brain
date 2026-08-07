@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from genios_engine.capture.connectors.base import SourceConnector
+from genios_engine.capture.source_registry import BUILDABLE_SOURCES
 from genios_engine.capture.landing.repository import (InMemorySourceEventRepository,
                                                       SourceEventRepository)
 from genios_engine.platform.config import get_settings
@@ -18,6 +19,28 @@ def make_repo() -> SourceEventRepository:
     return InMemorySourceEventRepository()
 
 
+# Source types make_connector_for can actually build. The integrations UI reads this
+# so a "Connect" button never starts an OAuth flow that ends in a 502 — advertising a
+# connector that raises ValueError was a customer-visible lie.
+#
+# Derived from the source registry (`buildable=True`) rather than hand-listed here: a
+# second hand-maintained list of sources is exactly how this drifted out of step with
+# the family taxonomy and the coverage capabilities. Adding a connector means flipping
+# `buildable` on its descriptor AND wiring the branch in make_connector_for below —
+# tests/test_source_registry.py asserts those two agree.
+IMPLEMENTED_SOURCE_TYPES: frozenset[str] = BUILDABLE_SOURCES
+
+# The dispatch table make_connector_for branches on, as DATA so it can be compared with
+# the registry. In dev (no Composio key) the function falls back to a fake connector for
+# every source_type, so a test cannot discover the real dispatch by calling it — these
+# two names make the agreement checkable instead of hopeful.
+DIRECT_SOURCE_TYPES: frozenset[str] = frozenset({"postgres", "database", "mysql"})
+COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
+    "gmail", "gcal", "calendar", "google_calendar", "notion",
+    "gdrive", "drive", "google_drive", "hubspot",
+})
+
+
 def make_connector_for(connection) -> SourceConnector:
     """Build the right connector for ONE org's connection, dispatched by source_type.
     Composio API key is global (GeniOS's); per-org identity is composio_user_id. Every
@@ -25,7 +48,7 @@ def make_connector_for(connection) -> SourceConnector:
     s = get_settings()
     st = connection.source_type
     # Client's own database — no Composio; read-only pull → structured route.
-    if st in ("postgres", "database", "mysql"):
+    if st in DIRECT_SOURCE_TYPES:
         from genios_engine.capture.connectors.database import ClientDatabaseConnector
         cfg = connection.config or {}
         return ClientDatabaseConnector(
@@ -39,10 +62,7 @@ def make_connector_for(connection) -> SourceConnector:
     key, uid = s.composio_api_key, connection.composio_user_id
     if st == "gmail":
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
-        ocr = None                              # scanned-PDF attachments need OCR (native-only if off)
-        if s.enable_ocr:
-            from genios_engine.capture.documents.tesseract import TesseractOcr
-            ocr = TesseractOcr()
+        ocr = make_ocr()                        # scanned-PDF attachments need OCR (native-only if off)
         return ComposioGmailConnector(api_key=key, user_id=uid,
                                       connected_account_id=s.composio_gmail_account or None, ocr=ocr)
     if st in ("gcal", "calendar", "google_calendar"):
@@ -53,16 +73,27 @@ def make_connector_for(connection) -> SourceConnector:
         return ComposioNotionConnector(api_key=key, user_id=uid)
     if st in ("gdrive", "drive", "google_drive"):
         from genios_engine.capture.connectors.drive import ComposioDriveConnector
-        ocr = None
-        if s.enable_ocr:
-            from genios_engine.capture.documents.tesseract import TesseractOcr
-            ocr = TesseractOcr()
+        ocr = make_ocr()
         return ComposioDriveConnector(api_key=key, user_id=uid, ocr=ocr)
+    if st == "hubspot":
+        from genios_engine.capture.connectors.hubspot import ComposioHubspotConnector
+        return ComposioHubspotConnector(api_key=key, user_id=uid)
     raise ValueError(f"no connector wired for source_type={st!r}")
 
 
 # backward-compatible alias
 make_gmail_connector_for = make_connector_for
+
+
+def make_ocr():
+    """The OCR engine (Tesseract) when enabled in settings, else None (native-text-only). Shared by
+    the Gmail/Drive attachment path AND dashboard uploads, so a scanned file reads the same way no
+    matter which door it arrives through."""
+    s = get_settings()
+    if getattr(s, "enable_ocr", False):
+        from genios_engine.capture.documents.tesseract import TesseractOcr
+        return TesseractOcr()
+    return None
 
 
 def make_agent_registry_store():
@@ -141,6 +172,17 @@ def make_payload_store():
         return PostgresRawPayloadStore(s.database_url, s.crypto_key)
     from genios_engine.capture.payload_store import InMemoryRawPayloadStore
     return InMemoryRawPayloadStore()
+
+
+def make_prepared_store():
+    """PreparedContent store — the persisted L1→L2 seam (PII-masked text + offset map).
+    Retained longer than the raw payload: it is the replayable form."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.prepared_store import PostgresPreparedContentStore
+        return PostgresPreparedContentStore(s.database_url)
+    from genios_engine.capture.prepared_store import InMemoryPreparedContentStore
+    return InMemoryPreparedContentStore()
 
 
 def make_trace_repo():
