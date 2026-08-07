@@ -1,22 +1,25 @@
 # 6 · Behavior Evolution
 
-**Status:** Partial
+**Status:** Built
 
-Separates stable behavior-shaped preferences into Behavior Brain provenance.
+Creates Behavior Brain proposals only from explicit preferences in a closed behavior-category set.
+It preserves the parent evidence exactly and makes no personality claim beyond the structured
+preference that was actually observed.
 
 | Boundary | Value |
 |---|---|
-| Input | Preference Learning objects in communication, decision, meeting, execution or relationship categories |
-| Output | Behavior-target LearningObject derived from the preference object |
+| Input | Preference proposals in communication, decision, meeting, execution or relationship categories |
+| Derivation | deterministic namespace/target change; no new evidence or source query |
+| Output | Behavior-target LearningObject with `derived_from` parent ID and unchanged private subject cap for user scope |
 | Primary code | `feedback/units.py::behavior_evolution` |
-| Honest gap | Publisher and versioning are built, but no generic lower-layer Behavior Brain consumer exists. |
+| Integration requirement | lower reasoning/execution layers need a Behavior Brain reader/materializer |
 
 ## Atlas-named component map
 
 | Atlas component | Live implementation |
 |---|---|
 | Behavior Analyzer | closed behavior-category filter over explicit preference proposals |
-| Behavior Drift | no dedicated drift detector; version supersession only prevents two active values |
+| Behavior Drift | immutable versions/supersession expose changed values; no speculative drift model |
 | Behavior Confidence | inherited grounded evidence, revalidated by Unit 11 |
 | Behavior Publisher | shared versioned Evolution Publisher |
 

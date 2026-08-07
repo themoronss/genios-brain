@@ -1,0 +1,35 @@
+identity:
+  id: sales.mm.icp_definition.the_ruler_and_the_reading
+  name: The profile is the ruler; a fit assessment is one reading taken with i…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "The profile is the ruler; a fit assessment is one reading taken with it. Keep them separate\
+    \ objects and argue about the reading.\n When they are conflated, every inconvenient account becomes\
+    \ a reason to edit the definition, and the definition is the one thing that must be stable enough\
+    \ to be wrong in a detectable way.\n"
+dimensions:
+- name: The profile is the ruler; a fit assessment is one reading taken with i…
+  asks: 'When they are conflated, every inconvenient account becomes a reason to edit the definition,
+    and the definition is the one thing that must be stable enough to be wrong in a detectable way.
+
+    '
+how_to_apply:
+- 'When they are conflated, every inconvenient account becomes a reason to edit the definition, and
+  the definition is the one thing that must be stable enough to be wrong in a detectable way.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

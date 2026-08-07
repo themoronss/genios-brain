@@ -11,8 +11,8 @@ commitment and the grounded fact corpus in its own ``detail``.  Layer 5.2 reads 
 into a message.  The dependency points downward, which is the rule, and the division of labour
 comes out exactly right:
 
-  * Layer 5 decides **whether to speak, to whom, through which channel, and what may be said.**
-  * Layer 5.2 decides **how it looks and gets it there, with retries.**
+  * Layer 5 decides **the commitment, work owner, business audience seed and what may be said.**
+  * Layer 5.2 resolves **the current recipient, destination, channel, timing and transport.**
 
 **Nothing new is ever said.**  The message is assembled only from values Layer 5 put in the
 event's fact corpus — days open, days remaining, the consequence sentence, the next action's
@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Mapping
 
 from sqlalchemy import text
 
@@ -196,7 +196,9 @@ def enqueue_executive_messages(engine, org_id: str, channel: str = "slack",
 
 
 def executive_delivery_is_live(conn, org_id: str, card_id: str, *,
-                               now: datetime | None = None) -> bool:
+                               now: datetime | None = None,
+                               expected_hash: str | None = None,
+                               expected_route: Mapping[str, Any] | None = None) -> bool:
     """Re-validate a queued reminder immediately before it is sent.
 
     The same law the card path enforces, applied to commitments: a queued message must prove its
@@ -204,22 +206,117 @@ def executive_delivery_is_live(conn, org_id: str, card_id: str, *,
     can sit in the outbox through a retry backoff, and the customer can reply in that window —
     which is exactly the nudge this whole layer exists to never send.
 
-    Deliberately cheap and local: the commitment being open is the proof. Layer 5's own guard
-    already re-ran the full authority predicate before writing the event, and it closes the
-    commitment the moment that predicate fails, so an open row *is* the authority check having
-    passed. Re-running the whole join here would duplicate that logic in a second place, which
-    is how two copies start disagreeing.
+    This reuses Layer 5's guard rather than treating an open database row as authority. A reply,
+    closed subject, superseding execution or revoked decision can arrive after the lifecycle
+    sweep and before transport; the provider boundary must observe and lock that current truth.
     """
     parsed = parse_executive_card_id(card_id)
     if parsed is None:
         return False
     execution_id, _event_id = parsed
     moment = now or datetime.now(timezone.utc)
+    if expected_route is not None:
+        # A semantic hash proves the immutable commitment, not mutable delivery authority.
+        # Re-plan under locks so a reassignment or directory/destination change cannot send to
+        # the formerly-authorised route between the materialisation sweep and this provider call.
+        from genios_engine.deliver.orchestrator import current_delivery_plan
+        stored_execution = expected_route.get("execution_id")
+        stored_event = expected_route.get("execution_event_id")
+        event_id = None if _event_id == "initial" else _event_id
+        if ((stored_execution is not None and str(stored_execution) != execution_id)
+                or (stored_event is not None and str(stored_event) != str(event_id))):
+            return False
+        try:
+            current = current_delivery_plan(
+                conn, org_id=org_id, execution_id=execution_id,
+                event_id=event_id, now=moment)
+        except (KeyError, TypeError, ValueError):
+            return False
+        if current is None:
+            return False
+        execution, plan = current
+        if expected_hash and execution.semantic_hash != expected_hash:
+            return False
+        routes = expected_route.get("route_plan")
+        if isinstance(routes, str):
+            try:
+                routes = json.loads(routes)
+            except ValueError:
+                return False
+        expected_routes = tuple(str(item) for item in (routes or ()))
+        try:
+            route_index = int(expected_route.get("route_index") or 0)
+            active_channel = plan.route_plan[route_index]
+        except (IndexError, TypeError, ValueError):
+            return False
+        from genios_engine.deliver.gate import channel_class_for
+        from genios_engine.deliver.orchestrator import format_kind_for
+        active_class = channel_class_for(active_channel)
+        active_reason = plan.reason_code + "".join(
+            f":fallback:{channel}" for channel in plan.route_plan[1:route_index + 1])
+        comparisons = (
+            (expected_route.get("recipient"), plan.recipient),
+            (expected_route.get("audience"), plan.audience),
+            (expected_route.get("channel"), active_channel),
+            (expected_route.get("channel_class"), active_class.value),
+            (expected_route.get("format_kind"), format_kind_for(active_channel)),
+            (expected_route.get("interrupt"),
+             plan.interrupt and active_class.value == "chat"),
+            (expected_route.get("priority_class"), plan.priority_class.value),
+            (expected_route.get("priority_rank"), plan.priority_rank),
+            (expected_route.get("route_reason"), active_reason[:192]),
+            (expected_routes, plan.route_plan),
+        )
+        return all(expected == actual for expected, actual in comparisons)
+
+    if conn.execute(text("select id from orgs where id=:o for share"),
+                    {"o": org_id}).first() is None:
+        return False
+    conn.execute(text(
+        "select graph_version from graph_versions where org_id=:o for share"),
+        {"o": org_id})
     row = conn.execute(text(
-        "select 1 from executions where org_id=:o and execution_id=:x "
-        "and closed_at is null and expires_at > :now"),
-        {"o": org_id, "x": execution_id, "now": moment}).first()
-    return row is not None
+        "select payload,state,signal_id from executions where org_id=:o and execution_id=:x "
+        "and closed_at is null and expires_at > :now "
+        "and state in ('pending','running','waiting','blocked') "
+        "and not exists (select 1 from execution_events dismissed "
+        "where dismissed.org_id=executions.org_id "
+        "and dismissed.execution_id=executions.execution_id "
+        "and dismissed.kind='execution.cancelled' "
+        "and dismissed.reason_code='human_dismissed') for share"),
+        {"o": org_id, "x": execution_id, "now": moment}).mappings().first()
+    if row is None:
+        return False
+    if _event_id == "initial":
+        from genios_engine.deliver.orchestrator import _initial_is_current
+        if not _initial_is_current(conn, org_id, execution_id, lock=True):
+            return False
+    else:
+        from genios_engine.deliver.orchestrator import _reminder_is_current
+        current, _detail = _reminder_is_current(
+            conn, org_id, execution_id, _event_id, lock=True)
+        if not current:
+            return False
+    try:
+        from genios_engine.contracts.execution import ExecutionObject
+        from genios_engine.executive.execution_guard import GuardAction, validate
+        from genios_engine.executive.execution_store import validation_input
+        payload = row["payload"]
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        execution = ExecutionObject.from_semantic_dict(payload)
+        if execution.execution_id != execution_id:
+            return False
+        if expected_hash and execution.semantic_hash != expected_hash:
+            return False
+        verdict = validate(
+            execution,
+            validation_input(
+                conn, execution, row, now=moment, signal_id=row.get("signal_id"),
+                lock_authority=True))
+        return verdict.action in {GuardAction.PROCEED, GuardAction.REROUTE}
+    except (KeyError, TypeError, ValueError):
+        return False
 
 
 def mark_executive_delivered(conn, org_id: str, card_id: str, *, at: datetime,

@@ -1,0 +1,28 @@
+identity:
+  id: sales.prospecting_and_outreach.outreach
+  name: Outreach
+  domain: sales
+  subdomain: prospecting_and_outreach
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  The parent capability for first contact across every channel. Owns sequencing, message
+  relevance and stop rules; the channel capabilities below own the mechanics specific to each
+  medium.
+
+question: "How do we earn a first conversation with someone who did not ask for one?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

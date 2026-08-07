@@ -1,0 +1,52 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.root_cause_analysis.timeline_before_hypothesis
+  name: Timeline before hypothesis
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Reconstruct the timeline before forming any hypothesis: first occurrence, last known good,
+    and every change that landed in between — releases, configuration, data volume, entitlement changes,
+    third-party incidents, and the customer''s own changes, which nobody thinks to ask about.
+
+
+    Order of events is the cheapest evidence available and the fastest to be destroyed by log rotation
+    and memory. Hypothesis-first investigation reads a timeline looking for confirmation and reliably
+    finds it.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: 'Reconstruct the timeline before forming any hypothesis: first occurrence, last known good,
+    and every change that landed in between — releases, configuration, data volume, entitlement changes,
+    third-party incidents, and the customer''s own changes, which nobody thinks to ask about.'
+  actor: human
+  description: Order of events is the cheapest evidence available and the fastest to be destroyed by
+    log rotation and memory. Hypothesis-first investigation reads a timeline looking for confirmation
+    and reliably finds it.
+  objects_read: &id001
+  - customer_support.obj.core.issue
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.incident
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

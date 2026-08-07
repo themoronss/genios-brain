@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.facilities_and_assets.maintenance_coordination
+  name: Maintenance Coordination
+  domain: admin
+  subdomain: facilities_and_assets
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Coordinating planned and reactive maintenance with internal teams and contractors:
+  schedules, statutory inspections, contractor access, and the backlog. Deferred maintenance
+  is a debt that is repaid at a premium and usually at short notice.
+
+question: "Is this being maintained on schedule, and is the reactive queue under control?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,30 @@
+# Load-set for customer_support.support_management.ticket_review — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_management.ticket_review
+
+core:
+  # A review needs the path and the ending. ticket carries the state history and the owners it
+  # collected; resolution is what was finally claimed to have worked, and comparing the two is
+  # most of the method — a long path to a thin resolution is the shape worth reading.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.resolution
+  # escalation says where the process gave up on itself. quality_scorecard is deliberately
+  # OPTIONAL here and required in quality_assurance: a review that opens with the rubric turns
+  # into an assessment of the agent, and this capability is trying to look at the system.
+  # customer_sentiment is the trace of what the experience cost the customer along the way.
+  optional:
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.quality_scorecard
+    - customer_support.obj.core.customer_sentiment
+
+scoped:
+  required: []
+  optional: []

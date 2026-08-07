@@ -28,7 +28,7 @@ So it lives in neither. **A contract is the only thing both sides may depend on.
 | `events.py` | human + agent events | [Layer 1](../Layer-1-Knowledge-Layer/00-Overview.md) |
 | `reasoning.py` | L3 → L4 → L5 (22 types) | [Layer 4 · 01](../Layer-4-Reasoning-Engine/_reference/Contracts-and-Dataflow.md) |
 | `execution.py` | L5 → L5.2 (the Execution Object) | [Layer 5](../Layer-5-Executive-Engine/00-Overview.md) |
-| `delivery.py` | the admission contract | [Layer 5.2](../Layer-5.2-Delivery-Engine/00-Overview.md) |
+| `delivery.py` | L5.2's immutable `DeliveryObject`, stable `DeliveryResult`, lifecycle vocabulary and admission decisions | [Layer 5.2](../Layer-5.2-Delivery-Engine/00-Overview.md) |
 | `validators.py` | shared field guards | below |
 
 ### 3.3 · `validators.py` — one definition of "valid"
@@ -59,5 +59,18 @@ Used by `execution.py` and `delivery.py` at construction. Three of them do real 
 | rehydratable | `from_semantic_dict()` + `verify_round_trip()` |
 
 > An object that can be constructed invalid **will** be constructed invalid, somewhere, at 3am.
+
+### 3.5 · The Layer 5 → 5.2 → 6 boundary
+
+`ExecutionObject` is the only active input that can authorize a new outward delivery. Layer 5
+owns the commitment and work owner; Layer 5.2 turns that frozen object into one deduplicated
+`DeliveryObject`, then projects transport and engagement evidence as `DeliveryResult`. Layer 6
+consumes that result's measured timestamps (`delivered`, `viewed`, `ignored`, `accepted`,
+`executed`) instead of inferring engagement from a mutable transport status.
+
+The v2 delivery contract includes execution lineage, audience/recipient, destination, channel,
+format, five-class delivery priority, snapshotted daily attention budget, route ladder, retry
+policy and stable lifecycle timestamps. These are deterministic fields; an LLM may rewrite
+grounded copy, but cannot choose their values.
 
 ---

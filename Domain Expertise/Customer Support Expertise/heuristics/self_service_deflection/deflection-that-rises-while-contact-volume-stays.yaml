@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.self_service_deflection.deflection_that_rises_while_contact_volume_stays
+  name: Deflection that rises while contact volume stays
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Deflection that rises while contact volume stays flat is not deflection; it is a denominator
+    moving.
+heuristic:
+  statement: Deflection that rises while contact volume stays flat is not deflection; it is a denominator
+    moving.
+  why: The usual formula counts help-center sessions that were not followed by a ticket, so anything
+    that drives more people into the help center — a bad release, a confusing new flow, a campaign —
+    inflates the numerator while real demand is unchanged or worse.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

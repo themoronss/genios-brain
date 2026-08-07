@@ -1,7 +1,10 @@
 # Adapter and contract
 
-The backend stores the payload and lets an authenticated extension retrieve it; presence leases can report the current surface/busy state.
+The orchestrator can map live `gmail`, `email_editor`, `crm` or `browser` presence to the
+`extension` destination. The surface adapter marks the committed payload available, and an
+authenticated extension retrieves the same `DeliveryObject` from the inbox.
 
-Every implemented target receives a canonical payload, emits the common channel result shape and
-is invoked through the durable management path. Target code may format transport details; it may
-not reopen Layer 5 policy.
+Presence leases report activity, focus/busy state and current surface with mandatory expiry. The
+client renders an inline suggestion and posts idempotent lifecycle receipts; it may not choose a
+different audience, mutate business priority or execute an external-effect action without the
+Layer 5 approval path.

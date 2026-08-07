@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import secrets
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -18,6 +19,8 @@ from sqlalchemy import text
 
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, hash_key, invalidate_key_cache,
                                          require_owner)
+from genios_engine.platform.config import get_settings
+from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.wiring import make_graph_store
 
@@ -26,7 +29,8 @@ _graph = make_graph_store()
 
 _DEFAULT_SCOPE = {"connectors": None, "segments": None, "fact_types": None,
                   "exclude_tags": [], "max_age_days": 365, "min_confidence": 0.0}
-_DEFAULT_ACTIONS = ["read_context"]      # a dashboard-minted agent reads the brain; L5 claim is opt-in
+_DEFAULT_ACTIONS = ["read_context", "delivery.read", "delivery.receipts.write",
+                    "delivery.context.write"]
 
 
 def _scope(v) -> dict:
@@ -44,17 +48,34 @@ def _counts(c, org_id: str, agent_id: str) -> tuple[int, int]:
     return int(calls or 0), int(blocked or 0)
 
 
+def _mask_webhook_url(url: str | None) -> str | None:
+    """A webhook path is commonly a bearer credential; list APIs expose only its host."""
+    if not url:
+        return None
+    parsed = urlparse(str(url))
+    return (f"{parsed.scheme}://{parsed.hostname}/…"
+            if parsed.scheme and parsed.hostname else "configured")
+
+
 def _summary(c, r, org_id: str) -> dict:
     calls, blocked = _counts(c, org_id, r.agent_id)
+    webhook_url = getattr(r, "webhook_url", None)
+    encrypted = getattr(r, "webhook_config_encrypted", None)
+    if encrypted:
+        try:
+            raw = bytes(encrypted) if not isinstance(encrypted, bytes) else encrypted
+            webhook_url = json.loads(decrypt(raw, get_settings().crypto_key)).get("webhook_url")
+        except Exception:
+            webhook_url = None
     return {
         "agent_id": r.agent_id, "name": r.name, "description": r.description,
         "status": r.status or "active", "scope": _scope(r.scope),
         "scope_version": int(r.scope_version or 1), "calls_24h": calls, "blocked_24h": blocked,
         "created_at": r.created_at.isoformat() if r.created_at else None,
         "is_default": bool(r.is_default), "connectors": [],
-        # Proactive push: the URL is shown; the signing secret is write-only (returned once on set).
-        "webhook_url": getattr(r, "webhook_url", None),
-        "webhook_configured": bool(getattr(r, "webhook_secret", None)),
+        # Endpoint paths and signing secrets are write-only; both can be credentials.
+        "webhook_url_masked": _mask_webhook_url(webhook_url),
+        "webhook_configured": bool(encrypted or getattr(r, "webhook_secret", None)),
     }
 
 
@@ -64,7 +85,7 @@ def list_agents(ctx: AuthCtx = Depends(require_owner)) -> dict:
     with _graph.engine.connect() as c:
         rows = c.execute(text(
             "select agent_id, name, description, status, scope, scope_version, is_default, "
-            "webhook_url, webhook_secret, created_at from agent_registry "
+            "webhook_url, webhook_secret, webhook_config_encrypted, created_at from agent_registry "
             "where org_id=:o and coalesce(status,'active')<>'archived' "
             "order by created_at desc nulls last"), {"o": org_id}).fetchall()
         agents = [_summary(c, r, org_id) for r in rows]
@@ -97,13 +118,22 @@ def _mint_webhook_secret() -> str:
     return "gnwh_" + secrets.token_urlsafe(32)
 
 
+def _seal_webhook(url: str, secret: str) -> bytes:
+    key = get_settings().crypto_key
+    if not key:
+        raise HTTPException(503, "GENIOS_CRYPTO_KEY is required to store agent credentials")
+    return encrypt(json.dumps({"webhook_url": url, "webhook_secret": secret},
+                              separators=(",", ":"), sort_keys=True), key)
+
+
 def _clean_webhook_url(url: str | None) -> str | None:
     url = (url or "").strip()
     if not url:
         return None
-    if not (url.startswith("https://") or url.startswith("http://")):
+    from genios_engine.deliver.channels.webhook import valid_endpoint_url
+    if not valid_endpoint_url(url):
         raise HTTPException(422, {"error": "invalid_webhook_url",
-                                  "message": "webhook_url must start with https:// (http:// allowed for localhost)"})
+                                  "message": "webhook_url must be a public HTTPS endpoint"})
     return url
 
 
@@ -119,17 +149,21 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
     webhook_secret = _mint_webhook_secret() if webhook_url else None
     now = datetime.now(timezone.utc)
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
         # race-safe: rely on the unique(org_id, agent_id) index (migration 0017) — ON CONFLICT DO
         # NOTHING + RETURNING means a concurrent create can't slip past a TOCTOU SELECT check.
         row = c.execute(text(
             "insert into agent_registry (id, org_id, agent_id, key_hash, allowed_actions, name, "
             "description, status, scope, scope_version, key_prefix, webhook_url, webhook_secret, "
+            "webhook_config_encrypted, "
             "created_at, scope_updated_at) "
-            "values (:id,:o,:a,:kh,:acts,:nm,:desc,'active',cast(:sc as jsonb),1,:kp,:wu,:ws,:ts,:ts) "
+            "values (:id,:o,:a,:kh,:acts,:nm,:desc,'active',cast(:sc as jsonb),1,:kp,null,null,"
+            ":sealed,:ts,:ts) "
             "on conflict (org_id, agent_id) do nothing returning agent_id"),
             {"id": new_id("agt"), "o": org_id, "a": aid, "kh": key_hash, "acts": _DEFAULT_ACTIONS,
              "nm": body.name, "desc": body.description, "sc": json.dumps(scope), "kp": prefix,
-             "wu": webhook_url, "ws": webhook_secret, "ts": now}).first()
+             "sealed": (_seal_webhook(webhook_url, webhook_secret)
+                        if webhook_url and webhook_secret else None), "ts": now}).first()
         if row is None:
             raise HTTPException(409, {"error": "agent_exists", "message": f"agent '{aid}' already exists"})
         # ALSO register the key in api_keys so it authenticates get_current_org (/v1/*) — a key only
@@ -153,7 +187,8 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
 def _get_agent(c, org_id: str, aid: str):
     r = c.execute(text(
         "select agent_id, name, description, status, scope, scope_version, scope_updated_at, "
-        "is_default, key_prefix, created_at, key_last_used_at, webhook_url, webhook_secret "
+        "is_default, key_prefix, created_at, key_last_used_at, webhook_url, webhook_secret, "
+        "webhook_config_encrypted "
         "from agent_registry where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid}).first()
     if r is None:
         raise HTTPException(404, {"error": "not_found", "message": "agent not found"})
@@ -183,6 +218,7 @@ def edit_scope(aid: str, body: ScopeUpdate,
     org_id = ctx.org_id
     scope = _scope(body.scope)
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
         _get_agent(c, org_id, aid)
         ver = c.execute(text(
             "update agent_registry set scope=cast(:sc as jsonb), scope_version=scope_version+1, "
@@ -203,15 +239,18 @@ def set_webhook(aid: str, body: WebhookUpdate,
     org_id = ctx.org_id
     url = _clean_webhook_url(body.webhook_url)
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
         _get_agent(c, org_id, aid)
         if url is None:
-            c.execute(text("update agent_registry set webhook_url=null, webhook_secret=null "
+            c.execute(text("update agent_registry set webhook_url=null, webhook_secret=null,"
+                           "webhook_config_encrypted=null "
                            "where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid})
             return {"agent_id": aid, "webhook_url": None, "webhook_configured": False}
         secret = _mint_webhook_secret()
-        c.execute(text("update agent_registry set webhook_url=:u, webhook_secret=:s "
+        c.execute(text("update agent_registry set webhook_url=null, webhook_secret=null,"
+                       "webhook_config_encrypted=:sealed "
                        "where org_id=:o and agent_id=:a"),
-                  {"u": url, "s": secret, "o": org_id, "a": aid})
+                  {"sealed": _seal_webhook(url, secret), "o": org_id, "a": aid})
     from genios_engine.platform.audit import record
     record(org_id, "config_changed", actor_type="user", target_type="agent", target_id=aid,
            metadata={"event": "webhook_set"})
@@ -254,6 +293,7 @@ def rotate_key(aid: str, body: KeyRotate,
 def archive_agent(aid: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
     org_id = ctx.org_id
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
         _get_agent(c, org_id, aid)
         hashes = [r.key_hash for r in c.execute(text(
             "select key_hash from api_keys where org_id=:o and agent_id=:a and is_active"),

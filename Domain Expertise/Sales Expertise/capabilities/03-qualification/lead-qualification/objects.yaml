@@ -1,0 +1,25 @@
+# Load-set for sales.qualification.lead_qualification — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/lead-qualification/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.qualification.lead_qualification
+
+core:
+  required:
+    - sales.obj.core.budget
+    - sales.obj.core.decision_maker
+    - sales.obj.core.timeline
+  optional:
+    - sales.obj.core.buying_committee
+    - sales.obj.core.champion
+    - sales.obj.core.icp
+
+scoped:
+  required: []
+  optional: []

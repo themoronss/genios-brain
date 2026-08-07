@@ -104,6 +104,7 @@ class PostgresAgentRegistryStore:
         # scope/status/name columns are PRESERVED (a plain DELETE+INSERT wiped them). Also removes
         # the old TOCTOU race (relies on the unique index added in 0017).
         with self._engine.begin() as c:
+            c.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
             c.execute(text(
                 "insert into agent_registry (id, org_id, agent_id, key_hash, allowed_actions) "
                 "values (:id, :o, :a, :kh, :aa) "

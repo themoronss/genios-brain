@@ -1,0 +1,55 @@
+# B2B — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.b2b
+  name: B2B
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Selling to an organisation. Multiple people must agree, the buyer is not the user, and a
+  formal process usually exists. The canonical capability set is closest to this motion, so
+  this branch mostly emphasises rather than adds.
+
+characteristics:
+  buyer: "an organisation, represented by a committee"
+  typical_cycle_days: 60
+  typical_acv: "mid five to low six figures"
+  committee_size: "3-7 seats"
+  decision_style: "consensus or committee vote, with an economic approver"
+  primary_channels: [email, phone, linkedin, in_person]
+
+capabilities:
+  emphasises:
+    - sales.qualification.buying_committee_analysis
+    - sales.qualification.stakeholder_mapping
+    - sales.qualification.decision_maker_identification
+    - sales.closing.procurement
+    - sales.closing.legal_review
+
+objects:
+  extends:
+    - object: sales.obj.core.decision_maker
+      require_properties: [approval_limit, authority_level]
+      note: >
+        Approval limit is not optional in a B2B motion — a deal sized above an unverified
+        limit is the most common cause of a slipped quarter.
+    - object: sales.obj.core.buying_committee
+      require_properties: [size, roles_covered]
+      note: >
+        Committee shape is the primary forecast input here.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

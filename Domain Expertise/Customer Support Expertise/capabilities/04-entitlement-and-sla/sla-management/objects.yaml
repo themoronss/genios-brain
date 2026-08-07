@@ -1,0 +1,35 @@
+# Load-set for customer_support.entitlement_and_sla.sla_management — REFERENCES ONLY.
+#
+# core   -> objects/core/          loaded by more than one capability
+# scoped -> objects/sla_management/  loaded by this capability alone (there are none)
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.entitlement_and_sla.sla_management
+
+core:
+  # sla_target is the clock itself — start, pause state, deadline — and without it there is
+  # nothing to manage. ticket is what the clock is attached to, and is also where the status
+  # changes that silently move clocks show up. entitlement is required rather than optional
+  # because a clock with no promise behind it is a target: it can be missed without anyone
+  # having broken anything, and this capability would have no basis on which to judge it.
+  required:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.entitlement
+  # coverage_window turns a duration into a deadline — a clock computed without it is right
+  # only by accident outside business hours. queue is here because reassignment and merges are
+  # clock events, so queue state explains a surprising share of clock anomalies. Both are
+  # optional: reasoning degrades usefully without them and stalls entirely without the three
+  # above.
+  optional:
+    - customer_support.obj.core.coverage_window
+    - customer_support.obj.core.queue
+
+scoped:
+  # Nothing is exclusive to this capability. Every object the clock touches is read by
+  # breach_prevention, expectation_setting or support_analytics as well, so promoting anything
+  # here to scoped would immediately be an error in the other direction.
+  required: []
+  optional: []

@@ -189,6 +189,15 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
     now = authority_time(eval_time)
     period_start = _week_start(now)
     with store.engine.begin() as conn:
+        # The narrow legacy tuner is still Layer 6 learning authority. It must obey the same
+        # tenant consent switch before it locks or mutates a pack, rule, signal or card.
+        from genios_engine.feedback.store import ensure_policy, lock_learning_tenant
+        lock_learning_tenant(conn, org_id)
+        learning_policy = ensure_policy(conn, org_id, for_share=True)
+        if not learning_policy.enabled:
+            return {"org_id": org_id, "pack_id": pack_id, "applied": False,
+                    "reason": "learning_disabled", "window_days": WINDOW_DAYS,
+                    "policy_revision": learning_policy.revision}
         pack = _pack_version(conn, org_id, pack_id, lock=True)
         if pack is None or pack.state != "active":
             return {"org_id": org_id, "pack_id": pack_id, "applied": False,

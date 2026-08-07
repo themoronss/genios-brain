@@ -1,9 +1,11 @@
 """The Execution Object — Layer 5's single output, and the only thing Layer 5.2 is allowed to carry.
 
-Layer 4 answers *what should happen*.  This contract answers *how it happens*: the ordered
-actions, who owns each one, by when, through which channel, what proves it was done, and
-what happens on each day nobody does it.  A reasoning decision is an opinion; an execution
-object is a commitment with a clock attached.
+Layer 4 answers *what should happen*. This contract turns that decision into a commitment:
+the ordered actions, work owner, deadline, completion evidence and escalation intent. Its
+legacy communication fields retain the semantic audience/presentation hint needed by existing
+stored objects, but Layer 5.2 resolves the current recipient, concrete channel, timing and
+interruptibility. A reasoning decision is an opinion; an execution object is a commitment with
+a clock attached.
 
 Three properties earn this file its weight.
 
@@ -50,9 +52,10 @@ from genios_engine.contracts.validators import (
     require_sorted_unique,
     require_text,
 )
+from genios_engine.contracts.visibility import Visibility
 from genios_engine.platform.canonical import decanonicalize, semantic_hash, stable_id
 
-EXECUTION_VERSION = "execution.v1"
+EXECUTION_VERSION = "execution.v2"
 
 
 class ExecutionState(str, Enum):
@@ -243,12 +246,13 @@ class PlannedAction:
 
 @dataclass(frozen=True, slots=True)
 class CommunicationPlan:
-    """Who hears about this, where, how loudly, and why that was the right call.
+    """Layer 5's frozen communication intent and backwards-compatible route hints.
 
-    Layer 5 owns this decision end to end — audience, seat, channel and interrupt — and Layer 5.2
-    executes it.  ``reason_code`` is mandatory because a routing choice a human cannot
-    interrogate is indistinguishable from a bug: when the wrong person gets paged at 2am, the
-    first question is always "why them?", and the answer must already be in the row.
+    Layer 5 owns the business audience/assignee seed and presentation intent. ``channel_id``,
+    ``channel_class`` and ``interrupt`` remain for v1/v2 compatibility so stored artifacts round-trip,
+    but they are not delivery authority: Layer 5.2 deterministically resolves the live recipient,
+    destination, concrete channel, format, timing and interruption policy. ``reason_code`` keeps
+    the upstream intent auditable without bypassing that boundary.
     """
 
     audience: AudienceClass
@@ -360,6 +364,13 @@ class ExecutionObject:
     monitored: bool = True
     remindable: bool = True
     autonomy_allowed: bool = False
+    # Frozen source ACL inherited from the exact evidence selected by Layer 4.  Stored as a
+    # mapping rather than a mutable Pydantic model so the ExecutionObject remains genuinely
+    # immutable. execution.v1 payloads did not carry this field, so it stays outside their
+    # stored semantic hash; Layer 5.2 must re-derive the ACL from immutable reasoning lineage
+    # before delivery, and treats missing lineage as no permission rather than org visibility.
+    visibility: MappingProxyType = field(default_factory=lambda: freeze_mapping(
+        Visibility().model_dump()))
     metadata: MappingProxyType = field(default_factory=lambda: MappingProxyType({}))
 
     def __post_init__(self) -> None:
@@ -394,6 +405,9 @@ class ExecutionObject:
         setattr_(self, "monitored", require_bool(self.monitored, "monitored"))
         setattr_(self, "remindable", require_bool(self.remindable, "remindable"))
         setattr_(self, "autonomy_allowed", require_bool(self.autonomy_allowed, "autonomy_allowed"))
+        raw_visibility = dict(self.visibility or {})
+        validated_visibility = Visibility.model_validate(raw_visibility)
+        setattr_(self, "visibility", freeze_mapping(validated_visibility.model_dump()))
         setattr_(self, "metadata", freeze_mapping(self.metadata))
         self._validate_actions()
         self._validate_clock()
@@ -486,7 +500,7 @@ class ExecutionObject:
         Deliberately excludes ``communication``: reassignment is a legitimate operation on an
         existing commitment, not the birth of a new one.
         """
-        return {"version": self.version, "goal": self.goal,
+        result = {"version": self.version, "goal": self.goal,
                 "capability_id": self.capability_id,
                 "capability_version": self.capability_version,
                 "actions": tuple(action.to_semantic_dict() for action in self.actions),
@@ -494,13 +508,16 @@ class ExecutionObject:
                 "deadline_at": self.deadline_at, "expires_at": self.expires_at,
                 "success_events": self.success_events,
                 "do_nothing_consequence": self.do_nothing_consequence}
+        if self.version != "execution.v1":
+            result["visibility"] = self.visibility
+        return result
 
     @property
     def plan_hash(self) -> str:
         return semantic_hash(self.plan_semantic_dict())
 
     def to_semantic_dict(self) -> dict[str, Any]:
-        return {"org_id": self.org_id, "version": self.version, "goal": self.goal,
+        result = {"org_id": self.org_id, "version": self.version, "goal": self.goal,
                 "capability_id": self.capability_id,
                 "capability_version": self.capability_version,
                 "decision_hash": self.decision_hash,
@@ -518,6 +535,9 @@ class ExecutionObject:
                 "success_events": self.success_events, "subject_ref": self.subject_ref,
                 "monitored": self.monitored, "remindable": self.remindable,
                 "autonomy_allowed": self.autonomy_allowed, "metadata": self.metadata}
+        if self.version != "execution.v1":
+            result["visibility"] = self.visibility
+        return result
 
     @property
     def semantic_hash(self) -> str:
@@ -592,6 +612,7 @@ class ExecutionObject:
             subject_ref=data.get("subject_ref"), monitored=bool(data.get("monitored", True)),
             remindable=bool(data.get("remindable", True)),
             autonomy_allowed=bool(data.get("autonomy_allowed", False)),
+            visibility=data.get("visibility") or Visibility().model_dump(),
             metadata=data.get("metadata") or {})
 
     def verify_round_trip(self) -> None:

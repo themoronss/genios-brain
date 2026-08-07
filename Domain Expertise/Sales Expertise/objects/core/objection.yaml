@@ -1,0 +1,765 @@
+# CORE OBJECT — Objection
+#
+# Loaded by objection_handling, negotiation, pricing, proposal_creation, discovery,
+# deal_review and closing. It is core because the same discipline — separate the stated
+# concern from the real one — is exercised in every one of them.
+#
+# The reasoning that governs this whole file: an objection is a *unit of engagement*, not a
+# unit of resistance. The account that argues is spending time on us. The account that has
+# gone quiet has already decided and has not told us. Every pattern below is written so that
+# silence produces an object rather than nothing.
+
+identity:
+  id: sales.obj.core.objection
+  scope: core
+  name: Objection
+  domain: sales
+  subdomain: proposal_and_commercials
+  owner_capability: sales.proposal_and_commercials.objection_handling
+  version: 1.0.0
+  status: draft
+  aliases: ["Concern", "Pushback", "Blocker", "Stall"]
+purpose:
+  statement: >
+    A stated concern that stands between interest and agreement. The core discipline is
+    separating the stated objection from the real one — "it is too expensive" is almost never
+    about the number, it is about value not yet established, a budget owner not yet met, or a
+    comparison being run that nobody has told us about. Distinguish it from a Risk: an
+    objection is voiced by the buyer and has an answer; a risk is identified by us and has a
+    mitigation. And distinguish a raised objection from silence: a raised objection is
+    engagement, because a buyer with no intent disengages rather than argues. The genuinely
+    dangerous account is the silent one, which is why this object can be instantiated with
+    is_stated = false.
+attributes:
+  - name: statement
+    purpose: What was actually said, and whether anything was said at all.
+    type: composite
+    contains:
+      - raw_statement
+      - stated_category
+      - is_stated
+      - first_raised_at
+  - name: diagnosis
+    purpose: >
+      What it actually is. The gap between stated_category and real_category is the entire
+      professional content of this object.
+    type: composite
+    contains:
+      - real_category
+      - is_smokescreen
+      - severity
+      - underlying_need_ref
+  - name: ownership
+    purpose: Who voiced it, and who inside the buying organisation must be satisfied before it closes.
+    type: composite
+    contains:
+      - raised_by_ref
+      - raised_on_behalf_of
+      - must_satisfy_ref
+      - ball_in_court
+  - name: lifecycle
+    purpose: Where it is, and how many times it has come back. Recurrence is the strongest diagnostic
+      here.
+    type: composite
+    contains:
+      - status
+      - times_restated
+      - last_restated_at
+      - resolved_at
+  - name: handling
+    purpose: What we did about it, and what proof the buyer requires before words count.
+    type: composite
+    contains:
+      - response_given
+      - requires_proof
+      - proof_type_required
+      - evidence_supplied
+  - name: deal_impact
+    purpose: What this objection is holding up, and what else it is connected to.
+    type: composite
+    contains:
+      - blocks_stage
+      - competitor_ref
+      - linked_risk_ref
+      - deal_sentiment
+      - deal_momentum
+  - name: stated_category
+    purpose: The category of the words used. Recorded separately from real_category on purpose —
+      collapsing the two is how a discount gets approved for a value problem.
+    type: value
+    data_type: enum
+    allowed_values: [price, budget, timing, authority, need, fit, trust, security, legal, incumbent,
+        status_quo, unknown]
+    required: true
+    description: >
+      The category of the words used. Recorded separately from real_category on purpose —
+      collapsing the two is how a discount gets approved for a value problem.
+  - name: real_category
+    purpose: What the concern actually is, after diagnosis. Defaults to `unknown`, never to
+      stated_category — an undiagnosed objection must not silently inherit the buyer's own framing,
+      because the buyer's framing is the thing under examination.
+    type: value
+    data_type: enum
+    allowed_values: [price, budget, timing, authority, need, fit, trust, security, legal, incumbent,
+        status_quo, unknown]
+    required: true
+    description: >
+      What the concern actually is, after diagnosis. Defaults to `unknown`, never to
+      stated_category — an undiagnosed objection must not silently inherit the buyer's own
+      framing, because the buyer's framing is the thing under examination.
+  - name: raw_statement
+    purpose: The buyer's own words, unparaphrased. Paraphrase loses the hedging, and the hedging is
+      the signal.
+    type: value
+    data_type: string
+    description: The buyer's own words, unparaphrased. Paraphrase loses the hedging, and the hedging
+      is the signal.
+  - name: is_stated
+    purpose: False when this object was inferred from behaviour rather than words — silence after a
+      proposal, a meeting declined twice, a thread that stops mid-negotiation. Unstated objections are
+      the majority of lost deals and they have no raw_statement to read.
+    type: value
+    data_type: boolean
+    required: true
+    description: >
+      False when this object was inferred from behaviour rather than words — silence after a
+      proposal, a meeting declined twice, a thread that stops mid-negotiation. Unstated
+      objections are the majority of lost deals and they have no raw_statement to read.
+  - name: is_smokescreen
+    purpose: True when the stated objection is a polite exit rather than a request. The tell is that
+      answering it changes nothing — the buyer accepts the answer and does not advance.
+    type: value
+    data_type: boolean
+    description: >
+      True when the stated objection is a polite exit rather than a request. The tell is that
+      answering it changes nothing — the buyer accepts the answer and does not advance.
+  - name: severity
+    purpose: '`blocking` stops the current stage. `fatal` cannot be answered at all — wrong product, wrong
+      market, no budget in this fiscal year. Recording `fatal` is a disqualification and should be treated
+      as an outcome, not a failure.'
+    type: value
+    data_type: enum
+    allowed_values: [minor, material, blocking, fatal]
+    required: true
+    description: >
+      `blocking` stops the current stage. `fatal` cannot be answered at all — wrong product,
+      wrong market, no budget in this fiscal year. Recording `fatal` is a disqualification
+      and should be treated as an outcome, not a failure.
+  - name: underlying_need_ref
+    purpose: The need the objection implies. A security objection means security is a buying
+      criterion, which is information.
+    type: reference
+    ref: sales.obj.core.business_need
+    data_type: ref
+    description: The need the objection implies. A security objection means security is a buying
+      criterion, which is information.
+  - name: raised_by_ref
+    purpose: Who said it.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: Who said it.
+  - name: raised_on_behalf_of
+    purpose: Frequently populated and frequently ignored. "Finance will not like this" is a relayed
+      objection; the person who can answer it is not in the room, and answering the messenger
+      accomplishes nothing.
+    type: value
+    data_type: string
+    description: >
+      Frequently populated and frequently ignored. "Finance will not like this" is a relayed
+      objection; the person who can answer it is not in the room, and answering the messenger
+      accomplishes nothing.
+  - name: must_satisfy_ref
+    purpose: Whose acceptance actually closes this objection. Often not the person who raised it. An
+      objection answered to the satisfaction of the wrong person is still open.
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+    description: >
+      Whose acceptance actually closes this objection. Often not the person who raised it.
+      An objection answered to the satisfaction of the wrong person is still open.
+  - name: status
+    purpose: '`answered` means we responded. `accepted` means they agreed. `resolved` means the deal moved
+      as a result. Three different things, and only the third one is evidence.'
+    type: value
+    data_type: enum
+    allowed_values: [open, being_handled, answered, accepted, recurring, resolved, fatal]
+    required: true
+    description: >
+      `answered` means we responded. `accepted` means they agreed. `resolved` means the deal
+      moved as a result. Three different things, and only the third one is evidence.
+  - name: times_restated
+    purpose: The most diagnostic integer on this object. Once is a question. Twice means our answer
+      did not land. Three times means we are answering the wrong objection.
+    type: value
+    data_type: integer
+    description: >
+      The most diagnostic integer on this object. Once is a question. Twice means our answer
+      did not land. Three times means we are answering the wrong objection.
+  - name: first_raised_at
+    purpose: The first_raised_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: last_restated_at
+    purpose: The last_restated_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: resolved_at
+    purpose: The resolved_at of this object.
+    type: value
+    data_type: timestamp
+  - name: response_given
+    purpose: The response_given of this object.
+    type: value
+    data_type: string
+  - name: requires_proof
+    purpose: True when a verbal answer cannot close it. Trust, security and legal objections almost
+      always require artefacts.
+    type: value
+    data_type: boolean
+    description: True when a verbal answer cannot close it. Trust, security and legal objections
+      almost always require artefacts.
+  - name: proof_type_required
+    purpose: What the buyer needs to see. Naming it converts an argument into a task with a due date.
+    type: value
+    data_type: enum
+    allowed_values: [none, reference_customer, security_documentation, roi_model, pilot, legal_redline,
+      pricing_concession, executive_sponsorship]
+    description: What the buyer needs to see. Naming it converts an argument into a task with a due
+      date.
+  - name: evidence_supplied
+    purpose: The evidence_supplied of this object.
+    type: value
+    data_type: list
+  - name: blocks_stage
+    purpose: Which stage cannot complete while this is open. `none` with severity = blocking is a
+      contradiction worth flagging.
+    type: value
+    data_type: enum
+    allowed_values: [none, discovery, proposal, negotiation, legal, signature]
+    description: Which stage cannot complete while this is open. `none` with severity = blocking is a
+      contradiction worth flagging.
+  - name: competitor_ref
+    purpose: Populated when the objection is a comparison in disguise — "your reporting is thin" is
+      usually somebody else's demo talking.
+    type: reference
+    ref: sales.obj.core.competitor
+    data_type: ref
+    description: Populated when the objection is a comparison in disguise — "your reporting is thin"
+      is usually somebody else's demo talking.
+  - name: linked_risk_ref
+    purpose: An objection we cannot answer becomes a risk. The handoff between the two objects.
+    type: reference
+    ref: sales.obj.core.risk
+    data_type: ref
+    description: An objection we cannot answer becomes a risk. The handoff between the two objects.
+  - name: ball_in_court
+    purpose: '`nobody` on an open objection is the worst of the three values and reads as benign. It means
+      the objection is decaying rather than being handled.'
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      `nobody` on an open objection is the worst of the three values and reads as benign.
+      It means the objection is decaying rather than being handled.
+  - name: deal_sentiment
+    purpose: The deal_sentiment of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+  - name: deal_momentum
+    purpose: The deal_momentum of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+states:
+  initial: open
+  values:
+    - name: open
+      description: Surfaced, unanswered. The honest default.
+      entered_when: [has_obs: objection]
+    - name: being_handled
+      description: We have taken it on and the ball is with us.
+      entered_when: [has_obs: objection, {path: thread.ball_in_court, op: "=", value: us}]
+    - name: answered
+      description: We responded. Says nothing about whether it worked.
+    - name: accepted
+      description: The buyer agreed with the answer and said so.
+    - name: recurring
+      description: >
+        Came back after being answered. The state a reviewer should look for first, because
+        it means the diagnosis was wrong, not the delivery.
+    - name: resolved
+      description: The deal advanced after the answer. The only state that counts as evidence.
+    - name: dormant
+      description: >
+        Nobody has touched it and nobody is waiting. Reads as harmless and is not — an
+        objection nobody owns is how a deal goes quiet without a single bad email.
+      entered_when: [has_obs: objection, {path: thread.ball_in_court, op: "=", value: nobody}]
+    - name: fatal
+      description: Unanswerable. Correctly ends in a disqualification.
+      entered_when: [has_obs: closed_lost_mention]
+  transitions:
+    - {from: open, to: being_handled, when: [{path: thread.ball_in_court, op: "=", value: us}]}
+    - {from: being_handled, to: answered}
+    - {from: answered, to: accepted}
+    - {from: accepted, to: resolved, when: [{path: derived.momentum, op: ">", value: 0.5}]}
+    - {from: answered, to: recurring, when: [has_obs: objection]}
+    - {from: recurring, to: being_handled}
+    - {from: open, to: dormant, when: [{path: thread.ball_in_court, op: "=", value: nobody}]}
+    - {from: dormant, to: being_handled}
+    - {from: open, to: fatal, when: [has_obs: closed_lost_mention]}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: attaches_to
+    target: sales.obj.core.deal
+    cardinality: one
+    description: An objection has no meaning outside the deal it is slowing.
+
+  - type: belongs_to
+    target: sales.obj.core.stakeholder
+    cardinality: zero_or_one
+    description: The person who voiced it. Absent when is_stated is false.
+
+  - type: blocks
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+    description: A blocking objection open at proposal time makes the proposal a document rather than
+      an ask.
+
+  - type: references
+    target: sales.obj.core.competitor
+    cardinality: zero_or_one
+    description: Most feature objections are a competitor's positioning arriving second-hand.
+
+  - type: produces
+    target: sales.obj.core.risk
+    cardinality: zero_or_one
+    description: Escalation path. An objection we cannot close is converted, not dropped.
+
+  - type: influences
+    target: sales.obj.core.pricing
+    cardinality: zero_or_one
+    description: Only a diagnosed price objection may move price. An undiagnosed one moves margin for
+      nothing.
+
+  - type: influences
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+
+  - type: supersedes
+    target: sales.obj.core.objection
+    cardinality: zero_or_one
+    description: >
+      Self-referential. A restated objection supersedes its earlier form rather than opening
+      a second record — otherwise the register shows five small concerns instead of one that
+      has been asked five times, which is the opposite of what a reviewer needs to see.
+
+  - type: requires
+    target: sales.obj.core.next_action
+    cardinality: zero_or_many
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: obj.stated_objection_observed
+      statement: "An objection observation fired on this node."
+      status: executable
+      when:
+        - {has_obs: objection}
+      yields: {confidence_bp: 9000, attribute: is_stated, value: true}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        The existence of the objection is near-certain; the category is not, which is why this
+        pattern sets is_stated and deliberately leaves real_category alone. Note also that when
+        a competitor observation sits on a neighbouring node, a stated feature objection is
+        usually somebody else's demo arriving second-hand — see obj.objection_shadows_a_competitor.
+
+    - id: obj.price_objection_observed
+      statement: "A price-objection observation fired — the stated category is price."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+      yields: {confidence_bp: 9500, attribute: stated_category, value: price}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Sets stated_category only. real_category stays unknown until diagnosis, because the
+        overwhelming majority of price objections are value objections wearing a number.
+
+    - id: obj.budget_freeze_is_a_funding_objection
+      statement: "A budget freeze was observed — the concern is funding, not price."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 9200, attribute: real_category, value: budget}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        One of the few cases where real_category can be set directly. A freeze is structural:
+        no amount of discount reaches it, and treating it as a price objection wastes both the
+        margin and the quarter.
+
+    - id: obj.resolution_recorded
+      statement: "The buyer explicitly confirmed the objection is answered and no longer stands."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: status, value: accepted}
+      requires_signals:
+        - kind: obs_kind
+          name: objection_resolved
+          owner_layer: L2
+          note: >
+            The highest-value gap on this object by a distance. Layer 2 opens objections and
+            never closes them, so every objection in the register is permanently open and the
+            `recurring` state can never be distinguished from a first raise. Every recurrence
+            heuristic below is downstream of this one signal.
+
+    - id: obj.category_from_classifier
+      statement: "Layer 2 classified the objection text into a category."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: stated_category, value: null}
+      requires_signals:
+        - kind: obs_kind
+          name: objection_category
+          owner_layer: L2
+          note: >
+            Today `objection` is an untyped flag and `objection_price` is the only subtype.
+            Timing, authority, security and trust objections all collapse into the same
+            observation, so the register cannot be read by category at all.
+
+  heuristic:
+
+    - id: obj.price_objection_before_any_price
+      statement: "A price objection was raised although we have never presented pricing — the concern is
+        value, not cost."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+        - {no_obs: pricing_discussed}
+      yields: {confidence_bp: 6800, attribute: real_category, value: need}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Reads backwards to a naive reader and is one of the most reliable diagnostics in the
+        profession. A buyer objecting to a number nobody has quoted is telling us they cannot
+        picture a return, not that they cannot afford it. Discounting here is answering a
+        question that was never asked.
+
+    - id: obj.discount_pressure_after_verbal_yes
+      statement: "Discount pressure arrived after a verbal yes — this is leverage, not an objection."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {has_obs: verbal_yes}
+      yields: {confidence_bp: 7400, attribute: is_smokescreen, value: true}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        Sequence carries the meaning. A price concern before agreement is a real gate; the same
+        words after agreement are a negotiation move made from a decided position. Conceding
+        here buys nothing that was not already won and teaches the account that late pressure
+        works on us at renewal too.
+
+    - id: obj.silence_after_proposal_is_an_unstated_objection
+      statement: "A proposal went out and nothing has come back in three times this account's own reply
+        cadence."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+              7}}
+      yields: {confidence_bp: 6500, attribute: is_stated, value: false}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        The pattern that justifies is_stated existing as a field. Baseline-relative rather than
+        a fixed number of days, because a fortnight of silence is normal for one account and
+        terminal for another. Confidence is deliberately moderate — holidays and reorganisations
+        exist — but an unstated objection surfaced wrongly costs one email, and one missed costs
+        the deal.
+
+    - id: obj.objection_shadows_a_competitor
+      statement: "An objection was raised while a competitor is present on the account."
+      status: executable
+      when:
+        - {has_obs: objection}
+        - {neighbor_has_obs: competitor}
+      yields: {confidence_bp: 6600, attribute: competitor_ref, value: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Feature objections rarely originate with the buyer. They originate in a rival's
+        battlecard and reach us as the buyer's own question. Knowing this changes the answer
+        from a product defence to a re-framing of the evaluation criteria.
+
+    - id: obj.repeated_objection_is_the_real_one
+      statement: "The same objection has been raised three or more times — our diagnosis is wrong, not our
+        answer."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: is_smokescreen, value: false}
+      requires_signals:
+        - kind: derived
+          name: derived.objection_repeat_count
+          owner_layer: L2
+          note: >
+            The engine can ask whether an observation kind is present but not how many times
+            it has fired, so recurrence — the strongest diagnostic this object has — is
+            invisible. Needs a per-kind count, or at minimum a repeat flag, on the node.
+
+    - id: obj.relayed_objection_has_no_owner
+      statement: "The objection was voiced on behalf of an absent party — finance, legal, or a superior."
+      status: needs_signal
+      yields: {confidence_bp: 7800, attribute: raised_on_behalf_of, value: null}
+      requires_signals:
+        - kind: obs_kind
+          name: objection_relayed
+          owner_layer: L2
+          note: >
+            Requires attribution of the concern's origin, not just its speaker. High value —
+            a relayed objection is unanswerable through the person who raised it, and the
+            standard failure mode is spending three weeks convincing the messenger.
+
+    - id: obj.intensity_separates_a_query_from_a_gate
+      statement: "The language used marks this as a hard constraint rather than a question."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: severity, value: blocking}
+      requires_signals:
+        - kind: derived
+          name: derived.objection_intensity
+          owner_layer: L2
+          note: >
+            "That seems expensive" and "we cannot spend that this year" produce the identical
+            observation today. Severity is therefore always guessed, and the register cannot
+            be sorted by what actually stops the deal.
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: objection and price-objection observations, path: thread.last_inbound}
+  - {source: email, signal: who is waiting on whom while the objection stands, path: thread.ball_in_court}
+  - {source: email, signal: inbound silence after a proposal, path: deal.last_inbound}
+  - {source: derived, signal: sentiment balance around the objection, path: derived.sentiment}
+  - {source: derived, signal: deal trajectory after the answer, path: derived.momentum}
+  - {source: meeting_transcript, signal: "the objection in the buyer's own words, and who deferred to\
+      whom"}
+  - {source: call_recording, signal: "hesitation, hedging and intensity that email flattens away"}
+  - {source: crm, signal: closed-lost reasons on comparable prior deals}
+  - {source: document, signal: redlines and security questionnaires as written objections}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: real_category_confidence_bp, type: integer, description: "How sure we are the diagnosis is\
+      right. Gates every concession.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: blocking_objections, type: list, description: "Open objections at severity blocking or fatal,\
+      ordered by stage blocked.", consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: unstated_objection_flag, type: boolean, description: "An objection inferred from silence rather\
+      than words.", consumed_by: [L4.reasoning_unit]}
+  - {name: required_proof, type: list, description: "Artefacts the buyer needs before words count — reference,\
+      security pack, ROI model.", consumed_by: [L5.execution_planning]}
+  - {name: handling_message, type: string, description: "What to say, and to whom, given the diagnosis.",
+      consumed_by: [L5.communication_planning]}
+  - {name: objection_outcome_record, type: string, description: "Which handling worked, for calibration\
+      of real_category inference.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: obj.no_concession_without_diagnosis, statement: "No pricing concession while real_category is\
+      unknown.", hard: true}
+  - {id: obj.no_self_certified_resolution, statement: "Status may not reach `resolved` without buyer confirmation\
+      or observable deal movement.", hard: true}
+  - {id: obj.unanswerable_becomes_a_risk, statement: "An objection open beyond the current stage must\
+      be converted to a Risk with an owner, never silently closed.", hard: true}
+  - {id: obj.stated_category_is_immutable, statement: "stated_category records what was said and may never\
+      be overwritten by diagnosis; diagnosis writes real_category.", hard: true}
+  - {id: obj.silence_is_not_consent, statement: "Absence of a restated objection is not evidence it was\
+      accepted.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: obj.resolution_requires_the_buyer
+    statement: >
+      An objection may move to `resolved` only on buyer confirmation or observable deal
+      movement, never on our having sent an answer. Self-certified resolution is the single
+      largest source of forecast inflation in the objection register.
+    then: reject_self_certified_resolution
+    severity: blocking
+
+  - id: obj.no_discount_before_diagnosis
+    statement: >
+      A pricing concession may not be proposed while real_category is `unknown`. Discounting
+      a value objection lowers the price and leaves the objection standing.
+    when: [has_obs: objection_price]
+    then: block_concession_pending_diagnosis
+    severity: blocking
+
+  - id: obj.blocking_objection_blocks_commit
+    statement: An open objection at severity `blocking` prevents the deal being forecast as committed.
+    when: [has_obs: objection, {path: deal.status, op: "=", value: open}]
+    then: cap_forecast_category
+    severity: blocking
+
+  - id: obj.silence_after_proposal_opens_an_objection
+    statement: >
+      Silence past three times this account's own reply cadence after a proposal must open an
+      objection with is_stated = false. Waiting for the buyer to articulate it is waiting for
+      something that will not happen.
+    when:
+      - {has_obs: proposal_sent}
+      - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+            7}}
+    then: open_unstated_objection
+    severity: warning
+
+  - id: obj.relayed_objection_needs_the_absent_party
+    statement: >
+      When raised_on_behalf_of is populated, the objection cannot close until must_satisfy_ref
+      is engaged directly. Answering the messenger produces agreement from someone with no
+      authority to give it.
+    then: require_direct_engagement
+    severity: warning
+
+  - id: obj.third_restatement_is_a_misdiagnosis
+    statement: >
+      times_restated at three or above means real_category is wrong. Re-open diagnosis rather
+      than improving the answer.
+    then: reopen_diagnosis
+    severity: advisory
+
+# ── 8 · Decision Factors — weights sum to 10000 ──────────────────────────────────────────
+decision_factors:
+
+  - name: diagnosis_certainty
+    weight_bp: 2500
+    direction: context
+    description: >
+      How confident we are that real_category is right. Weighted top because every downstream
+      move — concession, reference, escalation — is chosen from this field and nothing else.
+    reads: [real_category, is_smokescreen, times_restated]
+
+  - name: blocking_severity
+    weight_bp: 2000
+    direction: decreases
+    reads: [severity, blocks_stage]
+
+  - name: raiser_authority
+    weight_bp: 2000
+    direction: context
+    description: >
+      An objection from the economic buyer and the same words from an end user are different
+      objects. The second is information; the first is a gate.
+    reads: [raised_by_ref, must_satisfy_ref, raised_on_behalf_of]
+
+  - name: resolution_state
+    weight_bp: 1800
+    direction: increases
+    description: Resolved objections raise deal confidence more than no objections at all — proof the
+      buyer engaged with the decision.
+    reads: [status, resolved_at, evidence_supplied]
+
+  - name: recurrence
+    weight_bp: 1200
+    direction: decreases
+    reads: [times_restated, last_restated_at]
+
+  - name: competitive_shadow
+    weight_bp: 500
+    direction: decreases
+    reads: [competitor_ref]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: email, strength_bp: 8500, description: "The objection in writing. Unambiguous, and re-readable\
+      when the diagnosis is challenged."}
+  - {source: meeting_transcript, strength_bp: 9000, description: "The words plus who else went quiet when\
+      they were said. The best available source."}
+  - {source: call_recording, strength_bp: 8800, description: "Adds intensity and hesitation, which email\
+      removes entirely."}
+  - {source: document, strength_bp: 8000, description: "A redline or a failed security questionnaire item\
+      is an objection with a paper trail."}
+  - {source: crm, strength_bp: 5500, description: "Rep-logged objections. Systematically under-records\
+      the ones that were not answered well."}
+  - {source: derived, strength_bp: 5000, description: "Silence and momentum decay. Sole grounds only for\
+      is_stated = false."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: objection_resolution_rate, unit: percent, description: "Share reaching `resolved`, not `answered`.\
+      The distinction is the metric.", owner_layer: L6}
+  - {name: time_to_resolution, unit: days, description: "First raise to buyer confirmation.", owner_layer:
+      L6}
+  - {name: restatement_rate, unit: percent, description: "Share raised more than once. Measures diagnosis\
+      quality directly.", owner_layer: L6}
+  - {name: misdiagnosis_rate, unit: percent, description: "Share where real_category was later corrected.\
+      Calibrates every heuristic above.", owner_layer: L6}
+  - {name: unstated_objection_share, unit: percent, description: "Share of lost deals whose only objection\
+      was inferred from silence. Expect this to be large and uncomfortable.", owner_layer: L6}
+  - {name: concession_without_diagnosis, unit: percent, description: "Discounts approved while real_category\
+      was unknown. Direct margin leakage.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: obj.raised, name: Objection Raised, emitted_when: [has_obs: objection], payload: [
+        stated_category, raised_by_ref, severity]}
+  - {id: obj.price_raised, name: Price Objection Raised, emitted_when: [has_obs: objection_price],
+      payload: [stated_category, deal_momentum]}
+  - {id: obj.inferred_from_silence, name: Unstated Objection Inferred, emitted_when: [has_obs: proposal_sent,
+      {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3,
+            floor: 7}}], payload: [is_stated, deal_momentum], description: "The event nobody is waiting
+      for and everybody needs. It is the only way a silent loss becomes visible before the forecast call."}
+  - {id: obj.went_dormant, name: Objection Went Dormant, emitted_when: [has_obs: objection, {path:
+          thread.ball_in_court, op: "=", value: nobody}], payload: [status, last_restated_at]}
+  - {id: obj.became_fatal, name: Objection Became Fatal, emitted_when: [has_obs: closed_lost_mention],
+    payload: [real_category, severity]}
+  - {id: obj.escalated_to_risk, name: Objection Converted to Risk, payload: [linked_risk_ref, real_category]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: obj.diagnose, name: Diagnose the real objection, actor: human, effect: "Ask what would have to\
+      be true for this not to be a problem. Cheapest move available and skipped in most deals."}
+  - {id: obj.isolate, name: Isolate it, actor: human, effect: "Establish whether it is the only thing\
+      standing in the way. An objection answered in a queue of four is wasted work."}
+  - {id: obj.supply_proof, name: Supply the required artefact, actor: human, preconditions: [has_obs: objection],
+    effect: "Converts an argument into a delivery with a date."}
+  - {id: obj.route_to_owner, name: Engage the person who must be satisfied, actor: human, effect: "Correct\
+      response to a relayed objection. Convincing the messenger produces agreement from someone with no
+      authority to give it."}
+  - {id: obj.surface_the_silence, name: Name the silence directly, actor: human, preconditions: [has_obs:
+          proposal_sent, {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline:
+            reply_cadence, mult: 3, floor: 7}}], effect: "A short message that makes it easy to say no.
+      Recovers the deal or ends it, and both beat the current state."}
+  - {id: obj.convert_to_risk, name: Convert to a risk with an owner, actor: human, effect: "For objections\
+      we cannot close. Keeps them visible instead of quietly dropped."}
+  - {id: obj.disqualify, name: Record it as fatal and disqualify, actor: human, effect: "A real outcome.\
+      A capability that never reaches this action is not handling objections, only deferring them."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "\"It's too expensive\" before any price was quoted", note: "stated_category price, real_category\
+      need. Value has not been established. Discounting answers nothing."}
+  - {label: "\"We need to check with legal\"", note: "Genuine gate with a process behind it. proof_type_required\
+      = legal_redline, and the timeline belongs to their counsel, not to us."}
+  - {label: "\"Send me some information and I'll circulate it\"", note: "The classic misclassification.\
+      Logged as interest; it is a polite exit. is_smokescreen true, and the tell is that the answer changes
+      nothing."}
+  - {label: "Silence for three weeks after the proposal", note: "is_stated false. No words, a real objection,\
+      and the state most deals die in without ever appearing in the register."}
+  - {label: "\"Finance will not approve this\"", note: "raised_on_behalf_of = finance. Unanswerable through\
+      the speaker. must_satisfy_ref points at somebody we have never met."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Seven of twelve patterns are executable today, carried by the objection, objection_price,
+    budget_freeze, discount_pressure and proposal_sent observation kinds. The five blocked
+    patterns share one root cause and the highest-value gap is objection_resolved: Layer 2
+    opens objections and never closes them, so every objection is permanently open, the
+    `recurring` state can never be reached, and restatement — the strongest diagnostic this
+    object has — is unobservable. Second is objection_category, which would let the register
+    be read by category instead of by a single untyped flag.

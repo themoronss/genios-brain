@@ -1,0 +1,49 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.queue_management.read_the_queue_as_rates
+  name: Read the queue as rates
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Before touching a single ticket, state three things: what arrived, what closed, and which
+    is larger.
+
+
+    A growing pile and a shrinking pile look identical in a screenshot and need opposite interventions.
+    If arrivals exceed closures, no amount of working harder inside the queue changes the trajectory
+    — the answer is on the arrival side or in the service rate itself, never in effort.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: 'Before touching a single ticket, state three things: what arrived, what closed, and which is
+    larger.'
+  actor: human
+  description: A growing pile and a shrinking pile look identical in a screenshot and need opposite
+    interventions. If arrivals exceed closures, no amount of working harder inside the queue changes
+    the trajectory — the answer is on the arrival side or in the service rate itself, never in effort.
+  objects_read: &id001
+  - customer_support.obj.core.backlog
+  - customer_support.obj.core.queue
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

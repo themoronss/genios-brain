@@ -2,13 +2,18 @@
 
 **Status:** Built
 
-Determines whether evidence is sufficiently repeated, diverse, fresh, valuable and internally consistent.
+Separates raw observation count from independent support, keeps neutral evidence from manufacturing
+certainty, and evaluates configurable repetition, diversity, confidence, noise, conflict,
+freshness and business value gates.
 
 | Boundary | Current truth |
 |---|---|
-| Input | integer evidence counts, distinct days, confidence, noise, conflict, freshness and business value |
-| Output | validated, held or rejected assessment used by lifecycle planning |
-| Authority | `feedback/governance.py::validate_learning` and evidence contract |
+| Input | immutable `LearningEvidence`, first/last seen times and tenant policy snapshot |
+| Evidence identity | exact sorted source refs, independent refs and trace IDs |
+| Scoring | deterministic integer basis points; no floating inference at validation time |
+| Freshness | recomputed as of evaluation/review time from `last_seen_at` over a 28-day decay window |
+| Output | Observed, Candidate, Validated or Rejected reason-coded verdict |
+| Authority | `feedback/units.py::_evidence`; `feedback/governance.py::validate_learning` |
 
 ## Component modules
 

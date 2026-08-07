@@ -1,0 +1,384 @@
+identity:
+  id: sales.obj.core.timeline
+  scope: core
+  name: Timeline
+  domain: sales
+  subdomain: qualification
+  owner_capability: sales.qualification.lead_qualification
+  version: 1.0.0
+  status: draft
+  aliases: ["Compelling Event", "Close Plan", "Decision Timeline"]
+purpose:
+  statement: >
+    When the buyer must have decided, and why. The discriminator is the compelling event —
+    something that happens to the buyer whether or not they buy from us: a contract expiring,
+    an audit, a launch, a fiscal year closing. A date with no compelling event behind it is a
+    preference, and preferences slip. Most of what sales calls a timeline is our forecast date
+    wearing the buyer's clothes, which is why this object separates the two explicitly.
+attributes:
+  - name: the_event
+    purpose: The thing that forces a decision independent of us.
+    type: composite
+    contains:
+      - compelling_event
+      - event_date
+      - event_verified
+      - consequence_of_missing
+  - name: dates
+    purpose: Groups the Dates attributes.
+    type: composite
+    contains:
+      - buyer_decision_date
+      - our_forecast_date
+      - contract_start_required
+      - last_reasonable_start
+  - name: pace
+    purpose: Groups the Pace attributes.
+    type: composite
+    contains:
+      - elapsed_days
+      - days_since_last_contact
+      - stage_velocity
+      - expected_remaining_days
+  - name: slippage
+    purpose: Movement history. One slip is noise; the second is the signal.
+    type: composite
+    contains:
+      - slip_count
+      - total_slip_days
+      - slip_observed
+      - last_slip_at
+  - name: compelling_event
+    purpose: Plain description of what forces the decision. Null is a legitimate and common value, and
+      recording it as null is far more useful than inventing one.
+    type: value
+    data_type: string
+    description: >
+      Plain description of what forces the decision. Null is a legitimate and common value,
+      and recording it as null is far more useful than inventing one.
+  - name: event_date
+    purpose: The event_date of this object.
+    type: value
+    data_type: timestamp
+  - name: event_verified
+    purpose: Whether the event was confirmed from the buyer's side rather than assumed by us.
+    type: value
+    data_type: boolean
+    description: Whether the event was confirmed from the buyer's side rather than assumed by us.
+  - name: consequence_of_missing
+    purpose: What happens to the buyer if the date passes. If nobody can answer this, the event is not
+      compelling.
+    type: value
+    data_type: string
+    description: What happens to the buyer if the date passes. If nobody can answer this, the event is
+      not compelling.
+  - name: buyer_decision_date
+    purpose: When THEY say they will decide.
+    type: value
+    data_type: timestamp
+    description: When THEY say they will decide.
+  - name: our_forecast_date
+    purpose: When WE say it will close. Kept separate from buyer_decision_date on purpose — the gap
+      between the two is the most honest forecast-risk metric available, and merging them hides it
+      permanently.
+    type: value
+    data_type: timestamp
+    description: >
+      When WE say it will close. Kept separate from buyer_decision_date on purpose — the gap
+      between the two is the most honest forecast-risk metric available, and merging them
+      hides it permanently.
+  - name: contract_start_required
+    purpose: The contract_start_required of this object.
+    type: value
+    data_type: timestamp
+  - name: last_reasonable_start
+    purpose: Latest date the process could begin and still make the event. Backward-planned, not
+      guessed.
+    type: value
+    data_type: timestamp
+    description: Latest date the process could begin and still make the event. Backward-planned, not
+      guessed.
+  - name: elapsed_days
+    purpose: The elapsed_days of this object.
+    type: value
+    data_type: integer
+    unit: days
+    source_paths: [deal.last_inbound]
+  - name: days_since_last_contact
+    purpose: The days_since_last_contact of this object.
+    type: value
+    data_type: integer
+    unit: days
+    source_paths: [thread.last_inbound]
+  - name: stage_velocity
+    purpose: The stage_velocity of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+  - name: expected_remaining_days
+    purpose: The expected_remaining_days of this object.
+    type: value
+    data_type: integer
+    unit: days
+  - name: slip_count
+    purpose: Number of times the date has moved. Two or more is the strongest single loss predictor in
+      most pipelines.
+    type: value
+    data_type: integer
+    description: Number of times the date has moved. Two or more is the strongest single loss
+      predictor in most pipelines.
+  - name: total_slip_days
+    purpose: The total_slip_days of this object.
+    type: value
+    data_type: integer
+    unit: days
+  - name: slip_observed
+    purpose: The slip_observed of this object.
+    type: value
+    data_type: boolean
+  - name: last_slip_at
+    purpose: The last_slip_at of this object.
+    type: value
+    data_type: timestamp
+states:
+  initial: unknown
+  values:
+    - {name: unknown, description: "No date and no event."}
+    - {name: soft, description: "A date exists with no compelling event behind it. A preference."}
+    - {name: anchored, description: "A verified compelling event with a date."}
+    - {name: at_risk, description: "Pace will not make the date.", entered_when: [{path: derived.momentum,
+          op: "<", value: 0.3}]}
+    - {name: slipped, description: "The date has moved at least once.", entered_when: [has_obs: timeline_slip]}
+    - {name: met, description: "Decision made on or before the date."}
+    - {name: missed, description: "Date passed with no decision."}
+  transitions:
+    - {from: unknown, to: soft}
+    - {from: soft, to: anchored}
+    - {from: anchored, to: at_risk, when: [{path: derived.momentum, op: "<", value: 0.3}]}
+    - {from: at_risk, to: anchored}
+    - {from: anchored, to: slipped, when: [has_obs: timeline_slip]}
+    - {from: slipped, to: anchored}
+    - {from: anchored, to: met}
+    - {from: anchored, to: missed}
+
+relationships:
+  - {type: gates, target: sales.obj.core.deal, cardinality: zero_or_one}
+  - {type: requires, target: sales.obj.core.budget, cardinality: zero_or_one, description: "A decision\
+      date before available_from is not achievable, whatever anyone intends."}
+  - {type: belongs_to, target: sales.obj.core.buying_committee, cardinality: zero_or_one, description: "Committee
+      cadence, not ours, sets the real pace."}
+  - {type: influences, target: sales.obj.core.next_action, cardinality: zero_or_many}
+
+inference_patterns:
+
+  deterministic:
+    - id: tl.slip_observed
+      statement: "A timeline-slip observation fired."
+      status: executable
+      when: [has_obs: timeline_slip]
+      yields: {confidence_bp: 9500, attribute: slip_observed, value: true}
+
+    - id: tl.commitment_date_exists
+      statement: "A dated commitment is attached to this node."
+      status: executable
+      when: [exists: commitment.due_at]
+      yields: {confidence_bp: 8000, attribute: buyer_decision_date, value: null}
+      evidence_fields: [commitment.due_at, commitment.action]
+
+    - id: tl.commitment_overdue
+      statement: "A dated commitment has passed without being met."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {fn: days_since, path: commitment.due_at, op: ">=", value: 1}
+      yields: {confidence_bp: 9000, attribute: slip_observed, value: true}
+
+    - id: tl.crm_close_date
+      statement: "The CRM carries a close date."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: our_forecast_date, value: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.deal.close_date, owner_layer: L1, note: "This is OUR date, not the\
+            buyer's. Projecting it must not overwrite buyer_decision_date — that conflation is the reason
+            forecasts read confident and land late."}
+
+    - id: tl.close_date_history
+      statement: "The close date has moved N times in the CRM."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: slip_count, value: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.deal.close_date_history, owner_layer: L1, note: "Highest-value unbuilt\
+            signal on this object. Slip count is the strongest single loss predictor in most pipelines and
+            it is sitting in CRM field history untouched."}
+
+  heuristic:
+    - id: tl.momentum_will_not_make_the_date
+      statement: "Momentum has collapsed while the deal is still open — the current pace cannot reach the
+        stated date."
+      status: executable
+      when:
+        - {path: derived.momentum, op: "<", value: 0.3}
+        - {path: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 7500, attribute: null}
+
+    - id: tl.gone_quiet_near_the_date
+      statement: "No inbound contact for a fortnight on an open deal."
+      status: executable
+      when:
+        - {fn: days_since, path: deal.last_inbound, op: ">=", value: 14}
+        - {path: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 7000, attribute: null}
+      note: >
+        Deliberately absolute rather than baseline-relative. Near a decision date, fourteen
+        days of silence means the same thing regardless of the contact's normal cadence —
+        the deal has left their attention.
+
+    - id: tl.proposal_sent_no_movement
+      statement: "A proposal went out and a week later the ball is still with them."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 7}
+      yields: {confidence_bp: 7200, attribute: null}
+
+    - id: tl.compelling_event_stated
+      statement: "The buyer named a date and the consequence of missing it."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: event_verified, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: compelling_event_stated, owner_layer: L2, note: "Requires extracting an\
+            event and its consequence together. Extracting the date alone produces exactly the soft timeline
+            this object exists to distinguish."}
+
+    - id: tl.renewal_or_expiry_anchor
+      statement: "An incumbent contract expiry date creates a hard event."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: compelling_event, value: null}
+      requires_signals:
+        - {kind: fact_path, name: account.incumbent_contract_end, owner_layer: L1}
+
+inputs:
+  - {source: email, signal: stated dates and deferrals, path: thread.last_inbound}
+  - {source: email, signal: dated commitments, path: commitment.due_at}
+  - {source: calendar, signal: scheduled decision meetings, path: meeting.start_at}
+  - {source: crm, signal: close date and its history}
+  - {source: derived, signal: stage velocity, path: derived.momentum}
+  - {source: meeting_transcript, signal: compelling events named aloud}
+  - {source: contract, signal: incumbent expiry}
+
+outputs:
+  - {name: event_confidence_bp, type: integer, consumed_by: [L4.reasoning_unit]}
+  - {name: achievable_close_date, type: timestamp, description: "Backward-planned from the event, bounded\
+      by budget availability.", consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: slip_risk_bp, type: integer, consumed_by: [L4.reasoning_unit]}
+  - {name: forecast_gap_days, type: integer, description: "our_forecast_date minus buyer_decision_date.\
+      Surfaced, never reconciled.", consumed_by: [L4.decision_maker]}
+  - {name: first_action_due, type: timestamp, description: "Derived from last_reasonable_start.", consumed_by: [
+      L5.execution_planning]}
+
+constraints:
+  - {id: tl.cannot_precede_budget, statement: "our_forecast_date cannot precede budget.available_from.",
+      hard: true}
+  - {id: tl.cannot_commit_without_event, statement: "No committed forecast without event_verified.", hard:
+      true}
+  - {id: tl.cannot_compress_committee, statement: "The close date cannot be earlier than the committee's\
+      own cadence allows, however urgent our quarter is.", hard: true}
+
+business_rules:
+  - id: tl.no_event_no_commit
+    statement: A deal without a verified compelling event must not enter the committed forecast,
+      whatever date the buyer has given.
+    severity: blocking
+  - id: tl.second_slip_downgrades
+    statement: >
+      On the second slip the deal is downgraded a forecast category automatically. One slip is
+      noise; two is a pattern, and the pattern is almost always that a seat is unmapped or the
+      budget is not real.
+    severity: blocking
+  - id: tl.budget_availability_bounds_close
+    statement: our_forecast_date cannot precede the budget's available_from.
+    severity: blocking
+  - id: tl.forecast_gap_must_be_visible
+    statement: When our_forecast_date is earlier than buyer_decision_date, the gap is recorded and
+      surfaced. It is never silently reconciled to ours.
+    severity: warning
+  - id: tl.past_last_reasonable_start
+    statement: If today is past last_reasonable_start, the event date is no longer achievable and the
+      plan must be rebuilt rather than restated.
+    severity: warning
+
+decision_factors:
+  - {name: event_strength, weight_bp: 3500, direction: increases, reads: [compelling_event, event_verified,
+      consequence_of_missing], description: "Largest weight on the object. A verified compelling event is
+      worth more than any amount of enthusiasm."}
+  - {name: slip_history, weight_bp: 2500, direction: decreases, reads: [slip_count, total_slip_days]}
+  - {name: pace_vs_remaining, weight_bp: 2000, direction: context, reads: [stage_velocity, expected_remaining_days,
+      last_reasonable_start]}
+  - {name: date_disagreement, weight_bp: 1000, direction: decreases, reads: [buyer_decision_date, our_forecast_date]}
+  - {name: contact_recency, weight_bp: 1000, direction: context, reads: [days_since_last_contact]}
+
+evidence:
+  - {source: contract, strength_bp: 10000, description: "Incumbent expiry. A date that exists whether\
+      or not anyone talks to us."}
+  - {source: meeting_transcript, strength_bp: 8500, description: "Buyer names the event and its consequence."}
+  - {source: email, strength_bp: 8000, description: "A dated commitment in writing."}
+  - {source: crm, strength_bp: 6000, description: "Close date. Ours, not theirs."}
+  - {source: calendar, strength_bp: 7000, description: "A decision meeting actually booked."}
+  - {source: derived, strength_bp: 5000, description: "Momentum and silence. Predictive, not evidentiary."}
+
+metrics:
+  - {name: event_verification_rate, unit: percent, description: "Share of committed deals with a verified\
+      compelling event.", owner_layer: L6}
+  - {name: slip_rate, unit: percent, owner_layer: L6}
+  - {name: forecast_gap_median, unit: days, description: "Median gap between our date and the buyer's.\
+      Measures institutional optimism.", owner_layer: L6}
+  - {name: date_accuracy, unit: percent, description: "Deals closing in the forecast period. Calibrates\
+      every pattern above.", owner_layer: L6}
+  - {name: second_slip_loss_rate, unit: percent, description: "The evidence for tl.second_slip_downgrades.",
+      owner_layer: L6}
+
+events:
+  - {id: tl.event_verified, name: Compelling Event Verified, payload: [compelling_event, event_date]}
+  - {id: tl.slipped, name: Timeline Slipped, emitted_when: [has_obs: timeline_slip], payload: [
+        slip_count, total_slip_days]}
+  - {id: tl.second_slip, name: Second Slip Recorded, payload: [slip_count], description: "Triggers an
+      automatic forecast downgrade. Two slips almost always mean an unmapped seat or an unreal budget, not
+      a scheduling problem."}
+  - {id: tl.past_last_start, name: Past Last Reasonable Start, payload: [last_reasonable_start]}
+  - {id: tl.went_quiet, name: Went Quiet Near the Date, emitted_when: [{fn: days_since, path: deal.last_inbound,
+        op: ">=", value: 14}]}
+
+actions:
+  - {id: tl.establish_event, name: Establish the compelling event, actor: human, effect: "Ask what happens\
+      if the date passes. If nobody can answer, there is no event and the forecast should say so."}
+  - {id: tl.backward_plan, name: Build a backward close plan, actor: human, effect: "From the event date,\
+      not from today. Produces last_reasonable_start."}
+  - {id: tl.confirm_date, name: Confirm the date with the buyer, actor: human}
+  - {id: tl.re_engage_quiet, name: Re-engage a quiet deal, actor: human, preconditions: [{fn: days_since,
+        path: deal.last_inbound, op: ">=", value: 14}]}
+  - {id: tl.downgrade_forecast, name: Downgrade the forecast, actor: system, preconditions: [has_obs: timeline_slip],
+    effect: "Automatic on the second slip."}
+
+examples:
+  - {label: "Incumbent contract expires 31 March", note: "The strongest possible event. Verified, dated,\
+      and independent of us."}
+  - {label: "Audit deadline", note: "External and non-negotiable. Compresses everything."}
+  - {label: "\"We'd like it done this quarter\"", note: "A preference. state = soft. This is what most\
+      CRM close dates actually are."}
+  - {label: "Fiscal year end with use-it-or-lose-it budget", note: "Event and budget expiry align. The\
+      rare case where their urgency exceeds ours."}
+  - {label: "Third slip", note: "Not a timing problem. Something else is untrue — usually an unmapped\
+      seat or a budget that was never approved."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of eleven patterns are executable. The standout gap is crm.deal.close_date_history —
+    slip count is the strongest single loss predictor available and it already exists as CRM
+    field history that the connector does not read.

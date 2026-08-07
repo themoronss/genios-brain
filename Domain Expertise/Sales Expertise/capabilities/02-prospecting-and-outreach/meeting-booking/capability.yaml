@@ -1,0 +1,27 @@
+identity:
+  id: sales.prospecting_and_outreach.meeting_booking
+  name: Meeting Booking
+  domain: sales
+  subdomain: prospecting_and_outreach
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Turning a positive reply into a held meeting. The gap between agreed and attended is where
+  most inbound intent is lost, and it is almost entirely a scheduling-friction problem.
+
+question: "How do we convert interest into a scheduled conversation?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

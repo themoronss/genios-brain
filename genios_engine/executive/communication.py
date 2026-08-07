@@ -1,21 +1,18 @@
-"""Layer 5 · Unit 3 — the Communication Planning Unit.  *Where* and *how loudly*.
+"""Layer 5 · Unit 3 — semantic communication intent for a commitment.
 
-Owning the channel choice up here, alongside the owner choice, is a deliberate architectural
-call: interrupting someone is part of the commitment, not part of the transport.  "Slack this
-person right now" and "let them find it in tomorrow's digest" are two different promises about
-how much of their attention this is worth, and that judgement belongs with the layer that
-decided the work was worth doing at all.  Layer 5.2 keeps the adapters, the retries and the
-outbox — it executes the plan, it does not author it.
+This v1 unit records how important the commitment believes communication to be: business
+audience, tone, presentation intent and historical route hints. Layer 5.2 treats those as input
+intent, not current send authority. It resolves the live recipient, registered destination,
+concrete channel and interruptibility from present context and policy.
 
 The rules encode one principle: **interruption is a budget, not a feature.**  Every channel
 here is ordered by how much of a person's attention it spends, and a commitment has to earn its
 way up that order with score, not with enthusiasm.  A system that pages on everything is
 indistinguishable from a system nobody reads.
 
-Behaviourally this reproduces exactly what Layer 5.2 does today — high and critical go to the
-org's chat channel, everything else waits for the digest, unrouted work sits on the card
-surface — with the difference that the choice is now recorded, explained by a reason code, and
-frozen into the execution object rather than recomputed inside a queue drain.
+The historical channel decision remains frozen and explained so old ExecutionObjects round-trip
+and audits can reconstruct upstream intent. The Layer 5.2 orchestrator deliberately ignores its
+concrete channel and interrupt fields when selecting an actual route.
 
 Pure: the org's available channels are passed in, never queried here.
 """
@@ -115,7 +112,10 @@ def plan_communication(context: ExecutionContext, assignment: Assignment, *,
                        available_channels: frozenset[str] | set[str] | None = None,
                        autonomous: bool = False,
                        cfg: Mapping[str, Any] | None = None) -> CommunicationPlan:
-    """Decide audience, channel, interrupt and tone — and record why.
+    """Record business audience, tone and backwards-compatible route/attention hints.
+
+    The returned concrete channel and interrupt values are part of the immutable v1/v2 contract's
+    audit shape. Layer 5.2 recomputes the actual route and interrupt decision from current state.
 
     Ordered most-constrained first.  Each branch is a *refusal to escalate the channel*, and
     they are checked before the branches that would: an unrouted commitment cannot be pushed to

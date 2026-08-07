@@ -1,0 +1,101 @@
+# Hardware — offering type under Product.
+#
+# Declares only what differs from customer_support.offering.product.
+
+identity:
+  id: customer_support.offering.product.hardware
+  name: Hardware
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.product
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A physical unit the customer owns, installs and operates, usually for years. Every fix has a
+  shipping address. Nothing about a hardware resolution moves at software speed: the diagnosis
+  is performed remotely through a human being who is standing next to the device and describing
+  it badly, and the remedy is a part, a technician or a return — all of which travel at the
+  speed of logistics and none of which we can perform ourselves at two in the morning. We can
+  diagnose unilaterally and we can resolve almost nothing unilaterally, which is the exact
+  inverse of software and the reason the two feel so different to run.
+  Entitlement attaches to a serial number and a ship date rather than to a login, so the first
+  question of a hardware ticket is one a hosted-software agent never asks: is this unit still
+  covered, and can we prove when it left the factory. Failure is correlated by manufacturing
+  lot rather than by release date, which means the cluster that matters looks nothing like a
+  regression spike — it builds slowly over months as a fleet ages, and it is completely
+  invisible unless serial numbers are on the tickets.
+  The habit that breaks operators arriving from software is announcing a timeline on the
+  strength of a diagnosis. "We have found the fix" is a meaningful sentence about a deploy and
+  an empty one about a component that is not yet in a van, and the customer will quote the
+  first date they were given back to us for the rest of the warranty.
+
+characteristics:
+  delivery: "a physical unit shipped once, then owned and operated by the customer well beyond the point at which we still sell it"
+  pricing_shape: "one-off purchase carrying a warranty term, frequently plus a separately sold maintenance or support contract that is the real entitlement"
+  margin_profile: "moderate unit margin, and every dispatch, spare and return is a direct cash cost against it — support here consumes inventory and travel, not only labour"
+  post_sale_load: "a long obligation tail; the failure rate rises as the fleet ages, so the cheapest support year is the first one and nobody budgets for the fifth"
+  support_load: "bimodal — a heavy front band of installation and configuration questions in the first weeks after shipment, then a slow-burning fault stream that grows with fleet age. Batch defects produce spikes tied to manufacturing lots rather than to anything on our calendar, and they surface as a rising rate rather than as an outage"
+  resolution_locus: "a device in the customer's physical possession. The fix is a part, a field visit or an RMA, and the customer or a field engineer performs it — we hold the knowledge and none of the hands"
+  notes: >
+    Firmware blurs this: a firmware defect has a software resolution locus and a hardware
+    entitlement model, and a queue that treats it as one or the other will get the fix speed or
+    the warranty question wrong. Flagging firmware tickets separately is worth the effort.
+
+capabilities:
+  emphasises:
+    # Warranty is the gate on every hardware resolution and it expires silently.
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # A dispatch date is the promise. It is the only part of the resolution the customer can
+    # verify before it happens, and it is the thing they will be angry about if it slips.
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.customer_communication.proactive_status_updates
+    # Reproduction against a device we cannot see, through a person who is not an engineer, is
+    # the core technical skill of this offering and has no equivalent in hosted software.
+    - customer_support.diagnosis_and_resolution.issue_reproduction
+    - customer_support.diagnosis_and_resolution.diagnostics
+    # A workaround here buys weeks, not hours, because the real fix is in transit.
+    - customer_support.diagnosis_and_resolution.workaround_management
+    # Lot-level clustering is the aggregation that matters and it only works on serials.
+    - customer_support.intake_and_triage.duplicate_and_merge
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [external_ref, commitment_ref]
+      note: >
+        `external_ref` carries the serial or RMA number and is not optional in this branch for
+        two independent reasons: without unit identity the ticket cannot be clustered by
+        manufacturing lot, which is the only clustering that pays for itself here, and a
+        warranty claim cannot be proved when the customer disputes the ship date.
+        `commitment_ref` is mandatory because a hardware promise is a date on which a physical
+        object arrives — the customer is tracking that date whether or not we are.
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, effective_at, expires_at, coverage_hours]
+      note: >
+        Warranty starts at delivery, not at purchase, and the gap between those two dates is
+        where most warranty disputes live. `effective_at` is therefore required here in a way
+        it is not for a subscription, where the two are the same instant.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [verified_against_version]
+      note: >
+        Hardware revisions ship under the same product name for years. An article written for
+        revision B served confidently to the owner of a revision C unit produces a precise,
+        authoritative instruction that damages an in-warranty device — a failure mode software
+        support does not have, because software customers cannot physically break the thing by
+        following our advice.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The parent's emphasis on deflection is inherited but lands weaker here: the deflectable band
+    is setup and configuration, and a customer holding a dead unit is not going to be talked out
+    of contacting us by an article, nor should they be.

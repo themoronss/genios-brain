@@ -1,0 +1,24 @@
+# Load-set for admin.executive_support.inbox_and_correspondence — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/inbox-and-correspondence/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.executive_support.inbox_and_correspondence
+
+core:
+  required:
+    - admin.obj.core.request
+    - admin.obj.core.commitment
+  optional:
+    - admin.obj.core.approval
+    - admin.obj.core.escalation
+    - admin.obj.core.document
+
+scoped:
+  required: []
+  optional: []

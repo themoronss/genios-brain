@@ -1,14 +1,16 @@
 # Delivery Policy
 
-**Status:** Built
+**Status:** Active
 
-Decides whether a tenant/seat/channel candidate is permitted to travel at all.
+Answers **“is this tenant/recipient/channel delivery permitted at all?”** It is a hard,
+reason-coded gate rather than advisory metadata.
 
 | Boundary | Current truth |
 |---|---|
 | Input | candidate plus resolved tenant/seat/channel policy |
-| Output | `SEND` or terminal `SUPPRESS` with a stable reason code |
-| Authority | `deliver/policy.py`, `deliver/gate.py` |
+| Output | `SEND`, timed tenant `DEFER`, or terminal `SUPPRESS` |
+| Runtime | `deliver/policy.py`, `deliver/gate.py`, preference APIs |
+| Non-goal | payload interpretation, ownership or execution liveness |
 
 ## Component modules
 

@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     sync_interval_hours: float = 6.0             # cadence of the auto-sync sweep (0 = off)
     sync_initial_delay_seconds: int = 45         # wait after startup before the first sweep
     sync_batch_limit: int = 25                   # records pulled per connection per sweep
+    # Delivery has minute-scale retry/deferral clocks and therefore cannot inherit the heavy
+    # ingestion cadence. The same scheduler master switch controls both daemon loops; this shorter
+    # interval is safe across replicas because Layer 5.2 claims rows with SKIP LOCKED + fencing.
+    delivery_interval_seconds: float = 60.0      # due delivery sweep cadence (0 = off)
+    delivery_initial_delay_seconds: int = 10     # let migrations/startup settle first
+    public_app_url: str = ""                     # HTTPS UI origin for actionable delivery links
 
     # tenant / options
     org_id: str = "org_trial"

@@ -33,8 +33,8 @@ Three places in this codebase exist *because* of that rule, and each is better f
 
 | Situation | Resolution |
 |---|---|
-| Layer 5 must send a message, but may not import Layer 5.2 | Layer 5 **writes its decision down**; `deliver/executive_bridge.py` reads it. **The send has one owner, not two** |
+| Layer 5 must request delivery, but may not import Layer 5.2 | Layer 5 persists one `ExecutionObject`; Layer 5.2 materializes it into its own durable outbox. **The send has one owner, not two** |
 | Layer 6 Learning must retune Layer 3/4 | it writes **rows**; the merge reads them. *The consumer stays free to change its mind about what it wants to learn* |
-| Layer 5.2 Delivery must know who owns a commitment | it **delegates downward** to `executive/assignment.py` |
+| Layer 5.2 needs a work-owner seed and live authority | it reads the persisted Layer 5 execution and current directory as data, then resolves the current delivery recipient without changing ownership |
 
 ---

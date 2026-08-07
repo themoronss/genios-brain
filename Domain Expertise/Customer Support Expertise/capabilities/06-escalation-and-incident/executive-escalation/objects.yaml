@@ -1,0 +1,24 @@
+# Load-set for customer_support.escalation_and_incident.executive_escalation —
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.escalation_and_incident.executive_escalation
+
+core:
+  # escalation and customer_account, and notably NOT ticket. At this altitude the unit of concern
+  # is the relationship, not the piece of work; an executive escalation about a single ticket has
+  # almost always been mis-routed and should have gone to escalation_management instead.
+  required:
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.customer_account
+  # churn_risk because it is usually the real subject of the meeting. escalation_owner because
+  # the sponsor must still hand back to a named operational owner or the executive becomes the
+  # support channel. entitlement because concessions get promised here and the contract is what
+  # says whether we are conceding or merely complying.
+  optional:
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.escalation_owner
+    - customer_support.obj.core.entitlement
+
+scoped:
+  required: []
+  optional: []

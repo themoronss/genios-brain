@@ -1,14 +1,17 @@
 # 4 · Application Delivery
 
-**Status:** Partial
+**Status:** Engine-ready; application pull route active; product clients required
 
-Provides a durable `application` pull channel that an authenticated application can consume.
+Provides a durable `application`/`in_app` route for web, desktop, IDE or CLI clients to consume
+the same execution-bound delivery.
 
 | Boundary | Current truth |
 |---|---|
-| Runtime authority | `channels/surface.py` |
-| Result | adapter/pull outcome projected into the shared DeliveryResult ledger |
+| Runtime | `channels/surface.py`, delivery inbox and presence APIs |
+| Active route | authenticated `application` and `in_app` pull surfaces |
+| Result | durable availability projected into the shared DeliveryResult ledger |
 | Business outcome | never inferred from transport alone |
+| Integration | concrete web/desktop/IDE/CLI clients are outside this engine repository |
 
 ## Component modules
 

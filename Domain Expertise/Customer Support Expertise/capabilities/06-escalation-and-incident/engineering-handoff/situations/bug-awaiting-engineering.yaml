@@ -1,0 +1,159 @@
+# Situation — Bug Awaiting Engineering.
+#
+# The characteristic failure of this situation is not technical and it is not a prioritisation
+# dispute. It is that the ticket goes quiet because the AGENT has nothing new to say. There is no
+# update, so no update is sent; the customer reads the silence as abandonment; and by the time
+# the fix ships — weeks or months later, if anyone remembers to tell them — the relationship has
+# already been decided by the interval rather than by the outcome.
+#
+# That is a communication defect wearing an engineering label, which is why this file loads
+# Commitment alongside Bug Report: the object that keeps the ticket alive during the wait is the
+# promise to make contact, not the defect. "Nothing has changed" is a complete and adequate
+# update, and it is the one an agent will not send unprompted because it feels like admitting
+# there is nothing to say.
+
+identity:
+  id: customer_support.sit.bug_awaiting_engineering
+  name: Bug Awaiting Engineering
+  domain: customer_support
+  owner_capability: customer_support.escalation_and_incident.engineering_handoff
+  version: 1.0.0
+  status: draft
+
+description: >
+  A defect has been filed and the customer is waiting on somebody who does not work in support.
+  Support has done its part — reproduced it, written it up, handed it over — and has now entered
+  the state it is worst at: owning a relationship while owning none of the work. The ticket has
+  no next action an agent can take, which is precisely why it stops appearing in anyone's day.
+  Frequently a workaround exists, which makes it worse rather than better: the ticket is marked
+  resolved on the strength of it, the clock stops, the queue reports health, and a customer is
+  left performing a manual step every morning against a defect nobody is telling them about. The
+  situation is live for as long as the customer's problem is real, regardless of what state their
+  ticket is in.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: bug_awaiting_engineering
+      owner_layer: L2
+      nearest_today: commitment_overdue
+      note: >
+        Must mean: a customer-facing ticket is blocked on a filed defect owned outside support,
+        carrying the bug reference, its current engineering state, and — separately and most
+        importantly — the time since the customer last heard anything. Those are two clocks and
+        the second one is the one this domain cares about: a bug can be moving briskly through an
+        engineering board while the customer has heard nothing for five weeks, and that is the
+        state that loses accounts. It must also carry the support-side owner, because the
+        defining failure of the handoff is a filed bug on behalf of a customer nobody owns.
+        What would emit it: the handoff_to_engineering and bug_filed obs kinds in
+        planned_substrate, with the ticket held in a waiting_on_engineering state, plus
+        bug_fixed as the closing edge — the fix event is the one that must come back, and today
+        it never does.
+        Why commitment_overdue is not good enough: it fires on the promise, not on the state. It
+        needs someone to have committed to a date, so it catches the well-managed tickets — the
+        ones where an agent said "I will update you Friday" and then did not — and generates
+        nothing at all for the ticket where nobody promised anything. The tickets where nobody
+        promised anything are the entire population this situation exists to find. Nobody is
+        late, so nothing fires, so the silence continues, which is the mechanism by which support
+        organisations lose customers slowly and without a single recorded failure.
+    - type: workaround_only
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        Must mean: a ticket was resolved by a workaround while the underlying issue remains open.
+        It must carry the workaround, the issue it defers to, and the workaround's ongoing cost
+        to the customer — a one-time configuration change and a manual step performed every
+        morning are recorded identically today and are not remotely the same debt. Crucially it
+        must SURVIVE the ticket closing. Its whole purpose is keeping a customer attached to an
+        open defect after their ticket has gone, so a type scoped to an open ticket is
+        structurally incapable of expressing it. This is the more valuable of the two types on
+        this file, because it marks the customers who are technically resolved and actually still
+        broken, and no support system anywhere can currently list them.
+        What would emit it: Layer 2 joining ticket_resolved with workaround_provided where the
+        linked issue is not closed, and holding the join open until the issue closes.
+        Why unanswered_email is not good enough: there is no thread left to be unanswered. The
+        ticket was closed politely, the customer said thank you, and the conversation ended —
+        that is the defining property of the state. Every compromise the pipeline offers requires
+        a live thread or an open record, and this situation is defined by the absence of both.
+        What goes wrong today: the workaround is the last thing anyone records. The fix ships
+        months later, nobody tells the customer, and the cheapest goodwill available in support —
+        "the thing you reported is fixed, you can stop doing the workaround" — is never
+        collected.
+
+  # Person. The thing decaying here is one human's confidence that anyone remembers them, and
+  # they are usually the person who did the work of reporting it well. The scope enum has no
+  # ticket member; person is the honest nearest because the subject genuinely is the individual
+  # waiting, not the account paying.
+  scope: person
+
+also_serves:
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.diagnosis_and_resolution.workaround_management
+  - customer_support.voice_of_customer.product_feedback_routing
+
+objects:
+  load:
+    - customer_support.obj.core.bug_report
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.workaround
+  optional:
+    # root_cause where diagnosis got that far — it turns the report from a description into a
+    # proposal and materially changes how engineering receives it. product_area routes to a team
+    # rather than a backlog. requester because the update, when it comes, goes to a named human
+    # who may have changed roles during the wait.
+    - customer_support.obj.core.root_cause
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.requester
+  never_load:
+    # This is the load-set decision that carries the file. Waiting on engineering is OUR problem,
+    # not the customer's wait, and every SLA-shaped reading of this ticket says everything is
+    # fine: the first response was met, the resolution clock is paused or already satisfied by
+    # the workaround, and the board is green. Loading SLA Target imports exactly that blindness
+    # and lets the compile conclude the ticket is healthy while the customer goes a month without
+    # hearing anything. The clock is not the question here; the silence is.
+    - customer_support.obj.core.sla_target
+    # A closed-shaped object invites closure-shaped reasoning. The customer's problem has not
+    # stopped, which is what a Resolution asserts — and the workaround, which is loaded, is the
+    # honest partial version of the same thing with the debt still attached to it.
+    - customer_support.obj.core.resolution
+
+priority_bp: 6000
+typical_duration_days: 45
+
+signals_of_progress:
+  - followup_sent
+  - workaround_provided
+  - root_cause_identified
+  - bug_fixed
+
+signals_of_decay:
+  - escalation_requested
+  - cancellation_threat
+  - angry_language
+  - ticket_reopened
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Only followup_sent is a real substrate obs kind; workaround_provided, root_cause_identified,
+    bug_fixed, escalation_requested, cancellation_threat, angry_language and ticket_reopened are
+    support-native names from planned_substrate that nothing emits today. They are unvalidated
+    free-form strings, so this file loads and does not run.
+    followup_sent is listed first in signals_of_progress on purpose and is the most important
+    entry in either list. It is the only one support controls. Every other progress signal
+    belongs to engineering, and a situation whose progress measures are all owned by another team
+    is one that support will conclude it cannot influence — which is the belief that produces the
+    silence in the first place.
+    typical_duration_days is 45, which is long enough to look like an error. It is not. It is set
+    against the customer's problem rather than the ticket's status, and defect fix cycles are
+    measured in weeks in most organisations; setting it to the ticket lifetime would mark this
+    situation complete at the moment the workaround shipped, which is the exact failure that
+    workaround_only exists to catch.

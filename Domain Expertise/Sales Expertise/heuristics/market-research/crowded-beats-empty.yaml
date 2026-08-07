@@ -1,0 +1,35 @@
+identity:
+  id: sales.heu.market_research.crowded_beats_empty
+  name: A contested category is cheaper to sell into than an empty one
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "A contested category is cheaper to sell into than an empty one.\n Competitors have already\
+    \ convinced the buyer the category exists, created the budget line and taught the internal justification.\
+    \ In an empty category we pay for all of that ourselves, in cycle length, before anyone compares\
+    \ us to anything. Emptiness is a cost that reads as an opportunity.\n"
+heuristic:
+  statement: 'A contested category is cheaper to sell into than an empty one.
+
+    '
+  why: 'Competitors have already convinced the buyer the category exists, created the budget line and
+    taught the internal justification. In an empty category we pay for all of that ourselves, in cycle
+    length, before anyone compares us to anything. Emptiness is a cost that reads as an opportunity.
+
+    '
+  reads:
+  - sales.obj.market_research.market_map
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

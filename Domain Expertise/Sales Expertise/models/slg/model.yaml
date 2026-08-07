@@ -1,0 +1,36 @@
+# SLG — Sales Led Growth — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.slg
+  name: SLG — Sales Led Growth
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A seller drives the motion from first contact to signature. The default assumption behind
+  most of the canonical capability set.
+
+characteristics:
+  buyer: "an organisation, engaged by a seller"
+  typical_cycle_days: 60
+  decision_style: "seller-guided committee process"
+
+capabilities:
+  emphasises:
+    - sales.prospecting_and_outreach.outreach
+    - sales.discovery_and_solution.discovery
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

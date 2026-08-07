@@ -1,0 +1,24 @@
+# Load-set for admin.compliance_and_governance.board_and_secretarial — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/board-and-secretarial/ loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.compliance_and_governance.board_and_secretarial
+
+core:
+  required:
+    - admin.obj.core.meeting
+    - admin.obj.core.document
+  optional:
+    - admin.obj.core.approval
+    - admin.obj.core.compliance_obligation
+    - admin.obj.core.policy
+
+scoped:
+  required: []
+  optional: []

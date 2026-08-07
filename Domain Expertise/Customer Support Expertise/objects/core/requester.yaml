@@ -1,0 +1,3564 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# REQUESTER — the human who asked.
+#
+# This object exists because every other model of "the customer" in support software is an
+# aggregate: the account pays, the plan entitles, the queue counts. None of them is blocked.
+# One person is, and almost every correct decision in intake, communication and diagnosis
+# turns on facts about them that no CRM field carries.
+#
+# THE THESIS, in three lines:
+#   1. Technical fluency changes the correct answer more than seniority does, and fluency is
+#      the one thing no contact record holds.
+#   2. The person who writes in is often not the person suffering. That single unexamined
+#      assumption is the root cause of most failed reproductions, and it is invisible unless
+#      modelled — so it is modelled here, as a first-class boolean with its own confidence.
+#   3. A requester who has contacted three times this week is telling you something that no
+#      one of those three tickets contains. The aggregate is the object; the ticket is not.
+#
+# ALL TWENTY-THREE SECTIONS ARE PRESENT. The six that carry the knowledge a naive system does
+# not have — preconditions, dependencies, exceptions, best_practices, anti_patterns,
+# references — were absent in the migrated version and are the reason this rewrite exists.
+# `exceptions` is the section to read first if you are reviewing this file: it is where the
+# rules above are recorded as legitimately wrong, which is the only part of a playbook an
+# experienced operator would not already know.
+#
+# Eighteen inference patterns: NINE executable today, NINE needs_signal. The unusually high
+# executable count is not a claim that this object is well served. It is that the substrate
+# happens to model a message thread, a promise and a meeting, and a Requester is a person
+# waiting inside one. Note what is NOT executable: every attempt to infer technical_fluency,
+# the highest-weighted decision factor on this object, is in the needs_signal list. The
+# system can tell you precisely how long this person has been waiting and almost nothing
+# about what to say to them.
+#
+# PERSONAL DATA. This is the only object in the domain that is mostly about a named human
+# rather than about work. Every attribute carries `sensitivity`, and the ones marked
+# confidential are marked so deliberately — Atlas Rule 10 says an attribute never widens the
+# audience of the evidence it came from, and a machine's opinion of a named person's
+# competence, mood or working hours is the clearest case of that rule there is.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.requester
+  scope: core
+  name: Requester
+  domain: customer_support
+  subdomain: intake_and_triage
+  owner_capability: customer_support.intake_and_triage.channel_intake
+  version: 2.0.0
+  status: draft
+  aliases:
+  - Reporter
+  - Contact
+  - End User
+  - Submitter
+  - Caller
+  - Affected User
+  - The Customer
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+
+purpose:
+  statement: >
+    The one human who is blocked right now. Not the buyer, not the account, and frequently
+    neither an admin nor anyone with authority.
+
+    Three things about this person change the correct answer and only one of them is on any
+    contact record. Their technical fluency changes it more than their seniority does: a staff
+    engineer and a non-technical office manager reporting the identical fault need opposite
+    replies, and getting that backwards costs either a wasted round-trip or an insulted
+    customer. Their contact history changes it: someone who has written in three times this
+    week is telling you something none of those tickets says on its own. And whether they are
+    the person actually suffering changes everything downstream — the person who writes in is
+    often reporting on behalf of someone else, which quietly breaks every reproduction attempt
+    made against what they can tell you.
+
+    The object is deliberately about the individual and not the relationship. Everything
+    durable and commercial — ARR, renewal, health, plan — belongs to Customer Account. What
+    lives here is what is true of this person on this contact: what they can do, what they
+    have already tried, how long they have waited by their own standards, and what may
+    honestly be promised to them.
+  discriminator: >
+    A Requester is the one human blocked right now; the Customer Account is what pays and the
+    Named Contact is who the support plan permits to ask. A requester with no standing, no
+    budget and no admin rights is still a Requester, and an account with nobody blocked has no
+    Requester at all — which is why "who is the customer here" is the wrong question and "who
+    is stuck" is the right one.
+  answers:
+  - Who is actually blocked, and is it the person who wrote in?
+  - How should this reply be pitched — what can this person actually do next, as opposed to
+    what does their job title suggest they know?
+  - Are they waiting on us right now, and for how long by their own standards rather than by
+    the queue's clock?
+  - Have we heard from them already this week, and does that make this a content gap rather
+    than a ticket?
+  - What may be promised to this specific human, as opposed to to their employer?
+  - Where, in what language, and at what hour should the answer land?
+  - Is this contact on a trajectory toward an escalation, and is that about the fault or about
+    our handling of it?
+  - Whose confirmation actually closes this — theirs, or somebody else's?
+  not:
+  - Not what the customer is contractually owed. Entitlement owns that; a Requester only
+    inherits it, and can be genuinely uncovered at a fully covered company.
+  - Not the deadline. SLA Target owns the clock, its pause condition and its calendar. This
+    object holds only observed waiting, which is a different and coarser thing.
+  - Not the work. Ticket owns state, owner and clock; a Requester can have four open tickets
+    or none and still be the same object.
+  - Not what was said. Conversation owns the message thread; this object owns what the thread
+    reveals about the person.
+  - Not the fault. Issue owns the defect that many requesters are independently reporting.
+  - Not the commercial relationship. Customer Account owns ARR, renewal date and health score,
+    and none of them may be read off this object.
+  - Not the account's mood. Customer Sentiment aggregates across contacts; this object holds
+    only what this human has shown us on this thread.
+  - Not authority. Nothing here authorises a commercial concession, a contract change or an
+    entitlement upgrade, however senior the asker sounds.
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+#
+# Eight composite groups and forty-six fields. The groups are the argument: fluency is kept
+# apart from standing because they are unrelated and constantly conflated, and
+# who_is_actually_blocked exists as its own group so that the proxy question cannot be
+# skipped by an author filling in a form.
+#
+# `sensitivity` is not decoration here. `internal` means an agent may see it; `confidential`
+# means it is a judgement about a named individual that would be damaging or embarrassing if
+# it reached them, their employer, or a downstream system with a wider audience. Rule 10:
+# an attribute never widens the audience of its evidence.
+
+attributes:
+
+# ── group: identification ────────────────────────────────────────────────────────────────
+- name: identification
+  purpose: >
+    Resolving the contact to one durable human. Sounds clerical and is the single most common
+    silent failure in support software: if this group is wrong, contact history is wrong,
+    entitlement is wrong, and the object is a fresh stranger on every ticket.
+  type: composite
+  contains:
+  - requester_id
+  - display_name
+  - email_domain
+  - is_shared_mailbox
+  - identity_confidence_bp
+
+- name: requester_id
+  purpose: >
+    The stable internal key for this human across tickets, channels and years. Distinct from
+    an email address on purpose — people change employers, get married, and move from a
+    personal address to a corporate one mid-thread, and every one of those events silently
+    resets contact history in systems keyed on the address.
+  type: value
+  data_type: string
+  required: true
+  validation: non-empty; stable across channel and address changes
+  constraints: >
+    Must never be re-minted for the same human. A merge of two requester records preserves
+    both histories; the count that matters — how many times this person has been back — is
+    destroyed by a delete and cannot be reconstructed.
+  sensitivity: internal
+
+- name: display_name
+  purpose: >
+    What to call them in the reply. Held separately from the identifier because the name is
+    personal data with a narrower audience than the key, and because it is routinely wrong —
+    shared mailboxes, transliterated names and initials-only signatures are all common, and
+    addressing someone by a name they do not use reads as carelessness about everything else.
+  type: value
+  data_type: string
+  sensitivity: confidential
+
+- name: email_domain
+  purpose: >
+    The domain half of the contact address, kept as its own field because it is the cheapest
+    account-resolution signal there is and the one that fails most instructively. A free-mail
+    domain on what should be a corporate account is the tell that this contact will resolve to
+    nothing, and knowing that BEFORE the entitlement lookup is what stops the lookup silently
+    downgrading a paying customer to free-tier handling.
+  type: value
+  data_type: string
+  validation: lowercase; the portion after '@'
+  constraints: >
+    A free-mail domain must not by itself be treated as evidence of a consumer account. B2B
+    contractors, founders and support-plan named contacts routinely write from personal
+    addresses, particularly when the corporate one is the thing that is broken.
+  sensitivity: internal
+
+- name: is_shared_mailbox
+  purpose: >
+    Whether the contact arrived from an address that is not a person — it@, support@,
+    accounts@, a ticket forwarded by a helpdesk. When true, essentially every other attribute
+    on this object is meaningless: fluency is an average of strangers, contact history counts
+    an organisation, and reply_cadence measures a rota. It is set false by default in every
+    ticketing system and is true far more often than anyone expects in enterprise accounts.
+  type: value
+  data_type: boolean
+  validation: null means unassessed, which must not be read as false
+  sensitivity: internal
+
+- name: identity_confidence_bp
+  purpose: >
+    How sure we are that this contact is the human we think it is. Exists so that low identity
+    confidence can cap the confidence of everything downstream rather than being silently
+    forgotten. A contact resolved by exact address match on a repeat requester and a contact
+    resolved by fuzzy name match off a forwarded email are both "identified", and treating
+    them as equally identified is how contact history becomes fiction.
+  type: value
+  data_type: integer
+  unit: basis_points
+  validation: ">= 0 and <= 10000"
+  constraints: >
+    Below roughly 5000, contact_history and fluency inferences should be suppressed rather
+    than reported with a caveat. A caveat on a dashboard is not read; a missing number is.
+  sensitivity: internal
+
+# ── group: fluency ───────────────────────────────────────────────────────────────────────
+- name: fluency
+  purpose: >
+    What this person can actually do when asked. The most load-bearing group on the object and
+    the one every system substitutes job title for. Fluency changes what the correct reply IS,
+    not merely how politely it should be worded, which is why it outweighs everything in
+    `standing` in the decision factors below.
+  type: composite
+  contains:
+  - technical_fluency
+  - diagnostic_capability
+  - product_familiarity
+  - self_service_inclination
+  - tooling_access
+
+- name: technical_fluency
+  purpose: >
+    What this person can reason about, as opposed to what they know in general. The single
+    most consequential field on this object and the one most often inferred from title, which
+    is wrong in both directions and confidently so — a VP of Engineering may have no shell
+    access to the box and no memory of how the product is configured, and a customer-service
+    temp may be the only human alive who knows the workflow that breaks it. Read it from what
+    they wrote, never from who they are.
+  type: value
+  data_type: enum
+  allowed_values:
+  - none
+  - basic
+  - intermediate
+  - advanced
+  - expert
+  required: true
+  validation: must be one of allowed_values; no default — an unassessed requester is a
+    finding, not a `basic` one
+  constraints: >
+    May not be sourced from role_title, seniority_band or is_admin. See the constraint
+    req.fluency_is_never_inferred_from_title, which exists because this is the failure the
+    object was written to prevent.
+  sensitivity: confidential
+
+- name: diagnostic_capability
+  purpose: >
+    What they can gather, which is access plus permission and not knowledge. Kept apart from
+    technical_fluency deliberately: a highly fluent requester on a locked-down enterprise
+    laptop with no developer tools and no permission to install anything is `cannot_gather`,
+    and asking them for a HAR file costs two days to discover that.
+  type: value
+  data_type: enum
+  allowed_values:
+  - cannot_gather
+  - can_follow_steps
+  - can_gather_logs
+  - can_reproduce_reliably
+  constraints: >
+    Must be assessed before any instruction requiring logs, developer tools or configuration
+    access is sent. Where it is unknown, offer a no-capability path alongside the ask rather
+    than probing for capability first — the probe costs a round-trip and tells the customer we
+    are testing them.
+  sensitivity: internal
+
+- name: product_familiarity
+  purpose: >
+    How much of our product they carry in their head. Orthogonal to technical fluency and
+    frequently inverse to it: power users report the subtlest and most valuable bugs, are the
+    least tolerant of being sent a getting-started article, and are often not engineers at all.
+  type: value
+  data_type: enum
+  allowed_values:
+  - new
+  - occasional
+  - regular
+  - power_user
+  sensitivity: internal
+
+- name: self_service_inclination
+  purpose: >
+    Whether they looked before they wrote. Defaults to unknown and stays there today — see the
+    req.read_the_docs_before_writing_in needs_signal pattern. This matters more than it sounds:
+    sending the doc link back to someone who has already read it and found it insufficient is
+    the most reliable way to turn a calm requester into an angry one, and it is entirely
+    avoidable with a signal we could emit cheaply.
+  type: value
+  data_type: enum
+  allowed_values:
+  - prefers_docs
+  - prefers_human
+  - mixed
+  - unknown
+  default: unknown
+  sensitivity: internal
+
+- name: tooling_access
+  purpose: >
+    What we can actually do with them live, as opposed to at them asynchronously. Whether a
+    screen-share is permitted, whether a support bundle can be uploaded, whether their
+    employer's security policy blocks remote sessions. The correct answer to a low-capability
+    requester is usually "let us look at it together", and this field is what says whether
+    that offer is real or is about to waste another exchange.
+  type: value
+  data_type: enum
+  allowed_values:
+  - none
+  - screen_share_allowed
+  - remote_session_allowed
+  - can_upload_bundle
+  - unknown
+  default: unknown
+  sensitivity: internal
+
+# ── group: who_is_actually_blocked ───────────────────────────────────────────────────────
+- name: who_is_actually_blocked
+  purpose: >
+    Whether the writer and the sufferer are the same human. When they are not, every fact in
+    the ticket is second-hand and the confidence of the whole diagnosis has to come down. This
+    group exists as its own composite so that the question cannot be quietly skipped: an
+    author filling in the object has to answer it, and Layer 4 can see that it was answered.
+  type: composite
+  contains:
+  - is_affected_user
+  - reports_on_behalf_of
+  - affected_user_count
+  - affected_user_certainty_bp
+  - role_title
+  - seniority_band
+  - account_ref
+
+- name: is_affected_user
+  purpose: >
+    Is the writer the person experiencing the fault? Defaults to true in every ticketing system
+    on the market and is false often enough that the assumption is the root cause of most
+    failed reproductions. Deliberately has NO default here. Null means the question was never
+    asked, and an unasked question must be treated as false for any purpose that depends on
+    the answer — reproduction, verification, closure.
+  type: value
+  data_type: boolean
+  required: true
+  validation: null is a distinct and meaningful value; do not coerce it to true
+  sensitivity: internal
+
+- name: reports_on_behalf_of
+  purpose: >
+    Self-referential. The proxy edge. When populated, reproduction steps must be executed by
+    the target and confirmation of resolution must come from the target — a proxy saying "they
+    say it's fine now" is a relayed opinion, not verification, and it is the most common
+    precursor to a reopen. Sensitivity is confidential because it names a second human who
+    never contacted us and never consented to being modelled.
+  type: reference
+  ref: customer_support.obj.core.requester
+  data_type: ref
+  constraints: >
+    A proxy chain deeper than two hops should be treated as a routing failure rather than
+    modelled faithfully. If the office manager is relaying for a team lead who is relaying for
+    a developer, the correct action is to get the developer on the thread, not to represent the
+    chain accurately.
+  sensitivity: confidential
+
+- name: affected_user_count
+  purpose: >
+    How many people the reporter is speaking for. One person reporting for themselves and one
+    person reporting for forty are different tickets with different severity, and the number is
+    routinely buried in a sentence nobody parses. It belongs on the Requester rather than the
+    Ticket because it is a fact about the reporting relationship, not about the fault.
+  type: value
+  data_type: integer
+  unit: people
+  validation: ">= 1; >= 2 implies is_affected_user is not the whole story"
+  constraints: >
+    A high count is evidence about IMPACT, which is an input to severity. It is not evidence
+    about urgency and it is not evidence about entitlement. Reporting for a hundred people does
+    not buy a faster clock than the contract bought.
+  sensitivity: internal
+
+- name: affected_user_certainty_bp
+  purpose: >
+    How sure we are that the writer is the sufferer, as a number rather than as a caveat.
+    Exists so it can be consumed as a CAP on the confidence of every diagnosis built on the
+    requester's description, rather than as an alert of its own. Low certainty should quietly
+    make the whole reasoning chain less sure; it should almost never trigger an action.
+  type: derived
+  data_type: integer
+  unit: basis_points
+  derived_from:
+  - is_affected_user
+  - reports_on_behalf_of
+  - affected_user_count
+  - identity_confidence_bp
+  validation: ">= 0 and <= 10000; null when is_affected_user is null"
+  sensitivity: internal
+
+- name: role_title
+  purpose: >
+    Their job title, recorded because it is cheap, because Layer 5 legitimately needs it for
+    register and form of address, and because writing it down is the only way to make explicit
+    that it is NOT used for anything else. Every inference from title to capability in this
+    file is forbidden by a named constraint.
+  type: value
+  data_type: string
+  constraints: >
+    May inform tone. May not inform technical_fluency, diagnostic_capability, authority_scope
+    or priority.
+  sensitivity: internal
+
+- name: seniority_band
+  purpose: >
+    A coarse read of how far up the customer's organisation this person sits. Kept because it
+    genuinely changes who else needs to be told and how a bad outcome will travel, and marked
+    confidential because it is an inferred judgement about a named individual. Explicitly not
+    a priority input: an executive with a cosmetic bug is a cosmetic bug.
+  type: value
+  data_type: enum
+  allowed_values:
+  - individual_contributor
+  - team_lead
+  - manager
+  - director
+  - executive
+  - unknown
+  default: unknown
+  constraints: >
+    Never an input to severity. A legitimate input to who is informed and to escalation
+    routing, and an illegitimate one to how fast the fault is fixed.
+  sensitivity: confidential
+
+- name: account_ref
+  purpose: >
+    The organisation they belong to. Often the weakest link in the whole graph: a personal
+    address on a corporate account resolves to nothing, and the entitlement lookup then
+    silently downgrades a paying enterprise customer to free-tier handling without anyone
+    deciding to. An unresolved account is a reason to hold and ask, never a reason to default.
+  type: reference
+  ref: customer_support.obj.core.customer_account
+  data_type: ref
+  constraints: >
+    Null must be handled as "unknown", not as "consumer". The two are opposite operational
+    situations and collapsing them is how the best customers get the worst service.
+  sensitivity: internal
+
+# ── group: standing ──────────────────────────────────────────────────────────────────────
+- name: standing
+  purpose: >
+    What this person is permitted to ask for. Independent of how loudly they ask, independent
+    of how senior they are, and independent of whether they are technically capable. Standing
+    bounds what may be PROMISED. It never bounds whether we answer.
+  type: composite
+  contains:
+  - is_admin
+  - is_named_contact
+  - vip_flag
+  - authority_scope
+
+- name: is_admin
+  purpose: >
+    Administrative rights in the product. Says what they can change; says nothing about what
+    they may commercially agree to, and nothing whatsoever about fluency. The clearest proof of
+    the distinction is the account admin who has never opened the product: every permission,
+    no idea what is broken.
+  type: value
+  data_type: boolean
+  default: false
+  constraints: >
+    A legitimate input to whether a suggested remediation is executable by this person. Never
+    an input to technical_fluency, entitlement or authority.
+  sensitivity: internal
+
+- name: is_named_contact
+  purpose: >
+    Whether this specific human is one of the contacts the support plan actually covers.
+    Entitlement belongs to the account; coverage is frequently limited to named people, and the
+    mismatch between those two facts is the most common entitlement dispute there is. Getting
+    this right in advance turns an argument into a sentence.
+  type: value
+  data_type: boolean
+  constraints: >
+    False must never be used to refuse help before the account entitlement has been checked.
+    It bounds what may be promised, not whether to answer.
+  sensitivity: internal
+
+- name: vip_flag
+  purpose: >
+    An operator override, not an inference. Kept because it is real and used, and flagged here
+    as the field most likely to be applied for political rather than contractual reasons. A VIP
+    flag that outranks severity is how a queue starts serving the loudest, and the loudest are
+    reliably not the worst affected.
+  type: value
+  data_type: boolean
+  default: false
+  constraints: >
+    Settable only by a human with a recorded reason. Must not be inferred from seniority_band,
+    account_arr or escalation history, and must not override severity — only priority, and only
+    where the reason is contractual.
+  sensitivity: confidential
+
+- name: authority_scope
+  purpose: >
+    What this person can actually agree to on their side. The field that stops a support
+    conversation quietly becoming a commercial one: a technically fluent admin can accept a
+    workaround and cannot accept a contract change, and discovering that after the fact costs
+    more than asking.
+  type: value
+  data_type: enum
+  allowed_values:
+  - none
+  - technical_decisions
+  - operational_decisions
+  - commercial_decisions
+  - unknown
+  default: unknown
+  constraints: >
+    Never inferred from role_title or is_admin. Both are wrong in both directions and this is
+    the field where being wrong has a contractual cost.
+  sensitivity: internal
+
+# ── group: reachability ──────────────────────────────────────────────────────────────────
+- name: reachability
+  purpose: >
+    How to reach them, in what language, and when they are awake. Small weight in Layer 4
+    because it changes almost nothing about WHAT to do, and large consequence in Layer 5.2,
+    which is where it is actually read. Getting it wrong turns a four-hour response into a
+    four-day one without breaching anything.
+  type: composite
+  contains:
+  - arrival_channel
+  - preferred_channel
+  - language
+  - language_confidence_bp
+  - timezone
+  - working_hours
+  - accessibility_needs
+
+- name: arrival_channel
+  purpose: >
+    Which surface the contact arrived on. Read as evidence about the customer's EXPECTATION OF
+    SPEED, never about the urgency of the fault — chat feels urgent because someone is present,
+    and a sev-1 outage reported by email at 2am is more urgent than a password question typed
+    into a chat widget. Held apart from preferred_channel because people use the button that is
+    visible, not the channel they want the answer on.
+  type: value
+  data_type: enum
+  allowed_values:
+  - email
+  - chat
+  - phone
+  - portal
+  - in_app
+  - slack
+  - teams
+  - social
+  - community
+  - api
+  - unknown
+  constraints: >
+    Sets the latency the customer will experience as normal. It must not set severity, and it
+    must not set priority except through an entitlement that genuinely differentiates channels.
+  sensitivity: internal
+
+- name: preferred_channel
+  purpose: >
+    Where they want the answer, which is not always where they asked. Someone who opens a chat
+    because it was the visible button and then asks for a written summary has told you their
+    real preference, and honouring it is free.
+  type: value
+  data_type: enum
+  allowed_values:
+  - email
+  - chat
+  - phone
+  - portal
+  - slack
+  - teams
+  - in_app
+  - unknown
+  default: unknown
+  sensitivity: internal
+
+- name: language
+  purpose: >
+    BCP-47 where known. Load-bearing for CORRECTNESS and not only for courtesy: a
+    machine-translated diagnostic instruction can change what the customer actually does, and
+    the customer carries the risk of the mistranslation while we carry the credit for the fast
+    reply. It also governs how their register should be read — see the exception on terseness.
+  type: value
+  data_type: string
+  validation: BCP-47 tag, e.g. en-GB, pt-BR, ja-JP
+  constraints: >
+    Where language differs from the agent's, the reply must be composed in the requester's
+    language or the translation must be reviewed. Diagnostic imperatives are the highest-risk
+    sentences in support to translate badly.
+  sensitivity: internal
+
+- name: language_confidence_bp
+  purpose: >
+    How sure we are of the language, held separately because a wrong guess is worse than no
+    guess. Someone writing competent English as a second language is routinely detected as an
+    English speaker, which is true and misleading: it suppresses every accommodation that would
+    have helped and it licenses idiom that will not land.
+  type: value
+  data_type: integer
+  unit: basis_points
+  validation: ">= 0 and <= 10000"
+  sensitivity: internal
+
+- name: timezone
+  purpose: >
+    IANA zone. Determines whether a reply lands at the start of their working day or after the
+    end of it, which is the difference between one round-trip and two.
+  type: value
+  data_type: string
+  validation: IANA zone identifier, e.g. Europe/Berlin
+  sensitivity: internal
+
+- name: working_hours
+  purpose: >
+    Kept separate from timezone because they are not the same constraint. A requester in Berlin
+    who works US hours is reachable at times their timezone says they are asleep, and an
+    on-call engineer is reachable at times nobody is. This is also the field that decides
+    whether an entitlement's business-hours clock is being read against the right calendar —
+    the calendar, not the target, is where SLA disputes actually originate.
+  type: value
+  data_type: string
+  validation: free-form or an iCal-style working-hours expression, evaluated in `timezone`
+  constraints: >
+    Automated chases must respect it where known. It must NOT be used to justify delaying a
+    reply we owe — their working hours bound when we may push, not when we may answer.
+  sensitivity: confidential
+
+- name: accessibility_needs
+  purpose: >
+    Stated or evident requirements about how a reply must be delivered — screen-reader-safe
+    formatting, no colour-only distinctions, no video-only walkthrough, larger structural
+    signposting, extra time. Recorded because the alternative is that a customer has to ask
+    twice, and the second ask is where they stop asking. Marked confidential because in several
+    jurisdictions this is health data and because it was disclosed to get help, not to be
+    profiled.
+  type: value
+  data_type: list
+  constraints: >
+    Once stated, must persist across contacts and channels. Re-asking is the failure the field
+    exists to prevent. Must not be visible to any consumer with a wider audience than the
+    contact it was disclosed on.
+  sensitivity: confidential
+
+# ── group: responsiveness ────────────────────────────────────────────────────────────────
+- name: responsiveness
+  purpose: >
+    Observed reply behaviour, always relative to this person's own rhythm rather than to a
+    queue-wide clock. This is the group the pipeline can actually populate today, and therefore
+    where every executable pattern in this file reads from.
+  type: composite
+  contains:
+  - last_inbound_at
+  - ball_in_court
+  - response_latency
+  - reply_cadence_hours
+  - engagement_trend
+  - hours_waiting
+  - expected_reply_by
+
+- name: last_inbound_at
+  purpose: >
+    When they last wrote. One of the very few fields with a real Layer 2 source today, and the
+    anchor of half the patterns below. Its weakness is that it sees correspondence only — a
+    customer who replied by phone or in a chat widget looks silent to it.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - thread.last_inbound
+  validation: must not be in the future
+  sensitivity: internal
+
+- name: ball_in_court
+  purpose: >
+    Who owes the next message. The closest thing the substrate has to an SLA clock state, and
+    worth saying plainly: it is not one. It does not know about pauses, business hours, or
+    whether the thing we owe them is a reply or a fix. It is nonetheless the most useful live
+    field on this object, because it is derived from observed correspondence rather than
+    declared by the person whose response time the declaration protects.
+  type: value
+  data_type: enum
+  allowed_values:
+  - us
+  - them
+  - nobody
+  source_paths:
+  - thread.ball_in_court
+  constraints: >
+    Where this and a declared ticket clock_state disagree, the disagreement is the finding.
+    Surface both; do not silently prefer either.
+  sensitivity: internal
+
+- name: response_latency
+  purpose: >
+    How quickly this person answers us, classified against THEIR OWN baseline and never against
+    a queue average. A requester who consistently takes three days is `normal`, not `slow`, and
+    chasing them at twenty-four hours teaches them that our follow-ups mean nothing — after
+    which the one chase that mattered is also ignored.
+  type: value
+  data_type: enum
+  allowed_values:
+  - fast
+  - normal
+  - slow
+  - unresponsive
+  constraints: >
+    Must be computed against reply_cadence_hours where a baseline exists. Absent a baseline,
+    fall back to the pattern floors rather than to a queue mean.
+  sensitivity: confidential
+
+- name: reply_cadence_hours
+  purpose: >
+    This person's learned reply rhythm. Populated from the `reply_cadence` baseline rather than
+    from a fact path, and cold-starts empty — so every pattern that uses it carries a floor,
+    because a missing baseline resolves to the floor rather than to nothing. Two requesters
+    with identical tickets and different cadences want different chase schedules, and this is
+    the only field that knows it.
+  type: value
+  data_type: number
+  unit: hours
+  validation: "> 0"
+  sensitivity: internal
+
+- name: engagement_trend
+  purpose: >
+    Engine-computed two-way volume against the prior fortnight. At or below 0.5 it has halved,
+    which on a support thread usually means one of two opposite things: they solved it
+    themselves, or they gave up on us. The number cannot tell those apart and neither can any
+    pattern below that reads it alone.
+  type: value
+  data_type: number
+  source_paths:
+  - derived.engagement
+  sensitivity: internal
+
+- name: hours_waiting
+  purpose: >
+    How long this person has actually been waiting on us, wall-clock, ignoring every pause.
+    This is the number the customer experiences and narrates; the clock-adjusted number is the
+    one that appears in our report. Where the two diverge sharply, the report is the fiction.
+  type: derived
+  data_type: number
+  unit: hours
+  derived_from:
+  - last_inbound_at
+  - ball_in_court
+  validation: ">= 0; null when ball_in_court is not `us`"
+  sensitivity: internal
+
+- name: expected_reply_by
+  purpose: >
+    When a reply from THEM would still be normal, computed from their own cadence. Exists so
+    that a chase, an auto-close and a "customer unresponsive" note are all timed to the person
+    rather than to the queue. It is not an SLA and must never be presented as one — it is a
+    prediction about a human, not a promise to them.
+  type: derived
+  data_type: timestamp
+  derived_from:
+  - last_inbound_at
+  - reply_cadence_hours
+  constraints: >
+    Applies only while ball_in_court is `them`. Using it while we are the blocker inverts its
+    meaning and would justify our own silence with their habits.
+  sensitivity: internal
+
+# ── group: contact_history ───────────────────────────────────────────────────────────────
+- name: contact_history
+  purpose: >
+    The aggregate one ticket cannot see, and the reason this object is not a field on Ticket.
+    Repeat contact is a defect signal about US — the product, the documentation, the last
+    resolution — and not a personality trait of theirs. Every field here is dangerous in the
+    hands of a system that reads it as the latter.
+  type: composite
+  contains:
+  - first_seen_at
+  - contact_frequency
+  - open_ticket_count
+  - lifetime_ticket_count
+  - prior_escalation_count
+  - prior_csat_mean
+  - is_repeat_contact
+
+- name: first_seen_at
+  purpose: >
+    When this human first contacted us. Cheap, and it converts every other count in this group
+    from a raw number into a rate. It also flags the specific case that most needs different
+    handling: a first-ever contact, where no baseline exists and every relative threshold in
+    this file silently falls back to its floor.
+  type: value
+  data_type: timestamp
+  sensitivity: internal
+
+- name: contact_frequency
+  purpose: >
+    The number that turns three unremarkable tickets into one alarming pattern. Not emitted
+    today; the source path recorded here is an ask, not a fact, and is deliberately named so
+    that backlog.py counts it. It is the highest-value missing signal on this object.
+  type: value
+  data_type: number
+  unit: contacts_per_week
+  source_paths:
+  - derived.contact_frequency
+  validation: ">= 0"
+  constraints: >
+    Must be read against lifetime_ticket_count and first_seen_at. A power user's fourth contact
+    this month is noise; a two-year-silent customer's second in a week is a signal, and an
+    absolute threshold cannot tell them apart.
+  sensitivity: internal
+
+- name: open_ticket_count
+  purpose: >
+    Concurrent open contacts from this person. Three at once is a different problem from three
+    in a row: three at once usually means one underlying issue reported through three symptoms
+    and is a merge candidate, while three in a row means the first two resolutions did not hold.
+  type: value
+  data_type: integer
+  unit: count
+  validation: ">= 0"
+  sensitivity: internal
+
+- name: lifetime_ticket_count
+  purpose: >
+    The denominator that makes contact_frequency readable. Also the crudest available proxy for
+    product_familiarity, and a much better one than anything on the contact record — someone on
+    their fortieth ticket knows the product, whatever their title says.
+  type: value
+  data_type: integer
+  unit: count
+  validation: ">= 0"
+  sensitivity: internal
+
+- name: prior_escalation_count
+  purpose: >
+    How often this person has previously asked for a manager or an escalation. Genuinely
+    predictive and genuinely dangerous — it is equally a measure of how often WE failed them,
+    and a system that quietly derates a customer for it is punishing them for our history.
+    Confidential because the moment this is visible it becomes a difficult-customer list.
+  type: value
+  data_type: integer
+  unit: count
+  validation: ">= 0"
+  constraints: >
+    Must decay. An escalation from two years ago under a different product and a different team
+    is not evidence about this contact. Must never be surfaced to a routing rule that lowers
+    service level.
+  sensitivity: confidential
+
+- name: prior_csat_mean
+  purpose: >
+    How this person has rated us before. Useful as context and heavily skewed by who answers
+    surveys at all — the delighted and the furious respond, the satisfied middle is invisible,
+    so a mean of two responses is a mood, not a measurement. Confidential because a survey is
+    given on an implied promise that it feeds improvement, not profiling.
+  type: value
+  data_type: number
+  validation: within the survey's own scale; null when fewer than two responses exist
+  constraints: >
+    Never an input to priority or routing. A customer who rated us badly last time is owed
+    better service, not different service.
+  sensitivity: confidential
+
+- name: is_repeat_contact
+  purpose: >
+    The one-bit summary that triage actually acts on: have we heard from this person about
+    something recently. Derived rather than stored so that it moves when the underlying counts
+    move, and routed to content-gap analysis rather than to agent review — the fourth clean
+    resolution to the same person in a week is four failures to solve it once.
+  type: derived
+  data_type: boolean
+  derived_from:
+  - contact_frequency
+  - lifetime_ticket_count
+  - first_seen_at
+  - open_ticket_count
+  sensitivity: internal
+
+# ── group: temperature ───────────────────────────────────────────────────────────────────
+- name: temperature
+  purpose: >
+    How this contact is going, as opposed to how this person usually is. The distinction is the
+    whole group: a trajectory is actionable and a trait is a label, and support systems have a
+    long history of storing the second while claiming to measure the first.
+  type: composite
+  contains:
+  - observed_sentiment
+  - tone_preference
+  - effort_expressed
+  - escalation_propensity
+
+- name: observed_sentiment
+  purpose: >
+    Engine-computed observation balance, signed around zero. Read the note on the
+    req.unhappy_and_waiting_on_us pattern before trusting it: it is measuring a SALES
+    vocabulary — objection, discount_pressure, competitor — and support frustration is politer
+    than sales frustration. It reads a customer on their third courteous "any update?" as
+    neutral. Useful as a direction; never as a verdict on a human.
+  type: value
+  data_type: number
+  source_paths:
+  - derived.sentiment
+  constraints: >
+    Direction beats level. A neutral requester becoming negative outranks a requester who has
+    been curt since the first message, because the second is a register and the first is a
+    change.
+  sensitivity: confidential
+
+- name: tone_preference
+  purpose: >
+    How they want to be WRITTEN to, which is independent of how they are currently feeling and
+    independent of how they write themselves. A terse writer is not asking for terseness, and
+    in a second language terseness is usually effort rather than register.
+  type: value
+  data_type: enum
+  allowed_values:
+  - terse
+  - warm
+  - formal
+  - technical
+  constraints: >
+    Must not be inferred from message length or from punctuation density alone. Both are
+    dominated by the requester's fluency in the language and by the channel they are typing on.
+  sensitivity: internal
+
+- name: effort_expressed
+  purpose: >
+    How hard this person has had to work to get help so far — repeated explanations, channel
+    switches, reassignments, things they already tried and told us about. Held apart from
+    sentiment because low effort predicts retention more reliably than delight does: a calm
+    customer who has re-explained the same problem to three agents is a churn risk that no
+    sentiment score will show.
+  type: value
+  data_type: enum
+  allowed_values:
+  - low
+  - moderate
+  - high
+  - unknown
+  default: unknown
+  sensitivity: internal
+
+- name: escalation_propensity
+  purpose: >
+    Likelihood this CONTACT becomes an escalation. A judgement about the trajectory of this
+    conversation, not a label on the human, and it must decay when a contact resolves well.
+    The strongest observable input is not tone — it is a broken promise, because customers
+    forgive the bug and remember Tuesday.
+  type: value
+  data_type: enum
+  allowed_values:
+  - low
+  - moderate
+  - high
+  - unknown
+  default: unknown
+  constraints: >
+    Scoped to the current contact. Must not persist across resolved contacts as a property of
+    the person; prior_escalation_count already carries history and already carries its warning.
+  sensitivity: confidential
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+#
+# No terminal state is declared, and that is deliberate: a Requester is a person, and people
+# come back. `dormant` looks terminal and is the state most likely to be wrong — it is where
+# the queue's hidden backlog lives.
+
+states:
+  initial: unknown
+  values:
+  - name: unknown
+    description: >
+      No human resolved on this contact. More common than it should be — shared inboxes,
+      no-reply forwards and portal submissions under a service account all land here.
+    implies: >
+      Nothing personal may be asserted. Fluency, history and entitlement standing are all
+      unavailable, and any advice that depends on them should degrade rather than guess.
+  - name: identified
+    description: A specific human is attached to the contact.
+    entered_when:
+    - exists: thread.last_inbound
+    implies: Contact history becomes readable, and repeat contact becomes detectable at all.
+  - name: engaged
+    description: They wrote last and are waiting on us. This is the state the object is named
+      for.
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    implies: >
+      We are the blocker. Nothing may be auto-closed, no clock may pause, and elapsed time is
+      being charged to us whatever the declared ticket state says.
+  - name: waiting_on_customer
+    description: >
+      We answered and owe nothing until they reply. NOT a flavour of dormant: the person is
+      still blocked, they simply owe us the next message. Collapsing the two is how a queue
+      reports health it does not have.
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    implies: >
+      A chase is legitimate but must be timed to their cadence, not the queue's. This is the
+      state in which the most tickets quietly die.
+  - name: at_risk
+    description: The contact is going badly, independent of how long it has taken.
+    entered_when:
+    - path: derived.sentiment
+      op: <
+      value: 0
+    implies: >
+      The problem to solve has shifted from the fault to the handling. A faster technical
+      answer will not recover this on its own.
+  - name: escalated
+    description: >
+      Ownership has transferred with a named receiver. No entered_when, because nothing in the
+      substrate emits escalation — this state is set by a human today and that is honest.
+    implies: >
+      This object stops being the driver. Escalation owns the contact, and escalation_propensity
+      becomes a historical fact rather than a live prediction.
+  - name: dormant
+    description: >
+      Waiting on them, and long enough past it that they are probably not coming back. Distinct
+      from resolved: the problem may still be live and simply unattended.
+    implies: >
+      The queue's most expensive false negative. The SLA clock is paused, the dashboard is
+      green, and the customer has quietly decided we are useless.
+    entered_when:
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value: 14
+  transitions:
+  - from: unknown
+    to: identified
+    when:
+    - exists: thread.last_inbound
+    reversible: false
+  - from: identified
+    to: engaged
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    reversible: true
+  - from: engaged
+    to: waiting_on_customer
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    reversible: true
+  - from: waiting_on_customer
+    to: engaged
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    reversible: true
+  - from: engaged
+    to: at_risk
+    when:
+    - path: derived.sentiment
+      op: <
+      value: 0
+    reversible: true
+  - from: at_risk
+    to: engaged
+    trigger: The handling recovers — a promise kept, a substantive answer, an apology that cost
+      us something.
+    reversible: true
+  - from: at_risk
+    to: escalated
+    trigger: Ownership transfers to a named receiver with a reason.
+    reversible: false
+  - from: waiting_on_customer
+    to: dormant
+    when:
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value: 14
+    reversible: true
+  - from: dormant
+    to: engaged
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    reversible: true
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+#
+# Twelve edges. `weight_bp` sums to 10000 by convention rather than by rule — it makes the
+# relative claims explicit and auditable, which is the point of writing them down at all.
+#
+# The two fields to read together are weight and confidence, because they answer different
+# questions. The proxy self-edge carries weight 1200 and confidence 3000: it matters enormously
+# and we are usually not sure it exists, which is exactly the shape of the failure this object
+# was written to catch.
+
+relationships:
+
+- target: customer_support.obj.core.ticket
+  type: produces
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 1800
+  confidence_bp: 9800
+  priority: 1
+  evidence:
+  - ticket
+  - email
+  description: >
+    The requester creates tickets; the requester is not the ticket. Systems that collapse the
+    two lose the ability to say "this is the fourth time this person has asked", which is the
+    single most useful sentence in triage. Confidence is near-certain because the edge is
+    structural — a ticket without a requester is a data defect, not a state.
+
+- target: customer_support.obj.core.customer_account
+  type: belongs_to
+  direction: outbound
+  cardinality: one
+  weight_bp: 1400
+  confidence_bp: 7000
+  priority: 2
+  evidence:
+  - crm
+  - ticket
+  description: >
+    Cardinality is `one` aspirationally. In practice an unresolvable requester — free-mail
+    domain, forwarded from a shared inbox, a contractor at a partner — is common, which is why
+    confidence sits at 7000 and not higher. The correct handling of an unresolved account is to
+    hold the ticket and ask, never to default it to free tier.
+
+- target: customer_support.obj.core.requester
+  type: references
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 1200
+  confidence_bp: 3000
+  priority: 3
+  conditions:
+  - has_obs: introduction
+  evidence:
+  - email
+  - telemetry
+  description: >
+    Self-referential — the proxy edge, mirroring reports_on_behalf_of. The office manager
+    writes, the developer is broken, and every question we ask the writer is answered by
+    someone who is guessing. Traversed third despite low confidence because the cost asymmetry
+    is extreme: asking who is affected costs one sentence, and missing a proxy costs the whole
+    reproduction attempt plus two days. The condition is honest about how weakly we can detect
+    it today.
+
+- target: customer_support.obj.core.conversation
+  type: produces
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 1200
+  confidence_bp: 9000
+  priority: 4
+  evidence:
+  - email
+  - chat
+  - phone
+  description: >
+    Not one per ticket in either direction. One conversation spawns several tickets when they
+    add "also, while I have you"; one ticket spans several conversations when the same person
+    chases it on chat after emailing. This is also the edge that carries all the fluency
+    evidence — what they wrote is the only real fluency signal we have.
+
+- target: customer_support.obj.core.entitlement
+  type: requires
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 1100
+  confidence_bp: 6000
+  priority: 5
+  evidence:
+  - crm
+  - contract
+  description: >
+    The requester inherits entitlement from the account and does not hold it. The exception is
+    the whole problem: many plans cover only named contacts, so a real employee of a real
+    paying customer can be genuinely uncovered. Confidence is 6000 because the named-contact
+    list is the least-maintained artefact in most support operations — it is written at
+    contract signature and never revisited, while the people churn.
+
+- target: customer_support.obj.core.commitment
+  type: requires
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 1000
+  confidence_bp: 7500
+  priority: 6
+  conditions:
+  - exists: commitment.due_at
+  evidence:
+  - email
+  - phone
+  description: >
+    Every promise made to this human. The counterparty of a commitment is a person, not an
+    account — "we'll come back to you Tuesday" was said to someone, and they are the one who
+    notices on Wednesday. Worth traversing because a broken promise is the strongest escalation
+    predictor available without reading tone.
+
+- target: customer_support.obj.core.support_agent
+  type: works_with
+  direction: bidirectional
+  cardinality: zero_or_many
+  weight_bp: 700
+  confidence_bp: 8000
+  priority: 7
+  conditions:
+  - fn: edge_count
+    op: '>='
+    value: 2
+  evidence:
+  - ticket
+  description: >
+    Continuity is worth more to a requester than routing efficiency is to us. Re-explaining a
+    problem to a third agent is the complaint underneath most "your support is terrible", and
+    the count of distinct agents on this edge is a better predictor of a bad outcome than
+    resolution time is.
+
+- target: customer_support.obj.core.escalation
+  type: escalates_to
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 600
+  confidence_bp: 4000
+  priority: 8
+  conditions:
+  - path: derived.sentiment
+    op: <
+    value: 0
+  evidence:
+  - ticket
+  - email
+  description: >
+    A requester asking for a manager is not yet an escalation. Until a receiving owner exists
+    this edge is absent and what we have is a complaint. Confidence is deliberately low because
+    nothing in the substrate emits escalation at all — the condition attached here is a proxy
+    for pressure, not evidence of a transfer.
+
+- target: customer_support.obj.core.customer_sentiment
+  type: measures
+  direction: inbound
+  cardinality: zero_or_one
+  weight_bp: 400
+  confidence_bp: 5500
+  priority: 9
+  evidence:
+  - derived
+  - email
+  description: >
+    Sentiment is measured ON this human and is not owned by them. Traversed inbound for that
+    reason. Confidence is middling because the sentiment we can compute is borrowed from a
+    commercial vocabulary and reads polite enterprise frustration as neutral — the exact
+    register most support complaints arrive in.
+
+- target: customer_support.obj.core.churn_risk
+  type: influences
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 300
+  confidence_bp: 3000
+  priority: 10
+  conditions:
+  - path: derived.engagement
+    op: <=
+    value: 0.5
+  evidence:
+  - derived
+  - survey
+  description: >
+    Deliberately `influences` and not `produces`. One furious requester is not account churn
+    risk unless they carry weight with whoever renews — and the Requester object is precisely
+    the one that usually does not know whether they do. Weight is low for the same reason the
+    confidence is: this edge is real and it is almost never sufficient on its own.
+
+- target: customer_support.obj.core.knowledge_article
+  type: deflects
+  direction: inbound
+  cardinality: zero_or_many
+  weight_bp: 200
+  confidence_bp: 3500
+  priority: 11
+  evidence:
+  - help_center
+  - knowledge_base
+  description: >
+    Both directions of value: the article that answered them before they wrote, and the article
+    whose absence is why they did. The second is the one worth traversing — a requester's own
+    words are the search terms of the next requester, so the phrasing of their contact is the
+    specification for the article that should have existed.
+
+- target: customer_support.obj.core.satisfaction_score
+  type: produces
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 100
+  confidence_bp: 5000
+  priority: 12
+  evidence:
+  - survey
+  description: >
+    Their verdict on us. Lowest weight on the object on purpose: a survey is cheap for them to
+    give, easy for us to time favourably, and answered almost entirely by the delighted and the
+    furious. A reopen carries more information than a score because it costs the customer
+    effort they did not want to spend.
+
+# ── 6 · Inference patterns ───────────────────────────────────────────────────────────────
+#
+# Eighteen: nine executable, nine needs_signal.
+#
+# Every pattern carries a `false_positive` — the case where it fires and is wrong. That field
+# is what makes a confidence_bp arguable rather than decorative; a reviewer who disagrees with
+# a number should be arguing with the false positive, not with the number.
+#
+# `yields.corroborates` is declared ONLY where the supporting evidence is genuinely
+# independent (Rule 11). Several pairs below look mutually supporting and are not, because
+# they share thread.ball_in_court as a common term — those say so and declare nothing.
+
+inference_patterns:
+
+  deterministic:
+
+  - id: req.awaiting_our_reply
+    statement: They wrote last, nobody has answered, and it has been long enough that silence
+      is now a choice.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: thread.last_inbound
+      op: '>='
+      value: 4
+    yields:
+      confidence_bp: 9000
+      attribute: null
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_inbound
+    false_positive: >
+      An automated "we've received your request" acknowledgement counted as our reply by the
+      connector, flipping ball_in_court to `them` and back on the next inbound — so the four
+      hours are measured from the wrong message. Equally: a customer answered by phone or in a
+      chat widget looks like continuing silence to a mail-derived signal, and this fires on a
+      thread where somebody has already spoken to them.
+    note: >
+      The plainest statement of what this object is: the person blocked right now. Not 10000
+      because ball_in_court is computed from message direction and several connectors count an
+      autoresponder as our reply — which flips the ball without a human having read anything.
+      The four-hour floor exists to keep it from firing on every message the instant it lands,
+      not because four hours is a target.
+
+  - id: req.past_their_own_reply_cadence
+    statement: We are waiting on them and they have gone well past their own learned reply
+      rhythm.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    - fn: hours_since
+      path: thread.last_inbound
+      op: '>'
+      value:
+        baseline: reply_cadence
+        mult: 2
+        floor: 48
+    yields:
+      confidence_bp: 8000
+      value: slow
+      attribute: response_latency
+    evidence_fields:
+    - thread.last_inbound
+    - thread.ball_in_court
+    false_positive: >
+      Annual leave, illness and a public holiday in their country all look identical to this.
+      So does a requester who took our last answer, tried it, and is testing it for a week —
+      which is the single most common cause and the one where a chase reads as nagging.
+    note: >
+      Baseline-relative on purpose. A requester who always takes three days is not slow, they
+      are consistent, and chasing them on a queue-wide 24-hour clock teaches them that our
+      follow-ups mean nothing. The 48-hour floor matters more than the multiplier: a cold-start
+      baseline resolves to the floor, so on a brand-new requester this is simply "two days",
+      which is the right conservative default.
+
+  - id: req.abandoned_the_thread
+    statement: Waiting on them, a fortnight of silence, and two-way volume has halved — they
+      are not coming back.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value: 14
+    - path: derived.engagement
+      op: <=
+      value: 0.5
+    yields:
+      confidence_bp: 8500
+      value: unresponsive
+      attribute: response_latency
+    evidence_fields:
+    - thread.last_inbound
+    - derived.engagement
+    false_positive: >
+      A customer who solved it themselves produces an identical trace to a customer who gave up
+      on us, and the two want opposite responses. Also fires on seasonal shutdowns and on
+      requesters who moved the conversation to a channel we do not ingest — a Slack Connect
+      channel or a phone call to their account manager.
+    note: >
+      The most expensive false negative in a support queue is the waiting_on_customer ticket
+      that will never move: the clock is paused, the dashboard is green, and the customer has
+      quietly decided we are useless. Three conditions are ANDed rather than one because
+      days_since alone fires on everyone who takes a holiday, and the engagement collapse is
+      what separates "away" from "gone". Note the honest limit — it separates away from gone,
+      not gave-up from solved-it, and no substrate signal today can.
+
+  - id: req.named_contact_on_the_plan
+    statement: This specific human is listed as a covered contact on the account's support plan.
+    status: needs_signal
+    yields:
+      confidence_bp: 9500
+      value: true
+      attribute: is_named_contact
+    false_positive: >
+      Named-contact lists are written at contract signature and almost never revisited. The
+      person listed left eighteen months ago; the person writing in does their job. A stale
+      list makes this pattern confidently wrong in the direction that refuses help to the right
+      human, which is worse than not firing at all.
+    requires_signals:
+    - kind: fact_path
+      name: entitlement.plan
+      owner_layer: L1
+      note: >
+        Plans live in billing systems and CRMs that L1 already connects to; nothing projects
+        the covered-contact list into a typed fact. Without it the system cannot distinguish an
+        uncovered person at a covered company, which is the most common entitlement argument
+        there is.
+    - kind: obs_kind
+      name: entitlement_checked
+      owner_layer: L2
+      note: >
+        Also worth having as an event: knowing entitlement was verified, and when, is what
+        stops it being re-litigated on every contact.
+
+  - id: req.is_the_account_admin
+    statement: The contact record marks this person as an administrator on the account.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      value: true
+      attribute: is_admin
+    false_positive: >
+      Admin flags are inherited from provisioning, not from behaviour. The finance manager who
+      bought the licences is an admin who has never opened the product. The pattern is right
+      about permissions and will be misread as evidence of capability by every consumer that
+      does not read this line.
+    requires_signals:
+    - kind: fact_path
+      name: account.contact_role
+      owner_layer: L1
+      note: >
+        Cheap to source and easy to over-read. Worth emitting for permissions routing, but the
+        moment it is used as a proxy for technical fluency it becomes actively harmful — see
+        the constraint req.fluency_is_never_inferred_from_title.
+
+  - id: req.repeat_contact_inside_a_week
+    statement: This person has contacted us several times inside a short window.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      attribute: contact_frequency
+      corroborates:
+      - req.repeat_contact_by_graph_degree
+    false_positive: >
+      Onboarding and migration weeks. A newly implemented account contacting five times in a
+      week is the product working as sold, and flagging it as a defect signal teaches the
+      account to stop asking — which is the outcome the metric was invented to prevent. See the
+      exception req.repeat_contact_that_is_healthy.
+    requires_signals:
+    - kind: derived
+      name: derived.contact_frequency
+      owner_layer: L2
+      note: >
+        The highest-value missing signal on this object. Three individually reasonable tickets
+        from one person in a week is a content gap, a product defect or a failed first
+        resolution, and it is invisible to every capability that reads one ticket at a time.
+        Everything the executable graph-degree heuristic below approximates, this would state.
+    - kind: baseline
+      name: contact_rate_per_account
+      owner_layer: L2
+      note: >
+        Needed to make frequency readable — a power user's fourth contact is noise, a quiet
+        customer's second is a signal, and an absolute threshold cannot tell them apart.
+
+  - id: req.shared_mailbox_is_not_a_person
+    statement: The contact arrived from a role address rather than an individual, so no
+      personal attribute on this object is safe to assert.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      value: true
+      attribute: is_shared_mailbox
+      corroborates:
+      - req.proxy_reporter_suspected
+    false_positive: >
+      Sole traders, small consultancies and founders routinely write from info@ or their own
+      company's role address and ARE the individual. Firing here suppresses fluency and history
+      inferences that were perfectly valid, which is a quiet loss of service quality rather
+      than a visible error.
+    requires_signals:
+    - kind: fact_path
+      name: conversation.from_address
+      owner_layer: L1
+      note: >
+        The address is in every ingested message and is projected nowhere. Without it, contact
+        history silently aggregates an entire IT department into one fictional human whose
+        fluency is an average and whose reply cadence is a rota. This is the cheapest signal in
+        the whole backlog and it corrupts the most fields when missing.
+    - kind: fact_path
+      name: ticket.channel
+      owner_layer: L1
+      note: >
+        Corroborating and independent of the address: portal submissions under a service
+        account and forwarded helpdesk tickets are both shared-identity patterns that the
+        address alone can miss.
+
+  heuristic:
+
+  - id: req.freshly_blocked_relative_to_their_rhythm
+    statement: Their message is very recent measured against their own rhythm, and we have not
+      answered — this is a live block, not an archived complaint.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: thread.last_inbound
+      op: <=
+      value:
+        baseline: reply_cadence
+        mult: 0.25
+        floor: 2
+    yields:
+      confidence_bp: 6500
+      attribute: null
+    evidence_fields:
+    - thread.last_inbound
+    - thread.ball_in_court
+    false_positive: >
+      A person hammering us four times in an hour and a person who sent one calm note are
+      indistinguishable to it — the engine cannot count messages inside a window — and those
+      two want opposite responses. It also fires on a courtesy "thanks, that worked", where
+      the ball is technically ours and nothing at all is blocked.
+    note: >
+      Scaled to the person rather than to the clock: two hours old means something very
+      different for a requester who writes daily than for one who writes twice a year.
+      Deliberately 6500, because recency is not urgency. It declares no `corroborates` with
+      req.awaiting_our_reply despite pointing the same way — both read thread.ball_in_court and
+      thread.last_inbound, so they are one piece of evidence stated twice, and Rule 11 forbids
+      raising confidence on that.
+
+  - id: req.repeat_contact_by_graph_degree
+    statement: This requester is attached to an unusually busy graph while two-way volume is
+      climbing — they are probably back for the same thing.
+    status: executable
+    when:
+    - fn: edge_count
+      op: '>='
+      value: 4
+    - path: derived.engagement
+      op: '>='
+      value: 1.5
+    yields:
+      confidence_bp: 5500
+      attribute: null
+    evidence_fields:
+    - derived.engagement
+    false_positive: >
+      A requester at a densely-modelled enterprise account inflates edge_count without
+      contacting us at all, and a requester whose three genuine contacts landed in three
+      unconnected threads deflates it to nothing. It is therefore biased toward large accounts
+      and blind to exactly the small ones where repeat contact predicts churn.
+    note: >
+      Directionally right and structurally wrong, which is why it sits at 5500. edge_count is
+      graph degree, not contact count in a window. It is kept because the alternative today is
+      no repeat-contact signal whatsoever, and it should be retired the day
+      derived.contact_frequency ships — the needs_signal pattern above declares that it
+      corroborates this one, which is the honest relationship: an independent and better
+      measurement of the same thing.
+
+  - id: req.unhappy_and_waiting_on_us
+    statement: Observation balance has gone negative while the next move is ours.
+    status: executable
+    when:
+    - path: derived.sentiment
+      op: <
+      value: 0
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 6000
+      value: high
+      attribute: escalation_propensity
+    evidence_fields:
+    - derived.sentiment
+    - thread.ball_in_court
+    false_positive: >
+      A perfectly calm requester who mentions a competitor's product, or who is describing a
+      severe fault in vivid language while being entirely happy with us, both score negative.
+      The mirror miss is worse: the polite chaser on their third "any update on this?" scores
+      neutral and is the one who escalates without warning.
+    note: >
+      Held down to 6000 because derived.sentiment is computed from a sales observation
+      vocabulary — objection, discount_pressure, competitor. Support frustration is politer than
+      sales frustration. It is the only sentiment the engine has and it is measuring adjacent
+      weather. Treat it as a reason to read the thread, never as a verdict on the human.
+
+  - id: req.broken_promise_to_this_human
+    statement: We owe them the next message and a commitment made on this thread is already
+      past due.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: commitment.due_at
+      op: '>'
+      value: 0
+    yields:
+      confidence_bp: 7000
+      value: high
+      attribute: escalation_propensity
+    evidence_fields:
+    - commitment.due_at
+    - commitment.action
+    - thread.ball_in_court
+    false_positive: >
+      commitment.due_at is thread-scoped, not person-scoped, so a promise made to a different
+      participant on the same thread fires it against this requester. It also cannot see a
+      promise that was kept by phone or in a channel we do not ingest, so an agent who called
+      the customer on Tuesday as agreed is recorded as having broken the promise.
+    note: >
+      The strongest executable escalation predictor in this file, precisely because it does not
+      require reading tone. A broken promise escalates faster than a broken product: the
+      customer forgives the bug and remembers Tuesday. Held at 7000 rather than higher because
+      of the thread-scoping above — in a support context the wrong-participant case is usually
+      still the right nudge, which is why the pattern survives the imprecision.
+
+  - id: req.call_happened_and_nothing_was_written
+    statement: A meeting with this requester completed and no follow-up has been sent since.
+    status: executable
+    when:
+    - path: meeting.status
+      op: '='
+      value: completed
+    - no_obs: followup_sent
+    yields:
+      confidence_bp: 7500
+      value: moderate
+      attribute: escalation_propensity
+      corroborates:
+      - req.broken_promise_to_this_human
+    evidence_fields:
+    - meeting.start_at
+    - meeting.status
+    false_positive: >
+      A recurring team standup attached to the same graph node fires this every week. The
+      literal `completed` is pack-defined: if the shipped pack emits `held` or `done` instead,
+      this pattern silently never fires at all, which is the more dangerous failure because
+      nobody sees a zero.
+    note: >
+      Support calls are where the most is agreed and the least is recorded. The requester leaves
+      believing something specific was promised; nothing in writing means nobody can check, and
+      the disagreement surfaces a week later as a complaint about broken promises. Declared as
+      corroborating req.broken_promise_to_this_human because the evidence is genuinely
+      independent — calendar and follow-up observation on one side, a parsed commitment on the
+      other — so the two together may honestly raise confidence where either alone may not.
+
+  - id: req.proxy_reporter_suspected
+    statement: An introduction was made on this thread and the requester sits between more than
+      one party — they may be reporting on someone else's behalf.
+    status: executable
+    when:
+    - has_obs: introduction
+    - fn: edge_count
+      op: '>='
+      value: 2
+    yields:
+      confidence_bp: 5000
+      value: false
+      attribute: is_affected_user
+    evidence_fields:
+    - thread.ball_in_court
+    false_positive: >
+      The `introduction` observation was trained on sales handoffs. On a support thread it
+      fires equally on "looping in Dev, who is the one actually seeing this" and on "adding our
+      new account manager", and it cannot tell an introduction OF the affected user from an
+      introduction TO anybody else. It will also miss the commonest proxy of all — the office
+      manager who never introduces anyone and simply relays.
+    note: >
+      The weakest pattern in this file and kept on purpose. 5000 is a coin flip stated as one.
+      Its job is not to conclude — it is to make an agent ask "who is actually seeing this?"
+      before writing reproduction steps. A wrong guess costs one sentence; a missed proxy costs
+      the entire reproduction attempt and two days. That asymmetry, and not the confidence, is
+      the argument for keeping it.
+
+  - id: req.fluency_from_what_they_attach
+    statement: A requester who pastes a stack trace, a HAR file or a config diff unprompted is
+      fluent, whatever their title says.
+    status: needs_signal
+    yields:
+      confidence_bp: 8500
+      value: advanced
+      attribute: technical_fluency
+    false_positive: >
+      A non-technical requester forwarding a screenshot their engineer sent them looks
+      identical to a technical requester producing one. This is the proxy case wearing a
+      technical costume, and it is precisely the population where over-estimating fluency does
+      the most damage — the reply goes over the head of the only person we can actually talk to.
+    requires_signals:
+    - kind: obs_kind
+      name: diagnostic_artifact_attached
+      owner_layer: L2
+      note: >
+        Nothing in the pipeline inspects attachments or code blocks. This is the single best
+        available evidence of fluency, it arrives unasked in the first message, and it is
+        discarded. Cheap to extract and it improves the highest-weighted decision factor on
+        this object.
+    - kind: obs_kind
+      name: reproduction_confirmed
+      owner_layer: L2
+      note: >
+        Corroborating and independent: someone who can reproduce on demand has proved
+        diagnostic_capability, which is access. The artifact proves fluency, which is knowledge.
+        Together they also settle the proxy false positive above, because a relayer cannot
+        reproduce on request.
+
+  - id: req.read_the_docs_before_writing_in
+    statement: They searched the help centre, did not find it, and then wrote in — a different
+      problem from someone who never looked.
+    status: needs_signal
+    yields:
+      confidence_bp: 8000
+      value: prefers_docs
+      attribute: self_service_inclination
+    false_positive: >
+      Shared devices, incognito sessions and requesters who searched from a phone before writing
+      from a laptop all break the join between the help-centre session and the contact. The
+      pattern will report "never looked" for people who looked hard, and the resulting doc link
+      is the thing that makes them angry.
+    requires_signals:
+    - kind: obs_kind
+      name: self_service_attempted
+      owner_layer: L2
+      note: >
+        Today both requesters arrive identical and both get the article link back. Sending the
+        doc to someone who already read it is the most reliable way to turn a calm contact into
+        an angry one, and it is entirely avoidable.
+    - kind: obs_kind
+      name: self_service_abandoned
+      owner_layer: L2
+      note: >
+        The stronger half: where they gave up names the content gap precisely, which is what
+        content_gap_analysis needs and cannot get from the ticket text. It is also the signal
+        that stops abandonment being counted as a deflection success.
+
+  - id: req.escalation_prone_from_history
+    statement: This person has escalated before, and requesters who have escalated once escalate
+      faster the next time.
+    status: needs_signal
+    yields:
+      confidence_bp: 7000
+      value: high
+      attribute: escalation_propensity
+      corroborates:
+      - req.unhappy_and_waiting_on_us
+    false_positive: >
+      Three prior escalations that all trace to one major incident are one event, not a
+      disposition — see the exception req.escalation_history_from_one_incident. Fired on that
+      population, this pattern manufactures a difficult-customer label out of a week when we
+      were the difficult party.
+    requires_signals:
+    - kind: obs_kind
+      name: escalation_requested
+      owner_layer: L2
+      note: >
+        There is no escalation signal of any kind in the substrate, so escalation history — one
+        of the most predictive facts about a requester — is entirely unobservable today.
+    - kind: fact_path
+      name: derived.escalation_pressure
+      owner_layer: L2
+      note: >
+        Deliberately capped at 7000 even once it ships. Prior escalations are as much a record
+        of how often we failed this person as of how they behave, and a system that quietly
+        derates them for it is punishing the customer for our history.
+
+  - id: req.reachable_language_and_hours
+    statement: Their language and their active hours can be read from the messages themselves
+      rather than asked for.
+    status: needs_signal
+    yields:
+      confidence_bp: 8000
+      attribute: language
+    false_positive: >
+      Language detection reports the language of the message, not the language of the person. A
+      requester writing careful second-language English is detected as an English speaker, which
+      suppresses every accommodation that would have helped and licenses idiom that will not
+      land. Send-time inference has the mirror flaw: it reads the hours of whoever is on call,
+      not the hours of the person who needs the answer.
+    requires_signals:
+    - kind: fact_path
+      name: conversation.language
+      owner_layer: L1
+      note: >
+        Detectable from message body at ingest with high reliability. Without it every reply is
+        composed in the agent's language, and the correctness risk in a translated diagnostic
+        instruction is carried by the customer.
+    - kind: derived
+      name: derived.requester_active_hours
+      owner_layer: L2
+      note: >
+        Timezone alone is the wrong signal — a Berlin requester working US hours is reachable
+        when their timezone says they are asleep. Observed send-times answer it directly and the
+        timestamps are already in the store.
+
+  - id: req.effort_is_high_before_they_complain
+    statement: They have re-explained, switched channel or been reassigned — the cost of getting
+      help is already high, whatever their tone says.
+    status: needs_signal
+    yields:
+      confidence_bp: 7500
+      value: high
+      attribute: effort_expressed
+    false_positive: >
+      A requester who moved from chat to email because the answer was long, or who was
+      reassigned once as correct routing, has spent no meaningful effort. Counting mechanical
+      channel changes as effort inflates the measure and makes the well-run accounts look worst,
+      because well-run accounts route more.
+    requires_signals:
+    - kind: obs_kind
+      name: ces_submitted
+      owner_layer: L2
+      note: >
+        The direct measure. Worth having because effort predicts retention more reliably than
+        satisfaction does — a calm customer who has re-explained the same problem three times is
+        a churn risk that no sentiment score will surface.
+    - kind: obs_kind
+      name: agent_reassigned
+      owner_layer: L2
+      note: >
+        The observable proxy, and the one that does not require asking. Every reassignment
+        restarts the customer's explanation from zero, and the count of them is the cheapest
+        effort signal in support.
+
+  - id: req.accessibility_need_declared
+    statement: They have told us how a reply has to be delivered for them to be able to use it.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      attribute: accessibility_needs
+    false_positive: >
+      A stated preference ("please just send me the steps in text") is not necessarily an
+      accessibility need, and recording it as one attaches a sensitive classification to a
+      person who did not disclose anything. The safe failure is to honour the preference without
+      classifying it, which is what the confidential sensitivity marking is for.
+    requires_signals:
+    - kind: obs_kind
+      name: accessibility_need_stated
+      owner_layer: L2
+      note: >
+        Stated in plain language in threads we already ingest and discarded on every contact, so
+        the customer re-states it every time — which is the specific failure the field exists to
+        prevent. Whatever emits it must respect Rule 10: the audience of this attribute can
+        never be wider than the audience of the message it was disclosed in.
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+
+inputs:
+- source: email
+  signal: who wrote last and how quickly they answer
+  path: thread.last_inbound
+  fills:
+  - last_inbound_at
+  - reply_cadence_hours
+  - response_latency
+  reliability_bp: 8500
+  description: Sees correspondence only. A customer who answered by phone reads as silence.
+- source: email
+  signal: who owes the next message
+  path: thread.ball_in_court
+  fills:
+  - ball_in_court
+  - hours_waiting
+  reliability_bp: 7500
+  description: >
+    Derived from message direction, so an autoresponder counted as our reply flips it without a
+    human having read anything.
+- source: derived
+  signal: two-way volume against the prior fortnight
+  path: derived.engagement
+  fills:
+  - engagement_trend
+  reliability_bp: 6000
+- source: derived
+  signal: observation balance used as a sentiment proxy
+  path: derived.sentiment
+  fills:
+  - observed_sentiment
+  - escalation_propensity
+  reliability_bp: 4000
+  description: >
+    Calibrated on a commercial vocabulary. Reads polite enterprise frustration as neutral, which
+    is the register most support complaints arrive in.
+- source: derived
+  signal: promises made on this thread and their due dates
+  path: commitment.due_at
+  fills:
+  - escalation_propensity
+  reliability_bp: 7000
+  description: Thread-scoped rather than person-scoped, so it can attribute someone else's
+    broken promise to this requester.
+- source: ticket
+  signal: channel of arrival, submitter identity, prior contact history
+  fills:
+  - arrival_channel
+  - requester_id
+  - lifetime_ticket_count
+  - open_ticket_count
+  reliability_bp: 8000
+  description: >
+    No ticket fact path exists in the substrate. Every requester attribute sourced from a
+    ticketing system today is manual entry, which is why the counts in contact_history are the
+    least populated fields on this object.
+- source: chat
+  signal: message cadence and how much the requester types before giving up
+  fills:
+  - effort_expressed
+  - technical_fluency
+  reliability_bp: 6500
+  description: >
+    Abandonment mid-sentence is the earliest effort signal support has. Healthy contact centres
+    run 2–5% abandonment; sustained figures above 8% are a staffing or routing failure rather
+    than a customer-patience one.
+- source: phone
+  signal: call outcome and whatever was verbally promised
+  fills:
+  - escalation_propensity
+  - tone_preference
+  reliability_bp: 5000
+  description: The least recorded and most escalation-prone input there is. What was promised
+    survives only in whatever the agent typed afterwards.
+- source: help_center
+  signal: search terms and abandoned articles before the contact
+  fills:
+  - self_service_inclination
+  reliability_bp: 4500
+  description: Would populate self_service_inclination; see req.read_the_docs_before_writing_in.
+    Their search terms are also the specification for the article that should have existed.
+- source: crm
+  signal: role, admin flag, named-contact status, account link
+  fills:
+  - role_title
+  - is_admin
+  - is_named_contact
+  - account_ref
+  - seniority_band
+  reliability_bp: 6000
+  description: Strong for standing and worthless for fluency. Someone typed it once and it has
+    aged since.
+- source: survey
+  signal: how this person rated us last time and how much effort it cost them
+  fills:
+  - prior_csat_mean
+  - effort_expressed
+  reliability_bp: 4500
+- source: telemetry
+  signal: whether the affected account actually experienced the fault
+  fills:
+  - is_affected_user
+  - affected_user_certainty_bp
+  - affected_user_count
+  reliability_bp: 9000
+  description: The only source that settles the proxy question without asking, and the only one
+    that can contradict both the requester and the agent and be right.
+- source: manual_entry
+  signal: what the agent learned by asking
+  fills:
+  - technical_fluency
+  - diagnostic_capability
+  - is_affected_user
+  - accessibility_needs
+  - tooling_access
+  reliability_bp: 7000
+  description: >
+    Honest, unverifiable, and today the ONLY source for the highest-weighted attributes on this
+    object. Worth stating plainly: the fields that most change the answer are the ones a human
+    has to type.
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+
+outputs:
+- name: fluency_profile
+  type: string
+  description: Fluency, product familiarity and what they can actually gather. Determines the
+    shape of the reply before anything else does.
+  derived_from:
+  - technical_fluency
+  - diagnostic_capability
+  - product_familiarity
+  - tooling_access
+  consumed_by:
+  - L4.reasoning_unit
+  - L5.communication_planning
+- name: affected_user_certainty_bp
+  type: integer
+  description: How sure we are the writer is the person experiencing the fault. Should CAP the
+    confidence of every diagnosis built on their description rather than trigger anything.
+  derived_from:
+  - is_affected_user
+  - reports_on_behalf_of
+  - identity_confidence_bp
+  consumed_by:
+  - L4.reasoning_unit
+- name: escalation_risk_bp
+  type: integer
+  description: Trajectory of this contact toward an escalation, from broken promises first,
+    sentiment second, history third — in that order of evidential weight.
+  derived_from:
+  - escalation_propensity
+  - observed_sentiment
+  - prior_escalation_count
+  - effort_expressed
+  consumed_by:
+  - L4.decision_maker
+  - L4.reasoning_unit
+- name: repeat_contact_flag
+  type: boolean
+  description: This person has been back. Feeds content-gap analysis, never agent performance
+    review.
+  derived_from:
+  - is_repeat_contact
+  - contact_frequency
+  consumed_by:
+  - L4.reasoning_unit
+  - L6.learning_unit
+- name: reachability
+  type: string
+  description: Channel, language, timezone, working hours and accessibility needs as one
+    delivery instruction.
+  derived_from:
+  - preferred_channel
+  - language
+  - timezone
+  - working_hours
+  - accessibility_needs
+  consumed_by:
+  - "L5.2.channel_planner"
+- name: expected_reply_window
+  type: duration
+  description: How long to wait before a chase is warranted, derived from their own cadence
+    rather than a queue default.
+  derived_from:
+  - expected_reply_by
+  - reply_cadence_hours
+  consumed_by:
+  - L5.execution_planning
+- name: entitlement_standing
+  type: string
+  description: Whether this specific human is covered, and what may therefore be promised to
+    them. Bounds the promise; never bounds the answer.
+  derived_from:
+  - is_named_contact
+  - account_ref
+  - authority_scope
+  consumed_by:
+  - L4.decision_maker
+- name: identity_confidence_bp
+  type: integer
+  description: How sure we are this contact is the human we think it is. Should suppress
+    contact-history claims below roughly half, rather than caveat them.
+  derived_from:
+  - identity_confidence_bp
+  - is_shared_mailbox
+  - email_domain
+  consumed_by:
+  - L4.reasoning_unit
+  - L6.learning_unit
+
+# ── 9 · Preconditions ────────────────────────────────────────────────────────────────────
+#
+# `block` and `degrade` are genuinely different answers and the difference is the whole of the
+# Layer 3 strategy. `degrade` means Layer 3 still produces advice at lower confidence rather
+# than withholding it; `block` means the specific downstream conclusion must not be formed at
+# all. Note that only one precondition below blocks the whole object — the rest block a
+# conclusion while letting the reply proceed, which is almost always the right shape in support,
+# because a customer waiting for an answer is not helped by our epistemic scruples.
+
+preconditions:
+
+- id: req.a_thread_exists
+  statement: >
+    At least one inbound message from this human must be visible to Layer 2. Nine of the
+    eighteen patterns in this file read thread.last_inbound or thread.ball_in_court, and with no
+    thread the object is a name on a form.
+  requires:
+  - last_inbound_at
+  when:
+  - exists: thread.last_inbound
+  if_unmet: >
+    degrade — fall back to whatever was manually entered, suppress every responsiveness
+    inference rather than defaulting it, and mark identity_confidence_bp low. A requester with
+    no observable thread still deserves an answer.
+
+- id: req.identity_resolves_to_one_human
+  statement: >
+    The contact must resolve to one durable human, not to a role address, a service account or
+    a forwarded helpdesk ticket. Contact history, fluency and reply cadence are all meaningless
+    across a rota.
+  requires:
+  - requester_id
+  - is_shared_mailbox
+  - identity_confidence_bp
+  if_unmet: >
+    degrade — answer normally, but suppress contact_history and fluency inferences entirely
+    rather than reporting them with a caveat. A caveat on a dashboard is not read; an absent
+    number is.
+
+- id: req.account_resolved_before_entitlement_is_claimed
+  statement: >
+    account_ref must resolve before anything is said or implied about what this person is owed.
+    An unresolved account is unknown, not free tier.
+  requires:
+  - account_ref
+  - email_domain
+  if_unmet: >
+    degrade — hold any entitlement claim and answer the technical question meanwhile. Blocking
+    the reply punishes the customer for our identity resolution; defaulting the entitlement
+    downgrades a paying customer without anyone deciding to.
+
+- id: req.affected_user_question_asked_before_reproduction
+  statement: >
+    is_affected_user must be answered — not assumed — before any conclusion is drawn from a
+    reproduction attempt, a "cannot reproduce", or a customer confirmation.
+  requires:
+  - is_affected_user
+  - affected_user_certainty_bp
+  if_unmet: >
+    block — the CONCLUSION, not the contact. Continue the conversation, keep helping, and refuse
+    to record "no fault found" or "verified fixed" until the question has an answer. This is the
+    single most valuable block in the file and it costs one sentence.
+
+- id: req.baseline_has_warmed_before_relative_thresholds_are_trusted
+  statement: >
+    The reply_cadence baseline must have observed enough exchanges to be a rhythm rather than a
+    guess before response_latency is reported as anything but unknown.
+  requires:
+  - reply_cadence_hours
+  - first_seen_at
+  if_unmet: >
+    degrade — every relative pattern in this file already carries a floor, and a cold-start
+    baseline resolves to that floor. The floors are the fallback, so the system remains correct
+    and becomes merely conservative, which is the right failure direction for chasing a human.
+
+- id: req.personal_data_is_in_scope_for_this_use
+  statement: >
+    Attributes marked confidential — display_name, accessibility_needs, prior_csat_mean,
+    prior_escalation_count, seniority_band, observed_sentiment, vip_flag, response_latency,
+    working_hours — may only be resolved into a compile whose audience is no wider than the
+    audience of the evidence they came from.
+  requires:
+  - identification
+  if_unmet: >
+    block — the attribute, not the object. Rule 10 is not a preference, and the failure mode is
+    not hypothetical: an accessibility need disclosed in a private ticket appearing in an
+    account-level summary is a disclosure the customer did not make.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+
+constraints:
+- id: req.entitlement_belongs_to_the_account
+  statement: A requester cannot hold entitlement personally; it is inherited from the account
+    and may be limited to named contacts.
+  hard: true
+  why: >
+    Personal entitlement is how side agreements are created by accident. One agent granting one
+    person a faster clock becomes the precedent the next agent is measured against.
+
+- id: req.cannot_promise_beyond_entitlement
+  statement: Nothing may be committed to this requester that exceeds what the account's
+    entitlement allows, however reasonable the request or senior the asker.
+  hard: true
+  why: >
+    A promise beyond entitlement creates a breach that did not exist before it was typed, and
+    the breach lands on a colleague rather than on the person who made it.
+
+- id: req.proxy_cannot_verify_resolution
+  statement: A requester with is_affected_user false cannot provide the confirmation that closes
+    a contact.
+  hard: true
+  why: >
+    "They say it's fine now" is a relayed opinion, and it is the most common precursor to a
+    reopen. A reopen after a proxy confirmation is a worse finding than never closing at all,
+    because it destroys the customer's confidence in our verification as well as our fix.
+
+- id: req.no_chase_outside_their_hours
+  statement: Automated chases must respect working_hours and timezone where known. A 3am nudge
+    is a complaint we generated ourselves.
+  hard: false
+  why: >
+    Soft rather than hard because a live customer-impacting incident legitimately overrides it —
+    see the exception req.outage_overrides_quiet_hours. Outside that case there is no support
+    outcome improved by an out-of-hours automated chase.
+
+- id: req.no_auto_close_while_ball_is_ours
+  statement: A contact may never be auto-closed for inactivity while ball_in_court is us. Our
+    silence is not their disengagement.
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  hard: true
+  why: >
+    This is the mechanism by which a queue's own neglect is recorded as customer abandonment,
+    and it makes the resulting metric look like an improvement.
+
+- id: req.fluency_is_never_inferred_from_title
+  statement: role_title, seniority_band and is_admin may not be used as sources for
+    technical_fluency, diagnostic_capability or authority_scope.
+  hard: true
+  why: >
+    It is wrong in both directions and confidently so. A VP of Engineering may have no access to
+    the box; a support temp may be the only person who knows the failing workflow. Both errors
+    cost a round-trip and one of them costs the account's technical goodwill.
+
+- id: req.arrival_channel_is_not_severity
+  statement: The channel a contact arrived on may set the customer's expectation of latency. It
+    may not set severity, and may set priority only through an entitlement that genuinely
+    differentiates channels.
+  hard: true
+  why: >
+    Chat feels urgent because a human is present. A sev-1 outage reported by email at 2am is
+    more urgent than a password question typed into a widget, and a queue that sorts by channel
+    inverts exactly that pair.
+
+- id: req.history_may_not_lower_service_level
+  statement: prior_escalation_count, prior_csat_mean and escalation history may inform how a
+    contact is handled. They may never route a requester to a slower queue or a lower tier.
+  hard: true
+  why: >
+    Those fields are as much a record of how often we failed this person as of how they behave.
+    Derating them for it is punishing the customer for our history, and it is the mechanism by
+    which a difficult-customer list forms without anyone deciding to build one.
+
+# ── 11 · Business rules ──────────────────────────────────────────────────────────────────
+
+business_rules:
+- id: req.proxy_cannot_close_the_reproduction
+  statement: >
+    When is_affected_user is false, a failed reproduction recorded against this requester's
+    account may not be treated as evidence that the fault does not exist. The proxy answered a
+    question about someone else's screen.
+  then: block_reproduction_conclusion
+  severity: blocking
+  why: >
+    "Cannot reproduce" closed against a proxy is the most expensive wrong conclusion in
+    diagnosis, because it stops the investigation AND tells the customer they imagined it.
+
+- id: req.no_diagnostics_beyond_capability
+  statement: >
+    Instructions requiring log collection, developer tools or configuration access must not be
+    sent to a requester whose diagnostic_capability is cannot_gather or whose technical_fluency
+    is none or basic, unless a no-capability fallback is offered alongside.
+  then: require_low_fluency_fallback
+  severity: warning
+  why: >
+    Three failed instruction rounds are slower than one screen-share, and each failed round
+    teaches the customer that we do not understand their situation.
+
+- id: req.admin_is_not_authority
+  statement: >
+    is_admin true grants product permissions and nothing else. An admin's request is never a
+    contractual instruction and never an entitlement upgrade, no matter how senior they sound.
+  severity: warning
+  why: >
+    The admin flag is inherited from provisioning. Reading it as authority is how a support
+    conversation quietly becomes a commercial commitment nobody was authorised to make.
+
+- id: req.no_auto_close_inside_their_own_cadence
+  statement: >
+    A contact must not be auto-closed for inactivity while the ball is with the requester and
+    the elapsed time is still inside twice their learned reply cadence. Closing a slow-but-
+    consistent requester on a queue-wide clock is a metric improvement and a service failure.
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  - fn: hours_since
+    path: thread.last_inbound
+    op: <=
+    value:
+      baseline: reply_cadence
+      mult: 2
+      floor: 48
+  then: block_auto_close
+  severity: blocking
+  why: >
+    Auto-close exists to skip the chase. The chase is the step that separates a fixed problem
+    from an abandoned one, which is why auto-closed tickets are the ones that reopen.
+
+- id: req.repeat_contact_is_our_defect
+  statement: >
+    A requester contacting us repeatedly in a short window raises a content-gap or product flag
+    regardless of whether each individual contact was resolved cleanly. Four clean resolutions
+    to the same person in a week is four failures to solve it once.
+  when:
+  - fn: edge_count
+    op: '>='
+    value: 4
+  then: flag_repeat_contact
+  severity: advisory
+  why: >
+    First contact resolution is the operational metric most tightly correlated with satisfaction
+    — roughly one point of CSAT per point of FCR — and repeat contact is what its absence looks
+    like from the customer's side. Routed to content and product, never to agent review.
+
+- id: req.reply_in_their_language
+  statement: >
+    A reply must be composed in the requester's language when known. Machine translation of a
+    diagnostic instruction is a correctness risk and not merely a tone one.
+  severity: warning
+  why: >
+    The customer carries the risk of the mistranslation and we take the credit for the fast
+    reply. Diagnostic imperatives are the highest-risk sentences in support to translate badly,
+    because a mistranslated instruction changes what the customer actually does to their system.
+
+- id: req.unnamed_contact_is_not_uncovered_customer
+  statement: >
+    is_named_contact false must never be used to refuse help outright before the account
+    entitlement has been checked. It bounds what may be promised, not whether to answer.
+  severity: blocking
+  why: >
+    Named-contact lists are written at contract signature and never revisited. Refusing on a
+    stale list refuses the right person for the wrong reason, in front of an audience that
+    includes their employer.
+
+- id: req.accessibility_needs_persist
+  statement: >
+    Once accessibility_needs is populated, every subsequent reply on any channel must honour it
+    without the requester restating it.
+  then: apply_accessibility_profile
+  severity: blocking
+  why: >
+    Re-asking is the failure. A customer who has to negotiate access to help on every contact
+    stops contacting, and that shows up in the metrics as an improvement.
+
+# ── 12 · Decision factors ────────────────────────────────────────────────────────────────
+#
+# weight_bp sums to exactly 10000. The ordering is the argument: fluency above everything
+# resembling seniority, and reachability last despite being operationally consequential,
+# because it changes HOW the answer is delivered rather than WHAT it is.
+
+decision_factors:
+- name: technical_fluency
+  weight_bp: 2500
+  direction: context
+  description: >
+    Weighted highest deliberately, and above anything resembling seniority. Fluency changes what
+    the correct reply IS, not merely how fast we should send it. Direction is `context` because
+    high fluency is not good news — it means the easy explanations are already gone and the
+    remaining ones are expensive.
+  reads:
+  - technical_fluency
+  - diagnostic_capability
+  - product_familiarity
+  - tooling_access
+- name: affected_user_certainty
+  weight_bp: 2000
+  direction: context
+  description: >
+    How sure we are the writer is the sufferer. Low certainty should lower confidence in every
+    downstream diagnosis rather than trigger an action of its own — it is a multiplier on the
+    reasoning, not an alert.
+  reads:
+  - is_affected_user
+  - reports_on_behalf_of
+  - affected_user_certainty_bp
+  - affected_user_count
+- name: contact_frequency
+  weight_bp: 1500
+  direction: decreases
+  description: >
+    Decreases confidence that the last resolution worked. Frequency is evidence about our product
+    and our documentation before it is evidence about this person, and it is the factor most
+    likely to be misread as the opposite.
+  reads:
+  - contact_frequency
+  - open_ticket_count
+  - lifetime_ticket_count
+  - is_repeat_contact
+- name: escalation_risk
+  weight_bp: 1500
+  direction: decreases
+  description: >
+    Broken promises, then effort, then sentiment, then history — in that order of evidential
+    weight. Broken promises are the strongest and the only one this domain can currently observe
+    without reading tone; history is the weakest and the most dangerous.
+  reads:
+  - escalation_propensity
+  - effort_expressed
+  - observed_sentiment
+  - prior_escalation_count
+- name: responsiveness
+  weight_bp: 1200
+  direction: increases
+  description: >
+    Always relative to their own baseline. An unresponsive requester is not a low-priority one —
+    they may be the one who gave up, and that is the most expensive state in the queue because it
+    is invisible to every dashboard.
+  reads:
+  - response_latency
+  - ball_in_court
+  - engagement_trend
+  - reply_cadence_hours
+  - hours_waiting
+- name: entitlement_standing
+  weight_bp: 700
+  direction: increases
+  description: >
+    Bounds what may be promised to this human. Deliberately light: standing should shape the
+    commitment and never the diagnosis, and a queue where standing weighs heavily is a queue
+    that has started serving the contract instead of the fault.
+  reads:
+  - is_named_contact
+  - vip_flag
+  - account_ref
+  - authority_scope
+- name: reachability_fit
+  weight_bp: 600
+  direction: context
+  description: >
+    Channel, language, hours and accessibility needs. Small weight in Layer 4 because it changes
+    almost nothing about what to do — and large consequence in Layer 5.2, which is where it is
+    actually read. A four-hour entitlement delivered into the wrong timezone is experienced as
+    four days without breaching anything.
+  reads:
+  - preferred_channel
+  - arrival_channel
+  - language
+  - timezone
+  - working_hours
+  - accessibility_needs
+
+# ── 13 · Evidence ────────────────────────────────────────────────────────────────────────
+#
+# `independent_of` is authored rather than assumed, because Rule 11 only lets confidence rise
+# on genuinely independent corroboration. The important claim in this list is negative: email,
+# chat and derived are NOT independent of each other, because derived.* is computed from the
+# correspondence. Treating them as three sources is how a single observation gets counted three
+# times and arrives at a confident wrong answer.
+
+evidence:
+- source: telemetry
+  strength_bp: 9000
+  independent_of:
+  - email
+  - chat
+  - crm
+  - survey
+  - manual_entry
+  decays: true
+  description: >
+    The affected session itself. The only source that settles the proxy question without asking,
+    and it outranks anything the requester says about it. Decays because a session from last
+    month proves the fault existed, not that it exists.
+- source: ticket
+  strength_bp: 8000
+  independent_of:
+  - email
+  - telemetry
+  decays: false
+  description: Submitter identity and prior contact history from the ticketing system. Strong
+    and, today, entirely manual — the counts in contact_history have no automated source at all.
+- source: crm
+  strength_bp: 7500
+  independent_of:
+  - email
+  - chat
+  - telemetry
+  decays: true
+  description: >
+    Role, admin flag, named-contact status. Strong for standing and worthless for fluency;
+    someone typed it once and never revisited it, which is exactly why it decays fastest of
+    anything on this list.
+- source: manual_entry
+  strength_bp: 7000
+  independent_of:
+  - derived
+  - crm
+  decays: true
+  description: >
+    What the agent learned by asking. Honest, unverifiable, written by the person being measured
+    — and today the only source for technical_fluency, diagnostic_capability and
+    accessibility_needs, which are the three fields that most change the answer.
+- source: email
+  strength_bp: 7000
+  independent_of:
+  - crm
+  - telemetry
+  - survey
+  decays: false
+  description: What they wrote and how they wrote it. The richest fluency evidence available and
+    the least structured. Not independent of derived, which is computed from it.
+- source: chat
+  strength_bp: 6500
+  independent_of:
+  - crm
+  - telemetry
+  decays: false
+  description: >
+    Cadence and abandonment. Reveals frustration earlier than email because there is no time to
+    soften it — and absence of a reply proves less here than in email, because chats are
+    abandoned mid-sentence routinely. Sustained abandonment above roughly 8% is a queue problem,
+    not a customer one.
+- source: phone
+  strength_bp: 6000
+  independent_of:
+  - email
+  - chat
+  - crm
+  decays: true
+  description: High information, near-zero retention. Whatever was promised on a call exists
+    only in the customer's memory unless someone writes it down.
+- source: survey
+  strength_bp: 5000
+  independent_of:
+  - email
+  - crm
+  - telemetry
+  decays: true
+  description: >
+    Their prior rating of us. Genuine, and answered almost entirely by the delighted and the
+    furious — the satisfied middle is invisible, so a mean of two responses is a mood rather than
+    a measurement.
+- source: help_center
+  strength_bp: 4500
+  independent_of:
+  - email
+  - crm
+  decays: true
+  description: Search and abandonment behaviour before the contact. Circumstantial about the
+    person, precise about the content gap.
+- source: derived
+  strength_bp: 4000
+  decays: true
+  description: >
+    Engagement and sentiment shapes. Corroborating only, and explicitly independent of NOTHING —
+    it is computed from the same correspondence as email and chat, so it must never be counted
+    as a second opinion on them.
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+
+metrics:
+- name: proxy_detection_rate
+  unit: percent
+  description: Share of proxy-reported contacts identified before the first reproduction attempt
+    rather than after it failed. The metric this object exists to move.
+  direction: higher_is_better
+  owner_layer: L6
+  calibrates:
+  - req.proxy_reporter_suspected
+  - req.shared_mailbox_is_not_a_person
+- name: fluency_classification_accuracy
+  unit: percent
+  description: Share of inferred fluency levels an agent later agreed with. Calibrates the
+    highest-weighted decision factor on this object; if it cannot be measured, the weight is a
+    guess.
+  direction: higher_is_better
+  owner_layer: L6
+  calibrates:
+  - req.fluency_from_what_they_attach
+  - req.is_the_account_admin
+- name: first_contact_resolution_by_fluency
+  unit: percent
+  description: >
+    FCR split by fluency band. Published benchmarks put good FCR around 70–79%, with roughly a
+    one-to-one relationship between FCR points and CSAT points — so if the bands do not differ,
+    the fluency inference is not doing any work and should be treated as unproven.
+  direction: higher_is_better
+  owner_layer: L6
+  calibrates:
+  - req.fluency_from_what_they_attach
+- name: repeat_contact_rate
+  unit: percent
+  description: Share of requesters contacting more than once inside a week. A product and content
+    metric wearing a support badge; routed to content-gap analysis, never to agent review.
+  direction: lower_is_better
+  owner_layer: L6
+  calibrates:
+  - req.repeat_contact_by_graph_degree
+  - req.repeat_contact_inside_a_week
+- name: requester_reply_latency
+  unit: hours
+  description: >
+    Observed time for this person to answer us. Feeds the reply_cadence baseline rather than a
+    queue average. Deliberately carries no direction — it is a description of a human, not a
+    target for us, and treating it as one is how chase schedules become nagging.
+  owner_layer: L2
+  calibrates:
+  - req.past_their_own_reply_cadence
+- name: unresponsive_thread_share
+  unit: percent
+  description: Share of open contacts parked on the requester past twice their own cadence. The
+    queue's hidden backlog, and the only number that makes a paused clock visible.
+  direction: lower_is_better
+  owner_layer: L2
+  calibrates:
+  - req.abandoned_the_thread
+- name: chat_abandonment_share
+  unit: percent
+  description: >
+    Share of chats this requester population abandons before an answer. Healthy contact centres
+    sit around 2–5%; sustained figures above 8% indicate a staffing or routing failure. Recorded
+    here because an abandonment is counted as a deflection success by every deflection metric,
+    which is why deflection must never be read as first-contact resolution.
+  direction: lower_is_better
+  owner_layer: L6
+- name: requester_effort_score
+  unit: score
+  description: >
+    How hard it was for this person to get resolved. Kept alongside satisfaction because low
+    effort predicts retention more reliably than delight does — a calm customer who re-explained
+    three times is a churn risk no sentiment score will show.
+  direction: lower_is_better
+  owner_layer: L6
+  calibrates:
+  - req.effort_is_high_before_they_complain
+- name: channel_preference_hit_rate
+  unit: percent
+  description: Share of replies delivered on the requester's stated preferred channel, in their
+    language, inside their working hours.
+  direction: higher_is_better
+  owner_layer: "L5.2"
+  calibrates:
+  - req.reachable_language_and_hours
+- name: accessibility_restatement_rate
+  unit: percent
+  description: Share of contacts on which a requester had to restate an accessibility need we
+    already held. Should be zero; is not.
+  direction: lower_is_better
+  owner_layer: L6
+  calibrates:
+  - req.accessibility_need_declared
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+
+events:
+- id: req.identified
+  name: Requester Identified
+  emitted_when:
+  - exists: thread.last_inbound
+  payload:
+  - requester_id
+  - account_ref
+  - arrival_channel
+  - identity_confidence_bp
+  severity: info
+- id: req.awaiting_reply
+  name: Requester Awaiting Reply
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  payload:
+  - last_inbound_at
+  - hours_waiting
+  - response_latency
+  severity: info
+  description: Deliberately noisy. It fires on every inbound and is expected to be filtered
+    downstream by elapsed time, not suppressed here.
+- id: req.went_quiet
+  name: Requester Went Quiet
+  emitted_when:
+  - fn: days_since
+    path: thread.last_inbound
+    op: '>='
+    value: 14
+  payload:
+  - last_inbound_at
+  - engagement_trend
+  - ball_in_court
+  severity: notable
+  invalidates:
+  - response_latency
+  - escalation_propensity
+  - expected_reply_by
+  description: >
+    The event that turns a paused clock back into a live problem. A ticket parked on
+    waiting_on_customer forever is invisible to every queue metric and visible to exactly one
+    person: the customer. It invalidates escalation_propensity because a prediction about a
+    conversation nobody is having is not a prediction.
+- id: req.turned_negative
+  name: Requester Sentiment Turned
+  emitted_when:
+  - path: derived.sentiment
+    op: <
+    value: 0
+  payload:
+  - observed_sentiment
+  - escalation_propensity
+  - effort_expressed
+  severity: notable
+- id: req.promise_missed
+  name: Promise To Requester Missed
+  emitted_when:
+  - fn: hours_since
+    path: commitment.due_at
+    op: '>'
+    value: 0
+  payload:
+  - escalation_propensity
+  - hours_waiting
+  severity: critical
+  invalidates:
+  - escalation_propensity
+  description: >
+    Should be treated as more urgent than the underlying issue. The issue was always going to
+    take time; the promise was ours to keep, and the customer narrates the promise.
+- id: req.repeat_contact_detected
+  name: Repeat Contact Detected
+  emitted_when:
+  - fn: edge_count
+    op: '>='
+    value: 4
+  payload:
+  - contact_frequency
+  - open_ticket_count
+  - is_repeat_contact
+  severity: notable
+  description: Routes to content-gap analysis, never to agent performance. A requester who keeps
+    coming back is evidence about the product and the documentation first.
+- id: req.proxy_suspected
+  name: Proxy Reporter Suspected
+  emitted_when:
+  - has_obs: introduction
+  payload:
+  - is_affected_user
+  - reports_on_behalf_of
+  - affected_user_certainty_bp
+  severity: notable
+  invalidates:
+  - technical_fluency
+  - diagnostic_capability
+  - product_familiarity
+  description: >
+    Invalidates the whole fluency group on purpose. If the writer is a relayer, everything we
+    inferred about capability describes the wrong person, and continuing to use it produces a
+    reply pitched at somebody who is not reading it.
+- id: req.escalation_asked_for
+  name: Requester Asked For Escalation
+  payload:
+  - escalation_propensity
+  - prior_escalation_count
+  - effort_expressed
+  severity: critical
+  invalidates:
+  - escalation_propensity
+  description: >
+    No emitted_when, because nothing in the substrate emits escalation of any kind. Recorded
+    without a trigger so the gap is countable rather than invisible — this is the loudest event a
+    requester can generate and the brain cannot hear it.
+
+# ── 16 · Actions ─────────────────────────────────────────────────────────────────────────
+
+actions:
+- id: req.ask_who_is_affected
+  name: Ask who is actually seeing this
+  actor: human
+  preconditions:
+  - has_obs: introduction
+  effect: >
+    One sentence, asked before any reproduction step. The highest return-on-effort question in
+    support and the one most often skipped because the answer is assumed.
+  cost: trivial
+  reversible: true
+- id: req.calibrate_to_fluency
+  name: Match the reply to their fluency
+  actor: agent
+  effect: >
+    Rewrite the instruction up or down. Both directions are failures: jargon at a novice wastes a
+    round-trip, hand-holding at an expert reads as contempt and costs the account's technical
+    goodwill in one reply.
+  cost: low
+  reversible: true
+- id: req.offer_a_no_capability_path
+  name: Offer a path that needs nothing from them
+  actor: agent
+  effect: >
+    A screen-share, a support bundle, or us reproducing it ourselves. The correct move when
+    diagnostic_capability is cannot_gather or unknown, and it is faster than three failed
+    instruction rounds.
+  cost: moderate
+  reversible: true
+- id: req.confirm_channel_and_language
+  name: Confirm channel, language, hours and access needs
+  actor: agent
+  effect: Asked once, reused forever. Cheap, and it stops replies landing at 3am in a language
+    they read slowly and a format they cannot use.
+  cost: trivial
+  reversible: true
+- id: req.chase_on_their_cadence
+  name: Chase against their own baseline
+  actor: system
+  preconditions:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  - fn: hours_since
+    path: thread.last_inbound
+    op: '>'
+    value:
+      baseline: reply_cadence
+      mult: 2
+      floor: 48
+  effect: >
+    One chase, timed to the person. A second automated chase inside the same window is how a
+    requester learns to filter us, after which the one chase that mattered is also filtered.
+  cost: trivial
+  reversible: false
+- id: req.send_written_recap
+  name: Put the call in writing
+  actor: human
+  preconditions:
+  - path: meeting.status
+    op: '='
+    value: completed
+  - no_obs: followup_sent
+  effect: >
+    Recap what was agreed and by when. Converts a remembered promise into a checkable one, which
+    is the entire difference between a commitment and a grievance.
+  cost: low
+  reversible: false
+- id: req.raise_content_gap
+  name: Raise this as a content gap
+  actor: agent
+  effect: >
+    For a repeat contact, in the requester's own words rather than ours — their phrasing is the
+    search term the next requester will use. The only support action whose success is measured by
+    work that never arrives.
+  cost: low
+  reversible: true
+- id: req.verify_with_the_affected_user
+  name: Verify the fix with the person who was broken
+  actor: human
+  effect: >
+    Never close a proxy-reported contact on the proxy's word. "They say it's fine now" is the most
+    common precursor to a reopen.
+  cost: moderate
+  reversible: true
+- id: req.instrument_the_proxy
+  name: Script the steps for the relayer
+  actor: agent
+  effect: >
+    When the affected user genuinely cannot be reached — mediated accounts, security policy,
+    shift patterns — give the proxy an exact script and ask for output verbatim rather than for a
+    summary. Slower than talking to the sufferer and far better than a paraphrase.
+  cost: moderate
+  reversible: true
+- id: req.suppress_history_signals
+  name: Withhold contact history from this compile
+  actor: system
+  effect: >
+    Applied when identity confidence is low or the contact is a shared mailbox. Suppress rather
+    than caveat: a caveat on a dashboard is not read, and a fictional history is worse than none.
+  cost: trivial
+  reversible: true
+
+# ── 17 · Dependencies ────────────────────────────────────────────────────────────────────
+#
+# A relationship is a fact about the world; a dependency is a fact about the compile. The
+# distinction matters most at the two extremes of this list: Conversation is a `requires` even
+# though the world-level edge is weaker than Ticket's, because without the thread there is
+# nothing to read fluency from; and Resolution is a `blocks`, which is this object reaching
+# forward to stop a conclusion rather than to contribute one.
+
+dependencies:
+- target: customer_support.obj.core.conversation
+  kind: requires
+  strength: hard
+  description: >
+    Every fluency, tone, language and effort inference is read out of what was written. Without
+    the conversation this object degrades to a name, an account link and whatever an agent typed.
+- target: customer_support.obj.core.ticket
+  kind: enriches
+  strength: hard
+  description: >
+    Supplies arrival channel, submitter identity and the counts in contact_history. Marked hard
+    because the aggregate — how many times this person has been back — cannot be reconstructed
+    from anywhere else, and it is the object's whole claim to existing separately.
+- target: customer_support.obj.core.customer_account
+  kind: requires
+  strength: soft
+  description: >
+    Needed before any entitlement standing is asserted. Soft because a requester with no resolved
+    account is still answerable; the degradation is that nothing may be promised, not that nothing
+    may be said.
+- target: customer_support.obj.core.entitlement
+  kind: enriches
+  strength: hard
+  description: >
+    Supplies is_named_contact and bounds every commitment. Hard because the failure without it is
+    not a missing field — it is an agent promising a four-hour response to an account that bought
+    next business day.
+- target: customer_support.obj.core.commitment
+  kind: enriches
+  strength: soft
+  description: >
+    Supplies the strongest observable escalation predictor in the file. Soft because its absence
+    degrades escalation_propensity to sentiment-only, which is worse but not useless.
+- target: customer_support.obj.core.customer_sentiment
+  kind: enriches
+  strength: soft
+  description: >
+    Supplies the temperature group. Deliberately soft: the sentiment available today is borrowed
+    from a commercial vocabulary and this object should never be blocked waiting for it.
+- target: customer_support.obj.core.support_agent
+  kind: enriches
+  strength: soft
+  description: >
+    Supplies the continuity count — how many distinct humans this requester has had to explain
+    the problem to. A better predictor of a bad outcome than resolution time and available from
+    the ticket record alone.
+- target: customer_support.obj.core.escalation
+  kind: invalidated_by
+  strength: soft
+  description: >
+    Once an escalation exists with a named receiving owner, escalation_propensity stops being a
+    live prediction and becomes a historical fact. Continuing to compute it produces advice about
+    a decision that has already been taken.
+- target: customer_support.obj.core.resolution
+  kind: blocks
+  strength: hard
+  description: >
+    A Requester with is_affected_user false blocks verification-based closure of the Resolution.
+    This is the one place this object reaches forward to stop something rather than to inform it,
+    and it is the reason the proxy question is worth a precondition of its own.
+- target: customer_support.obj.core.churn_risk
+  kind: enriches
+  strength: soft
+  description: >
+    Contributes effort and repeat-contact evidence. Deliberately weak in both directions: one
+    unhappy requester is not account churn risk, and account churn risk is not evidence about this
+    person's next ticket.
+
+# ── 18 · Exceptions ──────────────────────────────────────────────────────────────────────
+#
+# Where the rules above are legitimately wrong. This is the section an experienced operator
+# reads first, because everything else in this file they either already knew or would have
+# guessed. Frequencies are honest: `common` means it will happen this week in a queue of any
+# size, and two of the eight below are common.
+
+exceptions:
+
+- id: req.terse_is_not_rude_in_a_second_language
+  statement: >
+    A three-word reply, a missing greeting and a bare imperative from a requester writing in a
+    second language are EFFORT, not contempt. Many languages mark politeness with mood or
+    particles that do not survive translation, and English imperatives read as brusque to English
+    speakers and as neutral to almost everyone else. Read register against language, or do not
+    read it.
+  overrides:
+  - req.unhappy_and_waiting_on_us
+  - req.reply_in_their_language
+  why: >
+    Every sentiment and tone model in support was trained on native-speaker register. Applying it
+    across a language boundary systematically scores non-native speakers as angrier, which routes
+    them to de-escalation they did not need and away from the technical answer they did — and
+    it does so most reliably to the customers already having the hardest time getting help.
+  frequency: common
+
+- id: req.repeat_contact_that_is_healthy
+  statement: >
+    High contact frequency during onboarding, migration, implementation or the first weeks after
+    a major release is the product working as sold, not a defect signal. Flagging it teaches the
+    account to stop asking, which is the exact outcome the metric was invented to prevent.
+  overrides:
+  - req.repeat_contact_is_our_defect
+  - req.repeat_contact_inside_a_week
+  - req.repeat_contact_by_graph_degree
+  why: >
+    Repeat contact is a defect signal only against a stable baseline. During a change window there
+    is no baseline, and the accounts that contact most are the accounts adopting fastest. Suppress
+    the flag for the window; do not suppress the content capture, because these are the contacts
+    that write the best articles.
+  frequency: common
+
+- id: req.fluent_but_locked_down
+  statement: >
+    A requester with expert technical_fluency and cannot_gather diagnostic_capability is a normal
+    and specific case, not a contradiction to be resolved. The correct response is neither to send
+    them beginner instructions nor to keep asking for artefacts they are not permitted to produce
+    — it is to ask them what they CAN see and reason with them at their level about it.
+  overrides:
+  - req.no_diagnostics_beyond_capability
+  - req.fluency_from_what_they_attach
+  why: >
+    Managed devices, regulated environments and locked-down enterprise laptops are the default in
+    exactly the accounts that pay most. The rule that gates diagnostics on fluency is a shorthand;
+    the real gate is capability, and treating a locked-down expert as a novice loses the best
+    diagnostic partner on the ticket.
+  frequency: occasional
+
+- id: req.the_proxy_is_the_only_permitted_channel
+  statement: >
+    In mediated accounts — a security policy that forbids vendor contact with end users, a managed
+    service provider, a clinical or classified environment — the proxy IS the contract, and routing
+    around them to reach the affected user is a policy breach on the customer's side. The right
+    move is to instrument the proxy, not to bypass them.
+  overrides:
+  - req.proxy_cannot_verify_resolution
+  - req.proxy_cannot_close_the_reproduction
+  - req.ask_who_is_affected
+  when:
+  - has_obs: security_review_started
+  why: >
+    The proxy rules in this file assume that reaching the sufferer is merely inconvenient. Where it
+    is prohibited, insisting on it stalls the ticket indefinitely and looks to the customer like we
+    do not understand their environment. Verification still degrades — script the steps, ask for
+    output verbatim, and record the closure as proxy-verified rather than customer-verified so the
+    reduced confidence survives into the metrics.
+  frequency: occasional
+
+- id: req.escalation_history_from_one_incident
+  statement: >
+    Several prior escalations that all trace to a single major incident are ONE event, not a
+    disposition. Counting them as history manufactures a difficult-customer label out of a week
+    when we were the difficult party.
+  overrides:
+  - req.escalation_prone_from_history
+  why: >
+    prior_escalation_count has no notion of correlation. A customer who escalated three times
+    during a four-day outage behaves identically in the data to a customer who escalates on every
+    third ticket, and the two want opposite handling — the first wants an apology and normal
+    service, the second wants a different engagement model.
+  frequency: occasional
+
+- id: req.outage_overrides_quiet_hours
+  statement: >
+    During a live customer-impacting incident, the working-hours and preferred-channel constraints
+    yield. A requester whose production is down wants the 3am message, and withholding it to
+    respect their calendar is a courtesy they did not ask for.
+  overrides:
+  - req.no_chase_outside_their_hours
+  - req.confirm_channel_and_language
+  why: >
+    The quiet-hours rule optimises for not manufacturing complaints out of routine nudges. It was
+    never meant to govern incident communication, where the complaint is generated by silence
+    instead. The test is blast radius, not the requester's tone: a SEV1 or SEV2 overrides, a SEV3
+    with a workaround does not.
+  frequency: rare
+
+- id: req.the_vip_flag_that_is_contractual
+  statement: >
+    Some VIP flags encode a genuine executive-sponsor or named-contact clause rather than office
+    politics. The correct response to a VIP flag is to verify what it encodes, not to strip it.
+  overrides:
+  - req.history_may_not_lower_service_level
+  why: >
+    The rule treating vip_flag as political is right about most of them and wrong about the ones
+    that were negotiated. Stripping a contractual flag because the field has a bad reputation
+    breaches an agreement, and it does so invisibly because the agreement lives in a contract
+    nobody in the queue has read.
+  frequency: rare
+
+- id: req.chase_anyway_when_a_contractual_clock_is_running
+  statement: >
+    Baseline-relative chasing is right for hygiene and wrong when a contractual or regulatory clock
+    is running against the customer's own reply. If their silence will cost them an entitlement, a
+    warranty window or a legal deadline, chase on the deadline's schedule, not on theirs.
+  overrides:
+  - req.no_auto_close_inside_their_own_cadence
+  - req.chase_on_their_cadence
+  - req.past_their_own_reply_cadence
+  why: >
+    Every relative-cadence rule in this file optimises for not nagging. That trade is correct when
+    the only cost of waiting is our metric, and inverted when the cost of waiting is theirs. This
+    is also the one exception where a business-hours SLA calendar matters more than the requester's
+    own hours, because the calendar is what the deadline is measured against.
+  frequency: occasional
+
+# ── 19 · Best practices ──────────────────────────────────────────────────────────────────
+
+best_practices:
+
+- id: req.bp.ask_who_is_affected_first
+  statement: Ask who is actually seeing the problem in the first reply, before writing a single
+    reproduction step.
+  why: >
+    A wrong guess costs one sentence; a missed proxy costs the entire reproduction attempt and two
+    days, and it ends in a "cannot reproduce" that tells the customer they imagined it. It is the
+    highest return-on-effort question in support and the most skipped, because the answer feels
+    obvious and is not.
+  applies_when: Every first contact where the writer's role and the failing surface do not
+    obviously match — and, honestly, every first contact.
+  evidence: telemetry and manual_entry both settle it; nothing else does.
+
+- id: req.bp.read_fluency_from_the_message
+  statement: Infer technical fluency from what they wrote and attached, never from their title or
+    their admin flag.
+  why: >
+    Title is wrong in both directions and confidently so. The first message routinely contains a
+    stack trace, a config diff or a precise description of an intermittent race condition — all
+    stronger evidence of capability than any field on the contact record, and all currently
+    discarded by the pipeline.
+  applies_when: Always, and especially where the CRM has a seniority field, because that is where
+    the temptation is.
+
+- id: req.bp.chase_on_their_clock
+  statement: Time every chase to this person's own reply cadence rather than to a queue-wide
+    interval.
+  why: >
+    A requester who always takes three days is consistent, not slow. Chasing them at twenty-four
+    hours trains them to filter our follow-ups, after which the one chase that actually mattered is
+    filtered too. The cost of the rule is that it makes the queue's aggregate look slower.
+  applies_when: Whenever ball_in_court is `them` and a reply_cadence baseline exists.
+
+- id: req.bp.capture_in_their_words
+  statement: When a contact becomes an article, a macro or a content-gap ticket, capture the
+    requester's own phrasing rather than translating it into internal vocabulary.
+  why: >
+    The customer's words are the search terms of the next customer. Rewriting into product-internal
+    naming is precisely how a correct article becomes unfindable, and it is the failure that makes
+    a knowledge base look well-stocked and useless. This is KCS doctrine and it is doctrine because
+    everyone gets it wrong the first time.
+  applies_when: Any contact that produces knowledge — which, on a repeat-contact requester, is most
+    of them.
+
+- id: req.bp.offer_the_no_capability_path_alongside
+  statement: Send the diagnostic ask and the zero-capability alternative in the same message.
+  why: >
+    Probing for capability first costs a round-trip and reads as a test. Offering both lets the
+    requester self-select in one exchange, and it is the only version of the interaction where a
+    cannot_gather requester does not feel like an obstacle to their own support ticket.
+  applies_when: diagnostic_capability is cannot_gather or unknown, which is most of the time.
+
+- id: req.bp.route_repeat_contact_to_content_not_to_qa
+  statement: Send repeat contact to content-gap analysis and product feedback before it reaches any
+    agent scorecard.
+  why: >
+    Four clean resolutions to one person in a week is four failures to solve it once, and none of
+    them is the agent's. Routing it to quality assurance produces defensiveness and better ticket
+    notes; routing it to content produces an article and a smaller queue.
+  applies_when: is_repeat_contact is true, or the graph-degree heuristic fires.
+
+- id: req.bp.ask_reachability_once_and_reuse_it
+  statement: Confirm channel, language, timezone, working hours and access needs once, and carry
+    them across every subsequent contact and channel.
+  why: >
+    Each of these is cheap to ask and expensive to re-ask. An accessibility need restated on every
+    contact is a customer negotiating access to help repeatedly, and the customers who stop
+    negotiating show up in the metrics as an improvement.
+  applies_when: First contact with a requester who will contact again — which, for any account on a
+    support plan, is all of them.
+
+- id: req.bp.verify_with_the_sufferer
+  statement: Take resolution confirmation from the person who was broken, not from the person who
+    reported it.
+  why: >
+    Verification is the step that separates a fixed problem from an abandoned one, and it is
+    almost always skipped. A proxy's "they say it's fine now" is the most common precursor to a
+    reopen, and a reopen after a claimed verification is a worse finding than never closing.
+  applies_when: is_affected_user is false or null.
+
+- id: req.bp.match_urgency_not_emotion
+  statement: Set pace from impact and how fast the damage is growing; set tone from the person.
+    Never let the emotional register of the message set the queue position.
+  why: >
+    Priority is impact multiplied by urgency, and neither term is "how upset the writer sounds".
+    A queue that responds to volume teaches every customer that escalating language is the way to
+    get served, and the quiet ones — who are frequently the worst affected — learn it last.
+  applies_when: Every triage decision, and most visibly on the calm requester reporting a total
+    outage.
+
+# ── 20 · Anti-patterns ───────────────────────────────────────────────────────────────────
+#
+# `why_it_happens` is the field that earns each of these a place. An anti-pattern nobody would
+# plausibly commit is not worth recording, so every entry below names the reasonable-sounding
+# logic that leads a competent person there.
+
+anti_patterns:
+
+- id: req.ap.authority_from_job_title
+  statement: Treating a senior job title as evidence of technical capability, decision authority or
+    entitlement.
+  why_it_happens: >
+    The title is the only field on the contact record that looks like it means something, and in
+    most other business contexts it does. A VP genuinely can approve things — just not the things
+    support needs approved, and not on their own product estate.
+  cost: >
+    Two failure modes with one cause. Sending an expert-level diagnostic to a senior non-technical
+    requester wastes a round-trip and makes them feel stupid. Accepting a senior person's word as a
+    contractual instruction creates a commitment nobody was authorised to make and a precedent the
+    next agent inherits.
+  instead: >
+    Read capability from the message and authority from the contract. Keep role_title for tone and
+    for nothing else, which is what the constraint in this file enforces.
+  detectable_by:
+  - req.is_the_account_admin
+  - fluency_classification_accuracy
+
+- id: req.ap.answering_the_writer_not_the_sufferer
+  statement: Directing every question, instruction and verification at whoever wrote in, without
+    ever establishing whether they are the person experiencing the fault.
+  why_it_happens: >
+    The writer is the only person in the thread. Every ticketing system defaults
+    is_affected_user to true, the reply-to address is right there, and asking "who is actually
+    seeing this?" feels like a stalling question when the customer is already waiting.
+  cost: >
+    Every reproduction question is answered by someone relaying a guess. The thread reads as an
+    unreproducible intermittent bug for two days, frequently ends in "no fault found", and the
+    customer is told a problem they are genuinely having does not exist.
+  instead: >
+    Ask once, in the first reply, in one sentence. Where the sufferer cannot be reached, instrument
+    the proxy with an exact script and record the closure as proxy-verified.
+  detectable_by:
+  - req.proxy_reporter_suspected
+  - req.shared_mailbox_is_not_a_person
+  - proxy_detection_rate
+
+- id: req.ap.matching_emotion_instead_of_urgency
+  statement: Letting the emotional register of the message set the response speed and the queue
+    position.
+  why_it_happens: >
+    It feels like empathy, it is immediately rewarded — the angry customer stops being angry — and
+    the calm customer never complains about being deprioritised, so the feedback loop only ever
+    points one way.
+  cost: >
+    The queue is sorted by volume rather than by impact. Every customer learns that escalating
+    language is how to get served, and the quiet ones learn it last, which means the calm requester
+    reporting a total production outage waits behind the furious one reporting a typo.
+  instead: >
+    Set pace from impact and how fast the damage is growing, and tone from the person. Both can be
+    high; they are separate dials, and priority is the product of impact and urgency, not of volume.
+  detectable_by:
+  - req.unhappy_and_waiting_on_us
+  - repeat_contact_rate
+
+- id: req.ap.terseness_read_as_rudeness
+  statement: Reading a short, greeting-less, imperative message from a non-native speaker as
+    hostility, and routing it to de-escalation instead of to an answer.
+  why_it_happens: >
+    Every sentiment and tone model in support was trained on native-speaker register, and a human
+    agent under load applies the same instinct. "Send me the log now" genuinely does read as rude in
+    English, and the agent is not wrong about the English — only about the person.
+  cost: >
+    The customers having the hardest time getting help are systematically routed away from the
+    technical answer they asked for and into an apology they did not want. It also compounds:
+    de-escalation lengthens the exchange, which raises the effort score, which looks like
+    confirmation that the customer was difficult.
+  instead: >
+    Read register against language and language_confidence_bp. Where a language boundary exists,
+    suppress the tone read entirely rather than discounting it — a suppressed signal is safer than
+    a halved one.
+  detectable_by:
+  - req.reachable_language_and_hours
+  - requester_effort_score
+
+- id: req.ap.sending_the_doc_link_back
+  statement: Answering a contact with the help-centre article the requester has already read and
+    found insufficient.
+  why_it_happens: >
+    It is fast, it is correct in the majority of cases, and deflection is a metric somebody is
+    measured on. The system genuinely cannot see that they already looked, so the article is the
+    highest-expected-value reply available to it.
+  cost: >
+    The single most reliable way to turn a calm requester into an angry one, because it is
+    unmistakably a message that nobody read what they wrote. It also hides the content gap: the
+    article exists, so the gap analysis records coverage.
+  instead: >
+    Emit self_service_attempted and self_service_abandoned and branch on them. Absent the signal,
+    open with what the article does not cover rather than with the link.
+  detectable_by:
+  - req.read_the_docs_before_writing_in
+  - chat_abandonment_share
+
+- id: req.ap.difficult_customer_list
+  statement: Letting prior_escalation_count, prior_csat_mean or escalation history route a requester
+    to a slower queue, a lower tier or a defensive reply template.
+  why_it_happens: >
+    The correlation is real — people who escalated once do escalate faster — so the routing rule
+    looks like good prediction. It is usually introduced as a way to give difficult contacts to
+    more experienced agents, which is a defensible intention.
+  cost: >
+    Those fields measure how often WE failed this person at least as much as how they behave. The
+    rule punishes the customer for our history, and it is self-fulfilling: worse handling produces
+    more escalations, which strengthens the flag.
+  instead: >
+    Use history to inform handling — brief the agent, lead with what went wrong last time — and
+    never to lower service level. The constraint req.history_may_not_lower_service_level exists
+    precisely to be quoted at this.
+  detectable_by:
+  - req.escalation_prone_from_history
+  - requester_effort_score
+
+- id: req.ap.paused_clock_read_as_health
+  statement: Treating a requester in waiting_on_customer as a resolved problem because the clock is
+    paused and the dashboard is green.
+  why_it_happens: >
+    The pause is legitimate — we genuinely are blocked on them — and every queue metric agrees that
+    the ticket is fine. Nothing in the operational view distinguishes a customer who is testing our
+    fix from one who gave up a fortnight ago.
+  cost: >
+    The queue's hidden backlog. The most expensive false negative in support is the
+    waiting_on_customer ticket that will never move, because the customer has quietly decided we
+    are useless and will say so at renewal rather than in the ticket.
+  instead: >
+    Watch unresponsive_thread_share, not SLA attainment. Chase once on their cadence, then close
+    with an explicit invitation rather than silently.
+  detectable_by:
+  - req.abandoned_the_thread
+  - unresponsive_thread_share
+
+- id: req.ap.shared_mailbox_modelled_as_a_person
+  statement: Aggregating contacts from it@ or support@ into a single requester record and then
+    reading fluency, cadence and history off it.
+  why_it_happens: >
+    It is the default behaviour of every system that keys identity on an email address, and it
+    produces a record that looks complete and well-populated — more complete, in fact, than most
+    real requesters, because it accumulates everything.
+  cost: >
+    Fluency becomes an average of strangers, reply cadence measures a rota, and contact history
+    counts an entire IT department as one person contacting us eleven times a week. Every
+    inference on the object is then confidently wrong, and the repeat-contact flag fires on an
+    organisation that is behaving normally.
+  instead: >
+    Detect the role address, set is_shared_mailbox, and suppress the personal attribute groups
+    rather than caveating them.
+  detectable_by:
+  - req.shared_mailbox_is_not_a_person
+  - proxy_detection_rate
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+
+examples:
+- label: Office manager reporting for a developer
+  kind: typical
+  note: >
+    is_affected_user false, technical_fluency basic, diagnostic_capability cannot_gather. Every
+    reproduction question is answered by someone relaying an answer, and the thread reads as an
+    unreproducible bug for two days before anyone asks who is actually seeing it.
+- label: Staff engineer at a customer, pastes a stack trace in the first message
+  kind: typical
+  note: >
+    technical_fluency expert, diagnostic_capability can_reproduce_reliably. Wants the cause, not the
+    ticket number. Sending them a getting-started article loses the account's technical goodwill in
+    one reply, and they will not tell us why.
+- label: Account admin who has never used the product
+  kind: misclassification
+  note: >
+    is_admin true, technical_fluency none, is_affected_user false. Has every permission and no idea
+    what is broken. The clearest proof that admin status and fluency are unrelated fields, and the
+    case every title-based inference gets wrong.
+- label: Staff engineer on a locked-down managed laptop
+  kind: edge
+  note: >
+    technical_fluency expert, diagnostic_capability cannot_gather, tooling_access none. Looks like a
+    contradiction and is completely ordinary in regulated accounts. Both naive responses — beginner
+    instructions, or repeated requests for a HAR file — are wrong. See the exception
+    req.fluent_but_locked_down.
+- label: it@customer.example — eleven contacts this week
+  kind: misclassification
+  note: >
+    is_shared_mailbox true and undetected. Aggregated into one fictional requester whose fluency is
+    an average, whose reply cadence is a rota, and who trips every repeat-contact rule in the file
+    while the organisation behaves entirely normally.
+- label: Fourth contact this week about the same workflow
+  kind: typical
+  note: >
+    Three tickets each closed correctly. Individually clean, collectively a content gap or a product
+    defect. Nothing in the substrate can currently see this and it is the object's highest-value ask.
+- label: Fourth contact this week, in week two of a migration
+  kind: counterexample
+  note: >
+    Identical data to the row above and the opposite finding. This is the product being adopted, and
+    flagging it as a defect signal teaches the account to stop asking. The exception
+    req.repeat_contact_that_is_healthy exists for exactly this pair.
+- label: The polite chaser
+  kind: edge
+  note: >
+    Third courteous "any update on this?". derived.sentiment reads neutral throughout,
+    escalation_propensity is genuinely high, and the gap between those two is precisely what the
+    borrowed sentiment vocabulary cannot see. This requester escalates without warning.
+- label: Terse second-language requester
+  kind: misclassification
+  note: >
+    "Send log now. Not working." Scored as hostile, routed to de-escalation, and given an apology
+    instead of an answer. The register is a translation artefact and the effort was real — this is
+    the most common wrong read in a multilingual queue.
+- label: Consumer end user on a free plan
+  kind: typical
+  note: >
+    is_named_contact false, entitlement thin, escalation_propensity high because their expectations
+    were set by consumer apps rather than by a contract. Standing bounds what may be promised, never
+    whether to answer.
+- label: Requester in a language and timezone we do not staff
+  kind: edge
+  note: >
+    Every reply lands overnight and is machine-translated. Two round-trips take a working week, and
+    the customer experiences a four-hour entitlement as four days without a single breach being
+    recorded.
+- label: Enterprise contact whose security policy forbids us talking to end users
+  kind: counterexample
+  note: >
+    The proxy rules in this file say route to the sufferer. Here that is a policy breach on the
+    customer's side, and insisting on it stalls the ticket forever. Instrument the proxy instead and
+    record the closure as proxy-verified so the reduced confidence survives into the metrics.
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+#
+# Only frameworks actually leaned on above. Each note says which line of this file it is behind,
+# so a reviewer can argue with the source rather than with us.
+
+references:
+
+- title: "ITIL 4 — incident, service request and problem; Priority = Impact x Urgency"
+  kind: standard
+  note: >
+    Supplies the separation this object depends on twice. Priority is impact multiplied by urgency,
+    where impact is how much of the customer's business is affected and urgency is how fast the
+    damage grows — neither term is "how upset the writer sounds", which is the whole argument of
+    the anti-pattern req.ap.matching_emotion_instead_of_urgency and of the constraint
+    req.arrival_channel_is_not_severity. It also supplies affected_user_count as an impact input
+    rather than an urgency one.
+
+- title: KCS v6 Practices Guide
+  kind: methodology
+  author: Consortium for Service Innovation
+  url: https://www.serviceinnovation.org/included/docs/KCS_v6_Practices_Guide_2023_06_08.pdf
+  note: >
+    Two Solve-loop practices are load-bearing here. "Capture in the requester's context" — the
+    customer's words are the search terms of the next customer — is the source of
+    req.bp.capture_in_their_words, of the req.raise_content_gap action, and of the reasoning on the
+    inbound knowledge_article edge. "Reuse is review" is why repeat contact is routed to content
+    rather than to agent quality: an article nobody reuses is unproven, and a requester coming back
+    is the demand signal that proves the gap.
+
+- title: "The Effortless Experience — Customer Effort Score"
+  kind: book
+  author: Matthew Dixon, Nick Toman, Rick DeLisi (CEB / Gartner)
+  note: >
+    The basis for the effort_expressed attribute and the requester_effort_score metric. Low effort
+    predicts retention more reliably than delight does, which is why a calm customer who has
+    re-explained the same problem to three agents is modelled here as a churn risk that no sentiment
+    score will surface. It is also the argument for weighting effort above sentiment inside the
+    escalation_risk decision factor.
+
+- title: "First contact resolution benchmarks — SQM Group / industry"
+  kind: research
+  note: >
+    Published FCR benchmarks put good performance at roughly 70–79%, with top centres at or above
+    74%, and SQM's long-running finding of an approximately one-to-one relationship between FCR
+    points and CSAT points. Cited on the first_contact_resolution_by_fluency metric and behind the
+    business rule req.repeat_contact_is_our_defect. Only the published shape is used — no figure is
+    asserted about this system's own performance.
+
+- title: "Deflection is not first contact resolution"
+  kind: research
+  note: >
+    Deflection asks only whether a contact reached a live agent, so an abandonment counts as a
+    success — which is why it is the most gamed metric in support and why it must never be read as
+    resolution. Behind the self_service_inclination attribute, the anti-pattern
+    req.ap.sending_the_doc_link_back, and the note on the chat_abandonment_share metric.
+
+- title: "Contact centre abandonment benchmarks"
+  kind: research
+  note: >
+    Roughly 2–5% abandonment is healthy; sustained figures above 8% indicate a staffing or routing
+    failure rather than impatient customers. Used on the chat evidence source and on the
+    chat_abandonment_share metric, where it is the number that stops abandonment being read as a
+    deflection win.
+
+- title: "SLA mechanics — business-hours versus calendar-hours clocks and pause conditions"
+  kind: framework
+  note: >
+    Every SLA is bound to a calendar, and disputes almost always trace to which one rather than to
+    the target itself. This is why working_hours is modelled separately from timezone, why the
+    exception req.chase_anyway_when_a_contractual_clock_is_running says the deadline's calendar
+    outranks the requester's own hours, and why ball_in_court is documented here as explicitly NOT a
+    clock state — it knows nothing about pauses or business hours.
+
+- title: "Incident response practice — severity levels and the Incident Commander role (Google SRE lineage)"
+  kind: practitioner
+  note: >
+    Severity is blast radius, not volume: SEV1 a critical or major outage, SEV2 significant
+    degradation, SEV3 minor impact with a workaround, SEV4 cosmetic. Used in the exception
+    req.outage_overrides_quiet_hours, where the test for overriding a requester's working hours is
+    the severity band rather than the requester's tone. The MTTD/MTTA/MTTR decomposition is the
+    reason hours_waiting is modelled as wall-clock rather than clock-adjusted — the customer
+    experiences total elapsed time, not our portion of it.
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    All twenty-three sections authored. Fifty-four attributes across eight composite groups.
+    Eighteen inference patterns — nine executable, nine needs_signal — and every one of them
+    carries a false_positive, because a confidence with no stated failure case is a number nobody
+    can argue with.
+
+    The uncomfortable summary: the system can tell you precisely how long this person has been
+    waiting and almost nothing about what to say to them. Every attempt to infer technical_fluency,
+    the highest-weighted decision factor on this object, is in the needs_signal list. Everything
+    that fires today fires off thread.*, commitment.*, meeting.*, derived.* and graph degree.
+
+    The four asks that would change this object most, in order:
+    (1) conversation.from_address — the cheapest signal in the backlog and the one whose absence
+    corrupts the most fields, because without it a role mailbox is silently modelled as a person;
+    (2) derived.contact_frequency — turns three unremarkable tickets into one alarming pattern and
+    retires the graph-degree heuristic that currently stands in for it;
+    (3) diagnostic_artifact_attached — the best evidence of fluency there is, arriving unasked in
+    the first message and discarded;
+    (4) escalation_requested — there is no escalation signal of any kind in the substrate, so the
+    loudest thing a requester can do is inaudible.
+
+    Sensitivity is authored honestly rather than defensively. Nine attributes are confidential and
+    each is confidential for a stated reason: they are judgements about a named individual, or data
+    disclosed to get help rather than to be profiled. Rule 10 is enforced by the precondition
+    req.personal_data_is_in_scope_for_this_use, which blocks the attribute and never the answer.
+
+    The section a reviewer should read first is `exceptions`. Two of the eight are marked common,
+    which is a claim: terse non-native-speaker messages misread as rudeness, and healthy repeat
+    contact during onboarding flagged as a defect. Both will happen this week in a queue of any
+    size, and neither is written down in any playbook this domain has.

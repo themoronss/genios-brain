@@ -1,6 +1,7 @@
 # Consumption boundary and gaps
 
-No Redis cache or lower runtime reader uses these memories yet.
+PostgreSQL is the source of truth. No Context/Reasoning reader consumes these memories yet, and no
+optional Redis acceleration/fallback has been added.
 
-A durable/API-visible row proves publication, not product behavior change. Activation requires a
-separate topology-safe read contract, version/fallback rule and tests.
+A future reader must query by tenant and viewer, enforce `expires_at` at read time even before the
+physical sweep, and treat cache failure as a PostgreSQL fallback rather than extending the lease.

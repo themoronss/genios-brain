@@ -1,624 +1,453 @@
-# Layer 5.2 — The Delivery Engine
+# Layer 5.2 — Delivery Engine
 
-**Last updated:** 7 August 2026
+**Last updated:** 8 August 2026
 **Branch:** `antler-inception`
-**Tests:** **142 focused delivery/outbox/Executive-bridge tests**; full repository suite
-**1796 passed**.
-**Status:** Atlas Layer 5.2 core implemented, wired into the existing drain and Atlas Layer 6
-learning, **no new worker**.
-**For the CTO:** Part 5 is a runbook. Apply migrations through `0044`, deploy, then exercise one
-real destination and one controlled terminal failover.
+**Product identity:** Layer **5.2** is Delivery. Layer **6** is Learning & Evolution. There is no
+product Layer 7.
+**Verification:** `1861 passed, 1 unrelated Starlette/httpx deprecation warning`
+**Status:** The Atlas-aligned **internal delivery control plane is implemented and wired**.
+What remains is deployment, real-provider credentials, product clients and live integration/load
+proof—not another hidden routing or lifecycle subsystem.
 
-**System Design navigation:** [Layer map](../System%20Design/Layer-5.2-Delivery-Engine/README.md) ·
-[component status](../System%20Design/Layer-5.2-Delivery-Engine/STATUS.md) ·
-[Delivery Orchestrator](../System%20Design/Layer-5.2-Delivery-Engine/01-Delivery-Orchestrator/README.md) ·
-[11 Delivery Units](../System%20Design/Layer-5.2-Delivery-Engine/02-Delivery-Units/README.md) ·
-[Delivery Management](../System%20Design/Layer-5.2-Delivery-Engine/03-Delivery-Management/README.md)
-
-The System Design now follows the Atlas's three physical parts. It explicitly marks email missing
-and API-only application/mobile/extension/dashboard seams partial rather than calling all eleven
-targets complete.
-
-**The one-line summary for a CTO:** GeniOS could produce a correct, well-owned, well-worded
-alert and then deliver it at 03:14. Layer 5.2 is the gate between "Layer 5 decided to speak"
-and "the webhook fires" — it decides whether this message may travel, **to this person, right
-now**, and when it may not, it says so in the row with a reason code.
-
-Layer 4 answers **"what should happen?"**
-Layer 5 answers **"how do we make it happen?"**
-Layer 5.2 answers **"may this reach them, now?"**
-
-That third question was not being asked. A 03:14 notification is not a delivery bug — it is how
-a tenant mutes the channel in week three, and once it is muted every other layer's accuracy is
-worth exactly zero.
-
-**Start at Part 5 — it is the deployment runbook.**
-
-> **Naming note:** legacy filenames such as `0042_l6_delivery_gate.sql` and
-> `test_l6_outbox.py` predate the corrected Atlas documentation. They remain stable technical
-> identifiers, but both belong to product **Layer 5.2 Delivery**.
-
-> **Current-state correction, 7 August 2026.** The original build note below describes the
-> admission gate introduced by migration `0042`. Atlas reconciliation now also exposes immutable
-> `DeliveryObject`/`DeliveryResult` projections, leased live presence, deterministic destination
-> ordering, Slack + Teams + signed webhook adapters, authenticated pull surfaces, terminal-
-> failure-only failover, delivery analytics and the durable learning handoff. Migration `0044`
-> adds the presence state. The System Design folder is the component-level current authority.
+System Design: [Layer 5.2 index](../System%20Design/Layer-5.2-Delivery-Engine/README.md) ·
+[status matrix](../System%20Design/Layer-5.2-Delivery-Engine/STATUS.md) ·
+[orchestrator](../System%20Design/Layer-5.2-Delivery-Engine/01-Delivery-Orchestrator/README.md) ·
+[11 delivery units](../System%20Design/Layer-5.2-Delivery-Engine/02-Delivery-Units/README.md) ·
+[management](../System%20Design/Layer-5.2-Delivery-Engine/03-Delivery-Management/README.md) ·
+[contracts and operations](../System%20Design/Layer-5.2-Delivery-Engine/04-Contracts-and-Operations/README.md)
 
 ---
 
-## Part 1 — What already existed (and was good)
+## 1. CTO verdict
 
-`deliver/` was not empty. The *transport* half was already built and is genuinely solid:
+The architecture now follows the Atlas boundary:
 
-| What | Where |
-|---|---|
-| **The outbox** — every send is a row: queued → delivered \| failed_terminal | `deliver/outbox.py` |
-| **Bounded backoff** — `(5, 30, 120, 720)` minutes, then terminal. Never an infinite retry | `deliver/outbox.py` |
-| **Claim safety** — `FOR UPDATE SKIP LOCKED`, so two instances never send the same message | `deliver/outbox.py` |
-| **Idempotent enqueue** — unique on `(org_id, card_id, channel)`; a re-run is a no-op | `migrations/0032` |
-| **Authority re-validation at send time** — a queued card proves it is *still* live before it goes | `deliver/outbox.py` |
-| **The Layer 5 wire** — commitments become real messages, exactly once | `deliver/executive_bridge.py` |
-| **Daily budget** — `budget_per_user_day`, "a property of the channel's politeness" | `deliver/router.py` |
-| **Band cuts from pack config** — a tenant redefines "critical" in one place | `deliver/bands.py` |
+```text
+Layer 5                         Layer 5.2                         Layer 6
+commitment                     delivery                          learning
 
-**The most important thing that was already right:** delivery is *state*, not hope. Nothing is
-a fire-and-forget HTTP call inside the reasoning sweep.
+work owner                     current audience/recipient       measured adaptation
+actions + deadline      ->     destination/channel/format  ->   from DeliveryResult
+business priority              timing/policy/priority
+ExecutionObject                lifecycle/retry/recovery          no guessed engagement
+```
 
-### What was missing
+The one active Layer 5.2 input is a persisted, hash-verifiable `ExecutionObject`. Cards are a
+presentation/read model and cannot independently authorize an outward notification. The old
+synchronous agent fan-out and raw-card enqueue path are not called by the production distribution
+sweep.
 
-Everything between the claim and the send. Not partially built — **absent**:
+New commitments use `execution.v2`, which also freezes the narrowest Layer 1 source visibility
+inherited through the selected Layer 4 evidence. Existing `execution.v1` objects remain
+hash-compatible; Layer 5.2 re-derives their ACL in memory from the immutable reasoning context, and
+missing lineage fails closed rather than becoming an org-visible default. Concrete communication
+fields retained in both contracts are backwards-compatible audit hints: Layer 5.2 ignores the
+frozen channel and interrupt values and recomputes the live route from current directory, presence,
+destinations, visibility and policy.
 
-| Missing | Consequence |
-|---|---|
-| **Any notion of the recipient's local time** | A Kolkata tenant's critical card fired at 03:00 IST. No timezone was stored anywhere per seat |
-| **Quiet hours** | None. The only dial was *how many* per day, never *when* |
-| **A burst limit** | `budget_per_user_day` allows 7 cards. All seven could land in the same minute |
-| **An opt-out** | A person who wanted Slack pushes off had no way to say so, and no column to say it in |
-| **A tenant kill switch / compliance hold** | Disabling delivery meant deleting the webhook, which also lost the config |
-| **A verdict that is not "send" or "fail"** | Holding a message could only be expressed as a *failure*, which burned the retry ladder |
-| **Any record of why a message did not arrive** | "Why wasn't I told?" was a log-grep against a clock that had already moved |
+### What “complete” means here
 
-Grep confirmed it: `quiet_hours`, `interrupt`, `opted_out`, `defer` appeared nowhere in
-`deliver/` before this work. The outbox had exactly two outcomes and neither of them meant
-*not yet*.
-
----
-
-## Part 2 — The fork we had to settle first
-
-The spec calls this "Layer 5.2" and gives it its own number. The codebase has a topology file
-(`LAYERS.py`) where `deliver` is already layer **6**, sitting between `executive` (5) and
-`feedback` (7).
-
-**Settled: `deliver` (6) *is* the spec's Layer 5.2.** No renumbering, no new package, no
-migration of existing code. The layer already existed and already sat in the right place in the
-DAG — what was missing was not a home, it was the units.
-
-> This matters more than it sounds. Renumbering would have touched `LAYERS.py`,
-> `tests/test_layer_topology.py`, and every import in `deliver/` — a large, risky diff that
-> changes no behaviour. The work is filling the gap, not moving the furniture.
-
-**The second fork: where does the gate run — enqueue or drain?**
-
-**Settled: drain.** Enqueue happens inside the 6-hourly sweep, so a row can sit queued for
-hours. Evaluating quiet hours against the *enqueue* clock would ask "is 14:00 a humane moment?"
-about a message that lands at 03:00 — which is the exact bug this layer exists to fix. The
-codebase had already settled this question once, for authority: never trusted from queue time,
-always re-validated immediately before the send. Admission obeys the same law for the same
-reason.
-
-Enqueue's job is to **materialise** the delivery object onto the row. The gate's job is to
-**judge** it against the world as it is at the instant of sending.
+- The internal boundary, orchestration, persistence, safety, management, API and Layer 6 handoff
+  are present and covered by the repository suite.
+- A capability is not called externally operational unless its provider/client exists. The
+  capability registry reports this distinction through `engine_ready`, `operational`,
+  `available_channels` and `integration_required`.
+- No claim is made that migration `0046`, provider ACK-loss behavior or multi-worker contention
+  has been proven on production infrastructure. The repository closes the internal races; the
+  quiescent cutover and real-provider proof remain mandatory deployment work below.
 
 ---
 
-## Part 3 — What we built
+## 2. The active runtime flow
 
-The admission core remains two pure units and one composer. Around it, the Atlas reconciliation
-adds the context, routing, adapter, result, analytics and recovery components required to make
-Layer 5.2 a complete delivery orchestrator.
+```text
+Layer 5 persists immutable ExecutionObject
+        ↓
+minute delivery heartbeat calls run_distribution
+        ↓
+Delivery Orchestrator resolves source visibility + context + audience + route + format + priority
+        ↓
+one logical DeliveryObject is inserted idempotently
+        ↓
+priority/fairness worker claims it with an expiring fencing token
+        ↓
+hard policy + quiet/busy timing + atomic attention quota/attempt journal
+        ↓
+live execution identity/hash/authority re-check
+        ↓
+surface or provider adapter (only after the durable attempt exists)
+        ↓
+append-only attempt outcome + lifecycle event
+        ↓
+DeliveryResult API/analytics → Layer 6 DeliveryFact
+```
 
-| Spec unit | Where | What it does |
+Initial delivery and reminder/escalation events use the same materializer. A malformed frozen
+object is written to `delivery_materialization_failures`; it cannot silently disappear or crash
+all tenants. Once the source is repaired and successfully materialized, that failure is marked
+resolved.
+
+---
+
+## 3. Delivery Orchestrator — all seven Atlas responsibilities
+
+| Atlas responsibility | Implementation | Current behavior |
 |---|---|---|
-| **Delivery Policy Unit** | `deliver/policy.py` | *May this travel at all?* Kill switch, hold, channel floor, opt-out. Almost always terminal |
-| **Timing & Interruptibility** ⭐⭐⭐⭐⭐ | `deliver/timing.py` | *Is this the moment?* Quiet hours, burst, busy. **Never suppresses anything** |
-| **Delivery Gate** | `deliver/gate.py` | Composes the units, resolves their inputs from live tenant state |
-| **Delivery Context Resolver** | `deliver/presence.py`, `deliver/gate.py` | Combines preferences, recipient/channel state, burst history and an active leased presence at send time |
-| **Destination Routing** | `deliver/destination.py` | Stable primary/fallback ordering from registered destinations; never trusts row order |
-| **Channel Adapter Unit** | `deliver/channels/` | Slack, Teams, signed HTTPS webhook and durable pull surfaces behind one adapter contract |
-| **Delivery Tracking & Result** | `deliver/results.py` | Projects the one outbox ledger into immutable public DeliveryObject and DeliveryResult contracts |
-| **Retry & Failure Recovery** | `deliver/outbox.py` | Bounded transport retry and authority-reproved failover only after terminal adapter failure |
-| **Delivery Analytics** | `deliver/analytics.py` | Counted status/channel metrics, attempts, deferrals, burst holds and measured p50/p95 latency |
-| — Contract | `contracts/delivery.py` | `SEND` / `DEFER` / `SUPPRESS`, DeliveryObject/Result and the composition law |
-| — Wiring | `deliver/outbox.py` | Enqueue stamps the delivery object; drain asks the gate before the send |
-| — Schema | `migrations/0042_l6_delivery_gate.sql` | `delivery_preferences` + the delivery object on the outbox row |
-| — Presence schema | `migrations/0044_l52_atlas_delivery.sql` | Tenant-scoped, expiring `delivery_presence` leases |
-| — Surface | `api/delivery_routes.py` | Preferences, effective gate, held rows, context, typed results, pull inbox and analytics |
+| Delivery Context Resolver | `deliver/presence.py`, `deliver/gate.py` | Reads an expiring seat lease: activity, current surface, focus mode and busy window. Stale context expires rather than becoming permanent truth. |
+| Audience Resolver | `deliver/audience.py` | Resolves current owner/manager/admin or a specific registered agent, then permits only a current seat whose verified email can view the inherited source ACL. A frozen former manager or unrelated admin cannot bypass that ACL. |
+| Destination Router | `deliver/orchestrator.py`, `deliver/destination.py` | Builds one stable primary→fallback ladder from registered destinations and authenticated product surfaces. Human and agent routes are isolated; participant/private evidence cannot enter a shared Slack/Teams/webhook route. |
+| Channel Planner | `deliver/orchestrator.py` | Deterministically selects `inline_suggestion`, card, Slack/Teams message, webhook payload, agent envelope or REST resource. No LLM chooses a route or format. |
+| Timing & Interruptibility | `deliver/timing.py`, `deliver/gate.py` | Quiet hours, focus/meeting state and burst windows return `SEND`, `DEFER` or `SUPPRESS`. Deferral never consumes a provider retry. |
+| Delivery Policy | `deliver/policy.py`, `deliver/orchestrator.py`, preferences API | Source visibility, tenant/seat/channel enablement, holds, opt-out, band floor, quiet policy and hard suppression are enforced at materialization and rechecked under live locks at the send boundary. |
+| Priority Scheduler | `deliver/scheduler.py`, `deliver/outbox.py` | Maps business priority into Critical/High/Medium/Low/Background, orders due claims and ages waiting rows every four hours to prevent starvation. |
 
-### The seven decisions that matter most
+### Routing laws now enforced
 
-**1. DEFER is a first-class verdict, and it spends nothing.**
-This is the single most important line in the layer. The outbox already had a retry ladder for
-*failures*, and that ladder is bounded — a channel that never works must eventually stop being
-tried. Deferral is the opposite kind of event: **nothing is broken, the recipient is asleep.**
+1. Human delivery never uses the reserved `agent` transport.
+2. Agent delivery may use only the signed agent push or authenticated API inbox; it never falls
+   back into a human dashboard with an agent recipient.
+3. Agent selection requires the exact `delivery.read` grant. A poll-only agent receives an API
+   route only when an active scoped API key for that same `agent_id` exists. Registry-only or
+   legacy signal-read grants cannot turn into an execution instruction.
+4. High/critical work prefers an eligible current surface or configured push route. Busy/focus
+   state removes interruption but does not erase the delivery.
+5. Medium/low/background work lands on durable pull surfaces. Those inboxes are the non-intrusive
+   batch/queue; the active path does not create a second duplicate “digest delivery” for the same
+   insight.
+6. Route fallback advances the same logical row and recomputes channel class, payload, format,
+   interruption and reason. It does not create another logical notification.
+7. `participants`/`private` evidence is routed only to a visibility-authorized active seat on an
+   authenticated recipient surface. No authorized principal means fail-closed materialization,
+   not an arbitrary admin fallback.
 
-If a hold consumed an `attempts` slot, a message queued at 22:00 would burn all four attempts
-against quiet hours and be `failed_terminal` by breakfast — the exact message the recipient
-most wanted. So `_defer` moves `next_attempt_at`, bumps a **separate** `defer_count`, and
-touches nothing else. A test loops ten deferrals and asserts the row never goes terminal, and
-another asserts the SET clause literally does not contain the word `attempts`.
+---
 
-**2. Gating keys on channel *physics*, not sender *intent*.**
-Layer 5's `CommunicationPlan.interrupt` means "this deserves attention". It does **not** mean
-"this will make a phone buzz": a high-band card is pushed to Slack with `interrupt=False` and
-still lights a lock screen at midnight.
+## 4. Eleven Atlas delivery units
 
-`DeliveryCandidate.intrusive` is a property of the *channel class* — chat is intrusive, digest
-is not, in-app is not, email is not. That is what closes the gap. A digest is never gated on
-the clock, because nobody was ever going to be woken by a digest.
+The registry is `deliver/units.py`; the public view is
+`GET /api/org/{org_id}/delivery/capabilities`.
 
-**3. Break-glass inherits Layer 5's confidence floor for free.**
-The escape hatch is `band ≥ override_band AND interrupt`, and the second half is doing more
-work than it looks. `executive/communication.py` only sets `interrupt` when the reasoner's
-confidence clears its floor — a critical-*scoring* conclusion it is 40% sure of comes through
-with `interrupt=False`. So a low-confidence crisis **cannot** wake anybody, and the timing unit
-gets that property without knowing what a confidence interval is.
+| Unit | Internal engine | Operational transport now | External work still required |
+|---|---|---|---|
+| Human | Complete | In-app, dashboard, Slack, Teams | Browser/desktop/mobile clients for every desired human surface |
+| Agent | Complete | Signed per-agent webhook + scoped REST inbox | Register each runtime, endpoint and scopes; receiver verifies HMAC/idempotency |
+| API | Complete | Authenticated REST inbox + signed webhook | GraphQL, streaming, MCP and SDK only if product chooses them |
+| Application | Complete seam | `application` pull surface | Web/desktop/IDE/CLI client rendering and receipts |
+| Notification | Complete seam | In-app notification surface | APNs/FCM and OS notification provider/client wiring |
+| Dashboard | Complete seam | Durable dashboard/in-app pull data | Dashboard UI rendering, presence and receipt emission |
+| Webhook | Complete | Public-HTTPS HMAC adapter with stable idempotency key | Customer endpoint/secret, DNS/egress hardening and receiver contract |
+| Extension | Complete seam | Authenticated extension inbox + context lease | Browser/CRM/email-editor extension client |
+| Mobile | Complete seam | Authenticated mobile inbox | Mobile app plus APNs/FCM for native push |
+| Email | Contract/capability ready | No provider is falsely reported | Select SMTP/API provider, verified domain, bounce/unsubscribe/feedback handling |
+| Slack / Teams | Complete adapters | Incoming webhook / Teams Workflow | Tenant credentials; OAuth/bot integration for exact per-user DM/thread targeting |
 
-One dial, upstairs. And because there is no band above `critical`, raising `override_band` to
-`critical` is how a tenant says "never wake me".
+“Complete seam” means the deterministic route, durable DeliveryObject, authenticated pull API,
+lifecycle receipts and analytics are implemented. It does not mean a browser extension or mobile
+binary has magically been shipped from this backend repository.
 
-**4. Constraints compose; they do not race.**
-A meeting, quiet hours and a burst limit are three independent facts, and a delivery has to
-satisfy all three. Rather than an if/elif ladder whose *order* silently decides the answer,
-each check produces its own decision and `DeliveryDecision.combine` folds them:
+`operational` is fail-closed runtime truth, not “a row exists.” Capability discovery decrypts the
+current sealed credential with `GENIOS_CRYPTO_KEY` and runs the same URL/secret/agent shape checks
+used by the adapter boundary. Missing keys, corrupt ciphertext, invalid endpoints and registry-only
+agents are reported unavailable without exposing credential bytes or decryption errors.
 
-> **First SUPPRESS wins. Among DEFERs, the latest window binds. Otherwise the first SEND.**
+---
 
-Intersection, not a vote. Adding a fourth unit later is adding a line to a list — and it can
-only ever make the system **quieter**, never louder, which is the correct direction for a
-mechanism that spends human attention.
+## 5. Delivery Management — all eight Atlas managers
 
-The tie-breaks are deterministic on purpose: two units that both suppress must always name the
-same reason, or the same delivery blocked twice gets explained two different ways depending on
-dictionary ordering. That is the kind of nondeterminism that turns an incident review into an
-argument.
+### 5.1 Delivery Outbox
 
-**5. `suppressed` is a third status, not a flavour of `cancelled`.**
-`cancelled` already meant one specific thing: the subject stopped being live before the send —
-a closed commitment, a revoked decision. A person who turned this channel off is a *different
-fact with a different fix*. Three outcomes, three statuses, because an operator seeing
-`suppressed` should look at preferences, not at Slack's status page.
+`deliver/orchestrator.py` and `deliver/outbox.py` implement the Atlas's durable spine. The current,
+hash-verified execution and its fully resolved Layer 5.2 plan become one tenant-scoped logical row
+plus an append-only `queued` event in one transaction; no adapter is called inline. A later worker
+claims that row with `FOR UPDATE SKIP LOCKED` and an expiring fencing token. The attention
+reservation and physical `started` attempt then commit together before network I/O, so a crash
+cannot create an invisible provider call. One route ladder stays on one row; definite failure may
+advance it, while ambiguous evidence stops unsafe cross-channel fan-out and requires bounded
+reconciliation/replay rules.
 
-**6. Bad configuration degrades in the engine and is refused at the door.**
-Two responses to the same predicate, and the asymmetry is deliberate:
+### 5.2 Delivery Tracker
 
-- **`build_context` degrades.** A tenant who types `Amercia/New_York` must never stop *another*
-  tenant's mail draining. Every unusable value falls back to the **protective** default — a
-  broken timezone becomes UTC quiet hours, not *no* quiet hours — and the reason travels into
-  the audit row so the setting is visibly wrong rather than silently ignored.
-- **`PUT /delivery/preferences` refuses.** It writes, re-resolves inside the same transaction,
-  and rolls back if the result would degrade.
+`deliver/tracker.py` separates transport state from the public engagement lifecycle:
 
-The engine cannot afford to fail; the form field cannot afford to lie. The consequence is the
-one that matters: **a setting that survives a PUT is a setting that will actually take effect.**
-
-**7. Preferences resolve field-by-field, never row-by-row.**
-Rows are keyed `(org_id, seat_id, channel)` with `'*'` as the wildcard, at four specificities:
-
-```
-(org, seat, 'slack')  →  this person, this channel     "no Slack pushes, keep email"
-(org, seat, '*'    )  →  this person, everywhere       their timezone, their quiet hours
-(org, '*',  'slack')  →  everyone, this channel        "Slack is escalations only"
-(org, '*',  '*'    )  →  the tenant default            set by an admin
+```text
+queued ↔ deferred → delivered → viewed → ignored
+                              └→ accepted → executed | failed
+queued/deferred/delivered/viewed/accepted → expired where legal
 ```
 
-Each *column* independently walks from most specific to least and takes the first non-null
-opinion. Picking a winning **row** would mean a person who sets only their timezone thereby
-discards their tenant's quiet hours. A seat beats an org-wide channel rule, because the seat is
-a statement about a human and the channel is a statement about a pipe.
+`suppressed` and `cancelled` remain terminal facts with different meanings. Every move appends a
+tenant-scoped `delivery_events` row in the same transaction. Client-supplied idempotency keys make
+repeated taps/retries no-ops, and chronology validation rejects receipts before creation/delivery
+or more than five minutes in the future.
 
-`'*'` is a sentinel rather than NULL because **NULLs never compare equal inside a primary key**,
-which would let two org-wide default rows coexist and make resolution depend on physical row
-order.
+### 5.3 Retry Manager
 
-### What is deliberately absent, and why
+- Provider failures use bounded backoff: `5, 30, 120, 720` minutes, then terminal on the next
+  failed attempt.
+- `Retry-After` may change a still-available delay, but cannot resurrect an exhausted retry cycle.
+- Quiet hours, meetings and quotas are deferrals, not failures, so they do not burn the ladder.
+- Every provider call has an append-only `delivery_attempts` record. For intrusive delivery, the
+  hourly/daily reservations and fenced `started` attempt commit in one transaction before network
+  dispatch, so a worker crash cannot consume untraceable quota.
 
-**No second daily cap.** `budget_per_user_day` already exists in `deliver/router.py`. A second
-daily dial here would be a second answer to one question — and the failure mode is not that a
-message gets blocked twice, it is that a support engineer finds one limit, changes it, and
-nothing happens. Timing caps only the **burst**, which the daily budget genuinely does not
-cover: seven cards are a reasonable day and an unreasonable minute.
+### 5.4 Failure Recovery
 
-**No "are they already handling it?" check.** Layer 5 owns that and already does it
-(`executive_bridge.executive_delivery_is_live`). Two copies of an authority rule is how a
-revoked recommendation gets delivered.
+- Definite terminal failures may advance the same row to its next route.
+- Ambiguous timeouts/5xx outcomes never cross-channel fail over because the first provider may
+  already have accepted the message.
+- Expired worker claims mark the exact claim-owned unfinished attempt `unknown` before another
+  worker proceeds. If no attempt exists for that claim, the row is safely requeued without
+  inventing ambiguous transport evidence.
+- Slack/Teams incoming webhooks cannot consume an idempotency key. Their timeout, thrown adapter,
+  lost ACK or expired post-attempt claim becomes terminal/manual reconciliation instead of an
+  automatic duplicate human interruption.
+- Owner-controlled replay requires an explicit duplicate-risk acknowledgement for `started`,
+  `unknown`, `delivered` or pre-v2 legacy ambiguity. ACK-loss replay preserves the receiver key;
+  definite non-delivery starts a new `retry_generation`, and old attempts remain append-only.
 
-**No content inspection.** The gate sees a candidate, never a payload. A rule that reads the
-message is a rule that will eventually be asked to make exceptions for important-sounding ones —
-and at that point "should I interrupt?" has quietly become a second reasoning engine sitting
-below the real one.
+### 5.5 Deduplication
 
-### The thirteen reason codes
+`(org_id, dedupe_key)` is globally unique for non-legacy delivery rows. Initial execution and each
+execution event have deterministic logical keys. Ten available destinations produce one delivery
+with a route ladder—not ten impressions.
 
-Every blocked delivery names itself. "Why wasn't I told?" is asked far more often, and far more
-angrily, than "why *was* I told?" — so the answer is in the row, not in a log.
+Provider idempotency is stable across retries of one route generation:
 
-| Unit | Reason code | Verdict |
-|---|---|---|
-| `policy` | `org_delivery_disabled` | suppress |
-| `policy` | `org_delivery_held` | **defer** (the only one policy issues) |
-| `policy` | `channel_inactive` | suppress |
-| `policy` | `below_channel_min_band` | suppress |
-| `policy` | `recipient_inactive` | suppress |
-| `policy` | `recipient_opted_out` | suppress |
-| `policy` | `permitted` | send |
-| `timing` | `quiet_hours` | defer |
-| `timing` | `recipient_busy` | defer |
-| `timing` | `burst_limit` | defer |
-| `timing` | `channel_not_intrusive` | send |
-| `timing` | `override_band_<band>` | send — **the break-glass** |
-| `timing` | `within_attention_window` | send |
-| `timing` | `quiet_window_unsatisfiable` | send (defensive; unreachable via the contract) |
-
----
-
-## Part 4 — Bugs found and fixed while building
-
-**1. A card pushed to chat had no interrupt flag, and no dial to get one.**
-The card path never builds a `CommunicationPlan`, so it had nothing to say whether a card could
-break through quiet hours. Fixed by extracting `may_interrupt(band, confidence_bp, cfg)` out of
-`executive/communication.py` and calling it from the card enqueue — **with the tenant's own
-config snapshot**, pulled from the `authority_cfg` join that was already in the query.
-
-It reads the snapshot the card was *authorised under*, not the current pack config. A tenant who
-tightens `interrupt_band` while a card is queued must not have that card re-judged by a rule its
-band was never cut by. Both ends of the comparison talk about the same configuration.
-
-**2. `'*'` is a scope, never a route.**
-The preferences validator built a probe candidate with `channel='*'` and the contract correctly
-refused it — a delivery that names no channel is not a delivery. Fixed by expanding a wildcard
-rule to the concrete adapters it governs and validating against each, so a setting that is
-harmless for the digest and broken for chat is caught at save time rather than at 03:00.
-
-**3. A burst read cached across a pass would have let a flood through.**
-Ten intrusive messages coming due in one drain against a limit of three: a memoised count reads
-"0 delivered this hour" ten times and every one of them goes out — the exact flood the limiter
-exists to prevent. Fixed with `note_delivered`, which folds this pass's own sends into the
-window so the fourth message is held by the three that preceded it seconds earlier.
-
-**4. A successful send kept a stale hold reason.**
-A row deferred overnight still carried `gate_reason='quiet_hours'` after it finally delivered —
-and worse, a message that *woke somebody* could not say why. Fixed: the success path writes the
-admitting verdict too. `override_band_critical` in the row is the whole answer to "who
-authorised this at 2am?", which is a question that does get asked.
-
-**5. A gate that cannot read must not decide by accident.**
-An exception in the resolver would have taken the whole drain down, or — worse in a naive
-fix — sent the message anyway. Fixed per row: a gate failure takes the existing bounded retry
-ladder. The message survives, nothing goes out un-judged, a gate that stays broken ends
-`failed_terminal` with the reason in the row, and one tenant's bad state cannot stop the pass
-draining for everybody else.
-
-**6. The resolver held a snapshot across an outbound POST.**
-The gate connection sat `idle in transaction` while Slack answered, holding a snapshot and
-blocking vacuum. Fixed with a rollback between rows — these are read-only queries, so it costs
-nothing and additionally means each resolve sees deliveries this pass just committed.
-
-### Atlas reconciliation defects closed after the admission core
-
-| # | Gap or failure mode | Current correction |
-|---|---|---|
-| 7 | The Atlas promised DeliveryObject and DeliveryResult, but callers saw private outbox rows | Immutable typed projections now expose a stable public lifecycle without creating a second ledger |
-| 8 | A crashed client could leave somebody permanently busy | Presence is a mandatory-expiry lease; effective busy time is capped by its expiry |
-| 9 | Destination selection depended on whichever channel row arrived first | Explicit integer priority with stable channel-name tie-break |
-| 10 | Failover could have bypassed quiet hours, opt-out or revoked authority | Only `failed_terminal` opens failover, and authority is re-proved before enqueueing the next destination |
-| 11 | Calling a mobile/dashboard row “delivered” could be mistaken for device push | These adapters are explicitly pull surfaces; success means durable availability in the authenticated inbox |
-| 12 | A broad delivery failure rate could mislabel queued/suppressed work as transport failure | Analytics excludes open work and counts transport reliability only over delivered + failed-terminal rows |
-
-### The current focused test families
-
-| File | What it proves |
-|---|---|
-| `tests/test_delivery_gate.py` | Contract invariants, policy/timing composition, DST, resolver and drain wiring |
-| `tests/test_delivery_routes.py` | Effective gate, transactional preference refusal, held surface and tenant boundary |
-| `tests/test_delivery_atlas.py` | Typed objects/results, leased presence/resolver, deterministic routes, adapter validation, analytics, migration and failover law |
-| `tests/test_delivery.py` | Card/digest routing and format behaviour |
-| `tests/test_l6_outbox.py` | Claim safety, authority revalidation, bounded retry and one-ledger lifecycle |
-| `tests/test_executive_bridge.py` | Frozen Layer 5 communication handoff, resolved recipients and stale suppression |
-
-Three schema-conformance locks are worth calling out because they catch the *silent* failure:
-every preference column the gate reads, every column the router writes, and every column the
-held view selects must exist in a migration. Rename one and `preferences.get(...)` returns
-`None` everywhere, the gate falls back to defaults, and a tenant who set quiet hours watches
-nothing change **with no error anywhere**. The read list is derived from the source, so it
-cannot drift out of date.
-
----
-
-## Part 5 — Deployment runbook
-
-**Layer 5.2 self-starts.** It sits inside the drain that already runs on the scheduler
-heartbeat. No new cron, no new worker, no new service, no new environment variable. Apply the
-migration, deploy the branch, and it begins gating.
-
----
-
-### Step 1 — Apply the migration
-
-```bash
-.venv/bin/python -m genios_engine.platform.migrate
+```text
+delivery_id : retry_generation : channel
 ```
 
-Applies both Layer 5.2 migrations in sequence:
+Generic webhook and agent transports forward this key. Slack/Teams incoming webhooks do not offer
+the same end-to-end guarantee, so automatic retry is refused on ambiguity and an owner must inspect
+provider state and explicitly accept duplicate risk before replay.
 
-`0042_l6_delivery_gate.sql`:
+### 5.6 Rate Limiter
 
-- `delivery_preferences` — the rules table, with the `'*'` sentinel and its org cascade FK
-- seven columns on `delivery_outbox` — `recipient`, `band`, `channel_class`, `interrupt`,
-  `defer_count`, `gate_unit`, `gate_reason`
-- two partial indexes — the burst-window read and the operator's "what is held?" view
+PostgreSQL conditionally reserves the final hourly and daily attention slot, so two workers cannot
+both spend it. Slack and Teams share one tenant-wide exact rolling-hour stream, while the local-day
+budget remains per recipient (including mixed timezones). The daily limit is snapshotted from the
+effective configuration onto the DeliveryObject. Reservation and attempt start are atomic; a
+definite non-delivery releases both slots, while an ambiguous outcome retains them because the
+person may already have been interrupted.
 
-`0044_l52_atlas_delivery.sql`:
+### 5.7 Delivery Analytics
 
-- `delivery_presence` — one bounded lease per `(org_id, seat_id)`
-- a database check that `expires_at > observed_at`
-- tenant deletion cascade and an active-lease lookup index
+`deliver/analytics.py` reports counted status/channel cohorts, transport success/failure, attempts,
+deferrals, burst holds, p50/p95 delivery latency, response/execution time, view/ignore/accept/execute
+rates and per-recipient fatigue. Denominators use real impressions only. Earlier engagement clocks
+survive a later expiry instead of being erased by the latest lifecycle state.
 
-**Verify:**
+### 5.8 Delivery Object Builder
 
-```sql
-select filename from schema_migrations
- where filename in ('0042_l6_delivery_gate.sql', '0044_l52_atlas_delivery.sql')
- order by filename;  -- 2 rows
-\d delivery_preferences
-\d delivery_presence
-\d delivery_outbox
+`deliver/orchestrator.py` materializes the v2 DeliveryObject with execution lineage, audience,
+recipient, destination, concrete channel, format, five-class priority, daily budget, timing,
+route reason/ladder, dedupe key, source payload and authority expiry. The output projection is
+`delivery-result.v2`.
+
+---
+
+## 6. Persistence and migration `0046`
+
+Migration `0046_l52_delivery_control_plane.sql` adds:
+
+- `cards.execution_id`, making cards explicitly subordinate to an ExecutionObject;
+- execution lineage/hash, route, format, priority, budget, source, fenced claim, retry generation
+  and lifecycle columns on `delivery_outbox`;
+- composite tenant foreign keys and unique logical-delivery identity;
+- append-only `delivery_events` and `delivery_attempts`;
+- atomic `delivery_rate_windows`;
+- durable `delivery_materialization_failures`;
+- encrypted credential columns for org channels and agent webhooks;
+- a legacy-reconciliation marker and explicit replay-approval timestamp;
+- check constraints for lifecycle vocabulary/timestamps, claim shape, route cursor, priority,
+  budget, retry counters and non-legacy execution lineage.
+
+`0046` takes a write-blocking outbox table lock, seeds exact rolling-hour and current per-recipient
+local-day counters from already delivered rows, and marks **every pre-control-plane pending or
+terminal-failed legacy row** for manual reconciliation—even `attempts=0`, because an old worker
+could have POSTed and crashed before incrementing that counter. The v2 materializer cannot adopt a
+marked row. Only an owner's explicit ambiguous-risk replay clears the marker. The migration runner uses a
+PostgreSQL session advisory lock, so replicas cannot race the migration ledger or non-idempotent
+DDL.
+
+The migration uses `NOT VALID` on compatibility foreign/check constraints so representative legacy
+rows can be repaired without blocking rollout. New writes are still enforced. The CTO must validate
+those constraints after production cleanup; “migration applied” and “all legacy rows validated” are
+two separate deployment facts.
+
+This is intentionally not a rolling old/new-worker migration. Database locks cannot stop an old
+process that has already started an external POST, and the old worker does not understand v2 rows,
+fencing or atomic quotas. The exact stop/wait/apply/deploy/resume sequence in section 10 is a release
+condition, not an optional hardening item.
+
+---
+
+## 7. Security and API surface
+
+### Authentication and isolation
+
+- Preferences, channel configuration/test sends, dead-letter replay and destructive operations
+  require an owner credential.
+- Scoped clients use explicit grants: `delivery.read`, `delivery.receipts.write` and
+  `delivery.context.write`.
+- A scoped `agent_id` is bound to its own recipient/seat. It cannot read another seat or receive
+  org-wide rows through a null-recipient fallback.
+- Scoped context `PUT` requires `delivery.context.write`; scoped context `GET` requires
+  `delivery.read`. Both are self-bound to the authenticated `agent_id`; owners retain org-wide
+  context administration and context `DELETE` remains owner-only.
+- Every SQL read/write carries authenticated `org_id`; path/body values are never tenant authority.
+- New provider secrets are Fernet-sealed. List APIs return masked metadata, not secrets.
+- Generic and agent webhook URLs require public HTTPS and reject obvious private, loopback, local,
+  credential-bearing and non-HTTPS targets.
+
+### Operational APIs
+
+```text
+GET    /api/org/{org_id}/delivery/results
+GET    /api/org/{org_id}/delivery/results/{delivery_id}
+GET    /api/org/{org_id}/delivery/inbox
+POST   /api/org/{org_id}/delivery/results/{delivery_id}/events
+GET    /api/org/{org_id}/delivery/results/{delivery_id}/attempts
+POST   /api/org/{org_id}/delivery/results/{delivery_id}/replay
+GET    /api/org/{org_id}/delivery/dead-letters
+GET    /api/org/{org_id}/delivery/analytics
+GET    /api/org/{org_id}/delivery/capabilities
+PUT/GET/DELETE delivery context and preference endpoints
+owner-only channel and agent-webhook configuration endpoints
 ```
 
-**Note:** the column adds carry non-volatile defaults, so PostgreSQL 11+ does them without a
-table rewrite. The cascade constraint is `not valid`, matching the 0033/0041 convention — it
-binds every future write without taking a full-table lock on deploy.
+The legacy `/v1/signals*` poll/claim/result handlers are authenticated `410 Gone` sentinels, not a
+second execution plane. Active agents consume complete `genios.agent-delivery.v1` envelopes from
+`/delivery/inbox?channel=api` and submit scoped lifecycle receipts.
 
-**If it fails:** migrations are immutable and checksummed. Ship a new migration; never edit an
-already-applied file in place.
-
----
-
-### Step 2 — Deploy the branch
-
-No new settings. Layer 5.2 uses what is already there:
-
-| Setting | Why | Already set? |
-|---|---|---|
-| `GENIOS_DATABASE_URL` | everything | yes |
-| `GENIOS_SCHEDULER_ENABLED` | drives the drain the gate sits in | yes |
-
-**Behaviour on day one, before anybody configures anything:** the defaults are protective on
-timing and permissive on policy, and that asymmetry is deliberate. An unconfigured tenant gets
-quiet hours **on** (21:00–08:00 UTC), a burst cap of 3/hour, and critical break-glass — but
-delivery itself stays enabled. Silence by default would be indistinguishable from the product
-being broken.
-
-> **Expect a visible change in the first night's numbers.** High-band cards that used to go out
-> at 02:00 will now be held until 08:00 local. That is the feature. `drain()` reports it:
-> `deferred` and `suppressed` are new keys in the returned totals.
+The dead-letter surface returns both terminal transport rows and unresolved materialization
+failures, so a corrupt source object does not remain invisible to operations.
 
 ---
 
-### Step 3 — Confirm it is running
+## 8. Layer 6 handoff
 
-The fastest check is the surface, because it runs the *real* gate rather than describing it:
+`feedback/store.py` reads the same durable outbox by tenant and bounded window. `DeliveryFact` now
+preserves lifecycle status and `viewed_at`, `ignored_at`, `accepted_at`, `executed_at` timestamps.
+`performance_optimization` measures those real facts alongside delivery, failure, attempts,
+deferrals and latency.
 
-```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$API/api/org/$ORG/delivery/effective?at=2026-08-08T02:00:00%2B00:00" | jq
+Layer 6 does not infer engagement. If a client has not emitted an authenticated receipt, the field
+stays null. If a user viewed a delivery before it expired, the earlier view remains evidence.
+
+---
+
+## 9. Verification evidence
+
+### Dedicated control-plane ratchets
+
+`tests/test_delivery_control_plane.py` covers:
+
+- human vs agent route isolation, poll-only agents and fail-closed no-route behavior;
+- inherited source-visibility routing, v1 hash compatibility and v2 ACL round-trip;
+- exact agent grants/API credential binding and scoped context self-binding;
+- current-manager resolution and stale target rejection;
+- proof that Layer 5's concrete channel/interrupt hints cannot bypass Layer 5.2;
+- context-aware inline/busy behavior;
+- all five priority boundaries and anti-starvation aging;
+- all eleven unit capability reports;
+- legal/illegal lifecycle paths;
+- expired-after-viewed analytics and Layer 6 consumption;
+- DeliveryObject daily-budget projection and validation;
+- terminal/429/ambiguous provider outcome classes;
+- scoped inbox isolation;
+- migration tenant/fencing/lineage ratchets;
+- quiescent legacy reconciliation, quota baseline, per-user daily/shared-hourly identities and
+  atomic quota/attempt journaling;
+- ExecutionObject-only active distribution and stable provider idempotency;
+- API surface registration.
+
+The dedicated control-plane file runs inside the focused delivery/executive set below; the full
+suite result is the release ratchet rather than a hand-maintained per-file count.
+
+### Full repository
+
+```text
+1861 passed, 1 warning in 8.21s
 ```
 
-Expect `"in_quiet_hours": true`, `verdicts.high.verdict == "defer"` with
-`reason_code == "quiet_hours"` and a `not_before` at 08:00 local, and
-`verdicts.critical_interrupt.verdict == "send"` with `reason_code == "override_band_critical"`.
-
-Then confirm the drain is producing the new outcomes:
-
-```sql
-select status, gate_unit, gate_reason, count(*)
-from delivery_outbox
-where created_at > now() - interval '1 day'
-group by 1,2,3 order by 4 desc;
-```
+The warning is a third-party Starlette/httpx deprecation, unrelated to Layer 5.2 behavior.
+`compileall` and `git diff --check` also pass. No live PostgreSQL/provider environment was available
+in this workspace, so the next section remains mandatory.
 
 ---
 
-### Step 4 — Read the reason codes before assuming anything is wrong
+## 10. CTO deployment and integration checklist — the only remaining work
 
-`suppressed` rows are **not** errors. The table in Part 3 is the decoder. In particular:
+### P0 — deploy the control plane
 
-| If you see | It means | Do |
-|---|---|---|
-| lots of `quiet_hours` | working as designed, first night | nothing |
-| `channel_inactive` | the webhook was removed or deactivated | re-register in Settings → Channels |
-| `below_channel_min_band` | someone set a channel floor above the card's band | intended, or lower `min_band` |
-| `recipient_opted_out` | that person turned this channel off | intended |
-| `org_delivery_disabled` | tenant kill switch is on | intended, or clear it |
-| `delivery gate unavailable` in `last_error` | the gate could not read — usually the migration did not run | Step 1 |
+1. Back up the target database. Stop **all** old delivery producers and drainers—not only the new
+   feature flag—and prevent an autoscaler from starting another old replica.
+2. Wait at least the old five-minute worker lease **plus the maximum provider-call timeout**, then
+   inspect/reconcile any provider request that may still have been in flight. There is no safe
+   old/new mixed-worker window.
+3. While outbound work remains stopped, apply `0046` through the checksummed migration runner. Its
+   advisory/table locks serialize DDL and adoption; confirm historical hourly/local-day quota rows
+   were seeded and every pending pre-v2 legacy row is marked for reconciliation.
+4. Deploy only the v2 code to every worker. Review marked legacy dead letters against provider
+   state; replay only with the explicit ambiguous-risk acknowledgement. Then enable v2
+   materialization/drain.
+5. Inspect legacy cards/outbox rows, repair violations, then run `VALIDATE CONSTRAINT` for every
+   `0046` constraint created `NOT VALID`.
+6. Run concurrent staging workers to prove `SKIP LOCKED`, claim expiry/fencing, one logical dedupe
+   winner, final rolling-hour/local-day contention, replay-twice paths, visibility/recipient races
+   and expiry/send races on real PostgreSQL.
+7. Set `GENIOS_CRYPTO_KEY` and an HTTPS-origin `GENIOS_PUBLIC_APP_URL`; re-save or rotate every
+   existing plaintext org-channel and agent credential. Confirm backups/logs do not expose old
+   values and capability discovery reports corrupt/unusable credentials unavailable.
 
-The operator view is one call:
+### P0 — wire the first real surfaces
 
-```bash
-curl -s -H "Authorization: Bearer $TOKEN" "$API/api/org/$ORG/delivery/held" | jq
-```
+8. Configure one Slack tenant, one Teams tenant, one signed generic webhook and one registered
+   agent runtime in staging.
+9. Exercise 2xx, terminal 4xx, 429 with `Retry-After`, 5xx/timeout, ACK loss, route fallback,
+   authority revocation and dead-letter replay. Verify provider-side duplicate behavior.
+10. Before multi-seat release, bind every signed-in human to a verified `org_seats` identity and
+    enforce recipient-scoped inbox reads; then implement the product clients' presence leases,
+    inbox polling and idempotent lifecycle receipts for dashboard/application/extension/mobile
+    surfaces. Owners intentionally retain organization-wide operational access.
 
-It returns each held message with `held_by` (which unit), `reason_code`, `retryable`, and
-`next_attempt_at`. It reads the **row**, not a log, because by the time anybody asks the clock
-has moved on and the log has rotated.
+### P1 — provider choices
 
----
+11. Select and integrate the email provider, verified domain, bounce/complaint/unsubscribe pipeline
+   and inbound engagement receipts.
+12. Add APNs/FCM and OS notification handling for native mobile/system notifications.
+13. If exact Slack/Teams person targeting is required, replace channel-wide incoming webhooks with
+    tenant OAuth/bot APIs and map GeniOS seats to provider user IDs.
+14. Add GraphQL/streaming/MCP/SDK delivery only where an actual consuming product requires it; the
+    REST and webhook boundaries already exist.
 
-### Step 5 — The tenant-side settings that change behaviour
+### P1 — production hardening
 
-All four specificities go through one endpoint. `PUT` writes; omitted fields are left alone;
-an explicit `null` clears an override so it inherits again.
+15. Enforce network-level webhook egress allowlists/proxy rules, DNS resolution checks and secret
+    rotation. Application URL validation alone is defense in depth, not a complete SSRF boundary.
+16. Add dashboards/alerts for queue age by priority, materialization failures, unknown attempts,
+    retry exhaustion, provider latency/error rates, lifecycle receipt delay, quota holds and
+    recipient fatigue.
+17. Define SLOs and run provider outage, worker crash, database failover and key-rotation drills.
 
-```bash
-# Tenant default: Kolkata hours, quiet 22:00–08:00
-curl -X PUT -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  "$API/api/org/$ORG/delivery/preferences" \
-  -d '{"tz_name":"Asia/Kolkata","quiet_start_hour":22,"quiet_end_hour":8}'
-
-# One person turns Slack pushes off
-curl -X PUT ... -d '{"seat_id":"seat_42","channel":"slack","opted_out":true}'
-
-# "Slack is escalations only"
-curl -X PUT ... -d '{"channel":"slack","min_band":"critical"}'
-
-# Compliance hold with a known end (a stop and a pause are mutually exclusive — 422 if both)
-curl -X PUT ... -d '{"hold_until":"2026-08-12T09:00:00+00:00"}'
-
-# "Never wake me" — there is no band above critical
-curl -X PUT ... -d '{"override_band":"critical"}'
-```
-
-A `422` here is the router refusing to write something that would degrade. The message names
-the field.
-
----
-
-### Step 6 — What to watch in week one
-
-1. **The `deferred` counter should be non-zero and then drain.** Rows held overnight should
-   deliver in the morning batch. If `defer_count` climbs past ~3 on the same row, a window is
-   not opening — check `tz_name` and the quiet bounds.
-2. **`suppressed` should be small and explainable.** A spike in `channel_inactive` means a
-   webhook died.
-3. **`burst_limit` appearing at all** means seven-a-day is landing in bursts, which is worth
-   knowing regardless.
-4. **`override_band_critical` on a delivered row** is a message that woke somebody. Those should
-   be rare and each one should look justified.
+When these checks pass, production readiness is an evidence-backed deployment statement. The
+repository no longer needs another internal routing, retry, lifecycle, analytics or learning
+handoff subsystem to satisfy the Atlas Layer 5.2 design.
 
 ---
 
-### Step 7 — Rollback
+## 11. Compatibility notes
 
-Layer 5.2 adds delivery columns plus the preference and presence tables; it changes no existing
-business decision, but the drain now proves admission before sending and may recover an exhausted
-transport through the next registered destination.
-
-To neutralise it without redeploying, set the tenant default to no quiet hours:
-
-```bash
-curl -X PUT ... -d '{"quiet_enabled":false}'
-```
-
-That returns behaviour to exactly what it was — policy defaults are permissive, so with quiet
-hours off the gate admits everything it used to. The tables can be left in place; they are inert
-if nothing writes to them.
-
----
-
-### The one thing that is genuinely unproven
-
-**The new SQL has not been exercised against a live PostgreSQL deployment in this handoff.** Every
-unit, the composer and the drain wiring execute against in-memory doubles, while schema ratchets
-check the statements against migration-declared tables and columns.
-
-What *has* been done to close the gap as far as it can be closed without a database:
-
-- **Schema-conformance tests** assert that every column read or written exists in a
-  migration, derived from source rather than restated.
-- **`'suppressed'` was proven to break no consumer** — `outbox.py` is the only reader of
-  `delivery_outbox.status` in the whole repo.
-
-That proves syntax and naming. It does not prove "this column exists on your deployed table".
-**Step 1 and Step 3 are what close it, and they are why this runbook starts there.**
-
----
-
-### Still open, deliberately
-
-**Presence has a trusted manual publisher, not an automatic one.** Owner-authenticated product
-surfaces can publish and clear a 30–3600 second lease through `/delivery/context`; expired state is
-ignored. Automatic calendar/browser/mobile projection still needs a trusted seat identity and a
-publisher lifecycle. Calendar plans alone are deliberately not fabricated into live presence.
-
-**External adapters are Slack, Teams and signed webhook.** App, dashboard, API, application,
-extension and mobile are durable pull surfaces; mobile does **not** mean APNs/FCM. Native email and
-device push remain open until provider, identity, unsubscribe/token, receipt and outage semantics
-are chosen. Production also needs network-level egress controls for customer webhooks.
-
-**No admin role check.** Writes take `require_owner`, which is the strongest boundary this
-codebase has. `org_seats.role` exists; a shared admin dependency belongs in `platform/auth.py`
-when one is written, not invented inside a settings router.
-
----
-
-## Part 6 — What this layer will not do, on purpose
-
-**1. It never decides that somebody should not be told something.**
-That judgement was made upstairs by a layer with the context to make it. The timing unit only
-ever moves the *moment*, and where it cannot find a humane one it says so with a reason code
-rather than quietly dropping the message. `evaluate_timing` returning `SUPPRESS` is impossible,
-and a test sweeps every reachable combination of profile, state, band, interrupt flag and hour
-across eight days to prove it.
-
-**2. It never reads the message.**
-The candidate carries no headline, no facts, no payload. A timing unit that could read the body
-would eventually be asked to make an exception for an important-sounding one.
-
-**3. It never reassigns.**
-A deactivated seat is a suppression, not a reroute. Choosing a different person at delivery time
-would invent an owner the commitment never had — and Layer 5's unrouted path already exists for
-work with nobody to send it to. The commitment stays live, keeps escalating, and stays visible
-on the card surface. Only this push stops.
-
-**4. It never fails open on ambiguity.**
-Every fallback resolves toward silence: an unrecognised channel class is assumed **intrusive**
-and gated; an unreadable band becomes `standard`, which cannot break glass; a row carrying both
-a stop and a pause resolves to the stop; a card with no recorded confidence cannot interrupt.
-The one deliberate exception is a structurally impossible quiet window, where sending slightly
-rudely beats never sending at all — and the contract refuses that config at construction, so it
-is unreachable.
-
-**5. It never lets a hold become a loss.**
-Deferral is unbounded by design, because every deferral has a real end: a quiet window opens, a
-burst clears, a hold lifts. Staleness stays owned by the authority re-validation, which runs the
-moment the window opens and cancels an expired card there. A second age check here would be a
-second, weaker copy of a predicate that already exists.
-
----
-
-## Part 7 — Where we disagreed with the architecture spec
-
-| Spec says | We did | Why |
-|---|---|---|
-| Layer 5.2 is a distinct layer | It **is** `deliver` (product Layer 5.2, import rank 6), which already sat between executive and feedback | Product identity and dependency ordering are recorded separately. The layer had a home; it was missing units |
-| A "Delivery Object" | Materialised as **columns on the outbox row**, not a new table | The outbox already *is* the delivery ledger. A second table would be a second write per send and a second thing to keep true |
-| A notification-history table for rate limiting | Answered from `delivery_outbox` itself, with a partial index | Once the row carries `recipient` and `channel_class`, "how many intrusive messages this hour?" is a range scan over rows the system already writes |
-| Interrupt decided at delivery | Interrupt is **decided by Layer 5** and only *honoured* here | Layer 5 gates it on a confidence floor. Re-deriving it below would put a second, weaker copy of a confidence rule under the real one |
-| Quiet hours as a delivery-time filter | Quiet hours produce a **DEFER with a clock**, never a drop | A filter loses the message. The whole layer turns on deferral being distinct from both failure and refusal |
-
----
-
-## Summary
-
-| Capability | Status |
-|---|---|
-| SEND / DEFER / SUPPRESS as a closed, typed contract | ✅ Both halves of the DEFER invariant enforced at construction |
-| Quiet hours, in the recipient's own timezone | ✅ DST-correct — proven against spring-forward, fall-back and +05:30 |
-| Timing unit can never suppress | ✅ Exhaustively swept |
-| Break-glass, inheriting Layer 5's confidence floor | ✅ Low-confidence critical cannot wake anyone |
-| Burst limit (per hour), distinct from the daily budget | ✅ Counts this pass's own sends |
-| Per-org / per-channel / per-seat policy | ✅ Field-by-field resolution, four specificities |
-| Deferral never spends a retry | ✅ Locked at the SQL level by test |
-| `suppressed` distinct from `cancelled` and `failed_terminal` | ✅ Three outcomes, three fixes |
-| Every blocked delivery explains itself in the row | ✅ 13 reason codes + `/delivery/held` |
-| Bad config degrades in the engine, is refused at the door | ✅ Same predicate, opposite responses |
-| Tenant control surface | ✅ Preferences, `/effective`, held rows, leased context, results, pull inbox and analytics |
-| Schema conformance locked by test | ✅ Reads, writes and the held view |
-| Typed DeliveryObject and DeliveryResult | ✅ Immutable projection over the one outbox ledger |
-| Leased live context | ✅ Owner-published, TTL-bounded and ignored after expiry |
-| Destination routing and terminal-failure failover | ✅ Stable priority; never routes around policy, timing or authority |
-| Slack, Teams and signed webhook | ✅ Validated adapters behind bounded retry |
-| Pull surfaces and inbox | ✅ Durable availability, explicitly not device push |
-| Delivery analytics and Atlas Layer 6 handoff | ✅ Counted from the same durable ledger |
-| **Run against a real Postgres** | ❌ **Step 1 + Step 3 of the runbook** |
+- `enqueue_pending`, `enqueue_digest`, `enqueue_failover` and the older executive bridge remain in
+  code so historical tests/rows and rollback analysis stay readable. `run_distribution` does not
+  call them for new outward materialization.
+- `execution.v2` adds source visibility. `execution.v1` remains byte/hash compatible and still
+  stores channel/interrupt hints; Layer 5.2 does not trust them as current routing authority.
+- Legacy `/v1/signals*` agent handlers deliberately remain as authenticated `410` migration
+  sentinels. They cannot poll, claim or complete raw signal/card work.
+- Existing plaintext provider columns remain a rolling-migration fallback. New configuration
+  writes seal credentials; production must rotate the legacy values before retiring fallback.
+- Generic/agent delivery is at-least-once across an ambiguous external network and uses a stable
+  receiver key. Non-idempotent Slack/Teams ambiguity stops for manual reconciliation; true
+  provider-level exactly-once still requires receiver/provider support.

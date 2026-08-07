@@ -1,0 +1,41 @@
+# Startup / Lean — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.startup_lean
+  name: Startup / Lean
+  kind: model
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Administration performed by founders and generalists alongside their real jobs. Nothing is
+  specialised, almost nothing is documented, and the binding risk is a statutory obligation
+  nobody knew existed rather than a slow process.
+
+characteristics:
+  typical_cycle_days: 1
+  committee_size: "1 approver — usually a founder"
+  decision_style: "informal and immediate; authority is unbounded and unwritten"
+  primary_channels: [chat, email]
+
+capabilities:
+  deactivates:
+    - admin.admin_operations.service_level_management
+    - admin.admin_operations.admin_analytics
+  emphasises:
+    - admin.compliance_and_governance.statutory_filing
+    - admin.executive_support.commitment_tracking
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

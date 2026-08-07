@@ -20,6 +20,7 @@ flowchart TD
     R --> C["03-API-and-The-Heartbeat.md<br/><i>transport, and where the whole system runs</i>"]
     R --> D["04-The-Topology-Ratchet.md<br/><b>a build failure, not a review nit</b>"]
     R --> E["05-Gaps.md"]
+    R --> F["06-Atlas-Envelope-Alignment.md<br/><i>what the envelope promises vs what we carry</i>"]
 ```
 
 ---
@@ -34,6 +35,7 @@ flowchart TD
 | 03 | [api/ and the heartbeat](03-API-and-The-Heartbeat.md) | ~190 endpoints, and the one function where the whole system runs in order |
 | 04 | [The topology ratchet](04-The-Topology-Ratchet.md) | The four rules, and the three places the codebase is better for them |
 | 05 | [Gaps and the map](05-Gaps.md) | Where transport still holds business logic, and the env surface |
+| 06 | [Atlas envelope alignment](06-Atlas-Envelope-Alignment.md) | Which of the Atlas's four envelope fields we actually carry, and the one we do not |
 
 ---
 

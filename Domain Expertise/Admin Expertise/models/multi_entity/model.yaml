@@ -1,0 +1,39 @@
+# Multi-Entity Group — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.multi_entity
+  name: Multi-Entity Group
+  kind: model
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A group of legal entities, often across jurisdictions, administered together. Every
+  statutory obligation multiplies by entity and no two calendars align, which makes the filing
+  and registration disciplines the spine of the whole function.
+
+characteristics:
+  typical_cycle_days: 4
+  committee_size: "3-6 approvers, per entity"
+  decision_style: "entity-by-entity, with a group policy overlay"
+  primary_channels: [email, portal, scheduled_review]
+
+capabilities:
+  emphasises:
+    - admin.compliance_and_governance.statutory_filing
+    - admin.compliance_and_governance.licence_and_registration
+    - admin.compliance_and_governance.board_and_secretarial
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

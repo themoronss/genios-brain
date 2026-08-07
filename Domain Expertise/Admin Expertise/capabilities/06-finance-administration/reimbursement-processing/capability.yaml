@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.finance_administration.reimbursement_processing
+  name: Reimbursement Processing
+  domain: admin
+  subdomain: finance_administration
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Closing the loop on approved claims: payment scheduling, payroll or bank routing,
+  confirmation to the claimant and query handling. Reimbursement is the most personally felt
+  administrative service in the company; a slow one is remembered far longer than its value.
+
+question: "Has this approved claim actually been paid back, and when?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

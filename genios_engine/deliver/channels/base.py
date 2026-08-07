@@ -12,6 +12,11 @@ from typing import Protocol
 class ChannelResult:
     ok: bool
     detail: str = ""                 # error text on failure; never includes the config
+    retryable: bool = False
+    unknown: bool = False             # provider may have accepted but acknowledgement was lost
+    http_status: int | None = None
+    retry_after_seconds: int | None = None
+    provider_message_id: str | None = None
 
 
 class Channel(Protocol):
@@ -31,6 +36,9 @@ def get_channel(name: str):
     if name == "webhook":
         from genios_engine.deliver.channels.webhook import SignedWebhookChannel
         return SignedWebhookChannel()
+    if name == "agent":
+        from genios_engine.deliver.channels.agent import AgentWebhookChannel
+        return AgentWebhookChannel()
     from genios_engine.deliver.channels.surface import SURFACE_CHANNELS, SurfaceChannel
     if name in SURFACE_CHANNELS:
         return SurfaceChannel(name)
@@ -39,7 +47,7 @@ def get_channel(name: str):
 
 def supported_channels() -> tuple[str, ...]:
     from genios_engine.deliver.channels.surface import SURFACE_CHANNELS
-    return tuple(sorted({"slack", "teams", "webhook", *SURFACE_CHANNELS}))
+    return tuple(sorted({"slack", "teams", "webhook", "agent", *SURFACE_CHANNELS}))
 
 
 __all__ = ["Channel", "ChannelResult", "get_channel", "supported_channels"]

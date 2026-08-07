@@ -1,15 +1,17 @@
 # 7 · Adaptive Evolution
 
-**Status:** Partial
+**Status:** Built
 
-Separates current operating preferences into Adaptive Brain proposals rather than stable behavior claims.
+Creates Adaptive Brain proposals from explicit current-operating preferences. A closed category set
+keeps short-horizon personalization distinct from stable Behavior Brain claims.
 
 | Boundary | Value |
 |---|---|
-| Input | Preference objects in priority, notification, execution-preference or runtime-personalization categories |
-| Output | Adaptive-target LearningObject |
+| Input | Preference proposals in priority, notification, execution-preference or runtime-personalization categories |
+| Derivation | deterministic namespace/target change with unchanged evidence |
+| Output | Adaptive-target LearningObject with parent lineage and unchanged private subject cap for user scope |
 | Primary code | `feedback/units.py::adaptive_evolution` |
-| Honest gap | Generic Adaptive publication is durable/API-visible but not consumed by lower execution/reasoning runtime. |
+| Integration requirement | lower reasoning/execution layers need an Adaptive Brain reader/materializer |
 
 ## Atlas-named component map
 

@@ -1,0 +1,691 @@
+# GENERATED FILE — do not hand-edit.
+#   regenerate:  python "Domain Expertise/_tools/index.py"
+#
+# The reverse index: Layer 2 emits a situation type, this map says which capabilities apply and
+# which objects to load. Without it the compiler would scan every capability in the domain; with
+# it the lookup is O(1) into the relevant slice — the single biggest performance win in Layer 3
+# once a domain grows past a handful of capabilities.
+#
+# `load` is the union of the situation's own load-set and every serving capability's required
+# objects, minus anything either marks never_load.
+
+domain: Sales Expertise
+
+map:
+  stalled_deal:
+    situations:
+      - sales.sit.enterprise_deal
+      - sales.sit.out_of_profile_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.market_and_targeting.icp_definition
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.lead_qualification
+      - sales.qualification.stakeholder_mapping
+      - sales.revenue_operations.pipeline_management
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.budget
+        - sales.obj.core.company
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.icp
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.competitor
+        - sales.obj.core.opportunity
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+
+  buying_signal:
+    situations:
+      - sales.sit.inbound_fit_check
+      - sales.sit.inbound_lead
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.follow_up
+      - sales.prospecting_and_outreach.lead_generation
+      - sales.prospecting_and_outreach.meeting_booking
+      - sales.qualification.lead_qualification
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.next_action
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.buying_signal
+        - sales.obj.core.champion
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+  cooling_deal:
+    situations:
+      - sales.sit.enterprise_deal
+      - sales.sit.out_of_profile_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.market_and_targeting.icp_definition
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.lead_qualification
+      - sales.qualification.stakeholder_mapping
+      - sales.revenue_operations.pipeline_management
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.budget
+        - sales.obj.core.company
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.icp
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.competitor
+        - sales.obj.core.opportunity
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+
+  single_threaded_deal:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  competitor_in_live_deal:
+    situations:
+      - sales.sit.field_evidence_on_the_market
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.market_and_targeting.market_research
+      - sales.proposal_and_commercials.pricing
+      - sales.revenue_operations.revenue_intelligence
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.icp
+        - sales.obj.core.pricing
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+        - sales.obj.market_research.market_finding
+        - sales.obj.market_research.market_map
+      optional:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_signal
+        - sales.obj.core.opportunity
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+        - sales.obj.core.proposal
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.buying_committee
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+  going_dark_after_proposal:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  deal_health:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  pricing_objection:
+    situations:
+      - sales.sit.field_evidence_on_the_market
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.market_and_targeting.market_research
+      - sales.proposal_and_commercials.pricing
+      - sales.revenue_operations.revenue_intelligence
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.icp
+        - sales.obj.core.pricing
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+        - sales.obj.market_research.market_finding
+        - sales.obj.market_research.market_map
+      optional:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_signal
+        - sales.obj.core.opportunity
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+        - sales.obj.core.proposal
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.buying_committee
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+  verbal_yes_not_closed:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  contract_requested:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  security_review_pending:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  discount_pressure:
+    situations:
+      - sales.sit.field_evidence_on_the_market
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.market_and_targeting.market_research
+      - sales.proposal_and_commercials.pricing
+      - sales.revenue_operations.revenue_intelligence
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.icp
+        - sales.obj.core.pricing
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+        - sales.obj.market_research.market_finding
+        - sales.obj.market_research.market_map
+      optional:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_signal
+        - sales.obj.core.opportunity
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+        - sales.obj.core.proposal
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.buying_committee
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+  legal_in_review:
+    situations:
+      - sales.sit.enterprise_deal
+    capabilities:
+      - sales.closing.legal_review
+      - sales.closing.procurement
+      - sales.qualification.buying_committee_analysis
+      - sales.qualification.champion_identification
+      - sales.qualification.decision_maker_identification
+      - sales.qualification.stakeholder_mapping
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.stakeholder
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.risk
+
+  demo_requested:
+    situations:
+      - sales.sit.inbound_fit_check
+      - sales.sit.inbound_lead
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.follow_up
+      - sales.prospecting_and_outreach.lead_generation
+      - sales.prospecting_and_outreach.meeting_booking
+      - sales.qualification.lead_qualification
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.next_action
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.buying_signal
+        - sales.obj.core.champion
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+  closed_lost_risk:
+    situations:
+      - sales.sit.field_evidence_on_the_market
+      - sales.sit.out_of_profile_deal
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.market_and_targeting.market_research
+      - sales.proposal_and_commercials.pricing
+      - sales.qualification.lead_qualification
+      - sales.revenue_operations.pipeline_management
+      - sales.revenue_operations.revenue_intelligence
+      - sales.sales_management.deal_review
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.budget
+        - sales.obj.core.company
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.icp
+        - sales.obj.core.pricing
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+        - sales.obj.market_research.market_finding
+        - sales.obj.market_research.market_map
+      optional:
+        - sales.obj.core.buying_signal
+        - sales.obj.core.opportunity
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+        - sales.obj.core.proposal
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.buying_committee
+        - sales.obj.core.champion
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+  unanswered_email:
+    situations:
+      - sales.sit.outbound_prospect
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.follow_up
+      - sales.prospecting_and_outreach.outreach
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.next_action
+        - sales.obj.core.persona
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.champion
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.pain_point
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.timeline
+
+  champion_quiet:
+    situations:
+      - sales.sit.outbound_prospect
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.follow_up
+      - sales.prospecting_and_outreach.outreach
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.next_action
+        - sales.obj.core.persona
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.champion
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.pain_point
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.timeline
+
+  meeting_no_followup:
+    situations:
+      - sales.sit.outbound_prospect
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.follow_up
+      - sales.prospecting_and_outreach.outreach
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.next_action
+        - sales.obj.core.persona
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.champion
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.decision_maker
+        - sales.obj.core.pain_point
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.timeline
+
+  intro_followup:
+    situations:
+      - sales.sit.inbound_fit_check
+      - sales.sit.inbound_lead
+    capabilities:
+      - sales.market_and_targeting.icp_definition
+      - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.follow_up
+      - sales.prospecting_and_outreach.lead_generation
+      - sales.prospecting_and_outreach.meeting_booking
+      - sales.qualification.lead_qualification
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.next_action
+        - sales.obj.icp_definition.disqualifier
+        - sales.obj.icp_definition.fit_analysis
+      optional:
+        - sales.obj.core.buying_signal
+        - sales.obj.core.champion
+        - sales.obj.core.competitor
+        - sales.obj.core.deal
+        - sales.obj.core.pain_point
+        - sales.obj.core.persona
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.decision_maker
+        - sales.obj.core.timeline
+
+# ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
+# These situations are authored and route NOTHING, because the type that would
+# trigger them is not in any shipped pack's signal_vocab. Not a defect in the
+# authoring — it is the requirement list, stated where the compiler can count it.
+pending_l2_types: {}
+
+# ── Coverage ──────────────────────────────────────────────────────────────
+# Types this domain routes.
+routed_l2_types:
+  - buying_signal
+  - champion_quiet
+  - closed_lost_risk
+  - competitor_in_live_deal
+  - contract_requested
+  - cooling_deal
+  - deal_health
+  - demo_requested
+  - discount_pressure
+  - going_dark_after_proposal
+  - intro_followup
+  - legal_in_review
+  - meeting_no_followup
+  - pricing_objection
+  - security_review_pending
+  - single_threaded_deal
+  - stalled_deal
+  - unanswered_email
+  - verbal_yes_not_closed
+
+# Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
+# that compiles to nothing, silently. Global, not this domain's fault.
+unrouted_l2_types:
+  - budget_freeze
+  - champion_left
+  - deal_sentiment_negative
+  - objection_open
+  - proposal_no_response
+  - timeline_slip
+
+# Authored but unreachable — no situation routes into them.
+orphan_capabilities:
+  - sales.closing.closing
+  - sales.closing.contract_management
+  - sales.discovery_and_solution.demo
+  - sales.discovery_and_solution.discovery
+  - sales.discovery_and_solution.need_analysis
+  - sales.discovery_and_solution.value_proposition
+  - sales.market_and_targeting.tam_sam_som
+  - sales.post_sale_and_growth.churn_prevention
+  - sales.post_sale_and_growth.cross_sell
+  - sales.post_sale_and_growth.customer_success
+  - sales.post_sale_and_growth.expansion
+  - sales.post_sale_and_growth.onboarding
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.upsell
+  - sales.proposal_and_commercials.negotiation
+  - sales.proposal_and_commercials.objection_handling
+  - sales.proposal_and_commercials.proposal_creation
+  - sales.prospecting_and_outreach.cold_calling
+  - sales.prospecting_and_outreach.cold_email
+  - sales.prospecting_and_outreach.linkedin_outreach
+  - sales.revenue_operations.forecasting
+  - sales.revenue_operations.quota_planning
+  - sales.revenue_operations.sales_analytics
+  - sales.revenue_operations.sales_operations
+  - sales.revenue_operations.territory_planning
+  - sales.sales_management.performance_management
+  - sales.sales_management.relationship_management
+  - sales.sales_management.sales_coaching
+
+# Authored but no capability's objects.yaml loads them.
+unreachable_objects:
+  - sales.obj.core.contact
+
+stats:
+  l2_types_total: 26
+  l2_types_routed_here: 19
+  l2_types_unrouted_globally: 6
+  l2_types_pending: 0
+  situations: 6
+  capabilities: 46
+  capabilities_stub: 43
+  capabilities_complete: 3
+  capabilities_routed: 18
+  objects_total: 28
+  objects_core: 24
+  objects_scoped: 4

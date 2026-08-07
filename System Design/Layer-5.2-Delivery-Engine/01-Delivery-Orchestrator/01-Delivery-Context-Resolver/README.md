@@ -1,14 +1,17 @@
 # Delivery Context Resolver
 
-**Status:** Partial
+**Status:** Active core; automatic reporting from every client is integration-dependent
 
-Combines recipient/channel preferences, recent delivery history and the newest valid presence lease at drain time.
+Answers **“what is the recipient doing now, and which delivery constraints currently apply?”**
+It combines tenant/seat/channel preferences, recent intrusive-delivery history and the newest
+unexpired presence lease.
 
 | Boundary | Current truth |
 |---|---|
-| Input | organization, seat, channel candidate, priority/band and explicit evaluation time |
-| Output | a grounded delivery context containing timezone, quiet window, channel policy, busy/activity/current-surface state and burst facts |
-| Authority | `deliver/presence.py`, `deliver/gate.py` |
+| Input | organization, resolved recipient, channel candidate and explicit evaluation time |
+| Output | timezone, quiet window, channel policy, activity/surface/focus state, `busy_until` and burst facts |
+| Runtime | `deliver/presence.py`, `deliver/gate.py`, delivery preference/presence APIs |
+| Determinism | tenant-scoped rows + explicit time; no LLM judgement |
 
 ## Component modules
 

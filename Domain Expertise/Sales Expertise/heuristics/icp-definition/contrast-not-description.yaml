@@ -1,0 +1,35 @@
+identity:
+  id: sales.heu.icp_definition.contrast_not_description
+  name: Compare winners against losers, not winners against the market
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Compare winners against losers, not winners against the market.\n Attributes shared by\
+    \ everyone you sold to and everyone you lost carry no signal. The instinctive method — list what\
+    \ our best customers have in common — reliably produces the least discriminating profile available,\
+    \ because common attributes are common.\n"
+heuristic:
+  statement: 'Compare winners against losers, not winners against the market.
+
+    '
+  why: 'Attributes shared by everyone you sold to and everyone you lost carry no signal. The instinctive
+    method — list what our best customers have in common — reliably produces the least discriminating
+    profile available, because common attributes are common.
+
+    '
+  reads:
+  - sales.obj.icp_definition.fit_analysis
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

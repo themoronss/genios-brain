@@ -240,15 +240,22 @@ def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict
 
 # ── destructive: wipe graph / delete account ─────────────────────────────────
 # Reset removes the tenant's learned/runtime state while preserving account configuration,
-# connected sources, seats, billing ledgers, policies, and channels. Uploaded files are removed
+# connected sources, external tasks, seats, billing ledgers, policies, and channels. Open GeniOS
+# commitments are retired first: retaining an outward-authoritative ExecutionObject while deleting
+# its signal/delivery ledger would rematerialise and resend it on the minute-scale delivery sweep.
+# Uploaded files are removed
 # too: retaining an ``indexed`` file after deleting every derived event/fact would be a false and
 # unrecoverable UI state (the upload API has no re-index-existing-file operation).
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
-    "learning_transitions", "knowledge_suggestions", "temporary_memories",
+    "learning_input_rejections", "learning_object_evaluations", "learning_transitions",
+    "knowledge_suggestions",
+    "temporary_memories",
     "learned_brain_entries", "learning_metrics", "learning_objects", "learning_runs",
-    "learning_policies",
-    "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
+    "learning_event_inbox",
+    "delivery_materialization_failures", "delivery_attempts", "delivery_events",
+    "delivery_rate_windows", "delivery_outbox", "agent_claims", "card_build_claims",
+    "card_feedback_revisions",
     "card_feedback_verdicts", "card_events", "cards", "signals",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
@@ -272,9 +279,37 @@ _UPLOAD_ROOT = (Path(__file__).resolve().parents[2] / "uploads").resolve()
 
 def _lock_erasure_authority(c, org: str) -> None:
     """Serialize erasure against reasoning publication and every action/claim boundary."""
+    held = c.execute(text("select id from orgs where id=:o for update"), {"o": org}).first()
+    if held is None:
+        raise HTTPException(404, "org not found")
     c.execute(text("select graph_version from graph_versions where org_id=:o for update"),
               {"o": org})
     c.execute(text("select pack_id from tenant_packs where org_id=:o for update"), {"o": org})
+
+
+def _retire_open_executions(c, org: str, *, at: datetime) -> int:
+    """Revoke retained commitments before their authority and dedupe ledger are erased."""
+    from genios_engine.executive.execution_store import log_event
+
+    rows = c.execute(text(
+        "select execution_id,state from executions where org_id=:o and closed_at is null "
+        "for update"), {"o": org}).mappings().all()
+    retired = 0
+    for row in rows:
+        changed = c.execute(text(
+            "update executions set state='cancelled',closed_at=:at,close_reason='account_reset',"
+            "next_check_at=null,updated_at=now() where org_id=:o and execution_id=:x "
+            "and closed_at is null"),
+            {"at": at, "o": org, "x": row["execution_id"]})
+        if not getattr(changed, "rowcount", 0):
+            continue
+        log_event(
+            c, org_id=org, execution_id=str(row["execution_id"]),
+            kind="execution.cancelled", reason_code="account_reset", actor="system",
+            from_state=str(row["state"]), to_state="cancelled",
+            detail={"source": "settings_reset"}, occurred_at=at)
+        retired += 1
+    return retired
 
 
 def _remove_upload_files(paths) -> int:
@@ -309,10 +344,11 @@ def _wipe(c, org: str) -> dict:
 
 @router.post("/api/org/{org_id}/reset")
 def reset_graph(org_id: str, org: str = Depends(_org)) -> dict:
-    """Wipe this org's learned graph + signals + cards (keeps the account, connections, tasks).
+    """Wipe learned graph/signals/cards; keep account, connections and external source tasks.
     User-initiated from Settings with an explicit confirm."""
     with _graph.engine.begin() as c:
         _lock_erasure_authority(c, org)
+        retired_executions = _retire_open_executions(c, org, at=datetime.now(timezone.utc))
         upload_paths = [row.storage_path for row in c.execute(text(
             "select storage_path from resource_uploads where org_id=:o "
             "and storage_path is not null"), {"o": org})]
@@ -324,16 +360,14 @@ def reset_graph(org_id: str, org: str = Depends(_org)) -> dict:
             "update tenant_packs set lvl3_config='{}'::jsonb, "
             "authority_revision=authority_revision+1,updated_at=clock_timestamp() "
             "where org_id=:o"), {"o": org})
-    return {"wiped": True, "rows": wiped, "upload_files_removed": removed_files}
+    return {"wiped": True, "rows": wiped, "upload_files_removed": removed_files,
+            "retired_executions": retired_executions}
 
 
 @router.delete("/api/org/{org_id}/account")
 def delete_account(org_id: str, org: str = Depends(_org)) -> dict:
     """Full account deletion — wipe all org data, then remove the org (cascades api_keys). Irreversible."""
     with _graph.engine.begin() as c:
-        held = c.execute(text("select id from orgs where id=:o for update"), {"o": org}).first()
-        if held is None:
-            raise HTTPException(404, "org not found")
         _lock_erasure_authority(c, org)
         upload_paths = [row.storage_path for row in c.execute(text(
             "select storage_path from resource_uploads where org_id=:o and storage_path is not null "),

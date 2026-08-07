@@ -1,0 +1,38 @@
+identity:
+  id: sales.df.icp_definition.segmentation_triad
+  name: Firmographic / technographic / behavioural segmentation — the professi…
+  kind: decision_framework
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Firmographic / technographic / behavioural segmentation — the profession's standard decomposition\
+    \ of a profile, with need and economic fit as the commercial overlay.\n It exists mainly to stop\
+    \ teams stopping at the first block. Naming the three forces the question \"what do we know about\
+    \ how they buy\", which is where the predictive power sits and which a firmographic-only exercise\
+    \ never reaches.\n"
+criteria:
+- name: Firmographic / technographic / behavioural segmentation — the professi…
+  description: 'It exists mainly to stop teams stopping at the first block. Naming the three forces
+    the question "what do we know about how they buy", which is where the predictive power sits and
+    which a firmographic-only exercise never reaches.
+
+    '
+how_to_apply:
+- 'It exists mainly to stop teams stopping at the first block. Naming the three forces the question
+  "what do we know about how they buy", which is where the predictive power sits and which a firmographic-only
+  exercise never reaches.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

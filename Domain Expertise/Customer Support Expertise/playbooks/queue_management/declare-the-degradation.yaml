@@ -1,0 +1,45 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.queue_management.declare_the_degradation
+  name: Declare the degradation
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'When the queue is behind, decide what is not being served, say so internally, and tell
+    the affected customers before they discover it by waiting.
+
+
+    Undeclared degradation still happens — it just happens invisibly, unevenly and to whoever is unlucky.
+    A stated reduction in scope is a decision that can be reviewed; an unstated one is a lottery the
+    customer loses without being told they entered.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: When the queue is behind, decide what is not being served, say so internally, and tell the affected
+    customers before they discover it by waiting.
+  actor: human
+  description: Undeclared degradation still happens — it just happens invisibly, unevenly and to whoever
+    is unlucky. A stated reduction in scope is a decision that can be reviewed; an unstated one is a
+    lottery the customer loses without being told they entered.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

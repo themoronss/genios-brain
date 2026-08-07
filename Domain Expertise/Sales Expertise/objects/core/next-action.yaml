@@ -1,0 +1,674 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Next Action — core object.
+#
+# The only object in the roster the substrate was practically built for: commitment.action
+# and commitment.due_at are typed facts today, so most of this fires. Note what is still
+# missing, because it is the definition itself — the engine can see WHAT was committed and
+# WHEN, and never WHO owns it or whether it was done.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.next_action
+  scope: core
+  name: Next Action
+  domain: sales
+  subdomain: revenue_operations
+  owner_capability: sales.revenue_operations.pipeline_management
+  version: 1.0.0
+  status: draft
+  aliases: ["Next Step", "Commitment", "Action Item", "Follow-up"]
+purpose:
+  statement: >
+    The single specific thing that must happen next, with an owner and a due date. Deliberately
+    singular — that is the discriminator, and it is what separates this from a task list. A
+    deal with six next actions has none, because nothing has been prioritised and every one of
+    them can be deferred by pointing at another. The three clauses are each load-bearing:
+    "specific" means a stranger could tell you whether it happened, "owner" means a named side
+    and preferably a named person, "due date" means a date somebody agreed to rather than a
+    date we invented. "Keep in touch", "circle back next quarter" and "await their feedback"
+    fail all three and are the most common contents of the field in every CRM ever built.
+attributes:
+  - name: the_action
+    purpose: What must happen, stated so completion is observable by someone who was not there.
+    type: composite
+    contains:
+      - action_text
+      - is_specific
+      - advances_stage
+      - effort
+  - name: ownership
+    purpose: >
+      Whose move it is. Separate from who we would like it to be — an unassigned action
+      silently becomes ours, and a buyer's commitment quietly becomes our chase.
+    type: composite
+    contains:
+      - owner
+      - owner_ref
+      - ball_in_court
+  - name: timing
+    purpose: When it is due, and how far past due it has drifted.
+    type: composite
+    contains:
+      - due_at
+      - is_dated
+      - days_overdue
+      - created_at
+      - originating_meeting_at
+  - name: origin
+    purpose: Where the action came from. Buyer-originated actions convert far better than ones we
+      invented.
+    type: composite
+    contains:
+      - origin
+      - origin_detail
+      - channel
+  - name: discharge
+    purpose: How we would know it happened, and whether we ever saw it.
+    type: composite
+    contains:
+      - action_state
+      - discharged_by
+      - completed_at
+      - chase_count
+  - name: consequence
+    purpose: What is downstream of it, and what happens when it slips.
+    type: composite
+    contains:
+      - blocks_close
+      - blocking_reason
+      - blocked_by_ref
+      - supersedes_ref
+  - name: action_state
+    purpose: '`none` and `undated` are separate values and both are failures, of different kinds. `none`
+      means nobody agreed anything. `undated` means somebody agreed something and no date attached to it,
+      which reads as progress in every pipeline review and is not.'
+    type: value
+    data_type: enum
+    allowed_values: [none, proposed, open, undated, overdue, blocked, done, cancelled, superseded]
+    required: true
+    description: >
+      `none` and `undated` are separate values and both are failures, of different kinds.
+      `none` means nobody agreed anything. `undated` means somebody agreed something and no
+      date attached to it, which reads as progress in every pipeline review and is not.
+  - name: action_text
+    purpose: The literal commitment. "Send the security questionnaire to Priya by Thursday" is one.
+      "Keep in touch" is not, and the difference is whether a third party could tell you it had
+      happened.
+    type: value
+    data_type: string
+    source_paths: [commitment.action]
+    description: >
+      The literal commitment. "Send the security questionnaire to Priya by Thursday" is one.
+      "Keep in touch" is not, and the difference is whether a third party could tell you it
+      had happened.
+  - name: is_specific
+    purpose: True when completion is observable by someone who was not in the conversation. The single
+      test that removes most fake next actions from a pipeline, and the reason pipeline reviews that
+      read the field aloud are more useful than dashboards.
+    type: value
+    data_type: boolean
+    description: >
+      True when completion is observable by someone who was not in the conversation. The
+      single test that removes most fake next actions from a pipeline, and the reason
+      pipeline reviews that read the field aloud are more useful than dashboards.
+  - name: advances_stage
+    purpose: Whether completing it moves the deal or merely records activity. Most logged activity
+      fails this test. "Sent a follow-up" is not the same as "got the security questionnaire
+      returned", and only one of them shortens the cycle.
+    type: value
+    data_type: boolean
+    description: >
+      Whether completing it moves the deal or merely records activity. Most logged activity
+      fails this test. "Sent a follow-up" is not the same as "got the security questionnaire
+      returned", and only one of them shortens the cycle.
+  - name: effort
+    purpose: Sizing exists so a five-minute action is not deferred behind a two-day one for a
+      fortnight, which is what happens when everything is a task.
+    type: value
+    data_type: enum
+    allowed_values: [minutes, hour, half_day, multi_day]
+    description: Sizing exists so a five-minute action is not deferred behind a two-day one for a
+      fortnight, which is what happens when everything is a task.
+  - name: owner
+    purpose: Defaults to `unassigned`, never to `us`. Defaulting to us is how a buyer's commitment
+      becomes our chase without anybody deciding it should, and it is why reps end up doing the
+      buyer's internal selling for them.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, both, unassigned]
+    required: true
+    description: >
+      Defaults to `unassigned`, never to `us`. Defaulting to us is how a buyer's commitment
+      becomes our chase without anybody deciding it should, and it is why reps end up doing
+      the buyer's internal selling for them.
+  - name: owner_ref
+    purpose: The named person, when there is one. A side without a name is only half an owner.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: The named person, when there is one. A side without a name is only half an owner.
+  - name: ball_in_court
+    purpose: Observed rather than declared, and frequently disagrees with `owner`. That disagreement
+      is itself the signal — an action owned by them with the ball in our court means we are chasing
+      something we already handed over.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      Observed rather than declared, and frequently disagrees with `owner`. That disagreement
+      is itself the signal — an action owned by them with the ball in our court means we are
+      chasing something we already handed over.
+  - name: due_at
+    purpose: A date somebody agreed to. A date we invented for CRM hygiene is not a due date and slips
+      without anyone noticing, because nobody promised it.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    description: A date somebody agreed to. A date we invented for CRM hygiene is not a due date and
+      slips without anyone noticing, because nobody promised it.
+  - name: is_dated
+    purpose: The is_dated of this object.
+    type: value
+    data_type: boolean
+  - name: days_overdue
+    purpose: The days_overdue of this object.
+    type: value
+    data_type: integer
+    unit: days
+    source_paths: [commitment.due_at]
+  - name: created_at
+    purpose: The created_at of this object.
+    type: value
+    data_type: timestamp
+  - name: originating_meeting_at
+    purpose: Actions agreed in a meeting and not written down within the hour are the ones that
+      vanish.
+    type: value
+    data_type: timestamp
+    source_paths: [meeting.start_at]
+    description: Actions agreed in a meeting and not written down within the hour are the ones that
+      vanish.
+  - name: origin
+    purpose: '`buyer_request` is worth several times any other origin. An action the buyer asked for is
+      one they are already expecting; an action from a playbook is one we have to justify.'
+    type: value
+    data_type: enum
+    allowed_values: [meeting, email, buyer_request, playbook, manual, inferred]
+    description: >
+      `buyer_request` is worth several times any other origin. An action the buyer asked for
+      is one they are already expecting; an action from a playbook is one we have to justify.
+  - name: origin_detail
+    purpose: The origin_detail of this object.
+    type: value
+    data_type: string
+  - name: channel
+    purpose: Read by Layer 5.2. The right action on the wrong channel is a slower version of no
+      action.
+    type: value
+    data_type: enum
+    allowed_values: [email, call, meeting, document, in_person, slack, linkedin]
+    description: Read by Layer 5.2. The right action on the wrong channel is a slower version of no
+      action.
+  - name: discharged_by
+    purpose: How we would know it happened. Only the first four are observable today, and only for
+      actions on our side.
+    type: value
+    data_type: enum
+    allowed_values: [none, followup_sent, meeting_held, document_sent, reply_received,
+        confirmed_manually]
+    description: How we would know it happened. Only the first four are observable today, and only for
+      actions on our side.
+  - name: completed_at
+    purpose: The completed_at of this object.
+    type: value
+    data_type: timestamp
+  - name: chase_count
+    purpose: How many times we have chased. Past two, the action is not the problem — the priority or
+      the relationship is, and a third chase makes both worse.
+    type: value
+    data_type: integer
+    description: >
+      How many times we have chased. Past two, the action is not the problem — the priority
+      or the relationship is, and a third chase makes both worse.
+  - name: blocks_close
+    purpose: Whether the close date moves if this slips. Most next actions do not, and the ones that
+      do deserve a different level of attention.
+    type: value
+    data_type: boolean
+    description: Whether the close date moves if this slips. Most next actions do not, and the ones
+      that do deserve a different level of attention.
+  - name: blocking_reason
+    purpose: The blocking_reason of this object.
+    type: value
+    data_type: string
+  - name: blocked_by_ref
+    purpose: The blocked_by_ref of this object.
+    type: reference
+    ref: sales.obj.core.risk
+    data_type: ref
+  - name: supersedes_ref
+    purpose: Self-referential. Replacing an action must be explicit, because the alternative is two
+      live actions and therefore none.
+    type: reference
+    ref: sales.obj.core.next_action
+    data_type: ref
+    description: Self-referential. Replacing an action must be explicit, because the alternative is
+      two live actions and therefore none.
+  - name: deal_state
+    purpose: Present so the object can answer the only question that matters at scale — which open
+      deals have no next action at all.
+    type: value
+    data_type: string
+    source_paths: [deal.status]
+    description: Present so the object can answer the only question that matters at scale — which open
+      deals have no next action at all.
+  - name: deal_momentum
+    purpose: Engine-computed trajectory. An overdue action on a deal with momentum is administrative;
+      the same action on a flat deal is the deal.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+    description: Engine-computed trajectory. An overdue action on a deal with momentum is
+      administrative; the same action on a flat deal is the deal.
+states:
+  initial: none
+  values:
+    - {name: none, description: "No action agreed. On an open deal this is the most common and most expensive\
+        state.", entered_when: [absent: commitment.action]}
+    - {name: proposed, description: "We have suggested it; they have not agreed to it. Not yet a commitment."}
+    - {name: open, description: "Agreed, owned and dated.", entered_when: [exists: commitment.action,
+        exists: commitment.due_at]}
+    - {name: undated, description: "Agreed with no date. Reads as progress in a pipeline review and behaves\
+        as nothing.", entered_when: [exists: commitment.action, absent: commitment.due_at]}
+    - {name: overdue, description: "Past due and not discharged.", entered_when: [{fn: days_since, path:
+            commitment.due_at, op: ">", value: 0}]}
+    - {name: blocked, description: "Cannot proceed until something else resolves. Distinct from overdue\
+        — rescheduling does not help."}
+    - {name: done, description: "Discharged and observed."}
+    - {name: cancelled, description: "Deliberately dropped. A legitimate outcome and rarely recorded as\
+        one."}
+    - {name: superseded, description: "Replaced by a newer action."}
+  transitions:
+    - {from: none, to: proposed}
+    - {from: proposed, to: open, when: [exists: commitment.action, exists: commitment.due_at]}
+    - {from: proposed, to: undated, when: [exists: commitment.action, absent: commitment.due_at]}
+    - {from: undated, to: open, when: [exists: commitment.due_at]}
+    - {from: open, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: open, to: blocked}
+    - {from: overdue, to: blocked}
+    - {from: blocked, to: open}
+    - {from: open, to: done, when: [has_obs: followup_sent]}
+    - {from: overdue, to: done, when: [has_obs: followup_sent]}
+    - {from: overdue, to: superseded}
+    - {from: open, to: cancelled}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - {type: attaches_to, target: sales.obj.core.deal, cardinality: one, description: "Exactly one open\
+      action per deal. The cardinality is the point of the object."}
+  - {type: belongs_to, target: sales.obj.core.stakeholder, cardinality: zero_or_one, description: "The\
+      accountable person, which may well be on their side."}
+  - {type: blocks, target: sales.obj.core.timeline, cardinality: zero_or_one, description: "An overdue\
+      action is the mechanism by which a close date slips. The slip is the symptom; this is the cause."}
+  - {type: requires, target: sales.obj.core.champion, cardinality: zero_or_one, description: "Actions\
+      owned by the buyer are executed by the champion or not at all."}
+  - {type: supersedes, target: sales.obj.core.next_action, cardinality: zero_or_one}
+  - {type: precedes, target: sales.obj.core.next_action, cardinality: zero_or_one}
+  - {type: references, target: sales.obj.core.risk, cardinality: zero_or_one}
+  - {type: produces, target: sales.obj.core.buying_signal, cardinality: zero_or_many, description: "A\
+      buyer completing an action they own is a stronger buying signal than anything they say."}
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: na.commitment_present
+      statement: "A commitment with both an action and a due date exists on this node."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {exists: commitment.due_at}
+      yields: {confidence_bp: 9500, attribute: action_state, value: open}
+      evidence_fields: [commitment.action, commitment.due_at]
+
+    - id: na.undated_commitment
+      statement: "Something was agreed and no date attached to it."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+      yields: {confidence_bp: 9000, attribute: action_state, value: undated}
+      evidence_fields: [commitment.action]
+      note: >
+        The "keep in touch" state, and the reason this pattern exists as its own rule rather
+        than as an absence. An undated commitment satisfies every CRM hygiene check, appears
+        in every pipeline review as a next step, and cannot slip because it was never due.
+
+    - id: na.overdue
+      statement: "The due date has passed and nothing has discharged the action."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 9400, attribute: action_state, value: overdue}
+      evidence_fields: [commitment.due_at]
+      note: >
+        Overdue by the engine's reckoning, not necessarily by reality — see
+        na.completion_unobservable. This pattern is the reason that gap matters.
+
+    - id: na.absent_on_a_live_deal
+      statement: "An open deal with no commitment recorded against it at all."
+      status: executable
+      when:
+        - {absent: commitment.action}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 9200, attribute: action_state, value: none}
+      note: >
+        The single most valuable query in pipeline management and the one most systems cannot
+        answer, because an empty field and an unread field look identical in a CRM. A deal
+        with no agreed next step is not stalled yet — it is about to be, and this is the only
+        point at which the fix costs one email.
+
+    - id: na.owner_is_named
+      statement: "The commitment names who owns it."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: owner_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: commitment.owner, owner_layer: L2, note: "The substrate emits the action\
+            and the date and never the owner. Every executable pattern on this object therefore assumes silently
+            that the action is ours — which is precisely the failure the object exists to prevent. Highest-value
+            gap here by some distance."}
+
+  heuristic:
+
+    - id: na.our_move_is_late_by_their_standards
+      statement: "The ball is with us and we have been slower than this buyer's own reply cadence."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2,
+            floor: 3}}
+      yields: {confidence_bp: 7500, attribute: action_state, value: overdue}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      note: >
+        Lateness measured against their normal, not ours. A buyer who answers within the hour
+        experiences a two-day gap as neglect; a fortnightly correspondent does not notice a
+        week. A fixed SLA gets both wrong, and gets the fast one wrong in the direction that
+        costs deals.
+
+    - id: na.buyer_named_the_action
+      statement: "They asked for a demo and no follow-up has gone out."
+      status: executable
+      when:
+        - {has_obs: demo_requested}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 8200, attribute: origin, value: buyer_request}
+      note: >
+        The buyer has told us the next action for free, which is the highest-converting origin
+        there is, and the clock started when they said it rather than when we logged it.
+
+    - id: na.paper_is_the_action
+      statement: "A verbal yes with no contract requested — the next action is to put paper in front of
+        them."
+      status: executable
+      when:
+        - {has_obs: verbal_yes}
+        - {no_obs: contract_requested}
+      yields: {confidence_bp: 7200, attribute: advances_stage, value: true}
+      note: >
+        The gap between agreement and paper is where deals are lost to inertia and to a
+        competitor who moved faster. Nobody logs "send the contract" as a next action because
+        it feels like a formality; the formality is the deal.
+
+    - id: na.meeting_is_the_action
+      statement: "A meeting is on the calendar and neither side is waiting on the other."
+      status: executable
+      when:
+        - {exists: meeting.start_at}
+        - {path: thread.ball_in_court, op: "=", value: nobody}
+      yields: {confidence_bp: 7000, attribute: action_state, value: open}
+      evidence_fields: [meeting.start_at]
+      note: >
+        A booked meeting is a legitimate next action and the ball genuinely sits with nobody
+        until it happens. Worth stating explicitly because it is the one case where an idle
+        thread is healthy, and a chase here is actively counterproductive.
+
+    - id: na.completion_unobservable
+      statement: "The action was discharged and the engine never saw it."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: action_state, value: done}
+      requires_signals:
+        - {kind: obs_kind, name: commitment_completed, owner_layer: L2, note: "followup_sent covers email\
+            actions on our side only. A call made, a document shared outside email, or anything the buyer
+            did is invisible, so na.overdue fires against commitments that were met. Nothing erodes trust
+            in a reminder system faster than being nagged about something already done."}
+
+    - id: na.competing_actions
+      statement: "Several open commitments on one deal — which means none of them is the next action."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: action_state, value: none}
+      requires_signals:
+        - {kind: derived, name: derived.open_commitment_count, owner_layer: L2, note: "commitment.action\
+            resolves to a single latest value, so the substrate cannot express a SET of open commitments.
+            The object's defining rule — a deal with six next actions has none — is therefore unenforceable
+            today, and the failure it names is invisible."}
+
+    - id: na.action_is_vague
+      statement: "The committed text is not something a third party could verify."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: is_specific, value: false}
+      requires_signals:
+        - {kind: derived, name: derived.commitment_specificity, owner_layer: L2, note: "A classification\
+            over commitment.action text separating 'send the security questionnaire to Priya' from 'circle
+            back'. Cheap to build and it would remove most fake next actions from every pipeline at once."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: commitments made in a thread, path: commitment.action}
+  - {source: email, signal: agreed dates, path: commitment.due_at}
+  - {source: email, signal: who is waiting on whom, path: thread.ball_in_court}
+  - {source: email, signal: whether we have actually followed up}
+  - {source: calendar, signal: booked meetings as scheduled actions, path: meeting.start_at}
+  - {source: meeting_transcript, signal: "action items agreed aloud — the richest source and the least\
+      captured"}
+  - {source: crm, signal: "next step field, close date"}
+  - {source: derived, signal: deal trajectory, path: derived.momentum}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: has_next_action, type: boolean, description: "The pipeline-hygiene primitive. False on an open\
+      deal is a finding, not a note.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: action_quality_bp, type: integer, description: "Specificity, ownership and stage advancement\
+      combined. Separates a real next step from a logged one.", consumed_by: [L4.reasoning_unit]}
+  - {name: due_at, type: timestamp, description: "When the reminder should fire, adjusted to this buyer's\
+      cadence rather than a fixed rule.", consumed_by: [L5.execution_planning]}
+  - {name: owner_side, type: string, description: "us, them, both or unassigned. Determines whether the\
+      play is to do it or to chase it.", consumed_by: [L5.execution_planning]}
+  - {name: chase_channel, type: string, description: "Where the chase should land. A third email after\
+      two ignored ones should be a call.", consumed_by: ["L5.2.channel_planner"]}
+  - {name: slip_contribution, type: integer, description: "How much this action's delay explains the deal's\
+      slipped close date.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: na.one_open_per_deal, statement: "Exactly one action may be open per deal at a time.", hard: true}
+  - {id: na.needs_owner_and_date, statement: "An action without an owner and a due date cannot enter state\
+      open.", hard: true}
+  - {id: na.cannot_own_their_action, statement: "We cannot mark an action owned by them as done. Only\
+      observation of their behaviour discharges it.", hard: true}
+  - {id: na.replacement_is_explicit, statement: "Superseding an action must mark the prior one superseded\
+      in the same pass, or two live actions exist and therefore none does.", hard: true}
+  - {id: na.no_chase_before_due, statement: "Do not chase before due_at. Chasing early teaches the buyer\
+      that our dates are not real.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: na.exactly_one_open_per_deal
+    statement: An open deal carries exactly one open next action. Six is zero — nothing has been
+      prioritised, so every one of them can be deferred by pointing at another.
+    when: [{neighbor_fact: deal.status, op: "=", value: open}]
+    then: enforce_single_open_action
+    severity: blocking
+
+  - id: na.open_deal_must_have_one
+    statement: An open deal with no next action must be flagged in the same pass, not at the next
+      pipeline review. The absence is the finding; a review that discovers it a fortnight later has
+      already lost the fortnight.
+    when: [absent: commitment.action, {neighbor_fact: deal.status, op: "=", value: open}]
+    then: flag_no_next_action
+    severity: blocking
+
+  - id: na.must_be_owned_and_dated
+    statement: An action without both an owner and a due date is not a next action. Record it as
+      undated rather than letting it count toward pipeline hygiene, because counting it is what makes
+      the field worthless.
+    severity: blocking
+
+  - id: na.unassigned_never_defaults_to_us
+    statement: An action with no stated owner is `unassigned`, never `us`. Silently adopting the
+      buyer's commitments is how a rep ends up doing their internal selling and calling it follow-up.
+    severity: warning
+
+  - id: na.second_slip_escalates
+    statement: Rescheduling is the default response to an overdue action and it is usually wrong. A
+      second slip on the same action means the action is not the blocker — escalate or change the
+      action.
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    then: escalate_rather_than_reschedule
+    severity: warning
+
+  - id: na.activity_is_not_progress
+    statement: Actions with advances_stage = false must not count toward pipeline health. Otherwise
+      the metric rewards logging follow-ups, which is the cheapest thing a rep can do and the least
+      useful.
+    severity: advisory
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - {name: specificity, weight_bp: 2000, direction: increases, reads: [is_specific, action_text],
+      description: "Whether a stranger could verify completion. Vague actions score near zero however diligently
+      they are logged."}
+  - {name: ownership_clarity, weight_bp: 2000, direction: increases, reads: [owner, owner_ref, ball_in_court],
+    description: "A named person on a named side. The disagreement between owner and ball_in_court is a
+      signal in itself."}
+  - {name: stage_advancement, weight_bp: 2000, direction: increases, reads: [advances_stage, blocks_close]}
+  - {name: timeliness, weight_bp: 2000, direction: context, reads: [due_at, is_dated, days_overdue],
+      description: "Context rather than decreases, because an overdue action on a deal with momentum is
+      administrative and the same action on a flat deal is the deal."}
+  - {name: origin_quality, weight_bp: 1000, direction: increases, reads: [origin, originating_meeting_at],
+    description: "Buyer-requested actions convert several times better than playbook-generated ones. They
+      are already expecting them."}
+  - {name: chase_fatigue, weight_bp: 1000, direction: decreases, reads: [chase_count], description: "Past
+      two chases the relationship is the constraint, and a third makes it worse."}
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# Eight of twelve fire — the best-served object in the roster, because commitment.action and
+# commitment.due_at are typed facts today. That makes the four blocked ones unusually pointed:
+# the engine can see WHAT was committed and WHEN, and never WHO owns it or whether it is done.
+evidence:
+  - {source: meeting_transcript, strength_bp: 9000, description: "An action agreed aloud by both parties,\
+      with the date they said. The strongest source and the least captured."}
+  - {source: email, strength_bp: 8500, description: "A commitment in writing. Self-documenting and already\
+      dated."}
+  - {source: calendar, strength_bp: 8000, description: "A booked meeting is an action both sides have\
+      already accepted."}
+  - {source: crm, strength_bp: 5000, description: "The next-step field. Frequently filled in for hygiene\
+      rather than intent, which is why is_specific exists."}
+  - {source: call_recording, strength_bp: 8500, description: "Same weight as a transcript when one exists."}
+  - {source: derived, strength_bp: 4500, description: "Inferred from silence and ball position. Corroborating\
+      only — quiet does not tell you what was promised."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: deals_with_next_action, unit: percent, description: "Share of open deals carrying exactly one\
+      open, dated, owned action. The headline pipeline-hygiene number.", owner_layer: L6}
+  - {name: action_specificity_rate, unit: percent, description: "Share passing the stranger test. Unmeasurable\
+      today and the cheapest gap on the list to close.", owner_layer: L6}
+  - {name: on_time_completion_rate, unit: percent, description: "By owner side. Buyer-side completion\
+      is a far better predictor of the win than anything they say.", owner_layer: L6}
+  - {name: median_days_overdue, unit: days, owner_layer: L4}
+  - {name: second_slip_rate, unit: percent, description: "Actions slipping twice. Correlates with loss\
+      more tightly than any single-slip measure.", owner_layer: L6}
+  - {name: action_to_stage_rate, unit: percent, description: "Completed actions that actually advanced\
+      a stage. Separates progress from activity.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: na.created, name: Next Action Created, emitted_when: [exists: commitment.action, exists:
+          commitment.due_at], payload: [action_text, owner, due_at]}
+  - {id: na.missing, name: Deal Has No Next Action, emitted_when: [absent: commitment.action, {
+          neighbor_fact: deal.status, op: "=", value: open}], payload: [deal_state, deal_momentum],
+      description: "The cheapest intervention point in the whole pipeline. One email fixes it today; a fortnight
+      from now it is a stalled deal with a different name."}
+  - {id: na.undated, name: Next Action Has No Date, emitted_when: [exists: commitment.action, absent:
+          commitment.due_at], payload: [action_text]}
+  - {id: na.overdue, name: Next Action Overdue, emitted_when: [{fn: days_since, path: commitment.due_at,
+        op: ">", value: 0}], payload: [action_text, due_at, days_overdue, owner]}
+  - {id: na.slipped_twice, name: Next Action Slipped Again, payload: [action_text, chase_count, days_overdue],
+    description: "The second slip is the interesting one. It says the action was never the blocker."}
+  - {id: na.completed, name: Next Action Completed, emitted_when: [has_obs: followup_sent], payload: [
+      action_text, completed_at, discharged_by]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: na.agree_next_step, name: Agree the next step before the call ends, actor: human, effect: "Named\
+      action, named owner, named date, said out loud while both parties are still on the line. The single
+      highest-return habit in sales and the one most consistently skipped in the last ninety seconds of
+      a meeting."}
+  - {id: na.assign_owner, name: Assign an explicit owner, actor: human, preconditions: [exists: commitment.action]}
+  - {id: na.set_due_date, name: Put a date on an undated commitment, actor: human, preconditions: [exists:
+          commitment.action, absent: commitment.due_at]}
+  - {id: na.remind, name: Remind the owner, actor: agent, preconditions: [{fn: days_since, path: commitment.due_at,
+        op: ">", value: 0}]}
+  - {id: na.chase, name: Chase the buyer's action, actor: human, preconditions: [{path: thread.ball_in_court,
+        op: "=", value: them}], effect: "Chase the commitment, not the person. 'You mentioned Thursday for
+      the questionnaire' outperforms 'just checking in' by a distance."}
+  - {id: na.escalate, name: Escalate rather than reschedule, actor: human, effect: "On a second slip.\
+      Rescheduling a twice-slipped action is how a deal spends a quarter looking active."}
+  - {id: na.replace, name: Replace the action with a better one, actor: human, effect: "Frequently correct.\
+      An action nobody will do is worse than an action nobody agreed, because it stops the search for one
+      that would move."}
+  - {id: na.close_it_out, name: Cancel the action explicitly, actor: human, effect: "A legitimate outcome.\
+      Cancelled and done are different facts and both beat an action that quietly rots."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "\"Priya returns the security questionnaire by Thursday\"", note: "Specific, owned by them,\
+      dated. A stranger could tell you whether it happened. This is the shape."}
+  - {label: "\"Keep in touch\"", note: "The classic misclassification — logged as a next step, counted\
+      in every hygiene metric, cannot slip because it was never due. It is the absence of a next action
+      wearing one's clothes."}
+  - {label: "\"Follow up next week\"", note: "Owned by us, roughly dated, advances nothing. Passes most\
+      CRM checks and moves no deal."}
+  - {label: "Six open tasks on one deal", note: "Reads as a well-managed opportunity in the activity log.\
+      Nothing is prioritised, so each one is deferrable by pointing at the others, and none is the next
+      action."}
+  - {label: "Demo requested on Monday, no follow-up by Friday", note: "The buyer named the next action\
+      for free and the clock started when they said it. The highest-converting origin there is, missed in
+      the most avoidable way."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Eight of twelve patterns are executable, four blocked — the best-served object in the
+    roster, because commitment.action and commitment.due_at are typed facts today. That makes
+    the blocked four unusually pointed. The single highest-value gap is commitment.owner: the
+    substrate emits what was committed and when, and never whose it is, so all eight
+    executable patterns silently assume the action is ours — which is exactly the failure the
+    object exists to prevent, and the mechanism by which a buyer's commitment becomes our
+    chase. Close behind are commitment_completed (followup_sent only covers our own email
+    actions, so na.overdue fires against commitments that were met) and
+    derived.open_commitment_count, without which this object's defining rule — a deal with
+    six next actions has none — cannot be enforced at all.

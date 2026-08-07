@@ -1,0 +1,1659 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deadline — the date that does not care.
+#
+# This object exists for one reason: an administrative queue that cannot tell an internal
+# target from an external deadline will rank the wrong thing first, every time, and will do
+# it while looking perfectly reasonable. The board pack the CEO wants on Friday and the VAT
+# return due on the seventh are both "deadlines" in every system I have ever seen. One of
+# them moves by asking. The other one does not move at all, and missing it produces a
+# penalty, an interest charge, a lapsed licence, an auto-renewed contract or — in the cases
+# nobody expects — a personal liability attaching to a named director.
+#
+# So the discriminator is NEGOTIABILITY, and it is a field rather than a feeling. Everything
+# else on this object exists to make that field actionable: what instrument set the date, who
+# can move it and by what mechanism, how the date is computed when it is not written down,
+# what the day-count convention is, how long the work actually takes, and therefore the only
+# date an administrator can really act on — the last responsible start, which is always
+# earlier than the deadline and is never in anybody's calendar.
+#
+# Five of fifteen patterns below are executable. The ten that are not are the sharpest
+# demonstration in the whole library of what the shipped packs cannot see: the pipeline
+# knows when somebody promised something, and has never once heard of a statute.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.deadline
+  name: Deadline
+  domain: admin
+  scope: core
+  owner_capability: admin.compliance_and_governance.statutory_filing
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+  aliases: ["Due Date", "Statutory Date", "Filing Date", "Notice Date", "Cut-Off", "Long-Stop Date"]
+
+purpose:
+  statement: >
+    A dated obligation imposed from outside the organisation — by a statute, a regulator, a
+    court, a tax authority, a contract clause, a funder or a third party whose clock is
+    downstream of ours. It carries the date, the instrument that set it, the day-count
+    convention that computes it, the consequence of missing it, and the preparation time it
+    silently requires. It is the object that makes an administrative queue rankable, because
+    it is the only one that can say "this cannot move" and mean it.
+  discriminator: >
+    Negotiability. If the people involved can agree to move the date between themselves, it
+    is an internal target and belongs on the commitment or the action item. If moving it
+    requires an act by a body outside this organisation — or cannot be done at all — it is a
+    deadline. Note that who SET the date is irrelevant: a payroll cut-off is set internally
+    and is functionally non-negotiable, because a bank's clearing window sits behind it.
+  answers:
+    - "Of these forty open items, which one genuinely cannot move?"
+    - "What is the last day work can start and still land on time — as opposed to the day it is due?"
+    - "The contract ends in March. What is the date we actually have to act by?"
+    - "What happens if we miss it: a penalty, an interest charge, a lapsed right, or a director's personal liability?"
+    - "Can this be extended, by whom, and by when must the extension be requested?"
+    - "Does the date fall on a weekend, and does this regime roll forward or back?"
+    - "We met it. Can we prove we met it?"
+  not:
+    - "Not the work — the filing, the payment, the notice or the return is its own object; this is the date it is measured against."
+    - "Not an internal target. A date the executive would like belongs on admin.obj.core.commitment, where it can be renegotiated with the person owed."
+    - "Not a reminder. A reminder is a Layer 5 artefact derived from this object; the deadline exists whether or not anyone set one."
+    - "Not the obligation itself — admin.obj.core.compliance_obligation owns what must be done and why; this owns when and what happens if not."
+    - "Not a service level. An SLA is a promise the organisation made about its own responsiveness and it can be renegotiated; that is a target with consequences, not a deadline."
+
+# ── Attributes ───────────────────────────────────────────────────────────────────────────
+attributes:
+
+  - name: source
+    purpose: Where the date comes from and who, if anyone, can move it.
+    type: composite
+    contains: [authority_type, negotiability, issuing_body, jurisdiction, legal_basis,
+               obligation_ref, contract_ref, policy_ref]
+
+  - name: date
+    purpose: The date itself, and everything needed to compute it correctly.
+    type: composite
+    contains: [due_at, date_basis, anchor_event, anchor_offset_days, day_count_convention,
+               weekend_rule, cutoff_local_time, timezone, window_opens_at, date_is_computed]
+
+  - name: preparation
+    purpose: The gap between when work must start and when the thing is due. The actionable half.
+    type: composite
+    contains: [lead_time_days, dependency_chain_depth, blocking_approval_ref, prepared_by_ref,
+               last_responsible_start_at]
+
+  - name: consequence
+    purpose: What actually happens on breach, in the currency the organisation feels.
+    type: composite
+    contains: [consequence_type, consequence_value, consequence_escalates, grace_period_days,
+               curable, personal_liability]
+
+  - name: extension
+    purpose: Whether the date can be moved, by what mechanism, and by when it must be asked for.
+    type: composite
+    contains: [extendable, extension_mechanism, extension_request_by, extension_granted_at]
+
+  - name: ownership
+    purpose: The named human who is accountable, and the one who covers when they are away.
+    type: composite
+    contains: [accountable_owner_ref, backup_owner_ref, owner_is_named]
+
+  - name: proof
+    purpose: Evidence that it was met, which in a regulated regime is the deliverable itself.
+    type: composite
+    contains: [evidence_required, proof_of_submission, submission_receipt_ref, met_at]
+
+  - name: recurrence
+    purpose: Whether this returns, and what history says about how it has gone before.
+    type: composite
+    contains: [recurrence_pattern, next_occurrence_at, last_met_at, historical_miss_count]
+
+  - name: signals
+    purpose: Computed reads Layer 4 ranks on.
+    type: composite
+    contains: [state, days_remaining, slack_hours, breach_risk_bp]
+
+  - name: negotiability
+    purpose: Whether, and by whom, this date can be moved. The discriminator, as a field.
+    type: value
+    data_type: enum
+    allowed_values: [non_negotiable, movable_by_issuer_only, movable_by_agreement, internal_target]
+    required: true
+    default: movable_by_agreement
+    sensitivity: internal
+    description: >
+      Four members and not two, because the middle is where the money is. `non_negotiable`
+      cannot move at all — a court date, a limitation period. `movable_by_issuer_only` can
+      move, but only if the issuing body is asked, and almost always only if asked BEFORE the
+      date. `movable_by_agreement` covers contractual dates the counterparty may waive.
+      `internal_target` exists so the object can hold the thing it is being contrasted with,
+      and any queue ranking that treats it as equal to the other three is broken.
+
+  - name: authority_type
+    purpose: The kind of body that imposed the date, which predicts the consequence shape.
+    type: value
+    data_type: enum
+    allowed_values: [statute, regulator, court, tax_authority, contract, funder,
+                     payroll_provider, insurer, internal_policy, internal_target]
+    required: true
+    description: >
+      Statutory and court dates carry automatic consequences that need no counterparty to
+      enforce them. Contractual dates need someone to notice and complain, which is why they
+      are missed more often and discovered later — sometimes years later, in diligence.
+
+  - name: issuing_body
+    purpose: Who to ask when the date is in doubt.
+    type: value
+    data_type: string
+    description: "Named. 'The registry' is not a body; the registry's filing team with a reference number is."
+
+  - name: jurisdiction
+    purpose: Whose calendar, whose public holidays and whose local time apply.
+    type: value
+    data_type: string
+    description: >
+      Non-optional on any multi-entity organisation. The same annual return has a different
+      date, a different clock and a different public-holiday calendar per jurisdiction, and
+      a single global reminder rule gets one of them wrong every year.
+
+  - name: legal_basis
+    purpose: The specific clause, section or schedule the date sits in.
+    type: value
+    data_type: string
+    description: >
+      "Clause 14.2, 90 days' written notice" rather than "the contract says three months".
+      When the date is challenged, the clause is what settles it, and finding it under
+      pressure costs a day nobody has.
+
+  - name: obligation_ref
+    purpose: The compliance obligation this date belongs to.
+    type: reference
+    ref: admin.obj.core.compliance_obligation
+
+  - name: contract_ref
+    purpose: The agreement whose clause sets the date.
+    type: reference
+    ref: admin.obj.core.contract
+
+  - name: policy_ref
+    purpose: The internal policy that sets the date, where the source is internal.
+    type: reference
+    ref: admin.obj.core.policy
+
+  - name: due_at
+    purpose: The moment the obligation must be discharged by.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [commitment.due_at]
+    description: >
+      A date without a time is only half a deadline. Registries close at counters, filing
+      portals cut off at 23:59 local, and payment files leave at a banking cut-off in the
+      early afternoon. Storing a date alone loses between four hours and a day of the window.
+
+  - name: date_basis
+    purpose: How the date is arrived at, which decides whether it can silently change.
+    type: value
+    data_type: enum
+    allowed_values: [fixed_calendar, event_relative, rolling_period, window, on_demand]
+    required: true
+    default: fixed_calendar
+    description: >
+      `event_relative` is the dangerous one — a date computed from a period end, a year end,
+      an incorporation date or a meeting. Move the anchor and the deadline moves with it,
+      usually without anybody recomputing. `window` matters because some obligations are
+      open only between two dates and being early is as invalid as being late.
+
+  - name: anchor_event
+    purpose: The event an event-relative date is computed from.
+    type: value
+    data_type: string
+
+  - name: anchor_offset_days
+    purpose: The offset from the anchor, in the stated convention.
+    type: value
+    data_type: integer
+
+  - name: day_count_convention
+    purpose: How the days are counted, which is the single commonest arithmetic error in administration.
+    type: value
+    data_type: enum
+    allowed_values: [calendar_days, business_days, clear_days, months_calendar, unspecified]
+    required: true
+    default: unspecified
+    description: >
+      "Clear days" excludes both the first and the last day and is standard in notice
+      provisions and board procedure; counting inclusively serves the notice a day late and
+      invalidates it. `unspecified` is deliberately the default so that an unresolved
+      convention is visible as a gap rather than silently assumed to be calendar days.
+
+  - name: weekend_rule
+    purpose: What happens when the date lands on a non-working day.
+    type: value
+    data_type: enum
+    allowed_values: [roll_forward, roll_backward, no_roll, unspecified]
+    default: unspecified
+    description: >
+      Most filing regimes roll forward to the next business day. Several payment and notice
+      regimes roll BACKWARD, because the obligation must be discharged by the date, not after
+      it. Assuming forward is the expensive default and it fails a handful of times a year in
+      any organisation with a payroll.
+
+  - name: cutoff_local_time
+    purpose: The time of day the window closes.
+    type: value
+    data_type: string
+    description: 'e.g. "23:59" for an online portal, "15:00" for a same-day payment cut-off.'
+
+  - name: timezone
+    purpose: Which local time the cut-off is expressed in.
+    type: value
+    data_type: string
+
+  - name: window_opens_at
+    purpose: The earliest date the obligation may be discharged, where one exists.
+    type: value
+    data_type: timestamp
+    description: >
+      Grant claims, tax elections and some statutory filings are accepted only inside a
+      window. A submission made early is rejected, and rejection usually arrives after the
+      window has closed.
+
+  - name: lead_time_days
+    purpose: How long the work genuinely takes, including everyone else's part of it.
+    type: value
+    data_type: integer
+    unit: days
+    description: >
+      The most under-recorded number in administration and the one that decides whether a
+      deadline is safe. It is not how long the administrator needs; it is preparation plus
+      review plus approval plus counter-signature plus the portal being slow on the last day.
+      Take it from the last three actuals, never from an estimate.
+
+  - name: dependency_chain_depth
+    purpose: How many other people's decisions sit between now and done.
+    type: value
+    data_type: integer
+    description: >
+      Each additional approver adds not just their own turnaround but their absence risk.
+      A three-signature deadline in August is a different object from the same deadline in
+      October.
+
+  - name: blocking_approval_ref
+    purpose: The approval that must complete before the deadline can be met.
+    type: reference
+    ref: admin.obj.core.approval
+    description: >
+      The deadline's real due date is this approval's due date, and it is earlier by the
+      approver's turnaround. Failing to propagate the date backwards down the chain is how
+      an organisation discovers on the due date that the sign-off has not started.
+
+  - name: prepared_by_ref
+    purpose: Who does the work, as distinct from who is accountable for it.
+    type: reference
+    ref: admin.obj.core.employee_record
+
+  - name: last_responsible_start_at
+    purpose: The last moment work can begin and still land on time. The date that should be in the diary.
+    type: derived
+    data_type: timestamp
+    derived_from: [due_at, lead_time_days, dependency_chain_depth]
+    description: >
+      Everything about this object points here. Nobody misses a deadline on the due date;
+      they miss it three weeks earlier by not starting, and then discover it on the due date.
+      A reminder set on due_at is a notification of failure.
+
+  - name: consequence_type
+    purpose: What breaching this actually produces.
+    type: value
+    data_type: enum
+    allowed_values: [financial_penalty, interest, auto_renewal, right_lost, licence_lapse,
+                     enforcement_action, prosecution, contractual_breach, reputational,
+                     none_stated]
+    required: true
+    default: none_stated
+    description: >
+      `right_lost` and `auto_renewal` are the two that get under-weighted, because neither
+      generates a letter. A missed notice window does not fine you; it quietly commits the
+      organisation to another twelve months of a contract it wanted out of, and nobody finds
+      out until the renewal invoice.
+
+  - name: consequence_value
+    purpose: The monetary size of the breach, where it can be stated.
+    type: value
+    data_type: money
+    sensitivity: internal
+
+  - name: consequence_escalates
+    purpose: Whether the cost grows with the delay.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      True for most penalty regimes and all interest. It is why a missed deadline must never
+      be treated as terminal — day three costs a fraction of day ninety, and teams that write
+      the deadline off as lost let it drift precisely when acting is cheapest.
+
+  - name: grace_period_days
+    purpose: Any formal period after the date in which the obligation can still be met without full consequence.
+    type: value
+    data_type: integer
+    unit: days
+    description: >
+      Distinguishes overdue from breached. A grace period is a documented feature of the
+      regime, not an informal tolerance, and treating an informal tolerance as a grace period
+      is how an organisation is surprised by the first regulator who does not offer one.
+
+  - name: curable
+    purpose: Whether a breach can be remedied after the fact.
+    type: value
+    data_type: boolean
+    description: >
+      A late filing is curable at a cost. A missed limitation period, a lapsed election and a
+      missed contractual notice window generally are not — the right is simply gone. Curable
+      and non-curable deadlines deserve completely different amounts of paranoia.
+
+  - name: personal_liability
+    purpose: Whether breach attaches to a named individual rather than to the entity.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      True for a set of director and officer duties in most company-law regimes, and for
+      certain licence-holder and data-protection roles. Under-known, and it changes the
+      urgency conversation completely: the person who must be told is the one whose name is
+      on it.
+
+  - name: extendable
+    purpose: Whether the date can be moved at all.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: extension_mechanism
+    purpose: How an extension is obtained, in operational terms.
+    type: value
+    data_type: string
+    description: '"Form X filed before the due date", "written agreement of the counterparty", "no mechanism".'
+
+  - name: extension_request_by
+    purpose: The deadline on the extension, which is earlier than the deadline itself.
+    type: value
+    data_type: timestamp
+    description: >
+      Almost every extension mechanism requires the request to arrive BEFORE the original
+      date. An extension asked for afterwards is not a request, it is a mitigation plea. This
+      attribute is a deadline hanging off a deadline and it must be diarised separately.
+
+  - name: extension_granted_at
+    purpose: When an extension was granted, and therefore when due_at legitimately changed.
+    type: value
+    data_type: timestamp
+
+  - name: accountable_owner_ref
+    purpose: The one named person answerable for this being met.
+    type: reference
+    ref: admin.obj.core.employee_record
+    required: true
+
+  - name: backup_owner_ref
+    purpose: Who covers the date when the owner is on leave.
+    type: reference
+    ref: admin.obj.core.employee_record
+    description: >
+      A quarterly deadline and a two-week holiday collide roughly once a year per owner, and
+      the collision is entirely predictable in advance and almost never planned for.
+
+  - name: owner_is_named
+    purpose: Whether accountability rests on a person or on a function.
+    type: derived
+    data_type: boolean
+    derived_from: [accountable_owner_ref]
+    description: >
+      "Finance owns it" is not ownership. Functions do not remember, do not go on leave in a
+      way anyone notices, and cannot be asked how it is going.
+
+  - name: evidence_required
+    purpose: Whether meeting the deadline must be provable, not merely true.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      In a regulated or audited regime the evidence IS the deliverable. Work performed
+      correctly and undocumented did not happen, and the auditor is asking eighteen months
+      later when the portal no longer shows the submission.
+
+  - name: proof_of_submission
+    purpose: What form the receipt takes.
+    type: value
+    data_type: enum
+    allowed_values: [portal_receipt, signed_acknowledgement, postal_proof, email_confirmation,
+                     bank_confirmation, none]
+    default: none
+
+  - name: submission_receipt_ref
+    purpose: The stored artefact proving it was met.
+    type: reference
+    ref: admin.obj.core.audit_evidence
+
+  - name: met_at
+    purpose: When the obligation was actually discharged.
+    type: value
+    data_type: timestamp
+
+  - name: recurrence_pattern
+    purpose: Whether this deadline returns, and on what cycle.
+    type: value
+    data_type: enum
+    allowed_values: [one_off, weekly, monthly, quarterly, annual, statutory_cycle, event_driven]
+    default: one_off
+    description: >
+      Recurring deadlines are the safe ones — they get calendars and owners. One-off
+      deadlines buried inside a contract signed two years ago are the ones that are missed,
+      because nothing recurs to remind anybody they exist.
+
+  - name: next_occurrence_at
+    purpose: The following instance, so the cycle is visible rather than rediscovered each time.
+    type: value
+    data_type: timestamp
+
+  - name: last_met_at
+    purpose: When this deadline was last discharged.
+    type: value
+    data_type: timestamp
+
+  - name: historical_miss_count
+    purpose: How often this particular deadline has been missed or met at the wire.
+    type: value
+    data_type: integer
+    default: 0
+    description: >
+      The best available predictor for the next occurrence. A deadline met three years running
+      with two hours of slack each time is not a well-run deadline; it is a near miss with a
+      good record.
+
+  - name: state
+    purpose: Where this deadline sits in its own lifecycle.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, identified, active, at_risk, overdue, resolved, breached,
+                     superseded, cancelled]
+    required: true
+    default: unknown
+
+  - name: days_remaining
+    purpose: Calendar days to the due date. The number everybody looks at.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [due_at]
+
+  - name: slack_hours
+    purpose: Time remaining minus time required. The number that actually matters.
+    type: derived
+    data_type: number
+    unit: hours
+    derived_from: [due_at, lead_time_days, last_responsible_start_at, dependency_chain_depth]
+    description: >
+      Borrowed straight from critical path float. Negative slack with twenty days remaining
+      is an emergency; positive slack with two days remaining is fine. Every administrative
+      queue in existence sorts on days_remaining and is therefore sorting on the wrong field.
+
+  - name: breach_risk_bp
+    purpose: Likelihood this one is missed, given slack, history and dependency depth.
+    type: derived
+    data_type: integer
+    derived_from: [slack_hours, historical_miss_count, dependency_chain_depth, owner_is_named]
+
+  - name: date_is_computed
+    purpose: Whether the date is written somewhere or has to be calculated.
+    type: derived
+    data_type: boolean
+    derived_from: [date_basis, anchor_event, anchor_offset_days, day_count_convention]
+    description: >
+      True is the high-risk case and it covers the whole family of contractual notice dates.
+      Nobody misses a date printed on a letter; they miss the date that was ninety clear days
+      before a date printed on a letter, because it was never written down anywhere.
+
+# ── States ───────────────────────────────────────────────────────────────────────────────
+states:
+  initial: unknown
+  terminal: [resolved, breached, superseded, cancelled]
+  values:
+    - name: unknown
+      description: >
+        The obligation is known and its date is not resolved. Far more common than any
+        register admits, and the state in which every genuinely surprising miss originates.
+      entered_when: [{absent: commitment.due_at}]
+      implies: "Cannot be ranked, cannot be reminded on, cannot be escalated against."
+    - name: identified
+      description: The date is resolved and traced to an instrument, and the preparation window has not opened.
+    - name: active
+      description: >
+        Inside the preparation window — past last_responsible_start_at. Work must be under
+        way, not scheduled.
+      implies: "From here on, silence from the owner is a finding rather than a non-event."
+    - name: at_risk
+      description: Slack has gone negative, or the blocking approval has not started with insufficient time remaining.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+      implies: "Escalation is now arithmetic rather than a judgement call."
+    - name: overdue
+      description: >
+        The date has passed and the obligation is undischarged, but the consequence has not
+        yet crystallised — a grace period, a curable position, an escalating-but-small penalty.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+      implies: "Still worth doing today rather than next week. Escalating cost is the whole point."
+    - name: breached
+      description: >
+        The consequence has landed: the penalty applied, the licence lapsed, the notice
+        window closed, the contract auto-renewed.
+      implies: "Stops being a deadline and becomes an incident with a cost and a lesson."
+    - name: resolved
+      description: Discharged, on time, with the proof captured where proof is required.
+    - name: superseded
+      description: >
+        The issuing body moved the date, or an extension was granted. A legitimate ending and
+        a distinct one — it must never be recorded as having been met.
+    - name: cancelled
+      description: The underlying obligation ceased — the entity dormant, the contract terminated, the regime repealed.
+  transitions:
+    - {from: unknown, to: identified, trigger: date_resolved_from_instrument}
+    - {from: identified, to: active, trigger: last_responsible_start_reached}
+    - {from: active, to: at_risk, trigger: slack_negative}
+    - {from: at_risk, to: active, trigger: slack_recovered, reversible: true}
+    - {from: active, to: resolved, trigger: discharged_with_proof}
+    - {from: at_risk, to: resolved}
+    - {from: at_risk, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: active, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: overdue, to: resolved, trigger: discharged_late_within_grace}
+    - {from: overdue, to: breached, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 14}]}
+    - {from: identified, to: superseded, trigger: extension_granted, reversible: false}
+    - {from: active, to: superseded, trigger: extension_granted}
+    - {from: identified, to: cancelled, trigger: obligation_ceased}
+
+# ── Relationships ────────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: governed_by
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 2000
+    confidence_bp: 8500
+    priority: 1
+    evidence: [regulator, register, document]
+    description: >
+      The obligation says what must be done and why; this edge is what makes the date
+      defensible rather than remembered. A deadline with no obligation behind it is somebody's
+      diary entry with authority it has not earned.
+
+  - type: belongs_to
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1600
+    confidence_bp: 9000
+    priority: 2
+    conditions: [{path: contract.auto_renew, op: "=", value: true}]
+    description: >
+      Contractual dates arrive in pairs — an expiry and a notice date computed backwards from
+      it — and only the first is ever written down. This edge is where auto-renewals are
+      caught or missed, and it is the highest-value single edge on the object commercially.
+
+  - type: assigned_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: one
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 3
+    description: >
+      One named person. The edge is cardinality one deliberately: a deadline assigned to two
+      people is assigned to neither, and a deadline assigned to a function is assigned to
+      whoever happens to notice.
+
+  - type: precedes
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 6500
+    priority: 4
+    description: >
+      Self-referential — the internal milestone chain that ends at the external date. Building
+      it is how a single immovable date becomes a schedule with slack in it, and it is the
+      difference between a compliance calendar and a compliance panic.
+
+  - type: gates
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1300
+    confidence_bp: 7500
+    conditions: [{path: approval.state, op: "=", value: pending}]
+    description: >
+      The deadline sets the approval's real due date, which is earlier than the deadline by
+      the approver's turnaround. Organisations that do not propagate the date backwards
+      discover on the due date that the signature has not started.
+
+  - type: gates
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 7000
+    description: >
+      Commitments made against an external date inherit its immovability whether or not the
+      person making them realises. This is the edge that tells an owner their "I'll get to it
+      next week" is not available.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 7000
+    description: >
+      When slack goes negative, this is what the escalation is raised against — and it is the
+      only argument that reliably reorders a senior person's day, because it is arithmetic
+      rather than impatience.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    description: "Where the date is internally set but enforceable — an attestation deadline, a review cycle."
+
+  - type: produces
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 7500
+    description: >
+      The submission receipt. Where evidence is required, this edge is the difference between
+      having met the deadline and being able to show it eighteen months later.
+
+  - type: references
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 6500
+    description: >
+      Fiscal year end. Non-negotiable, universally known, and still the sole cause of the
+      March buying season and everything that gets approved badly inside it.
+
+  - type: attaches_to
+    target: admin.obj.core.invoice
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 7000
+    description: >
+      Payment terms are contractual dates, which makes them deadlines rather than intentions.
+      Treating them as internal targets is how late-payment interest and a supplier stopping
+      delivery both arrive in the same week.
+
+  - type: references
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 6000
+    description: >
+      Review-due and retention-until dates. Disposal is itself a deadline — holding personal
+      data past its retention period is the breach, and it is the deadline nobody diarises
+      because nothing bad appears to happen on the day.
+
+# ── Inference Patterns ⭐ ────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: dl.date_unresolved
+      statement: "An action is known and no due date exists against it."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+      yields: {confidence_bp: 9000, attribute: state, value: unknown}
+      evidence_fields: [commitment.action]
+      note: >
+        The most useful cheap pattern in the file. An obligation with no resolved date cannot
+        be ranked, reminded on or escalated against, so it is invisible until it is late. In
+        every register I have reviewed, the undated rows are where the surprises live.
+
+    - id: dl.date_passed_undischarged
+      statement: "The due date is in the past and nothing has closed it."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 9500, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        Discharged out of band — filed on the portal, paid by the bank, posted — with nothing
+        writing back. This is the single largest source of a wrong nudge in the domain, and it
+        is why the first action against an overdue deadline must be a confirmation and never
+        an escalation.
+
+    - id: dl.consequence_window_elapsed
+      statement: "More than a fortnight past due, which exhausts almost every grace period in practice."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 14}
+      yields: {confidence_bp: 8000, attribute: state, value: breached,
+               corroborates: [dl.date_passed_undischarged]}
+      evidence_fields: [commitment.due_at]
+      note: >
+        Fourteen days is a working approximation and must be replaced by the regime's actual
+        grace period the moment grace_period_days is populated. Kept because the alternative —
+        leaving overdue and breached collapsed — hides the moment a cost crystallised, which
+        is the only moment Layer 6 can learn from.
+
+  heuristic:
+
+    - id: dl.preparation_window_open
+      statement: "The date is within a fortnight and has not yet passed — the window is open."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">=", value: -14}
+        - {fn: days_since, path: commitment.due_at, op: "<", value: 0}
+      yields: {confidence_bp: 7500, attribute: state, value: active}
+      evidence_fields: [commitment.due_at]
+      note: >
+        The one pattern here whose firing depends on days_since returning a NEGATIVE value for
+        a future timestamp. If the engine clamps at zero this is inert rather than wrong, which
+        is the correct failure direction, but it should be confirmed against
+        engine.py before anyone relies on the window logic. Fourteen days is also a placeholder
+        for lead_time_days, which is the number that should really open the window.
+      false_positive: >
+        A fortnight is far too short for anything with a signature in it and far too long for a
+        payment run. A fixed window is a stand-in for the real calculation, which is
+        due_at minus lead_time minus the approval chain's own latency.
+
+    - id: dl.anchor_event_vacated
+      statement: "The meeting an event-relative date was computed from has been cancelled."
+      status: executable
+      when:
+        - {exists: meeting.start_at}
+        - {path: meeting.status, op: "=", value: cancelled}
+      yields: {confidence_bp: 7000, attribute: date_is_computed, value: true}
+      evidence_fields: [meeting.start_at, meeting.status]
+      note: >
+        Board and committee dates cascade: papers due seven clear days before a meeting,
+        minutes circulated within ten working days after. Move the meeting and every derived
+        date moves with it, and nothing recomputes them. This is the cheapest available
+        detection of a silently invalid date.
+
+    - id: dl.statutory_date_from_the_obligation_register
+      statement: "The obligation register carries a date set by a named external authority."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: negotiability, value: non_negotiable}
+      requires_signals:
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "The central absence in the Admin brain. The pipeline knows when a person promised something and has never heard of a statute, which is why an administrative queue built on it ranks a board pack above a filing."}
+        - {kind: fact_path, name: obligation.authority, owner_layer: L1}
+        - {kind: fact_path, name: obligation.jurisdiction, owner_layer: L1,
+           note: "Without jurisdiction the holiday calendar and the local cut-off cannot be resolved, and a multi-entity group gets one wrong every year."}
+
+    - id: dl.contract_notice_date
+      statement: "The operative date is the notice date computed back from contract expiry, not the expiry itself."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: date_is_computed, value: true}
+      requires_signals:
+        - {kind: fact_path, name: contract.end_at, owner_layer: L1}
+        - {kind: fact_path, name: contract.notice_period_days, owner_layer: L1,
+           note: "Two fields that would generate an entire notice calendar automatically. The date that gets missed is never printed on the contract — it is ninety clear days before a date that is."}
+
+    - id: dl.auto_renewal_already_locked
+      statement: "The contract auto-renews and the notice window has already closed."
+      status: needs_signal
+      yields: {confidence_bp: 9600, attribute: state, value: breached}
+      requires_signals:
+        - {kind: fact_path, name: contract.auto_renew, owner_layer: L1}
+        - {kind: fact_path, name: contract.end_at, owner_layer: L1,
+           note: "The consequence that generates no letter, no penalty and no alert — just another twelve months of a contract somebody wanted out of, discovered at the renewal invoice."}
+        - {kind: obs_kind, name: auto_renewal_imminent, owner_layer: L2}
+
+    - id: dl.payroll_cutoff
+      statement: "A payroll input cut-off issued by the bureau or the bank sits before the pay date."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: negotiability, value: non_negotiable}
+      requires_signals:
+        - {kind: fact_path, name: payroll.cutoff_at, owner_layer: L1,
+           note: "Internally set and functionally external: a clearing window sits behind it. The clean proof that the discriminator is who can MOVE the date, not who set it. Also the one administrative deadline where being a day late is visible to every employee simultaneously."}
+
+    - id: dl.retention_period_elapsed
+      statement: "A record has passed its retention date and disposal is now itself the obligation."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: active}
+      requires_signals:
+        - {kind: fact_path, name: document.retention_until, owner_layer: L1,
+           note: "The deadline that runs the other way: holding the data is the breach. Nothing visibly bad happens on the day, which is exactly why it is never diarised and why over-retention is the commonest data-protection finding."}
+        - {kind: obs_kind, name: retention_period_elapsed, owner_layer: L2}
+
+    - id: dl.document_review_due
+      statement: "A controlled document has reached its scheduled review date."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: negotiability, value: movable_by_agreement}
+      requires_signals:
+        - {kind: fact_path, name: document.review_due_at, owner_layer: L1,
+           note: "Internally set and genuinely movable, and included deliberately as the contrast case: this is what an internal target looks like when it is well run, and it must not be ranked alongside a filing."}
+
+    - id: dl.filing_window_signalled
+      statement: "Layer 2 has observed that a filing is due or overdue."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: state, value: active}
+      requires_signals:
+        - {kind: obs_kind, name: filing_due, owner_layer: L2}
+        - {kind: obs_kind, name: filing_overdue, owner_layer: L2,
+           note: "Portal notifications and regulator correspondence already arrive by email; they are simply not extracted. This is among the cheapest signals in the whole Admin backlog."}
+
+    - id: dl.lead_time_from_actuals
+      statement: "This recurring deadline has historically taken materially longer to prepare than anyone allows for."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: lead_time_days, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.preparation_lead_time, owner_layer: L2,
+           note: "Measured from first activity to submission across the last three occurrences. Without it, lead time is an estimate, estimates are optimistic, and every deadline looks safe until the week it is not."}
+        - {kind: derived, name: derived.approval_latency, owner_layer: L2}
+
+    - id: dl.blocking_approval_not_started
+      statement: "The approval the deadline depends on has not been requested, with less time remaining than the approver typically takes."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: at_risk}
+      requires_signals:
+        - {kind: fact_path, name: approval.state, owner_layer: L1}
+        - {kind: fact_path, name: approval.requested_at, owner_layer: L1}
+        - {kind: baseline, name: approval_turnaround, owner_layer: L2,
+           note: "The deadline is not missed on the due date; it is missed on the day the sign-off should have started. This pattern is the earliest honest warning the object can generate."}
+
+    - id: dl.local_cutoff_unresolved
+      statement: "The date has no cut-off time or timezone, so the real window is unknown by up to a day."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: cutoff_local_time, value: null}
+      requires_signals:
+        - {kind: fact_path, name: obligation.jurisdiction, owner_layer: L1,
+           note: "Registries close at counters, portals cut off at 23:59 local, payment files leave in the early afternoon. Storing a bare date silently loses between four hours and a full day of the window, and always on the day it matters."}
+
+# ── Inputs ───────────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: regulator, signal: "published filing calendar, statutory notices, portal reminders",
+     fills: [due_at, authority_type, negotiability, consequence_type], reliability_bp: 10000,
+     description: "The issuing body's own date. Nothing outranks it and almost nothing reads it automatically."}
+  - {source: contract, signal: "expiry, notice period, day-count convention, renewal mechanics",
+     fills: [contract_ref, anchor_offset_days, day_count_convention, extendable], reliability_bp: 9500,
+     description: "The date is rarely stated; it is computed from a clause. Extraction has to do arithmetic, not lookup."}
+  - {source: portal, signal: "submission deadlines and acknowledgements",
+     fills: [due_at, submission_receipt_ref, met_at], reliability_bp: 9000}
+  - {source: payroll, signal: "bureau and bank cut-off calendar",
+     fills: [due_at, cutoff_local_time, negotiability], reliability_bp: 9000}
+  - {source: register, signal: "the obligation or compliance register",
+     fills: [obligation_ref, recurrence_pattern, accountable_owner_ref], reliability_bp: 7500,
+     description: "Only as good as its last review, and the review is annual while the organisation is not."}
+  - {source: erp, signal: "payment terms, period ends, fiscal calendar",
+     fills: [due_at, anchor_event], reliability_bp: 7500}
+  - {source: document, signal: "review-due and retention dates on controlled documents",
+     fills: [due_at, recurrence_pattern], reliability_bp: 6500}
+  - {source: email, signal: "the agent, adviser or counterparty saying the date has changed",
+     fills: [extension_granted_at], reliability_bp: 4500,
+     description: "A lead, never a source. Update the register from the instrument, not from the message about the instrument."}
+  - {source: calendar, signal: "a diary entry someone made once",
+     fills: [due_at], reliability_bp: 3500,
+     description: "The commonest home for a statutory date and the worst. It leaves with the person."}
+  - {source: derived, signal: "historical preparation time and approval latency",
+     fills: [lead_time_days, slack_hours], reliability_bp: 5500}
+
+# ── Outputs ──────────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: slack_hours, type: number,
+     description: "Time remaining minus time required. The correct sort key for any administrative queue.",
+     derived_from: [due_at, lead_time_days, dependency_chain_depth],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: negotiability, type: string,
+     description: "Whether this can move and who can move it. The field that stops a board pack outranking a filing.",
+     derived_from: [negotiability, authority_type],
+     consumed_by: [L4.decision_maker, L4.reasoning_unit]}
+  - {name: last_responsible_start_at, type: timestamp,
+     description: "The date that belongs in the diary instead of the due date.",
+     derived_from: [due_at, lead_time_days, dependency_chain_depth],
+     consumed_by: [L5.execution_planning]}
+  - {name: notice_date, type: timestamp,
+     description: "For contractual deadlines, the computed date action must be taken by — always earlier than expiry.",
+     derived_from: [contract_ref, anchor_offset_days, day_count_convention],
+     consumed_by: [L5.execution_planning]}
+  - {name: breach_consequence, type: string,
+     description: "What is lost on breach, in the currency the organisation feels, including any personal liability.",
+     derived_from: [consequence_type, consequence_value, personal_liability, curable],
+     consumed_by: [L4.reasoning_unit]}
+  - {name: reminder_schedule, type: list,
+     description: "Escalating prompts anchored to the start date and to slack, not to the due date.",
+     derived_from: [last_responsible_start_at, slack_hours, historical_miss_count],
+     consumed_by: [L5.communication_planning]}
+  - {name: escalation_trigger_at, type: timestamp,
+     description: "The moment escalation becomes arithmetic rather than judgement.",
+     derived_from: [slack_hours, dependency_chain_depth],
+     consumed_by: [L5.execution_planning]}
+  - {name: near_miss_flag, type: boolean,
+     description: "Met, but with almost no slack. A clean on-time record built entirely of near misses is not a control.",
+     derived_from: [met_at, due_at, slack_hours],
+     consumed_by: [L6.learning_unit]}
+
+# ── Preconditions ────────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: dl.traced_to_an_instrument
+    statement: "The date traces to a named statute, clause, schedule or published calendar — not to a diary entry."
+    requires: [legal_basis, issuing_body, admin.obj.core.compliance_obligation]
+    if_unmet: >
+      Treat as unverified and do not let it outrank a verified date. Go to the instrument
+      before acting: a remembered deadline is wrong often enough that acting on it produces
+      both wasted work and a false sense of coverage.
+
+  - id: dl.convention_and_calendar_resolved
+    statement: "The day-count convention, the weekend rule and the jurisdiction's holiday calendar are known."
+    requires: [day_count_convention, weekend_rule, jurisdiction]
+    if_unmet: >
+      Compute the date both ways and act on the earlier one. Clear days versus calendar days
+      is a two-day swing on a standard notice provision, and the cheap defence is to assume
+      the tighter reading rather than to resolve it under pressure.
+
+  - id: dl.owner_is_a_person
+    statement: "Accountability rests on one named individual with a named deputy."
+    requires: [accountable_owner_ref, backup_owner_ref]
+    if_unmet: >
+      Assign before scheduling anything. A deadline owned by a function is owned by whoever
+      notices, and the annual ones are noticed by nobody in the year somebody leaves.
+
+  - id: dl.lead_time_estimated
+    statement: "A preparation lead time exists, taken from actuals where the deadline recurs."
+    requires: [lead_time_days, dependency_chain_depth]
+    when: [{exists: commitment.due_at}]
+    if_unmet: >
+      Degrade rather than block: rank on days remaining and flag the ranking as unreliable.
+      Without lead time every deadline looks equally safe right up to the point where one of
+      them is not, and the queue gives no warning at all.
+
+  - id: dl.cutoff_resolved
+    statement: "The cut-off time and its timezone are known, not just the date."
+    requires: [cutoff_local_time, timezone]
+    if_unmet: >
+      Work to the earliest plausible cut-off. Assuming end of day on a deadline with a
+      mid-afternoon banking cut-off loses the day silently, and only on the day it matters.
+
+  - id: dl.extension_window_known
+    statement: "Where the date is extendable, the date by which the extension must be requested is itself diarised."
+    requires: [extendable, extension_request_by, extension_mechanism]
+    if_unmet: >
+      Diarise it now, before the deadline itself. Extension windows close before the
+      deadlines they extend, and an extension requested afterwards is not a request.
+
+# ── Constraints ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - id: dl.cannot_be_moved_internally
+    statement: "A deadline with negotiability = non_negotiable cannot be moved by any internal decision, at any level of seniority."
+    hard: true
+    why: >
+      This is the entire point of the object. The most senior person in the organisation has
+      exactly as much power over a filing date as the newest joiner, and a system that lets
+      priority be overridden by rank reintroduces the failure it was built to prevent.
+
+  - id: dl.extension_precedes_the_date
+    statement: "An extension must be requested before the original date, through the stated mechanism."
+    hard: true
+
+  - id: dl.date_without_time_is_incomplete
+    statement: "A deadline without a cut-off time and a timezone is not fully resolved."
+    hard: false
+    why: "Actionable at reduced confidence by assuming the earliest plausible cut-off, so it degrades rather than blocks."
+
+  - id: dl.business_day_arithmetic_needs_a_calendar
+    statement: "Business-day and clear-day counts cannot be computed without the jurisdiction's public holiday calendar."
+    hard: true
+
+  - id: dl.met_is_not_proven
+    statement: "Where evidence_required is true, an undocumented discharge does not count as met."
+    hard: true
+    why: >
+      In an audited regime the evidence is the deliverable. The auditor arrives eighteen
+      months later, the portal no longer displays the submission, and the position becomes
+      indistinguishable from never having filed.
+
+# ── Business Rules ───────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: dl.external_outranks_internal
+    statement: A deadline with negotiability = non_negotiable outranks any internal target in queue ordering, regardless of stated priority or requester seniority.
+    then: force_rank_above_targets
+    severity: blocking
+    why: >
+      The single rule this object exists to enforce. Without it the queue sorts by whoever
+      asked most recently and most loudly, which is precisely how a filing date is missed in
+      a week that felt busy and productive.
+
+  - id: dl.notice_date_is_the_operative_date
+    statement: For a contract with auto_renew true, the operative deadline is end_at minus notice_period_days computed in the stated convention, not end_at.
+    when: [{path: contract.auto_renew, op: "=", value: true}]
+    then: derive_notice_deadline
+    severity: blocking
+
+  - id: dl.no_deadline_without_a_named_owner
+    statement: A deadline cannot leave state unknown while accountable_owner_ref is unresolved or points at a function.
+    then: require_named_owner
+    severity: blocking
+
+  - id: dl.rank_on_slack_not_on_days_remaining
+    statement: Where lead_time_days exists, queue ordering must use slack, not days remaining.
+    then: sort_by_slack
+    severity: warning
+    why: "Negative slack at twenty days out is an emergency and sorts below a harmless item due tomorrow under every default ordering in existence."
+
+  - id: dl.convention_must_be_stated
+    statement: A computed date whose day_count_convention is unspecified must be flagged as unverified.
+    then: flag_unverified_date
+    severity: warning
+
+  - id: dl.evidence_required_blocks_closure
+    statement: A deadline with evidence_required true cannot move to resolved without a submission_receipt_ref.
+    then: block_closure
+    severity: blocking
+
+  - id: dl.overdue_is_not_terminal
+    statement: An overdue deadline with consequence_escalates true must remain actionable and rise in priority daily.
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    then: escalate_priority_daily
+    severity: warning
+    why: >
+      Teams write off a missed deadline as lost and let it drift, at exactly the point where
+      acting is cheapest. Day three of a late filing costs a fraction of day ninety.
+
+  - id: dl.personal_liability_notifies_the_individual
+    statement: Where personal_liability is true, the named individual must be informed directly and not through a summary report.
+    then: notify_named_individual
+    severity: blocking
+
+  - id: dl.extension_changes_the_date_only_when_granted
+    statement: due_at may be updated only on a recorded extension_granted_at, never on an expectation that an extension will be granted.
+    then: block_date_change
+    severity: blocking
+
+# ── Decision Factors ─────────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: negotiability
+    weight_bp: 2500
+    direction: context
+    description: >
+      The discriminator, and correctly the heaviest factor. Not "increases" — it is a gate on
+      how every other factor is read. A non-negotiable date with modest consequence still
+      outranks a movable one with a loud requester.
+    reads: [negotiability, authority_type]
+
+  - name: consequence_severity
+    weight_bp: 2000
+    direction: increases
+    description: >
+      Weighted by whether it escalates, whether it is curable and whether it lands on a named
+      individual. A non-curable consequence deserves paranoia that a fine does not.
+    reads: [consequence_type, consequence_value, curable, consequence_escalates, personal_liability]
+
+  - name: remaining_slack
+    weight_bp: 2000
+    direction: decreases
+    description: >
+      Time remaining minus time required. Replaces days_remaining everywhere it is available,
+      because days_remaining is confidently wrong on exactly the items that matter.
+    reads: [slack_hours, lead_time_days, last_responsible_start_at]
+
+  - name: dependency_depth
+    weight_bp: 1500
+    direction: increases
+    description: >
+      Every additional signature adds turnaround and absence risk. Three approvers in August
+      is a materially different item from three approvers in October.
+    reads: [dependency_chain_depth, blocking_approval_ref]
+
+  - name: historical_reliability
+    weight_bp: 1000
+    direction: context
+    description: >
+      The best available predictor. A record of on-time submissions with two hours of slack
+      each time is a near-miss history wearing a clean shirt.
+    reads: [historical_miss_count, last_met_at]
+
+  - name: evidence_burden
+    weight_bp: 600
+    direction: increases
+    description: "Where proof is the deliverable, capture time is part of the deadline and is routinely left out of the estimate."
+    reads: [evidence_required, proof_of_submission]
+
+  - name: ownership_clarity
+    weight_bp: 400
+    direction: decreases
+    description: "A named owner with a named deputy reduces risk more than any amount of reminding."
+    reads: [owner_is_named, backup_owner_ref]
+
+# ── Evidence ─────────────────────────────────────────────────────────────────────────────
+evidence:
+  - {source: regulator, strength_bp: 10000, decays: false,
+     independent_of: [register, calendar, manual_entry, email],
+     description: "The issuing body's own published date or direct notice. Nothing outranks it, and where it disagrees with the internal register the register is wrong."}
+  - {source: contract, strength_bp: 9500, decays: false,
+     independent_of: [register, calendar, erp],
+     description: "The executed instrument. Note the date is usually computed from it rather than stated in it, so the extraction has to be arithmetic and the arithmetic has to know the convention."}
+  - {source: portal, strength_bp: 9000, decays: false,
+     independent_of: [email, manual_entry],
+     description: "Filing portal deadlines and, crucially, submission receipts. The receipt is the only durable proof once the display window closes."}
+  - {source: payroll, strength_bp: 9000, decays: true,
+     description: "The bureau's cut-off calendar. Reissued annually and quietly changed for bank holidays."}
+  - {source: attestation, strength_bp: 8500, decays: false,
+     description: "A professional adviser's written confirmation of a filing date. Strong, and it transfers responsibility nowhere."}
+  - {source: erp, strength_bp: 7500, decays: true,
+     description: "Payment terms and period ends. Reliable for the arithmetic, silent on the consequence."}
+  - {source: register, strength_bp: 7000, decays: true,
+     independent_of: [calendar, email],
+     description: "The internal obligation register. Only as good as its last review, and it is reviewed annually while the organisation changes weekly."}
+  - {source: document, strength_bp: 6500, decays: true,
+     description: "Review-due and retention dates on controlled documents."}
+  - {source: calendar, strength_bp: 3500, decays: true,
+     description: "A diary entry. The commonest home for a statutory date and the worst one: it is unverifiable, unreviewable, and it leaves the organisation on the owner's last day."}
+  - {source: email, strength_bp: 4000, decays: true,
+     description: "An adviser or counterparty saying the date has moved. A lead, not a source — update from the instrument."}
+  - {source: manual_entry, strength_bp: 3000, decays: true,
+     description: "Somebody's recollection of the deadline. Frequently a year out of date and stated with total confidence."}
+  - {source: derived, strength_bp: 5000, decays: true,
+     description: "Lead time and slack computed from history. Strong for ranking, worthless as proof of the date."}
+
+# ── Metrics ──────────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: on_time_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Necessary and badly insufficient on its own. Read it only alongside slack at completion."}
+  - {name: median_slack_at_completion, unit: hours, direction: higher_is_better, owner_layer: L6,
+     calibrates: [dl.preparation_window_open, dl.lead_time_from_actuals],
+     description: "The honest measure. A hundred per cent on-time record achieved with two hours to spare every time is not a control, it is a run of luck with good documentation."}
+  - {name: deadline_discovery_lead_days, unit: days, direction: higher_is_better, owner_layer: L6,
+     description: "Days between a deadline becoming known internally and falling due. Measures whether the organisation finds its deadlines or its deadlines find it."}
+  - {name: computed_date_coverage, unit: percent, direction: higher_is_better, owner_layer: L3,
+     calibrates: [dl.contract_notice_date],
+     description: "Share of contractual notice dates actually computed and diarised rather than left implicit in an expiry date."}
+  - {name: undated_obligation_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     calibrates: [dl.date_unresolved],
+     description: "Obligations in the register with no resolved date. Where the surprises come from."}
+  - {name: negotiability_misclassification_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Items marked non-negotiable that later moved, and internal targets that turned out not to. Both directions corrupt the ranking, and the second is the more dangerous."}
+  - {name: extension_request_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Zero suggests extensions are not known about rather than not needed. Persistently high suggests lead times are fiction."}
+  - {name: breach_cost, unit: currency, direction: lower_is_better, owner_layer: L6,
+     description: "Penalties, interest and unwanted auto-renewals. The only number that reliably buys the resource to fix any of this."}
+  - {name: proof_capture_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Met deadlines with a stored receipt where evidence is required. Usually far lower than the on-time rate, and the gap is invisible until an audit."}
+
+# ── Events ───────────────────────────────────────────────────────────────────────────────
+events:
+  - {id: dl.discovered, name: Deadline Discovered, severity: notable,
+     payload: [due_at, authority_type, negotiability, accountable_owner_ref],
+     description: "Worth an event of its own. A deadline discovered three days out and a deadline discovered three months out are different objects operationally."}
+  - {id: dl.window_opened, name: Preparation Window Opened, severity: notable,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">=", value: -14},
+                    {fn: days_since, path: commitment.due_at, op: "<", value: 0}],
+     payload: [last_responsible_start_at, lead_time_days],
+     description: "The event a reminder should actually be attached to."}
+  - {id: dl.slack_exhausted, name: Slack Exhausted, severity: critical,
+     payload: [slack_hours, blocking_approval_ref, dependency_chain_depth],
+     description: "Remaining time is now less than remaining work. Escalation stops being a judgement call at this point and becomes arithmetic."}
+  - {id: dl.anchor_moved, name: Anchor Event Moved, severity: notable,
+     emitted_when: [{path: meeting.status, op: "=", value: cancelled}],
+     payload: [anchor_event, due_at],
+     invalidates: [due_at, last_responsible_start_at, slack_hours],
+     description: "Every date derived from the anchor is now wrong, and nothing recomputes them on its own."}
+  - {id: dl.passed_unmet, name: Deadline Passed Unmet, severity: critical,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [due_at, consequence_type, grace_period_days, curable]}
+  - {id: dl.breached, name: Consequence Crystallised, severity: critical,
+     payload: [consequence_type, consequence_value, personal_liability],
+     invalidates: [state, breach_risk_bp],
+     description: "The penalty applied, the licence lapsed, the notice window closed, the contract renewed. No longer a deadline; now an incident with a cost."}
+  - {id: dl.extended, name: Deadline Extended, severity: notable,
+     payload: [extension_granted_at, due_at],
+     invalidates: [due_at, last_responsible_start_at, slack_hours, days_remaining],
+     description: "The only legitimate way a date changes. Everything computed from the old date must be rebuilt, including the internal milestone chain."}
+  - {id: dl.met, name: Deadline Met, severity: info,
+     payload: [met_at, slack_hours, submission_receipt_ref],
+     description: "Carry the slack in the payload. Met-with-no-slack is the near miss that predicts next year's failure."}
+
+# ── Actions ──────────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: dl.register, name: Register the deadline against its instrument, actor: human,
+     cost: low, reversible: true,
+     effect: "Moves it out of somebody's diary and into a reviewable register with an owner. The whole of deadline management is downstream of this."}
+  - {id: dl.compute_notice_date, name: Compute and diarise the notice date, actor: system,
+     cost: trivial, reversible: true,
+     effect: "Turns an expiry date into an actionable one. The single highest-return automation available on this object."}
+  - {id: dl.set_lead_time, name: Set lead time from the last three actuals, actor: agent,
+     cost: low, reversible: true,
+     effect: "Replaces an optimistic estimate with a measurement and makes slack computable."}
+  - {id: dl.schedule_backwards, name: Build the milestone chain backwards from the date, actor: human,
+     cost: moderate, reversible: true,
+     effect: "Converts one immovable date into a schedule with visible slack. Every internal milestone created here is renegotiable; the external one is not."}
+  - {id: dl.confirm_before_chasing, name: Confirm it has not already been discharged out of band, actor: agent,
+     cost: trivial, reversible: true,
+     preconditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     effect: "Suppresses this object's largest false positive before it reaches a human."}
+  - {id: dl.request_extension, name: Request an extension through the stated mechanism, actor: human,
+     cost: high, reversible: false,
+     effect: "Available only before the date and only where a mechanism exists. Costs standing with the issuing body and is still far cheaper than a breach."}
+  - {id: dl.escalate_on_slack, name: Escalate when slack goes negative, actor: agent,
+     cost: moderate, reversible: false,
+     effect: "Raises against the date rather than against elapsed time, which is the framing a senior person actually reorders their day for."}
+  - {id: dl.reassign_for_absence, name: Reassign to the deputy for the owner's leave, actor: agent,
+     cost: trivial, reversible: true,
+     effect: "Handles the entirely predictable annual collision between a quarterly deadline and a fortnight's holiday."}
+  - {id: dl.capture_proof, name: Capture and file the submission receipt, actor: agent,
+     cost: trivial, reversible: true,
+     effect: "Two minutes at submission, and the difference between having met it and being able to prove it eighteen months later."}
+  - {id: dl.close_with_evidence, name: Close the deadline with its evidence attached, actor: agent,
+     cost: trivial, reversible: true,
+     effect: "Records met_at, slack at completion and the receipt, which is what makes next year's lead time real."}
+
+# ── Dependencies ─────────────────────────────────────────────────────────────────────────
+dependencies:
+  - {target: admin.obj.core.compliance_obligation, kind: requires, strength: hard,
+     description: "Supplies the authority, the jurisdiction and the reason. Without it a date has no defensible provenance and cannot be ranked as non-negotiable."}
+  - {target: admin.obj.core.contract, kind: requires, strength: hard,
+     description: "Supplies expiry, notice period and day-count convention — the three inputs to every computed contractual date."}
+  - {target: admin.obj.core.employee_record, kind: requires, strength: hard,
+     description: "The named owner and the named deputy. A deadline without a person cannot be acted on, only reported."}
+  - {target: admin.obj.core.approval, kind: enriches, strength: hard,
+     description: "Approval turnaround is normally the largest single component of lead time, and the one nobody includes in the estimate."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "The route taken when slack goes negative. The deadline is what makes that escalation legitimate rather than impatient."}
+  - {target: admin.obj.core.audit_evidence, kind: enriches, strength: soft,
+     description: "The receipt. Hard rather than soft in any regime where evidence is the deliverable."}
+  - {target: admin.obj.core.record_series, kind: derived_from, strength: soft,
+     description: "The retention schedule generates disposal deadlines, which run the other way: holding the record past the date is the breach."}
+  - {target: admin.obj.core.policy, kind: enriches, strength: soft,
+     description: "Sets internally imposed but enforceable dates — attestation cycles, review periods."}
+  - {target: admin.obj.core.budget_line, kind: enriches, strength: soft,
+     description: "Fiscal year end, which is non-negotiable and reshapes every purchasing decision in the quarter before it."}
+  - {target: admin.obj.core.invoice, kind: enriches, strength: soft,
+     description: "Payment terms are contractual dates and behave as deadlines, not as intentions."}
+  - {target: admin.obj.core.document, kind: enriches, strength: soft,
+     description: "Review-due and retention-until dates on controlled documents."}
+
+# ── Exceptions ───────────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: dl.weekend_rolls_backward
+    statement: "Where the date falls on a weekend or public holiday, some regimes roll forward to the next business day and others roll backward to the previous one."
+    overrides: [dl.convention_and_calendar_resolved]
+    why: >
+      Filing regimes generally roll forward. Payment and notice obligations frequently roll
+      backward, because the duty is to have discharged it BY the date rather than around it.
+      Assuming forward is the default error and it costs a working day on precisely the dates
+      that are already tight.
+    frequency: common
+
+  - id: dl.internally_set_but_immovable
+    statement: "A date set inside the organisation can still be non-negotiable when a third party's clock sits behind it."
+    overrides: [dl.external_outranks_internal]
+    when: [{exists: commitment.due_at}]
+    why: >
+      Payroll cut-offs, bank file submission windows and printer lead times before a board
+      meeting are all internally issued and cannot be moved by internal agreement. The
+      discriminator is who can MOVE the date, never who set it, and treating these as
+      internal targets is one of the more reliable ways to miss a payroll.
+    frequency: common
+
+  - id: dl.regime_wide_suspension
+    statement: "Filing and payment deadlines are occasionally suspended or extended en masse by the issuing authority."
+    overrides: [dl.cannot_be_moved_internally, dl.extension_precedes_the_date]
+    why: >
+      It happens during national emergencies, regulator system outages and legislative
+      transitions, and it happened at scale during the pandemic. The operational risk is the
+      opposite of the obvious one: teams keep working to a suspended date, or keep working to
+      an old date after a permanent change. Verify with the issuing body, never with a
+      newsletter.
+    frequency: rare
+
+  - id: dl.overdue_still_worth_meeting
+    statement: "A missed deadline is not a closed item — for escalating consequences, acting today is materially cheaper than acting next month."
+    overrides: [dl.date_passed_undischarged]
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    why: >
+      Penalty regimes almost universally escalate with delay, and interest accrues daily. The
+      psychological failure is real and consistent: once a date is missed the item drops out
+      of the queue entirely, exactly when the marginal value of acting is highest.
+    frequency: common
+
+  - id: dl.window_has_two_edges
+    statement: "Some obligations may be discharged only inside a window, and being early is as invalid as being late."
+    overrides: [dl.rank_on_slack_not_on_days_remaining]
+    why: >
+      Grant claims, tax elections and certain statutory filings are rejected if submitted
+      before the window opens, and the rejection frequently arrives after it has closed. Slack
+      ranking assumes earlier is always better, which is false for this whole family.
+    frequency: occasional
+
+  - id: dl.counterparty_waives_the_date
+    statement: "A contractual date can be waived or varied by the counterparty, but only in writing and usually only before it passes."
+    overrides: [dl.cannot_be_moved_internally]
+    why: >
+      Verbal indulgence is not a waiver and does not survive a change of account manager or a
+      dispute. Where a counterparty agrees to move a date, get it in writing that day — the
+      person who agreed will have moved on by the time it matters.
+    frequency: occasional
+
+  - id: dl.limitation_period_is_absolute
+    statement: "Limitation and prescription periods cannot be extended, waived or cured, and no mechanism exists to ask."
+    overrides: [dl.extension_precedes_the_date, dl.overdue_still_worth_meeting]
+    why: >
+      Included because it is the pure case at the far end of the negotiability scale, and
+      because it is the one where the difference between curable and non-curable stops being
+      an administrative nicety. When the period expires the right is simply gone.
+    frequency: rare
+
+# ── Best Practices ───────────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: dl.record_negotiability_as_a_field
+    statement: "Store negotiability explicitly on every dated item, and make the queue sort on it before anything else."
+    why: >
+      It is the only mechanism that stops a loud internal request outranking a quiet
+      statutory one. Left as tone of voice, it is decided by whoever asked most recently,
+      which is exactly the failure mode.
+    applies_when: "Every dated item, from the first day the register exists."
+
+  - id: dl.diarise_the_notice_date
+    statement: "For every contract, compute the notice date and put THAT in the calendar, not the expiry."
+    why: >
+      The date that is missed is never the one printed on the agreement; it is ninety clear
+      days before it, and it exists nowhere until somebody calculates it. A renewal calendar
+      that lists expiries is a record of decisions already made.
+    applies_when: "Every contract with a notice provision or an auto-renewal clause."
+    evidence: "Measurable directly as computed_date_coverage."
+
+  - id: dl.lead_time_from_actuals
+    statement: "Set lead time from the last three occurrences, not from an estimate."
+    why: >
+      Estimates are optimistic in a stable, measurable direction, and the error is largest on
+      the deadlines with the most dependencies — which are the ones that matter. Three data
+      points beat any amount of experience-based confidence.
+    applies_when: "Any recurring deadline. For one-offs, use the nearest comparable."
+
+  - id: dl.remind_at_the_start_not_the_end
+    statement: "Anchor reminders to last_responsible_start_at, with a second prompt when slack reaches zero."
+    why: >
+      A reminder on the due date is a notification of failure. Nobody misses a deadline on the
+      day; they miss it weeks earlier by not starting, and the calendar entry they set was
+      technically correct and operationally useless.
+    applies_when: "Any deadline with a lead time longer than a day."
+
+  - id: dl.name_a_person_and_a_deputy
+    statement: "One accountable individual, one named deputy, both recorded on the register."
+    why: >
+      Functions do not remember and do not go on leave visibly. The predictable annual
+      collision between a quarterly deadline and a fortnight's holiday is entirely
+      foreseeable and is almost never planned for.
+    applies_when: "Every deadline. Non-negotiable ones first."
+
+  - id: dl.settle_the_convention_at_signature
+    statement: "Confirm the day-count convention, the weekend rule and the holiday calendar once, at contract signature."
+    why: >
+      Ten minutes with a clause when nobody is under pressure, against a day of argument at
+      notice time when the difference between clear days and calendar days decides whether the
+      notice was valid.
+    applies_when: "Contract execution, and at the first review of any inherited register."
+
+  - id: dl.capture_proof_at_submission
+    statement: "Save the receipt at the moment of submission, into the record, not into a mailbox."
+    why: >
+      Two minutes then; irrecoverable later. Portals stop displaying old submissions, mailboxes
+      get archived, and the auditor asks eighteen months afterwards. Where evidence is required
+      the receipt is the deliverable and the filing is merely how it was obtained.
+    applies_when: "Every regulated, audited or contractually evidenced obligation."
+
+  - id: dl.review_the_register_on_a_cycle
+    statement: "Review the obligation register quarterly against the issuing bodies' published calendars."
+    why: >
+      Dates change, entities are added, regimes are amended and owners leave. An annually
+      reviewed register in an organisation that changes weekly is a snapshot being used as a
+      control.
+    applies_when: "Any organisation with more than one legal entity or jurisdiction."
+
+  - id: dl.schedule_backwards_from_the_date
+    statement: "Build the milestone chain backwards from the deadline and treat every internal milestone as renegotiable."
+    why: >
+      It converts one immovable date into a sequence with visible slack, and it makes the
+      correct distinction explicit: the internal dates can move by agreement, the external one
+      cannot, and everyone can see which is which.
+    applies_when: "Any deadline with more than one contributor or more than one signature."
+
+  - id: dl.track_slack_not_just_outcome
+    statement: "Record slack at completion, and treat a near miss as a failure that happened to land."
+    why: >
+      A perfect on-time record built entirely of two-hour margins tells you nothing about
+      whether the process works — only that it has not yet met an obstacle. Slack at
+      completion is the leading indicator; on-time rate is the lagging one.
+    applies_when: "Any recurring deadline with a compliance consequence."
+
+# ── Anti-Patterns ────────────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: dl.everything_is_a_deadline
+    statement: "Internal targets and statutory dates recorded in the same field with the same word, and ranked together."
+    why_it_happens: >
+      Calling an internal request a deadline gets it done, so everyone does it, and no system
+      offers a field to record the difference. Within a quarter the word carries no
+      information at all.
+    cost: >
+      The queue ranks a board pack above a VAT return because the board pack's requester is
+      more senior and more recent. This is the specific failure the object exists to prevent
+      and it is invisible right up until the penalty notice arrives.
+    instead: "Store negotiability as a field, sort on it first, and let internal targets live on the commitment where they can be renegotiated."
+    detectable_by: [negotiability_misclassification_rate, dl.statutory_date_from_the_obligation_register]
+
+  - id: dl.reminder_on_the_due_date
+    statement: "A calendar reminder set for the day the thing is due, on work that takes nine days."
+    why_it_happens: >
+      Setting a reminder on the date is the obvious thing, requires no estimate of how long
+      the work takes, and feels like the deadline has been handled.
+    cost: >
+      The reminder fires and is useless. It is a notification of failure dressed as a control,
+      and it produces a rushed submission with errors in it or an extension request that
+      should never have been needed.
+    instead: "Anchor the reminder to last_responsible_start_at and add a second at zero slack."
+    detectable_by: [median_slack_at_completion, dl.blocking_approval_not_started]
+
+  - id: dl.date_lives_in_one_persons_diary
+    statement: "The only record of an annual statutory date is a recurring entry in one employee's calendar."
+    why_it_happens: >
+      It works perfectly for years, costs nothing to set up, and the person concerned is
+      reliable — which is exactly why nobody ever proposes moving it into a register.
+    cost: >
+      It leaves with them. The classic discovery is a penalty notice eleven months after a
+      resignation, for an obligation nobody else knew existed.
+    instead: "Register with a named owner and a named deputy, reviewed on a cycle independent of any individual."
+    detectable_by: [undated_obligation_rate, deadline_discovery_lead_days]
+
+  - id: dl.calendar_days_for_clear_days
+    statement: "Counting a notice period inclusively, or in calendar days where the clause says clear or business days."
+    why_it_happens: >
+      The clause is read once, quickly, under time pressure, by someone who is not a lawyer,
+      and the difference is a couple of days that does not look material.
+    cost: >
+      The notice is served late and is invalid. The contract auto-renews for a full term, and
+      the organisation pays for a year of something it formally decided to exit.
+    instead: "Record the convention as a field at signature, compute both readings, act on the earlier."
+    detectable_by: [dl.contract_notice_date, computed_date_coverage]
+
+  - id: dl.owned_by_a_function
+    statement: '"Finance owns the filings." Nobody in Finance owns the filings.'
+    why_it_happens: >
+      Assigning to a team avoids a conversation about capacity with a specific person, and it
+      reads perfectly reasonably on a register.
+    cost: >
+      Every individual assumes it is being handled, and the assumption survives right up to the
+      due date. Team ownership also survives reorganisations in the worst possible way — the
+      team is renamed and the obligation is not reassigned.
+    instead: "One person accountable, one deputy named, both on the register and both told."
+    detectable_by: [on_time_rate, undated_obligation_rate]
+
+  - id: dl.extension_requested_afterwards
+    statement: "Asking for an extension once the date has already passed."
+    why_it_happens: >
+      The deadline is noticed on the day it is missed, and requesting an extension feels like
+      the constructive response to a problem just discovered.
+    cost: >
+      Almost every extension mechanism requires the request before the date. Afterwards it is
+      not a request but a mitigation plea, it is granted at discretion if at all, and it spends
+      standing with the issuing body that will be needed later.
+    instead: "Diarise extension_request_by as a separate deadline the moment the deadline is registered."
+    detectable_by: [extension_request_rate]
+
+  - id: dl.missed_means_finished
+    statement: "Treating a passed deadline as a closed item and dropping it out of the queue."
+    why_it_happens: >
+      There is nothing to aim at any more, the failure is embarrassing, and the queue is
+      already full of things that can still be met.
+    cost: >
+      Penalties escalate and interest accrues daily. The gap between day three and day ninety
+      is often an order of magnitude, and it is entirely self-inflicted after the original miss.
+    instead: "Escalate priority daily while consequence_escalates is true; a missed deadline should get louder, not quieter."
+    detectable_by: [breach_cost, dl.consequence_window_elapsed]
+
+  - id: dl.padding_every_step
+    statement: "Every contributor privately adds a safety margin to their own estimate."
+    why_it_happens: >
+      Each person is being individually prudent, and being individually late is punished more
+      visibly than being collectively slow.
+    cost: >
+      The padding is consumed by the work expanding to fill it, so the aggregate schedule ends
+      up both longer and less reliable — and the buffer is gone exactly when a genuine problem
+      appears.
+    instead: "Estimate each step honestly and hold one shared buffer immediately before the deadline, sized from history."
+    detectable_by: [median_slack_at_completion, dl.lead_time_from_actuals]
+
+  - id: dl.met_without_proof
+    statement: "The obligation was discharged on time and no receipt was kept."
+    why_it_happens: >
+      Submitting is the satisfying part, the portal shows a confirmation on screen, and the
+      job feels finished at exactly the moment the evidence would have taken twenty seconds
+      to save.
+    cost: >
+      In an evidence-based regime this is indistinguishable from never having filed. It is
+      discovered at audit, eighteen months later, when the portal no longer displays it and the
+      person who submitted it has left.
+    instead: "Capture the receipt into the record at submission and block closure without it."
+    detectable_by: [proof_capture_rate]
+
+  - id: dl.derived_dates_never_recomputed
+    statement: "The board meeting moves and the papers deadline, the notice period and the minutes date all stay where they were."
+    why_it_happens: >
+      The derived dates were computed once, by hand, and stored as fixed dates with no link
+      back to the anchor they came from.
+    cost: >
+      Silently invalid dates that look authoritative. Everyone works to them and discovers on
+      the day that the real window closed a week earlier or has not yet opened.
+    instead: "Store the anchor and the offset rather than the computed date, and recompute on every anchor change."
+    detectable_by: [dl.anchor_event_vacated]
+
+# ── Examples ─────────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Quarterly VAT return, due one month and seven days after the period end",
+     kind: typical,
+     note: "Event-relative, non-negotiable, penalty escalating with delay, curable at a cost. The textbook case and the one every register gets right.",
+     attributes: {authority_type: tax_authority, negotiability: non_negotiable, date_basis: event_relative,
+                  consequence_type: financial_penalty, consequence_escalates: true, curable: true}}
+
+  - {label: "Payroll input cut-off, 11:00 on the 14th, two working days before the pay run",
+     kind: edge,
+     note: "Set internally, immovable in practice, because a bank clearing window sits behind it. Proof that the discriminator is who can move the date, not who set it. Also the deadline where being one day late is visible to every employee at once.",
+     attributes: {authority_type: payroll_provider, negotiability: non_negotiable,
+                  cutoff_local_time: "11:00", consequence_type: reputational}}
+
+  - {label: "Ninety clear days' written notice before a three-year term expires",
+     kind: edge,
+     note: "The date is nowhere in the contract. It has to be computed, in the right convention, and diarised — and it is the single commonest source of an unwanted twelve-month renewal.",
+     attributes: {authority_type: contract, negotiability: movable_by_agreement, date_basis: event_relative,
+                  day_count_convention: clear_days, consequence_type: auto_renewal, curable: false}}
+
+  - {label: "Grant claim accepted only between 1 and 30 April",
+     kind: edge,
+     note: "A deadline with two edges. Submitted on 28 March it is rejected, and the rejection letter arrives in May. Slack-based ranking assumes earlier is safer and is wrong here.",
+     attributes: {date_basis: window, negotiability: non_negotiable}}
+
+  - {label: "Personal data held eleven months past its retention date",
+     kind: edge,
+     note: "The deadline that runs backwards: holding the record is the breach. Nothing visibly happens on the day, which is precisely why it is never diarised and why over-retention is such a routine finding.",
+     attributes: {authority_type: statute, negotiability: non_negotiable, consequence_type: enforcement_action}}
+
+  - {label: "Board pack circulated by Friday because the chair prefers the weekend to read",
+     kind: misclassification,
+     note: "An internal target with a strong preference attached. It can move by agreement and it does. Ranking it alongside a filing date is the specific failure this object exists to prevent."}
+
+  - {label: "Seventy-two-hour breach notification counted from when the team confirmed the breach",
+     kind: misclassification,
+     note: "The clock runs from awareness, not from confirmation. The date was already wrong before anybody was late, and the wrongness is invisible because the arithmetic was done confidently against the wrong anchor."}
+
+  - {label: "The date the executive said they needed it by",
+     kind: counterexample,
+     note: "A preference. It belongs on the commitment, where it can be renegotiated with the person who set it. Calling it a deadline devalues the word for the item that genuinely cannot move."}
+
+  - {label: "An internal SLA to respond to facilities requests within two working days",
+     kind: counterexample,
+     note: "A promise about our own responsiveness. Real, measured, and renegotiable — a target with consequences, not a deadline. It belongs on the service level object."}
+
+  - {label: "Annual return filed on time for six consecutive years, each time on the final afternoon",
+     kind: edge,
+     note: "A hundred per cent on-time record and no control whatsoever. The first year the owner is ill in that week, it is missed. Median slack at completion is the metric that sees this; on-time rate never will."}
+
+# ── References ───────────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Critical path method — float, slack and the last responsible moment", kind: methodology,
+     note: "The source of the object's central idea: rank on slack, not on days remaining, and act at the last responsible start rather than the due date."}
+  - {title: "Critical Chain Project Management", kind: book, author: "Eliyahu M. Goldratt",
+     note: "Student syndrome and the case against per-task padding: hold one shared buffer at the end rather than a private margin in every step."}
+  - {title: "Parkinson's Law", kind: book, author: "C. Northcote Parkinson",
+     note: "Why generous lead times are consumed rather than banked, and therefore why lead time must come from measured actuals rather than from what feels comfortable."}
+  - {title: "GDPR Article 33 — notification of a personal data breach within 72 hours", kind: standard,
+     note: "The canonical non-negotiable external deadline, and a clean illustration that the anchor matters as much as the offset: the clock runs from awareness, not from internal confirmation."}
+  - {title: "GDPR Article 5(1)(e) — storage limitation, and retention schedules", kind: standard,
+     note: "The deadline that runs the other way. Holding the record past its period is the breach, and nothing happens on the day to make anyone notice."}
+  - {title: "ISO 15489 / ISO 30301 — records management and retention schedules", kind: standard,
+     note: "Where disposal deadlines legitimately come from, and the reason a record series rather than a document is the right thing to attach them to."}
+  - {title: "Contractual notice provisions and 'clear days' drafting conventions", kind: framework,
+     note: "Clear days exclude both the first and the last day. The convention decides whether a notice was validly served and it is settled in ten minutes at signature or argued for a day at notice time."}
+  - {title: "Statutory filing calendars (e.g. Companies House confirmation statements and accounts; HMRC VAT and PAYE)", kind: standard,
+     note: "Named as the concrete instance of an issuing body publishing its own dates. The dates differ by jurisdiction and entity type; the register must be built per entity, never per group."}
+  - {title: "Limitation and prescription periods", kind: framework,
+     note: "The pure non-negotiable, non-curable case at the far end of the scale. No mechanism exists to extend it and the right simply ceases."}
+  - {title: "Business continuity and succession for key-person obligations", kind: practitioner,
+     note: "The named-deputy practice. Every register that depends on one person's memory is a continuity risk that nobody has recorded as one."}
+
+# ── Metadata ─────────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of fifteen patterns are executable, and all five ride on commitment.due_at — which is
+    the honest state of things and also the object's central warning: commitment.due_at carries
+    an INTERNAL date, so anything inferred through it inherits the exact collapse this object
+    exists to prevent. Every executable pattern here is therefore about timing and never about
+    negotiability, and negotiability is what the ranking turns on. The ten needs_signal entries
+    rank clearly: obligation.due_at with obligation.authority and obligation.jurisdiction first,
+    because without them the brain cannot tell a statute from a preference; then
+    contract.end_at with contract.notice_period_days, which would generate an entire notice
+    calendar from data the organisation already holds and would catch the auto-renewals that
+    currently surface as invoices. dl.preparation_window_open is flagged in its own note as
+    depending on days_since returning a negative value for a future timestamp; if the engine
+    clamps at zero the pattern is inert rather than wrong, and that should be confirmed against
+    engine.py before the window logic is relied on.

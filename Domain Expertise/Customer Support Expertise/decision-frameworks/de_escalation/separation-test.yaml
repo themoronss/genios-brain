@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.de_escalation.separation_test
+  name: Separation test
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Separation test before escalating: what does the receiving owner have — authority, access,
+    or information — that the current owner lacks?
+
+
+    It is the only reliable defence against escalation-as-temperature-management. If the honest answer
+    is nothing, the right move is a better message from the current owner, and routing it upward will
+    produce the same message from someone busier.'
+criteria:
+- name: Separation test
+  description: 'Separation test before escalating: what does the receiving owner have — authority, access,
+    or information — that the current owner lacks?'
+how_to_apply:
+- 'Separation test before escalating: what does the receiving owner have — authority, access, or information
+  — that the current owner lacks?'
+- It is the only reliable defence against escalation-as-temperature-management. If the honest answer
+  is nothing, the right move is a better message from the current owner, and routing it upward will
+  produce the same message from someone busier.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

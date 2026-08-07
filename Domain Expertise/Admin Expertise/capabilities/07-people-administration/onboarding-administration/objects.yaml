@@ -1,0 +1,25 @@
+# Load-set for admin.people_administration.onboarding_administration — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/onboarding-administration/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.people_administration.onboarding_administration
+
+core:
+  required:
+    - admin.obj.core.employee_record
+    - admin.obj.core.access_right
+  optional:
+    - admin.obj.core.asset
+    - admin.obj.core.document
+    - admin.obj.core.sop
+    - admin.obj.core.policy
+
+scoped:
+  required: []
+  optional: []

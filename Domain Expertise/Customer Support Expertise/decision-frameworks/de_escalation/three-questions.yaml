@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.de_escalation.three_questions
+  name: Three questions
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The three questions a heated customer is actually asking: do you understand what happened
+    to me, is anyone in charge of it, and when will I know more.
+
+
+    Answering the technical question they typed while leaving these three unanswered is the most common
+    shape of a reply that is correct and useless. Any draft can be checked against them in seconds,
+    which is what makes this the most practical framework here.'
+criteria:
+- name: Three questions
+  description: 'The three questions a heated customer is actually asking: do you understand what happened
+    to me, is anyone in charge of it, and when will I know more.'
+how_to_apply:
+- 'The three questions a heated customer is actually asking: do you understand what happened to me,
+  is anyone in charge of it, and when will I know more.'
+- Answering the technical question they typed while leaving these three unanswered is the most common
+  shape of a reply that is correct and useless. Any draft can be checked against them in seconds, which
+  is what makes this the most practical framework here.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,68 @@
+# Load-set for sales.market_and_targeting.icp_definition — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/icp-definition/         loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.market_and_targeting.icp_definition
+
+core:
+  required:
+    # The profile itself — the ruler. Everything else here is either the thing being measured
+    # or the reading taken.
+    - sales.obj.core.icp
+    # The account is the unit of fit. Fit is never assessed against a person or a deal, which
+    # is the mistake that produces "this contact is a great fit" and a company that cannot buy.
+    - sales.obj.core.account
+    # Firmographics live here. Required rather than optional because a profile that cannot see
+    # what the company IS degenerates into behavioural inference on live deals only — which is
+    # precisely the state the pipeline is in today, and it should be visible as a gap rather
+    # than hidden by declaring the input optional.
+    - sales.obj.core.company
+  optional:
+    # Who inside the account has to exist for us to sell at all. Part of behavioural fit, but
+    # unknowable at list-build time, so its absence must not block a pre-contact reading.
+    - sales.obj.core.persona
+    # Need fit. Absent on cold accounts by definition.
+    - sales.obj.core.pain_point
+    # Incumbency turns a greenfield profile into a displacement profile, and the two share
+    # almost no mechanics. Optional because most cold accounts have no observed incumbent.
+    - sales.obj.core.competitor
+    # Outcome history — the only evidence that validates a profile rather than describing it.
+    # Optional because a fit reading must still be possible on an account with no deal yet.
+    - sales.obj.core.deal
+
+scoped:
+  required:
+    # The reading taken with the ruler. Separate object on purpose: conflating the profile with
+    # an assessment against it is how the definition gets edited every time one account is
+    # inconvenient.
+    - sales.obj.icp_definition.fit_analysis
+    # Required, not optional, and that is a position. A profile with no enforced anti-fit list
+    # cannot reject anything, and a capability that never rejects is not running — the same
+    # argument the reference capability makes about disqualification in lead_qualification.
+    - sales.obj.icp_definition.disqualifier
+  optional: []
+
+# Genuine dependency, not stylistic ordering. The disqualifier check OVERRIDES the fit score
+# rather than contributing to it, so a fit_analysis resolved before the disqualifier set is
+# known will emit a verdict it then has to retract. And both read dimension weights off the
+# profile, so the ICP resolves first.
+load_order:
+  - sales.obj.core.icp
+  - sales.obj.icp_definition.disqualifier
+  - sales.obj.icp_definition.fit_analysis
+
+notes: >
+  Deliberately narrow. The temptation on a targeting capability is to load the whole
+  people-and-orgs half of the roster, because "who is in the account" feels like part of who
+  the account is. It is not: committee shape, champion and budget are properties of a live
+  deal, and loading them here lets the compiler produce confident advice about seats nobody
+  has met. Buying Committee, Champion, Decision Maker, Budget and Timeline are all
+  deliberately absent from this manifest and are excluded explicitly in the pre-contact
+  situation. Account is required alongside Company because the two are routinely conflated
+  and only one of them is the unit of fit.

@@ -1,0 +1,43 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.self_service_deflection.escape_before_deflect
+  name: Escape before deflect
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Design the route to a human first, then place the self-service answer in front of it —
+    never the reverse.
+
+
+    When the answer is designed first, the human route becomes whatever space is left, which is how
+    it ends up at the bottom of a page behind an accordion. Designing the escape first makes obstruction
+    a visible decision somebody has to argue for.'
+criteria:
+- name: Escape before deflect
+  description: Design the route to a human first, then place the self-service answer in front of it
+    — never the reverse.
+how_to_apply:
+- Design the route to a human first, then place the self-service answer in front of it — never the reverse.
+- When the answer is designed first, the human route becomes whatever space is left, which is how it
+  ends up at the bottom of a page behind an accordion. Designing the escape first makes obstruction
+  a visible decision somebody has to argue for.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

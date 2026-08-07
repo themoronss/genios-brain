@@ -1,0 +1,39 @@
+# Hybrid — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.hybrid
+  name: Hybrid
+  kind: model
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Judgement-heavy and confidential work retained in-house while transactional volume is
+  outsourced or centralised. The real administrative problem becomes the seam: handovers,
+  split ownership and requests that fall between the two.
+
+characteristics:
+  typical_cycle_days: 3
+  committee_size: "2-3 approvers"
+  decision_style: "retained for judgement, delegated for volume"
+  primary_channels: [portal, email, in_person]
+
+capabilities:
+  emphasises:
+    - admin.admin_operations.request_intake
+    - admin.executive_support.delegation_and_task_routing
+    - admin.admin_operations.sop_management
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

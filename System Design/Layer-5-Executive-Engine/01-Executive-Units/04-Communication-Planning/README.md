@@ -2,14 +2,16 @@
 
 **Status:** Built
 
-Resolves the effective owner and freezes audience, channel, interruption, tone and escalation intent as part of the commitment.
+Freezes the work-owner/audience seed, tone, presentation intent and backwards-compatible route
+hints as part of the commitment. Layer 5.2 resolves the current recipient, concrete channel and
+interruption decision at delivery time.
 
 | Boundary | Value |
 |---|---|
 | Input | execution context, planned actions, band/confidence and an injected seat directory |
 | Output | `Assignment`, `CommunicationPlan` and a frozen escalation ladder input |
 | Primary code | `genios_engine/executive/assignment.py`, `communication.py` |
-| Invariant | Layer 5 owns who and the attention promise; Atlas Layer 5.2 may adapt transport but may not silently reassign. |
+| Invariant | Layer 5 owns who must do the work; Layer 5.2 owns who receives the current delivery and how it travels, but may not silently reassign the commitment. |
 | Honest gap | Live provider/destination availability is evaluated downstream. General agent/per-action allocation is not built. |
 
 ## Component modules

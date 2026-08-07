@@ -1,0 +1,36 @@
+# Marketplace — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.marketplace
+  name: Marketplace
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Two-sided: supply and demand are both acquired, and neither side is worth much without the
+  other. Effectively two motions sharing a pipeline, which is why liquidity rather than deal
+  count is the operative metric.
+
+characteristics:
+  buyer: "supply-side and demand-side participants, separately"
+  decision_style: "network effects dominate individual persuasion"
+
+capabilities:
+  emphasises:
+    - sales.market_and_targeting.market_research
+    - sales.revenue_operations.revenue_intelligence
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

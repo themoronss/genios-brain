@@ -1,0 +1,38 @@
+identity:
+  id: sales.pb.market_research.segment_on_behaviour_then_test_firmographics
+  name: Cut segments on buying behaviour first — who owns the budget line, how…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Cut segments on buying behaviour first — who owns the budget line, how many people sign\
+    \ off, whether procurement is involved — and only then check whether any firmographic attribute\
+    \ predicts the cut.\n Firmographic segmentation is the default because the data is purchasable.\
+    \ It is the weakest cut available: two companies of the same size in the same industry where one\
+    \ buys from IT and one from Oper"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Cut segments on buying behaviour first — who owns the budget line, how…
+  description: 'Firmographic segmentation is the default because the data is purchasable. It is the
+    weakest cut available: two companies of the same size in the same industry where one buys from IT
+    and one from Operations require different motions, different collateral and different cycle assumptions,
+    and belong in different segments.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

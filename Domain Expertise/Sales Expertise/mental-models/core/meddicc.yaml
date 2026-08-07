@@ -1,0 +1,373 @@
+# MEDDICC — the qualification lens for large, committee-driven, multi-quarter purchases.
+#
+# Lineage matters here because the letter count is routinely argued about and the argument
+# hides a real distinction. Dick Dunkel and Jack Napoli built MEDDIC at Parametric Technology
+# Corporation in the early 1990s: six letters, no Competition, no Paper Process, aimed at
+# seven-figure CAD deals with a named economic buyer. The second C (Competition) was added as
+# the category filled up. Paper Process (the P in MEDDPICC) was added when procurement, legal
+# and security review became a distinct calendar of their own rather than an afterthought at
+# signature — which is the single biggest change in enterprise buying since the original.
+#
+# We author all eight. A brain that drops Paper Process is a brain that cannot explain why a
+# deal with perfect discovery slipped two quarters at the vendor security questionnaire.
+#
+# The thing to hold onto: MEDDICC is an INSPECTION instrument. It measures what you know about
+# a deal. It does not measure whether the deal is good. Those diverge, and the divergence is
+# where forecasts die — see `limits`.
+
+identity:
+  id: sales.mm.core.meddicc
+  name: MEDDICC
+  kind: mental_model
+  domain: sales
+  scope: core
+  version: 1.0.0
+  status: draft
+  aliases: [MEDDIC, MEDDPICC, MEDDPIC]
+
+purpose:
+  statement: >-
+    Eight named dimensions that convert a seller's confidence about a complex deal into a list
+    of things they can either evidence or cannot. Its value is not the score — it is that each
+    letter names a specific artefact whose absence is invisible until the deal stalls on it.
+  answers:
+    - "What do we actually know about this opportunity, as distinct from what we feel about it?"
+    - "Which single missing piece is most likely to be the reason this deal slips or dies?"
+    - "Is this deal forecastable, or merely active?"
+    - "Where did the last five losses share a blank letter?"
+  not:
+    - >-
+      Not a discovery script. Reading the letters aloud as questions on a first call is an
+      interrogation, and buyers answer interrogations with the answers that end them fastest.
+    - >-
+      Not a probability model. Eight known letters on a deal with no compelling event is a
+      well-documented no-decision, and no-decision is the largest loss category in enterprise
+      software.
+    - >-
+      Not a stage gate. Letters are learned out of order and re-learned when the committee
+      changes; treating them as sequential produces false precision.
+    - Not a substitute for a mutual action plan, which is where Decision Process becomes a date.
+
+when_to_use:
+  signals:
+    - An opportunity with a forecast category attached, being inspected by anyone other than its owner.
+    - More than two people from the buying side are connected to the deal graph.
+    - A renewal or expansion where the original economic buyer has left.
+  conditions:
+    # MEDDICC costs real seller time. It earns that cost once the deal has a graph — a
+    # two-node deal is a BANT problem, not a MEDDICC one.
+    - {path: deal.status, op: "=", value: open}
+    - {fn: edge_count, op: ">=", value: 3}
+  do_not_use_when:
+    - >-
+      Self-serve or product-led motions where the purchase completes without a human on the
+      buying side ever being identified. There is no economic buyer to find; there is a
+      pricing page.
+    - >-
+      Transactional deals under a signature threshold that a single manager clears. The
+      instrument's overhead exceeds the deal's variance.
+    - A first discovery call. Use SPIN there and fill the letters from what the buyer volunteers.
+
+dimensions:
+
+  - name: Metrics
+    asks: >-
+      What measurable business outcome does the buyer expect, expressed in their own numbers,
+      and whose target is that number?
+    objects: [sales.obj.core.business_need, sales.obj.core.pain_point, sales.obj.core.deal,
+              sales.obj.core.account]
+    weak_signal: >-
+      "Improve efficiency", "better visibility", or any figure that first appeared in the
+      seller's slide and has never been repeated back by the buyer. A metric the seller owns
+      is a marketing claim wearing a business case.
+    strong_signal: >-
+      The buyer states the figure unprompted in writing, sources it to a system you do not
+      control, and names the person whose bonus or board commitment depends on it.
+
+  - name: Economic Buyer
+    asks: >-
+      Who can release these funds without asking anyone else, and have you been in a room
+      with them?
+    objects: [sales.obj.core.decision_maker, sales.obj.core.budget, sales.obj.core.stakeholder]
+    weak_signal: >-
+      "My VP will sign it off" from a contact who has never been in a meeting with that VP
+      about this. Delegated confidence is not authority, and the seller cannot audit it.
+    strong_signal: >-
+      Direct contact in which the economic buyer stated their own criteria in their own words,
+      which are reliably different from the criteria the user-level stakeholders gave you.
+
+  - name: Decision Criteria
+    asks: >-
+      Against what written technical and business criteria will this be judged, and who wrote
+      them?
+    objects: [sales.obj.core.business_need, sales.obj.core.competitor, sales.obj.core.proposal]
+    weak_signal: >-
+      Your own feature list echoed back to you. If every criterion favours you, you are reading
+      a document your champion assembled from your website, not the one procurement will score.
+    strong_signal: >-
+      A written requirement set in which you can point at a criterion a competitor wins, and
+      explain why the ones you win matter more to the economic buyer.
+
+  - name: Decision Process
+    asks: >-
+      What are the named steps, owners and dates between today and a countersigned contract?
+    objects: [sales.obj.core.timeline, sales.obj.core.buying_committee, sales.obj.core.next_action]
+    weak_signal: >-
+      "We'll decide in Q3." A quarter is not a process. Nobody has told you who presents to
+      whom, or what happens if that meeting is cancelled.
+    strong_signal: >-
+      A mutual action plan the buyer has edited. The edit is the evidence — a plan only the
+      seller has touched documents the seller's hopes.
+
+  - name: Paper Process
+    asks: >-
+      What does procurement, legal, security review and vendor onboarding require, how long
+      does each take at this organisation, and has any of it started?
+    objects: [sales.obj.core.contract, sales.obj.core.risk, sales.obj.core.timeline,
+              sales.obj.core.account]
+    weak_signal: >-
+      Four weeks from a stated close date and nobody has asked for your SOC 2 report, your DPA,
+      or your insurance certificate. Silence here is not smooth sailing; it means the clock
+      that governs the close date has not started.
+    strong_signal: >-
+      Security review and legal review are both observably in flight, you hold the buyer's
+      standard paper timeline in days, and you have the procurement contact's name.
+
+  - name: Identify Pain
+    asks: >-
+      What is the problem, what does leaving it alone cost per unit of time, and what event
+      makes that cost rise on a specific date?
+    objects: [sales.obj.core.pain_point, sales.obj.core.business_need, sales.obj.core.buying_signal]
+    weak_signal: >-
+      A problem the buyer describes calmly and has lived with for three years. Tolerated pain
+      has already lost its budget competition once, and nothing in your discovery changed that.
+    strong_signal: >-
+      A dated external forcing event — a contract expiry, an audit, a migration deadline, a
+      regulatory date, a launch — that the buyer, not the seller, raised first.
+
+  - name: Champion
+    asks: >-
+      Who sells for you when you are not in the room, what do they personally gain, and what
+      have you seen them spend political capital on?
+    objects: [sales.obj.core.champion, sales.obj.core.stakeholder, sales.obj.core.contact]
+    weak_signal: >-
+      A friendly contact who takes every meeting, forwards every deck and has never introduced
+      you to anyone. Access is the test; enthusiasm is not. This is the most over-claimed letter
+      on any scorecard, because liking the seller is easy to mistake for advocating to a CFO.
+    strong_signal: >-
+      They have already arranged access you could not have arranged yourself, and they lost
+      something small to do it — a favour called in, a peer contradicted in a meeting.
+
+  - name: Competition
+    asks: >-
+      What are all the alternatives, including doing nothing, building it internally, and the
+      budget being spent on an unrelated priority?
+    objects: [sales.obj.core.competitor, sales.obj.core.objection, sales.obj.core.risk]
+    weak_signal: >-
+      "No competition." In a funded, dated, committee-run purchase this is almost always false
+      and always dangerous: it usually means the seller has only asked about named vendors, and
+      the real rival — the status quo, or a rival internal project for the same money — has no
+      logo to notice.
+    strong_signal: >-
+      You can state the competitor's genuine advantage in a sentence a buyer would agree with,
+      and you know which decision criterion they win on and who inside the account prefers them.
+
+how_to_apply:
+  - >-
+    Score each letter on evidence you can point at, not on memory. The working test is: could
+    you paste the artefact into the deal review? If not, the letter is unknown, and unknown is
+    a different state from weak.
+  - >-
+    Rank the unknowns by what they gate rather than by how many there are. An unknown Paper
+    Process on a deal forecast to close in three weeks outranks four soft letters on a deal
+    due next quarter, because paper is the only one whose duration you cannot compress.
+  - >-
+    Turn the top unknown into a single next action with a named human and a date, then attach
+    it to the deal. A qualification review that ends in a colour and no action has cost the
+    team an hour and changed nothing.
+  - >-
+    Re-run MEDDICC whenever the committee changes. A champion departure or a new economic buyer
+    invalidates Metrics, Decision Criteria and Champion simultaneously, and the previous score
+    is now actively misleading because it is confident about people who have gone.
+  - >-
+    In loss reviews, record the letter that was blank at the time of the loss, not the letter
+    that explains it in hindsight. The pattern across a team's losses is the only reliable
+    signal about which letter that team habitually fabricates.
+  - >-
+    Read the letters as a set, not a sum. Economic Buyer known and Paper Process unknown is a
+    normal mid-stage deal. Economic Buyer unknown and Paper Process known means someone else
+    is running your deal and you are the technical vendor on their shortlist.
+
+objects_used:
+  - sales.obj.core.deal
+  - sales.obj.core.opportunity
+  - sales.obj.core.decision_maker
+  - sales.obj.core.champion
+  - sales.obj.core.buying_committee
+  - sales.obj.core.stakeholder
+  - sales.obj.core.budget
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  - sales.obj.core.timeline
+  - sales.obj.core.competitor
+  - sales.obj.core.objection
+  - sales.obj.core.risk
+  - sales.obj.core.contract
+  - sales.obj.core.proposal
+  - sales.obj.core.next_action
+  - sales.obj.core.buying_signal
+  - sales.obj.core.account
+  - sales.obj.core.contact
+
+outcomes:
+  - A ranked list of unknowns, each with an owner and a date, replacing a single confidence adjective.
+  - Forecast categories defensible against a specific missing artefact rather than against sentiment.
+  - A team-level census of which letter is habitually blank at the moment of loss.
+
+limits:
+  - >-
+    MEDDICC measures information completeness, not deal quality. A deal can score eight of
+    eight and still be a no-decision, because none of the letters asks "is this problem in the
+    buyer's top three priorities this quarter?" — and priority rank, not information, is what
+    kills most enterprise deals.
+  - >-
+    It is silent on sequencing. It tells you Paper Process is unknown; it does not tell you
+    that starting security review before the economic buyer has agreed the business case burns
+    the champion's credibility for a step that may never be needed.
+  - >-
+    Every letter is populated by self-report from people with incentives. Champion is the worst
+    offender, then Decision Process, both because the buyer-side contact is usually guessing
+    about their own organisation and does not know they are guessing.
+  - >-
+    It was validated in an era of large single purchases with a named signatory. It degrades
+    in consumption-based and land-and-expand commercials where the "decision" is a series of
+    small approvals nobody experiences as a decision.
+  - >-
+    It has nothing to say about whether you should be in the deal at all. Qualification-out
+    logic lives in a disqualification framework; MEDDICC will happily document a beautifully
+    understood deal you cannot win.
+
+failure_modes:
+  - >-
+    Scoring from memory in the deal review rather than from the record, which converts the
+    instrument into a test of the rep's fluency under questioning. The confident rep scores
+    high and the honest one scores low, and the manager learns the opposite of what they need.
+  - >-
+    Colour-coding letters and stopping. Amber is not an action; the review's only output that
+    matters is the next action attached to the weakest gating letter.
+  - >-
+    Treating the eight letters as independent and averaging them. Economic Buyer, Decision
+    Process and Paper Process are strongly correlated — a deal that is blank on one is usually
+    blank on all three, and an average hides that the whole authority axis is missing.
+  - >-
+    Declaring a champion because someone is responsive. Responsiveness costs nothing;
+    arranging access costs something. The letter is about the cost they have paid, not the
+    warmth they have shown.
+  - >-
+    Answering Competition with "none" and moving on, which removes the status quo from the
+    analysis at precisely the point it becomes the favourite.
+  - >-
+    Running it once at stage entry and never again, so the record describes a committee that
+    has since changed shape.
+
+variants:
+  - applies_to: sales.model.enterprise_sales
+    change: >-
+      All eight letters apply, and Paper Process becomes co-equal with Economic Buyer rather
+      than a late formality — it can independently set the close date.
+    why: >-
+      At enterprise scale procurement, security and legal run on their own calendars with their
+      own queues, and none of them can be accelerated by the buyer's enthusiasm.
+  - applies_to: sales.model.smb_sales
+    change: >-
+      Collapse to Metrics, Economic Buyer, Identify Pain and Competition. Decision Process and
+      Paper Process usually resolve to one person and a card.
+    why: >-
+      Below the threshold where a second signature is required, four of the letters describe
+      machinery that does not exist, and asking about it makes the seller look unfamiliar with
+      businesses of that size.
+  - applies_to: sales.model.plg
+    change: >-
+      Apply only at the expansion or enterprise-tier conversation. Before that, usage telemetry
+      substitutes for Metrics and Identify Pain, and there is no economic buyer to find.
+    why: >-
+      Product-led adoption inverts the order: the pain is already being solved at team scale
+      before anyone with budget authority is aware of the vendor.
+  - applies_to: sales.model.government_sales
+    change: >-
+      Decision Criteria are published before the seller is engaged, and Paper Process dominates.
+      Champion is legally constrained in what they can do for you.
+    why: >-
+      Public procurement inverts the influence window — the criteria are written into a tender
+      document you may be prohibited from shaping once it is issued.
+  - applies_to: sales.offering.service
+    change: >-
+      Metrics attach to a delivered outcome and a named delivery lead, and Decision Criteria
+      routinely include the specific people who will do the work.
+    why: >-
+      In services the buyer is purchasing future labour, so "who exactly" is a decision
+      criterion in a way it never is for software.
+  - applies_to: sales.model.channel_sales
+    change: >-
+      Run the eight letters against the end customer, not the partner, and add a ninth informal
+      question — what the partner personally gains from this deal over their alternatives.
+    why: >-
+      A partner's pipeline is not the seller's pipeline; a fully qualified end customer sold by
+      a partner with a better-compensated alternative still does not close for you.
+
+metrics:
+  - name: letters_evidenced
+    unit: count
+    description: How many of the eight are backed by an artefact rather than an assertion.
+    direction: higher_is_better
+  - name: blank_letter_at_loss
+    unit: letter
+    description: >-
+      Which letter was unknown when a deal was lost. Aggregated across a team this is the only
+      output of MEDDICC that reliably changes behaviour.
+    direction: target_band
+  - name: slipped_deals_with_unknown_paper_process
+    unit: percent
+    description: Share of slipped deals whose Paper Process was unknown at the prior forecast call.
+    direction: lower_is_better
+
+references:
+  - title: MEDDIC
+    kind: methodology
+    author: Dick Dunkel and Jack Napoli
+    note: >-
+      Originated at Parametric Technology Corporation in the early 1990s during a period of
+      exceptional revenue growth. The original six letters; Competition and Paper Process were
+      later additions by the practitioner community.
+  - title: The Qualified Sales Leader
+    kind: book
+    author: John McMahon
+    note: >-
+      The most-cited practitioner account of MEDDICC in operation, written from the perspective
+      of the deal review rather than the rep. Its contribution is insisting the instrument is
+      about the manager's questions, not the rep's form-filling.
+  - title: MEDDICC
+    kind: book
+    author: Andy Whyte
+    note: Contemporary letter-by-letter treatment, including the Paper Process addition.
+  - title: Command of the Message
+    kind: methodology
+    author: Force Management
+    note: >-
+      Frequently paired with MEDDICC in practice — MEDDICC inspects what is known, Command of
+      the Message governs what is said. Sales organisations that adopt one usually adopt both.
+  - title: The Challenger Sale
+    kind: book
+    author: Matthew Dixon and Brent Adamson
+    note: >-
+      Relevant as a corrective — MEDDICC's Champion letter assumes a champion exists to be
+      found, where the Challenger research argues the seller often has to create the mobiliser.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete

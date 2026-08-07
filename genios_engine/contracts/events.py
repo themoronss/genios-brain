@@ -57,4 +57,6 @@ AGENT_API_SCOPES = {"signals.read", "artifacts.read", "signals.claim", "signals.
 # can merely read signals must never be able to train org-wide calibration or request execution.
 HUMAN_API_SCOPES = {
     "insights.read", "cards.read", "feedback.write", "cards.act", "actions.handoff",
+    "delivery.read", "delivery.receipts.write", "delivery.context.write",
+    "learning.read", "learning.review", "learning.rollback",
 }

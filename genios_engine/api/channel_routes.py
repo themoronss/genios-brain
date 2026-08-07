@@ -13,7 +13,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
-from genios_engine.platform.auth import get_current_org
+from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner
+from genios_engine.platform.config import get_settings
+from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.wiring import make_graph_store
 
 router = APIRouter()
@@ -54,16 +56,40 @@ def _safe_config(config: dict) -> dict:
     return out
 
 
+def _routing_config(config: dict) -> dict:
+    return {key: value for key, value in config.items()
+            if key in {"priority", "push_enabled", "digest_enabled", "mode", "purpose"}}
+
+
+def _seal_config(config: dict) -> bytes:
+    key = get_settings().crypto_key
+    if not key:
+        raise HTTPException(503, "GENIOS_CRYPTO_KEY is required to store channel credentials")
+    return encrypt(json.dumps(config, separators=(",", ":"), sort_keys=True), key)
+
+
+def _row_config(row) -> dict:
+    encrypted = getattr(row, "config_encrypted", None)
+    if encrypted:
+        try:
+            raw = bytes(encrypted) if not isinstance(encrypted, bytes) else encrypted
+            return json.loads(decrypt(raw, get_settings().crypto_key))
+        except Exception as exc:  # noqa: BLE001 - expose no ciphertext or credential detail
+            raise HTTPException(500, "channel credentials cannot be decrypted") from exc
+    legacy = getattr(row, "config", None)
+    return legacy if isinstance(legacy, dict) else json.loads(legacy or "{}")
+
+
 @router.get("/api/org/{org_id}/channels")
 def list_channels(org_id: str, org: str = Depends(_org)) -> dict:
     _require_db()
     with _graph.engine.connect() as c:
         rows = c.execute(text(
-            "select channel, config, active, last_digest_date, updated_at "
+            "select channel, config, config_encrypted, active, last_digest_date, updated_at "
             "from org_channels where org_id=:o"), {"o": org}).fetchall()
     out = []
     for r in rows:
-        cfg = r.config if isinstance(r.config, dict) else json.loads(r.config or "{}")
+        cfg = _row_config(r)
         out.append({"channel": r.channel, "active": bool(r.active),
                     "webhook_url_masked": _mask(cfg.get("webhook_url")),
                     "config_summary": _safe_config(cfg),
@@ -78,43 +104,55 @@ class SlackConfig(BaseModel):
 
 
 @router.put("/api/org/{org_id}/channels/slack")
-def set_slack(org_id: str, body: SlackConfig, org: str = Depends(_org)) -> dict:
+def set_slack(org_id: str, body: SlackConfig,
+              ctx: AuthCtx = Depends(require_owner)) -> dict:
     _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
     from genios_engine.deliver.channels.slack import valid_webhook_url
     if not valid_webhook_url(body.webhook_url):
         raise HTTPException(422, "webhook_url must start with https://hooks.slack.com/")
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": ctx.org_id})
         c.execute(text(
-            "insert into org_channels (org_id, channel, config, active) "
-            "values (:o, 'slack', cast(:cfg as jsonb), :a) "
+            "insert into org_channels (org_id, channel, config, config_encrypted, active) "
+            "values (:o, 'slack', '{}', :sealed, :a) "
             "on conflict (org_id, channel) do update set "
-            "config=excluded.config, active=excluded.active, updated_at=now()"),
-            {"o": org, "cfg": json.dumps({"webhook_url": body.webhook_url}),
+            "config=excluded.config,config_encrypted=excluded.config_encrypted, "
+            "active=excluded.active, updated_at=now()"),
+            {"o": ctx.org_id,
+             "sealed": _seal_config({"webhook_url": body.webhook_url}),
              "a": body.active})
     return {"saved": True, "channel": "slack", "active": body.active}
 
 
 @router.delete("/api/org/{org_id}/channels/slack")
-def remove_slack(org_id: str, org: str = Depends(_org)) -> dict:
+def remove_slack(org_id: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
     _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": ctx.org_id})
         c.execute(text("delete from org_channels where org_id=:o and channel='slack'"),
-                  {"o": org})
+                  {"o": ctx.org_id})
     return {"removed": True}
 
 
 @router.post("/api/org/{org_id}/channels/slack/test")
-def test_slack(org_id: str, org: str = Depends(_org)) -> dict:
+def test_slack(org_id: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Send a real test message NOW — configuration proof, not hope."""
     _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
     from genios_engine.deliver.channels.base import get_channel
     with _graph.engine.connect() as c:
         row = c.execute(text(
-            "select config from org_channels where org_id=:o and channel='slack' and active"),
-            {"o": org}).first()
+            "select config,config_encrypted from org_channels "
+            "where org_id=:o and channel='slack' and active"),
+            {"o": ctx.org_id}).first()
     if row is None:
         raise HTTPException(404, "no active slack channel configured")
-    cfg = row.config if isinstance(row.config, dict) else json.loads(row.config or "{}")
+    cfg = _row_config(row)
     res = get_channel("slack").send(
         {"text": "✅ GeniOS is connected — high-priority cards will arrive here."}, cfg)
     if not res.ok:
@@ -133,6 +171,8 @@ def _validate_channel_config(channel: str, config: dict) -> None:
     from genios_engine.deliver.channels.base import get_channel
     if get_channel(channel) is None:
         raise HTTPException(422, "unsupported channel")
+    if channel == "agent":
+        raise HTTPException(422, "agent delivery is configured per agent via /v1/agents")
     if channel == "teams":
         from genios_engine.deliver.channels.teams import valid_teams_webhook_url
         if not valid_teams_webhook_url(config.get("webhook_url")):
@@ -151,49 +191,62 @@ def _validate_channel_config(channel: str, config: dict) -> None:
 
 @router.put("/api/org/{org_id}/channels/{channel}")
 def set_channel(org_id: str, channel: str, body: GenericChannelConfig,
-                org: str = Depends(_org)) -> dict:
+                ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Register Teams, signed webhooks, or authenticated pull surfaces."""
     _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
     if channel == "slack":
         raise HTTPException(422, "use the dedicated /channels/slack endpoint")
     _validate_channel_config(channel, body.config)
     with _graph.engine.begin() as conn:
+        conn.execute(text("select id from orgs where id=:o for update"), {"o": ctx.org_id})
         conn.execute(text(
-            "insert into org_channels (org_id, channel, config, active) "
-            "values (:o,:ch,cast(:cfg as jsonb),:active) "
+            "insert into org_channels (org_id, channel, config, config_encrypted, active) "
+            "values (:o,:ch,cast(:cfg as jsonb),:sealed,:active) "
             "on conflict (org_id, channel) do update set config=excluded.config, "
-            "active=excluded.active, updated_at=now()"),
-            {"o": org, "ch": channel, "cfg": json.dumps(body.config),
+            "config_encrypted=excluded.config_encrypted,active=excluded.active, updated_at=now()"),
+            {"o": ctx.org_id, "ch": channel,
+             "cfg": json.dumps(_routing_config(body.config)),
+             "sealed": _seal_config(body.config) if body.config else None,
              "active": body.active})
     return {"saved": True, "channel": channel, "active": body.active,
             "config_summary": _safe_config(body.config)}
 
 
 @router.delete("/api/org/{org_id}/channels/{channel}")
-def remove_channel(org_id: str, channel: str, org: str = Depends(_org)) -> dict:
+def remove_channel(org_id: str, channel: str,
+                   ctx: AuthCtx = Depends(require_owner)) -> dict:
     _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
     with _graph.engine.begin() as conn:
+        conn.execute(text("select id from orgs where id=:o for update"), {"o": ctx.org_id})
         result = conn.execute(text(
             "delete from org_channels where org_id=:o and channel=:ch"),
-            {"o": org, "ch": channel})
+            {"o": ctx.org_id, "ch": channel})
     return {"removed": bool(result.rowcount), "channel": channel}
 
 
 @router.post("/api/org/{org_id}/channels/{channel}/test")
-def test_channel(org_id: str, channel: str, org: str = Depends(_org)) -> dict:
+def test_channel(org_id: str, channel: str,
+                 ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Exercise the real registered adapter; pull surfaces prove their durable seam locally."""
     _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
     from genios_engine.deliver.channels.base import get_channel
     adapter = get_channel(channel)
     if adapter is None:
         raise HTTPException(422, "unsupported channel")
     with _graph.engine.connect() as conn:
         row = conn.execute(text(
-            "select config from org_channels where org_id=:o and channel=:ch and active"),
-            {"o": org, "ch": channel}).first()
+            "select config,config_encrypted from org_channels "
+            "where org_id=:o and channel=:ch and active"),
+            {"o": ctx.org_id, "ch": channel}).first()
     if row is None:
         raise HTTPException(404, "no active channel configured")
-    cfg = row.config if isinstance(row.config, dict) else json.loads(row.config or "{}")
+    cfg = _row_config(row)
     result = adapter.send({"kind": "channel_test", "text": "GeniOS is connected."}, cfg)
     if not result.ok:
         raise HTTPException(502, f"{channel} send failed: {result.detail}")

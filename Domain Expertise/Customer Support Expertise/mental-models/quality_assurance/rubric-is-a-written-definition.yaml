@@ -1,0 +1,45 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.quality_assurance.rubric_is_a_written_definition
+  name: Rubric is a written definition
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The rubric is the organisation''s written-down definition of good support. Most arguments
+    about a score are actually arguments about that definition, and a score is the cheapest place a
+    company will ever discover it disagrees with itself about what good looks like.
+
+
+    Reframing disputes this way makes them productive. The question stops being "was this agent good"
+    and becomes "is this what we meant", which is answerable and produces an edit.'
+dimensions:
+- name: Rubric is a written definition
+  asks: The rubric is the organisation's written-down definition of good support. Most arguments about
+    a score are actually arguments about that definition, and a score is the cheapest place a company
+    will ever discover it disagrees with itself about what good looks like.
+how_to_apply:
+- The rubric is the organisation's written-down definition of good support. Most arguments about a score
+  are actually arguments about that definition, and a score is the cheapest place a company will ever
+  discover it disagrees with itself about what good looks like.
+- Reframing disputes this way makes them productive. The question stops being "was this agent good"
+  and becomes "is this what we meant", which is answerable and produces an edit.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

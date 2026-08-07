@@ -1,14 +1,17 @@
 # 8 · Extension Delivery
 
-**Status:** Partial
+**Status:** Engine-ready; extension pull/presence route active; client not included
 
-Provides an `extension` pull channel and presence seam for a browser/client extension.
+Provides an `extension` pull channel and short-lived presence seam for browser, email-editor and
+CRM overlays.
 
 | Boundary | Current truth |
 |---|---|
-| Runtime authority | `channels/surface.py`, presence and inbox APIs |
-| Result | adapter/pull outcome projected into the shared DeliveryResult ledger |
+| Runtime | `channels/surface.py`, presence and inbox APIs |
+| Active route | authenticated `extension` pull surface |
+| Result | durable availability plus explicit extension lifecycle receipts |
 | Business outcome | never inferred from transport alone |
+| Integration | installed browser/CRM/email extension and permission lifecycle |
 
 ## Component modules
 

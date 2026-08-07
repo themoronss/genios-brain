@@ -1,7 +1,10 @@
 # Adapter and contract
 
-Destination configuration supplies URL/secret. The adapter signs the request; the outbox records success, retryable failure or terminal failure and may invoke eligible fallback.
+Tenant configuration supplies a public HTTPS URL and secret of at least 16 characters. The
+adapter serializes deterministic JSON, signs it with HMAC-SHA256, and sends
+`X-Genios-Signature` plus the route-generation `Idempotency-Key`.
 
-Every implemented target receives a canonical payload, emits the common channel result shape and
-is invoked through the durable management path. Target code may format transport details; it may
-not reopen Layer 5 policy.
+The adapter returns HTTP/provider metadata, retryability and ambiguity through `ChannelResult`;
+it never owns retry or fallback. The outbox keeps one logical delivery, one row per physical
+attempt and avoids cross-channel fallback after an ambiguous acknowledgement. Credentials are
+sealed for new writes and never included in error detail.

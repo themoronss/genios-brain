@@ -29,6 +29,7 @@ from typing import Any
 
 from genios_engine.contracts.execution import EXECUTION_VERSION, ExecutionObject
 from genios_engine.contracts.reasoning import ReasoningDecision
+from genios_engine.contracts.visibility import Visibility
 from genios_engine.executive.assignment import Assignment, SeatDirectory, resolve_owner
 from genios_engine.executive.communication import band_of, plan_communication
 from genios_engine.executive.escalation import build_ladder
@@ -78,7 +79,8 @@ class BuildResult:
 
 def build_execution(context: ExecutionContext, *, assignment: Assignment, eval_time: datetime,
                     available_channels: frozenset[str] | set[str] | None = None,
-                    cfg: Mapping[str, Any] | None = None) -> BuildResult:
+                    cfg: Mapping[str, Any] | None = None,
+                    visibility: Visibility | Mapping[str, Any] | None = None) -> BuildResult:
     """Compose the units into one commitment, or refuse with a reason.
 
     The order matters.  Planning runs before routing because the plan decides whether the work
@@ -138,6 +140,8 @@ def build_execution(context: ExecutionContext, *, assignment: Assignment, eval_t
         monitored=bool(context.success_events) or context.interactive,
         remindable=communication.routable,
         autonomy_allowed=autonomous,
+        visibility=(visibility.model_dump() if isinstance(visibility, Visibility)
+                    else dict(visibility or Visibility().model_dump())),
         metadata={
             "builder_version": BUILDER_VERSION,
             "execution_type": context.execution_type.value,
@@ -168,7 +172,8 @@ def build_from_decision(decision: ReasoningDecision, *, org_id: str, reasoning_r
                         available_channels: frozenset[str] | set[str] | None = None,
                         subject_ref: str | None = None, subject_type: str | None = None,
                         subject_label: str | None = None,
-                        cfg: Mapping[str, Any] | None = None) -> BuildResult:
+                        cfg: Mapping[str, Any] | None = None,
+                        visibility: Visibility | Mapping[str, Any] | None = None) -> BuildResult:
     """The whole layer's build path in one call: decision in, commitment or refusal out.
 
     Exists so callers — the sweep, the API, the tests — cannot accidentally assemble the units in
@@ -182,7 +187,8 @@ def build_from_decision(decision: ReasoningDecision, *, org_id: str, reasoning_r
         return BuildResult(None, interpretation.reason_code, interpretation.detail)
     assignment = resolve_owner(facts=facts, attrs=attrs, directory=directory)
     return build_execution(interpretation.require(), assignment=assignment, eval_time=eval_time,
-                           available_channels=available_channels, cfg=cfg)
+                           available_channels=available_channels, cfg=cfg,
+                           visibility=visibility)
 
 
 __all__ = ["BUILDER_VERSION", "EXECUTION_CONFIG_KEY", "BuildResult", "build_execution",

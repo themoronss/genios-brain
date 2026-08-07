@@ -1,0 +1,36 @@
+# Mid Market Sales — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.mid_market_sales
+  name: Mid Market Sales
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Between SMB velocity and enterprise process. A segment, not a motion: enough process to need
+  committee mapping, not enough to need formal procurement.
+
+characteristics:
+  buyer: "a mid-sized organisation"
+  typical_cycle_days: 45
+  committee_size: "3-5"
+
+capabilities:
+  emphasises:
+    - sales.qualification.lead_qualification
+    - sales.revenue_operations.forecasting
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,35 @@
+identity:
+  id: sales.df.icp_definition.tri_cohort
+  name: Win–loss–churn cohort comparison — three cohorts, dimensions ranked by…
+  kind: decision_framework
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Win–loss–churn cohort comparison — three cohorts, dimensions ranked by separation between\
+    \ them rather than by prevalence within any one.\n It is the only structure in common use that can\
+    \ detect the fast-closing, fast-churning segment, because that segment looks identical to the ideal\
+    \ one in a win-loss study.\n"
+criteria:
+- name: Win–loss–churn cohort comparison — three cohorts, dimensions ranked by…
+  description: 'It is the only structure in common use that can detect the fast-closing, fast-churning
+    segment, because that segment looks identical to the ideal one in a win-loss study.
+
+    '
+how_to_apply:
+- 'It is the only structure in common use that can detect the fast-closing, fast-churning segment, because
+  that segment looks identical to the ideal one in a win-loss study.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

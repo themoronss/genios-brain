@@ -1,0 +1,25 @@
+# Load-set for customer_support.diagnosis_and_resolution.workaround_management
+# REFERENCES ONLY — never an inline object.
+
+capability: customer_support.diagnosis_and_resolution.workaround_management
+
+core:
+  # All three are required because a workaround is only coherent as a triangle: the ticket it
+  # relieves, the workaround itself, and the issue it does NOT fix. Drop the issue and the
+  # capability degenerates into advice-giving with no record of the debt, which is precisely the
+  # failure this capability exists to prevent.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.workaround
+    - customer_support.obj.core.issue
+  # knowledge_article is how a workaround stops being retold by hand once several accounts need
+  # it. commitment is the retirement condition made explicit — "we will tell you when the real
+  # fix lands" is a promise with an owner and a clock, and unrecorded it is the most commonly
+  # broken promise in support.
+  optional:
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.commitment
+
+scoped:
+  required: []
+  optional: []

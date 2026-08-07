@@ -1,0 +1,48 @@
+# Custodial — offering_family branch node.
+#
+# An Admin 'offering' is a SERVICE LINE: what kind of thing the administrative function
+# delivers. It is orthogonal to the operating model — Shared Services x Custodial is real,
+# and neither branch owns the other.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is type -> family -> canonical.
+
+identity:
+  id: admin.offering.custodial
+  name: Custodial
+  kind: offering_family
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Holding something on the organisation's behalf — records, assets, identity, entitlement —
+  and being able to account for it later. The value is realised entirely in the future, at
+  retrieval, which is why custodial work is under-resourced until the first time it fails.
+
+characteristics:
+  delivery: "continuous holding; value realised at retrieval"
+  pricing_shape: "fixed cost per period, independent of activity"
+  margin_profile: "stable and unglamorous; underinvestment is invisible for years"
+  post_sale_load: "permanent — the obligation outlives the transaction that created it"
+  notes: >
+    Consumers: auditors, regulators, courts, and colleagues years later. Funded by allocated
+    overhead. An internal function with no chargeback has no natural brake on demand, which
+    changes which capabilities matter and is why this line is recorded.
+
+capabilities:
+  emphasises:
+    - admin.records_and_documentation.document_control
+    - admin.records_and_documentation.retention_and_archival
+    - admin.facilities_and_assets.asset_register
+    - admin.people_administration.access_and_identity_administration
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,80 @@
+identity:
+  id: sales.sit.enterprise_deal
+  name: Enterprise Deal
+  domain: sales
+  owner_capability: sales.qualification.buying_committee_analysis
+  version: 1.0.0
+  status: draft
+
+description: >
+  A live, multi-stakeholder purchase with a formal review process. Everything expensive loads
+  here and nowhere else: committee mapping, authority verification, compelling-event
+  validation. The distinguishing property is not deal size but process — three or more
+  contacts and a review function involved. An 80-person company that runs security review
+  is an enterprise deal; a 5,000-person company buying on a credit card is not.
+
+matches:
+  l2_situation_types:
+    - stalled_deal
+    - cooling_deal
+    - single_threaded_deal
+    - security_review_pending
+    - legal_in_review
+    - going_dark_after_proposal
+    - deal_health
+    - verbal_yes_not_closed
+    - contract_requested
+  scope: deal
+  when:
+    - {path: deal.status, op: "=", value: open}
+
+also_serves:
+  - sales.qualification.stakeholder_mapping
+  - sales.qualification.decision_maker_identification
+  - sales.qualification.champion_identification
+  - sales.closing.legal_review
+  - sales.closing.procurement
+  - sales.sales_management.deal_review
+
+objects:
+  load:
+    - sales.obj.core.decision_maker
+    - sales.obj.core.champion
+    - sales.obj.core.buying_committee
+    - sales.obj.core.budget
+    - sales.obj.core.timeline
+  optional:
+    - sales.obj.core.icp
+
+priority_bp: 9000
+typical_duration_days: 90
+
+signals_of_progress:
+  - budget_approved
+  - proposal_sent
+  - legal_review
+  - security_review_started
+  - contract_requested
+  - verbal_yes
+
+signals_of_decay:
+  - timeline_slip
+  - budget_freeze
+  - champion_change
+  - competitor
+  - discount_pressure
+  - closed_lost_mention
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    All five authored objects load here — this is the situation that justifies the load-set
+    mechanism, because it is the one where loading everything is correct.
+    Nine of the twenty-six L2 situation types bind to this file. The remaining types are
+    counted by _tools/index.py as unrouted; an unrouted type is a real gap, since Layer 2
+    emits it and no capability will ever be compiled for it.

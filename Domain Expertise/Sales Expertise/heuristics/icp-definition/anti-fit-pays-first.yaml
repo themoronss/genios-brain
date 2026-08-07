@@ -1,0 +1,33 @@
+identity:
+  id: sales.heu.icp_definition.anti_fit_pays_first
+  name: Work anti-fit before fit
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Work anti-fit before fit.\n Extracted from sales.market_and_targeting.icp_definition;\
+    \ the reasoning is unauthored."
+heuristic:
+  statement: 'Work anti-fit before fit.
+
+    '
+  why: 'Disqualifiers are cheap to evaluate, catch the most expensive outcomes, and take effect the
+    day they are published. The positive profile only pays once targeting, routing and scoring have
+    been rebuilt around it, which takes a quarter longer than anyone plans.
+
+    '
+  reads:
+  - sales.obj.icp_definition.disqualifier
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

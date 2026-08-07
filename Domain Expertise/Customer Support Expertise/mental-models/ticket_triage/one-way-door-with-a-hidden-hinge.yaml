@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.ticket_triage.one_way_door_with_a_hidden_hinge
+  name: One way door with a hidden hinge
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Triage is reversible in the tool and expensive in the relationship.
+
+
+    Reassigning costs a click. But the customer has already been told, the clock has already been spent,
+    and the receiving agent starts from a story someone else wrote. Cheap-to-undo in the system is not
+    cheap-to-undo for the human on the other end.'
+dimensions:
+- name: One way door with a hidden hinge
+  asks: Triage is reversible in the tool and expensive in the relationship.
+how_to_apply:
+- Triage is reversible in the tool and expensive in the relationship.
+- Reassigning costs a click. But the customer has already been told, the clock has already been spent,
+  and the receiving agent starts from a story someone else wrote. Cheap-to-undo in the system is not
+  cheap-to-undo for the human on the other end.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

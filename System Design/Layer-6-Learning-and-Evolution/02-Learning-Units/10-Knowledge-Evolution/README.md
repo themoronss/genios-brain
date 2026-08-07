@@ -1,15 +1,18 @@
 # 10 · Knowledge Evolution
 
-**Status:** Partial
+**Status:** Built suggestion path
 
-Creates a human-review suggestion when a capability/play has sustained poor grounded outcomes.
+Creates a human-review-only `review_play` suggestion when a capability/play has sustained poor,
+grounded outcomes. This is the complete automated Layer 6 boundary: it intentionally cannot publish
+to or edit an Expert Brain/pack.
 
 | Boundary | Value |
 |---|---|
 | Input | Outcome Analysis objects with at least eight labeled outcomes |
-| Output | Knowledge Suggestion LearningObject with review-play reason and cohort |
+| Trigger | labeled success rate below 4,000 bp; neutral outcomes do not satisfy the floor |
+| Output | Knowledge Suggestion LearningObject and pending review-queue record |
 | Primary code | `feedback/units.py::knowledge_evolution` |
-| Honest gap | Suggestion/review state exists; automatic Git branch/PR/spec editing is intentionally not implemented. |
+| External workflow | approved suggestion needs a human authoring/PR/spec process; this is deliberate governance |
 
 ## Atlas-named component map
 
@@ -18,7 +21,7 @@ Creates a human-review suggestion when a capability/play has sustained poor grou
 | Knowledge Drift | sustained low outcome rate over a grounded play cohort |
 | Capability / Object / Playbook Suggestions | current builder emits `review_play`; richer suggestion types are not implemented |
 | Version Suggestions | immutable suggestion + transition history; no Git version authoring |
-| Human approval | owner-only review API; never an Expert publisher |
+| Human approval | scoped review API with ACL/current-policy revalidation; never an Expert publisher |
 
 ## Component modules
 

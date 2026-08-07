@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.de_escalation.acknowledge_align_assure
+  name: Acknowledge align assure
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Acknowledge — Align — Assure: name what happened in their words, agree what matters most
+    to them right now, commit to the next contact.
+
+
+    The Align step is the one that gets skipped and the one that carries the value. What matters most
+    to the customer is frequently not the fix — it may be a workaround before a board meeting, or something
+    they can forward — and assuming otherwise produces a perfectly executed response to the wrong priority.'
+criteria:
+- name: Acknowledge align assure
+  description: 'Acknowledge — Align — Assure: name what happened in their words, agree what matters
+    most to them right now, commit to the next contact.'
+how_to_apply:
+- 'Acknowledge — Align — Assure: name what happened in their words, agree what matters most to them
+  right now, commit to the next contact.'
+- The Align step is the one that gets skipped and the one that carries the value. What matters most
+  to the customer is frequently not the fix — it may be a workaround before a board meeting, or something
+  they can forward — and assuming otherwise produces a perfectly executed response to the wrong priority.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

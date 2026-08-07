@@ -1,0 +1,48 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.self_service_deflection.deflection_quality_quadrant
+  name: Deflection quality quadrant
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Cross found-versus-not-found with solved-versus-not-solved. Only one cell is a success,
+    and the found-but-not-solved cell is the one that produces angry repeat contacts.
+
+
+    Blended deflection collapses all four cells into one number and hides the only cell that tells you
+    something actionable. Found-but-not-solved is a content defect; not-found is a findability or coverage
+    defect; the fixes are opposite and the volume is identical.'
+criteria:
+- name: Deflection quality quadrant
+  description: Cross found-versus-not-found with solved-versus-not-solved. Only one cell is a success,
+    and the found-but-not-solved cell is the one that produces angry repeat contacts.
+  reads: &id001
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.knowledge_article
+how_to_apply:
+- Cross found-versus-not-found with solved-versus-not-solved. Only one cell is a success, and the found-but-not-solved
+  cell is the one that produces angry repeat contacts.
+- Blended deflection collapses all four cells into one number and hides the only cell that tells you
+  something actionable. Found-but-not-solved is a content defect; not-found is a findability or coverage
+  defect; the fixes are opposite and the volume is identical.
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

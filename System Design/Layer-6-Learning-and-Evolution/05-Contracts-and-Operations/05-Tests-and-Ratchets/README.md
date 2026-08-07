@@ -1,8 +1,10 @@
 # Tests and Ratchets
 
-Captures authority, lifecycle, publication and integration evidence.
+Captures authority, lifecycle, publication and integration evidence. The verified Layer 6 focused
+set is the original Atlas/authority collection plus the hardening safety collection.
 
-**Primary authority:** `tests/test_learning_atlas.py`, `tests/test_learning_authority.py` and shared schema/topology tests
+**Primary authority:** `tests/test_learning_atlas.py`, `tests/test_learning_authority.py`,
+`tests/test_learning_hardening.py` and shared schema/topology tests.
 
 ## Component modules
 

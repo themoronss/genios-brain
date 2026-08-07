@@ -35,6 +35,7 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts.execution import ExecutionObject, ExecutionState
+from genios_engine.contracts.visibility import PRIVATE, Visibility, narrowest
 from genios_engine.executive import execution_store as store
 from genios_engine.executive.assignment import (
     PgSeatDirectory,
@@ -74,9 +75,9 @@ _PLANNABLE_SIGNALS = (
     "ro.decision_hash, ro.decision_core, ro.confidence_bp as decision_confidence_bp, "
     "ro.missing_data, selected_rc.candidate_id, selected_rc.play_id, selected_rc.play_version, "
     "selected_rc.parameters, selected_rc.score_components, selected_rc.final_utility_bp, "
-    "selected_rc.evidence_refs "
+    "selected_rc.evidence_refs, authority_ctx.source_manifest "
     "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
-    " where s.org_id=:o and (" + AUTHORITATIVE_SIGNAL_PREDICATE + ") "
+    " where s.org_id=:o and s.status='open' and (" + AUTHORITATIVE_SIGNAL_PREDICATE + ") "
     "and not exists (select 1 from executions x where x.org_id=s.org_id "
     "and x.decision_hash=ro.decision_hash and x.closed_at is null) "
     "order by selected_rc.final_utility_bp desc, s.signal_id asc limit :l"
@@ -152,6 +153,96 @@ def _node_facts(conn, org_id: str, node_id: str) -> tuple[dict[str, Any], dict[s
     return facts, (attrs if isinstance(attrs, Mapping) else {})
 
 
+def _execution_visibility(conn, *, org_id: str, source_manifest: Any,
+                          evidence_ids: tuple[str, ...]) -> Visibility:
+    """Resolve selected Layer 4 evidence back to immutable Layer 1 source ACLs.
+
+    Native evidence points straight at ``graph_source_refs``. Composite reasoning points at
+    parent signals, so their frozen context manifests are expanded recursively before the same
+    lookup. Any selected manifest item that cannot be proven to a source fails closed to an
+    empty private audience; absence of a manifest is the explicit pre-visibility/org default.
+    """
+    raw = _json_field(source_manifest) or []
+    items = [dict(item) for item in raw if isinstance(item, Mapping)]
+    if not items:
+        return Visibility()
+    selected = set(evidence_ids)
+    if selected:
+        items = [item for item in items if str(item.get("evidence_id") or "") in selected]
+        if not items:
+            return Visibility(scope=PRIVATE, principals=[],
+                              derived_from="unresolved:selected-evidence")
+
+    pending = items
+    seen: set[tuple[str, str]] = set()
+    visibilities: list[Visibility] = []
+    unresolved = False
+    for _depth in range(8):
+        batch: list[dict[str, Any]] = []
+        for item in pending:
+            key = (str(item.get("source_ref_id") or ""),
+                   str(item.get("fact_version_id") or ""))
+            if key == ("", ""):
+                unresolved = True
+            elif key not in seen:
+                seen.add(key)
+                batch.append(item)
+        if not batch:
+            break
+        refs = sorted({str(item.get("source_ref_id")) for item in batch
+                       if item.get("source_ref_id")})
+        facts = sorted({str(item.get("fact_version_id")) for item in batch
+                        if item.get("fact_version_id")})
+        direct_rows = conn.execute(text(
+            "select ref.source_ref_id,ref.fact_version_id,se.visibility "
+            "from graph_source_refs ref join source_events se on se.org_id=ref.org_id "
+            "and se.event_id=ref.event_id where ref.org_id=:o and ("
+            "ref.source_ref_id=any(cast(:refs as text[])) or "
+            "ref.fact_version_id=any(cast(:facts as text[])))"),
+            {"o": org_id, "refs": refs, "facts": facts}).mappings().all()
+        resolved_keys: set[str] = set()
+        for row in direct_rows:
+            resolved_keys.update(str(value) for value in
+                                 (row.get("source_ref_id"), row.get("fact_version_id")) if value)
+            raw_visibility = _json_field(row.get("visibility"))
+            try:
+                visibilities.append(Visibility.model_validate(raw_visibility or {}))
+            except (TypeError, ValueError):
+                visibilities.append(Visibility(
+                    scope=PRIVATE, principals=[], derived_from="invalid:source-visibility"))
+
+        parent_rows = conn.execute(text(
+            "select s.signal_id,s.reasoning_run_id,parent_ctx.source_manifest "
+            "from signals s join reasoning_runs parent_run on parent_run.org_id=s.org_id "
+            "and parent_run.run_id=s.reasoning_run_id join reasoning_context_snapshots parent_ctx "
+            "on parent_ctx.org_id=parent_run.org_id and "
+            "parent_ctx.context_snapshot_id=parent_run.context_snapshot_id "
+            "where s.org_id=:o and (s.signal_id=any(cast(:refs as text[])) or "
+            "s.reasoning_run_id=any(cast(:facts as text[])))"),
+            {"o": org_id, "refs": refs, "facts": facts}).mappings().all()
+        children: list[dict[str, Any]] = []
+        for row in parent_rows:
+            resolved_keys.update(str(value) for value in
+                                 (row.get("signal_id"), row.get("reasoning_run_id")) if value)
+            child_manifest = _json_field(row.get("source_manifest")) or []
+            children.extend(dict(item) for item in child_manifest if isinstance(item, Mapping))
+
+        for item in batch:
+            keys = {str(value) for value in
+                    (item.get("source_ref_id"), item.get("fact_version_id")) if value}
+            if keys.isdisjoint(resolved_keys):
+                unresolved = True
+        pending = children
+    else:
+        unresolved = True
+
+    if unresolved:
+        visibilities.append(Visibility(
+            scope=PRIVATE, principals=[], derived_from="unresolved:evidence-lineage"))
+    return narrowest(*visibilities) if visibilities else Visibility(
+        scope=PRIVATE, principals=[], derived_from="unresolved:evidence-lineage")
+
+
 def plan_commitments(engine, org_id: str, *, eval_time: datetime | None = None,
                      effective: Mapping[str, Any] | None = None,
                      limit: int = 100) -> SweepReport:
@@ -162,6 +253,11 @@ def plan_commitments(engine, org_id: str, *, eval_time: datetime | None = None,
     examined = created = 0
 
     with engine.begin() as conn:
+        # A new commitment can supersede an open one without updating the predecessor row. The
+        # tenant lock closes that insert phantom against Layer 5.2's final FOR SHARE proof: either
+        # delivery finishes first, or planning commits first and the provider boundary sees the
+        # replacement. Account reset uses the same lock order.
+        conn.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
         channels = store.active_channels(conn, org_id)
         directory = PgSeatDirectory(conn=conn, org_id=org_id)
         rows = conn.execute(text(_PLANNABLE_SIGNALS),
@@ -206,8 +302,12 @@ def plan_commitments(engine, org_id: str, *, eval_time: datetime | None = None,
             context = interpretation.require()
             facts, attrs = _node_facts(conn, org_id, row["subject_node_id"])
             assignment = resolve_owner(facts=facts, attrs=attrs, directory=directory)
+            visibility = _execution_visibility(
+                conn, org_id=org_id, source_manifest=row.get("source_manifest"),
+                evidence_ids=context.evidence_ids)
             result = build_execution(context, assignment=assignment, eval_time=now,
-                                     available_channels=channels, cfg=cfg)
+                                     available_channels=channels, cfg=cfg,
+                                     visibility=visibility)
             _bump(counts, result.reason_code)
             if not result.built:
                 continue

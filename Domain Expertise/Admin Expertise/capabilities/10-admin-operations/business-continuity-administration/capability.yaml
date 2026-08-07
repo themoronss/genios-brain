@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.admin_operations.business_continuity_administration
+  name: Business Continuity Administration
+  domain: admin
+  subdomain: admin_operations
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  The administrative side of continuity: documenting critical processes and their
+  dependencies, maintaining contact trees and alternate arrangements, and testing them often
+  enough that the plan is known to work. A continuity plan that has never been exercised is a
+  document, not a capability.
+
+question: "If this stopped working tomorrow, is there a documented, tested way to keep going?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

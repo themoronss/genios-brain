@@ -180,6 +180,11 @@ class FakeDB:
              self._api_ladder),
             ("from execution_events where org_id=:o and execution_id=:x order by occurred_at",
              self._api_events),
+            ("select detail,occurred_at from execution_events", self._delivery_reminder),
+            ("select event_id from execution_events", self._delivery_superseding_event),
+            ("select graph_version from graph_versions", self._graph_version),
+            ("select id from orgs where id=", self._org),
+            ("select payload,state,signal_id from executions", self._execution_delivery_row),
             ("select reminder_count, last_reminded_at from executions", self._reminder_state),
             ("select execution_id from executions", self._superseding),
             ("select day_offset from execution_escalations", self._fired_days),
@@ -448,6 +453,63 @@ class FakeDB:
                   and e["reason_code"] == "human_dismissed" for e in self.execution_events)
         return Result([{"?": 1}] if hit else [])
 
+    def _delivery_reminder(self, sql, p) -> Result:
+        row = next((event for event in self.execution_events
+                    if event["org_id"] == p["o"] and event["execution_id"] == p["x"]
+                    and event["event_id"] == p["event"]
+                    and event["kind"] == "execution.reminded"), None)
+        return Result([{"detail": row["detail"], "occurred_at": row["occurred_at"]}]
+                      if row else [])
+
+    def _delivery_superseding_event(self, sql, p) -> Result:
+        stale_kinds = {
+            "execution.action_completed", "execution.reminded", "execution.started",
+            "execution.waiting", "execution.blocked", "execution.unblocked",
+            "execution.replanned", "execution.completed", "execution.cancelled",
+            "execution.expired", "execution.archived",
+        }
+        if "event" not in p:
+            hit = next((event for event in self.execution_events
+                        if event["org_id"] == p["o"]
+                        and event["execution_id"] == p["x"]
+                        and event["kind"] in stale_kinds), None)
+        else:
+            hit = next((event for event in self.execution_events
+                        if event["org_id"] == p["o"] and event["execution_id"] == p["x"]
+                        and event["event_id"] != p["event"]
+                        and ((event["kind"] == "execution.cancelled"
+                              and event["reason_code"] == "human_dismissed")
+                             or (event["kind"] == "execution.reminded" and
+                                 (event["occurred_at"] > p["reminded"] or
+                                  (event["occurred_at"] == p["reminded"] and
+                                   event["event_id"] > p["event"])))
+                             or (event["occurred_at"] >= p["reminded"]
+                                 and event["kind"] in stale_kinds
+                                 and event["kind"] != "execution.reminded"))), None)
+        return Result([{"event_id": hit["event_id"]}] if hit else [])
+
+    def _graph_version(self, sql, p) -> Result:
+        return Result([{"graph_version": 1}])
+
+    def _org(self, sql, p) -> Result:
+        return Result([{"id": p["o"]}] if p.get("o") == self.org_id else [])
+
+    def _execution_delivery_row(self, sql, p) -> Result:
+        row = self._row(p)
+        if row is None or row["closed_at"] is not None:
+            return Result([])
+        if row["state"] not in {"pending", "running", "waiting", "blocked"}:
+            return Result([])
+        if "now" in p and row["expires_at"] <= p["now"]:
+            return Result([])
+        if any(event["execution_id"] == p["x"]
+               and event["kind"] == "execution.cancelled"
+               and event["reason_code"] == "human_dismissed"
+               for event in self.execution_events):
+            return Result([])
+        return Result([{"payload": row["payload"], "state": row["state"],
+                        "signal_id": row.get("signal_id")}])
+
     def _execution_is_open(self, sql, p) -> Result:
         row = self._row(p)
         if row is None or row["closed_at"] is not None:
@@ -455,6 +517,12 @@ class FakeDB:
         # The bridge's pre-send liveness check adds an expiry bound; the API's open-row check
         # does not. Honouring :now only when it is bound keeps one handler honest for both.
         if "now" in p and row["expires_at"] <= p["now"]:
+            return Result([])
+        if "human_dismissed" in sql and any(
+                event["execution_id"] == p["x"]
+                and event["kind"] == "execution.cancelled"
+                and event["reason_code"] == "human_dismissed"
+                for event in self.execution_events):
             return Result([])
         return Result([{"?": 1}])
 

@@ -1,6 +1,10 @@
 # Lifecycle, edge cases and gaps
 
-A card view or click is an interaction fact, not automatic business success. The repository supplies APIs/rendering, not a claim that every frontend is finished.
+Provider acceptance or pull availability moves transport to delivered. Human engagement then
+advances independently through viewed/ignored/accepted/executed/failed/expired. A view or click is
+an interaction fact, not automatic business success, and retry failure is not execution failure.
 
-Where the target is partial or missing, the status is intentionally not promoted merely because a
-generic pull or webhook primitive could be adapted later.
+The backend contract, inbox and supported adapters are active. Complete browser/desktop/mobile
+clients and universal receipt instrumentation are integration work. Agent intent cannot fall back
+here. Migration 0046 quarantines pending legacy card notifications and the v2 drain terminalizes
+them without a provider call; canonical deliveries must carry execution lineage.

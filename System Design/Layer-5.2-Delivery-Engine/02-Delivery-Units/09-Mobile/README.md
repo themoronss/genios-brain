@@ -1,14 +1,17 @@
 # 9 · Mobile Delivery
 
-**Status:** Partial
+**Status:** Engine-ready; mobile pull/presence route active; native push not built
 
-Provides a mobile pull/presence seam through the durable surface adapter.
+Provides an authenticated mobile inbox and presence seam through the durable surface adapter.
+It does not claim APNs/FCM delivery.
 
 | Boundary | Current truth |
 |---|---|
-| Runtime authority | `channels/surface.py`, presence and inbox APIs |
-| Result | adapter/pull outcome projected into the shared DeliveryResult ledger |
+| Runtime | `channels/surface.py`, presence and inbox APIs |
+| Active route | `mobile` pull surface and leased presence |
+| Result | durable availability plus explicit mobile lifecycle receipts |
 | Business outcome | never inferred from transport alone |
+| Integration | mobile app, device registry and APNs/FCM provider lifecycle |
 
 ## Component modules
 

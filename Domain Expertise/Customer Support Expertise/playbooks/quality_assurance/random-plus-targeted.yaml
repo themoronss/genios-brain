@@ -1,0 +1,47 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.quality_assurance.random_plus_targeted
+  name: Random plus targeted
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Keep two sampling buckets. One drawn at random from the eligible population to estimate
+    the queue; one drawn deliberately to answer a stated question. Never average them, and never let
+    the targeted bucket be reported as coverage.
+
+
+    Both buckets are legitimate and they answer different questions. Mixing them produces a number that
+    estimates nothing, and the targeted bucket — which is always heavier with failures, because that
+    is why it was targeted — drags the estimate somewhere false.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Keep two sampling buckets. One drawn at random from the eligible population to estimate the
+    queue; one drawn deliberately to answer a stated question. Never average them, and never let the
+    targeted bucket be reported as coverage.
+  actor: human
+  description: Both buckets are legitimate and they answer different questions. Mixing them produces
+    a number that estimates nothing, and the targeted bucket — which is always heavier with failures,
+    because that is why it was targeted — drags the estimate somewhere false.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

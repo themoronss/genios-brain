@@ -1,14 +1,17 @@
 # 7 · Webhook Delivery
 
-**Status:** Built
+**Status:** Engine-ready; signed adapter active; tenant receiver/configuration required
 
-POSTs an adapter payload to a registered HTTPS destination with a verifiable signature.
+POSTs the grounded delivery payload to a tenant-registered public HTTPS endpoint with HMAC
+integrity and a stable idempotency key.
 
 | Boundary | Current truth |
 |---|---|
-| Runtime authority | `channels/webhook.py`, `destination.py`, `outbox.py` |
-| Result | adapter/pull outcome projected into the shared DeliveryResult ledger |
+| Runtime | `channels/webhook.py`, `destination.py`, `outbox.py`, channel configuration APIs |
+| Active route | signed generic webhook adapter |
+| Result | provider acceptance/failure projected into attempts and DeliveryResult |
 | Business outcome | never inferred from transport alone |
+| Integration | customer endpoint, secret management, receiver verification and egress operations |
 
 ## Component modules
 

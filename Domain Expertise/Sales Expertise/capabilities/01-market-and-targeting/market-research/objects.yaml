@@ -1,0 +1,56 @@
+# Load-set for sales.market_and_targeting.market_research — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/market-research/        loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.market_and_targeting.market_research
+
+core:
+  required:
+    # Who already holds the budget. Market research without the incumbent set is a description
+    # of demand with the supply side deleted.
+    - sales.obj.core.competitor
+    # Prevailing terms. Our commercial design is constrained by what this market already pays,
+    # not by our cost base, so this is required rather than optional.
+    - sales.obj.core.pricing
+    # The unit the map is assembled from and later sampled against.
+    - sales.obj.core.company
+  optional:
+    # The profile this map feeds. Loaded to check whether the map contradicts what the
+    # organisation already believes — not to define the market, which is the reverse direction.
+    - sales.obj.core.icp
+    # Who inside the segment holds the budget line. Absence lowers confidence in the
+    # behavioural segmentation without blocking the map.
+    - sales.obj.core.persona
+    # The shared job, expressed as the buyer expresses it.
+    - sales.obj.core.pain_point
+
+scoped:
+  required:
+    - sales.obj.market_research.market_map
+  optional:
+    - sales.obj.market_research.market_finding
+
+load_order:
+  # Findings resolve first: the map's status, confidence and review date are all derived from
+  # the findings underneath it, so a map resolved before its findings is a map with a verdict
+  # and no evidence attached.
+  - sales.obj.market_research.market_finding
+  - sales.obj.market_research.market_map
+
+notes: >
+  Six objects, not forty, and deliberately no deal-execution knowledge. Decision Maker,
+  Champion, Buying Committee, Budget and Timeline are all authored and all excluded: they
+  describe one live purchase, and the subject here is a population that mostly has no deals in
+  it yet. Loading them would let a market-research compile drift into running the deal that
+  produced the evidence, which is the opposite of what this capability is for — the deal is
+  the sample, not the subject.
+  Note also what is absent from core: there is no `market_segment` object. Segments live as a
+  property of market_map because the core/scoped rule is decided by the reference graph, and
+  nothing outside this capability loads a segment today. If tam_sam_som or territory_planning
+  ever needs one, it should be promoted straight to objects/core/ rather than copied.

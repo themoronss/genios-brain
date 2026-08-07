@@ -20,10 +20,9 @@ from .render import render_copy
 from .router import budget_full
 from .store import CardStore
 
-# L5 pipeline — turn gated signals into delivered cards. Runs after L3 (in-process background, no
-# Celery). One card per open signal: E0 compose → E1 render (one temp-0 call, validated) → E3
-# budget → persist at 'queued'. Cards only build from signals that already passed L3's gate, so
-# the model runs at most budget_per_day times per org — cheap by construction.
+# Card presentation pipeline. New cards are built only for validated Layer 5 executions; a raw
+# signal can no longer create an independently deliverable object. Layer 5.2 owns all outward
+# routing through its execution-bound outbox.
 
 
 def _open_signals_without_cards(graph, org_id: str,
@@ -41,8 +40,11 @@ def _open_signals_without_cards(graph, org_id: str,
             "selected_rc.play_id as play, s.config_snapshot_id, "
             "authority_cfg.effective as effective_config, "
             "authority_cfg.pack_id, s.authority_expires_at as decision_expires_at, "
-            "s.reasoning_run_id, s.reasoning_candidate_id, s.reasoning_decision_hash "
+            "s.reasoning_run_id, s.reasoning_candidate_id, s.reasoning_decision_hash, "
+            "x.execution_id "
             "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            " join executions x on x.org_id=s.org_id and x.signal_id=s.signal_id "
+            "and x.closed_at is null and x.state in ('pending','running','waiting','blocked') "
             " left join reasoning_context_payloads authority_payload "
             "on authority_payload.org_id=authority_ctx.org_id and "
             "authority_payload.context_snapshot_id=authority_ctx.context_snapshot_id "
@@ -106,6 +108,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 "reasoning_decision_hash": sig["reasoning_decision_hash"],
                 "config_snapshot_id": sig["config_snapshot_id"],
             }
+            draft["_execution_id"] = sig["execution_id"]
             draft["_authority_time"] = eval_time
             over_budget = budget_full(card_store, org_id, draft["assignee"], eval_time, budget)
             if over_budget:
@@ -118,11 +121,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 continue
             out["built"] += 1
             out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
-            try:
-                from .push import push_card_to_agents
-                out["agent_pushed"] += push_card_to_agents(card_store, org_id, card_id)
-            except Exception:                                  # noqa: BLE001
-                pass
+            # Agent delivery uses the same execution-linked outbox, policy, retry, dedupe and
+            # DeliveryResult path as every other destination. No synchronous side channel here.
             if draft["assignee"] is None:
                 out["unrouted"] += 1
             if (band(int(sig["score"]), bands_cfg) in ("high", "critical")

@@ -29,7 +29,7 @@ flowchart LR
 | Whether an executable commitment may exist | Decision Interpreter + Builder |
 | Action kinds, dependency waves and deadlines | Execution Planning |
 | Which actions are ready or blocked | Execution Coordination |
-| Recipient, channel, interruption and tone | Communication Planning |
+| Work-owner/audience seed, tone and presentation intent | Communication Planning; Layer 5.2 resolves current recipient, channel and interruption |
 | Whether an outbound moment is still valid | Execution Validation |
 | Reminder/escalation timing | Reminder + Escalation |
 | Progress, state and proof | Monitoring + Execution Tracking |

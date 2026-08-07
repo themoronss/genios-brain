@@ -1,0 +1,43 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.root_cause_analysis.bisect_between_good_and_bad
+  name: Bisect between good and bad
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Bisect between the last known good and the first known bad along whichever axis is cheapest
+    to halve — version, configuration, tenant, data set, time window.
+
+
+    Bisection converges without requiring a theory, and theories are what make investigations stall.
+    It is the only technique on this list that works when nobody understands the subsystem.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Bisect between the last known good and the first known bad along whichever axis is cheapest
+    to halve — version, configuration, tenant, data set, time window.
+  actor: human
+  description: Bisection converges without requiring a theory, and theories are what make investigations
+    stall. It is the only technique on this list that works when nobody understands the subsystem.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

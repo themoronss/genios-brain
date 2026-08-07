@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.quality_assurance.framework_self_score_delta
+  name: Framework self score delta
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Self-score-then-reveal — the delta between the agent''s prediction and the reviewer''s
+    mark is the diagnostic, not the mark.
+
+
+    It converts QA from a verdict into a conversation about a shared standard, and it is the cheapest
+    available test of whether the rubric transferred.'
+criteria:
+- name: Framework self score delta
+  description: Self-score-then-reveal — the delta between the agent's prediction and the reviewer's
+    mark is the diagnostic, not the mark.
+how_to_apply:
+- Self-score-then-reveal — the delta between the agent's prediction and the reviewer's mark is the diagnostic,
+  not the mark.
+- It converts QA from a verdict into a conversation about a shared standard, and it is the cheapest
+  available test of whether the rubric transferred.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,27 @@
+identity:
+  id: sales.post_sale_and_growth.upsell
+  name: Upsell
+  domain: sales
+  subdomain: post_sale_and_growth
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Increasing volume or tier within the existing product. Usage-led and largely mechanical,
+  which is exactly why it is routinely left unworked.
+
+question: "Should they be on more of what they already have?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

@@ -1,0 +1,28 @@
+# Load-set for customer_support.support_management.performance_management — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_management.performance_management
+
+core:
+  # The person and the standard, same pair as coaching — and that overlap is the point of tension
+  # in this subdomain rather than an accident. What differs is what is done with the result.
+  required:
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.quality_scorecard
+  # All three optionals are outcome measures and all three are contaminated by queue mix, which is
+  # why none of them is required. backlog is here as the denominator nobody loads: an agent's
+  # numbers are unreadable without knowing what the queue looked like while they were working it.
+  optional:
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.backlog
+
+scoped:
+  required: []
+  optional: []

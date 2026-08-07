@@ -2,7 +2,10 @@
 
 ## Analyzer / Planner
 
-Communication scoring maps urgency, confidence and audience into a band, channel class, interrupt flag and tone. Reassignment preserves commitment identity.
+Communication scoring maps urgency, confidence and business audience into a band, tone,
+presentation intent and backwards-compatible route hints. Reassignment preserves commitment
+identity. The actual channel and interrupt flag are recomputed by Layer 5.2 from live context and
+policy; these frozen v1 values cannot bypass that boundary.
 
 ## Calculator
 

@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.de_escalation.the_defect_is_the_smaller_half
+  name: The defect is the smaller half
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Every escalated contact has two problems: the fault, and what the handling of the fault
+    taught the customer about us. Only the second one survives the ticket.
+
+
+    It is the argument for spending effort on communication that could have gone into the fix. The fix
+    is forgotten within the quarter; the conclusion the customer drew about whether we can be relied
+    on is what gets quoted in the renewal conversation.'
+dimensions:
+- name: The defect is the smaller half
+  asks: 'Every escalated contact has two problems: the fault, and what the handling of the fault taught
+    the customer about us. Only the second one survives the ticket.'
+how_to_apply:
+- 'Every escalated contact has two problems: the fault, and what the handling of the fault taught the
+  customer about us. Only the second one survives the ticket.'
+- It is the argument for spending effort on communication that could have gone into the fix. The fix
+  is forgotten within the quarter; the conclusion the customer drew about whether we can be relied on
+  is what gets quoted in the renewal conversation.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,6 +1,7 @@
 # Existing Calibration Loop
 
-Documents the older narrow loop that currently changes Reasoning behavior.
+Documents the older narrow loop that currently changes Reasoning behavior. It remains under the
+same tenant learning-consent authority as the broader Atlas pipeline.
 
 **Primary authority:** `feedback/calibrate.py`
 

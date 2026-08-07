@@ -1,0 +1,40 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.self_service_deflection.self_service_only_works_on_questions_that_have_o
+  name: Self service only works on questions that have o
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Self-service only works on questions that have one right answer. Anything account-specific,
+    ambiguous or emotionally loaded should be routed to a human deliberately, and the right deflection
+    rate for those intents is none.
+heuristic:
+  statement: Self-service only works on questions that have one right answer. Anything account-specific,
+    ambiguous or emotionally loaded should be routed to a human deliberately, and the right deflection
+    rate for those intents is none.
+  why: A failed deflection does not cost one ticket. It costs the wasted attempt, the ticket that follows,
+    and the customer's new belief that we hide behind our documentation — and that last cost never appears
+    on the support ledger.
+  reads:
+  - customer_support.obj.core.intent
+  - customer_support.obj.core.customer_sentiment
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

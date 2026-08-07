@@ -1,0 +1,29 @@
+# Load-set for customer_support.entitlement_and_sla.breach_prevention — REFERENCES ONLY.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.entitlement_and_sla.breach_prevention
+
+core:
+  # Only two are genuinely required, and that is the point: a forecast needs the deadline and
+  # the thing carrying it. entitlement is deliberately NOT required here — by the time this
+  # capability runs the clock already exists, and demanding the contract again would block a
+  # forecast on a lookup that changes nothing about whether the deadline is going to be missed.
+  required:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.ticket
+  # These four are the actual predictors, and they are optional only because reasoning must
+  # still run without them. queue and support_agent say whether anyone has capacity to act;
+  # coverage_window says whether the deadline lands in a handover or an uncovered stretch,
+  # which is where the surprising breaches live; escalation says whether an intervention is
+  # already in flight, so the ladder does not get climbed twice.
+  optional:
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.coverage_window
+
+scoped:
+  required: []
+  optional: []

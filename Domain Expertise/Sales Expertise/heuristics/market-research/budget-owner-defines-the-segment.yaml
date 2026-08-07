@@ -1,0 +1,37 @@
+identity:
+  id: sales.heu.market_research.budget_owner_defines_the_segment
+  name: A segment is defined by whose budget line pays, not by industry code o…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "A segment is defined by whose budget line pays, not by industry code or headcount band.\n\
+    \ The budget owner determines the approval path, the cycle length, the language that lands and the\
+    \ size of cheque available. Two companies that look identical in a database and pay out of different\
+    \ functions are two markets that happen to share a filter.\n"
+heuristic:
+  statement: 'A segment is defined by whose budget line pays, not by industry code or headcount band.
+
+    '
+  why: 'The budget owner determines the approval path, the cycle length, the language that lands and
+    the size of cheque available. Two companies that look identical in a database and pay out of different
+    functions are two markets that happen to share a filter.
+
+    '
+  reads:
+  - sales.obj.market_research.market_map
+  - sales.obj.core.icp
+  - sales.obj.core.persona
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

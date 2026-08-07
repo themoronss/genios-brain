@@ -11,19 +11,19 @@ ever decides that a person should not be told something.  That judgement was mad
 layer with the context to make it.  This unit only ever moves the moment — and where it cannot
 find a humane one it says so with a reason code rather than quietly dropping the message.
 
-**What it keys on, and why it is not ``interrupt``.**  Layer 5's ``CommunicationPlan.interrupt``
-means *this deserves attention*.  It does not mean *this will make a phone buzz*: a high-band
-card is pushed to Slack with ``interrupt=False`` and still lights up a lock screen at midnight.
+**What it keys on, and why it is not only ``interrupt``.** Layer 5.2's orchestrator sets the
+final interrupt flag after priority, confidence, presence and destination resolution. It still
+does not mean *this will make a phone buzz*: a high-band delivery can use Slack with
+``interrupt=False`` and still light up a lock screen at midnight.
 Gating on ``DeliveryCandidate.intrusive`` — a property of the channel's physics rather than of
 the sender's intent — is what closes that gap.  A digest is never gated here, because nobody was
 ever going to be woken by a digest.
 
-**The break-glass, and why it borrows Layer 5's confidence rule for free.**  Some things really
+**The break-glass.** Some things really
 should wake somebody.  The escape hatch is ``band ≥ override_band AND interrupt``, and the second
-half is doing more work than it looks.  ``executive/communication.py`` only sets ``interrupt``
-when the reasoner's confidence clears its floor — a critical-scoring conclusion it is 40% sure of
-comes through with ``interrupt=False`` — so a low-confidence crisis cannot break glass, and this
-unit gets that property without knowing what a confidence interval is.  One dial, upstairs.
+half is doing more work than it looks. The delivery orchestrator only sets ``interrupt`` when
+the ExecutionObject confidence clears the floor and current context permits it, so a
+low-confidence crisis cannot break glass.
 
 **Constraints compose; they do not race.**  A meeting, quiet hours and a burst limit are three
 independent facts, and a delivery has to satisfy all three.  Rather than an if/elif ladder whose

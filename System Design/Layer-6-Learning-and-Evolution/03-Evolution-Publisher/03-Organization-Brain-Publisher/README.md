@@ -1,10 +1,10 @@
 # Organization Brain Publisher
 
-**Status:** Partial operational loop
+**Status:** Publisher built; lower-layer consumer pending
 
 | Target | Durable store | Authority |
 |---|---|---|
-| `BrainTarget.ORGANIZATION` | `learned_brain_entries` | `feedback/store.py::publish` |
+| `BrainTarget.ORGANIZATION` / `LearningTarget.ORGANIZATION` | `learned_brain_entries` | `feedback/store.py::_publish_brain` |
 
 ## Component modules
 

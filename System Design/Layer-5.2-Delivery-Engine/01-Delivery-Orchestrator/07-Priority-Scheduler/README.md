@@ -1,14 +1,21 @@
 # Priority Scheduler
 
-**Status:** Built
+**Status:** Active
 
-Claims eligible durable work in stable priority/due order while respecting daily budget, burst holds and retry backoff.
+Answers **“which already-due delivery gets a worker next?”** It maps immutable business priority
+to the Atlas five-class delivery queue and claims work with tenant fairness and starvation aging.
 
 | Boundary | Current truth |
 |---|---|
-| Input | queued rows, band/priority, due time, attempts/deferrals and recipient budget state |
-| Output | a claimed row for one adapter attempt, or a later eligible time |
-| Authority | `deliver/outbox.py`, `deliver/router.py`, `deliver/timing.py` |
+| Input | queued/deferred rows, priority rank, age, due time and fenced claim state |
+| Output | one expiring claim token per selected row |
+| Runtime | `deliver/scheduler.py`, `deliver/outbox.py`, `deliver/rate_limit.py` |
+| Fairness | per-org round robin plus four-hour priority aging |
+| Heartbeat | dedicated `delivery_interval_seconds` loop; one minute by production default |
+
+Delivery has its own minute-scale daemon loop and does not inherit the multi-hour ingestion/
+maintenance cadence. Deployments that disable the in-process scheduler must supply an equivalent
+minute-scale worker; a six-hour cron cannot satisfy retry, quiet-window or claim clocks.
 
 ## Component modules
 

@@ -2,10 +2,20 @@
 
 ## Analyzer / Calculator
 
-Default checks: 3 observations, 2 days, 6500 confidence bp, at most 2500 noise/conflict bp, at least 1000 value bp and nonzero freshness. Runtime has a separate explicit TTL rule.
+Preflight first refuses disabled/blocked policy, incomplete/empty source lineage, invalid constrained
+audience, non-org evidence for Organization, evidence invisible to a Behavior/Adaptive subject, or a
+non-explicit/excessive Runtime lease. This runs before value persistence.
+
+Default ordinary checks then require 3 **independent** observations, 2 distinct days, at least
+6,500 confidence bp, no more than 2,500 noise bp, no more than 2,500 conflict bp, at least 1,000
+business-value bp and nonzero current freshness. Freshness decays deterministically over 28 days
+from `last_seen_at` and the explicit evaluation/review time.
 
 ## Evaluator
 
-Each failing dimension yields a distinct state/reason; low repetition waits, excessive noise/conflict/value/freshness failures reject.
+Low repetition remains Observed; insufficient days/confidence remains Candidate. Excessive noise or
+conflict, inadequate business value, stale evidence and preflight failures reject with separate
+reason codes. Valid explicit Runtime memory uses a one-shot Validated result because its TTL, not
+permanence repetition, bounds retention.
 
-All counts, thresholds and rates are deterministic integers with explicit observation time.
+Validation cannot promote or widen an ACL. Governance follows only after a Validated result.

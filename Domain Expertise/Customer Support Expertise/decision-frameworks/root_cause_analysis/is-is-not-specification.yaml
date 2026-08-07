@@ -1,0 +1,43 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.root_cause_analysis.is_is_not_specification
+  name: Is is not specification
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'IS / IS-NOT problem specification — describe the problem in four dimensions (what, where,
+    when, extent) and for each state both what IS affected and what comparably IS NOT.
+
+
+    The only common framework that forces disconfirming evidence into the room. The IS-NOT column is
+    where the cause is actually located, and it is the column teams skip because it feels like recording
+    nothing.'
+criteria:
+- name: Is is not specification
+  description: IS / IS-NOT problem specification — describe the problem in four dimensions (what, where,
+    when, extent) and for each state both what IS affected and what comparably IS NOT.
+how_to_apply:
+- IS / IS-NOT problem specification — describe the problem in four dimensions (what, where, when, extent)
+  and for each state both what IS affected and what comparably IS NOT.
+- The only common framework that forces disconfirming evidence into the room. The IS-NOT column is where
+  the cause is actually located, and it is the column teams skip because it feels like recording nothing.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

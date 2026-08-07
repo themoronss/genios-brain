@@ -2,24 +2,29 @@
 
 **Status:** Built
 
-Learns counted response metrics from explicit canonical feedback while keeping positive, negative and neutral separate.
+Builds ACL-scoped response metrics from the latest explicit canonical card feedback revision while
+keeping positive, negative and neutral/timing evidence separate.
 
 | Boundary | Value |
 |---|---|
-| Input | explicit `FeedbackFact` values grouped by subject key |
-| Output | Metrics-target LearningObject with accepted/rejected/neutral counts |
+| Input | explicit `FeedbackFact` values grouped by subject and identical source ACL |
+| Dashboard authority | `run_play` / `do_it_myself` / `wrong` atomically version one canonical verdict; dashboard/extension snooze and dashboard requeue are non-verdict events |
+| Positive | accepted, executed, run_play, do_it_myself |
+| Negative | rejected, cancelled, `wrong:not_relevant`, `wrong:wrong_facts` |
+| Timing/neutral | `wrong:bad_timing` is canonical but neutral for quality; normalized explicit snooze is timing/neutral; silence is excluded |
+| Output | Metrics-target LearningObject with accepted/rejected/timing/neutral counts and exact lineage |
 | Primary code | `feedback/units.py::feedback_learning` |
-| Honest gap | Silence is ignored, not labeled. Raw free text needs a trusted upstream structurer before it can become a fact. |
+| Integration requirement | product surfaces must continue writing canonical feedback revisions and exact card/execution lineage |
 
 ## Atlas-named component map
 
 | Atlas component | Live implementation |
 |---|---|
-| Feedback Collector | `store.load_batch` canonical feedback query |
-| Parser | frozen `FeedbackFact` contract; no raw-prose parser in this unit |
+| Feedback Collector | latest `card_feedback_revisions` joined to verdict, card and verified execution; terminal dashboard actions write it atomically |
+| Parser | frozen `FeedbackFact`; no raw-prose interpretation or silence inference |
 | Categorizer | explicit action sets for positive/negative/neutral |
-| Confidence | deterministic evidence/count basis-point calculation |
-| Object Builder | immutable Metrics-target `LearningObject` |
+| Confidence | labelled agreement capped by independent card support; neutral contributes zero support |
+| Object Builder | immutable Metrics-target v2 `LearningObject` with ACL audience suffix |
 
 ## Component modules
 

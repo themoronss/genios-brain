@@ -1,0 +1,37 @@
+identity:
+  id: sales.pb.market_research.incumbent_teardown
+  name: Tear down the incumbent's public pricing, packaging, contract length a…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Tear down the incumbent's public pricing, packaging, contract length and renewal terms,\
+    \ then correct it against what buyers say they actually pay.\n Prevailing terms are the constraint\
+    \ on our commercial design. A packaging shape a segment has never bought is a harder sell than a\
+    \ price it has never paid, and list price is a claim while the paid price is a fact — the gap between\
+    \ them is itself a find"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Tear down the incumbent's public pricing, packaging, contract length a…
+  description: 'Prevailing terms are the constraint on our commercial design. A packaging shape a segment
+    has never bought is a harder sell than a price it has never paid, and list price is a claim while
+    the paid price is a fact — the gap between them is itself a finding.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

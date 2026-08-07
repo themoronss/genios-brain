@@ -1,0 +1,935 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CORE OBJECT — admin.obj.core.employee_record
+#
+# The second of the three custodial objects. This one is different in kind: the organisation
+# is not holding a laptop, it is holding a person's file — right-to-work evidence, bank
+# details, a grievance, an occupational-health note. Admin is the custodian of the most
+# sensitive personal data the organisation processes, and it usually holds it in a shared
+# drive with inherited permissions nobody has reviewed.
+#
+# Four of eleven patterns below are executable today. The seven that are not include every
+# pattern that would actually protect the data subject, which is the finding, not the excuse.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.employee_record
+  scope: core
+  name: Employee Record
+  domain: admin
+  subdomain: people_administration
+  owner_capability: admin.people_administration.employee_records_administration
+  version: 1.0.0
+  status: draft
+  aliases: ["Personnel File", "People File", "Employee Master Record", "P-File", "Worker Record"]
+purpose:
+  statement: >
+    The organisation's file on a worker: the identity and employment facts, the documents that
+    evidence them, and — crucially — the lawful basis and retention rule that say why the
+    organisation is allowed to keep any of it. Three properties make this object unlike every
+    other record Admin holds. It is the most sensitive personal data the function processes, so
+    the access list is part of the record rather than an implementation detail. Its retention
+    clock starts at the END of employment, not at creation, which is the single most common
+    error in records administration and the one that turns a tidy archive into an unlawful one.
+    And it does not close when the person leaves — leaving starts a period of years in which
+    the file must be kept, kept accurate, kept restricted, and then actually destroyed, which
+    almost nobody does because nothing and nobody is inconvenienced by a file that is merely
+    still there.
+attributes:
+  - name: identity_and_employment
+    purpose: The facts of the engagement. Deliberately minimal — this object is a custody wrapper, not
+      an HRIS.
+    type: composite
+    contains:
+      - record_id
+      - subject_display_name
+      - employment_status
+      - start_at
+      - end_at
+      - notice_period_days
+      - manager_ref
+      - business_unit
+      - work_location_ref
+      - payroll_reference
+  - name: lawful_basis_and_sensitivity
+    purpose: >
+      Why the organisation may hold this at all, and how far the answer stretches. The block
+      most personnel systems do not have a field for.
+    type: composite
+    contains:
+      - lawful_basis
+      - lawful_basis_recorded_at
+      - special_category_present
+      - special_category_types
+      - classification
+      - processing_purpose
+  - name: access_control
+    purpose: Who may read the file. Part of the record, because an access list held somewhere else is
+      an access list nobody reviews.
+    type: composite
+    contains:
+      - access_restriction
+      - named_readers
+      - last_access_review_at
+      - subject_access_request_open
+  - name: retention_and_disposal
+    purpose: The clock that starts when employment ends, and the disposal that is meant to follow it.
+    type: composite
+    contains:
+      - retention_rule_ref
+      - retention_basis
+      - retention_until
+      - disposal_state
+      - legal_hold
+      - disposed_at
+  - name: file_completeness
+    purpose: What is missing, and which of the gaps are statutory rather than administrative.
+    type: composite
+    contains:
+      - mandatory_documents_missing
+      - file_complete
+      - right_to_work_verified
+      - right_to_work_expires_at
+      - onboarding_state
+      - offboarding_state
+  - name: live_correspondence
+    purpose: The only part of this object the shipped pipeline can currently see.
+    type: composite
+    contains:
+      - ball_in_court
+      - last_correspondence_at
+      - open_task_due_at
+      - intake_state
+      - record_owner
+  - name: record_id
+    purpose: Stable internal identifier. Never the national insurance or social security number,
+      however convenient — that choice propagates into every downstream export and is unpickable
+      afterwards.
+    type: value
+    data_type: string
+    required: true
+    description: Stable internal identifier. Never the national insurance or social security number,
+      however convenient — that choice propagates into every downstream export and is unpickable
+      afterwards.
+  - name: subject_display_name
+    purpose: "The person's name as used administratively. Held deliberately thinly: this object points at
+      the file, it does not duplicate the HRIS. Every field copied here is a second place that must be corrected
+      after a name change and a second place that leaks."
+    type: value
+    data_type: string
+    description: >
+      The person's name as used administratively. Held deliberately thinly: this object points
+      at the file, it does not duplicate the HRIS. Every field copied here is a second place
+      that must be corrected after a name change and a second place that leaks.
+  - name: employment_status
+    purpose: '`pre_start` and `former` are the two states that carry the most administrative work and the
+      least attention. Pre-start is where right-to-work and equipment must land before day one; former is
+      where the retention clock runs for years.'
+    type: value
+    data_type: enum
+    allowed_values: [candidate, offer_accepted, pre_start, active, on_leave, notice_period, suspended,
+        former, contractor, alumni]
+    required: true
+    description: >
+      `pre_start` and `former` are the two states that carry the most administrative work and
+      the least attention. Pre-start is where right-to-work and equipment must land before day
+      one; former is where the retention clock runs for years.
+  - name: start_at
+    purpose: The start_at of this object.
+    type: value
+    data_type: timestamp
+  - name: end_at
+    purpose: The date every retention calculation on this object should be measured from, and the date
+      most of them are not.
+    type: value
+    data_type: timestamp
+    description: The date every retention calculation on this object should be measured from, and the
+      date most of them are not.
+  - name: notice_period_days
+    purpose: The external clock on offboarding. Everything — access removal, asset recovery, handover,
+      final pay input — has to fit inside it and cannot be extended by being busy.
+    type: value
+    data_type: integer
+    unit: days
+    description: The external clock on offboarding. Everything — access removal, asset recovery,
+      handover, final pay input — has to fit inside it and cannot be extended by being busy.
+  - name: manager_ref
+    purpose: Self-referential. Gives the escalation and handover path without a separate org-chart
+      object.
+    type: reference
+    ref: admin.obj.core.employee_record
+    data_type: ref
+    description: Self-referential. Gives the escalation and handover path without a separate org-chart
+      object.
+  - name: business_unit
+    purpose: The business_unit of this object.
+    type: value
+    data_type: string
+  - name: work_location_ref
+    purpose: Determines which jurisdiction's employment and data rules apply, which is why it belongs
+      on the record rather than in a directory.
+    type: reference
+    ref: admin.obj.core.facility
+    data_type: ref
+    description: Determines which jurisdiction's employment and data rules apply, which is why it
+      belongs on the record rather than in a directory.
+  - name: payroll_reference
+    purpose: The join to payroll input. A leaver whose payroll reference is never closed keeps being
+      paid, and that error is discovered by Finance, never by Admin.
+    type: value
+    data_type: string
+    description: The join to payroll input. A leaver whose payroll reference is never closed keeps
+      being paid, and that error is discovered by Finance, never by Admin.
+  - name: lawful_basis
+    purpose: "The most load-bearing field in this object. `not_recorded` is the honest default and the one
+      that should be alarming: it means the organisation is processing a person's data without having decided
+      why it is allowed to. `consent` is the trap — consent given by an employee to their employer is rarely
+      freely given and rarely survives a regulator's reading, so a file resting on it is usually resting
+      on nothing."
+    type: value
+    data_type: enum
+    allowed_values: [contract, legal_obligation, legitimate_interests, consent, vital_interests,
+        public_task, not_recorded]
+    required: true
+    description: >
+      The most load-bearing field in this object. `not_recorded` is the honest default and the
+      one that should be alarming: it means the organisation is processing a person's data
+      without having decided why it is allowed to. `consent` is the trap — consent given by an
+      employee to their employer is rarely freely given and rarely survives a regulator's
+      reading, so a file resting on it is usually resting on nothing.
+  - name: lawful_basis_recorded_at
+    purpose: When the basis was determined. A basis decided retrospectively during an audit is a
+      rationalisation, not a basis.
+    type: value
+    data_type: timestamp
+    description: When the basis was determined. A basis decided retrospectively during an audit is a
+      rationalisation, not a basis.
+  - name: special_category_present
+    purpose: Health, disability, occupational-health reports, union membership, ethnicity monitoring,
+      biometrics, criminal-record checks. These require a separate condition for processing on top of
+      the lawful basis, and they arrive in the file by accident — a fit note attached to an email
+      thread is special-category data sitting in the general folder.
+    type: value
+    data_type: boolean
+    description: >
+      Health, disability, occupational-health reports, union membership, ethnicity monitoring,
+      biometrics, criminal-record checks. These require a separate condition for processing on
+      top of the lawful basis, and they arrive in the file by accident — a fit note attached to
+      an email thread is special-category data sitting in the general folder.
+  - name: special_category_types
+    purpose: The special_category_types of this object.
+    type: value
+    data_type: list
+  - name: classification
+    purpose: Drives handling, storage location and transmission rules. A file whose classification is
+      unset defaults in practice to whatever the shared drive around it is, which is usually
+      `internal`.
+    type: value
+    data_type: enum
+    allowed_values: [internal, confidential, restricted, special_category]
+    description: Drives handling, storage location and transmission rules. A file whose classification
+      is unset defaults in practice to whatever the shared drive around it is, which is usually
+      `internal`.
+  - name: processing_purpose
+    purpose: The Article 30 record's purpose line. If it cannot be written in one sentence, the
+      organisation is holding the data for reasons it has not examined.
+    type: value
+    data_type: string
+    description: The Article 30 record's purpose line. If it cannot be written in one sentence, the
+      organisation is holding the data for reasons it has not examined.
+  - name: access_restriction
+    purpose: 'Need-to-know applied to a specific file, not a folder. `open_to_people_team` is the most common
+      real-world value and the least defensible: a twelve-person team all of whom can read a grievance file
+      is twelve people who could have been the leak.'
+    type: value
+    data_type: enum
+    allowed_values: [hr_only, hr_and_line_manager, hr_and_payroll, named_individuals,
+        open_to_people_team]
+    required: true
+    description: >
+      Need-to-know applied to a specific file, not a folder. `open_to_people_team` is the most
+      common real-world value and the least defensible: a twelve-person team all of whom can
+      read a grievance file is twelve people who could have been the leak.
+  - name: named_readers
+    purpose: Explicit reader list where access_restriction is named_individuals. Kept on the record
+      because an access list living in the file server's ACL is an access list that is never reviewed.
+    type: value
+    data_type: list
+    description: Explicit reader list where access_restriction is named_individuals. Kept on the
+      record because an access list living in the file server's ACL is an access list that is never
+      reviewed.
+  - name: last_access_review_at
+    purpose: When somebody last checked that the people who can read this file still need to. The
+      answer is almost always never, and the reason is that inherited folder permissions make access
+      invisible until it is exercised.
+    type: value
+    data_type: timestamp
+    description: >
+      When somebody last checked that the people who can read this file still need to. The
+      answer is almost always never, and the reason is that inherited folder permissions make
+      access invisible until it is exercised.
+  - name: subject_access_request_open
+    purpose: An open subject access request converts this file from a passive archive into a statutory
+      deadline, typically one calendar month, with the burden of finding everything, everywhere.
+    type: value
+    data_type: boolean
+    description: An open subject access request converts this file from a passive archive into a
+      statutory deadline, typically one calendar month, with the burden of finding everything,
+      everywhere.
+  - name: retention_rule_ref
+    purpose: The retention class this file belongs to. Different components of a personnel file carry
+      different periods — payroll records outlive appraisal notes by years — which is why a single
+      file-level rule is always an approximation.
+    type: reference
+    ref: admin.obj.core.record_series
+    data_type: ref
+    description: The retention class this file belongs to. Different components of a personnel file
+      carry different periods — payroll records outlive appraisal notes by years — which is why a
+      single file-level rule is always an approximation.
+  - name: retention_basis
+    purpose: The statute, limitation period or schedule entry the retention rests on. "We have always
+      kept them" is not a basis, and it is the answer that will be given.
+    type: value
+    data_type: string
+    description: The statute, limitation period or schedule entry the retention rests on. "We have
+      always kept them" is not a basis, and it is the answer that will be given.
+  - name: retention_until
+    purpose: Computed from end_at plus the retention period. Computing it from creation instead is the
+      classic error and it under-retains payroll while over-retaining everything else.
+    type: value
+    data_type: timestamp
+    description: Computed from end_at plus the retention period. Computing it from creation instead is
+      the classic error and it under-retains payroll while over-retaining everything else.
+  - name: disposal_state
+    purpose: The disposal_state of this object.
+    type: value
+    data_type: enum
+    allowed_values: [live, review_due, marked_for_disposal, disposed, legal_hold]
+  - name: legal_hold
+    purpose: A live claim, investigation or regulatory request suspends disposal entirely. Destroying
+      a file under hold is a separate and far more serious offence than keeping one too long.
+    type: value
+    data_type: boolean
+    description: A live claim, investigation or regulatory request suspends disposal entirely.
+      Destroying a file under hold is a separate and far more serious offence than keeping one too
+      long.
+  - name: disposed_at
+    purpose: The disposed_at of this object.
+    type: value
+    data_type: timestamp
+  - name: mandatory_documents_missing
+    purpose: The gaps that matter, ranked by whether they are statutory or merely tidy. A missing
+      signed contract is an employment-law problem; a missing emergency contact is an administrative
+      one; the file treats them identically and it should not.
+    type: value
+    data_type: list
+    description: >
+      The gaps that matter, ranked by whether they are statutory or merely tidy. A missing
+      signed contract is an employment-law problem; a missing emergency contact is an
+      administrative one; the file treats them identically and it should not.
+  - name: file_complete
+    purpose: The file_complete of this object.
+    type: value
+    data_type: boolean
+  - name: right_to_work_verified
+    purpose: In most jurisdictions this is a statutory check with a personal liability attached to
+      whoever failed to do it. It is also the one onboarding step that cannot be done retrospectively
+      with any legal effect.
+    type: value
+    data_type: boolean
+    required: true
+    description: In most jurisdictions this is a statutory check with a personal liability attached to
+      whoever failed to do it. It is also the one onboarding step that cannot be done retrospectively
+      with any legal effect.
+  - name: right_to_work_expires_at
+    purpose: A time-limited right to work creates a recurring external deadline for the whole
+      employment. Missing the recheck converts a lawful employment into an unlawful one on a date
+      known years in advance.
+    type: value
+    data_type: timestamp
+    description: >
+      A time-limited right to work creates a recurring external deadline for the whole
+      employment. Missing the recheck converts a lawful employment into an unlawful one on a
+      date known years in advance.
+  - name: onboarding_state
+    purpose: The onboarding_state of this object.
+    type: value
+    data_type: enum
+    allowed_values: [not_started, in_progress, complete, blocked]
+  - name: offboarding_state
+    purpose: "`complete` should mean access removed, assets recovered, handover done and final pay input
+      submitted. In practice it usually means the leaver's last day has passed."
+    type: value
+    data_type: enum
+    allowed_values: [not_started, in_progress, complete, blocked]
+    description: >
+      `complete` should mean access removed, assets recovered, handover done and final pay
+      input submitted. In practice it usually means the leaver's last day has passed.
+  - name: ball_in_court
+    purpose: Live today. Whose action the file is waiting on — the joiner who has not returned their
+      form, or the administrator who has not filed the one they returned.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: Live today. Whose action the file is waiting on — the joiner who has not returned
+      their form, or the administrator who has not filed the one they returned.
+  - name: last_correspondence_at
+    purpose: The last_correspondence_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: open_task_due_at
+    purpose: Live today, and only for tasks that happened to be promised in a thread. Every checklist
+      item that lives in an HR system is invisible to this.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    description: Live today, and only for tasks that happened to be promised in a thread. Every
+      checklist item that lives in an HR system is invisible to this.
+  - name: intake_state
+    purpose: Who the file is stuck on. `awaiting_admin` is the state nobody reports on, because a
+      backlog in the administrator's own tray does not generate a chaser email from anyone.
+    type: value
+    data_type: enum
+    allowed_values: [awaiting_subject, awaiting_admin, awaiting_third_party, complete]
+    description: >
+      Who the file is stuck on. `awaiting_admin` is the state nobody reports on, because a
+      backlog in the administrator's own tray does not generate a chaser email from anyone.
+  - name: record_owner
+    purpose: The named custodian of the file. Not the manager, not "HR" — a person who can be asked
+      why a grievance file was readable by the whole team.
+    type: value
+    data_type: string
+    description: The named custodian of the file. Not the manager, not "HR" — a person who can be
+      asked why a grievance file was readable by the whole team.
+states:
+  initial: draft
+  values:
+    - name: draft
+      description: File opened before start. The window where right-to-work and contract must land,
+        and the only window where they can land lawfully.
+    - name: active
+      description: Person employed, file in use.
+    - name: verified
+      description: Mandatory documents present and independently checked. Not a synonym for active —
+        most active files have never been verified.
+    - name: at_risk
+      description: A statutory gap is open — right-to-work expiring, a mandatory document missing, or
+        an overdue administrative task on the file.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    - name: on_hold
+      description: Legal hold. Disposal suspended regardless of the retention schedule.
+    - name: dormant
+      description: >
+        Person has left; the file is inside its retention period. The state this object spends
+        most of its life in and where it receives the least attention — nothing about a dormant
+        file inconveniences anyone, including the unrestricted access list on it.
+    - name: retained
+      description: Past business need, held only because a schedule or statute requires it. Access
+        should now be narrower than it was during employment and almost never is.
+    - name: disposed
+      description: Destroyed with a disposal record. The record of destruction is retained; the file
+        is not.
+  transitions:
+    - {from: draft, to: active}
+    - {from: active, to: verified}
+    - {from: active, to: at_risk, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: verified, to: at_risk, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: at_risk, to: verified}
+    - {from: active, to: dormant}
+    - {from: verified, to: dormant}
+    - {from: dormant, to: retained}
+    - {from: dormant, to: on_hold}
+    - {from: retained, to: on_hold}
+    - {from: on_hold, to: retained}
+    - {from: retained, to: disposed}
+
+# ── 7 · Business Rules — deterministic. No model evaluates these. ────────────────────────
+relationships:
+
+  - type: custodian_of
+    target: admin.obj.core.asset
+    cardinality: zero_or_many
+    description: Everything issued to this person. The join that makes offboarding recovery computable
+      and, unjoined, makes it a memory exercise.
+
+  - type: custodian_of
+    target: admin.obj.core.access_right
+    cardinality: zero_or_many
+    description: >
+      Entitlements are held in custody exactly like equipment, and they are the half that
+      costs nothing to hold, which is precisely why they are never returned.
+
+  - type: reports_to
+    target: admin.obj.core.employee_record
+    cardinality: zero_or_one
+    description: Self-referential. Also the recovery and handover route when the person themselves
+      stops responding.
+
+  - type: references
+    target: admin.obj.core.contract
+    cardinality: zero_or_one
+    description: The employment contract. Sets notice period, restrictive covenants and — for asset
+      recovery — whether a payroll deduction is permitted at all.
+
+  - type: requires
+    target: admin.obj.core.document
+    cardinality: zero_or_many
+    description: Right-to-work evidence, signed contract, policy acknowledgements, appraisal records.
+      The file IS these documents plus a rule about keeping them.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    cardinality: zero_or_many
+    description: Data protection, records retention, disciplinary and grievance policies. Also the
+      source of the attestations the file must evidence.
+
+  - type: governed_by
+    target: admin.obj.core.compliance_obligation
+    cardinality: zero_or_many
+    description: Statutory record-keeping duties and the Article 30 processing record. These are the
+      obligations that survive the person leaving.
+
+  - type: belongs_to
+    target: admin.obj.core.record_series
+    cardinality: zero_or_one
+    description: The retention class. Points at a schedule rather than a date, so a change to the
+      schedule reprices every file at once.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    cardinality: zero_or_one
+    description: Where an unresolved right-to-work expiry, an overdue subject access request or a
+      suspected unlawful disclosure goes.
+
+  - type: produces
+    target: admin.obj.core.commitment
+    cardinality: zero_or_many
+    description: The promises made to and about this person during onboarding and offboarding —
+      currently the only part of the lifecycle the engine can see.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: emp.file_task_past_due
+      statement: "A promised administrative task on this file has passed its due date."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">=", value: 1}
+      yields: {confidence_bp: 7500, attribute: file_complete, value: false}
+      evidence_fields: [commitment.due_at, commitment.action]
+      note: >
+        Honest about its own narrowness. It catches the document somebody promised in an email
+        and misses every checklist item living inside an HR system, which is the majority.
+
+    - id: emp.paperwork_returned_and_sitting_with_us
+      statement: "The subject has sent something in and the file has waited on us past our own normal turnaround."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2,
+            floor: 3}}
+      yields: {confidence_bp: 7000, attribute: intake_state, value: awaiting_admin}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      note: >
+        The backlog nobody reports. A joiner chasing us generates a visible complaint; a form
+        sitting unfiled in an administrator's tray generates nothing at all until day one.
+
+    - id: emp.start_date_approaching_file_incomplete
+      statement: "The start date is close and mandatory documents are still outstanding."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: onboarding_state, value: blocked}
+      requires_signals:
+        - {kind: fact_path, name: employee.start_at, owner_layer: L1, note: "Every HRIS holds this and no\
+            connector projects it. Without it, the one deadline in onboarding that is genuinely fixed and
+            genuinely known in advance is invisible to the engine, and onboarding is reduced to whoever remembers."}
+        - {kind: derived, name: derived.onboarding_completeness, owner_layer: L2, note: "Requires the mandatory-document\
+            list to be checkable rather than a checklist in a document."}
+
+    - id: emp.leaver_confirmed_offboarding_not_started
+      statement: "Departure is confirmed and no offboarding activity exists on the record."
+      status: needs_signal
+      yields: {confidence_bp: 9600, attribute: offboarding_state, value: not_started}
+      requires_signals:
+        - {kind: obs_kind, name: leaver_confirmed, owner_layer: L2, note: "The highest-value signal missing\
+            from the whole people-administration set. HR knows about a departure during the notice period;
+            asset recovery and access removal find out afterwards, when neither is achievable."}
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1, note: "Also the origin of every retention\
+            calculation on this object. Its absence means retention_until cannot be computed at all, only
+            asserted."}
+
+    - id: emp.retention_period_elapsed
+      statement: "The retention period computed from the end of employment has passed and the file is still
+        live."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: disposal_state, value: review_due}
+      requires_signals:
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1}
+        - {kind: fact_path, name: document.retention_until, owner_layer: L1, note: "Retention is authored\
+            in a schedule document and never projected onto the records it governs, so no system anywhere
+            in the organisation can answer 'what should be destroyed this month'. Over-retention is therefore
+            the default state of every personnel archive, and it is invisible because nothing breaks."}
+
+  heuristic:
+
+    - id: emp.orphaned_personnel_file
+      statement: "A file with nothing attached to it — no manager, no documents, no custody edges."
+      status: executable
+      when:
+        - {fn: edge_count, op: "=", value: 0}
+      yields: {confidence_bp: 6500, attribute: record_owner, value: null}
+      note: >
+        Weaker here than on asset, because a thin graph can mean a thin record rather than an
+        abandoned one. Still worth surfacing: an unattached file is one nobody will think to
+        review, restrict or destroy.
+
+    - id: emp.induction_scheduled_against_the_record
+      statement: "A meeting is on the calendar against this record and has not been cancelled — induction
+        is under way."
+      status: executable
+      when:
+        - {exists: meeting.start_at}
+        - {path: meeting.status, op: "!=", value: cancelled}
+      yields: {confidence_bp: 5500, attribute: onboarding_state, value: in_progress}
+      evidence_fields: [meeting.start_at, meeting.status]
+      note: >
+        Deliberately low. A calendar entry is weak evidence that onboarding is progressing and
+        no evidence at all that it is complete — but it is the only onboarding signal the
+        shipped substrate can see, and a record with no meeting and an approaching start date
+        is worth noticing for exactly that reason.
+
+    - id: emp.special_category_data_in_the_general_file
+      statement: "Content classified as special category is stored under a general-access restriction."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: classification, value: special_category}
+      requires_signals:
+        - {kind: fact_path, name: document.classification, owner_layer: L1, note: "Classification is applied\
+            by a human at filing time, if at all. Automated classification of a fit note or an occupational-health
+            report is well within reach of L2 extraction and would catch the commonest quiet breach in this
+            domain: sensitive content in an ordinary folder."}
+
+    - id: emp.file_read_by_someone_outside_the_reader_list
+      statement: "The file was opened by an identity not on the named reader list."
+      status: needs_signal
+      yields: {confidence_bp: 9400, attribute: last_access_review_at, value: null}
+      requires_signals:
+        - {kind: fact_path, name: record.access_log, owner_layer: L1, note: "Document stores emit audit\
+            logs and nothing consumes them for this purpose. This is the only pattern in the object that would
+            detect an unlawful disclosure while it is still recent enough to act on; without it, discovery
+            happens through a complaint, months later."}
+
+    - id: emp.handbook_attestation_never_returned
+      statement: "A mandatory policy was issued to this person and never acknowledged."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: file_complete, value: false}
+      requires_signals:
+        - {kind: obs_kind, name: policy_acknowledged, owner_layer: L2, note: "Attestation platforms exist\
+            and are rarely joined to the personnel file, so the organisation can say a policy was published
+            but not that any given person is bound by it — which is the only version of the fact a disciplinary
+            process can use."}
+
+    - id: emp.right_to_work_expiring
+      statement: "A time-limited right to work is approaching its expiry with no recheck recorded."
+      status: needs_signal
+      yields: {confidence_bp: 9700, attribute: right_to_work_verified, value: false}
+      requires_signals:
+        - {kind: fact_path, name: employee.right_to_work_expires_at, owner_layer: L1, note: "A statutory\
+            deadline, known years in advance, held in a scanned document and tracked by whoever last thought
+            about it. The most avoidable compliance failure in people administration."}
+
+# ── 10 · Inputs — where this object gets filled from ─────────────────────────────────────
+inputs:
+  - {source: hris, signal: "identity, employment status, start and end dates, manager, location"}
+  - {source: payroll, signal: "payroll reference, final pay status, deduction permissions"}
+  - {source: signed_form, signal: "employment contract, policy attestations, consent forms where genuinely\
+      applicable"}
+  - {source: document, signal: "right-to-work evidence, qualifications, appraisal and grievance records"}
+  - {source: access_log, signal: "who opened the file and when", description: "Available from every document\
+      store and consumed by nothing — see emp.file_read_by_someone_outside_the_reader_list."}
+  - {source: email, signal: "onboarding and offboarding correspondence", path: thread.ball_in_court}
+  - {source: email, signal: "last contact on the file", path: thread.last_inbound}
+  - {source: calendar, signal: "induction, probation review and exit interview", path: meeting.start_at}
+  - {source: regulator, signal: "retention periods and statutory record-keeping duties"}
+  - {source: manual_entry, signal: "classification, retention class and access decisions"}
+
+# ── 11 · Outputs — what this object can tell the rest of the stack ───────────────────────
+outputs:
+  - {name: lawful_basis_status, type: string, description: "Recorded, defensible, or absent. The gate\
+      on every other action against this file.", consumed_by: [L4.decision_maker]}
+  - {name: file_completeness_bp, type: integer, description: "Weighted by whether the gaps are statutory\
+      or administrative, not by count.", consumed_by: [L4.reasoning_unit]}
+  - {name: retention_position, type: string, description: "Live, due for review, overdue for disposal,\
+      or held. Drives the disposal queue nobody currently has.", consumed_by: [L4.reasoning_unit,
+        L5.execution_planning]}
+  - {name: access_exposure_bp, type: integer, description: "Reader breadth against content sensitivity\
+      and review age.", consumed_by: [L4.reasoning_unit]}
+  - {name: offboarding_gap_list, type: list, description: "Open custody edges — assets and entitlements\
+      — blocking completion.", consumed_by: [L5.execution_planning]}
+  - {name: statutory_deadline_set, type: list, description: "Right-to-work recheck, subject access request\
+      due date, notice period end. All external, none movable.", consumed_by: [L4.decision_maker,
+        L5.execution_planning]}
+  - {name: subject_contact_route, type: string, description: "How to reach the person, including the personal\
+      route needed once the corporate account is disabled.", consumed_by: ["L5.2.channel_planner"]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: emp.no_disposal_under_legal_hold, statement: "A record under legal hold cannot be disposed of,\
+      whatever the retention schedule says.", hard: true}
+  - {id: emp.special_category_needs_a_condition, statement: "Special-category data cannot be processed\
+      on a lawful basis alone; it needs a separate condition.", hard: true}
+  - {id: emp.consent_is_rarely_valid_at_work, statement: "Consent given by an employee to their employer\
+      is rarely freely given and should not be relied upon as the basis for anything the employment itself
+      requires.", hard: true}
+  - {id: emp.access_cannot_be_inherited, statement: "Read access to a personnel file cannot be granted\
+      by folder inheritance. It must be an explicit decision against this file.", hard: true}
+  - {id: emp.retention_measured_from_end_at, statement: "retention_until is derived from end_at and the\
+      record series. Any other origin is wrong in both directions at once.", hard: true}
+  - {id: emp.cross_border_transfer_needs_a_route, statement: "Moving the file to a jurisdiction outside\
+      its own requires a lawful transfer mechanism. Cloud storage location counts as a transfer and is the
+      one nobody checks.", hard: true}
+  - {id: emp.right_to_work_cannot_be_cured_later, statement: "A right-to-work check performed after the\
+      start date does not restore the statutory excuse it was meant to establish.", hard: true}
+
+# ── 15 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+business_rules:
+
+  - id: emp.no_processing_without_lawful_basis
+    statement: >
+      A record with lawful_basis = not_recorded is being processed without a decided basis.
+      No administrative convenience cures this and no amount of care in handling substitutes
+      for it.
+    then: block_processing
+    severity: blocking
+
+  - id: emp.special_category_needs_a_separate_condition
+    statement: Special-category data requires its own processing condition in addition to the lawful
+      basis. A fit note filed into the general folder inherits neither.
+    then: require_condition
+    severity: blocking
+
+  - id: emp.access_is_need_to_know_per_file
+    statement: >
+      Access is granted per file and per purpose, never by folder inheritance. A team that can
+      read every file can read the grievance about one of its own members.
+    then: enforce_named_access
+    severity: blocking
+
+  - id: emp.retention_clock_starts_at_end_not_creation
+    statement: >
+      retention_until is computed from end_at, never from record creation. Computing it from
+      creation is the single most common retention error and it fails in both directions at
+      once — destroying payroll records too early and keeping appraisal notes for a decade.
+    severity: blocking
+
+  - id: emp.legal_hold_suspends_disposal
+    statement: A record under legal hold cannot be disposed of regardless of the schedule. Destruction
+      under hold is a materially more serious failure than over-retention.
+    then: block_disposal
+    severity: blocking
+
+  - id: emp.right_to_work_recheck_is_statutory
+    statement: A time-limited right to work must be rechecked before expiry. The date is known in
+      advance, the deadline is external, and it cannot be cured retrospectively.
+    then: open_recheck_task
+    severity: blocking
+
+  - id: emp.leaving_is_the_start_of_retention
+    statement: >
+      A leaver event opens a retention period; it does not close a file. Treating the last
+      working day as the end of the record's life is how organisations discover during a
+      tribunal that they destroyed the evidence that would have defended them.
+    severity: warning
+
+  - id: emp.subject_access_request_starts_a_statutory_clock
+    statement: An open subject access request imposes a fixed external deadline on the whole
+      organisation, not just on this file. It outranks every internal priority in the queue.
+    then: escalate_deadline
+    severity: blocking
+
+  - id: emp.no_offboarding_complete_with_open_custody
+    statement: offboarding_state cannot be `complete` while any asset or access_right custody edge
+      remains open. This is the rule that stops the leaver checklist from being a formality.
+    then: block_completion
+    severity: blocking
+
+# ── 8 · Decision Factors — what Layer 4 should weigh. Advisory inputs, never a decision. ─
+decision_factors:
+
+  - name: lawful_basis_certainty
+    weight_bp: 2500
+    direction: increases
+    description: >
+      Whether a basis is recorded, defensible and not resting on employee consent. Ranked first
+      because it is the only factor that can make every other action on this file unlawful
+      rather than merely late.
+    reads: [lawful_basis, lawful_basis_recorded_at, processing_purpose]
+
+  - name: data_sensitivity
+    weight_bp: 2200
+    direction: context
+    description: Special-category content changes the handling rules, the storage rules, the access
+      rules and the consequence of getting any of them wrong. Context rather than increases —
+      sensitivity does not raise or lower a priority, it changes which rules apply.
+    reads: [special_category_present, special_category_types, classification]
+
+  - name: retention_position
+    weight_bp: 1800
+    direction: context
+    description: Where the file sits against its schedule, and whether a hold overrides it. Both
+      over-retention and premature destruction are failures, which is precisely why this is not
+      directional.
+    reads: [retention_until, retention_basis, disposal_state, legal_hold, end_at]
+
+  - name: statutory_gap
+    weight_bp: 1500
+    direction: decreases
+    description: Missing right-to-work evidence or an unsigned contract. Distinct from general
+      incompleteness because these carry personal liability and cannot be fixed after the fact.
+    reads: [right_to_work_verified, right_to_work_expires_at, mandatory_documents_missing]
+
+  - name: access_exposure
+    weight_bp: 1200
+    direction: decreases
+    description: Breadth of the reader list against the sensitivity of the content, and how long since
+      anyone checked it. The quiet risk — nothing happens, for years, until it does.
+    reads: [access_restriction, named_readers, last_access_review_at]
+
+  - name: lifecycle_stage
+    weight_bp: 800
+    direction: context
+    description: Pre-start and notice-period compress everything into a fixed external window. Dormant
+      removes the pressure and, with it, the attention.
+    reads: [employment_status, start_at, end_at, notice_period_days, offboarding_state]
+
+# ── 9 · Inference Patterns ⭐ — how the state of the file is discovered ──────────────────
+#
+# ANDed within a pattern. Express OR as two patterns — that is exactly how the engine works.
+evidence:
+  - {source: signed_form, strength_bp: 10000, description: "A signed contract or attestation. The only\
+      artefact that binds the individual, and therefore the only one a disciplinary or tribunal process
+      can use."}
+  - {source: hris, strength_bp: 9000, description: "System of record for employment facts. Authoritative\
+      on dates, silent on everything this object exists to govern."}
+  - {source: payroll, strength_bp: 8800, description: "Payroll records are statutory records in their\
+      own right, with their own — usually longer — retention period."}
+  - {source: document, strength_bp: 8000, description: "Scanned right-to-work evidence and qualifications.\
+      Strong content, weak metadata: nobody records when the scan was checked."}
+  - {source: access_log, strength_bp: 8000, description: "Machine-generated proof of who read the file.\
+      Unimpeachable, universally available, universally unread."}
+  - {source: regulator, strength_bp: 9500, description: "Statutory retention periods and record-keeping\
+      duties. Outranks internal schedules absolutely."}
+  - {source: attestation, strength_bp: 6500, description: "A manager confirming the file is complete.\
+      Exactly as reliable as the manager, which is to say variable."}
+  - {source: email, strength_bp: 5500, description: "Correspondence about the file. Establishes that something\
+      was asked for, not that it was received."}
+  - {source: manual_entry, strength_bp: 5000, description: "Classification and retention decisions typed\
+      by an administrator. Correct at the moment of typing and never revisited."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: lawful_basis_coverage, unit: percent, description: "Share of live records with a recorded,\
+      non-consent basis. Usually the most uncomfortable number in a first data-protection audit.",
+      owner_layer: L6}
+  - {name: file_completeness_at_start, unit: percent, description: "Share of joiners whose mandatory documents\
+      were complete on day one. Measured on day one, not retrospectively.", owner_layer: L6}
+  - {name: right_to_work_lapse_count, unit: count, description: "Rechecks missed past expiry. The target\
+      is zero and any other number is a finding.", owner_layer: L6}
+  - {name: overdue_disposal_count, unit: count, description: "Records past retention_until still live.\
+      Rises monotonically in every organisation that has never run a disposal.", owner_layer: L6}
+  - {name: access_review_age_p90, unit: days, description: "Ninetieth percentile age of last_access_review_at.\
+      In most organisations this is undefined, which is itself the answer.", owner_layer: L2}
+  - {name: offboarding_completion_days, unit: days, description: "Days from last working day to genuinely\
+      complete — access removed and assets recovered, not checklist ticked.", owner_layer: L6}
+  - {name: sar_fulfilment_days, unit: days, description: "Against the statutory window. A lower_is_better\
+      number with a hard cliff rather than a gradient.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: emp.record_opened, name: Record Opened, payload: [record_id, employment_status, lawful_basis]}
+  - {id: emp.start_date_set, name: Start Date Set, payload: [record_id, start_at], description: "The event
+      that should fan out into equipment, access, payroll and induction. Today it fans out into a person
+      remembering."}
+  - {id: emp.file_incomplete_at_start, name: File Incomplete At Start, payload: [record_id, mandatory_documents_missing,
+      right_to_work_verified]}
+  - {id: emp.leaver_confirmed, name: Leaver Confirmed, payload: [record_id, end_at, notice_period_days],
+    description: "Opens asset recovery, access revocation, handover and the retention clock simultaneously.
+      The single most consequential unmodelled event in people administration."}
+  - {id: emp.retention_review_due, name: Retention Review Due, payload: [record_id, retention_until, retention_basis]}
+  - {id: emp.legal_hold_applied, name: Legal Hold Applied, payload: [record_id, legal_hold]}
+  - {id: emp.sar_received, name: Subject Access Request Received, payload: [record_id, subject_access_request_open],
+    description: "Starts a fixed statutory clock that outranks every internal priority, and the search burden
+      spans systems this object does not own."}
+  - {id: emp.unauthorised_access_detected, name: Unauthorised Access Detected, payload: [record_id, access_restriction,
+      named_readers]}
+  - {id: emp.disposed, name: Record Disposed, payload: [record_id, disposed_at, retention_basis],
+      description: "The disposal record is retained after the file is destroyed. Evidence that destruction
+      was controlled is the only proof that it was lawful."}
+
+# ── 13 · Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ─
+actions:
+  - {id: emp.record_lawful_basis, name: Record the lawful basis, actor: human, effect: "Ten minutes once,\
+      and the difference between a defensible file and an indefensible one."}
+  - {id: emp.verify_right_to_work, name: Verify right to work, actor: human, effect: "Must happen before\
+      the first day. Cannot be cured retrospectively with any legal effect."}
+  - {id: emp.chase_missing_document, name: Chase a missing document, actor: agent, preconditions: [{path:
+          thread.ball_in_court, op: "=", value: them}], effect: "Chases the subject only when the ball is
+      genuinely with them — chasing someone for a form already sitting in our tray is how administrative
+      credibility is lost."}
+  - {id: emp.restrict_access, name: Narrow the reader list, actor: human, effect: "Replace inherited folder\
+      permissions with a named list. The highest-value, least-performed action on this object."}
+  - {id: emp.review_access_list, name: Review who can read this file, actor: human, effect: "A periodic\
+      check that the readers still need to be readers. Almost never scheduled, because nothing fails if
+      it is skipped."}
+  - {id: emp.compute_retention, name: Compute retention from end date, actor: system, effect: "Sets retention_until\
+      from end_at and the record series, not from creation."}
+  - {id: emp.apply_legal_hold, name: Apply a legal hold, actor: human, effect: "Suspends disposal. Must\
+      survive a schedule-driven purge, which means it has to live on the record and not in someone's inbox."}
+  - {id: emp.open_offboarding, name: Open offboarding, actor: agent, effect: "Fans out into asset recovery\
+      and access revocation inside the notice period, which is the only window in which either works."}
+  - {id: emp.dispose_record, name: Dispose of the record, actor: human, effect: "With a retained disposal\
+      certificate. The step that exists in every retention policy and in almost no organisation's actual
+      practice."}
+  - {id: emp.fulfil_sar, name: Fulfil a subject access request, actor: human, effect: "Search across every\
+      system holding the person's data, redact third parties, deliver inside the statutory window."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Pre-start joiner, contract unsigned, start in four days", note: "onboarding_state blocked.\
+      The deadline is external, the work is small, and it is missed constantly because nothing chases it
+      until day one."}
+  - {label: "Leaver two years gone, file untouched, readable by the whole people team", note: "dormant,\
+      over-retained and over-exposed simultaneously. Nothing has failed, nothing will fail, and it is the
+      exact shape of the risk this object exists to name."}
+  - {label: "Occupational-health report emailed into the general file", note: "special_category_present\
+      true, classification still internal. The commonest quiet breach in this domain and it arrives as an
+      attachment."}
+  - {label: "Time-limited right to work expiring next month", note: "A statutory deadline known three\
+      years in advance, tracked in a scanned PDF, and dependent on one person remembering."}
+  - {label: "Contractor engaged through an agency", note: "Not an employee, so no leaver event will fire\
+      — yet holds a laptop and a system account. The gap between the HRIS population and the access population."}
+  - {label: "Grievance file under legal hold", note: "disposal_state legal_hold. A scheduled purge that\
+      ignores the hold destroys the organisation's own defence, which is a worse failure than keeping it
+      too long."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Four of eleven patterns are executable, and none of the four touches the part of this
+    object that actually carries risk — lawful basis, access exposure and retention are
+    entirely invisible to the shipped substrate. The ranked Layer 1/2 ask is: (1) employee.end_at,
+    because without it retention cannot be computed at all, only asserted; (2) leaver_confirmed,
+    shared with asset and access_right and the highest-leverage single signal across all three;
+    (3) record.access_log, the only route to detecting an unlawful disclosure while it is still
+    recent; (4) employee.start_at, which turns onboarding from memory into a deadline;
+    (5) document.classification, which would catch special-category content filed into general
+    folders. Reviewed together with admin.obj.core.asset and admin.obj.core.access_right —
+    the three share one failure shape and one missing event.

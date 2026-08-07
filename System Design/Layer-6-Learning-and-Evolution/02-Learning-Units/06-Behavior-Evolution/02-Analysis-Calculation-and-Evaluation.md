@@ -2,10 +2,15 @@
 
 ## Analyzer / Calculator
 
-Subject identity is transformed deterministically from preference to behavior. No personality inference is made beyond the explicit category/value.
+The only analysis is category admission. The first `preference:` subject prefix is replaced by
+`behavior:` and target is set to Behavior. Value, support, competing count and all evidence remain
+unchanged.
 
 ## Evaluator
 
-Validation/governance re-evaluate the derived object; derivation does not bypass thresholds.
+The derived object is separately preflighted and validated. Independent repetition, conflict,
+confidence, freshness, ACL and current policy remain binding. For constrained evidence,
+`subject_principal` must be able to view the source and governance may require review.
 
-All counts, thresholds and rates are deterministic integers with explicit observation time.
+This is provenance separation, not evidence amplification: the parent and derived proposal can have
+different targets/subjects but identical support.

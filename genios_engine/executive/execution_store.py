@@ -197,7 +197,8 @@ def reminder_state(conn, org_id: str, execution_id: str, row: Any | None = None)
                          fired_escalation_days=frozenset(item.day_offset for item in fired))
 
 
-def authority_valid(conn, org_id: str, signal_id: str | None, *, now: datetime) -> bool:
+def authority_valid(conn, org_id: str, signal_id: str | None, *, now: datetime,
+                    lock: bool = False) -> bool:
     """Re-run Layer 4's authority predicate for this commitment's signal.
 
     Delegated to ``reason/authority.py`` rather than reimplemented.  This predicate is the single
@@ -215,16 +216,21 @@ def authority_valid(conn, org_id: str, signal_id: str | None, *, now: datetime) 
     """
     if not signal_id:
         return True
+    lock_clause = (
+        " for share of s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack"
+        if lock else "")
     row = conn.execute(text(
         "select 1 from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
-        " where s.org_id=:o and s.signal_id=:s and (" + AUTHORITATIVE_SIGNAL_PREDICATE + ") "
-        "limit 1"),
+        " where s.org_id=:o and s.signal_id=:s and s.status='open' and (" +
+        AUTHORITATIVE_SIGNAL_PREDICATE + ") "
+        "limit 1" + lock_clause),
         {"o": org_id, "s": signal_id, "authority_time": now}).first()
     return row is not None
 
 
 def validation_input(conn, execution: ExecutionObject, row: Any, *, now: datetime,
-                     signal_id: str | None = None) -> ValidationInput:
+                     signal_id: str | None = None,
+                     lock_authority: bool = False) -> ValidationInput:
     """Gather exactly what the guard is allowed to look at, in one pass.
 
     Assembled here rather than inside the guard so the judgement stays pure and, more
@@ -282,7 +288,7 @@ def validation_input(conn, execution: ExecutionObject, row: Any, *, now: datetim
     return ValidationInput(
         now=now, state=ExecutionState(row["state"]),
         authority_valid=authority_valid(conn, org_id, signal_id or row.get("signal_id"),
-                                        now=now),
+                                        now=now, lock=lock_authority),
         observed_events=observed, subject_status=subject_status, owner_active=owner_active,
         superseded_by=(superseded.execution_id if superseded else None),
         dismissed=dismissed is not None, subject_missing=subject_missing)

@@ -1,0 +1,27 @@
+identity:
+  id: sales.post_sale_and_growth.customer_success
+  name: Customer Success
+  domain: sales
+  subdomain: post_sale_and_growth
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Ongoing management of realised value, adoption and relationship health. Distinct from
+  support: support answers questions, success ensures the original business case is met.
+
+question: "Is the customer getting the outcome they bought?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

@@ -1,15 +1,182 @@
 # Rohit Updates
 
+## Layer 6 learning hardening completion (8 August 2026)
+
+**Current verdict:** the Atlas/Theory-aligned internal Layer 6 engine is implemented and locally
+verified. Read [`Rohit_Updates/Layer 6.md`](Rohit_Updates/Layer%206.md) for the detailed CTO
+handoff and
+[`System Design/Layer-6-Learning-and-Evolution/`](System%20Design/Layer-6-Learning-and-Evolution/README.md)
+for the part → subpart → component map. This section supersedes the Layer 6 implementation,
+migration, test and rollback statements in the dated entries below it.
+
+What is now true:
+
+- `learning.v2` is an immutable, content-addressed contract with independent evidence, first/last
+  observation time, end-to-end trace, explicit fail-closed visibility, source lineage and subject
+  principal. The four brains are Organization, Behavior, Adaptive and Runtime; metrics and
+  knowledge suggestions are separate artifact targets. Expert Brain is unrepresentable.
+- The bounded loader verifies exact feedback revisions, Layer 5 outcomes, as-of Layer 5.2
+  attempt/event history plus frozen `ExecutionObject` identity/hash, and enterprise-event source
+  lineage. Terminal dashboard judgments atomically version the canonical feedback ledger;
+  `wrong:bad_timing` is canonical timing/neutral evidence, while dashboard requeue and dashboard/
+  extension snooze remain non-verdict audit/lifecycle events. Malformed optional rows are isolated
+  into a sanitized rejection ledger.
+- All eleven units are present. Confidence uses independent evidence; neutral activity cannot
+  inflate it; preference conflicts are deterministic and actor-scoped; user preferences are capped
+  to a private ACL for one source-authorized subject and Behavior/Adaptive preserve that cap;
+  outcomes/performance are ACL-cohorted; retry clocks cannot change semantic learning identity.
+- Policy/evaluation time stay outside immutable evidence identity. A later claimed week may
+  re-evaluate an identical object only from Observed/Candidate under its pinned current policy/time;
+  Candidate never regresses, review/published/later/terminal duplicates never reopen, and each
+  actual verdict is appended to a run-policy-time-bound evaluation ledger. The reason records the
+  final lifecycle/publisher result—including publish success, no-material-change or metric conflict;
+  skipped later-state duplicates are counted unchanged rather than reopened.
+- Consent, blocked targets/subjects, lineage, actor visibility, organization authority and Runtime
+  TTL are checked before proposal persistence. Policy revisions are immutable/pinned; disabled
+  tenants still expire old memory without claiming or retaining a new run. Runtime human-review
+  policy is rejected by API and database because a valid lease must publish temporary and expire.
+- Performance freshness uses each delivery's latest durable lifecycle or receipt timestamp,
+  including failed, deferred, suppressed and cancelled endings. Only `failed` with no prior
+  `delivered_at` is transport-negative; ACCEPTED → FAILED after delivery remains transport-delivered
+  and is handled as an execution/business outcome. Delivery selection includes rows created in the
+  source window or carrying an in-window lifecycle event, so recent activity on an older delivery
+  is not dropped.
+- Publishers use tenant advisory locks, monotonic history versions, exact ACL/trace propagation and
+  honest no-op/conflict outcomes. Rollback restores the exact safe predecessor when current
+  visibility/consent/policy permit it, otherwise it rolls back to an empty active slot.
+- Every Layer 6 mutation starts with tenant `orgs FOR SHARE`; reset/delete uses `orgs FOR UPDATE`.
+  Policy precedes object/memory/advisory locks. Review discovers then locks policy/object and
+  rechecks; rollback locks discovered policy keys sorted before subject/object topology; dashboard/
+  intelligence feedback writers use tenant → graph → card.
+- APIs now have separate read/review/rollback scopes, filter visibility in SQL before pagination,
+  revalidate review/rollback authority under lock and provide bounded idempotent direct memory.
+- Migration `0047_l6_learning_hardening.sql` adds the policy ledger, v2 projections/constraints,
+  structured event inbox, sanitized rejection ledger, per-run object-evaluation ledger, sink lineage
+  and tenant-safe FKs, including a direct evaluation-ledger tenant erasure cascade. It parses
+  as 138 PostgreSQL statements and follows the Layer 5.2 migration `0046`.
+
+Verification: **50/50 canonical Layer 6 tests, 144/144 expanded cross-seam tests and 1,896
+full-repository tests passed**; compilation, migration parsing, System Design link checking and
+`git diff --check` are green. The one warning is the unrelated Starlette/httpx deprecation.
+
+Only integration/deployment work remains for Harsh: rehearse 0046→0047 and multi-worker behavior on
+populated PostgreSQL, including reset/delete contention against learning, expiry, policy/memory,
+review/rollback and both feedback writers; connect real provider/client receipt and approved
+structured-event producers; ratify tenant policy/privacy/retention; build allowlisted consumers for
+Organization, Behavior, Adaptive and Runtime snapshots; add production observability; and attach a
+human-owned Git/PR workflow to approved knowledge suggestions. Optional LLM use stops at typed
+extraction, and Redis may only be a disposable cache over PostgreSQL authority.
+
+---
+
+## Layer 5.2 delivery control-plane completion (8 August 2026)
+
+**Current verdict:** the Atlas-aligned internal Layer 5.2 control plane is implemented and locally
+verified. Read [`Rohit_Updates/Layer 5.2.md`](Rohit_Updates/Layer%205.2.md) for the detailed CTO
+handoff and [`System Design/Layer-5.2-Delivery-Engine/`](System%20Design/Layer-5.2-Delivery-Engine/README.md)
+for the part → subpart → component implementation map. This section supersedes the Layer 5.2
+implementation/test statements in the dated entries below it.
+
+What changed in code:
+
+- `execution.v2` now freezes the narrowest selected-source visibility; stored v1 execution hashes
+  remain compatible and their ACL is re-derived from immutable reasoning lineage at every delivery
+  boundary, failing closed when lineage cannot be resolved.
+- The active path is `ExecutionObject → Delivery Orchestrator → one logical outbox row → fenced
+  physical attempt → DeliveryResult`. Raw `/v1/signals*` agent work endpoints are authenticated
+  `410 Gone` migration sentinels rather than a second execution plane.
+- Current audience, recipient, destination, channel, format, priority, timing and policy are
+  resolved by Layer 5.2. Exact-agent `delivery.read`, a same-agent active API key, recipient ACLs,
+  current presence and decrypted adapter-valid credentials are enforced consistently at discovery,
+  materialization and final send.
+- Physical attempts and lifecycle facts are append-only. Attention reservation and the `started`
+  attempt commit atomically before provider I/O; claims are fenced; retries are bounded; ambiguous
+  Slack/Teams acknowledgement stops for manual reconciliation; owner replay requires explicit
+  duplicate-risk acknowledgement where necessary.
+- Migration `0046_l52_delivery_control_plane.sql` installs execution lineage, route/claim/lifecycle
+  state, attempt/event ledgers, atomic attention windows, legacy ambiguity quarantine and replay
+  audit. The migration runner now holds a global PostgreSQL advisory lock across the ledger and DDL.
+- The platform runs a dedicated minute-scale delivery heartbeat instead of coupling delivery
+  latency to the heavier maintenance cadence.
+
+Atlas structure correction: Delivery Management has **8 managers**, not 7. The System Design now
+contains `01-Delivery-Outbox` followed by Tracker, Retry, Recovery, Deduplication, Rate Limiter,
+Analytics and Delivery Object Builder as separate nested component folders.
+
+Verification: **1,896 tests passed**, `compileall` passed and `git diff --check` passed. The single
+warning is the unrelated third-party Starlette/httpx deprecation.
+
+Only external/deployment proof remains: quiescent populated-PostgreSQL migration rehearsal with no
+mixed legacy/v2 workers; real multi-worker contention and provider ACK-loss/reconciliation tests;
+tenant credentials; product presence/receipt publishers; real dashboard/application/extension/
+mobile clients; human-to-seat identity binding for recipient-scoped multi-seat access; email and
+APNs/FCM providers; and production observability/SLO operations.
+
+---
+
+## Addendum — Atlas revised to v3.1 (8 August 2026)
+
+**Nothing below this section was rewritten.** The entries that follow are dated records of what
+was true and what was verified on the day they were written, and falsifying a status report to
+match a later document is worse than leaving it slightly stale. This addendum states what the
+Atlas revision changed and which sentences below it supersedes.
+
+**No code changed.** Every item is either a correction *to the Atlas* to match shipped behaviour,
+or a newly named gap. Test status from 7 August stands.
+
+**Corrections made to the Atlas, because the code was already right**
+
+- Scores are integer basis points, not floats. The Atlas used `0.87`; the code has used
+  `priority_bp` / `confidence_bp` throughout.
+- Layer 4 persists an immutable, replayable reasoning trace. The Atlas claimed it was stateless
+  *and* unrecorded; migration `0026` has recorded it since it landed.
+- `Cancelled`, `Expired`, `Failed` and `Suppressed` are four different endings that teach different
+  lessons. `DeliveryResultStatus` already carried all four.
+- `SEND` / `DEFER` / `SUPPRESS` is a closed set composed by intersection, and a `DEFER` consumes no
+  retry attempt. That was `contracts/delivery.py` behaviour before it was Atlas text.
+- The transactional outbox is now a named management system rather than an unnamed detail, taking
+  Layer 5.2 Part C from seven entries to **eight**.
+
+**Supersedes, in the tables below**
+
+- "→ three dynamic brains" (Layer 6 row) — the Evolution Publisher has **five publishers writing
+  four targets**: Organization, Behavior, Adaptive and Runtime. Metrics is telemetry, not a brain.
+- "7 management systems" wherever it appears for Layer 5.2 — now **8**.
+- Any reference to `ExecutionObject.delivery_targets` — the Atlas field is now `audience_intent`
+  and is explicitly semantic. Concrete `channel_id` / `interrupt` remain as v1/v2 compatibility
+  hints the Layer 5.2 orchestrator does not read (`EXECUTION_VERSION` is now `execution.v2`;
+  stored v1 objects still round-trip). Runtime behaviour is unchanged.
+
+**New gaps the revision exposed** — recorded in
+[`05-Gaps.md`](System%20Design/Cross-Cutting-Contracts-Platform-API/05-Gaps.md) as items 8–10 and
+explained in
+[`06-Atlas-Envelope-Alignment.md`](System%20Design/Cross-Cutting-Contracts-Platform-API/06-Atlas-Envelope-Alignment.md):
+
+1. **No end-to-end `trace_id`.** Lineage is traversable hop by hop but not queryable in one
+   predicate. This is the only real absence.
+2. **`visibility` is not carried on the delivery objects.** Rule 10 is still enforced — Layer 5.2
+   re-reads it from the persisted execution — but a consumer holding only a `DeliveryResult` needs
+   a join to answer it.
+3. **`schema_version` has two shapes** — `int` in Layer 1, namespaced `str` in Layers 5/5.2.
+
+The Atlas also gained a **Layer 0** chapter covering `contracts/ · platform/ · api/`, the
+heartbeat, the latency budget, cross-layer failure semantics and tenancy/retention/erasure. That
+material already existed in
+[`System Design/Cross-Cutting-Contracts-Platform-API/`](System%20Design/Cross-Cutting-Contracts-Platform-API/README.md);
+the Atlas was the document missing it.
+
+---
+
 ## Current CTO handoff — Atlas Layers 5, 5.2 and 6
 
 Status: **implemented, reconciled with the Atlas, documented from live code and locally verified.**
 
-Last updated: 2026-08-07
+Last updated: 2026-08-07 · _partially superseded by the 8 August addendum above_
 
 **Documentation correction (7 August 2026):** the first documentation pass flattened these three
 large Atlas layers into a short list of pages. That was not an adequate system-design map. The
 live folders now follow `layer → part → subpart/unit → component module`: Layer 5 has 92 Markdown
-documents, Atlas Layer 5.2 has 114, and Atlas Layer 6 has 138. Every named Atlas component now has
+documents, Atlas Layer 5.2 has 117, and Atlas Layer 6 has 141. Every named Atlas component now has
 a physical location, code/status evidence, edge cases and an explicit gap boundary.
 
 The product map is canonical below. The integers 1–7 in `genios_engine/LAYERS.py` are dependency
@@ -27,7 +194,7 @@ The product map is canonical below. The integers 1–7 in `genios_engine/LAYERS.
 |---|---|---|---|
 | 5 | 10 deterministic Executive Units + multi-owner Coordination → one ExecutionObject | All ten units exist; immutable ExecutionObject, runtime dependency waves, owner/channel plan, stale guard, reminders, escalation, lifecycle, outcome collection, API and scheduler are connected | Concrete per-action multi-owner seat/agent assignment, digest batching, Redis acceleration and live-PostgreSQL proof |
 | 5.2 | Context-aware delivery orchestrator + 11 target units + tracking/retry/recovery/analytics → DeliveryResult | SEND/DEFER/SUPPRESS gate; recipient preferences; leased presence; typed DeliveryObject/Result; Slack, Teams, signed webhook and pull surfaces; terminal-failure-only failover; analytics; existing outbox remains the ledger | Native email, APNs/FCM, automatic trusted presence publisher, real provider/outage tests and live-PostgreSQL proof |
-| 6 | 11 governed Learning Units → three dynamic brains, TTL memory, metrics and knowledge suggestions; never edit Expert Brain | All 11 units, immutable LearningObject, full promotion lifecycle, tenant governance, actual execution-outcome learning, delivery-performance learning, Organization/Behavior/Adaptive publishers, TTL memory, metrics, human-review Knowledge Evolution, APIs and weekly scheduler are connected | Controlled lower-layer consumers/materializers for the new generic brains and Runtime memory; Redis cache; upstream free-text structuring; human-owned Git/PR authoring; live-PostgreSQL proof |
+| 6 | 11 governed Learning Units → four dynamic brains, TTL memory, metrics and knowledge suggestions; never edit Expert Brain | All 11 units, immutable `learning.v2`, exact input lineage, policy revisions, pre-persistence governance, audited lifecycle, Organization/Behavior/Adaptive/Runtime publishers, metrics, human-review Knowledge Evolution, APIs and scheduler are connected | Typed lower-layer consumers; real receipt/event producers; tenant policy/privacy sign-off; human-owned Git/PR workflow; 0046→0047 live-PostgreSQL/concurrency/observability proof; optional Redis/LLM extraction |
 
 ### The closed product loop now present in code
 
@@ -47,21 +214,23 @@ it is not fabricated into either success or failure.
 
 ### Verification snapshot
 
-- Full local repository suite: **1796 passed**.
+- Full local repository suite: **1,896 passed**. This supersedes the 7 August count.
 - Layer 5 focused collection: **195 tests**.
 - Delivery-focused collection (`test_delivery*`, outbox and Executive bridge): **142 tests**.
-- Learning-focused collection: **17 tests**.
+- Learning canonical Atlas/authority/hardening collection: **50/50 tests** — 14 Atlas, 3 authority
+  and 33 hardening; expanded Layer 6 cross-seam collection: **144/144 tests**.
 - SQL table/column ratchets, account-erasure cascades and layer-topology checks: green.
 - `git diff --check`: green.
 - Existing non-blocking warning: Starlette's `httpx` test-client deprecation.
-- Still unproven locally: applying migrations `0041`, `0042`, `0044`, `0045` and exercising the
+- Still unproven locally: applying migrations through `0047` and exercising the
   corresponding SQL/claims with live PostgreSQL and real external delivery credentials.
 
 ### CTO deployment order
 
 1. Review the three detailed notes above, each layer's `STATUS.md`, and its nested System Design
    part/unit/component tree.
-2. Apply migrations through `0045_atlas_l6_learning.sql` using the normal migration runner.
+2. Apply migrations through `0047_l6_learning_hardening.sql` using the normal migration runner;
+   rehearse populated-database `0046 → 0047` ordering with mixed-version workers quiesced.
 3. Run one tenant's Executive sweep twice; first run may create commitments, second must create zero
    duplicates.
 4. Exercise Delivery `/effective`, a leased context, each configured real adapter and controlled

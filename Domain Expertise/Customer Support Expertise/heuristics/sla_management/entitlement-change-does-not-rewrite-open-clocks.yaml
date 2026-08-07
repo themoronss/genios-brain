@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.sla_management.entitlement_change_does_not_rewrite_open_clocks
+  name: Entitlement change does not rewrite open clocks
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An entitlement that expires or downgrades mid-ticket does not retroactively unmake the
+    promise on tickets already open under it.
+heuristic:
+  statement: An entitlement that expires or downgrades mid-ticket does not retroactively unmake the
+    promise on tickets already open under it.
+  why: The promise attached at the moment the ticket was raised. Re-clocking open tickets on a plan
+    change is technically defensible, universally experienced as a bait and switch, and produces exactly
+    the conversation you least want during a renewal.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

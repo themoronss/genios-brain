@@ -1,0 +1,2821 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CHURN RISK — the probability this account leaves, read from the support relationship.
+#
+# Authored on the 23-section object schema. It carries the six sections ticket.yaml does not
+# yet have — preconditions, dependencies, exceptions, best_practices, anti_patterns,
+# references — because on THIS object those six are where the expertise actually lives. A
+# churn read without its exceptions is a smoke alarm that cannot tell a fire from a shower.
+#
+# Two facts shape everything below.
+#
+# FIRST: support sees churn earlier than any other function and is structurally the last to be
+# asked. The renewal conversation happens between an account team and a procurement contact;
+# the evidence sits in a queue nobody in that conversation reads. That is an organisational
+# problem wearing a data problem's clothes, and it is why `disposition.receiving_owner_ref`
+# and `lead_time_days` are first-class fields rather than workflow trivia.
+#
+# SECOND — and this is the whole method — the strongest predictors are BEHAVIOURAL, not
+# EMOTIONAL. A drop in contact volume from a previously active account is worse news than an
+# angry ticket, because engaged customers complain and departing ones go quiet. Repeat contact
+# about the same unresolved thing predicts better than severity, because severity is our word
+# for it and repetition is theirs. An unresolved escalation inside the renewal window is the
+# highest-signal combination available. The loudest customer on the list is very often the most
+# committed one.
+#
+# UNUSUALLY FOR THIS DOMAIN, THIS OBJECT CAN DO REAL WORK ON DAY ONE. Nine of nineteen patterns
+# are executable, and they are not scraps: derived.engagement and derived.momentum express the
+# going-quiet shape directly, `has_obs: closed_lost_mention` catches explicit loss language,
+# `has_obs: champion_change` catches the relationship reset, edge_count expresses thinning, and
+# the reply_cadence baseline makes silence relative to the account rather than to the queue.
+# The pattern that reads the discriminator — loud AND highly engaged, therefore NOT leaving —
+# runs today. That is more than the central object of this domain manages.
+#
+# WHAT IT CANNOT DO, stated plainly and repeated in metadata.notes: without `account.renewal_at`
+# it cannot time anything, and a churn read with no horizon is a mood. Without `account.arr` it
+# cannot rank exposure, so every flag arrives with equal weight and the account team triages
+# them by whoever shouted. Both are one line in a support_v1 pack's schema.fields. Until they
+# land, this object produces a direction and a driver and refuses to produce a priority.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.churn_risk
+  scope: core
+  name: Churn Risk
+  domain: customer_support
+  subdomain: voice_of_customer
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Retention Risk
+    - Attrition Risk
+    - Renewal Risk
+    - Account Health Risk
+    - Red Account
+    - At-Risk Account
+    - Save Candidate
+    - Flight Risk
+
+purpose:
+  statement: >
+    The probability that this account stops paying us, read from the one surface that sees it
+    first — the support relationship. It is a READ, not a fact and not a forecast: it carries a
+    driver, a horizon, a confidence and an explicit statement of what could not be seen. A read
+    with no driver is a score, and a score is something an account team argues with instead of
+    acting on.
+
+    The method inverts the intuitive one. Behavioural evidence outranks emotional evidence
+    every time, and by a distance. A previously active account whose contact volume has fallen
+    against its own norm is in more danger than an account filing furious tickets, because
+    complaining is a form of investment and departing customers stop investing. Repeat contact
+    about one unresolved thing predicts better than severity, because the customer's willingness
+    to raise it again is a measure of remaining patience, and severity is only a measure of our
+    own opinion. Cumulative effort predicts better than satisfaction, because effort accumulates
+    silently and satisfaction is sampled from whoever felt strongly enough to answer.
+
+    The highest-signal combination available anywhere in support is an unresolved escalation
+    sitting inside the renewal window. Neither half is strong alone — escalations get resolved,
+    renewal windows pass quietly — and together they are the closest thing this function has to
+    a prediction rather than an observation.
+
+    Support sees a slice, and the slice is real but partial. Usage, billing and the competitive
+    conversation are all invisible from here, and each of them can decide a renewal on its own.
+    So this object is required to declare its blindness rather than round it off, which is what
+    `risk_read.blindness` is for.
+  discriminator: >
+    Customer Sentiment is how they feel right now; Churn Risk is what they are going to do — and
+    the two decouple exactly when it matters most, because the angriest account on the list is
+    usually the one still trying, and the calm one that stopped writing has already had the
+    internal conversation about replacing us.
+  answers:
+    - Which of these accounts has already started leaving, and what tells us that before they say so?
+    - Is this quiet account safe, finished, or gone?
+    - Is this loud account actually at risk, or is the noise evidence that they are still invested?
+    - What specifically changed, in a sentence the account owner can repeat to the customer?
+    - Who outside support now owns the save conversation, and did the evidence reach them before
+      the renewal window opened or during it?
+    - How much of this read is behaviour we observed, and how much is feeling we inferred?
+    - What could we not see, and would seeing it plausibly flip the answer?
+  not:
+    - Not how the customer feels — that is customer_sentiment, which is a state of mind with a
+      trajectory, and this is a prediction about an action.
+    - Not the survey answer — that is satisfaction_score, which arrives after the ticket that
+      caused it, which arrived after the decision it merely confirms.
+    - Not the effort the customer spent — that is effort_score, an input here and one of the
+      better ones.
+    - Not the account itself — customer_account owns the identity, the contract and the
+      commercial facts. This object owns one read about it, at one time, with one confidence.
+    - Not the save plan. This object names the risk, the driver and the receiving owner; the
+      intervention is commercial and belongs to whoever can change terms.
+    - Not an escalation. An escalation is a transfer of ownership with a reason; a churn risk
+      may exist with no escalation ever raised, and that is its most dangerous form.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATTRIBUTES
+#
+# Eight composites, deliberately ordered so that `behavioural_signals` sits above
+# `emotional_signals`. That ordering is not cosmetic: it is the method, and a reader who
+# skims the file should absorb it from the shape before they read a word of prose.
+# ─────────────────────────────────────────────────────────────────────────────
+attributes:
+
+  - name: identification
+    purpose: >
+      Which account, read when, by whom, and under which support motion. `model_context` is here
+      and not in commercial_context because it governs whether the whole method applies at all —
+      in a self-serve motion, zero support contact is the norm and absence carries no information.
+    type: composite
+    contains: [account_ref, risk_ref, read_at, read_by, primary_contact_ref, model_context]
+
+  - name: risk_read
+    purpose: >
+      The read itself. Every field here exists to stop this becoming a bare number: a direction,
+      a horizon, a named driver, the evidence sentence, and an explicit list of what we could not
+      see. A risk_bp with no primary_driver should be treated as malformed rather than as low
+      quality.
+    type: composite
+    contains: [risk_bp, risk_band, direction, confidence_bp, horizon_days, primary_driver,
+               driver_evidence, blindness]
+
+  - name: behavioural_signals
+    purpose: >
+      What the account DID. Ranked first and weighted heaviest throughout this object. Every
+      field here is something the customer chose to do or chose to stop doing, which is why they
+      outperform every field in the next composite — behaviour costs the customer something and
+      tone does not.
+    type: composite
+    contains: [contact_volume_trend, contact_rate_baseline, days_since_last_contact, ball_in_court,
+               engagement_trend, relationship_momentum, repeat_contact_count, unresolved_repeat_topic,
+               cumulative_effort_bp, channel_shift]
+
+  - name: emotional_signals
+    purpose: >
+      What the account SAID and how it felt. Present because it is real evidence, ranked second
+      because it is weak evidence, and carrying `complaint_is_engagement` because the single most
+      valuable thing this composite can do is argue the risk DOWN. Anger is usually a signal of
+      remaining investment; the object that treats it as the primary risk input has been built
+      backwards.
+    type: composite
+    contains: [sentiment_ref, sentiment_score, escalation_language_seen, cancellation_language_seen,
+               detractor_count, complaint_is_engagement]
+
+  - name: relationship_signals
+    purpose: >
+      Who is on the other end, and whether that changed. Renewals are defended by a person whose
+      credibility was spent on us; when that person leaves, the account's accumulated goodwill
+      resets and no health score notices. `procurement_contact_appeared` is the field that turns
+      a loud account from reassuring into dangerous.
+    type: composite
+    contains: [contact_change_count, contact_changed_recently, active_contact_count, audience_widening,
+               defender_departed, procurement_contact_appeared]
+
+  - name: commercial_context
+    purpose: >
+      When the decision falls and how much rides on it. ENTIRELY UNAVAILABLE TODAY — nothing
+      commercial is visible on a support node. Its absence is why this object can express a
+      direction but not a priority, and why every flag currently reaches the account team with
+      identical weight.
+    type: composite
+    contains: [renewal_at, days_to_renewal, in_renewal_window, arr, plan_tier, contract_lock_months,
+               expansion_signal]
+
+  - name: service_history
+    purpose: >
+      What we did to them, accumulated. The queue records each of these as a closed work item and
+      a success; the account records them as a running total. `hard_resolution_recent` exists
+      because a fix the customer had to fight for is a risk event that the queue files as a win.
+    type: composite
+    contains: [unresolved_escalation_open, open_escalation_days, sla_breach_count, reopen_count,
+               incident_exposure_count, broken_promise_count, hard_resolution_recent]
+
+  - name: disposition
+    purpose: >
+      What happened to the read. A flag with no receiving owner is a note, and a note is later
+      used as evidence that the system worked. `lead_time_days` is the field that tests whether
+      this whole object is early enough to matter; everything else can look healthy while it says
+      the flags arrive after the decision.
+    type: composite
+    contains: [risk_state, receiving_owner_ref, briefed_at, save_plan_exists, suppressed_reason,
+               outcome, lead_time_days]
+
+  # ── identification ─────────────────────────────────────────────────────────
+  - name: account_ref
+    purpose: >
+      The account at risk. Required, and the precondition the whole object stands on: without a
+      stable account identity across threads there is no unit to read a baseline against, and
+      every pattern below degrades into a statement about one email conversation.
+    type: reference
+    ref: customer_support.obj.core.customer_account
+    data_type: ref
+    required: true
+
+  - name: risk_ref
+    purpose: The identifier of this read, so that a revised read is a new record rather than an
+      overwrite. Churn reads must be auditable against what was known at the time.
+    type: value
+    data_type: string
+
+  - name: read_at
+    purpose: >
+      When this read was taken. Load-bearing rather than administrative — a churn read decays
+      faster than almost anything else in this brain, because the behaviour it describes is a
+      three-week window and reading a six-week-old flag is reading history.
+    type: value
+    data_type: timestamp
+
+  - name: read_by
+    purpose: Who formed the read. A machine read and a manager's read after a quiet-account sweep
+      carry different confidence and should not be averaged.
+    type: value
+    data_type: enum
+    allowed_values: [system, agent, support_manager, account_owner, mixed, unknown]
+
+  - name: primary_contact_ref
+    purpose: The person who currently carries this relationship on their side. The object whose
+      departure resets the account's history.
+    type: reference
+    ref: customer_support.obj.core.named_contact
+    data_type: ref
+
+  - name: model_context
+    purpose: >
+      Which support motion this account sits in. Decides whether silence means anything at all.
+      In enterprise or named-TAM motions a quiet fortnight is a finding; in plg_self_serve the
+      overwhelming majority of healthy accounts never contact support once, so absence carries
+      zero information and every going-quiet pattern in this file must be suppressed.
+    type: value
+    data_type: enum
+    allowed_values: [enterprise, mid_market, smb, plg_self_serve, community, outsourced, unknown]
+
+  # ── risk_read ──────────────────────────────────────────────────────────────
+  - name: risk_bp
+    purpose: >
+      The read, 0–10000. A probability-shaped number and not a probability: it is calibrated
+      against nothing until outcomes come back from Layer 6, so treat it as a rank rather than a
+      likelihood. Never publish it without primary_driver beside it.
+    type: value
+    data_type: integer
+    unit: basis_points
+    validation: '0 <= risk_bp <= 10000'
+    sensitivity: confidential
+
+  - name: risk_band
+    purpose: The banded read, because a band survives poor calibration and a number does not. Bands
+      are what a human argues with; the number is what a dashboard sorts by.
+    type: value
+    data_type: enum
+    allowed_values: [none, watch, elevated, high, critical, unknown]
+
+  - name: direction
+    purpose: >
+      Where the read is heading. Direction beats level here even more than it does on sentiment:
+      an account that has been at elevated risk for a year is a fact of life, and an account that
+      moved from none to elevated in a fortnight is an event. Layer 4 should be able to sort on
+      this alone.
+    type: value
+    data_type: enum
+    allowed_values: [improving, flat, worsening, unknown]
+
+  - name: confidence_bp
+    purpose: How sure we are of the read, held separately from the read itself. A high risk at low
+      confidence is an instruction to go and look; a high risk at high confidence is an
+      instruction to go and act, and collapsing the two produces one wrong behaviour or the other.
+    type: value
+    data_type: integer
+    unit: basis_points
+
+  - name: horizon_days
+    purpose: >
+      Over what period this risk is asserted. A churn read with no horizon is a mood. Today this
+      is almost always a guess, because the natural horizon is the renewal date and
+      account.renewal_at does not exist in the substrate.
+    type: value
+    data_type: integer
+    unit: days
+
+  - name: primary_driver
+    purpose: >
+      The one behaviour or event this read is built on. The most important field in the object
+      after the read itself: an account team can act on a driver and can only argue with a score.
+      Enumerated rather than free text so that the distribution of drivers is countable — a
+      support function whose flags are overwhelmingly `explicit_language` is detecting nothing,
+      it is transcribing.
+    type: value
+    data_type: enum
+    allowed_values: [contact_volume_drop, unresolved_repetition, unresolved_escalation,
+                     relationship_change, cumulative_effort, broken_promises, incident_exposure,
+                     explicit_language, commercial, usage_decline, unknown]
+
+  - name: driver_evidence
+    purpose: The specific evidence, in language the account owner can repeat to the customer
+      without translation. "Contacts fell from nine a month to one since the March migration" is
+      usable; "engagement trend 0.4" is not.
+    type: value
+    data_type: list
+    sensitivity: internal
+
+  - name: blindness
+    purpose: >
+      What we could not see, listed explicitly. Usually some subset of product usage, billing and
+      invoicing, the competitive conversation, and anything discussed in a channel we do not
+      ingest. This field is the honest counterweight to the whole object and the one most likely
+      to be dropped as noise — it is not noise, it is the confidence interval written in words.
+    type: value
+    data_type: list
+    sensitivity: internal
+
+  # ── behavioural_signals ────────────────────────────────────────────────────
+  - name: contact_volume_trend
+    purpose: >
+      How this account's contact rate has moved against its OWN norm. The single strongest churn
+      predictor available to support, and not computable today — derived.engagement is a thread
+      measure, not an account measure, so every pattern below that uses it is reading a
+      conversation and inferring an account.
+    type: derived
+    derived_from: [derived.contact_frequency, contact_rate_baseline]
+    data_type: number
+
+  - name: contact_rate_baseline
+    purpose: >
+      This account's established contact rate. Judging volume against the queue instead of against
+      the account is the most common analytical error in the whole capability: a heavy integrator
+      raising fewer tickets and a light user raising more look identical in aggregate and mean
+      opposite things.
+    type: value
+    data_type: number
+    unit: contacts_per_week
+    source_paths: [contact_rate_per_account]
+
+  - name: days_since_last_contact
+    purpose: Elapsed silence. Meaningless as an absolute and strong as a multiple of the account's
+      own rhythm — two days is alarming for a daily-contact enterprise admin and unremarkable for
+      a quarterly one.
+    type: derived
+    derived_from: [thread.last_inbound]
+    data_type: integer
+    unit: days
+
+  - name: ball_in_court
+    purpose: >
+      Who is blocking, observed from the thread. `nobody` is the value that matters here and it is
+      the value that means almost nothing on a ticket: nobody owing anybody a reply is normal for
+      one work item and is the shape of a departing relationship for an account.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+
+  - name: engagement_trend
+    purpose: Engine-computed two-way volume against the prior fortnight. The best proxy the
+      substrate offers for the going-quiet shape, and a proxy rather than the thing — it is
+      scoped to a thread and churn is scoped to an account.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+
+  - name: relationship_momentum
+    purpose: Engine-computed trajectory, built for deal progression and borrowed here. On a support
+      relationship it reads as correspondence tempo, which is why every pattern reading it is
+      scored below the ones reading engagement.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+
+  - name: repeat_contact_count
+    purpose: >
+      How many times this account has come back on the same unresolved thing. Predicts better than
+      severity, because raising it again costs the customer effort and asserting severity costs us
+      nothing. Three contacts about one export bug outrank one sev1 that was fixed the same day.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: unresolved_repeat_topic
+    purpose: The thing they keep asking about. Names the driver in a way the account team can take
+      into a conversation, and doubles as the strongest available content-gap and product-feedback
+      input.
+    type: value
+    data_type: string
+
+  - name: cumulative_effort_bp
+    purpose: >
+      Total effort this account has spent getting answers out of us, across the relationship rather
+      than per ticket. Reconstructable from ticket history — touches, reassignments, reopens,
+      elapsed wall-clock — when no survey exists, which is the usual case on the accounts that
+      matter most.
+    type: value
+    data_type: integer
+    unit: basis_points
+
+  - name: channel_shift
+    purpose: >
+      Whether contact moved rather than stopped. The single most common false read in this object:
+      an account that moved to a shared Slack channel, a TAM, or a community forum looks
+      identical to an account that went quiet, and the substrate ingests only email.
+    type: value
+    data_type: enum
+    allowed_values: [none, to_lower_touch, to_higher_touch, off_platform, unknown]
+
+  # ── emotional_signals ──────────────────────────────────────────────────────
+  - name: sentiment_ref
+    purpose: The current sentiment read on this relationship. An input, and a weak one. Kept as a
+      reference rather than a copied score so that its own confidence and decay travel with it.
+    type: reference
+    ref: customer_support.obj.core.customer_sentiment
+    data_type: ref
+
+  - name: sentiment_score
+    purpose: >
+      Engine-computed observation balance. Present because it is the one emotional signal that
+      actually runs today, and deliberately weighted at a fraction of the behavioural fields —
+      it is calibrated on commercial correspondence and reads a furious but professionally worded
+      enterprise admin as roughly neutral, which is precisely the population that leaves.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+
+  - name: escalation_language_seen
+    purpose: Whether the customer has used escalation language. Notable, and much less predictive
+      than it feels — escalating is something a customer does when they still believe escalation
+      will work.
+    type: value
+    data_type: boolean
+
+  - name: cancellation_language_seen
+    purpose: >
+      Whether cancellation, non-renewal or competitor-migration language has appeared in plain
+      text. Very high confidence and very low lead time: by the time this is true the decision is
+      usually taken, so its value is political rather than analytical — it makes the case
+      unarguable to an account team that ignored the quiet signals.
+    type: value
+    data_type: boolean
+
+  - name: detractor_count
+    purpose: Low survey scores from this account. Arrives after the ticket that caused it, which
+      arrived after the decision it confirms. Corroborates; never leads.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: complaint_is_engagement
+    purpose: >
+      True when this account is loud AND still highly engaged. The most under-used field in the
+      object, and it exists to argue the read DOWN. A customer who still bothers to argue with us
+      still expects the argument to be worth having; treating them as the top risk while a silent
+      account sits unflagged is the characteristic failure of this whole capability.
+    type: value
+    data_type: boolean
+
+  # ── relationship_signals ───────────────────────────────────────────────────
+  - name: contact_change_count
+    purpose: How many times the person on the other end has changed. Each change resets the
+      relationship's accumulated credit and none of them resets a health score.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: contact_changed_recently
+    purpose: Whether the primary contact changed inside the current read window. Observable today
+      via the champion_change observation, which is the only relationship-level signal the
+      substrate genuinely emits.
+    type: value
+    data_type: boolean
+
+  - name: active_contact_count
+    purpose: >
+      How many people at this account are currently in contact with us, taken from graph degree.
+      A LEVEL, not a trend — the engine can compare degree to a threshold but not to its own past,
+      which is the exact limitation that makes the thinning pattern below weak rather than strong.
+    type: derived
+    derived_from: [edge_count]
+    data_type: integer
+    unit: count
+
+  - name: audience_widening
+    purpose: More senior people joining the thread. Ambiguous on its own — it is what an
+      escalation looks like and also what a cc'd distribution list looks like — and meaningful in
+      combination with silence from the original contact.
+    type: value
+    data_type: boolean
+
+  - name: defender_departed
+    purpose: >
+      The person whose credibility was spent on choosing us has left, changed role, or gone quiet.
+      Under-modelled everywhere and among the strongest predictors in existence: the account's
+      history with us was held by a person, and when the person goes the history stops counting
+      while every score keeps counting it.
+    type: value
+    data_type: boolean
+
+  - name: procurement_contact_appeared
+    purpose: >
+      Someone commercial has entered a support conversation. The term that turns anger from
+      reassuring into dangerous. Loud plus engaged is a committed customer; loud plus engaged plus
+      a procurement contact and a data-export request is an exit in progress, and the engine
+      cannot currently see the third term at all.
+    type: value
+    data_type: boolean
+
+  # ── commercial_context ─────────────────────────────────────────────────────
+  - name: renewal_at
+    purpose: >
+      When the decision actually falls. THE missing field of this object. Without it there is no
+      horizon, the renewal-window inversion cannot be applied, and the highest-signal combination
+      available to support — an unresolved escalation inside the renewal window — is inexpressible.
+    type: value
+    data_type: timestamp
+    source_paths: [account.renewal_at]
+
+  - name: days_to_renewal
+    purpose: >
+      Distance to the decision. Changes the instruction rather than the read — the same risk ninety
+      days out is a save plan and eighteen months out is a watch item.
+    type: derived
+    derived_from: [renewal_at]
+    data_type: integer
+    unit: days
+
+  - name: in_renewal_window
+    purpose: Whether the commercial conversation has opened. Inside the window, unresolved service
+      failures stop being operational facts and become negotiating positions.
+    type: value
+    data_type: boolean
+
+  - name: arr
+    purpose: >
+      What is at stake. Not an input to whether the account is leaving — small accounts leave at
+      least as readily — but the input that lets an account team rank the flags they receive.
+      Absent today, which is why every flag from this object currently arrives with identical
+      weight and gets triaged by whoever shouted.
+    type: value
+    data_type: money
+    source_paths: [account.arr]
+    sensitivity: confidential
+
+  - name: plan_tier
+    purpose: What they bought. Bounds what support was ever able to give them, and a risk read that
+      ignores it will flag accounts for not receiving service they never purchased.
+    type: value
+    data_type: string
+    source_paths: [entitlement.plan]
+
+  - name: contract_lock_months
+    purpose: >
+      How long they are contractually held regardless of intent. Risk is a probability AND a date:
+      a high read on an account with eighteen months left and a ninety-day notice period is a real
+      finding that is not urgent, and treating it as urgent is how the escalation channel gets
+      burned for the cases that were.
+    type: value
+    data_type: integer
+    unit: months
+
+  - name: expansion_signal
+    purpose: Evidence the account is buying more, adding seats or onboarding new teams. The
+      cleanest available contradiction of a churn read, and one of the few things that should
+      lower it outright rather than merely qualify it.
+    type: value
+    data_type: boolean
+
+  # ── service_history ────────────────────────────────────────────────────────
+  - name: unresolved_escalation_open
+    purpose: An escalation that has not been closed out. Half of the highest-signal combination in
+      this domain; the other half is the renewal window, and the pair is worth far more than the
+      sum because each alone resolves quietly most of the time.
+    type: value
+    data_type: boolean
+
+  - name: open_escalation_days
+    purpose: How long it has been open. An escalation resolved in two days is a system working; one
+      open for five weeks is a promise the customer has watched us fail to keep, repeatedly, with
+      senior people watching.
+    type: value
+    data_type: integer
+    unit: days
+
+  - name: sla_breach_count
+    purpose: Breaches against this account. One is an operational fact. Three concentrated on one
+      account is a relationship fact, and the queue reports the first and never the second.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: reopen_count
+    purpose: Reopens across this account's tickets. The truest quality signal support has, because
+      unlike a survey the customer has to act rather than merely feel.
+    type: value
+    data_type: integer
+    unit: count
+    source_paths: [ticket.reopen_count]
+
+  - name: incident_exposure_count
+    purpose: Major incidents this account was actually affected by, as distinct from incidents that
+      occurred. The distinction matters — an account unaffected by a famous outage carries none of
+      its risk and every naive aggregate gives it all of it.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: broken_promise_count
+    purpose: >
+      Named dates given to this account and missed. Customers forgive slow far more readily than
+      they forgive silence after a specific day was promised, and this is the only field in the
+      composite that is partially computable today.
+    type: derived
+    derived_from: [commitment.due_at, commitment.action]
+    data_type: integer
+    unit: count
+
+  - name: hard_resolution_recent
+    purpose: >
+      A recent resolution the customer had to fight for. The queue files it as a success and closes
+      the ticket; the account files it as evidence about what happens when something goes wrong.
+      The fortnight AFTER a hard resolution is the highest-yield window for a churn read and the
+      one nobody looks at, because the work item is closed.
+    type: value
+    data_type: boolean
+
+  # ── disposition ────────────────────────────────────────────────────────────
+  - name: risk_state
+    purpose: Where this read sits in its own lifecycle. Mirrors `states` below.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, identified, at_risk, escalated, on_hold, resolved, archived, closed]
+
+  - name: receiving_owner_ref
+    purpose: >
+      The named person outside support who now owns the save conversation. Required for the read to
+      count as raised. A churn risk routed to a dashboard is a note; the account still leaves, and
+      the note is produced afterwards as evidence that the system worked.
+    type: reference
+    ref: customer_support.obj.core.escalation_owner
+    data_type: ref
+
+  - name: briefed_at
+    purpose: When the evidence actually reached that owner. The gap between read_at and briefed_at
+      is the part of the lead time support controls, and it is usually larger than the part it
+      complains about.
+    type: value
+    data_type: timestamp
+
+  - name: save_plan_exists
+    purpose: Whether anyone is doing anything. Tracked because a flagged account with no plan is
+      indistinguishable in every report from a flagged account with one.
+    type: value
+    data_type: boolean
+
+  - name: suppressed_reason
+    purpose: >
+      Why this read is deliberately being held back. Recorded rather than silently applied, because
+      a suppression nobody can see becomes permanent — the live-incident suppression in particular
+      has a habit of outlasting the incident by a quarter.
+    type: value
+    data_type: enum
+    allowed_values: [none, live_incident, cold_start, no_baseline, self_serve_motion,
+                     contract_locked, channel_shift_known, unknown]
+
+  - name: outcome
+    purpose: >
+      What eventually happened. The only field that can calibrate anything in this object, and the
+      reason `churned_silently` is separated from `churned` — an account that left without ever
+      telling us is the specific failure this whole capability exists to prevent, and folding it
+      into a general churn count hides exactly the cases worth learning from.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, not_yet_due, retained, retained_reduced, churned, churned_silently]
+
+  - name: lead_time_days
+    purpose: >
+      How far ahead of the decision the risk was first raised. The one metric that tests whether
+      this object is early enough to be worth having; every other number here can look healthy
+      while this one says the flags arrive after the decision has been taken.
+    type: value
+    data_type: integer
+    unit: days
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STATES
+#
+# `identified` deliberately covers a CLEAN read as well as a concerning one — absence of risk on
+# a watched account is a finding, and a lifecycle with no state for "we looked and it is fine"
+# cannot distinguish a silent account from an unexamined one.
+# ─────────────────────────────────────────────────────────────────────────────
+states:
+  initial: unknown
+  terminal: [closed, archived]
+  values:
+    - name: unknown
+      description: >
+        No read has been formed. The default and, on most accounts, the honest one. Distinct from
+        `identified` with a low risk, which is a claim; this is the absence of one.
+      implies: Nothing. Do not report it as healthy.
+    - name: identified
+      description: >
+        A read exists. Includes the clean read — "we looked, the account is behaving like itself".
+        Recording that is what makes coverage measurable rather than assumed.
+      implies: Someone has actually examined this account against its own baseline.
+    - name: at_risk
+      description: >
+        Elevated, with a named driver and evidence. Not a feeling and not a score: entry requires
+        primary_driver to be set to something other than unknown.
+      entered_when:
+        - path: derived.engagement
+          op: '<='
+          value: 0.5
+        - path: thread.ball_in_court
+          op: '='
+          value: nobody
+      implies: Someone outside support needs to know, and the clock on doing something is running.
+    - name: escalated
+      description: >
+        Handed to a named owner who can act commercially. Not a synonym for urgent and not a
+        synonym for executive attention — it means the risk now has a receiver.
+      implies: Support has done what it can do. The save is someone else's, by design.
+    - name: on_hold
+      description: >
+        The read is suppressed and the suppression is recorded. Almost always a live major
+        incident, during which every account looks at risk and cross-account comparison carries
+        no discriminating power at all.
+      implies: Do not compare this account to others until the window closes. Do not forget to reopen it.
+    - name: resolved
+      description: >
+        Behaviour returned to the account's own norm, or the driver was removed. Explicitly
+        reversible — recovery in support terms frequently means the customer decided to give us
+        one more chance rather than that they stopped considering leaving.
+      implies: The risk is lower, not gone. Watch the same driver for a further cycle.
+    - name: archived
+      description: The account renewed, or the risk stopped being material for this cycle. Terminal
+        and clean.
+      implies: Nothing outstanding. Keep the read for calibration.
+    - name: closed
+      description: The account left. Terminal and the only state that can calibrate anything above
+        it — `outcome` carries whether they told us first.
+      implies: Feed lead_time_days and outcome to Layer 6, including when the answer is embarrassing.
+  transitions:
+    - from: unknown
+      to: identified
+      trigger: A baseline exists and someone read the account against it.
+    - from: identified
+      to: at_risk
+      when:
+        - path: derived.engagement
+          op: '<='
+          value: 0.5
+        - path: thread.ball_in_court
+          op: '='
+          value: nobody
+    - from: identified
+      to: archived
+    - from: at_risk
+      to: identified
+      when:
+        - path: derived.engagement
+          op: '>='
+          value: 1.0
+      reversible: true
+    - from: at_risk
+      to: escalated
+      trigger: A named receiving owner accepted it. Without one this transition must not occur.
+    - from: at_risk
+      to: on_hold
+      trigger: A major incident opened; cross-account comparison suspended.
+    - from: at_risk
+      to: closed
+    - from: on_hold
+      to: at_risk
+      trigger: Incident closed and the comparison window is clean again.
+    - from: escalated
+      to: resolved
+    - from: escalated
+      to: closed
+    - from: resolved
+      to: at_risk
+      reversible: true
+    - from: resolved
+      to: archived
+    - from: identified
+      to: closed
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RELATIONSHIPS
+#
+# The weights carry the argument. customer_sentiment sits near the bottom on purpose: it is the
+# edge a naive reader would traverse first and the one that predicts least.
+# ─────────────────────────────────────────────────────────────────────────────
+relationships:
+  - target: customer_support.obj.core.customer_account
+    type: belongs_to
+    cardinality: one
+    weight_bp: 2000
+    confidence_bp: 9500
+    priority: 1
+    description: >
+      Exactly one account. The unit of churn is the paying entity, never the ticket and never the
+      person — although the person is what actually decides, which is the tension the next edge
+      exists to hold.
+
+  - target: customer_support.obj.core.named_contact
+    type: influences
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 1600
+    confidence_bp: 7000
+    priority: 2
+    description: >
+      Inbound because the causality runs that way: the contact shapes the risk, not the reverse.
+      Renewals are defended by a person whose credibility was spent on us. Scoring the logo and
+      not the relationship is how an account with a perfect health score churns three weeks after
+      its champion changed jobs.
+
+  - target: customer_support.obj.core.ticket
+    type: caused_by
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 3
+    description: >
+      The service history that produced the risk. Aggregate, never individual: one bad ticket is
+      not churn risk, a pattern of them is, and the whole point of this object is that the pattern
+      is invisible from inside any single ticket.
+
+  - target: customer_support.obj.core.escalation
+    type: caused_by
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 8000
+    priority: 4
+    conditions:
+      - absent: escalation.resolved_at
+    description: >
+      Weighted this high only while unresolved. A closed escalation is a story about a system that
+      worked; an open one inside a renewal window is the highest-signal combination support has.
+    evidence: [ticket, email, crm]
+
+  - target: customer_support.obj.core.escalation_owner
+    type: assigned_to
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 6000
+    priority: 5
+    description: >
+      The named receiver outside support. Modelled as an edge and not a field because its ABSENCE
+      is the finding: a risk with no owner has not been raised, whatever the dashboard says.
+
+  - target: customer_support.obj.core.effort_score
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 6500
+    description: Effort predicts loyalty better than satisfaction does, and unlike satisfaction it
+      can be reconstructed from ticket history when nobody answered a survey.
+
+  - target: customer_support.obj.core.commitment
+    type: caused_by
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 7000
+    description: Named dates we gave and missed. The cheapest trust to lose and the one customers
+      narrate afterwards, because a missed SLA is contractual and a missed Thursday is personal.
+
+  - target: customer_support.obj.core.incident
+    type: caused_by
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 5500
+    description: >
+      Exposure, not occurrence. Also the source of this object's worst noise: during a live major
+      incident every account's signals move together and the read loses all power to discriminate,
+      which is what the `on_hold` state is for.
+
+  - target: customer_support.obj.core.requester
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 6000
+    description: Who actually contacts us, and — more usefully — whether that set changed. A stable
+      requester identity across threads is what makes "who contacts us changed" answerable at all.
+
+  - target: customer_support.obj.core.satisfaction_score
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 7500
+    description: >
+      High confidence that the edge exists, low weight on what it is worth. A detractor response
+      arrives after the ticket that caused it, which arrived after the decision it confirms.
+      Anything that depends on the customer choosing to tell us is by construction late.
+
+  - target: customer_support.obj.core.customer_sentiment
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 8000
+    priority: 9
+    description: >
+      Deliberately the lowest-weighted evidential edge in the object, and the one a naive reader
+      would traverse first. Sentiment is how they feel; churn risk is what they will do. The edge
+      earns its place mainly through `customer_sentiment.trajectory` — direction carries far more
+      than level — and through the case where it argues the risk DOWN.
+
+  - target: customer_support.obj.core.entitlement
+    type: governed_by
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 7000
+    description: What they bought bounds what they were ever owed. Without it this object will flag
+      accounts for not receiving a level of service they never purchased.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INFERENCE PATTERNS — 19: nine executable, ten needs_signal.
+#
+# The nine that run are not scraps. Between them they express the going-quiet shape, the
+# relationship reset, explicit loss language, the thinning graph, the broken-promise-then-silence
+# sequence, and — the one that matters most — the read that argues the risk DOWN when a customer
+# is loud and still highly engaged. That last one is the discriminator made executable, and it is
+# the single most useful thing in this file today.
+#
+# The ten that cannot run are ranked in metadata.notes by what they would unlock.
+# ─────────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: cs.churn.loss_language_in_the_support_thread
+      statement: The thread carries explicit loss or non-renewal language — the customer has said
+        it out loud in writing.
+      status: executable
+      when:
+        - has_obs: closed_lost_mention
+      yields:
+        confidence_bp: 7200
+        attribute: primary_driver
+        value: explicit_language
+      evidence_fields: [derived.sentiment, thread.last_inbound]
+      false_positive: >
+        `closed_lost_mention` was built for a deal-loss vocabulary. On a support node it fires on
+        a customer telling us THEY lost a deal because of our outage — which is bad news and is
+        not this news — and on an agent quoting a retention macro back into the thread, where the
+        churn language is ours rather than theirs.
+      note: >
+        High value, low recall, and late. It is the only executable pattern here that reads
+        stated intent rather than behaviour, which is why it is capped at 7200 despite being a
+        near-explicit admission: the extractor was tuned on a different domain's phrasing and the
+        subject of the sentence is not recoverable from the observation. Treat it as grounds to
+        look immediately, never as grounds to act without reading the thread. Its real successor
+        is `cancellation_threat`, which does not exist yet.
+
+    - id: cs.churn.broken_promise_then_the_account_stopped_writing
+      statement: A named commitment to this account went past due with nothing observed going back,
+        and two-way volume has fallen since.
+      status: executable
+      when:
+        - fn: days_since
+          path: commitment.due_at
+          op: '>='
+          value: 3
+        - no_obs: followup_sent
+        - path: derived.engagement
+          op: '<='
+          value: 0.7
+      yields:
+        confidence_bp: 6600
+        attribute: primary_driver
+        value: broken_promises
+        corroborates: [cs.churn.gone_quiet_with_nobody_waiting]
+      evidence_fields: [commitment.due_at, commitment.action, derived.engagement]
+      false_positive: >
+        The follow-up happened by phone or in a chat widget, neither of which is ingested, and the
+        volume drop is the normal quiet after a resolved problem. This is the same trace as a
+        promise kept off-channel.
+      note: >
+        The SEQUENCE is what makes this worth having. Either half alone is weak — missed promises
+        are common and recoverable, volume drops are ambiguous — but a customer who stopped writing
+        AFTER we failed to come back to them on a date we chose is telling us something specific,
+        and it is the most actionable thing in this file because the recovery is a single honest
+        message. Three days rather than one deliberately: at one day this fires on ordinary slip
+        and drowns the real cases.
+
+    - id: cs.churn.the_contact_changed_and_the_volume_fell_after
+      statement: The person on the other end changed, and the account's two-way volume has dropped
+        since.
+      status: executable
+      when:
+        - has_obs: champion_change
+        - path: derived.engagement
+          op: '<='
+          value: 0.7
+      yields:
+        confidence_bp: 6000
+        attribute: defender_departed
+        value: true
+      evidence_fields: [derived.engagement, thread.last_inbound]
+      false_positive: >
+        `champion_change` also fires on a routine internal reorg where the account is perfectly
+        healthy and simply reassigned its admin, and — worse — on OUR side of the thread changing,
+        because the observation does not record whose organisation the departure was in. A support
+        agent handover can look identical to a customer's champion leaving.
+      note: >
+        The one relationship-level signal the substrate genuinely emits, and it is doing real work
+        here. The reason renewals are lost to contact changes is that the account's accumulated
+        goodwill was held by a person, and no health score notices when the person goes while
+        every score keeps counting the history they built. The engagement condition is what makes
+        this a risk read rather than a personnel note: a contact change followed by SUSTAINED
+        volume is a healthy handover and should not fire at all.
+
+    - id: cs.churn.unresolved_escalation_inside_the_renewal_window
+      statement: An escalation is still open on this account while the renewal conversation is
+        live.
+      status: needs_signal
+      yields:
+        confidence_bp: 9000
+        attribute: primary_driver
+        value: unresolved_escalation
+      requires_signals:
+        - kind: fact_path
+          name: account.renewal_at
+          owner_layer: L1
+          note: >
+            The single most valuable missing field for this object. Without it there is no renewal
+            window, so the highest-signal combination available anywhere in support cannot be
+            expressed at all, and every read this object produces is a direction with no date
+            attached.
+        - kind: obs_kind
+          name: escalation_requested
+          owner_layer: L2
+          note: >
+            Support has no escalation signal of any kind. Anger is inferable from language; a
+            transfer of ownership with a reason is not, and the two are routinely confused
+            precisely because only one of them is currently visible.
+        - kind: fact_path
+          name: ticket.status
+          owner_layer: L1
+          note: Needed to establish that the escalation is UNRESOLVED. A closed escalation inside
+            the renewal window is a story about a system that worked and carries the opposite sign.
+      note: >
+        The highest-signal combination this domain has, and it needs two signals from two different
+        layers, neither of which exists. That is worth stating plainly rather than approximating:
+        each half alone is genuinely weak, because most escalations resolve and most renewal
+        windows pass quietly, and it is the CONJUNCTION that predicts. Approximating it with the
+        nearest available thing — negative sentiment near an arbitrary date — would produce a
+        detector that fires constantly and predicts nothing.
+
+    - id: cs.churn.contact_rate_below_this_accounts_own_norm
+      statement: This account is contacting us materially less often than it historically does.
+      status: needs_signal
+      yields:
+        confidence_bp: 8000
+        attribute: contact_volume_trend
+      requires_signals:
+        - kind: derived
+          name: derived.contact_frequency
+          owner_layer: L2
+          note: >
+            The account-level counterpart to derived.engagement. Every executable going-quiet
+            pattern in this file reads a THREAD and infers an ACCOUNT, which is the central
+            approximation this object is currently making and the one most likely to mislead: an
+            account can be silent on one thread and busy on four others.
+        - kind: baseline
+          name: contact_rate_per_account
+          owner_layer: L2
+          note: >
+            Absence needs a baseline or it is not evidence. A hundred-seat account opening four
+            tickets a week is normal; a two-seat account doing the same is a churn signal, and a
+            heavy integrator that drops from nine contacts a month to one has said more than any
+            survey ever will.
+      note: >
+        The strongest churn predictor available to a support function, and it is not computable
+        today. `reply_cadence` is being borrowed below as the nearest available baseline, but it
+        measures how FAST they reply, not how OFTEN they write — a real proxy, used carefully,
+        and not the thing.
+
+    - id: cs.churn.the_same_unresolved_thing_asked_again
+      statement: This account has come back repeatedly about one thing that is still not fixed.
+      status: needs_signal
+      yields:
+        confidence_bp: 7800
+        attribute: unresolved_repeat_topic
+      requires_signals:
+        - kind: obs_kind
+          name: ticket_reopened
+          owner_layer: L2
+          note: The only quality signal a customer must spend effort to send, and therefore the
+            only one that cannot be prompted, timed or gamed the way a survey can.
+        - kind: derived
+          name: derived.contact_frequency
+          owner_layer: L2
+          note: Needed to distinguish three contacts about one thing from three unrelated
+            contacts. Today each is read as a fresh surprise by a different agent, which is also
+            how it feels to the customer.
+        - kind: fact_path
+          name: ticket.status
+          owner_layer: L1
+          note: The "unresolved" half. Repetition about a thing we fixed is a different and much
+            weaker signal.
+      note: >
+        Repetition predicts better than severity, and the reason is that they are measures of
+        different people's opinions: severity is our assessment of the fault, repetition is the
+        customer's remaining patience expressed as an action. A sev1 fixed the same day costs less
+        goodwill than a sev3 asked about four times.
+
+    - id: cs.churn.explicit_cancellation_language
+      statement: The customer has used cancellation, non-renewal or migration language directly.
+      status: needs_signal
+      yields:
+        confidence_bp: 9200
+        attribute: cancellation_language_seen
+        value: true
+      requires_signals:
+        - kind: obs_kind
+          name: cancellation_threat
+          owner_layer: L2
+          note: >
+            Stated in plain language in threads the pipeline already ingests, and absent from the
+            extractor whitelist. It is the moment support stops being a cost-centre question and
+            becomes a revenue one.
+      note: >
+        Highest confidence in this file and among the least valuable, which is the point worth
+        internalising: by the time it is true the decision has usually been taken, so its lead time
+        is close to zero. Its value is political rather than analytical — it makes the case
+        unarguable to an account team that ignored six weeks of quiet signals. Build it, and do not
+        let anyone treat the resulting flags as the detection working.
+
+    - id: cs.churn.breaches_concentrated_on_one_account
+      statement: This account has absorbed several SLA breaches in a short window.
+      status: needs_signal
+      yields:
+        confidence_bp: 7200
+        attribute: sla_breach_count
+      requires_signals:
+        - kind: fact_path
+          name: sla.clock_state
+          owner_layer: L1
+        - kind: obs_kind
+          name: sla_breach
+          owner_layer: L2
+          note: >
+            One breach is an operational fact and gets reported as one. Three concentrated on a
+            single account is a relationship fact, and no queue-level report will ever surface it
+            because the denominator is the queue.
+        - kind: fact_path
+          name: sla.target_resolution_at
+          owner_layer: L1
+      note: Notably weaker than repetition, because a breach is measured against our promise and
+        repetition is measured against their patience. Included because breaches are what the
+        customer will cite in the renewal conversation, whether or not they caused the decision.
+
+  heuristic:
+
+    - id: cs.churn.gone_quiet_with_nobody_waiting
+      statement: Two-way volume has halved and nobody owes anybody a reply — the account has
+        stopped talking to us rather than waiting on us.
+      status: executable
+      when:
+        - path: derived.engagement
+          op: '<='
+          value: 0.5
+        - path: thread.ball_in_court
+          op: '='
+          value: nobody
+      yields:
+        confidence_bp: 6400
+        attribute: primary_driver
+        value: contact_volume_drop
+        corroborates: [cs.churn.quiet_past_this_accounts_own_cadence]
+      evidence_fields: [derived.engagement, thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        The account that goes quiet because it is finally working. An integration that completed,
+        an onboarding that finished, a migration that landed — the intended outcome of the product
+        produces exactly this trace, and only usage data separates it from abandonment. This is the
+        most common wrong firing of this pattern and it is common in absolute terms, not merely
+        relative to the others.
+      note: >
+        The core behavioural read, made executable. `ball_in_court = nobody` is what earns the
+        confidence: engagement halving while THEY owe us a reply is an unanswered question, and
+        engagement halving while WE owe them one is our own neglect — neither is this. Nobody
+        waiting on anybody while volume collapses is the shape of a relationship being wound down,
+        and it is the shape that generates no event, no ticket and no alert anywhere else in the
+        stack. Capped at 6400 for two honest reasons: derived.engagement is thread-scoped rather
+        than account-scoped, and the halving is measured against the prior fortnight rather than
+        against this account's own norm.
+
+    - id: cs.churn.quiet_past_this_accounts_own_cadence
+      statement: This account has been silent for far longer than its own established rhythm, with
+        nobody waiting on anybody.
+      status: executable
+      when:
+        - path: thread.ball_in_court
+          op: '='
+          value: nobody
+        - fn: days_since
+          path: thread.last_inbound
+          op: '>='
+          value:
+            baseline: reply_cadence
+            mult: 3
+            floor: 7
+      yields:
+        confidence_bp: 6800
+        attribute: primary_driver
+        value: contact_volume_drop
+        corroborates: [cs.churn.gone_quiet_with_nobody_waiting]
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        A seasonal account. Education in August, retail in January, a European account in the first
+        fortnight of August — all produce silence at three times their own cadence with nothing
+        wrong at all. The baseline is a rolling one and cannot see a year.
+      note: >
+        The highest-confidence executable pattern in the file, and the reason is that it is the
+        only one measured against the ACCOUNT rather than against a constant. Silence is not
+        information until you know what this customer's normal looks like: a daily-contact
+        enterprise admin going quiet for four days is a finding, and a quarterly user doing the
+        same is a Tuesday. The honest cost is that `reply_cadence` measures how fast they reply,
+        not how often they initiate, so it is the wrong baseline used carefully — the right one is
+        `contact_rate_per_account` and it does not exist. Multiplier of 3 and a floor of 7 days are
+        both deliberately conservative: this pattern should fire late and be believed, not fire
+        early and be filtered.
+
+    - id: cs.churn.loud_and_still_here
+      statement: Sentiment is negative while two-way volume is at or above its prior level — this
+        customer is complaining, which means they are still invested.
+      status: executable
+      when:
+        - path: derived.sentiment
+          op: '<'
+          value: 0.0
+        - path: derived.engagement
+          op: '>='
+          value: 1.0
+      yields:
+        confidence_bp: 6000
+        attribute: complaint_is_engagement
+        value: true
+      evidence_fields: [derived.sentiment, derived.engagement]
+      false_positive: >
+        The final fortnight before a planned exit looks exactly like this — high volume, negative
+        tone — because the account is extracting data, chasing final invoices and closing out
+        open items. Anger plus volume is reassuring; anger plus volume plus a procurement contact
+        and an export request is an exit in progress, and the engine cannot see the third term at
+        all. This is the one false positive in the file that inverts the answer rather than merely
+        weakening it.
+      note: >
+        The discriminator made executable, and the most useful pattern here today. It is the only
+        one that argues the read DOWN, and it exists because the characteristic failure of this
+        entire capability is chasing the loudest account while a silent one leaves unflagged. A
+        customer who still bothers to argue with us still expects the argument to be worth having.
+        Deliberately kept at 6000 rather than higher despite being conceptually strong, because
+        derived.sentiment is calibrated on commercial correspondence and reads a professionally
+        worded but furious enterprise admin as roughly neutral — so this fires on the demonstrative
+        and misses the dangerous quiet ones, which is the correct direction of error for a pattern
+        whose job is to lower a score.
+
+    - id: cs.churn.trajectory_collapsed_on_a_previously_active_account
+      statement: Correspondence trajectory has collapsed while volume is also down — the
+        relationship is decaying rather than pausing.
+      status: executable
+      when:
+        - path: derived.momentum
+          op: '<='
+          value: 0.3
+        - path: derived.engagement
+          op: '<='
+          value: 0.7
+      yields:
+        confidence_bp: 5200
+        attribute: direction
+        value: worsening
+        corroborates: [cs.churn.gone_quiet_with_nobody_waiting]
+      evidence_fields: [derived.momentum, derived.engagement]
+      false_positive: >
+        A problem that was genuinely solved. Tempo and volume both fall after a resolution, and on
+        a healthy account they fall together and stay down until the next real question — which is
+        indistinguishable from decay over any window shorter than the account's own contact cycle.
+      note: >
+        Weaker than the two patterns above and included because it supplies DIRECTION, which they
+        do not. derived.momentum was built to score deal progression through stages; a support
+        relationship has no stages, so what it actually measures here is correspondence tempo. That
+        still catches the real thing, and 5200 says "this read is worsening" rather than "this
+        account is leaving". The engagement condition is load-bearing: momentum alone collapses on
+        every relationship that is merely calm.
+
+    - id: cs.churn.single_threaded_and_quieting
+      statement: Only one or two people at this account are in contact with us, and volume has
+        halved.
+      status: executable
+      when:
+        - fn: edge_count
+          op: '<='
+          value: 2
+        - path: derived.engagement
+          op: '<='
+          value: 0.5
+      yields:
+        confidence_bp: 4800
+        attribute: primary_driver
+        value: relationship_change
+      evidence_fields: [derived.engagement]
+      false_positive: >
+        A small account that was always single-threaded. Degree of 2 on a two-seat customer is
+        their healthy maximum, and this pattern will flag every SMB account that had a quiet month
+        while never flagging the enterprise account that quietly went from eleven contacts to
+        three.
+      note: >
+        The honest limitation, stated rather than hidden: degree is a LEVEL and the thing worth
+        knowing is a DECLINE. The engine can compare a node's degree to a threshold but not to its
+        own past, so this pattern reads "the account is thin now" and infers "it thinned" only
+        because the engagement condition says volume also fell. That inference is the weak joint
+        and is exactly why this sits at 4800 rather than with the leaders. `derived.account_degree_trend`
+        would convert it from a hint into a real pattern; until then it is a queue-level sort and
+        should never be a per-account trigger.
+
+    - id: cs.churn.competitor_named_while_disengaging
+      statement: A competitor has been named in the thread while the account's volume is falling.
+      status: executable
+      when:
+        - has_obs: competitor
+        - path: derived.engagement
+          op: '<='
+          value: 0.7
+      yields:
+        confidence_bp: 5800
+        attribute: null
+      evidence_fields: [derived.engagement, derived.sentiment]
+      false_positive: >
+        A customer asking whether we integrate with a competitor's product is evaluating breadth,
+        not exit — and it is the single most common reason a competitor name appears in a support
+        thread. The disengagement condition is the only thing separating the two readings, and it
+        is a weak separator.
+      note: >
+        A competitor named in a SALES thread is a normal part of an evaluation. A competitor named
+        in a SUPPORT thread by a customer who is also writing to us less is a different object
+        entirely, because they are no longer evaluating — they are comparing what they have against
+        what they could have. That distinction is the whole value of the pattern and also its
+        fragility, since the observation carries no indication of who named the competitor or why.
+
+    - id: cs.churn.effort_high_while_satisfaction_looks_fine
+      statement: This account is spending a lot of effort getting answers, while its survey scores
+        look unremarkable.
+      status: needs_signal
+      yields:
+        confidence_bp: 7000
+        attribute: cumulative_effort_bp
+      requires_signals:
+        - kind: obs_kind
+          name: ces_submitted
+          owner_layer: L2
+        - kind: fact_path
+          name: csat.score
+          owner_layer: L1
+          note: Needed for the CONTRADICTION, which is the whole pattern. Effort alone is a cost
+            finding; effort that is high while satisfaction reads neutral is a churn finding.
+        - kind: baseline
+          name: resolution_time
+          owner_layer: L2
+          note: Lets effort be reconstructed from ticket history — touches, reassignments, reopens,
+            elapsed wall clock — on the accounts that never answer a survey, which are
+            disproportionately the strategic ones.
+      note: >
+        Effort predicts loyalty better than satisfaction does, and the mechanism is that effort
+        accumulates silently while satisfaction is sampled from whoever felt strongly enough to
+        respond. The middle of a satisfaction distribution is where churn actually lives and a
+        survey programme makes that middle invisible by construction. This is also the pattern that
+        works on accounts nobody ever surveyed, which is why it outranks the detractor pattern
+        below.
+
+    - id: cs.churn.detractor_after_a_hard_resolution
+      statement: The account scored an interaction badly, and it was one they had to fight to get
+        resolved.
+      status: needs_signal
+      yields:
+        confidence_bp: 6500
+        attribute: detractor_count
+      requires_signals:
+        - kind: fact_path
+          name: csat.score
+          owner_layer: L1
+        - kind: obs_kind
+          name: csat_submitted
+          owner_layer: L2
+        - kind: baseline
+          name: resolution_time
+          owner_layer: L2
+          note: The "hard" half. A detractor score on a fast resolution is about the answer; a
+            detractor score on a resolution that took four times this account's norm is about us.
+      note: >
+        Ranked below effort deliberately. A survey response is cheap for the customer to give,
+        cheap for us to time favourably, and biased toward the extremes — and it arrives after the
+        ticket that caused it, which arrived after the decision it confirms. Worth having because
+        the fortnight AFTER a hard resolution is the highest-yield window for a churn read and the
+        one nobody looks at, since the work item is closed and the queue has moved on.
+
+    - id: cs.churn.usage_fell_before_the_contact_did
+      statement: Product usage declined ahead of the drop in support contact — they stopped using
+        it before they stopped asking about it.
+      status: needs_signal
+      yields:
+        confidence_bp: 8500
+        attribute: primary_driver
+        value: usage_decline
+      requires_signals:
+        - kind: fact_path
+          name: product.active_usage_trend
+          owner_layer: L1
+          note: >
+            Not in planned_substrate and it should be. This is THE signal that separates "no longer
+            needs us" from "no longer wants us" — both go quiet, only one is a loss, and support
+            structurally cannot tell them apart from inside a queue. Until it exists, every
+            quiet-account flag this object produces carries an irreducible ambiguity that must be
+            declared in `blindness` rather than rounded off.
+        - kind: fact_path
+          name: account.health_score
+          owner_layer: L1
+          note: The customer-success read, useful here mainly as a cross-check. When support's read
+            and the health score disagree, support is usually earlier and the health score is
+            usually better evidenced.
+        - kind: fact_path
+          name: account.renewal_at
+          owner_layer: L1
+      note: >
+        The highest-confidence needs_signal pattern in the file, and the one that would change the
+        most reads, because it resolves the false positive that damages every executable pattern
+        above: the account that went quiet because the product is finally working. Ordering is the
+        whole pattern — usage falling FIRST is departure, usage falling AFTER contact stopped is
+        usually a support failure that drove them off.
+
+    - id: cs.churn.incident_exposure_concentrated_on_this_account
+      statement: This account was actually affected by several major incidents, as distinct from
+        several incidents having occurred.
+      status: needs_signal
+      yields:
+        confidence_bp: 6000
+        attribute: incident_exposure_count
+      requires_signals:
+        - kind: fact_path
+          name: incident.status
+          owner_layer: L1
+          note: >
+            Also the input to the SUPPRESSION half of this signal, which matters more than the
+            detection half — while an incident is live, every account's sentiment and volume move
+            together and cross-account reads must be held. Without this fact the `on_hold` state
+            can only be entered by hand, which means in practice it is entered late and left on.
+        - kind: fact_path
+          name: incident.severity
+          owner_layer: L1
+        - kind: obs_kind
+          name: incident_declared
+          owner_layer: L2
+          note: Exposure requires knowing which accounts were on the affected surface. Attributing
+            a famous outage to every account is how a naive aggregate hands its full cost to
+            customers who never noticed it.
+      note: >
+        The only pattern in this file that must be able to switch the object OFF. Its detection
+        value is modest — repeated exposure genuinely erodes a relationship, but slowly and with
+        wide variance — and its suppression value is high, because reads taken during an incident
+        window are not merely noisy, they are systematically wrong in a consistent direction, which
+        is worse: the resulting ranking looks entirely plausible.
+
+    - id: cs.churn.locked_in_and_the_risk_is_next_year
+      statement: The read is elevated but the account is contractually held well past the current
+        horizon.
+      status: needs_signal
+      yields:
+        confidence_bp: 6800
+        attribute: contract_lock_months
+      requires_signals:
+        - kind: fact_path
+          name: contract.end_at
+          owner_layer: L1
+        - kind: fact_path
+          name: contract.notice_period_days
+          owner_layer: L1
+          note: The notice period, not the end date, is what makes a risk urgent. An account with
+            eighteen months left and a ninety-day notice window has a decision point in fifteen
+            months, not eighteen.
+        - kind: fact_path
+          name: contract.auto_renew
+          owner_layer: L1
+          note: An auto-renewing contract inverts the whole read — silence becomes our friend, and
+            the risk moves from the renewal date to the notice deadline that precedes it.
+      note: >
+        Risk is a probability AND a date, and this object currently only produces the first half.
+        The pattern exists to STOP action as often as to prompt it: a genuine elevated read on a
+        locked-in account is a watch item, and escalating it as urgent is exactly how the
+        escalation channel gets burned for the cases where urgency was real. These three fact paths
+        already sit in planned_substrate under the Admin domain, which makes this among the
+        cheapest entries in the whole backlog.
+
+# ─────────────────────────────────────────────────────────────────────────────
+inputs:
+  - source: derived
+    signal: two-way volume against the prior fortnight
+    path: derived.engagement
+    fills: [engagement_trend, contact_volume_trend]
+    reliability_bp: 5500
+    description: The workhorse of this object today, and thread-scoped where churn is
+      account-scoped. Every executable going-quiet read is making that leap.
+  - source: email
+    signal: who is waiting on whom
+    path: thread.ball_in_court
+    fills: [ball_in_court]
+    reliability_bp: 7000
+    description: The `nobody` value is the one that matters here and the one that means nothing on
+      a ticket.
+  - source: email
+    signal: last message from the customer
+    path: thread.last_inbound
+    fills: [days_since_last_contact]
+    reliability_bp: 8000
+  - source: derived
+    signal: observation balance across the thread
+    path: derived.sentiment
+    fills: [sentiment_score]
+    reliability_bp: 4000
+    description: Deliberately the lowest-reliability input that runs today, and the one a naive
+      reader would rank first.
+  - source: derived
+    signal: correspondence tempo
+    path: derived.momentum
+    fills: [relationship_momentum]
+    reliability_bp: 3500
+    description: Borrowed from deal trajectory. Corroborating evidence for direction, never sole
+      grounds.
+  - source: email
+    signal: promises made in writing and their due dates
+    path: commitment.due_at
+    fills: [broken_promise_count]
+    reliability_bp: 7500
+  - source: crm
+    signal: renewal date, ARR, plan tier, contract term
+    fills: [renewal_at, arr, plan_tier, contract_lock_months]
+    reliability_bp: 0
+    description: >
+      NOT AVAILABLE. Nothing commercial is visible on a support node. This one line is why the
+      object can produce a direction and a driver but not a priority, and why every flag it raises
+      currently reaches the account team with identical weight.
+  - source: telemetry
+    signal: product usage trend before and after the contact drop
+    reliability_bp: 0
+    description: >
+      NOT AVAILABLE, and the most consequential absence here. It is the only source that separates
+      an account that no longer needs us from one that no longer wants us.
+  - source: ticket
+    signal: contact history, reopens, effort, breaches, escalations
+    reliability_bp: 0
+    description: NOT AVAILABLE as typed facts. The account-level aggregate of this domain's central
+      object cannot be computed, which is why absence has no baseline to be absent against.
+  - source: survey
+    signal: CSAT, CES and NPS responses
+    reliability_bp: 0
+    description: Late by construction, biased to the extremes, and still not ingested.
+  - source: chat
+    signal: live conversation, abandonment, and channel migration
+    reliability_bp: 0
+    description: An account that moved to chat or a shared channel reads as silence to every
+      pattern above. This is the object's most damaging blind spot after usage.
+  - source: phone
+    signal: call outcomes and what was really said about the renewal
+    reliability_bp: 0
+  - source: status_page
+    signal: whether a live incident explains the whole population's signals moving together
+
+outputs:
+  - name: churn_risk_bp
+    type: integer
+    description: The read. Never emit it without primary_driver and blindness attached; a bare
+      number is what an account team argues with instead of acting on.
+    derived_from: [risk_bp, confidence_bp]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: risk_direction
+    type: string
+    description: improving | flat | worsening. More decision-relevant than the level, and the only
+      output of this object that is reliable today.
+    derived_from: [direction, engagement_trend, relationship_momentum]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: primary_driver
+    type: string
+    description: The one behaviour this read rests on. The thing an account owner can take into a
+      conversation.
+    derived_from: [primary_driver, driver_evidence]
+    consumed_by: [L4.reasoning_unit, L5.communication_planning]
+  - name: blindness_declaration
+    type: string
+    description: What could not be seen and whether seeing it would plausibly flip the answer. The
+      output most likely to be dropped as noise and the one that keeps the rest honest.
+    derived_from: [blindness]
+    consumed_by: [L4.decision_maker, L6.learning_unit]
+  - name: receiving_owner
+    type: string
+    description: Who outside support now owns the save. Null is a finding, not a gap.
+    derived_from: [receiving_owner_ref, briefed_at]
+    consumed_by: [L5.execution_planning, L5.communication_planning]
+  - name: save_urgency
+    type: string
+    description: How soon someone must act, which is a function of the horizon and not of the read.
+      Unavailable without account.renewal_at, and currently emitted as unknown.
+    derived_from: [days_to_renewal, contract_lock_months, risk_band]
+    consumed_by: [L4.decision_maker, L5.execution_planning]
+  - name: quiet_account_flag
+    type: boolean
+    description: The going-quiet shape, on its own, for the sweep. Cheap, noisy, and the highest
+      recall thing this object emits.
+    derived_from: [engagement_trend, days_since_last_contact, ball_in_court]
+    consumed_by: [L4.reasoning_unit]
+  - name: churn_lead_time_days
+    type: number
+    description: How early the flag was raised relative to the outcome. The feedback signal that
+      calibrates everything above it.
+    derived_from: [lead_time_days, outcome]
+    consumed_by: [L6.learning_unit]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PRECONDITIONS — what must be true before the question can even be asked.
+#
+# A constraint bounds the answer; a precondition gates whether we are entitled to one. On this
+# object the distinction is unusually load-bearing, because the most damaging failure available
+# is not a wrong read — it is a confident read taken on an account that had no baseline.
+# ─────────────────────────────────────────────────────────────────────────────
+preconditions:
+  - id: churn_risk.account_identity_resolves
+    statement: A stable account identity must exist across threads, contacts and channels before
+      any account-level read can be formed.
+    requires: [customer_support.obj.core.customer_account, account_ref]
+    if_unmet: block
+
+  - id: churn_risk.baseline_exists
+    statement: The account's own contact norm must be established before its silence can be read as
+      evidence.
+    requires: [contact_rate_baseline]
+    if_unmet: degrade
+    when:
+      - absent: derived.contact_frequency
+
+  - id: churn_risk.minimum_relationship_history
+    statement: >
+      A relationship must have existed long enough to have a normal. An account eleven days old
+      has no cadence, and every silence pattern in this file will fire on it within a fortnight.
+    if_unmet: block
+
+  - id: churn_risk.motion_permits_absence_reading
+    statement: >
+      The support motion must be one in which contact is expected. In plg_self_serve the great
+      majority of healthy accounts never contact support at all, so absence carries no information
+      and the going-quiet patterns must be suppressed rather than merely down-weighted.
+    requires: [model_context]
+    if_unmet: block
+
+  - id: churn_risk.not_inside_an_incident_window
+    statement: >
+      No live major incident may be distorting the population. During one, every account's
+      sentiment and volume move together and the read loses its power to discriminate between
+      accounts, which is the only thing it is for.
+    if_unmet: degrade
+
+  - id: churn_risk.a_receiving_owner_exists
+    statement: >
+      A named person outside support who can act commercially must exist before a read is RAISED.
+      Forming the read without one is fine and often necessary; routing it to a dashboard instead
+      of a person is what turns detection into paperwork.
+    requires: [receiving_owner_ref]
+    if_unmet: degrade
+
+  - id: churn_risk.horizon_is_known_or_declared_unknown
+    statement: >
+      Either the renewal date is known, or the read must explicitly carry horizon_days as unknown.
+      Silently assuming a horizon is how a watch item on a three-year contract becomes an
+      escalation.
+    requires: [renewal_at, horizon_days]
+    if_unmet: degrade
+
+constraints:
+  - id: churn_risk.no_score_without_a_driver
+    statement: A risk_bp may not be published without primary_driver set to something other than
+      unknown.
+    hard: true
+    why: A score with no driver cannot be acted on, only argued with — and the argument is always
+      about the score rather than about the customer.
+
+  - id: churn_risk.emotion_alone_cannot_raise_the_band
+    statement: Sentiment and escalation language may not on their own raise risk_band above
+      `watch`. A behavioural or commercial signal is required for anything higher.
+    hard: true
+    why: The characteristic failure of this capability is chasing the loudest account. This
+      constraint is the mechanical form of the discriminator.
+
+  - id: churn_risk.silence_requires_a_baseline
+    statement: Absence of contact may not raise the read on an account with no established contact
+      norm.
+    when:
+      - absent: derived.contact_frequency
+    hard: true
+    why: Absence is not evidence until you know what presence looked like. Without a baseline this
+      object flags every account that had a quiet fortnight.
+
+  - id: churn_risk.no_raise_without_a_receiver
+    statement: A read may not enter the `escalated` state without a named receiving owner.
+    hard: true
+    why: An escalation with no receiver is a complaint wearing a workflow — and here, a churn flag
+      with no receiver is a note that is later cited as evidence the system worked.
+
+  - id: churn_risk.incident_window_suppresses_comparison
+    statement: Cross-account comparison is invalid while a major incident is live and for the
+      following recovery window.
+    hard: false
+    why: Every account's signals move together during an incident. Reads taken then rank accounts
+      by how loudly they experienced a shared event.
+
+  - id: churn_risk.reads_do_not_widen_audience
+    statement: A churn read may never be shared more widely than the evidence it was built from.
+    hard: true
+    why: Rule 10. The evidence is a customer's private frustration expressed to support; a read
+      built from it that circulates to a wider audience than the ticket did is a disclosure.
+
+  - id: churn_risk.a_closed_ticket_does_not_clear_the_read
+    statement: Resolving or closing tickets may not lower risk_bp on its own.
+    hard: true
+    why: Resolution closes the work item. The effort the customer spent getting there is what they
+      will recall when asked to defend the spend, and it does not close with the ticket.
+
+  - id: churn_risk.decays
+    statement: A read older than its own horizon window must be marked stale rather than carried
+      forward.
+    hard: false
+    why: This object decays faster than almost anything else in the brain — it describes a
+      three-week behavioural window, and a six-week-old flag is history presented as news.
+
+business_rules:
+  - id: churn_risk.behavioural_outranks_emotional
+    statement: >
+      Where a behavioural signal and an emotional signal disagree, the behavioural one wins. An
+      account that is furious and writing constantly reads lower than an account that is polite and
+      has stopped writing.
+    then: rank_behavioural_first
+    severity: blocking
+    why: Engaged customers complain; departing ones go quiet. This is the single most important
+      rule in the object and the one most likely to be overridden under pressure from a loud account.
+
+  - id: churn_risk.complaint_is_engagement
+    statement: Negative sentiment accompanied by sustained or increased contact volume must lower
+      the read, not raise it.
+    when:
+      - path: derived.sentiment
+        op: '<'
+        value: 0.0
+      - path: derived.engagement
+        op: '>='
+        value: 1.0
+    then: lower_read
+    severity: warning
+    why: A customer who still bothers to argue with us still expects the argument to be worth
+      having. Suspended when a procurement contact has appeared — see the exception.
+
+  - id: churn_risk.compare_to_the_account_not_the_queue
+    statement: Contact volume must be judged against this account's own history, never against the
+      queue average.
+    then: require_per_account_baseline
+    severity: blocking
+    why: A heavy integrator raising fewer tickets and a light user raising more look identical in
+      aggregate and mean opposite things.
+
+  - id: churn_risk.renewal_window_inverts_the_read
+    statement: >
+      Inside the renewal window, unresolved service failures stop being operational facts and
+      become negotiating positions. The same open escalation is worth materially more there than
+      outside it.
+    then: apply_renewal_multiplier
+    severity: warning
+    why: Not because the failure changed, but because the customer's remaining opportunity to act
+      on it did.
+
+  - id: churn_risk.flag_before_you_can_prove_it
+    statement: A read may be raised at the point of suspicion with confidence_bp stated, and must
+      not be withheld pending proof.
+    then: allow_low_confidence_raise
+    severity: warning
+    why: The standard of proof that satisfies a reviewer becomes available after the renewal
+      decision has been taken. Being wrong is visible and cheap; being late is invisible and total.
+
+  - id: churn_risk.absence_of_risk_is_a_finding
+    statement: A clean read on a watched account must be recorded as a read, not omitted.
+    then: record_clean_read
+    severity: warning
+    why: Without it a silent account is indistinguishable from an unexamined one, and coverage
+      becomes an assumption rather than a measurement.
+
+  - id: churn_risk.every_raise_names_a_receiver
+    statement: A raised read must name the person outside support who now owns the conversation.
+    then: require_receiving_owner
+    severity: blocking
+    why: A dashboard is not an owner. The account still leaves and the dashboard is later produced
+      as evidence that detection worked.
+
+  - id: churn_risk.do_not_escalate_everything_to_an_executive
+    statement: Executive escalation is reserved for reads that are both high-confidence and
+      inside an actionable horizon.
+    severity: warning
+    why: Executive attention is single-use. Spending it on watch items trains the executive to stop
+      reading flags, which destroys the channel the genuine cases needed.
+
+  - id: churn_risk.support_senses_it_does_not_save_it
+    statement: Support owns detection, evidence and handoff. It does not own the intervention.
+    severity: advisory
+    why: The save is commercial and needs someone able to change terms. A support function that
+      owns both ends up doing neither, and the account team learns to wait.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DECISION FACTORS — sums to exactly 10000.
+#
+# The weights ARE the expertise here. `emotional_signal` at 300 against
+# `behavioural_contact_change` at 2400 is not a rounding artefact — it is an eight-to-one
+# statement that how the customer feels is nearly worthless once you know how they are behaving.
+# ─────────────────────────────────────────────────────────────────────────────
+decision_factors:
+  - name: behavioural_contact_change
+    weight_bp: 2400
+    direction: increases
+    description: >
+      Change in contact volume against this account's own norm. Ranked first by a distance, because
+      it is the only factor that measures something the customer chose to stop doing. It is also
+      the factor most likely to be under-read, since it generates no event, no ticket and no alert
+      anywhere in the stack.
+    reads: [contact_volume_trend, contact_rate_baseline, days_since_last_contact, engagement_trend,
+            ball_in_court]
+
+  - name: unresolved_repetition
+    weight_bp: 1600
+    direction: increases
+    description: >
+      The same thing asked again, still not fixed. Outranks severity because severity is our
+      assessment of the fault and repetition is the customer's remaining patience expressed as an
+      action.
+    reads: [repeat_contact_count, unresolved_repeat_topic, reopen_count, unresolved_escalation_open,
+            open_escalation_days]
+
+  - name: renewal_proximity
+    weight_bp: 1400
+    direction: context
+    description: >
+      Context rather than increase: proximity does not make churn more likely, it makes the same
+      risk more urgent and more expensive to ignore. Inside the window an unresolved failure stops
+      being an operational fact and becomes a negotiating position.
+    reads: [renewal_at, days_to_renewal, in_renewal_window, contract_lock_months]
+
+  - name: relationship_change
+    weight_bp: 1200
+    direction: increases
+    description: >
+      Who is on the other end, and whether they changed. Under-weighted almost everywhere because
+      it has no number attached: the account's accumulated goodwill was held by a person, and when
+      that person goes the history stops counting while every score keeps counting it.
+    reads: [defender_departed, contact_changed_recently, contact_change_count, active_contact_count,
+            procurement_contact_appeared]
+
+  - name: cumulative_effort
+    weight_bp: 1100
+    direction: increases
+    description: >
+      Total effort spent getting answers out of us, across the relationship. Predicts loyalty
+      better than satisfaction does, and unlike satisfaction it can be reconstructed from ticket
+      history on accounts that never answered a survey.
+    reads: [cumulative_effort_bp, broken_promise_count, sla_breach_count, hard_resolution_recent]
+
+  - name: product_usage_evidence
+    weight_bp: 900
+    direction: context
+    description: >
+      Weighted for how decisive it is when present, not for how often it is available — which today
+      is never. It is the only factor that separates an account that no longer needs us from one
+      that no longer wants us, and its absence is why every quiet-account read here carries an
+      irreducible ambiguity.
+    reads: [blindness, channel_shift, expansion_signal]
+
+  - name: commercial_exposure
+    weight_bp: 800
+    direction: context
+    description: >
+      What is at stake. Context and not increase, deliberately: small accounts leave at least as
+      readily as large ones, and a function that only investigates large accounts discovers its
+      SMB churn from the revenue report.
+    reads: [arr, plan_tier, expansion_signal]
+
+  - name: emotional_signal
+    weight_bp: 300
+    direction: context
+    description: >
+      Eight times lighter than the leading behavioural factor, and the weighting is the point. Not
+      because feeling does not matter, but because it is the factor a naive reader over-weights by
+      an order of magnitude, and its incremental predictive value once contact behaviour is known
+      is close to nothing. Its most valuable contribution is negative — arguing the read down when
+      the customer is loud and still engaged.
+    reads: [sentiment_score, complaint_is_engagement, escalation_language_seen, detractor_count,
+            cancellation_language_seen]
+
+  - name: context_noise_suppressors
+    weight_bp: 300
+    direction: decreases
+    description: >
+      The reasons not to trust the read: a live incident flattening the whole population, a known
+      channel migration, a seasonal quiet period, a cold-start account with no baseline. Small in
+      weight and large in effect, because it fires exactly when everything else is firing at once.
+    reads: [suppressed_reason, incident_exposure_count, channel_shift, model_context]
+
+# ─────────────────────────────────────────────────────────────────────────────
+evidence:
+  - source: telemetry
+    strength_bp: 9500
+    independent_of: [ticket, email, survey, derived]
+    decays: true
+    description: >
+      Product usage. The strongest evidence available for this object by a distance, the only
+      source that can contradict both the customer and the account team and be right, and entirely
+      absent from support's field of view.
+
+  - source: contract
+    strength_bp: 8800
+    independent_of: [ticket, email, derived, survey]
+    decays: false
+    description: Term, notice period and auto-renewal. Does not say whether they want to leave; says
+      whether wanting to matters this year, which is half of every actionable read.
+
+  - source: ticket
+    strength_bp: 8500
+    independent_of: [survey, crm, telemetry]
+    decays: true
+    description: The contact history in aggregate. Reopens, effort, breaches and repetition all live
+      here, and none of it is available as typed facts today.
+
+  - source: crm
+    strength_bp: 8000
+    independent_of: [ticket, email, telemetry]
+    decays: true
+    description: Renewal date, ARR, plan, and whoever the account team last spoke to. Someone typed
+      it once and it has aged since, but the renewal date does not go stale.
+
+  - source: email
+    strength_bp: 7500
+    independent_of: [survey, telemetry, crm]
+    decays: true
+    description: The written thread. The only source the pipeline actually has, timestamped and
+      verbatim — and blind to any relationship that moved to another channel.
+
+  - source: chat
+    strength_bp: 6500
+    independent_of: [survey, telemetry]
+    decays: true
+    description: Verbatim and timestamped where it exists. Its absence is worse here than on a
+      ticket, because an account that migrated to chat reads as an account that went silent.
+
+  - source: survey
+    strength_bp: 5500
+    independent_of: [ticket, telemetry]
+    decays: true
+    description: The customer's own verdict, biased to the extremes, easy to time favourably, and
+      arriving after the decision it confirms. The middle of the distribution — where churn lives —
+      does not answer.
+
+  - source: phone
+    strength_bp: 5500
+    independent_of: [email, survey]
+    decays: true
+    description: Where the renewal is actually discussed, and where the least evidence survives.
+      Whatever the agent typed afterwards is the whole record.
+
+  - source: derived
+    strength_bp: 4500
+    decays: true
+    description: >
+      Engagement, momentum and sentiment. Explicitly NOT independent of email — it is computed from
+      the same thread — so it may corroborate a read's direction and must never be counted as a
+      second source under Rule 11.
+
+  - source: status_page
+    strength_bp: 4000
+    independent_of: [ticket, email]
+    decays: true
+    description: Proves a shared incident existed, which is how the population-wide suppression is
+      justified. Does not prove this account was affected.
+
+  - source: help_center
+    strength_bp: 3000
+    independent_of: [ticket, email]
+    decays: true
+    description: Self-service behaviour before contact. Weak, and the best available hint that an
+      account is troubleshooting alone rather than asking — which is either maturity or
+      disengagement.
+
+  - source: manual_entry
+    strength_bp: 3000
+    decays: true
+    description: An agent's or manager's note that something feels off. Unverifiable, frequently
+      earliest, and the reason `read_by` exists — a human read after a quiet-account sweep is
+      different evidence from a machine read and should not be averaged with one.
+
+metrics:
+  - name: churn_risk_lead_time
+    unit: days
+    direction: higher_is_better
+    owner_layer: L6
+    description: >
+      Days between the first raised read and the churn or renewal decision. The only metric here
+      that tests whether the object is early enough to matter; every other number can look healthy
+      while this one says the flags arrive after the decision.
+    calibrates: [cs.churn.gone_quiet_with_nobody_waiting, cs.churn.quiet_past_this_accounts_own_cadence,
+                 cs.churn.explicit_cancellation_language]
+
+  - name: support_first_detection_share
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Share of churned accounts where support raised a flag before any other function.
+      Tests the premise of the whole object — that support is the earliest sensor.
+
+  - name: silent_churn_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: >
+      Share of churn where `outcome` was churned_silently — the account left without ever telling
+      us. The specific failure this object exists to prevent, and the number that must be reported
+      separately rather than folded into a general churn count.
+    calibrates: [cs.churn.contact_rate_below_this_accounts_own_norm]
+
+  - name: quiet_account_review_coverage
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Share of accounts whose contact rate fell below their own norm that a human
+      actually reviewed. Measures whether the cheapest signal is being read at all.
+
+  - name: false_positive_rate
+    unit: percent
+    direction: target_band
+    owner_layer: L6
+    description: >
+      Deliberately a band and not a minimum. Near zero means the bar has been set where only the
+      undeniable qualifies and the quiet accounts are being missed; a high rate means the account
+      team has stopped reading flags, which is the same failure by a different route.
+    calibrates: [cs.churn.single_threaded_and_quieting, cs.churn.competitor_named_while_disengaging]
+
+  - name: flag_to_owner_latency
+    unit: hours
+    direction: lower_is_better
+    owner_layer: L6
+    description: Time from read_at to briefed_at. The part of the lead time support fully controls,
+      and usually larger than the part it complains about.
+
+  - name: baseline_coverage
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L2
+    description: Share of accounts with an established contact-rate baseline. The ceiling on
+      everything above — an account with no baseline cannot go quiet, it can only be silent.
+
+  - name: driver_distribution_skew
+    unit: ratio
+    direction: target_band
+    owner_layer: L6
+    description: >
+      How concentrated primary_driver is. A support function whose flags are overwhelmingly
+      `explicit_language` is not detecting anything, it is transcribing; one with no
+      `contact_volume_drop` at all is not looking at the accounts that matter.
+
+  - name: loud_account_flag_share
+    unit: percent
+    direction: target_band
+    owner_layer: L6
+    description: Share of raised reads on accounts that were highly engaged at the time. Directly
+      measures whether the discriminator is being applied or quietly ignored under pressure.
+
+events:
+  - id: churn_risk.quiet_account_detected
+    name: Account Has Gone Quiet
+    severity: notable
+    emitted_when:
+      - path: derived.engagement
+        op: '<='
+        value: 0.5
+      - path: thread.ball_in_court
+        op: '='
+        value: nobody
+    payload: [engagement_trend, days_since_last_contact, ball_in_court, account_ref]
+    description: The cheapest and highest-recall event this object emits, and the only one that
+      fires on an account doing nothing. Feed it to a sweep, not to an alert.
+
+  - id: churn_risk.silence_past_cadence
+    name: Silence Past The Account's Own Rhythm
+    severity: notable
+    emitted_when:
+      - path: thread.ball_in_court
+        op: '='
+        value: nobody
+      - fn: days_since
+        path: thread.last_inbound
+        op: '>='
+        value:
+          baseline: reply_cadence
+          mult: 3
+          floor: 7
+    payload: [days_since_last_contact, contact_rate_baseline, account_ref]
+
+  - id: churn_risk.loss_language_observed
+    name: Loss Language In The Thread
+    severity: critical
+    emitted_when:
+      - has_obs: closed_lost_mention
+    payload: [primary_driver, driver_evidence, account_ref, sentiment_score]
+    description: Loud, late and worth acting on immediately anyway. The lead time is close to zero,
+      which is exactly why the quiet events above matter more.
+
+  - id: churn_risk.relationship_contact_changed
+    name: The Contact Changed
+    severity: notable
+    emitted_when:
+      - has_obs: champion_change
+    payload: [defender_departed, contact_change_count, primary_contact_ref, account_ref]
+    invalidates: [cumulative_effort_bp, sentiment_ref, contact_rate_baseline, complaint_is_engagement]
+    description: >
+      Invalidates more than it asserts. Everything we believed about this relationship was learned
+      from a person who may no longer be there — the effort ledger, the sentiment read and the
+      contact baseline all belong to the departed contact and none of them transfer.
+
+  - id: churn_risk.raised
+    name: Churn Risk Raised
+    severity: critical
+    payload: [risk_bp, risk_band, primary_driver, driver_evidence, blindness, confidence_bp,
+              receiving_owner_ref]
+    description: Must carry a receiving owner. A raise with a null owner is a note and should be
+      rejected rather than logged.
+
+  - id: churn_risk.briefed
+    name: Account Owner Briefed
+    severity: info
+    payload: [briefed_at, receiving_owner_ref, driver_evidence]
+    description: The moment support's job is done. The gap from churn_risk.raised is the latency
+      metric worth managing.
+
+  - id: churn_risk.suppressed
+    name: Read Suppressed
+    severity: info
+    payload: [suppressed_reason, risk_state, account_ref]
+    description: >
+      Emitted rather than applied silently, because an invisible suppression becomes a permanent
+      one — the live-incident suppression in particular has a habit of outlasting the incident by a
+      quarter.
+
+  - id: churn_risk.cleared
+    name: Risk Cleared
+    severity: info
+    payload: [direction, engagement_trend, outcome]
+    description: Behaviour returned to the account's own norm. Reversible, and frequently means the
+      customer decided to give us one more chance rather than that they stopped considering leaving.
+
+  - id: churn_risk.realised
+    name: Account Churned
+    severity: critical
+    payload: [outcome, lead_time_days, primary_driver, blindness]
+    description: The only event that calibrates anything above it. Report it with lead_time_days
+      attached even — especially — when the answer is that we saw it the week they told us.
+
+actions:
+  - id: churn_risk.quiet_account_sweep
+    name: Sweep accounts that fell below their own contact norm
+    actor: human
+    cost: moderate
+    reversible: true
+    preconditions:
+      - path: derived.engagement
+        op: '<='
+        value: 0.5
+      - path: thread.ball_in_court
+        op: '='
+        value: nobody
+    effect: >
+      The highest-yield routine in this capability and the one nobody schedules, because silence
+      generates no work item to schedule it against.
+
+  - id: churn_risk.verify_before_flagging
+    name: Contact the account before raising the read
+    actor: agent
+    cost: low
+    reversible: true
+    effect: >
+      One conversation separates "gone quiet because it works" from "gone quiet because they left".
+      It is the step that substitutes for the usage data support cannot see, and it is cheap.
+
+  - id: churn_risk.reconstruct_effort
+    name: Rebuild the effort ledger from ticket history
+    actor: agent
+    cost: moderate
+    effect: Produces an effort read on the strategic accounts that never answer surveys, which are
+      the accounts where the read is worth having.
+
+  - id: churn_risk.brief_the_account_owner
+    name: Brief the named owner outside support
+    actor: human
+    cost: low
+    preconditions:
+      - exists: thread.ball_in_court
+    effect: Turns a detection into a save opportunity. Without it the object produces paperwork.
+
+  - id: churn_risk.hand_off_the_save
+    name: Hand the intervention to someone who can change terms
+    actor: human
+    cost: moderate
+    effect: >
+      Support can see it and usually cannot fix it. A support function that keeps the save ends up
+      offering the only thing it controls — more attention — to a customer whose objection is
+      commercial.
+
+  - id: churn_risk.record_a_clean_read
+    name: Record that the account was examined and is fine
+    actor: agent
+    cost: trivial
+    effect: Makes coverage measurable. Without it a silent account is indistinguishable from an
+      unexamined one in every report.
+
+  - id: churn_risk.suppress_during_incident
+    name: Suppress cross-account comparison for the incident window
+    actor: system
+    cost: trivial
+    reversible: true
+    effect: Prevents a fortnight of reads that rank accounts by how loudly they experienced a shared
+      event. Must expire automatically; a manual reinstatement never happens.
+
+  - id: churn_risk.check_the_fortnight_after_a_hard_resolution
+    name: Re-read the account two weeks after a hard resolution
+    actor: agent
+    cost: low
+    effect: >
+      The highest-yield window in the whole capability and the one nobody looks at, because the
+      ticket is closed and the queue has moved on. What the customer remembers is not the fix, it is
+      what it took to get it.
+
+  - id: churn_risk.state_the_blindness
+    name: Say what could not be seen
+    actor: agent
+    cost: trivial
+    effect: >
+      Converts an over-confident read into a usable one. An account team that knows support could
+      not see usage will go and look at usage; one that receives a bare score will argue about the
+      score.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEPENDENCIES — facts about the COMPILE, not about the world.
+# ─────────────────────────────────────────────────────────────────────────────
+dependencies:
+  - target: customer_support.obj.core.customer_account
+    kind: requires
+    strength: hard
+    description: No account, no unit of churn. The object is not resolvable without it and should
+      not be loaded alone.
+
+  - target: customer_support.obj.core.ticket
+    kind: requires
+    strength: soft
+    description: The contact history in aggregate. Soft because the executable patterns read
+      threads rather than tickets — which is precisely the approximation this object is making.
+
+  - target: customer_support.obj.core.customer_sentiment
+    kind: enriches
+    strength: soft
+    description: >
+      Enriches and never determines. Loading sentiment without this object is common and harmless;
+      loading this object and letting sentiment lead is the failure the discriminator exists to
+      prevent.
+
+  - target: customer_support.obj.core.escalation
+    kind: enriches
+    strength: soft
+    description: Supplies the strongest half of the strongest available combination — an open
+      escalation. The other half is commercial and unavailable.
+
+  - target: customer_support.obj.core.effort_score
+    kind: enriches
+    strength: soft
+
+  - target: customer_support.obj.core.satisfaction_score
+    kind: enriches
+    strength: soft
+    description: Corroborates, always late. Never load this object in order to reach satisfaction —
+      the arrow runs the other way.
+
+  - target: customer_support.obj.core.incident
+    kind: invalidated_by
+    strength: hard
+    description: >
+      A live major incident invalidates cross-account comparison outright. This is the one
+      dependency that removes reads rather than adding them, and it is why the `on_hold` state
+      exists.
+
+  - target: customer_support.obj.core.entitlement
+    kind: enriches
+    strength: soft
+    description: Bounds what the account was ever owed. Without it the object flags accounts for
+      not receiving service they never bought.
+
+  - target: customer_support.df.churn_signal_detection.behavioural_before_emotional
+    kind: derived_from
+    strength: hard
+    description: The framework this object's entire weighting scheme implements. If it changes, the
+      decision_factors here are wrong.
+
+  - target: customer_support.mm.churn_signal_detection.absence_needs_a_baseline
+    kind: derived_from
+    strength: hard
+    description: The argument behind every silence pattern and behind the
+      churn_risk.silence_requires_a_baseline constraint.
+
+  - target: customer_support.heu.churn_signal_detection.silence_beats_anger
+    kind: derived_from
+    strength: soft
+
+  - target: customer_support.heu.churn_signal_detection.baseline_is_per_account
+    kind: derived_from
+    strength: soft
+
+  - target: customer_support.df.churn_signal_detection.renewal_window_inversion
+    kind: derived_from
+    strength: soft
+    description: Formalises the renewal_proximity decision factor and the business rule that goes
+      with it.
+
+  - target: customer_support.mm.churn_signal_detection.support_sees_a_slice
+    kind: derived_from
+    strength: soft
+    description: The reason `blindness` is a first-class attribute rather than a caveat in prose.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXCEPTIONS — where the rules above are legitimately wrong.
+#
+# The most important section in this file. Every rule above says silence is bad; an experienced
+# operator carries half a dozen cases where it is not, and a system that lacks them produces
+# confident nonsense on exactly the accounts an expert would wave through in a second.
+# ─────────────────────────────────────────────────────────────────────────────
+exceptions:
+  - id: churn_risk.quiet_because_it_finally_works
+    statement: >
+      The account went quiet because the product started working. An integration completed, an
+      onboarding finished, a migration landed — and the contact rate fell to near zero exactly as
+      intended.
+    overrides: [cs.churn.gone_quiet_with_nobody_waiting, cs.churn.quiet_past_this_accounts_own_cadence,
+                cs.churn.trajectory_collapsed_on_a_previously_active_account,
+                churn_risk.silence_requires_a_baseline]
+    frequency: common
+    why: >
+      This is the single most common wrong firing of the whole object, and it is not a rare edge —
+      on a maturing product it may be the majority of quiet accounts. The trace is IDENTICAL to
+      abandonment: fewer contacts, nobody waiting, tempo collapsed. Only product usage separates
+      the two and support cannot see it, which is why the cheap substitute is a conversation:
+      one message asking how it is going resolves it in a day. Treat every quiet-account read as
+      carrying this ambiguity until someone has asked.
+    when:
+      - path: derived.engagement
+        op: '<='
+        value: 0.5
+
+  - id: churn_risk.the_contact_moved_rather_than_stopped
+    statement: >
+      Contact did not fall, it migrated — to a shared Slack channel, to a TAM's direct line, to a
+      community forum, or into the product's in-app messenger. The account is talking to us more
+      than ever and the pipeline sees none of it.
+    overrides: [cs.churn.gone_quiet_with_nobody_waiting, cs.churn.quiet_past_this_accounts_own_cadence,
+                cs.churn.single_threaded_and_quieting]
+    frequency: occasional
+    why: >
+      The substrate ingests email. Every silence pattern here is really an EMAIL-silence pattern
+      wearing an account-silence label, and a channel migration is the case where the two come
+      apart completely — often accompanying an UPGRADE in the relationship. Check `channel_shift`
+      before believing any quiet read, and treat a recent onboarding to a higher-touch tier as
+      near-conclusive.
+
+  - id: churn_risk.seasonal_quiet
+    statement: An education account in August, a retailer in January, a European account in the
+      first fortnight of August, a tax practice in May. The silence is a calendar, not a decision.
+    overrides: [cs.churn.quiet_past_this_accounts_own_cadence, cs.churn.gone_quiet_with_nobody_waiting]
+    frequency: common
+    why: >
+      The reply_cadence baseline is rolling and cannot see a year. Seasonal accounts will trip
+      every silence pattern in this file on schedule, annually, and the resulting flags train the
+      account team to ignore the channel just before the season when it would have mattered.
+
+  - id: churn_risk.the_loud_account_that_really_is_leaving
+    statement: >
+      Anger plus sustained volume normally lowers the read. It does not when a commercial actor has
+      appeared — a procurement contact in a support thread, a request for a data export, a question
+      about contract end dates or API rate limits for a bulk extraction.
+    overrides: [churn_risk.complaint_is_engagement, cs.churn.loud_and_still_here]
+    frequency: rare
+    why: >
+      The final fortnight before a planned exit looks exactly like high engagement: lots of
+      contact, negative tone, urgency. The difference is WHO is now in the thread and WHAT they are
+      asking for. This is the one exception that inverts the object's central discriminator rather
+      than merely qualifying it, and the engine cannot currently see the term that triggers it.
+
+  - id: churn_risk.self_serve_motion_has_no_baseline
+    statement: In a product-led self-serve motion the overwhelming majority of healthy accounts
+      never contact support at all. Absence carries no information whatsoever.
+    overrides: [cs.churn.gone_quiet_with_nobody_waiting, cs.churn.quiet_past_this_accounts_own_cadence,
+                cs.churn.single_threaded_and_quieting, cs.churn.trajectory_collapsed_on_a_previously_active_account]
+    frequency: common
+    why: >
+      The whole method rests on reading absence against presence, and in this motion there was
+      never presence. Applying it anyway produces a risk register consisting of every customer who
+      is using the product as designed. Suppress at the motion level via `model_context`, do not
+      down-weight — a down-weighted nonsense signal is still nonsense with a smaller number.
+
+  - id: churn_risk.live_incident_flattens_the_population
+    statement: During a major incident and for roughly a fortnight afterwards, every account's
+      sentiment and contact volume move together.
+    overrides: [cs.churn.loud_and_still_here, cs.churn.trajectory_collapsed_on_a_previously_active_account,
+                churn_risk.behavioural_outranks_emotional]
+    frequency: occasional
+    why: >
+      The read's only job is to discriminate BETWEEN accounts, and during an incident it cannot —
+      it ranks them by how loudly they experienced a shared event. Reads taken in this window are
+      not merely noisy, they are systematically wrong in a consistent direction, which is worse
+      because the resulting list looks plausible.
+
+  - id: churn_risk.contract_locked
+    statement: >
+      The read is genuinely elevated and the account cannot act on it for another year. A high risk
+      with eighteen months of term and a ninety-day notice window is a real finding that is not
+      urgent.
+    overrides: [churn_risk.do_not_escalate_everything_to_an_executive]
+    frequency: occasional
+    why: >
+      Risk is a probability AND a date. Escalating locked-in accounts as urgent is precisely how the
+      escalation channel gets burned for the cases where urgency was real — and the correct action
+      is not silence but a longer-horizon plan, which is a different conversation with a different
+      owner.
+
+  - id: churn_risk.decision_taken_somewhere_we_cannot_see
+    statement: >
+      The account was acquired, restructured, or had its budget consolidated into a parent
+      organisation. The decision is being taken by people who have never contacted support and
+      never will.
+    overrides: [churn_risk.behavioural_outranks_emotional, churn_risk.no_score_without_a_driver]
+    frequency: rare
+    why: >
+      Neither behaviour nor sentiment will show it, and often the operational relationship stays
+      perfectly healthy right up to the notice. The only tell available from a queue is a sudden
+      appearance of unfamiliar domains or a contact change with no handover — which is why
+      `defender_departed` is worth watching even on accounts reading as green.
+
+  - id: churn_risk.high_effort_that_the_customer_chose
+    statement: >
+      A sophisticated account that runs hard integrations will always show high contact volume, high
+      effort and frequent escalations. That is what deep adoption looks like, and it is the
+      signature of a customer who cannot easily leave.
+    overrides: [churn_risk.behavioural_outranks_emotional]
+    frequency: occasional
+    why: >
+      Effort is a churn signal when it is effort spent fighting us and a retention signal when it is
+      effort spent building on us. The two are indistinguishable in a ticket count and separable in
+      about thirty seconds of reading. Any effort-based read on a heavy integrator needs a human
+      before it is raised.
+
+# ─────────────────────────────────────────────────────────────────────────────
+best_practices:
+  - id: churn_risk.bp.compare_to_itself
+    statement: Compare every account to its own history, never to the queue.
+    why: A heavy integrator raising fewer tickets and a light user raising more look identical in
+      aggregate and mean opposite things.
+    applies_when: Always, and especially when the tool's default report is a queue-level average.
+
+  - id: churn_risk.bp.behaviour_before_language
+    statement: Read what they did before reading what they said, and let the behaviour set the band.
+    why: Behaviour costs the customer something and tone does not. Language is the confirmation
+      layer, not the detection layer.
+
+  - id: churn_risk.bp.flag_at_suspicion
+    statement: Raise at the point of suspicion with the confidence stated, rather than waiting for
+      proof.
+    why: The standard of proof that satisfies a reviewer becomes available after the renewal
+      decision. Being wrong is visible and cheap; being late is invisible and total.
+    applies_when: Whenever the alternative is holding a read for another fortnight of evidence.
+
+  - id: churn_risk.bp.one_repeatable_sentence
+    statement: Name the driver and the changed behaviour in one sentence the account owner can
+      repeat to the customer without translating it.
+    why: '"Contacts fell from nine a month to one since the March migration" starts a conversation.
+      "Engagement trend 0.4, risk 7200" starts an argument about the model.'
+    evidence: driver_evidence
+
+  - id: churn_risk.bp.hand_it_to_someone_who_can_change_terms
+    statement: Route the save to a named person with commercial authority, and confirm they took it.
+    why: Support can see it and usually cannot fix it. A flag routed to a dashboard is a note that
+      is later produced as evidence the system worked.
+
+  - id: churn_risk.bp.record_the_clean_read
+    statement: Write down that you looked and the account is fine.
+    why: Without it a silent account is indistinguishable from an unexamined one, and coverage
+      becomes an assumption.
+
+  - id: churn_risk.bp.reconstruct_effort_when_no_survey_exists
+    statement: Rebuild the effort ledger from ticket history — touches, reassignments, reopens,
+      wall-clock — on accounts that never answered a survey.
+    why: The accounts that never answer surveys are disproportionately the strategic ones, so the
+      measurement programme is systematically blindest where the stakes are highest.
+
+  - id: churn_risk.bp.read_the_fortnight_after
+    statement: Re-read the account two weeks after a hard resolution, not on the day it closed.
+    why: What the customer remembers is not the fix, it is what it took to get it — and the queue
+      has already filed the ticket as a success and moved on.
+
+  - id: churn_risk.bp.state_the_blindness
+    statement: Say explicitly which of usage, billing and the competitive conversation you could not
+      see, and whether seeing it would plausibly flip the answer.
+    why: An account team that knows support could not see usage will go and look at usage. One that
+      receives a bare score will argue about the score.
+    evidence: blindness
+
+  - id: churn_risk.bp.watch_the_person_not_the_logo
+    statement: Track who defends us inside the account, and treat their departure as a reset of the
+      relationship's history rather than a contact-record update.
+    why: Renewals are defended by a person whose credibility was spent on choosing us. When they go,
+      the history stops counting and every score keeps counting it.
+
+# ─────────────────────────────────────────────────────────────────────────────
+anti_patterns:
+  - id: churn_risk.ap.chase_the_angry_account
+    statement: Ranking the churn register by how angry each account sounds.
+    why_it_happens: >
+      Anger is legible, arrives with its own deadline, and generates internal urgency that feels
+      like work being done. Silence generates nothing, nobody is measured on it, and no meeting is
+      ever called about an account that did not write in.
+    cost: The loud accounts get attention they mostly did not need while the quiet ones leave. The
+      register looks busy and the churn number does not move.
+    instead: Sort by behavioural change against each account's own baseline; use anger as a
+      tie-break and as evidence the customer is still invested.
+    detectable_by: [loud_account_flag_share, driver_distribution_skew, cs.churn.loud_and_still_here]
+
+  - id: churn_risk.ap.score_without_a_driver
+    statement: Emitting a churn score with no named behaviour behind it.
+    why_it_happens: A score is comparable, sortable and dashboard-shaped. A driver requires someone
+      to read tickets, and reading tickets does not scale in a slide.
+    cost: The account team spends the meeting arguing about the model's accuracy instead of about
+      the customer, and eventually stops attending.
+    instead: Refuse to publish risk_bp without primary_driver and one sentence of driver_evidence.
+    detectable_by: [driver_distribution_skew, churn_risk.no_score_without_a_driver]
+
+  - id: churn_risk.ap.benchmark_against_the_queue
+    statement: Judging an account's contact volume against the queue average rather than against its
+      own history.
+    why_it_happens: The queue-level number is the one every support tool reports by default, and the
+      per-account baseline requires a data model nobody has built.
+    cost: Every heavy user looks at risk and every light user looks safe, permanently and in both
+      directions.
+    instead: Build contact_rate_per_account. Until it exists, use each account's own reply cadence
+      and say out loud that it is a proxy.
+    detectable_by: [baseline_coverage, cs.churn.contact_rate_below_this_accounts_own_norm]
+
+  - id: churn_risk.ap.flag_into_a_dashboard
+    statement: Raising risk to a queue, a report or a shared channel rather than to a named person.
+    why_it_happens: Routing to a person requires a relationship and an argument you might lose.
+      Routing to a dashboard requires a filter and cannot be refused.
+    cost: The account leaves, and the dashboard is produced afterwards as evidence that detection
+      worked. This is the most self-protective failure in the capability.
+    instead: Name a receiving owner, brief them, and record briefed_at.
+    detectable_by: [flag_to_owner_latency, churn_risk.every_raise_names_a_receiver]
+
+  - id: churn_risk.ap.wait_until_it_is_provable
+    statement: Holding a read for more evidence.
+    why_it_happens: Being wrong in front of an account team is immediately expensive and personally
+      embarrassing. Being late is invisible and gets attributed to the customer.
+    cost: The read arrives after the decision, and the resulting metric is lead time near zero with
+      a respectable precision rate attached.
+    instead: Raise at suspicion with confidence stated. Precision is a band to be managed, not a
+      minimum to be maximised.
+    detectable_by: [churn_risk_lead_time, false_positive_rate]
+
+  - id: churn_risk.ap.escalate_everything_to_an_executive
+    statement: Routing every elevated read to an executive.
+    why_it_happens: Executive attention is the strongest lever visible from inside support, and
+      using it feels like taking the risk seriously.
+    cost: It is a single-use lever. The executive learns the flags are noise and stops reading them,
+      which removes the channel exactly when a genuine case needs it.
+    instead: Reserve it for high confidence inside an actionable horizon; everything else goes to
+      the account owner.
+
+  - id: churn_risk.ap.clear_the_risk_when_the_ticket_closes
+    statement: Lowering the read because the outstanding tickets were resolved.
+    why_it_happens: The queue's definition of done is ticket-shaped, closing is the only event the
+      tool emits, and it genuinely feels like the problem ended.
+    cost: The effort the customer spent getting there is what they will recall when asked to defend
+      the spend, and it does not close with the ticket.
+    instead: Re-read the account a fortnight after a hard resolution and let behaviour, not
+      workflow state, clear the risk.
+    detectable_by: [cs.churn.detractor_after_a_hard_resolution, churn_risk.a_closed_ticket_does_not_clear_the_read]
+
+  - id: churn_risk.ap.let_sentiment_stand_in_for_risk
+    statement: Building the read out of derived.sentiment because it is the only thing the pipeline
+      can currently compute.
+    why_it_happens: >
+      derived.sentiment is available today and derived.contact_frequency is not, and available beats
+      correct in every roadmap conversation. It also produces a number immediately, which makes the
+      capability look shipped.
+    cost: The object becomes a sentiment mirror with a scarier name — it inherits sentiment's
+      calibration bias, its thread scope and its blindness to the quiet account, while claiming to
+      predict an action.
+    instead: Ship the behavioural patterns that DO run today, weight sentiment at a fraction of
+      them, and put derived.contact_frequency at the top of the backlog.
+    detectable_by: [driver_distribution_skew, loud_account_flag_share]
+
+  - id: churn_risk.ap.support_runs_the_save_itself
+    statement: Support detecting the risk and then attempting the retention conversation.
+    why_it_happens: Support found it, support has the relationship, and handing it over feels like
+      losing it — especially when the account team has ignored two previous flags.
+    cost: Support offers the only thing it controls, which is more attention, to a customer whose
+      objection is commercial. Meanwhile nobody with authority is in the conversation.
+    instead: Own detection, evidence and handoff. Make the handoff good enough that it is not
+      ignored, and measure flag_to_owner_latency rather than save rate.
+
+# ─────────────────────────────────────────────────────────────────────────────
+examples:
+  - label: The account that shouted for three weeks and renewed early
+    kind: misclassification
+    note: >
+      Top of the risk register on tone, bottom on behaviour — volume up, response times fast,
+      three new users onboarded mid-argument. They renewed before the window opened. This is the
+      example the discriminator exists for, and `cs.churn.loud_and_still_here` fires on it today.
+
+  - label: The account that stopped writing in March and gave notice in June
+    kind: typical
+    note: >
+      Nine contacts a month falling to one, no complaint, no escalation, no survey response, no
+      event of any kind anywhere in the stack. Twelve weeks of lead time available and nobody
+      looking. The whole object is built for this account.
+
+  - label: The unresolved escalation four weeks before renewal
+    kind: edge
+    note: >
+      The highest-signal combination support has and it is inexpressible today — it needs
+      account.renewal_at and an escalation observation, and the substrate has neither. Each half
+      alone would have been ignored, correctly.
+
+  - label: The eighth ticket about the same export bug
+    kind: typical
+    note: 'Sev3 every time, resolved every time, workaround every time. Repetition beats severity:
+      the customer''s willingness to raise it an eighth time is a measure of patience being spent,
+      and the queue records eight successes.'
+
+  - label: The account that went quiet because the integration finally worked
+    kind: counterexample
+    note: >
+      Identical trace to abandonment — engagement halved, nobody waiting, tempo collapsed — and the
+      opposite meaning. Only usage data separates them, support cannot see usage, and one message
+      asking how it is going resolves it in a day.
+
+  - label: The migration that moved support into a shared Slack channel
+    kind: counterexample
+    note: >
+      Email contact fell to zero. Actual contact roughly tripled. Every silence pattern in this
+      file fired on an account that had just been upgraded to a higher-touch tier, because the
+      substrate ingests email and calls it the relationship.
+
+  - label: The fortnight after the March outage, when every account looked at risk
+    kind: edge
+    note: >
+      Sentiment down across the population, volume up across the population, and the ranking that
+      came out of it sorted accounts by how loudly they experienced a shared event. Not noise —
+      systematically wrong in a consistent direction, which is worse, because the list looked
+      plausible.
+
+  - label: The two-seat account raising four tickets a week
+    kind: edge
+    note: Normal for a hundred-seat customer and a serious signal here. The read is only ever as
+      good as the baseline it is taken against, and this account's baseline is its own.
+
+  - label: The detractor survey that arrived after the decision
+    kind: misclassification
+    note: >
+      Filed as detection working. It was transcription: the survey followed the ticket, which
+      followed the decision. Anything depending on the customer choosing to tell us is late by
+      construction, and counting it as a catch hides the lead-time problem.
+
+  - label: The self-serve account that has never contacted support
+    kind: counterexample
+    note: >
+      Zero contacts, zero tickets, zero sentiment, healthy usage, renewed twice. In this motion
+      absence is the norm and reading it as risk produces a register containing every customer who
+      is using the product as designed.
+
+  - label: The champion who changed jobs while the health score stayed green
+    kind: typical
+    note: >
+      Every point of accumulated goodwill was held by one person. The score kept counting their
+      history for another two quarters. `has_obs: champion_change` catches this today, which makes
+      it one of the genuinely valuable things this object can do on day one.
+
+# ─────────────────────────────────────────────────────────────────────────────
+references:
+  - title: The Effortless Experience
+    kind: book
+    author: Matthew Dixon, Nick Toman, Rick DeLisi
+    artifact_ref: customer_support.df.churn_signal_detection.effort_as_loyalty_proxy
+    note: >
+      The source of the effort-over-satisfaction argument this object weights on — that reducing
+      the effort a customer spends predicts loyalty far better than exceeding their expectations
+      does. Contested in places and the core asymmetry has held up well in practice.
+
+  - title: Customer Effort Score (CES)
+    kind: framework
+    note: Used here as the shape of `cumulative_effort_bp`, with one deliberate departure — effort
+      is accumulated across the RELATIONSHIP rather than sampled per interaction, because the
+      accounts that matter most rarely answer the per-interaction survey.
+
+  - title: Net Promoter System
+    kind: framework
+    author: Fred Reichheld
+    artifact_ref: customer_support.heu.churn_signal_detection.survey_middle_is_invisible
+    note: Referenced with its main limitation for this purpose stated — the middle of the
+      distribution is where churn actually lives, and a promoter/detractor split makes it invisible.
+
+  - title: 'Customer Success: How Innovative Companies Are Reducing Churn'
+    kind: book
+    author: Nick Mehta, Dan Steinman, Lincoln Murphy
+    note: The health-score tradition this object deliberately sits earlier than. Health scores are
+      better evidenced and later; support's read is worse evidenced and earlier, and the two
+      disagreeing is informative rather than a defect in either.
+
+  - title: Support as the earliest sensor, last consulted
+    kind: internal
+    artifact_ref: customer_support.mm.churn_signal_detection.earliest_sensor_last_consulted
+    note: The organisational argument behind `receiving_owner_ref`, `briefed_at` and the
+      flag_to_owner_latency metric.
+
+  - title: Absence needs a baseline
+    kind: internal
+    artifact_ref: customer_support.mm.churn_signal_detection.absence_needs_a_baseline
+    note: The argument behind every silence pattern here and behind the
+      churn_risk.silence_requires_a_baseline constraint.
+
+  - title: Behavioural before emotional
+    kind: internal
+    artifact_ref: customer_support.df.churn_signal_detection.behavioural_before_emotional
+    note: The framework the decision_factors weighting implements literally. If that framework
+      changes, the weights in this file are wrong and must move with it.
+
+  - title: Practitioner convention — the quiet account sweep
+    kind: practitioner
+    note: >
+      Not from a published methodology. It is the routine experienced support managers run by hand
+      and never write down: a fortnightly pass over named accounts whose contact rate fell against
+      their own norm, with one message sent to each. Cheap, unglamorous, and the highest-yield
+      activity in this capability.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Twenty-two of twenty-three sections populated — everything but `supersedes`, which has no
+    predecessor. Carries the six sections ticket.yaml and customer-sentiment.yaml do not yet have,
+    because on a churn object `exceptions` and `anti_patterns` are not extras: a churn read with no
+    exceptions is a smoke alarm that cannot tell a fire from a shower, and the failure modes here
+    are all social rather than technical.
+
+    WHAT IT CAN DO TODAY. Nine of nineteen patterns are executable, and unusually for this domain
+    they are load-bearing rather than incidental. derived.engagement plus thread.ball_in_court =
+    nobody expresses the going-quiet shape directly, which is the strongest predictor in the
+    discipline. The reply_cadence baseline makes silence relative to the account rather than to the
+    queue — the wrong baseline used carefully, and far better than a constant.
+    has_obs: closed_lost_mention catches explicit loss language and has_obs: champion_change catches
+    the relationship reset, which is the signal every health score misses. edge_count expresses
+    graph thinning as a level. And cs.churn.loud_and_still_here — negative sentiment with sustained
+    volume, therefore LOWER risk — makes the object's discriminator executable, which is the single
+    most useful thing here on day one because the characteristic failure of this capability is
+    chasing the loudest account while a silent one leaves.
+
+    WHAT IT CANNOT DO WITHOUT account.renewal_at AND account.arr. Without renewal_at there is no
+    horizon, and a churn read with no horizon is a mood: the renewal-window inversion cannot be
+    applied, `days_to_renewal` and `save_urgency` cannot be computed, and the highest-signal
+    combination available anywhere in support — an unresolved escalation inside the renewal window
+    — is inexpressible, so this object emits `unknown` for urgency on every read it produces.
+    Without arr it cannot rank exposure, so every flag reaches the account team with identical
+    weight and gets triaged by whoever shouted loudest, which reproduces inside the account team
+    the exact failure this object exists to prevent inside support. Both are one line each in a
+    support_v1 pack's schema.fields, and together they are the cheapest large improvement available
+    to this file.
+
+    THE TEN needs_signal PATTERNS, ranked by what they unlock — the top seven asks, since three of
+    the ten share a signal with one already named. (1) account.renewal_at, for the
+    reasons above. (2) derived.contact_frequency with contact_rate_per_account — every executable
+    silence pattern here reads a THREAD and infers an ACCOUNT, which is the central approximation
+    this object makes and the one most likely to mislead. (3) product.active_usage_trend, not
+    currently in planned_substrate and it should be: it is the only thing that separates an account
+    that no longer needs us from one that no longer wants us, and its absence is why every
+    quiet-account read must declare `blindness`. (4) escalation_requested, since support has no
+    escalation signal of any kind and anger is routinely mistaken for one. (5) ticket_reopened, the
+    only quality signal a customer must spend effort to send. (6) cancellation_threat — highest
+    confidence, near-zero lead time, valuable politically rather than analytically. (7) the
+    contract.* trio, already in planned_substrate under Admin, which would let the object stop
+    action as often as it prompts it.
+
+    ONE DELIBERATE OMISSION. There is no risk-scoring formula anywhere in this file — no
+    thresholds combining the factors, no band boundaries, no decay curve. Those are Layer 4's
+    arithmetic and belong in the pack manifest. What is here is the ORDERING (behavioural over
+    emotional, direction over level, account baseline over queue average) and the weights that
+    express it, which is Layer 3's actual contribution and the part a naive implementation gets
+    backwards.

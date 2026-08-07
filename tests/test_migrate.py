@@ -1,10 +1,12 @@
 """Migration ledger: each file applies exactly once; edited history fails loudly."""
 from __future__ import annotations
 
+import inspect
+
 from sqlalchemy import text
 
 from genios_engine.platform.db import get_engine
-from genios_engine.platform.migrate import apply_migrations
+from genios_engine.platform.migrate import _split_sql, apply_migrations
 
 
 def _db(tmp_path):
@@ -67,3 +69,32 @@ def test_failed_file_records_nothing(tmp_path):
     with get_engine(url).connect() as c:
         rows = c.execute(text("select filename from schema_migrations")).all()
     assert rows == []                                    # not recorded → retried next run
+
+
+def test_sql_splitter_preserves_semicolons_inside_quotes_and_comments():
+    sql = """
+    -- line punctuation; is not a statement
+    insert into notes(value) values ('Layer 5 seed; never final authority');
+    /* block punctuation; is not a statement */
+    insert into notes(value) values ('it''s still; one value');
+    """
+    assert _split_sql(sql) == [
+        "insert into notes(value) values ('Layer 5 seed; never final authority')",
+        "insert into notes(value) values ('it''s still; one value')",
+    ]
+
+
+def test_sql_splitter_preserves_postgres_dollar_quoted_function_bodies():
+    sql = """create function f() returns void as $$ begin perform 1; end; $$ language plpgsql;
+    select 2;"""
+    statements = _split_sql(sql)
+    assert len(statements) == 2
+    assert "perform 1; end;" in statements[0]
+    assert statements[1] == "select 2"
+
+
+def test_postgres_replicas_serialize_ledger_read_and_all_file_ddl():
+    source = inspect.getsource(apply_migrations)
+    assert "pg_advisory_lock" in source
+    assert "pg_advisory_unlock" in source
+    assert "Session-scoped" in source

@@ -1,0 +1,2416 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Postmortem — the written CLAIM about an incident, and the list of things that
+# will be different because of it.
+#
+# SCOPED, not core, and deliberately. Three tests, all of which this object fails
+# as a core object and passes as a scoped one:
+#   1. It is a document about ONE incident, produced by ONE capability
+#      (escalation_and_incident.postmortem). Nothing else in the domain authors it.
+#   2. Nothing in triage reads it. Nothing in the queue reads it. A triage decision
+#      that consulted last quarter's postmortems would be slower and no better —
+#      what triage needs from a past incident is an `issue` and a `root_cause`, both
+#      of which are core objects and both of which the postmortem PRODUCES.
+#   3. The load-set matrix has exactly one capability requiring it, and validate.py
+#      enforces that from the reference graph rather than from this comment.
+#
+# The corollary is stated in the owning capability.yaml and is worth repeating: if a
+# second capability ever asks to load this object, that is not a promotion trigger.
+# It is evidence that findings are NOT flowing back out as issues, root_causes and
+# knowledge_articles the way they are supposed to, and somebody has started mining
+# the prose because the structured output was never produced.
+#
+# THE FOUR CLAIMS THIS FILE IS BUILT ON
+#
+#   1. An action with no owner and no date is not an action. A postmortem whose
+#      action list is entirely of that shape is a diary entry — it will be cited
+#      approvingly for years while the same incident recurs. This is the single most
+#      common way a well-attended, well-written review produces nothing.
+#   2. Blameless is not a courtesy. It is the only mechanism that produces a true
+#      timeline. The moment attribution is on the table, people stop volunteering the
+#      detail you need — not maliciously, and usually not consciously; they simply
+#      report a defensible version instead of an accurate one, and the cost lands on
+#      the NEXT review rather than this one, which is why the practice erodes quietly.
+#   3. The most valuable section is the detection timeline — the gap between breaking
+#      and knowing. It is the cheapest gap in the whole incident to close and the one
+#      nobody funds, because the fix has an owner (engineering) and the detection gap
+#      belongs to nobody. Support usually finds out first and is usually not in the
+#      room where that fact is discussed.
+#   4. A postmortem written for customers and one written for engineers are different
+#      documents. Merging them produces one that serves neither: either the internal
+#      version is sanitised until it stops being useful for learning, or the external
+#      version carries component names and internal blame. In practice it is always
+#      the first, and it happens quietly.
+#
+# HONESTY NOTE ON EXECUTABILITY — read before judging the pattern counts.
+# There is no ticket, SLA, CSAT, escalation or incident signal in the substrate. So
+# nothing here can establish that a postmortem exists, that an incident was reviewed,
+# or what the detection gap was. What IS available turns out to be unusually well
+# matched to this object's central failure: `commitment.action`, `commitment.due_at`
+# and `no_obs: followup_sent`. Every postmortem action item IS a commitment with an
+# owner and a date, so the domain's action-tracking substrate — built for "I'll get
+# back to you Thursday" — reads a postmortem action list without modification. Nine
+# patterns run on that, on `meeting.start_at`, on three commercial observation kinds
+# that fire on post-incident threads, and on graph shape. Nine do not, and the first
+# of those nine — the detection gap — is worth more than all nine that run put together.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.postmortem.postmortem
+  scope: capability
+  name: Postmortem
+  domain: customer_support
+  subdomain: escalation_and_incident
+  owner_capability: customer_support.escalation_and_incident.postmortem
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Post-Incident Review
+    - PIR
+    - RCA Document
+    - Root Cause Analysis Report
+    - Incident Review
+    - After-Action Review
+    - Learning Review
+
+purpose:
+  statement: >
+    The written account of what happened and what changes because of it. Two halves, and only
+    one of them is the point: a timeline of the incident assembled from artefacts, and a list of
+    actions each carrying a named person and a date. The timeline is the part everyone enjoys
+    writing. The action list is the part that decides whether the exercise was worth the room.
+
+    The output of a postmortem is a changed system, not a document. A postmortem whose actions
+    have no owner and no date is a diary entry — accurate, sincere, occasionally beautiful, and
+    completely inert. It will be linked to approvingly for years while the same incident recurs,
+    and its existence will make the recurrence harder to argue about, because the organisation
+    can point at it and say the work was done.
+
+    The document is also a claim, and claims can be wrong. That is not a defect in the model;
+    it is what makes the object worth having separately from the incident it describes.
+  discriminator: >
+    The Incident is the event; the Postmortem is the claim about the event. The incident record
+    can be right while the postmortem is wrong — and routinely is. The incident says impact ran
+    47 minutes because that is what the clock recorded; the postmortem says 12 because whoever
+    wrote it started the timeline at declaration rather than at onset, which is the single most
+    common error in the genre and the one that makes the detection gap disappear from the very
+    document that exists to find it. When the two disagree, the incident record wins on facts
+    and the postmortem wins on nothing.
+  answers:
+    - Did anything actually change because of this incident, or did we only write about it?
+    - How long was it broken before we knew, and is that number moving across reviews?
+    - Which actions are overdue, who owns them, and what displaced them?
+    - Has this exact failure been reviewed before, and were those actions completed?
+    - Is the account of what happened trustworthy, or was it reconstructed from memory?
+    - Does this customer need a written RCA, and is the internal version safe to send?
+  not:
+    - Not the incident itself — that is customer_support.obj.core.incident, which owns the
+      clock, the blast radius, the severity and the communication stream while impact is live.
+    - Not the defect — that is customer_support.obj.core.issue, which outlives the incident and
+      is closed by a fix rather than by a review.
+    - Not the causal finding — that is customer_support.obj.core.root_cause, which is a
+      structured object other capabilities can read. The postmortem REFERENCES root causes and
+      must not be the only place they are recorded, or the finding is trapped in prose.
+    - Not the engineering work — that is customer_support.obj.core.bug_report. An action item
+      that never became a tracked engineering artefact has not left this document.
+    - Not incident communication during the event — that is
+      customer_support.escalation_and_incident.major_incident_communication, and confusing the
+      two produces a review written while people are still fixing things.
+
+attributes:
+
+  # ── Composites ─────────────────────────────────────────────────────────────
+  - name: identification
+    purpose: >
+      What this review is about and what it points at. The refs are the object's whole theory of
+      value: a postmortem that produces no root_cause and no bug_report has produced nothing a
+      machine or a stranger can act on, however good the prose was.
+    type: composite
+    contains:
+      - postmortem_ref
+      - title
+      - incident_ref
+      - root_cause_ref
+      - issue_ref
+      - bug_report_ref
+      - severity_at_review
+
+  - name: authorship
+    purpose: >
+      Who wrote it, who ran the room, and whether the account is blameless in construction rather
+      than in intention. Recorded because blamelessness is a property of the process that produced
+      the text, and cannot be assessed from the text alone once it is written.
+    type: composite
+    contains:
+      - author_ref
+      - facilitator_ref
+      - contributor_count
+      - is_blameless
+      - blame_language_present
+      - review_meeting_at
+      - timeline_source
+
+  - name: detection_timeline
+    purpose: >
+      The most valuable section in the document, and the one most often reduced to a sentence.
+      Five timestamps, of which the interesting pair is started_at and detected_at — everything
+      after detection has an owner and a budget, and the gap before it has neither. A review that
+      records resolution time to the minute and detection time as "we became aware during the
+      morning" has skipped the finding.
+    type: composite
+    contains:
+      - started_at
+      - detected_at
+      - declared_at
+      - mitigated_at
+      - resolved_at
+      - time_to_detect_minutes
+      - time_to_declare_minutes
+      - detection_source
+      - examines_detection
+
+  - name: causal_account
+    purpose: >
+      What made it possible and what made it last. Deliberately plural — contributing_conditions
+      is a list and single_cause_claimed is a flag, because a review that names one cause has
+      usually named the last thing that changed rather than the reason it mattered.
+    type: composite
+    contains:
+      - trigger
+      - contributing_conditions
+      - single_cause_claimed
+      - what_went_well
+      - what_was_luck
+      - examines_communication
+
+  - name: actions
+    purpose: >
+      The only section that changes anything. Counted rather than merely listed, because the
+      useful questions are ratios — how many of these have a named human, how many have a date,
+      how many are still open — and a prose list cannot answer any of them without being read
+      by a person who will not read it.
+    type: composite
+    contains:
+      - action_count
+      - actions_with_owner_count
+      - actions_with_date_count
+      - actions_overdue_count
+      - actions_completed_count
+      - first_action_due_at
+      - action_status
+      - monitoring_action_present
+
+  - name: audience_and_publication
+    purpose: >
+      Who this was written for. Modelled explicitly because the object's fourth claim is that
+      there are two documents, and a system with one `document` field silently encourages the
+      merge it is meant to prevent.
+    type: composite
+    contains:
+      - audience
+      - is_customer_facing
+      - published_at
+      - customer_rca_sent_at
+      - internal_document_ref
+      - external_document_ref
+      - redaction_required
+
+  - name: recurrence
+    purpose: >
+      Whether this has happened before. Counted on the postmortem rather than on the incident,
+      because incidents are events and each one is genuinely new; the thing that recurs is the
+      failure MODE, and this document is where that is named.
+    type: composite
+    contains:
+      - is_recurrence
+      - prior_postmortem_ref
+      - recurrence_count
+      - prior_actions_completed
+
+  - name: observed_engagement
+    purpose: >
+      What the pipeline can actually see about this review — correspondence shape, not content.
+      As on Ticket, this is the only composite with live Layer 2 sources today, and therefore
+      where every executable pattern in this file reads from.
+    type: composite
+    contains:
+      - ball_in_court
+      - last_inbound_at
+      - discussion_engagement
+      - reader_sentiment
+      - participant_count
+
+  # ── identification ─────────────────────────────────────────────────────────
+  - name: postmortem_ref
+    purpose: The identifier people cite. Stable across revisions, because a postmortem that is
+      superseded must still be findable by the link somebody pasted into a board deck.
+    type: value
+    data_type: string
+    required: true
+
+  - name: title
+    purpose: >
+      The incident in the customer's terms, not the component's. "Exports returned empty files
+      for four hours" is findable by the next person who hits it; "PG replica lag on shard 7" is
+      findable only by whoever already knows.
+    type: value
+    data_type: string
+
+  - name: incident_ref
+    purpose: >
+      Exactly one. A review covering three incidents is a trend report, which is a legitimate and
+      different artefact with a different audience and no action list of its own.
+    type: reference
+    ref: customer_support.obj.core.incident
+    data_type: ref
+    required: true
+
+  - name: root_cause_ref
+    purpose: >
+      The structured causal finding, which must exist outside this document. Several may attach —
+      see the relationship cardinality. A null here on a published postmortem is a defect; a
+      root_cause object holding a stated unknown is not.
+    type: reference
+    ref: customer_support.obj.core.root_cause
+    data_type: ref
+
+  - name: issue_ref
+    purpose: The defect that outlives the incident. The incident ends when impact stops; the issue
+      ends when the defect is gone, and almost every "we already fixed that" second wave lives in
+      the gap between those two dates.
+    type: reference
+    ref: customer_support.obj.core.issue
+    data_type: ref
+
+  - name: bug_report_ref
+    purpose: >
+      The engineering-side artefact. The single best predictor of whether an action will ever be
+      done is whether it exists in the system engineering actually works from, rather than in the
+      document engineering was asked to read.
+    type: reference
+    ref: customer_support.obj.core.bug_report
+    data_type: ref
+
+  - name: severity_at_review
+    purpose: >
+      Severity as assessed with hindsight, which is frequently lower than severity as declared.
+      The downgrade is itself a finding and must be recorded rather than applied retroactively to
+      the incident — quietly restating severity after the fact is how a team's declared-sev1 count
+      falls without its outage minutes changing.
+    type: value
+    data_type: enum
+    allowed_values: [sev1, sev2, sev3, sev4, unknown]
+    source_paths:
+      - incident.severity
+
+  # ── authorship ─────────────────────────────────────────────────────────────
+  - name: author_ref
+    purpose: Whoever assembled the document. Usually someone who was on the incident, which is
+      efficient and is exactly why the facilitator should not be.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+
+  - name: facilitator_ref
+    purpose: >
+      Who ran the room. Should not have been on the response. A facilitator who was up all night
+      fixing it cannot ask "why did that seem like the right call at the time" without the room
+      hearing it as an accusation, no matter how they phrase it.
+    type: reference
+    ref: customer_support.obj.core.escalation_owner
+    data_type: ref
+
+  - name: contributor_count
+    purpose: >
+      How many people put something into the timeline. The cheapest available proxy for whether
+      the account is a reconstruction or a collection. One contributor produces a coherent story;
+      five produce a contradictory one, and the contradictions are where the findings are.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: is_blameless
+    purpose: >
+      Whether the review was run under an explicit blameless contract. A declared property, not a
+      derived one — and worth recording as declared, because a team that never says it out loud
+      has not made the promise and cannot be held to it.
+    type: value
+    data_type: boolean
+
+  - name: blame_language_present
+    purpose: >
+      Whether a named individual appears in the timeline where a role would have done. The check
+      that makes `is_blameless` falsifiable. Its real cost is not to this document — the person
+      named will survive it — but to the next review, where everyone in the room now knows what
+      gets written down.
+    type: value
+    data_type: boolean
+
+  - name: review_meeting_at
+    purpose: When the room met. The gap between the incident and this date predicts timeline
+      quality more strongly than anything else on the object, because memory of an incident decays
+      faster than memory of almost anything else people do at work.
+    type: value
+    data_type: timestamp
+    source_paths:
+      - meeting.start_at
+
+  - name: timeline_source
+    purpose: >
+      Where the timestamps came from. The most under-recorded field in the genre. A timeline built
+      from chat logs, pages and ticket arrival times is checkable; one built from recollection is
+      a set of plausible durations, and every derived number in this object inherits its
+      provenance from this field.
+    type: value
+    data_type: enum
+    allowed_values: [artefact, mixed, recollection, unknown]
+
+  # ── detection_timeline ─────────────────────────────────────────────────────
+  - name: started_at
+    purpose: When it actually broke. Not when the alert fired and not when the first ticket
+      arrived. Almost always earlier than every other timestamp on this object and almost always
+      the hardest one to establish.
+    type: value
+    data_type: timestamp
+    source_paths:
+      - incident.started_at
+
+  - name: detected_at
+    purpose: >
+      When anyone inside the company knew. The other half of the number this object exists to
+      produce. Note the deliberate looseness of "anyone" — a support agent who mentioned it in a
+      channel at 06:40 counts, even if engineering heard at 09:15, and the distance between those
+      two is its own finding.
+    type: value
+    data_type: timestamp
+
+  - name: declared_at
+    purpose: When it became an incident with a commander and a channel. Declaring is cheap and
+      un-declaring costs nothing, so a large detected-to-declared gap is almost never a judgement
+      problem and almost always a permission one.
+    type: value
+    data_type: timestamp
+
+  - name: mitigated_at
+    purpose: When customer impact stopped, which is not when the fix shipped. The number the
+      customer experienced.
+    type: value
+    data_type: timestamp
+
+  - name: resolved_at
+    purpose: When the underlying defect was actually gone. Frequently weeks after mitigated_at,
+      and the gap is where the second wave lives.
+    type: value
+    data_type: timestamp
+
+  - name: time_to_detect_minutes
+    purpose: >
+      started_at to detected_at. THE number. Cheapest gap in the incident to close — a threshold
+      on an existing metric, usually — and the one with no owner, no budget line and no slide.
+      Every organisation reports mean time to resolve and roughly none tracks this across reviews.
+    type: derived
+    derived_from:
+      - started_at
+      - detected_at
+    unit: minutes
+
+  - name: time_to_declare_minutes
+    purpose: detected_at to declared_at. Measures culture rather than tooling. If it is large, the
+      question is who felt they needed permission, not what tool was missing.
+    type: derived
+    derived_from:
+      - detected_at
+      - declared_at
+    unit: minutes
+
+  - name: detection_source
+    purpose: >
+      How we found out. `customer_ticket` is the honest and common answer, and a queue that
+      supplies it repeatedly is running the company's monitoring for free while being measured on
+      response time.
+    type: value
+    data_type: enum
+    allowed_values: [monitoring, customer_ticket, internal_user, partner, status_page_report,
+                     engineer_noticed, unknown]
+
+  - name: examines_detection
+    purpose: >
+      Whether the document actually contains a detection finding, as opposed to a detection
+      timestamp. The distinction matters — writing down that it took six hours and writing down
+      what will change so it takes six minutes are different acts, and only the second one is a
+      postmortem.
+    type: value
+    data_type: boolean
+
+  # ── causal_account ─────────────────────────────────────────────────────────
+  - name: trigger
+    purpose: >
+      The change or event that started it. Not the cause. A deploy is a trigger; the reason a bad
+      deploy could reach all regions simultaneously is a cause, and reviews that stop at the
+      trigger produce the action "be more careful when deploying".
+    type: value
+    data_type: string
+
+  - name: contributing_conditions
+    purpose: >
+      The set of things that each had to be true. Plural in the schema on purpose. Complex systems
+      fail through combinations, and a review that names one condition leaves the others live —
+      one of them will produce the next incident, and it will look unrelated.
+    type: value
+    data_type: list
+
+  - name: what_went_well
+    purpose: >
+      Not morale management. Every incident contains at least one control that worked, and naming
+      it is how you avoid removing it in the cleanup. Reviews that skip this section reliably
+      propose actions that delete a safeguard which functioned.
+    type: value
+    data_type: list
+
+  - name: what_was_luck
+    purpose: >
+      The best question in the whole review and the one most often left out: what would have made
+      this materially worse, and did we avoid it by design or by accident. It is the closest thing
+      to a free finding, because it names the next incident before it happens.
+    type: value
+    data_type: list
+
+  - name: single_cause_claimed
+    purpose: >
+      True when the document names exactly one root cause. Recorded as a smell rather than an
+      error — occasionally there really is one — but a queue whose postmortems all claim one cause
+      is describing its review process, not its systems.
+    type: value
+    data_type: boolean
+
+  - name: examines_communication
+    purpose: >
+      Whether the review covered what customers were told and when. Support's half of the incident
+      and the half most often absent, because engineering owns the review and the comms failure
+      belongs to whoever was answering tickets at 3am.
+    type: value
+    data_type: boolean
+
+  # ── actions ────────────────────────────────────────────────────────────────
+  - name: action_count
+    purpose: How many actions the document proposes. Uninformative alone and load-bearing as the
+      denominator of the two ratios below.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: actions_with_owner_count
+    purpose: >
+      Actions naming a specific person. A team is not an owner — "Platform will add alerting" has
+      the grammatical form of an action and none of the properties of one, because no individual
+      wakes up owning it.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: actions_with_date_count
+    purpose: >
+      Actions carrying a date. Together with the owner count this is the whole diary-entry test:
+      when both ratios are low, the document is a record of a conversation, and it should be
+      labelled as one rather than tracked as a plan.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: actions_overdue_count
+    purpose: The count that is supposed to hurt. Reported at the next review rather than at this
+      one, which is why it is invisible in exactly the organisations that most need it.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: actions_completed_count
+    purpose: Completed with evidence, not completed by assertion. The distinction is the whole
+      difference between an action list and a checklist somebody ticked before a meeting.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: first_action_due_at
+    purpose: The nearest deadline on the list. The one live commitment the pipeline can actually
+      see today, which makes it the anchor for every executable pattern in this file.
+    type: value
+    data_type: timestamp
+    source_paths:
+      - commitment.due_at
+
+  - name: action_status
+    purpose: >
+      Roll-up of the list. `abandoned` is a real and necessary value: an action consciously dropped
+      with a reason is a legitimate outcome and a far better one than an action that quietly ages,
+      because the reason is itself a finding about what the organisation actually prioritises.
+    type: value
+    data_type: enum
+    allowed_values: [none, drafted, owned, in_progress, overdue, complete, abandoned, unknown]
+
+  - name: monitoring_action_present
+    purpose: >
+      True when the list contains an action of the form "add more monitoring" with no named signal,
+      threshold or destination. Flagged specifically because it is the most common unownable
+      action in the genre — universally agreed, costless to write, and reappearing verbatim in the
+      next postmortem for the same system.
+    type: value
+    data_type: boolean
+
+  # ── audience_and_publication ───────────────────────────────────────────────
+  - name: audience
+    purpose: >
+      Who the document is written for. Drives everything about its shape — an engineering audience
+      needs component names and the honest sequence of wrong guesses; a customer audience needs
+      impact, cause in one sentence, and what changes by when, and is actively harmed by the rest.
+    type: value
+    data_type: enum
+    allowed_values: [internal_engineering, internal_all, customer_named_accounts, customer_public,
+                     regulator, unknown]
+    default: internal_engineering
+
+  - name: is_customer_facing
+    purpose: Whether any version of this leaves the company. Once true, blamelessness stops being
+      purely a cultural promise and starts being a disclosure question.
+    type: value
+    data_type: boolean
+
+  - name: published_at
+    purpose: When the internal version went out. Not the end of the work, and treating it as the
+      end is the most common way a good review produces nothing.
+    type: value
+    data_type: timestamp
+
+  - name: customer_rca_sent_at
+    purpose: >
+      When the external version reached the customer. Tracked separately because the two documents
+      have different deadlines — the customer's is contractual and often five business days, the
+      internal one's is only cultural, and the contractual one therefore wins by default and drags
+      the internal one into its shape.
+    type: value
+    data_type: timestamp
+
+  - name: internal_document_ref
+    purpose: Where the engineering version lives. Usually a wiki the pipeline cannot read, which is
+      why almost nothing on this object has a live source.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: external_document_ref
+    purpose: The customer-facing version. A separate artefact by rule, not by convention.
+    type: value
+    data_type: string
+    sensitivity: confidential
+
+  - name: redaction_required
+    purpose: >
+      True when the internal version contains anything that must not leave — other customers' names,
+      security detail, individual attribution. Its practical function is to make the merge visibly
+      illegal rather than merely unwise.
+    type: value
+    data_type: boolean
+    sensitivity: internal
+
+  # ── recurrence ─────────────────────────────────────────────────────────────
+  - name: is_recurrence
+    purpose: >
+      Whether this failure mode has been reviewed before. The most consequential boolean on the
+      object: it changes the correct output from "write a postmortem" to "reopen the previous one
+      and explain what displaced its actions", and almost no process supports that.
+    type: value
+    data_type: boolean
+
+  - name: prior_postmortem_ref
+    purpose: Self-referential. Present on any recurrence. A chain of these with incomplete action
+      lists is the strongest organisational finding this domain can produce.
+    type: reference
+    ref: customer_support.obj.postmortem.postmortem
+    data_type: ref
+
+  - name: recurrence_count
+    purpose: >
+      How many times this failure mode has produced an incident. Counted here rather than on the
+      incident because incidents are genuinely distinct events; the thing that repeats is the mode,
+      and it has no other home.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: prior_actions_completed
+    purpose: >
+      Whether the previous review's actions were done. If false on a recurrence, the finding for
+      this review is not technical and no amount of technical analysis will produce it — the
+      question is what outranked the action, and the answer is almost never "nothing".
+    type: value
+    data_type: boolean
+
+  # ── observed_engagement ────────────────────────────────────────────────────
+  - name: ball_in_court
+    purpose: Who is blocking, observed from correspondence. On a postmortem thread this usually
+      reads `nobody`, which is the honest description of a document everyone approved and nobody
+      is acting on.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths:
+      - thread.ball_in_court
+
+  - name: last_inbound_at
+    purpose: Last message on the review thread. One of very few attributes here with a live Layer 2
+      source.
+    type: value
+    data_type: timestamp
+    source_paths:
+      - thread.last_inbound
+
+  - name: discussion_engagement
+    purpose: >
+      Engine-computed two-way volume against the prior fortnight. On this object it measures
+      whether anyone is still talking about the review, which is a decent proxy for whether the
+      actions are being worked and a poor one for whether they are being finished.
+    type: value
+    data_type: number
+    source_paths:
+      - derived.engagement
+
+  - name: reader_sentiment
+    purpose: >
+      Engine-computed observation balance on the thread. Calibrated on commercial correspondence,
+      so it reads a customer who is quietly furious about the third occurrence as roughly neutral.
+      Direction only, never level.
+    type: value
+    data_type: number
+    source_paths:
+      - derived.sentiment
+
+  - name: participant_count
+    purpose: >
+      People attached to this review, from graph degree. Rises with genuine breadth of contribution
+      and also when somebody cc's a distribution list, which is why it is a sort and not a trigger.
+    type: value
+    data_type: integer
+    unit: count
+
+states:
+  initial: draft
+  terminal: [closed, superseded, archived]
+  values:
+    - name: draft
+      description: >
+        Timeline being assembled. The highest-value state and the shortest-lived. Everything
+        gathered here from artefacts is checkable; everything gathered after the review meeting is
+        recollection wearing a timestamp.
+    - name: submitted
+      description: Circulated for contribution before the room meets. Skipping this state is what
+        produces a review where one person narrates and four people nod.
+    - name: pending_approval
+      description: >
+        Under blameless review, meaning someone is reading it for attribution and for whether the
+        detection and communication sections exist at all — not for whether the engineering is
+        right. Those are different reads and collapsing them means only the second happens.
+    - name: published
+      description: >
+        The internal version is out. Deliberately NOT terminal. Treating publication as the end is
+        the failure this whole object is arranged around, and a lifecycle that ends here would
+        encode exactly that mistake into the software.
+      implies: The learning is recorded. Nothing has changed yet.
+    - name: in_progress
+      description: Actions owned and being worked. The only state in which the postmortem is doing
+        what it exists to do.
+    - name: overdue
+      description: >
+        At least one action is past its date with nothing sent. A state rather than a flag, because
+        what happens next differs — chasing an overdue postmortem action is a different motion with
+        a different owner from writing one, and organisations that model it as an attribute discover
+        their action debt at the annual review.
+      entered_when:
+        - fn: days_since
+          path: commitment.due_at
+          op: ">="
+          value: 7
+        - no_obs: followup_sent
+    - name: closed
+      description: Every action completed with evidence, or consciously abandoned with a stated
+        reason. Both are legitimate closings and the second is far better than silence.
+    - name: superseded
+      description: >
+        A recurrence produced a newer review of the same failure mode. Carries the previous
+        incomplete action list forward rather than restating it — see the exception on recurrence,
+        which argues this state should usually be reached by reopening rather than by reissuing.
+    - name: archived
+      description: Kept for the record. Findable, cited, and no longer tracked.
+  transitions:
+    - from: draft
+      to: submitted
+    - from: submitted
+      to: pending_approval
+    - from: pending_approval
+      to: submitted
+      reversible: true
+    - from: pending_approval
+      to: published
+    - from: published
+      to: in_progress
+    - from: in_progress
+      to: overdue
+      when:
+        - fn: days_since
+          path: commitment.due_at
+          op: ">="
+          value: 7
+        - no_obs: followup_sent
+    - from: overdue
+      to: in_progress
+      reversible: true
+    - from: in_progress
+      to: closed
+    - from: overdue
+      to: closed
+    - from: published
+      to: superseded
+    - from: in_progress
+      to: superseded
+    - from: overdue
+      to: superseded
+    - from: closed
+      to: superseded
+    - from: closed
+      to: archived
+    - from: superseded
+      to: archived
+    - from: draft
+      to: archived
+      trigger: review_declined
+
+relationships:
+  - target: customer_support.obj.core.incident
+    type: documents
+    cardinality: one
+    direction: outbound
+    weight_bp: 10000
+    confidence_bp: 9500
+    priority: 1
+    description: >
+      Exactly one incident per postmortem. The edge that carries the discriminator: this object is
+      a claim ABOUT that one, and the two can disagree. When they do, the incident record wins on
+      facts — it was written while the clock was running, by people who had no narrative to serve.
+    evidence: [status_page, ticket, telemetry]
+
+  - target: customer_support.obj.core.commitment
+    type: produces
+    cardinality: zero_or_many
+    weight_bp: 9000
+    confidence_bp: 8000
+    priority: 2
+    description: >
+      Every action item IS a commitment with an owner and a date. This edge is the object's entire
+      theory of change, and it is also the reason nine patterns in this file can run at all: the
+      domain's commitment substrate, built for "I'll come back to you Thursday", reads a postmortem
+      action list without modification. Zero of these on a published postmortem is the diary-entry
+      case, stated structurally.
+    evidence: [email, document, manual_entry]
+
+  - target: customer_support.obj.core.root_cause
+    type: produces
+    cardinality: zero_or_many
+    weight_bp: 7500
+    confidence_bp: 7000
+    description: >
+      Plural deliberately. A postmortem producing exactly one root_cause has usually named the last
+      thing that changed. The cardinality here is an argument, not bookkeeping.
+    evidence: [document, manual_entry]
+
+  - target: customer_support.obj.core.bug_report
+    type: produces
+    cardinality: zero_or_many
+    weight_bp: 7000
+    confidence_bp: 7500
+    description: >
+      The actions that survive are the ones that became tracked engineering artefacts. An action
+      that exists only in this document has not left the room it was written in, whatever its owner
+      and date say.
+    evidence: [document]
+
+  - target: customer_support.obj.core.issue
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 6000
+    confidence_bp: 7000
+    description: The defect that outlives the incident. Closed by a fix, never by a review.
+
+  - target: customer_support.obj.postmortem.postmortem
+    type: supersedes
+    cardinality: zero_or_one
+    weight_bp: 6500
+    confidence_bp: 6000
+    description: >
+      Self-referential, set on a recurrence. A chain of three with three incomplete action lists is
+      a stronger organisational finding than anything inside any of the three documents.
+
+  - target: customer_support.obj.core.ticket
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 5500
+    confidence_bp: 8000
+    description: >
+      The cluster. Ticket arrival timestamps are usually the best available evidence for
+      `started_at` — customers notice before monitoring does more often than anyone likes to write
+      down, which makes the support queue the cheapest detection instrument in the company and the
+      one least often consulted when the timeline is assembled.
+    evidence: [ticket, email, chat]
+
+  - target: customer_support.obj.core.knowledge_article
+    type: produces
+    cardinality: zero_or_many
+    weight_bp: 4000
+    confidence_bp: 5500
+    description: The customer-facing half frequently should become an article — the second wave asks
+      the same questions as the first, and answering them once is the only part of incident comms
+      that scales.
+
+  - target: customer_support.obj.core.customer_account
+    type: references
+    cardinality: zero_or_many
+    weight_bp: 4500
+    confidence_bp: 6500
+    description: Accounts owed a written RCA. Contractual for some, courtesy for others, and knowing
+      which is which before writing is the difference between a deadline and a nice gesture.
+
+  - target: customer_support.obj.core.entitlement
+    type: evidences
+    cardinality: zero_or_many
+    weight_bp: 3500
+    confidence_bp: 6000
+    description: >
+      The postmortem is the document a service-credit claim is adjudicated against. Worth knowing
+      before writing: the moment credits are in play, the timeline stops being a learning artefact
+      and becomes a commercial one, and the internal version must not be the thing that travels.
+    conditions:
+      - has_obs: legal_review
+
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    cardinality: zero_or_one
+    weight_bp: 3000
+    confidence_bp: 5000
+    description: >
+      One incident rarely loses an account. The same incident twice, with a postmortem in between
+      that promised it would not happen again, routinely does — the second occurrence is a broken
+      written promise rather than an outage.
+
+inference_patterns:
+
+  deterministic:
+
+    - id: postmortem.action_overdue_with_no_outbound
+      statement: An action from this review is at least a week past its date and no follow-up has
+        been observed — the action list is decaying.
+      status: executable
+      when:
+        - fn: days_since
+          path: commitment.due_at
+          op: ">="
+          value: 7
+        - no_obs: followup_sent
+      yields:
+        confidence_bp: 7800
+        attribute: action_status
+        value: overdue
+      evidence_fields:
+        - commitment.due_at
+        - commitment.action
+      false_positive: >
+        The action was completed in a system the pipeline cannot see. Postmortem actions land in
+        Jira, Linear and GitHub far more often than in email, so a shipped fix and an abandoned one
+        produce an identical trace here. This is the dominant false positive on this pattern and it
+        is not rare — it is the normal case at any engineering-led organisation.
+      note: >
+        The single most useful executable pattern in the file, and the reason this object gets any
+        executability at all: a postmortem action is structurally a commitment, so the substrate
+        built for "I'll get back to you Thursday" reads it unchanged. Seven days rather than one
+        (Ticket uses one) because a postmortem action is a fortnight-to-a-quarter piece of work, not
+        a reply — firing at day one would produce noise on every action that is simply being done.
+        Held at 7800 rather than higher entirely because of the false positive above; the honest
+        reading is "nobody has SAID anything about this in a week", which is a weaker and still
+        worthwhile claim. Where a bug_report ref exists and is closed, this should be suppressed —
+        which is exactly the `bug_filed` / `bug_fixed` signal named in the needs_signal patterns.
+
+    - id: postmortem.action_carries_no_date
+      statement: An action was recorded with no due date at all — this is the diary-entry shape, and
+        it is visible in the substrate today.
+      status: executable
+      when:
+        - exists: commitment.action
+        - absent: commitment.due_at
+      yields:
+        confidence_bp: 6800
+        attribute: actions_with_date_count
+        value: 0
+        corroborates:
+          - postmortem.action_overdue_with_no_outbound
+      evidence_fields:
+        - commitment.action
+        - commitment.due_at
+      false_positive: >
+        The date was stated in a form the extractor could not resolve — "by end of quarter", "before
+        the next release", "when the migration lands". Those are genuinely worse than a date and
+        genuinely not absent, so the pattern is right about the substance and wrong about the
+        mechanism, which will make it look broken to whoever reviews the evidence.
+      note: >
+        The cheapest true finding this object can produce and the one an expert reaches for first.
+        An action with an owner and no date does not get done; it gets remembered fondly. Deliberately
+        NOT higher than 6800 despite the condition being crisp, because absence of an extracted field
+        is weak evidence of absence in the world — see the false positive. Even so, the two failure
+        modes it conflates (no date given, and a date given so vaguely it could not be parsed) want
+        the same intervention, which is why the pattern is worth having at this confidence.
+
+    - id: postmortem.review_held_but_nothing_circulated
+      statement: The review meeting happened at least three days ago and nothing has gone out in
+        writing since.
+      status: executable
+      when:
+        - fn: days_since
+          path: meeting.start_at
+          op: ">="
+          value: 3
+        - no_obs: followup_sent
+      yields:
+        confidence_bp: 6500
+        attribute: action_status
+        value: drafted
+      evidence_fields:
+        - meeting.start_at
+      false_positive: >
+        The document was written straight into a wiki and never emailed, which is the standard
+        workflow at most companies. A recurring incident-review standing meeting attached to the
+        same graph node will also fire this every week forever.
+      note: >
+        The postmortem that lives only in the heads of the people who attended. Three days rather
+        than one because the write-up genuinely takes a day or two and firing sooner would flag
+        correct behaviour. Capped at 6500 by the wiki problem: this pattern can only see whether
+        something was SENT, and the better organisations publish rather than send. Its real value is
+        on the recurring case — the same review meeting appearing every fortnight with no artefact
+        after any of them is not a workflow difference, it is a review process that has become a
+        calendar entry.
+
+    - id: postmortem.exists_and_was_reviewed
+      statement: A postmortem exists for this incident, with a recorded review and a published
+        document.
+      status: needs_signal
+      yields:
+        confidence_bp: 10000
+        attribute: null
+      requires_signals:
+        - kind: obs_kind
+          name: incident_declared
+          owner_layer: L2
+          note: >
+            Nothing in the pipeline can establish that an incident happened, let alone that it was
+            reviewed. Every attribute on this object is therefore populated by a human typing into a
+            wiki, and this brain's knowledge of postmortems is knowledge of what SHOULD be there.
+        - kind: fact_path
+          name: incident.status
+          owner_layer: L1
+        - kind: obs_kind
+          name: incident_resolved
+          owner_layer: L2
+          note: A postmortem written while impact is live competes with the response for the same
+            five people. Knowing the incident is closed is the precondition for the whole object.
+
+    - id: postmortem.detection_gap_is_the_headline
+      statement: The time between the system breaking and anyone inside the company knowing, stated
+        as a number and tracked across reviews.
+      status: needs_signal
+      yields:
+        confidence_bp: 9500
+        attribute: time_to_detect_minutes
+      requires_signals:
+        - kind: fact_path
+          name: incident.started_at
+          owner_layer: L1
+          note: >
+            The highest-value missing signal for this object by a wide margin, and it is not close.
+            Detection lag is the cheapest gap in an incident to close — usually a threshold on a
+            metric that already exists — and it is the only one with no owner, no budget line and no
+            slide, because the fix belongs to engineering and the gap belongs to nobody. Without
+            started_at, every duration on this object is measured from when we noticed, which
+            silently deletes the finding from the document that exists to produce it.
+        - kind: fact_path
+          name: incident.detected_at
+          owner_layer: L1
+          note: >
+            Not in the planned substrate today and it should be. `incident.started_at` alone gives a
+            duration to resolution; the PAIR gives the detection gap. Emitting one without the other
+            produces a dashboard that looks like incident analytics and cannot answer the only
+            question this object exists to ask.
+        - kind: fact_path
+          name: ticket.created_at
+          owner_layer: L1
+          note: >
+            The cheapest available proxy for started_at and often the most accurate one — the first
+            ticket usually predates the first alert. This is the argument for support owning the
+            detection timeline rather than merely attending the meeting.
+
+    - id: postmortem.owed_by_severity
+      statement: This incident's severity obliges a postmortem, and none exists.
+      status: needs_signal
+      yields:
+        confidence_bp: 9000
+        attribute: null
+      requires_signals:
+        - kind: fact_path
+          name: incident.severity
+          owner_layer: L1
+          note: >
+            The trigger most organisations actually use, and the one this object's first exception
+            argues is insufficient on its own — severity is not the only thing that earns a review,
+            and a four-minute outage with a six-hour detection gap earns one at any severity.
+        - kind: obs_kind
+          name: incident_resolved
+          owner_layer: L2
+        - kind: fact_path
+          name: incident.started_at
+          owner_layer: L1
+
+    - id: postmortem.this_has_been_written_before
+      statement: A prior postmortem already names this root cause, and its actions were not
+        completed.
+      status: needs_signal
+      yields:
+        confidence_bp: 9200
+        attribute: is_recurrence
+        value: true
+      requires_signals:
+        - kind: obs_kind
+          name: root_cause_identified
+          owner_layer: L2
+          note: >
+            Without a structured causal finding there is nothing to match a recurrence against, so
+            recurrence is detected by whoever happens to remember — which means it is detected
+            reliably for eighteen months and then not at all, because the person who remembered
+            changed teams.
+        - kind: fact_path
+          name: incident.severity
+          owner_layer: L1
+        - kind: derived
+          name: derived.escalation_pressure
+          owner_layer: L2
+          note: Second and third occurrences generate materially different customer behaviour from
+            first ones, and the accumulation is the part only L2 can compute.
+
+    - id: postmortem.actions_never_reached_engineering
+      statement: The review produced actions, and none of them became a tracked engineering
+        artefact.
+      status: needs_signal
+      yields:
+        confidence_bp: 8500
+        attribute: bug_report_ref
+        value: null
+      requires_signals:
+        - kind: obs_kind
+          name: bug_filed
+          owner_layer: L2
+          note: >
+            The best available predictor of whether an action will ever be done is whether it exists
+            in the system engineering works from. An action list that produced no filed work is
+            fully decorative and can be detected on the day the document is published rather than at
+            the next review, which is the entire value of this signal.
+        - kind: obs_kind
+          name: handoff_to_engineering
+          owner_layer: L2
+        - kind: obs_kind
+          name: bug_fixed
+          owner_layer: L2
+          note: Also the suppression signal for postmortem.action_overdue_with_no_outbound — with
+            it, a completed action stops looking like an abandoned one.
+
+  heuristic:
+
+    - id: postmortem.audience_turned_contractual
+      statement: Legal review has appeared on this thread — the postmortem has stopped being a
+        learning artefact and become a commercial one.
+      status: executable
+      when:
+        - has_obs: legal_review
+      yields:
+        confidence_bp: 6400
+        attribute: is_customer_facing
+        value: true
+        corroborates:
+          - postmortem.feeding_a_customer_security_review
+      evidence_fields:
+        - derived.sentiment
+      false_positive: >
+        `legal_review` fires on ordinary contract redlines happening in parallel on the same account
+        — a renewal being papered in the same fortnight as an outage is common and entirely
+        unrelated. The observation kind was built for a sales motion and carries no notion of what
+        the review is about.
+      note: >
+        Weak mechanism, high-value claim, which is why it is here at 6400 rather than dropped. The
+        moment counsel is in the thread, the internal blameless document must not be the one that
+        travels: it names individuals, names other customers, and was written under a promise the
+        organisation can no longer keep. This is the executable half of the two-documents rule —
+        it cannot prove the merge happened, but it can flag the exact moment the merge becomes
+        expensive. Treat it as a prompt to split the document, never as a finding about the document.
+
+    - id: postmortem.feeding_a_customer_security_review
+      statement: The customer has opened a security review on the back of this incident, so the
+        postmortem is now an input to their assessment of us.
+      status: executable
+      when:
+        - has_obs: security_review_started
+      yields:
+        confidence_bp: 6000
+        attribute: audience
+        value: customer_named_accounts
+      evidence_fields:
+        - derived.sentiment
+        - thread.ball_in_court
+      false_positive: >
+        A scheduled annual vendor security review landing in the same window as an incident. The
+        coincidence is common at enterprise accounts, where reviews are calendar-driven, and this
+        pattern cannot tell a triggered review from a routine one.
+      note: >
+        Distinct from the legal one and worth separating rather than ORing (there is no OR in the
+        grammar anyway). A security review asks different questions — controls, detection, blast
+        radius containment — and the answers live in the detection timeline rather than in the fix.
+        A postmortem that skipped the detection section cannot answer any of it, which is when teams
+        discover retroactively that the section they cut was the one an external party wanted.
+
+    - id: postmortem.actions_keep_slipping
+      statement: The action list has been re-dated — an action exists and a timeline slip has been
+        observed on the same thread.
+      status: executable
+      when:
+        - exists: commitment.action
+        - has_obs: timeline_slip
+      yields:
+        confidence_bp: 5800
+        attribute: action_status
+        value: overdue
+      evidence_fields:
+        - commitment.action
+        - commitment.due_at
+      false_positive: >
+        On a postmortem thread the word "timeline" is everywhere — it is the name of the document's
+        best section — so `timeline_slip` is noisier here than on any other node in the domain. An
+        extractor reading "the timeline slipped by forty minutes before anyone noticed", which is a
+        statement about the INCIDENT, will fire this pattern about the ACTIONS.
+      note: >
+        A re-dated action is a specific and diagnosable thing, and it is different from an overdue
+        one: overdue means nobody looked, re-dated means somebody looked, decided something else
+        mattered more, and did not write down what. That second fact is a finding about
+        prioritisation and it is nearly always more useful than the action itself. 5800 is set by
+        the false positive above rather than by the strength of the claim.
+
+    - id: postmortem.went_quiet_with_actions_open
+      statement: Two-way discussion has halved while actions are still on the list — everyone has
+        moved on.
+      status: executable
+      when:
+        - path: derived.engagement
+          op: "<="
+          value: 0.5
+        - exists: commitment.action
+      yields:
+        confidence_bp: 5000
+        attribute: action_status
+        value: abandoned
+      evidence_fields:
+        - derived.engagement
+        - commitment.action
+      false_positive: >
+        The healthy case looks identical. A review that produced three well-owned actions which are
+        being executed quietly in a sprint generates exactly this trace — silence on the review
+        thread is what success looks like when the work moved to the right system. This pattern
+        cannot distinguish "abandoned" from "delegated properly", and those want opposite responses.
+      note: >
+        Deliberately weak and it must never close anything or mark anything abandoned on its own —
+        the yielded value is a candidate, not a verdict. Its real use is as the input to a single
+        question at the next review: of the actions that went quiet, which ones shipped. Asking that
+        question is most of the value of tracking postmortem actions at all, and a team that asks it
+        twice stops writing ownerless actions without being told to.
+
+    - id: postmortem.landed_badly_with_the_reader
+      statement: Sentiment has turned negative on the review thread while the ball is in our court —
+        the document did not do its job.
+      status: executable
+      when:
+        - path: derived.sentiment
+          op: "<"
+          value: 0.0
+        - path: thread.ball_in_court
+          op: "="
+          value: us
+      yields:
+        confidence_bp: 4800
+        attribute: reader_sentiment
+      evidence_fields:
+        - derived.sentiment
+        - thread.ball_in_court
+      false_positive: >
+        A postmortem thread is full of negative language by construction — it is a discussion of a
+        failure, and an honest one uses words like "broken", "missed" and "failed" throughout. This
+        pattern will read a rigorous, well-received review as a badly received one, and it will do so
+        consistently rather than occasionally.
+      note: >
+        Kept despite the false positive because the ball_in_court condition earns it: negative
+        language while WE are the blocker points at the handling rather than at the fault, and on a
+        postmortem thread that usually means the document explained rather than committed. The
+        classic version is a customer replying "so what are you actually changing" — the exact
+        sentence a postmortem with no owned actions provokes. 4800 says look, and specifically says
+        look at whether the action list has owners.
+
+    - id: postmortem.written_by_almost_nobody
+      statement: Very few people are attached to this review — the timeline is one person's account.
+      status: executable
+      when:
+        - fn: edge_count
+          op: "<="
+          value: 2
+      yields:
+        confidence_bp: 3800
+        attribute: contributor_count
+      evidence_fields:
+        - thread.ball_in_court
+      false_positive: >
+        A sparse graph makes every node low-degree, so on a thinly-ingested tenant this fires on
+        every postmortem including the well-attended ones. It also fires correctly-but-uselessly on
+        the small incident that a single person reviewed in ten minutes, which the first exception
+        argues is the RIGHT outcome.
+      note: >
+        The weakest pattern here and knowingly so — it is a queue-level sort, never a per-postmortem
+        trigger, and 3800 is chosen to keep it below anything that could route. The claim underneath
+        it is real: a single-contributor timeline is coherent, and incident timelines are not
+        coherent. Five people produce a contradictory account and the contradictions are where the
+        findings are, which is why breadth of contribution is a better quality proxy than length of
+        document. It needs a real participant signal to be worth acting on.
+
+    - id: postmortem.blame_language_in_the_timeline
+      statement: A named individual appears in the timeline where a role would have done.
+      status: needs_signal
+      yields:
+        confidence_bp: 8000
+        attribute: blame_language_present
+        value: true
+      requires_signals:
+        - kind: obs_kind
+          name: blame_attribution
+          owner_layer: L2
+          note: >
+            Nothing in the planned substrate covers this and it deserves to be there. Blamelessness
+            is currently enforced by whoever facilitates remembering to enforce it, which means it is
+            enforced well for about a year. The detection is cheap — individual names in a timeline
+            where the surrounding sentences use roles — and the cost of missing it is not borne by
+            this document at all. It is borne by the next review, where everyone now knows what gets
+            written down and volunteers less. That delay is precisely why the practice erodes without
+            anyone deciding to abandon it.
+        - kind: obs_kind
+          name: angry_language
+          owner_layer: L2
+          note: Distinct signal, related failure. A review thread carrying anger is one where the
+            blameless contract has already broken, whether or not a name was typed.
+
+    - id: postmortem.communication_failure_went_unexamined
+      statement: The incident's real failure was the update cadence, and the review only covered the
+        fix.
+      status: needs_signal
+      yields:
+        confidence_bp: 7500
+        attribute: examines_communication
+        value: false
+      requires_signals:
+        - kind: fact_path
+          name: incident.started_at
+          owner_layer: L1
+        - kind: obs_kind
+          name: incident_declared
+          owner_layer: L2
+          note: >
+            The gap between declaration and the first broadcast is support's half of the incident and
+            the half most often absent from the review, because engineering owns the document and the
+            comms failure belongs to whoever was answering tickets at 3am. Customers forgive the
+            fault; they narrate the silence.
+        - kind: fact_path
+          name: derived.backlog_age
+          owner_layer: L2
+          note: The ticket pile-up during an outage is the measurable form of a comms failure — every
+            ticket that arrived after a broadcast should have gone out is one the broadcast did not
+            reach.
+
+    - id: postmortem.timeline_is_recollection
+      statement: The timeline was assembled from memory rather than from artefacts, so every duration
+        in it is an estimate.
+      status: needs_signal
+      yields:
+        confidence_bp: 7000
+        attribute: timeline_source
+        value: recollection
+      requires_signals:
+        - kind: fact_path
+          name: ticket.created_at
+          owner_layer: L1
+          note: >
+            Ticket arrival times are artefacts and they are free. A timeline anchored on them is
+            checkable by anyone; one anchored on "I think it was around nine" is a set of plausible
+            durations that will be quoted as fact in a board pack within a month.
+        - kind: obs_kind
+          name: incident_declared
+          owner_layer: L2
+        - kind: baseline
+          name: first_response_time
+          owner_layer: L2
+          note: Needed to tell an abnormal response window during the incident from a normal one,
+            which is what turns a raw timestamp into a comms finding.
+
+    - id: postmortem.customer_rca_owed_and_late
+      statement: A customer is contractually owed a written RCA and the clock on it has passed.
+      status: needs_signal
+      yields:
+        confidence_bp: 8800
+        attribute: customer_rca_sent_at
+        value: null
+      requires_signals:
+        - kind: fact_path
+          name: entitlement.plan
+          owner_layer: L1
+          note: >
+            Written RCAs are an entitlement line item at enterprise tiers with a stated turnaround,
+            usually five business days. It is the only deadline attached to this object that anyone
+            outside the company can enforce, which is exactly why it wins by default and drags the
+            internal document into the customer document's shape — the failure this object's fourth
+            claim is about.
+        - kind: obs_kind
+          name: rca_requested
+          owner_layer: L2
+          note: Not in the planned substrate and should be. "Can we get an RCA on this" is stated in
+            plain language on threads already ingested, and it is the moment the postmortem acquires
+            a second audience.
+        - kind: fact_path
+          name: entitlement.expires_at
+          owner_layer: L1
+
+inputs:
+  - source: email
+    signal: action items and their due dates, as written in the review thread
+    path: commitment.due_at
+    fills: [first_action_due_at, action_status]
+    reliability_bp: 7000
+  - source: email
+    signal: the action itself
+    path: commitment.action
+    fills: [action_count, monitoring_action_present]
+    reliability_bp: 6500
+  - source: calendar
+    signal: the review meeting and when it happened
+    path: meeting.start_at
+    fills: [review_meeting_at]
+    reliability_bp: 8000
+    description: Proves a review was scheduled. Does not prove it happened, that this incident was
+      what it was about, or that anyone wrote anything afterwards.
+  - source: email
+    signal: who is blocking on the review thread
+    path: thread.ball_in_court
+    fills: [ball_in_court]
+  - source: email
+    signal: last message on the review thread
+    path: thread.last_inbound
+    fills: [last_inbound_at]
+  - source: derived
+    signal: whether anyone is still discussing it
+    path: derived.engagement
+    fills: [discussion_engagement]
+    reliability_bp: 4000
+  - source: derived
+    signal: observation balance on the thread
+    path: derived.sentiment
+    fills: [reader_sentiment]
+    reliability_bp: 3000
+    description: Calibrated on commercial correspondence and applied to a document that discusses a
+      failure in plain language. Direction only, and a weak direction at that.
+  - source: telemetry
+    signal: when it actually started, as opposed to when we noticed
+    description: The only source that can establish started_at independently of anyone's account,
+      and therefore the only one that can produce a detection gap nobody can argue with. Not ingested.
+  - source: ticket
+    signal: the cluster and its arrival timestamps
+    description: The cheapest available proxy for started_at, and frequently earlier than the first
+      alert. Support is the company's least expensive detection instrument and the least consulted
+      when the timeline is assembled.
+  - source: slack
+    signal: the incident channel
+    description: Where the real timeline lives — timestamped, unrehearsed, and written by people who
+      did not yet know how the story ended. It is the single best artefact for this object and it is
+      not ingested.
+  - source: status_page
+    signal: the timeline as customers saw it
+    description: The only version customers can check ours against. A published postmortem whose
+      timeline contradicts the status page is worse than no postmortem.
+  - source: document
+    signal: the postmortem itself
+    description: Lives in a wiki. Not readable by the pipeline, which is why almost every attribute
+      on this object has no source path and why this file's honest executable count comes entirely
+      from the commitment substrate.
+  - source: manual_entry
+    signal: what people remember
+    description: Honest, unverifiable, and decaying faster than anyone assumes. The default source
+      for a timeline assembled more than a week after the incident.
+
+outputs:
+  - name: detection_gap_minutes
+    type: number
+    description: Time from breaking to knowing. The number this object exists to produce and the one
+      worth trending across every review in a year.
+    derived_from: [started_at, detected_at]
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+  - name: action_debt
+    type: integer
+    description: Open actions past their date across all postmortems. The organisation's real
+      learning balance sheet, and a number almost nobody computes because it is embarrassing.
+    derived_from: [actions_overdue_count, action_status]
+    consumed_by: [L4.decision_maker, L6.learning_unit]
+  - name: recurrence_flag
+    type: boolean
+    description: Whether this failure mode has been reviewed before. Changes the correct output from
+      "write one" to "reopen the last one".
+    derived_from: [is_recurrence, prior_actions_completed]
+    consumed_by: [L4.decision_maker, L4.reasoning_unit]
+  - name: customer_rca_owed
+    type: boolean
+    description: Whether a written external RCA is contractually due, and to whom.
+    consumed_by: [L5.communication_planning, "L5.2.channel_planner"]
+  - name: learning_confidence_bp
+    type: integer
+    description: How much of this document should be believed, given timeline provenance and
+      contributor breadth. A recollection-sourced timeline with one contributor should not feed a
+      systemic conclusion at full weight.
+    derived_from: [timeline_source, contributor_count]
+    consumed_by: [L6.learning_unit]
+  - name: systemic_theme
+    type: string
+    description: The pattern across postmortems that no single one contains. The only output here
+      that requires more than one instance of this object to exist.
+    consumed_by: [L6.learning_unit]
+  - name: credit_exposure_signal
+    type: boolean
+    description: Whether this review is likely to be read as evidence in a service-credit or renewal
+      conversation. Changes who writes it and what may be in it.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+
+preconditions:
+  - id: postmortem.impact_must_have_stopped
+    statement: A postmortem may not be started while customer impact is ongoing.
+    requires:
+      - customer_support.obj.core.incident
+      - mitigated_at
+    if_unmet: block
+  - id: postmortem.timeline_before_the_room
+    statement: An artefact-backed timeline must be assembled before anyone is asked what happened.
+    requires:
+      - started_at
+      - detected_at
+      - timeline_source
+    if_unmet: degrade
+  - id: postmortem.facilitator_was_not_the_responder
+    statement: The person facilitating should not have been on the response.
+    requires:
+      - facilitator_ref
+      - author_ref
+    if_unmet: degrade
+  - id: postmortem.blameless_contract_stated
+    statement: The blameless contract must be stated out loud at the start of the review, not
+      assumed from culture.
+    requires:
+      - is_blameless
+    if_unmet: degrade
+  - id: postmortem.recurrence_checked_first
+    statement: Whether this failure mode has been reviewed before must be established before a new
+      document is opened.
+    requires:
+      - is_recurrence
+      - prior_postmortem_ref
+    if_unmet: block
+
+constraints:
+  - id: postmortem.exactly_one_incident
+    statement: A postmortem documents exactly one incident.
+    hard: true
+    why: A review covering several incidents is a trend report — a legitimate and different artefact
+      with a different audience, and one that cannot carry an action list because no single failure
+      owns the actions.
+  - id: postmortem.action_requires_owner_and_date
+    statement: An entry with no named person and no date may not be recorded as an action.
+    hard: true
+    why: It will not be done, and its presence on the list makes the list look complete. Record it
+      honestly under "things we noticed" instead, where nobody will mistake it for a plan.
+  - id: postmortem.no_individual_named_in_the_timeline
+    statement: The timeline names roles, never individuals.
+    hard: true
+    why: The cost is not paid by the person named. It is paid at the NEXT review, by the detail
+      nobody volunteers, and that cost is invisible at the moment the name is typed.
+  - id: postmortem.internal_and_external_are_separate_documents
+    statement: The internal and customer-facing versions are separate artefacts and may not be the
+      same document with sections hidden.
+    hard: true
+    why: A single document with hidden sections leaks on the first copy-paste, and more commonly is
+      simply written to the lower common denominator from the start.
+  - id: postmortem.detection_gap_must_be_stated
+    statement: The detection gap must appear as a number, including when it is zero.
+    hard: false
+    why: A gap recorded as prose cannot be trended, and untrended it is indistinguishable from a gap
+      that is not improving.
+  - id: postmortem.root_cause_may_be_unknown_but_not_blank
+    statement: A stated unknown is an acceptable root cause. A blank field is not.
+    hard: false
+    why: >
+      An unknown that is stated, together with what was tried, is a finding with an owner. Blank is
+      an unfinished document that will be cited as a finished one.
+  - id: postmortem.recurrence_reopens_rather_than_reissues
+    statement: A recurrence should reopen the prior review rather than open a new one.
+    hard: false
+    why: Two half-done action lists on the same failure mode leave neither authoritative, and hide
+      the recurrence count by spreading it across documents.
+
+business_rules:
+  - id: postmortem.ownerless_actions_are_not_actions
+    statement: >
+      An action without a named individual and a date is not an action. A team is not an owner —
+      "Platform will add alerting" has the grammatical form of an action and none of the properties
+      of one, because no individual wakes up owning it.
+    then: reject_ownerless_action
+    severity: blocking
+    why: This is the single most common way a well-attended, well-written review produces nothing,
+      and it is invisible at the moment it happens because the list looks full.
+
+  - id: postmortem.action_needs_a_date
+    statement: An action recorded with no due date must be rejected at authoring time rather than
+      discovered at the next review.
+    when:
+      - exists: commitment.action
+      - absent: commitment.due_at
+    then: reject_undated_action
+    severity: blocking
+    why: Executable today against the commitment substrate, which makes this the one rule on this
+      object that can be enforced at the moment of writing rather than argued about a quarter later.
+
+  - id: postmortem.overdue_action_is_a_finding
+    statement: An action a week past its date with nothing sent is a finding about the organisation,
+      not an administrative oversight.
+    when:
+      - fn: days_since
+        path: commitment.due_at
+        op: ">="
+        value: 7
+      - no_obs: followup_sent
+    then: flag_action_debt
+    severity: warning
+    why: The useful question is never "why is this late". It is "what outranked it", and the answer
+      is almost never "nothing" — which makes it a prioritisation finding worth more than the action.
+
+  - id: postmortem.blameless_by_construction
+    statement: The timeline names roles and affordances, never individuals, and the blameless
+      contract is stated aloud rather than assumed.
+    then: enforce_blameless_language
+    severity: blocking
+    why: Blamelessness is not a courtesy extended to the person who pushed the button. It is the only
+      mechanism that produces a true timeline, because people who expect consequences report a
+      defensible version rather than an accurate one — usually without noticing they are doing it.
+
+  - id: postmortem.two_audiences_two_documents
+    statement: A postmortem written for customers and one written for engineers are different
+      documents and must be authored separately from one shared timeline.
+    then: require_separate_external_document
+    severity: blocking
+    why: Merging them produces one that serves neither. In practice the internal version gets
+      sanitised until it stops being useful for learning, which is the failure nobody notices because
+      the document still exists and still gets praised.
+
+  - id: postmortem.detection_before_cause
+    statement: The detection timeline is written before the causal narrative.
+    then: order_sections_detection_first
+    severity: advisory
+    why: Whoever writes the cause first anchors the entire review on it, and the detection gap then
+      gets described relative to a story that already has an ending.
+
+  - id: postmortem.recurrence_reopens_the_original
+    statement: When the same failure mode recurs, reopen the prior postmortem with its incomplete
+      actions rather than opening a new one.
+    then: reopen_prior_postmortem
+    severity: warning
+    why: A second document lets the organisation feel productive about the same failure twice, and it
+      makes the recurrence count invisible by spreading it across two action lists.
+
+  - id: postmortem.single_root_cause_is_a_smell
+    statement: A review claiming exactly one root cause should be challenged before publication.
+    severity: advisory
+    why: Complex systems fail through combinations. Naming one cause usually names the last thing
+      that changed and leaves the other conditions live — one of them produces the next incident, and
+      it will look unrelated.
+
+  - id: postmortem.severity_downgrade_must_be_recorded
+    statement: A severity reassessed downward at review is recorded on the postmortem and does not
+      retroactively alter the incident record.
+    severity: warning
+    why: Quietly restating severity after the fact is how a team's declared-sev1 count falls without
+      its outage minutes changing, and it corrupts the one field incident analysis depends on.
+
+  - id: postmortem.publication_is_not_completion
+    statement: A postmortem may not be marked complete at publication. It completes when its actions
+      complete or are consciously abandoned with a reason.
+    then: block_close_on_publish
+    severity: blocking
+    why: Treating publication as the end is the failure this whole object is arranged around, and a
+      lifecycle that permitted it would encode the mistake into the software.
+
+decision_factors:
+  - name: detection_gap
+    weight_bp: 2400
+    direction: increases
+    description: >
+      How long it was broken before anyone knew. Ranked first deliberately and against the industry
+      habit, which ranks time-to-resolve first. Resolution time is mostly a function of how hard the
+      problem was; detection time is entirely a function of choices we made, it is the cheapest thing
+      in the incident to change, and it is the only part of the timeline with no owner.
+    reads: [time_to_detect_minutes, started_at, detected_at, detection_source, examines_detection]
+  - name: action_ownership_and_dates
+    weight_bp: 2000
+    direction: increases
+    description: >
+      What share of the actions have a named human and a date. The diary-entry test, and the factor
+      that decides whether anything downstream of this document is worth tracking at all.
+    reads: [actions_with_owner_count, actions_with_date_count, action_count, action_status,
+            monitoring_action_present]
+  - name: recurrence
+    weight_bp: 1800
+    direction: increases
+    description: >
+      Whether this has happened before and whether the last review's actions were done. Weighted
+      just below action ownership because it is the same finding one iteration later — a recurrence
+      with incomplete prior actions is not a technical event, it is the previous postmortem's
+      ownership failure arriving on schedule.
+    reads: [is_recurrence, recurrence_count, prior_actions_completed, prior_postmortem_ref]
+  - name: customer_exposure
+    weight_bp: 1500
+    direction: increases
+    description: >
+      How many customers were affected, who is owed a written RCA, and whether the account is one a
+      second occurrence would lose. Legitimate as an input to how urgently the review happens and how
+      carefully it is written; illegitimate as an input to what the timeline says.
+    reads: [severity_at_review, is_customer_facing, customer_rca_sent_at, audience]
+  - name: timeline_provenance
+    weight_bp: 1000
+    direction: context
+    description: >
+      Whether the timestamps came from artefacts or from memory. A context factor rather than a
+      scoring one — it should not change how much the incident matters, it should change how much of
+      this document any downstream conclusion is allowed to rest on.
+    reads: [timeline_source, contributor_count, review_meeting_at]
+  - name: blamelessness_of_the_account
+    weight_bp: 800
+    direction: context
+    description: >
+      Whether the review was run under a stated blameless contract and whether individuals appear in
+      the timeline. Low weight not because it matters little but because its cost lands on the NEXT
+      review rather than this one, so weighting it heavily here would misattribute the effect.
+    reads: [is_blameless, blame_language_present, facilitator_ref, contributor_count]
+  - name: comms_examination
+    weight_bp: 500
+    direction: increases
+    description: >
+      Whether the review covered what customers were told and when. Support's half of the incident,
+      weighted lowest here only because it is the factor with the weakest data behind it today — and
+      it is the one an expert would raise first in the room.
+    reads: [examines_communication, published_at, customer_rca_sent_at]
+
+evidence:
+  - source: telemetry
+    strength_bp: 9500
+    decays: false
+    independent_of: [manual_entry, email, ticket]
+    description: >
+      When it actually started and stopped, independent of anyone's account. The only source that can
+      contradict every human in the room and be right, and therefore the only one that can establish
+      a detection gap nobody can argue with.
+  - source: slack
+    strength_bp: 9000
+    decays: false
+    independent_of: [manual_entry, survey]
+    description: >
+      The incident channel. Timestamped, unrehearsed, and written by people who did not yet know how
+      the story ended — which is exactly what makes it better evidence than the same people's
+      recollection a week later. The single best artefact for this object and not ingested.
+  - source: ticket
+    strength_bp: 8500
+    decays: false
+    independent_of: [telemetry, manual_entry]
+    description: Arrival timestamps of the cluster. Frequently earlier than the first alert, and the
+      cheapest honest proxy for started_at available to anyone.
+  - source: status_page
+    strength_bp: 8000
+    decays: false
+    description: The timeline as customers saw it and the only version they can check ours against.
+      Proves what we said and when, which is the comms half of the review.
+  - source: email
+    strength_bp: 7000
+    decays: false
+    independent_of: [manual_entry]
+    description: The review thread and the action list as written. Strong on commitments, weak on the
+      timeline, and the only source the pipeline actually has today.
+  - source: calendar
+    strength_bp: 5500
+    decays: false
+    description: Proves a review was scheduled. Does not prove it happened, that anyone contributed,
+      or that a document exists.
+  - source: document
+    strength_bp: 5000
+    decays: true
+    description: >
+      The postmortem itself. Deliberately mid-table rather than top: this object's discriminator is
+      that the document is a CLAIM, so it is evidence of what was concluded and not of what occurred.
+      Decays because a published postmortem is frozen while the system it describes keeps changing.
+  - source: manual_entry
+    strength_bp: 3000
+    decays: true
+    description: What people remember, written down. Honest, unverifiable, and decaying faster than
+      anyone assumes — memory of an incident degrades faster than memory of almost anything else
+      people do at work.
+
+metrics:
+  - name: time_to_detect
+    unit: minutes
+    direction: lower_is_better
+    description: Breaking to knowing. The number this object exists to move, and the one almost
+      nobody trends.
+    owner_layer: L2
+    calibrates: [postmortem.detection_gap_is_the_headline]
+  - name: time_to_declare
+    unit: minutes
+    direction: lower_is_better
+    description: Knowing to declaring. Measures culture rather than tooling — if it is large, ask who
+      felt they needed permission.
+    owner_layer: L2
+  - name: postmortem_completion_lag
+    unit: days
+    direction: lower_is_better
+    description: Incident resolution to published document. Beyond about a week the timeline is
+      recollection regardless of what the document claims.
+    owner_layer: L6
+  - name: action_ownership_rate
+    unit: percent
+    direction: higher_is_better
+    description: Share of actions carrying a named individual AND a date. The diary-entry ratio.
+    owner_layer: L6
+    calibrates: [postmortem.action_carries_no_date]
+  - name: action_completion_rate
+    unit: percent
+    direction: higher_is_better
+    description: Share of actions completed with evidence rather than asserted. The only metric here
+      that describes whether the practice works.
+    owner_layer: L6
+    calibrates: [postmortem.action_overdue_with_no_outbound]
+  - name: recurrence_rate
+    unit: percent
+    direction: lower_is_better
+    description: Share of incidents whose failure mode had already been reviewed. Rises quietly and
+      is the strongest available indictment of an action-tracking process.
+    owner_layer: L6
+  - name: detection_gap_trend
+    unit: minutes
+    direction: lower_is_better
+    description: The gap across reviews over time. The single number that says whether any of this
+      produced anything, and the reason detection deserves its own metric rather than a sentence.
+    owner_layer: L6
+  - name: customer_rca_turnaround
+    unit: days
+    direction: lower_is_better
+    description: Request to delivery of the external document. The only deadline on this object
+      anyone outside the company can enforce, which is why it wins by default.
+    owner_layer: L6
+  - name: blameless_language_violations
+    unit: count
+    direction: lower_is_better
+    description: Individuals named in timelines. A count of zero proves nothing on its own; a count
+      that rises predicts a fall in contributor_count two reviews later.
+    owner_layer: L6
+    calibrates: [postmortem.blame_language_in_the_timeline]
+
+events:
+  - id: postmortem.opened
+    name: Postmortem Opened
+    payload: [incident_ref, severity_at_review, facilitator_ref]
+    severity: info
+    description: Should fire on incident resolution rather than on someone remembering. There is no
+      executable trigger for it today, which is why postmortems are owed rather than assigned.
+  - id: postmortem.timeline_assembled
+    name: Timeline Assembled From Artefacts
+    payload: [started_at, detected_at, timeline_source, time_to_detect_minutes]
+    severity: notable
+    description: The moment the detection gap becomes a number. Fires before the review meeting or the
+      review meeting is producing recollection.
+  - id: postmortem.review_held
+    name: Blameless Review Held
+    payload: [review_meeting_at, contributor_count, is_blameless]
+    severity: info
+  - id: postmortem.published
+    name: Postmortem Published
+    payload: [published_at, action_count, actions_with_owner_count, audience]
+    severity: notable
+    description: Explicitly not a completion event. Publication is the midpoint of the work and every
+      system that treats it as the end is the reason this object has a lifecycle past `published`.
+  - id: postmortem.action_overdue
+    name: Postmortem Action Overdue
+    emitted_when:
+      - fn: days_since
+        path: commitment.due_at
+        op: ">="
+        value: 7
+      - no_obs: followup_sent
+    payload: [action_status, actions_overdue_count, first_action_due_at]
+    severity: notable
+    description: The one event on this object with a real trigger today. It fires on the failure that
+      makes postmortems worthless, which is a reasonable thing for the only working trigger to do.
+  - id: postmortem.customer_rca_sent
+    name: Customer RCA Sent
+    payload: [customer_rca_sent_at, external_document_ref, audience]
+    severity: info
+  - id: postmortem.recurrence_detected
+    name: Recurrence Detected
+    payload: [is_recurrence, prior_postmortem_ref, recurrence_count, prior_actions_completed]
+    severity: critical
+    invalidates: [action_status, prior_actions_completed, examines_detection]
+    description: >
+      Invalidates the prior review's claim that the failure was addressed. That claim is exactly what
+      a postmortem is, which is why this is the only critical event on the object — a recurrence is
+      the document being proven wrong.
+  - id: postmortem.actions_closed
+    name: All Actions Closed
+    payload: [actions_completed_count, action_count, action_status]
+    severity: notable
+  - id: postmortem.superseded
+    name: Superseded By A Later Review
+    payload: [prior_postmortem_ref, recurrence_count]
+    severity: info
+
+actions:
+  - id: postmortem.assemble_timeline_from_artefacts
+    name: Build the timeline from logs, pages and ticket arrivals
+    actor: system
+    effect: Produces a checkable timeline before anyone is asked what they remember. The single
+      highest-leverage step and the one most often skipped because the meeting is already scheduled.
+    cost: low
+    reversible: true
+  - id: postmortem.declare_blameless_contract
+    name: State the blameless contract aloud
+    actor: human
+    effect: Makes the promise explicit and therefore breakable. A team that has never said it out loud
+      has not made it and cannot be held to it.
+    cost: trivial
+  - id: postmortem.hold_review_with_outside_facilitator
+    name: Facilitate with someone who was not on the response
+    actor: human
+    effect: Lets the question "why did that seem right at the time" be asked without the room hearing
+      an accusation.
+    cost: low
+  - id: postmortem.name_owner_and_date_on_every_action
+    name: Put a person and a date on every action
+    actor: human
+    preconditions:
+      - exists: commitment.action
+    effect: Converts the list from a record of a conversation into a plan. Anything that cannot take
+      a name and a date moves to "things we noticed", honestly labelled.
+    cost: trivial
+  - id: postmortem.file_actions_as_engineering_work
+    name: File the actions where engineering actually works
+    actor: system
+    effect: The best available predictor of completion. An action existing only in this document has
+      not left the room, whatever its owner and date say.
+    cost: low
+  - id: postmortem.split_customer_and_internal_versions
+    name: Write the external document separately from the internal one
+    actor: human
+    effect: One shared timeline, two documents, two audiences. Prevents the sanitisation that quietly
+      destroys the internal version's usefulness.
+    cost: moderate
+  - id: postmortem.send_customer_rca
+    name: Send the customer RCA
+    actor: agent
+    effect: Satisfies the contractual deadline and closes the incident for the account. Says what
+      changes and by when; does not narrate the debugging.
+    cost: moderate
+    reversible: false
+  - id: postmortem.chase_overdue_action
+    name: Chase an overdue action and record what displaced it
+    actor: agent
+    preconditions:
+      - fn: days_since
+        path: commitment.due_at
+        op: ">="
+        value: 7
+      - no_obs: followup_sent
+    effect: >
+      Recovers the action or produces the better finding. "What outranked it" is a prioritisation
+      answer and it is worth more than the action was.
+    cost: low
+  - id: postmortem.reopen_prior_postmortem
+    name: Reopen the previous review instead of writing a new one
+    actor: human
+    effect: Keeps one authoritative action list and makes the recurrence count visible. The move
+      almost no process supports and the correct one on any repeat.
+    cost: low
+  - id: postmortem.decline_a_review
+    name: Record a decision NOT to review, with the reason
+    actor: human
+    effect: >
+      Makes the exception legible. A team that reviews everything reviews nothing seriously; a
+      declined review with a stated reason is a governance artefact, and an undeclared one is an
+      omission nobody can audit.
+    cost: trivial
+    reversible: true
+  - id: postmortem.close_with_evidence
+    name: Close each action against evidence, or abandon it with a reason
+    actor: human
+    effect: Both endings are legitimate. Ticking a box before a meeting is neither.
+    cost: low
+
+dependencies:
+  - target: customer_support.obj.core.incident
+    kind: requires
+    strength: hard
+    description: You cannot write the claim without the event. The incident supplies the clock, the
+      blast radius and the severity that this object then reassesses.
+  - target: customer_support.obj.core.commitment
+    kind: requires
+    strength: hard
+    description: >
+      Action items ARE commitments. Without the commitment object the actions have nowhere structured
+      to live and the postmortem degrades to prose — which is also, precisely, how the diary-entry
+      failure happens in real tooling.
+  - target: customer_support.obj.core.root_cause
+    kind: requires
+    strength: soft
+    description: Soft because a stated unknown is a legitimate root cause. Hard would force teams to
+      invent a cause to close a document, which is worse than the gap.
+  - target: customer_support.obj.core.ticket
+    kind: enriches
+    strength: soft
+    description: The cluster is where the detection timeline actually comes from. Ticket arrival
+      times routinely predate the first alert.
+  - target: customer_support.obj.core.bug_report
+    kind: enriches
+    strength: soft
+    description: Turns an action into tracked work. Its absence is the strongest early predictor that
+      nothing will ship.
+  - target: customer_support.obj.core.entitlement
+    kind: enriches
+    strength: soft
+    description: Decides whether a written RCA is owed, to whom, and by when. Changes the deadline
+      from cultural to contractual.
+  - target: customer_support.obj.core.customer_sentiment
+    kind: enriches
+    strength: soft
+    description: Whether the document landed. A postmortem that produced a worse relationship than
+      the incident did is a finding about the writing, not about the fault.
+  - target: customer_support.obj.postmortem.postmortem
+    kind: invalidated_by
+    strength: hard
+    description: >
+      A later review of the same failure mode invalidates this one's central claim — that the failure
+      was addressed. Modelled as a dependency and not merely a relationship because it is a fact about
+      the compile: a superseded postmortem must not be read as current knowledge.
+
+exceptions:
+
+  - id: postmortem.too_small_to_earn_a_review
+    statement: >
+      An incident whose blast radius, duration AND detection gap are all small does not earn a
+      postmortem. The correct output is one line on the issue and nothing else.
+    overrides:
+      - postmortem.owed_by_severity
+      - postmortem.recurrence_checked_first
+      - postmortem.exactly_one_incident
+    frequency: common
+    why: >
+      The process has a fixed human cost — a facilitated hour plus four or five people plus the
+      write-up — and spending it on a nine-minute degradation with a two-minute detection gap trains
+      everyone in the room to treat the ritual as paperwork. That training is the actual damage: it
+      is spent from the same budget as the review that mattered, and it is spent first. The
+      important qualifier is the AND, and it is the half teams get wrong: severity is not the only
+      trigger. A four-minute outage that took six hours to notice earns a full review at any
+      severity, because the detection gap is the finding and it is entirely severity-independent.
+      Declining a review is a decision and must be recorded as one — see postmortem.decline_a_review
+      — because a declined review with a stated reason is auditable and an omission is not.
+
+  - id: postmortem.we_already_wrote_this_one
+    statement: >
+      When the same failure mode recurs and a prior postmortem exists, the correct output is NOT a
+      new postmortem. It is the previous one, reopened, with its incomplete actions, the names of
+      who owned them, and a written answer to what displaced them.
+    overrides:
+      - postmortem.this_has_been_written_before
+      - postmortem.recurrence_reopens_the_original
+      - postmortem.owed_by_severity
+    when:
+      - has_obs: timeline_slip
+    frequency: occasional
+    why: >
+      Writing a second document is how an organisation feels productive about the same failure twice.
+      The costs are concrete rather than aesthetic: two half-done action lists now exist and neither
+      is authoritative; the recurrence count is invisible because it is spread across two documents;
+      and the second review will independently rediscover the first review's findings, which feels
+      like rigour and is repetition. The genuinely useful output of a recurrence is not causal at all
+      — the technical cause is already written down and was already correct. It is the answer to
+      "what outranked the action", and that answer is almost never "nothing". It is usually a named
+      piece of roadmap work, and naming it is the only version of this review that changes anything.
+
+  - id: postmortem.accepted_risk_is_not_an_oversight
+    statement: >
+      When the contributing condition was a consciously accepted trade-off rather than a miss, the
+      action is to re-price the risk with the people who accepted it — not to fix the code.
+    overrides:
+      - postmortem.single_root_cause_is_a_smell
+      - postmortem.ownerless_actions_are_not_actions
+    frequency: occasional
+    why: >
+      A review that treats an accepted risk as an oversight produces an action nobody will do,
+      because the person who would do it already decided not to and their reasons have not changed.
+      The honest output is a decision record addressed to whoever owns the trade-off, which will
+      frequently have no engineering owner and no date in the usual sense — which is why this
+      exception has to suspend the ownership rule rather than work around it.
+
+  - id: postmortem.blamelessness_cannot_be_promised_under_legal_hold
+    statement: >
+      Where counsel, a regulator or a discoverable-document regime is involved, the organisation
+      cannot promise that the internal account will stay internal, and must say so before the review
+      rather than after it.
+    overrides:
+      - postmortem.blameless_by_construction
+      - postmortem.internal_and_external_are_separate_documents
+    when:
+      - has_obs: legal_review
+    frequency: rare
+    why: >
+      Blamelessness is a promise about consequences. Under legal hold the organisation is no longer
+      the only party deciding what the consequences are, and pretending otherwise is worse than
+      dropping the promise — people who later discover the account was discoverable stop
+      participating in every future review, not just this one. The correct move is to say it up
+      front, run the review knowing it, and accept a thinner timeline as the price. That is a real
+      loss and it should be recorded as one.
+
+  - id: postmortem.security_incident_is_a_different_process
+    statement: >
+      A security incident's review runs under a different owner, different distribution and legal
+      involvement. It is not a support postmortem with extra care.
+    overrides:
+      - postmortem.two_audiences_two_documents
+      - postmortem.exactly_one_incident
+    when:
+      - has_obs: security_review_started
+    frequency: rare
+    why: >
+      Running it as a support postmortem leaks — the distribution list is wrong by default, the
+      timeline contains attack detail, and the customer-facing version has disclosure obligations
+      with statutory clocks that have nothing to do with this object's conventions. The correct
+      behaviour here is to hand off and to know that you have, which is why this exception exists as
+      an explicit boundary rather than as a caveat inside the normal process.
+
+best_practices:
+  - id: postmortem.timeline_first
+    statement: Assemble the detection timeline from artefacts before anyone is asked what happened,
+      and write it before the causal narrative.
+    why: Whoever writes the cause first anchors the whole review on it, and the detection gap then
+      gets described relative to a story that already has an ending.
+    applies_when: Every review, without exception.
+    evidence: Chat logs, page timestamps, ticket arrival times, deploy records.
+
+  - id: postmortem.outside_facilitator
+    statement: Have the review facilitated by someone who was not on the response.
+    why: A facilitator who was up all night fixing it cannot ask "why did that seem like the right
+      call at the time" without the room hearing an accusation, however they phrase it.
+    applies_when: Any incident with more than one responder.
+
+  - id: postmortem.name_and_date_or_not_an_action
+    statement: Every action carries an individual's name and a date, or it moves to "things we
+      noticed" and is labelled as such.
+    why: The honest label is worth more than the false one. A list of six actions of which two are
+      real is worse than a list of two, because nobody knows which two.
+    applies_when: Always.
+
+  - id: postmortem.ask_what_was_luck
+    statement: Ask what would have made this materially worse, and whether we avoided it by design or
+      by accident.
+    why: The closest thing to a free finding in the genre. It names the next incident before it
+      happens, and it is the question most reliably left out because it feels speculative.
+    applies_when: Any incident where the impact could plausibly have been larger — which is most.
+
+  - id: postmortem.support_owns_the_detection_section
+    statement: Have support write the detection and communication sections, not engineering.
+    why: Support usually knows first, holds the arrival timestamps, and is the only function that
+      experienced the comms failure directly. Engineering-owned reviews reliably produce a superb fix
+      section and a one-sentence detection section.
+    applies_when: Any customer-visible incident.
+
+  - id: postmortem.track_actions_where_work_lives
+    statement: Track postmortem actions in the same system as ordinary engineering work, never in the
+      document.
+    why: Actions tracked in a document compete with a backlog they are not in, and lose silently
+      every time.
+    applies_when: Always.
+
+  - id: postmortem.count_recurrences_on_the_review
+    statement: Count recurrences on the postmortem rather than on the incident.
+    why: Incidents are genuinely distinct events and each looks new. The thing that repeats is the
+      failure mode, and this document is the only place it has a name.
+    applies_when: Any failure mode seen more than once.
+
+  - id: postmortem.publish_the_gap_even_when_it_is_good
+    statement: State the detection gap as a number in every review, including when it is zero.
+    why: A number that is only reported when it is bad cannot be trended, and an untrended gap is
+      indistinguishable from one that is not improving.
+    applies_when: Always.
+
+anti_patterns:
+
+  - id: postmortem.add_more_monitoring
+    statement: The action item that reads "add more monitoring" with no named signal, threshold,
+      destination or owner.
+    why_it_happens: >
+      It is true, it is uncontroversial, everyone in the room agrees with it immediately, and it
+      costs nothing to write. It also sounds like exactly the right lesson from an incident that took
+      too long to detect, which is what makes it so hard to object to in the moment.
+    cost: >
+      It is unownable and unverifiable, so it survives to the next postmortem for the same system
+      verbatim, and the detection gap does not move. Its presence also crowds out the specific action
+      that would have worked, because the room believes detection has been addressed.
+    instead: Name the signal, the threshold, where the alert goes, and who will be paged by it. If
+      none of those can be answered in the room, the action is "decide what would have caught this",
+      owned by a person, dated.
+    detectable_by: [postmortem.action_carries_no_date, monitoring_action_present,
+                    action_ownership_rate]
+
+  - id: postmortem.one_document_for_everyone
+    statement: Merging the customer version and the engineering version into a single document.
+    why_it_happens: >
+      Writing two documents feels like duplicated work, the engineering one is already written, and
+      the customer deadline is the one with a contract behind it. Nobody decides to merge them; the
+      external deadline simply arrives first and the internal document is what exists.
+    cost: >
+      One of two failures, and in practice always the first: the internal version is sanitised until
+      it is useless for learning, or the external version carries component names, internal blame and
+      other customers' impact. The sanitised case is worse because it is invisible — the document
+      still exists, still gets praised, and no longer contains the thing anyone would learn from.
+    instead: One shared timeline, two documents. The customer one says impact, cause in a sentence,
+      and what changes by when. The internal one says everything, including the wrong guesses.
+    detectable_by: [postmortem.audience_turned_contractual, redaction_required, is_customer_facing]
+
+  - id: postmortem.publication_as_the_deliverable
+    statement: Treating the published document as the completion of the work.
+    why_it_happens: The document is the visible artefact, the meeting has a scheduled end, and
+      everyone involved genuinely did produce something good. There is no moment at which anyone
+      decides to stop.
+    cost: The actions decay unattended and surface at the next incident on the same system, by which
+      point the original owners have changed teams and the list cannot even be chased.
+    instead: The lifecycle continues past `published` into `in_progress` and `overdue`, and closure
+      requires either evidence of completion or a conscious abandonment with a stated reason.
+    detectable_by: [postmortem.action_overdue_with_no_outbound, postmortem.went_quiet_with_actions_open,
+                    action_completion_rate]
+
+  - id: postmortem.naming_the_individual
+    statement: Naming a specific person in the timeline where a role would have served.
+    why_it_happens: >
+      It is the most precise way to describe what happened, and precision reads as rigour. In a team
+      that trusts each other it also feels harmless — the person is in the room, nobody is angry, and
+      softening it feels like euphemism.
+    cost: >
+      Not paid by the person named, which is why the practice survives. It is paid at the next review
+      by the detail nobody volunteers, and at the one after that by a timeline everyone can tell is
+      too tidy. The erosion takes about a year and nobody ever decides to abandon blamelessness.
+    instead: Name the role and the affordance — what made it possible for that action to have that
+      effect. "The deploy tool allowed a single confirmation to reach all regions" is both more
+      precise and more actionable than any sentence containing a name.
+    detectable_by: [postmortem.blame_language_in_the_timeline, blameless_language_violations,
+                    contributor_count]
+
+  - id: postmortem.the_single_root_cause
+    statement: Declaring exactly one root cause.
+    why_it_happens: Reviewers want a satisfying answer, a single cause is much easier to write an
+      action against, and the format of most templates has one field.
+    cost: The other contributing conditions stay live. One of them produces the next incident, it
+      looks unrelated, and it gets its own postmortem.
+    instead: List contributing conditions, each of which had to be true. Then ask which single one,
+      removed, would have prevented it — and notice how often the answer is "none of them alone".
+    detectable_by: [single_cause_claimed, recurrence_rate]
+
+  - id: postmortem.reviewing_only_the_fix
+    statement: Reviewing what broke and how it was fixed, while skipping detection and customer
+      communication entirely.
+    why_it_happens: >
+      Engineering owns the review, the fix is the engineering-shaped part, and it is the part where
+      everyone in the room has expertise. The detection gap belongs to nobody and the comms failure
+      belongs to whoever was answering tickets at 3am, who is usually not invited.
+    cost: The second occurrence lasts exactly as long as the first even though the bug was genuinely
+      fixed, because nothing about how quickly we noticed or how quickly we told anyone changed.
+    instead: Support writes the detection and communication sections. Detection is written first and
+      the gap is stated as a number.
+    detectable_by: [examines_detection, examines_communication, detection_gap_trend,
+                    postmortem.communication_failure_went_unexamined]
+
+examples:
+  - label: Four-minute outage, six-hour detection gap
+    kind: edge
+    note: >
+      The incident nobody would review on severity and the one with the most valuable finding in the
+      quarter. Impact was trivial; the fact that the same fault could have run for six hours before
+      anyone noticed is not. This is the case the first exception's AND clause exists to protect.
+
+  - label: An incident record that is right and a postmortem that is wrong
+    kind: misclassification
+    note: >
+      The incident says impact ran 47 minutes. The postmortem says 12, because whoever wrote it
+      started the timeline at declaration instead of onset. Both documents are internally consistent,
+      the postmortem is more widely read, and the detection gap has been deleted from the exact
+      document that exists to find it. The discriminator, made concrete.
+
+  - label: The same database failover, third time in fourteen months
+    kind: edge
+    note: >
+      Three incidents, three postmortems, three action lists, none complete. Each review
+      independently rediscovered the same cause and felt rigorous doing it. The only useful output
+      available on the third occasion was the answer to what outranked the actions the first two
+      times, and no template had a field for it.
+
+  - label: Published, praised, and nothing shipped
+    kind: typical
+    note: The modal outcome. Attended by nine people, quoted in an all-hands, six actions with team
+      names and no dates. Nobody did anything wrong at any single moment.
+
+  - label: One document sent to the customer and to engineering
+    kind: misclassification
+    note: >
+      Written to the customer deadline because that was the one with a contract behind it. Contains
+      no wrong guesses, no component names and no honest account of the debugging — so it is
+      unobjectionable and completely useless as a learning artefact, and it is the version now stored
+      as the postmortem of record.
+
+  - label: The on-call engineer named in the timeline
+    kind: counterexample
+    note: >
+      "At 02:14 Sam restarted the wrong node." Precise, true, and the last unprompted detail Sam's
+      team volunteered for a year. The cost was invisible at the moment it was typed and was paid by
+      four subsequent reviews.
+
+  - label: Sev1 declared, sev3 at review
+    kind: edge
+    note: >
+      A correct downgrade with hindsight, and the finding is that declaring was cheap and right.
+      Recorded on the postmortem rather than applied back to the incident — quietly restating it is
+      how a declared-sev1 count falls without outage minutes changing.
+
+  - label: An accepted risk that fired
+    kind: edge
+    note: >
+      The single-region failover was a documented trade-off made eighteen months earlier with the
+      cost written down. Treating it as an oversight produces an action the accepting party already
+      declined. The honest output is a decision record addressed to them, which no postmortem
+      template has room for.
+
+  - label: Four hundred tickets, no postmortem
+    kind: misclassification
+    note: >
+      Resolved in eleven minutes, so it cleared the severity bar for a review by duration and missed
+      it by impact. Four hundred customers experienced it and the detection came from ticket volume —
+      which is the finding, and it was never written down.
+
+references:
+  - title: Site Reliability Engineering — Chapter 15, Postmortem Culture
+    kind: book
+    author: Beyer, Jones, Petoff, Murphy (eds.)
+    note: The canonical statement of blameless postmortems and of publication-plus-tracking. Strong
+      on culture and on action ownership; written from an engineering vantage point, which is
+      precisely why its detection and customer-communication guidance is thin and this object's is not.
+
+  - title: Blameless PostMortems and a Just Culture
+    kind: practitioner
+    author: John Allspaw
+    note: >
+      The argument this object's second claim is taken from — that blamelessness is a mechanism for
+      obtaining accurate accounts rather than a kindness. Also the source of the observation that the
+      cost of blame lands on the next review rather than this one, which is what makes the erosion
+      invisible.
+
+  - title: How Complex Systems Fail
+    kind: research
+    author: Richard I. Cook
+    note: The source of "there is no single root cause". Directly underwrites
+      postmortem.single_root_cause_is_a_smell and the plural cardinality on the root_cause edge.
+
+  - title: ITIL Problem Management
+    kind: standard
+    note: >
+      Where the support side's incident/problem split comes from, and where this domain deliberately
+      diverges — ITIL's "problem record" collapses what this brain models as issue, root_cause and
+      postmortem into one artefact, which is why ITIL-shaped tooling can tell you a problem exists
+      and cannot tell you whether anyone did the actions.
+
+  - title: The Field Guide to Understanding Human Error
+    kind: book
+    author: Sidney Dekker
+    note: The old-view/new-view distinction behind the anti-pattern on naming individuals, and behind
+      the practice of naming the affordance rather than the actor.
+
+  - title: Customer Support domain — incident, root_cause and commitment objects
+    kind: internal
+    note: >
+      This object is deliberately thin where those are thick. It holds the claim and the actions; the
+      event, the causal finding and the individual promises live in core objects so that other
+      capabilities can read them without reading a document. If anything here starts duplicating
+      those, the duplication is the defect.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Scoped object, and the file says why in three places rather than one: the header comment, the
+    identity block's owner_capability, and the owning capability.yaml's note. It is a document about
+    ONE incident, produced by ONE capability, and nothing in triage or the queue reads it — what they
+    need from a past incident is an issue and a root_cause, both core, both PRODUCED by this object.
+    A second capability asking to load this is a symptom, not a promotion.
+
+    NINE patterns are executable today and NINE are not. That ratio is unusually good for this
+    domain and it is an accident of vocabulary rather than a sign that postmortems are well
+    instrumented: a postmortem action item is structurally identical to "I'll get back to you
+    Thursday", so commitment.action, commitment.due_at and no_obs:followup_sent read an action list
+    without modification. The two best executable patterns fall straight out of that — the overdue
+    action with nothing sent, and the action recorded with no date at all, which is the diary-entry
+    test expressed in the substrate. Three more read commercial observation kinds that genuinely fire
+    on post-incident threads (legal_review, security_review_started, timeline_slip), and the last
+    three read meeting timing, engagement collapse and graph degree, and are honestly scored at
+    3800-5000 because each has a false positive that fires as often as the true case. Every executable
+    pattern here carries a `false_positive`, and three of them describe a case that is at least as
+    common as the finding.
+
+    NOT ONE executable pattern touches the detection timeline, which is the section this object argues
+    is the most valuable in the document. postmortem.detection_gap_is_the_headline is the top-ranked
+    needs_signal and it needs a PAIR — incident.started_at and incident.detected_at. Only the first is
+    in planned_substrate today; shipping it alone would produce a dashboard that looks like incident
+    analytics and cannot answer the single question this object exists to ask. Two names are asked for
+    that are in no planned list at all and should be: obs_kind blame_attribution (individuals named in
+    a timeline, cheap to detect, and its absence is why blamelessness erodes without anyone deciding
+    to abandon it) and obs_kind rca_requested (stated in plain language on threads already ingested,
+    and the moment the postmortem acquires a second audience).
+
+    The two exceptions the domain asked for are both here and both carry the argument rather than the
+    rule: the incident too small to earn a review — with the AND clause that a small incident with a
+    large detection gap earns one anyway — and the recurrence, where the correct output is not a
+    second document but the first one reopened with a written answer to what displaced its actions.
+    Three more exceptions cover the accepted risk that fired, blamelessness under legal hold, and the
+    security incident that is a different process entirely.
+
+    decision_factors sum to exactly 10000, ranked detection gap first against the industry habit of
+    ranking resolution time first. Resolution time mostly measures how hard the problem was.
+    Detection time measures choices we made, is the cheapest thing in the incident to change, and has
+    no owner — which is the whole argument of this file in one line.

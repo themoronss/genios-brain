@@ -1,6 +1,10 @@
 # Lifecycle, edge cases and gaps
 
-No native CRM/ERP/product plugin is present here. The backend seam is built; actual application integrations remain.
+The backend surface, inbox and presence contracts are active. Delivery means availability; viewed,
+accepted and executed remain explicit client events. Presence expires, so a crashed application
+cannot leave contextual routing permanently busy.
 
-Where the target is partial or missing, the status is intentionally not promoted merely because a
-generic pull or webhook primitive could be adapted later.
+No complete CRM/ERP/product plugin, desktop shell, IDE plugin or CLI client is present here. The
+minute materializer may refresh a queued contextual route when every attempt proves non-delivery;
+unsafe/ambiguous transport evidence freezes it for manual recovery. Drain-time timing/policy always
+use fresh context.

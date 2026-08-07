@@ -1,0 +1,1725 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin core object — SOP (Standard Operating Procedure).
+#
+# An SOP is the written HOW. A policy states what must be true; an SOP states the steps, in
+# order, in enough detail that a competent stranger can complete the task without asking the
+# person who normally does it. That test — could someone else do this tomorrow from this alone —
+# is the whole discriminator, and almost every document filed as an SOP fails it.
+#
+# The central failure of this object is DRIFT, and drift is not a documentation problem. The
+# document does not decay; the organisation moves. The tool gets renamed, a step gets automated,
+# an exception becomes routine, and the written version stays exactly as correct as it was on the
+# day it was signed off. Nobody notices, because the people who run the process stopped reading it
+# years ago — they carry it in their heads and the document is for somebody else.
+#
+# That somebody else is the new joiner, and this is why drift is expensive rather than untidy:
+# THE ONLY PEOPLE WHO ACTUALLY FOLLOW THE SOP ARE THE PEOPLE WHO CANNOT TELL IT IS WRONG. The
+# experienced performer silently corrects it. The new joiner follows it and produces the defect,
+# and is then judged for not knowing better. A drifted SOP is worse than no SOP for exactly this
+# reason: no SOP forces the question to be asked of a human, a drifted one answers it confidently.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.sop
+  name: Standard Operating Procedure
+  domain: admin
+  scope: core
+  subdomain: admin_operations
+  owner_capability: admin.admin_operations.sop_management
+  version: 1.0.0
+  status: draft
+  aliases: ["SOP", "Work Instruction", "Runbook", "Process Document", "Desk Instruction",
+            "Method Statement", "Standard Work"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A written, ordered procedure for a recurring task: what starts it, the steps, who performs
+    each one, which systems are touched, where judgement is required, what comes out, and what to
+    do when the happy path fails. An SOP exists to move a process out of one person's head and
+    into a form the organisation owns. It succeeds only to the extent that the written version and
+    the performed version are the same thing, and that equivalence is not a property of the
+    document — it is a claim about the world that decays from the moment of approval and has to be
+    re-established by observation.
+  discriminator: >
+    Could a competent person who has never performed this task complete it correctly from this
+    document alone, without asking anyone? If yes, it is an SOP. If it only tells them what
+    outcome is required or what standard applies, it is a Policy. The test is executability by a
+    stranger, not the presence of numbered paragraphs.
+  answers:
+    - "If the person who normally does this were unavailable tomorrow, could anyone else run it?"
+    - "Is the written procedure still what we actually do, and when did anyone last check?"
+    - "Which of these steps exist to get the work done and which exist to satisfy a control?"
+    - "Where in this procedure do the errors happen, and is that step written or assumed?"
+    - "What did the new joiner follow last month, and was it the current version?"
+    - "What breaks in this process when the named owner leaves in six weeks?"
+    - "Is this a procedure at all, or a judgement we have dressed as one?"
+  not:
+    - >
+      Not the rule the procedure serves — that is admin.obj.core.policy. A policy sets the
+      standard; an SOP is one of possibly several ways of meeting it, and may be rewritten
+      entirely without the policy changing a word.
+    - >
+      Not the controlled artefact carrying the text — that is admin.obj.core.document, which owns
+      version, approval block, classification and retention. The SOP is the procedure; the
+      document is how we prove which wording was in force in March.
+    - >
+      Not a single occurrence of the work — that is admin.obj.core.action_item or
+      admin.obj.core.request. Running an SOP a hundred times produces a hundred of those and one
+      of these.
+    - >
+      Not the external duty behind a regulated procedure — that is
+      admin.obj.core.compliance_obligation. The duty says the thing must be done and evidenced;
+      the SOP is our chosen method, and choosing a worse method does not breach the duty until
+      the outcome does.
+    - >
+      Not a checklist. A checklist assumes the performer already knows the process and is guarding
+      against omission under load. An SOP assumes they do not. Filing one as the other is how an
+      organisation discovers, during a handover, that it has nine checklists and no procedures.
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ── Procedure ──────────────────────────────────────────────────────────────────────────
+  - name: procedure
+    purpose: The process itself — what starts it, what happens, in what order, and what comes out.
+    type: composite
+    contains: [process_name, trigger_condition, step_count, decision_points,
+               expected_duration_minutes, exception_path_documented, output_artifact_ref]
+
+  - name: process_name
+    purpose: The task as the people who perform it name it, not as the org chart names it.
+    type: value
+    data_type: string
+    required: true
+    sensitivity: internal
+    description: >
+      Naming matters more than it looks. A procedure filed as "Accounts Payable Process" is not
+      findable by the person searching for "how do I pay a supplier who isn't set up yet", and
+      unfindable is operationally identical to non-existent.
+
+  - name: trigger_condition
+    purpose: The event that starts the procedure.
+    type: value
+    data_type: string
+    required: true
+    sensitivity: internal
+    description: >
+      "Monthly" is not a trigger, it is a hope. A real trigger is an observable event with an
+      owner — an invoice arriving, a leaver date confirmed, a threshold breached. Procedures with
+      calendar triggers and no owner are the ones that quietly stop running, and nobody notices
+      until the quarter closes.
+
+  - name: step_count
+    purpose: How long the procedure is, which sets whether it will be read or skimmed.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: >
+      Watched over time this is a drift indicator in its own right. Steps are added after every
+      incident and almost never removed, so a procedure that has grown by half since approval is
+      one being skimmed rather than followed.
+
+  - name: decision_points
+    purpose: The number of steps that require judgement rather than execution.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: >
+      The steps where drift begins. An execution step performed differently is an error; a
+      judgement step performed differently is a local variant that will look correct to everyone
+      involved for years. A procedure with many decision points may be the wrong artefact entirely
+      — see the tribal-process exception.
+
+  - name: expected_duration_minutes
+    purpose: How long the written procedure claims it takes end to end.
+    type: value
+    data_type: integer
+    unit: minutes
+    sensitivity: internal
+    description: >
+      Kept so it can be contradicted. Compared against observed request cycle time, a large gap
+      means either the procedure omits steps people actually perform or people are skipping steps
+      the procedure requires — and both are drift.
+
+  - name: exception_path_documented
+    purpose: Whether the procedure says what to do when the happy path fails.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      The single highest-value field on this object after drift_state. The happy path is learned
+      in a week; the exception path is the reason the one experienced person is still needed, and
+      it is the part almost every SOP omits because the author has never had to explain it.
+
+  - name: output_artifact_ref
+    purpose: The record the procedure produces each time it is run.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: >
+      A procedure whose output is not a record is a procedure whose execution cannot be evidenced.
+      For regulated work that makes it worthless regardless of quality.
+
+  # ── Ownership ──────────────────────────────────────────────────────────────────────────
+  - name: ownership
+    purpose: Who owns the procedure, who may change it, and how many people can actually run it.
+    type: composite
+    contains: [owner_ref, process_owner_role, approver_ref, performer_count,
+               single_point_of_failure]
+
+  - name: owner_ref
+    purpose: The named individual accountable for the procedure being correct.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    description: >
+      A named person, not a function. Departmental ownership means the procedure is reviewed by
+      whoever is least busy, which is nobody. The owner is not necessarily the performer, and
+      collapsing the two produces a procedure owned by whoever last ran it.
+
+  - name: process_owner_role
+    purpose: The role that owns the procedure, so ownership survives the person.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      Carried alongside owner_ref rather than instead of it. The role is what makes the ownership
+      transferable at leaver time; the individual is what makes it actionable today. RACI's
+      distinction, and the reason this object survives a reorganisation.
+
+  - name: approver_ref
+    purpose: Who must approve a change to the procedure before it takes effect.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+    description: >
+      Only meaningful where criticality is regulated or safety_critical. For routine procedures an
+      approval gate on every edit guarantees the document is never edited, which is the more
+      expensive failure.
+
+  - name: performer_count
+    purpose: How many people have actually executed this procedure end to end.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: >
+      Executed, not trained. Attendance at a walkthrough is not evidence of capability, and the
+      difference is discovered on the day the usual performer is unavailable — which, because
+      absence and deadlines are uncorrelated, is a day the task is due.
+
+  - name: single_point_of_failure
+    purpose: Whether the organisation's ability to run this rests on one person.
+    type: derived
+    data_type: boolean
+    derived_from: [performer_count, owner_ref, executions_recorded_30d]
+    sensitivity: internal
+    description: >
+      The bus factor, expressed as a flag. This is the number an SOP set exists to move, and the
+      only honest measure of whether the writing achieved anything: a beautifully documented
+      procedure with one performer has not reduced the risk it was written for.
+
+  # ── Currency ───────────────────────────────────────────────────────────────────────────
+  - name: currency
+    purpose: Version, approval and review state — whether the document is current on its own terms.
+    type: composite
+    contains: [version, approved_at, effective_from, review_cycle_months, last_reviewed_at,
+               review_due_at, last_material_change_at, supersedes_ref, has_overdue_action,
+               review_ball_in_court]
+
+  - name: version
+    purpose: The identity of this wording, so conduct can be judged against what was in force.
+    type: value
+    data_type: string
+    sensitivity: internal
+    source_paths: [document.version]
+
+  - name: approved_at
+    purpose: When the current wording was signed off.
+    type: value
+    data_type: timestamp
+    source_paths: [document.approved_at]
+
+  - name: effective_from
+    purpose: When performers were expected to start following this wording.
+    type: value
+    data_type: timestamp
+    description: >
+      Deliberately separate from approved_at. The gap between them is the window in which two
+      versions are legitimately in play, and it is the window where handover errors cluster.
+
+  - name: review_cycle_months
+    purpose: The interval the organisation set for itself.
+    type: value
+    data_type: integer
+    unit: months
+    description: >
+      Recorded, and treated with suspicion. Calendar review is the weakest possible trigger — see
+      sop.review_on_change_not_on_calendar. It is kept because auditors ask for it and because an
+      absent cycle is a stronger signal than a long one.
+
+  - name: last_reviewed_at
+    purpose: When somebody last looked at it.
+    type: value
+    data_type: timestamp
+
+  - name: review_due_at
+    purpose: The self-imposed next review date.
+    type: value
+    data_type: timestamp
+    source_paths: [document.review_due_at]
+
+  - name: last_material_change_at
+    purpose: When the steps last actually changed, as opposed to when the document was touched.
+    type: value
+    data_type: timestamp
+    description: >
+      Held separately from last_reviewed_at because the gap between them is the most diagnostic
+      pair of dates on this object. A procedure reviewed four times with no material change, over
+      a period in which its underlying system was replaced, has been reviewed by someone who did
+      not open the system.
+
+  - name: supersedes_ref
+    purpose: The version this one replaced.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.sop
+    description: >
+      Self-referential. Without it, "which procedure was the joiner trained on in March" has no
+      answer, and that is the only version question that ever gets asked in anger.
+
+  - name: has_overdue_action
+    purpose: A maintenance commitment attached to this procedure has passed its due date.
+    type: value
+    data_type: boolean
+    default: false
+    source_paths: [commitment.due_at, commitment.action]
+    description: >
+      A review, a re-verification, a promised rewrite after an incident. One of the very few
+      administrative facts the shipped substrate can actually see.
+
+  - name: review_ball_in_court
+    purpose: Who owes the next move on an in-flight review.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      Reviews do not fail, they stall — and they stall on the reviewer roughly as often as on the
+      author. Knowing which chases the right person.
+
+  # ── Fidelity — the drift block ─────────────────────────────────────────────────────────
+  - name: fidelity
+    purpose: >
+      Whether the written procedure matches the performed one. Everything else on this object is
+      about the document; this is the only block about the world.
+    type: composite
+    contains: [drift_state, last_verified_against_practice_at, verification_method,
+               verification_age_days, deviation_count, local_variants_count,
+               system_changed_since_review]
+
+  - name: drift_state
+    purpose: The single load-bearing field on this object — how far the document is from practice.
+    type: value
+    data_type: enum
+    allowed_values: [verified, presumed_current, suspected_drift, known_drift, obsolete]
+    required: true
+    default: presumed_current
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      The enum has five members and not three because presumed_current is the honest default and
+      must be visibly distinct from verified. Most document control systems collapse the two,
+      which is precisely how a set of never-checked procedures reports as current. known_drift is
+      not a failure state to be hidden — a procedure known to be wrong is safer than one wrongly
+      believed right, because the performer stops trusting it. obsolete exists for the procedure
+      whose process no longer happens at all, which is a different administrative problem: it has
+      to be retired, not corrected.
+
+  - name: last_verified_against_practice_at
+    purpose: When someone last compared the document to what people actually do.
+    type: value
+    data_type: timestamp
+    description: >
+      Not last_reviewed_at. A review reads the document; a verification watches the work. Most
+      organisations have the first date and have never recorded the second, and the absence is not
+      an oversight — nobody has asked for it.
+
+  - name: verification_method
+    purpose: How the last verification was performed, which decides what it is worth.
+    type: value
+    data_type: enum
+    allowed_values: [observed_execution, performer_walkthrough, output_sampling, owner_assertion, none]
+    default: none
+    sensitivity: internal
+    description: >
+      Ranked deliberately. observed_execution is the gemba walk and is the only method that
+      catches the steps performers have stopped consciously noticing. owner_assertion — "the owner
+      confirms it is current" — is recorded honestly as its own value rather than being allowed to
+      masquerade as a review, because it is what actually happened in the overwhelming majority of
+      annual reviews.
+
+  - name: verification_age_days
+    purpose: How long since the document was last tested against reality.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [last_verified_against_practice_at]
+    description: >
+      Read against the pace of change in the systems the procedure names, not against a fixed
+      threshold. Ninety days is stale for a procedure over a platform in active migration and fine
+      for one over a statutory form that has not changed since 2011.
+
+  - name: deviation_count
+    purpose: Recorded departures from the written steps.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: >
+      Zero is not reassuring. Under any procedure of real length, zero recorded deviations means
+      deviations are not being recorded — the performers are correcting silently, which is exactly
+      the behaviour that makes drift invisible. A healthy procedure has a low, non-zero count and
+      an owner who reads it.
+
+  - name: local_variants_count
+    purpose: Undocumented forks — team copies that have diverged from the master.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: >
+      Each fork was a rational act by someone who hit a case the central version did not cover and
+      needed to finish their work. Forking is not the failure; unrecorded forking is. The count
+      matters because every subsequent improvement now has to be made three times or made once and
+      lost twice.
+
+  - name: system_changed_since_review
+    purpose: A system the procedure names has been changed, renamed, migrated or retired.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      The commonest silent invalidator, and it never announces itself to the document owner. A
+      field rename in the finance system invalidates six procedures nobody has connected to it,
+      and the first person to discover this is a joiner who cannot find the field.
+
+  # ── Usability ──────────────────────────────────────────────────────────────────────────
+  - name: usability
+    purpose: Whether the procedure can actually be executed by the person it was written for.
+    type: composite
+    contains: [readability, prerequisites, tooling_referenced, time_to_first_success_minutes]
+
+  - name: readability
+    purpose: The form the procedure takes, which decides whether it is followable under load.
+    type: value
+    data_type: enum
+    allowed_values: [step_by_step, narrative, bullet_summary, tribal_only]
+    default: narrative
+    sensitivity: internal
+    description: >
+      tribal_only is an honest value, not an empty one: it records that the procedure exists in
+      someone's head and the object is a placeholder for a gap. Narrative prose is the most common
+      form and the least followable — it reads well to the author and cannot be executed a step at
+      a time by someone under time pressure.
+
+  - name: prerequisites
+    purpose: Access, training, tools and permissions needed before step one is possible.
+    type: value
+    data_type: list
+    sensitivity: internal
+    description: >
+      The most-omitted section and the one that stops the stranger dead. A procedure that begins
+      "open the supplier record" assumes an entitlement the reader may not have, and the request
+      to get it takes three days that the procedure does not mention.
+
+  - name: tooling_referenced
+    purpose: The systems, forms and templates the procedure names.
+    type: value
+    data_type: list
+    sensitivity: internal
+    description: >
+      Tracked as structured data rather than left in prose, because this is the field that makes
+      invalidation computable: when a system is renamed or retired, the set of procedures that
+      just became wrong is a lookup rather than an archaeology exercise.
+
+  - name: time_to_first_success_minutes
+    purpose: How long a competent stranger takes to complete it correctly on their first attempt.
+    type: value
+    data_type: integer
+    unit: minutes
+    sensitivity: internal
+    description: >
+      The only usability measure that cannot be gamed, because it is measured on someone who has
+      no prior knowledge to compensate with. Where it cannot be measured, the SOP has never been
+      tested and its quality is the author's opinion.
+
+  # ── Assurance ──────────────────────────────────────────────────────────────────────────
+  - name: assurance
+    purpose: What this procedure is worth as a control, and which of its steps are load-bearing.
+    type: composite
+    contains: [criticality, control_steps, policy_ref, obligation_ref, evidence_produced]
+
+  - name: criticality
+    purpose: What happens to the organisation if this procedure is performed wrongly.
+    type: value
+    data_type: enum
+    allowed_values: [routine, business_critical, regulated, safety_critical]
+    required: true
+    default: routine
+    sensitivity: internal
+    description: >
+      Sets almost every other rule on this object: whether deviation is permitted, whether change
+      needs approval, whether publication requires a stranger test, and how much a stale
+      verification costs. A single criticality setting applied uniformly across a procedure set is
+      how organisations end up approving typo corrections to the stationery order process through
+      the same gate as the sterilisation procedure.
+
+  - name: control_steps
+    purpose: The steps that exist to satisfy a control rather than to complete the work.
+    type: value
+    data_type: list
+    sensitivity: confidential
+    description: >
+      Marked explicitly because process improvement removes the steps that slow the work down, and
+      these are exactly those. An editor who cannot see which steps are controls either strips one
+      out or refuses to touch anything. Confidential rather than internal for the uncomfortable
+      reason that a list of the steps whose omission nobody would notice in the output is also a
+      list of the steps to skip.
+
+  - name: policy_ref
+    purpose: The internal rule this procedure implements.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.policy
+    description: >
+      A policy states what must be true; this is the how. Where the link is absent, the procedure
+      cannot tell an editor which of its steps are negotiable.
+
+  - name: obligation_ref
+    purpose: The external duty this procedure discharges, where there is one.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.compliance_obligation
+    description: >
+      Changes the arithmetic on drift entirely. A drifted routine procedure produces rework; a
+      drifted regulated one means the evidence trail for a statutory duty describes a process
+      nobody performed.
+
+  - name: evidence_produced
+    purpose: Whether executing the procedure leaves a trace that could be produced to an auditor.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Distinct from output_artifact_ref: the work may produce an output while leaving no record of
+      who performed which step and when. For a regulated procedure the difference between the two
+      is the difference between doing the work and being able to prove it.
+
+  # ── Adoption ───────────────────────────────────────────────────────────────────────────
+  - name: adoption
+    purpose: Whether anybody is actually using it, as distinct from whether it exists.
+    type: composite
+    contains: [executions_recorded_30d, questions_raised_count, last_touched_at,
+               engagement_trend, is_orphaned]
+
+  - name: executions_recorded_30d
+    purpose: How many times the procedure is known to have been run in the last month.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: >
+      Read together with questions_raised_count. High executions and high questions means the
+      document is failing its readers; high executions and zero questions means either an
+      excellent procedure or one nobody opens, and access data is what separates them.
+
+  - name: questions_raised_count
+    purpose: Questions asked about this task despite a procedure existing for it.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: >
+      The defect list. Every question is a step the SOP failed to answer, and the questions cluster
+      hard: three or four gaps generate most of the traffic. Treated as feedback rather than as
+      interruption, this is the cheapest continuous improvement signal an admin function has.
+
+  - name: last_touched_at
+    purpose: When there was last any traffic about this procedure.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: >
+      One of the few attributes with a live Layer 2 source today. A weak proxy — it measures talk
+      about the procedure, not use of it — but a real one, because a procedure nobody has mentioned
+      in a year is rarely a procedure being followed.
+
+  - name: engagement_trend
+    purpose: Whether traffic about this procedure is rising or collapsing.
+    type: derived
+    data_type: number
+    source_paths: [derived.engagement]
+    derived_from: [last_touched_at]
+    description: >
+      A collapse is ambiguous and worth investigating for exactly that reason: either the process
+      stopped happening, or it moved somewhere this document does not describe. Both matter and
+      the two are indistinguishable from the document.
+
+  - name: is_orphaned
+    purpose: Nothing and nobody is attached to this procedure.
+    type: derived
+    data_type: boolean
+    derived_from: [owner_ref, executions_recorded_30d, last_touched_at, performer_count]
+    description: >
+      Published, unowned, unexecuted, unverified. Orphaned procedures are invisible to every other
+      check on this object — nothing is due, nobody is late, no deviation is recorded — and they
+      are the ones the joiner finds first, because search does not rank by ownership.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [superseded, archived]
+  values:
+    - name: draft
+      description: Being written or rewritten. Binds nobody and should be followed by nobody, however widely circulated.
+      implies: The process is currently running on tribal knowledge whatever the document says.
+    - name: pending_approval
+      description: With the approver. Only meaningful where criticality is regulated or safety_critical.
+      implies: The steps are settled; the authority to publish them is not.
+    - name: approved
+      description: Signed off but not yet effective or not yet communicated to performers.
+      implies: Two versions are legitimately in play. This is the window where handover errors cluster.
+    - name: published
+      description: Communicated and effective. Not yet evidence of anything about practice.
+      implies: The organisation can now be judged against this wording.
+    - name: active
+      description: Published, executed and verified against practice. The only state in which the procedure is genuinely doing its job.
+      entered_when: [{exists: thread.last_inbound}]
+      implies: A stranger could run this task. The bus factor has actually moved.
+    - name: at_risk
+      description: In force but drifting — verification stale, maintenance overdue, or the systems underneath it changed.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+      implies: Still being followed, and the people following it are the ones who cannot tell it is wrong.
+    - name: on_hold
+      description: Deliberately suspended — the system it describes is mid-migration and the steps are known to be temporarily wrong.
+      implies: >
+        Better than at_risk despite sounding worse. A suspended procedure sends the performer to a
+        human; a drifted one sends them confidently into the wrong screen.
+    - name: superseded
+      description: A newer version is in force. The old wording still governs work performed while it stood.
+    - name: archived
+      description: Retired with a recorded reason. Retiring without recording why is how a procedure returns in three years, reconstructed from memory.
+  transitions:
+    - {from: draft, to: pending_approval, trigger: change_submitted_for_approval}
+    - {from: pending_approval, to: approved}
+    - {from: pending_approval, to: draft, reversible: true}
+    - {from: draft, to: published, trigger: routine_procedure_published_without_gate}
+    - {from: approved, to: published}
+    - {from: published, to: active, trigger: verified_against_practice}
+    - {from: active, to: at_risk, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: at_risk, to: active, trigger: verification_completed}
+    - {from: active, to: on_hold, trigger: underlying_system_migration}
+    - {from: on_hold, to: draft, reversible: true}
+    - {from: active, to: superseded}
+    - {from: at_risk, to: superseded}
+    - {from: superseded, to: archived}
+    - {from: at_risk, to: archived, trigger: process_no_longer_performed}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 2000
+    confidence_bp: 8000
+    priority: 1
+    evidence: [document, register]
+    description: >
+      The rule the procedure exists to satisfy. This edge is what tells an editor which steps are
+      negotiable: without it, every step looks equally optional and the ones removed first are the
+      controls, because they are the ones that do not help finish the work.
+
+  - type: references
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: one
+    weight_bp: 1800
+    confidence_bp: 9500
+    priority: 2
+    evidence: [document, register]
+    description: >
+      The controlled artefact carrying the wording, its version and its approval block. One
+      procedure, one authoritative document — every other copy is a version somebody is following.
+
+  - type: assigned_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1600
+    confidence_bp: 7000
+    priority: 3
+    evidence: [hris, register]
+    description: >
+      Owner and performers. The cardinality of this edge is the bus factor, and it is the number
+      the whole object exists to move. An edge count of one means the writing has not yet achieved
+      anything.
+
+  - type: evidences
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 7500
+    priority: 4
+    conditions: [{exists: commitment.due_at}]
+    evidence: [regulator, register, document]
+    description: >
+      For regulated work, running the procedure is how the duty is discharged and the record is how
+      it is proven. Where this edge exists, drift stops being rework and becomes an evidence trail
+      describing a process nobody performed.
+
+  - type: produces
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 6000
+    priority: 5
+    description: >
+      Execution records, deviation logs, verification results. The by-product that turns out to be
+      the point at audit time — and the reason evidence_produced is a separate attribute from
+      output_artifact_ref.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 7000
+    priority: 6
+    conditions: [{exists: commitment.due_at}]
+    description: >
+      A change gate, and only where criticality earns one. Gating every edit on a routine procedure
+      guarantees the procedure is never edited, which costs more than the ungated typo it prevents.
+
+  - type: precedes
+    target: admin.obj.core.sop
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 7
+    description: >
+      Handoff chains. Two well-written procedures with an undefined seam between them lose work in
+      the gap, and neither owner sees it because each ends where the other begins.
+
+  - type: measures
+    target: admin.obj.core.service_level
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 5500
+    priority: 8
+    description: >
+      The SLA is a promise about how long this procedure takes. Where the two are set independently
+      — the commitment by whoever negotiated it, the steps by whoever wrote them — the promise is
+      arithmetic nobody has done.
+
+  - type: documents
+    target: admin.obj.core.request
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 6500
+    priority: 9
+    evidence: [portal, erp]
+    description: >
+      The request type this procedure fulfils. Observed request cycle time is the only external
+      check on expected_duration_minutes, and therefore the only drift detector that does not
+      depend on somebody's account of their own work.
+
+  - type: supersedes
+    target: admin.obj.core.sop
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 9000
+    priority: 10
+    description: Self-referential. The chain that answers which wording the joiner was trained on.
+
+# ── 6 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# ANDed within a pattern. Express OR as two patterns — that is how the engine works, so
+# authoring it any other way produces something that cannot run.
+#
+# Five of thirteen are executable. That thinness is honest rather than lazy: the shipped
+# substrate can see a promise about a procedure and traffic around it, and can see nothing at all
+# about whether the procedure is being followed. Everything that would actually detect drift —
+# execution telemetry, version identity across copies, performer diversity — is a Layer 1/2ask.
+inference_patterns:
+
+  deterministic:
+
+    - id: sop.maintenance_commitment_overdue
+      statement: "A maintenance commitment attached to this procedure — a review, a rewrite, a verification — is past its due date."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 9000, attribute: has_overdue_action, value: true}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        The review happened in a meeting and nobody closed the commitment. This is the single
+        largest source of a wrong nudge in this domain, and it is worth tolerating: the cost of
+        chasing a completed review is one reply, and the cost of missing an uncompleted one is a
+        joiner following a wrong procedure for a year.
+      note: >
+        commitment.due_at is one of the few natively administrative paths in the shipped substrate
+        and this is its honest use. The limit is coverage, not correctness — it sees only procedure
+        work somebody promised in writing, and most procedure maintenance is scheduled in a
+        spreadsheet where the pipeline cannot see it.
+
+    - id: sop.maintenance_promise_abandoned
+      statement: "Someone promised to update this procedure and the promise is more than a quarter old."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 90}
+      yields: {confidence_bp: 8000, attribute: drift_state, value: known_drift}
+      evidence_fields: [commitment.action, commitment.due_at]
+      false_positive: >
+        The promise may have been to add a cross-reference rather than to correct a step. Fires
+        anyway, because the class of thing that gets promised about an SOP and then abandoned for
+        a quarter is overwhelmingly a correction somebody noticed and nobody made.
+      note: >
+        Deliberately distinct from sop.maintenance_commitment_overdue. A week late is a busy owner.
+        A quarter late is a statement about the procedure: someone saw it was wrong, said so, and
+        the organisation absorbed that without acting. The document has been known-wrong for three
+        months and has been read by every joiner since.
+
+    - id: sop.review_date_passed_unverified
+      statement: "The procedure's own review date has passed with no recorded verification against practice."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: drift_state, value: suspected_drift}
+      requires_signals:
+        - {kind: fact_path, name: document.review_due_at, owner_layer: L1,
+           note: "The self-imposed date carried on the controlled document. Note the contrast with an external filing deadline: this one can be moved by the organisation that set it, which is exactly why it is missed so often."}
+        - {kind: fact_path, name: document.approved_at, owner_layer: L1,
+           note: "Needed to distinguish 'never reviewed since approval' from 'reviewed and due again', which are different problems with different owners."}
+
+    - id: sop.two_versions_in_circulation
+      statement: "A newer version has been issued and the previous wording is still being distributed and followed."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: local_variants_count, corroborates: [sop.new_joiner_followed_a_stale_version]}
+      requires_signals:
+        - {kind: obs_kind, name: document_superseded, owner_layer: L2}
+        - {kind: fact_path, name: document.version, owner_layer: L1,
+           note: "Requires version identity across copies, not just on the master. Until it exists, 'which version did they follow' — the only version question ever asked in anger — cannot be answered from the system, and the honest response to a tribunal is that we do not know."}
+
+    - id: sop.owner_left_and_nobody_inherited
+      statement: "The named owner has left and no successor has been recorded against the procedure."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: is_orphaned, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: leaver_confirmed, owner_layer: L2}
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1}
+        - {kind: obs_kind, name: handover_completed, owner_layer: L2,
+           note: "The absence of this is the signal, not its presence. Joiner-mover-leaver has a documented handover step in every organisation and an enforced one in almost none, because the leaver is the least motivated author in the building and their notice period is consumed by live work."}
+
+  heuristic:
+
+    - id: sop.orphaned_in_the_graph
+      statement: "A procedure with a degree of one is attached to nobody — no owner, no performers, no policy, no output. Published and inert."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {exists: thread.last_inbound}
+      yields: {confidence_bp: 6000, attribute: is_orphaned, value: true}
+      false_positive: >
+        A low degree is often sparse graph coverage rather than a genuinely orphaned procedure,
+        which is why this sits at 6000 and never asserts alone.
+      note: >
+        It earns its place because orphaned procedures are invisible to every other check here:
+        nothing is due, nobody is late, no deviation is recorded, and the procedure is doing
+        nothing at all. Exception reports never list them because there is no exception. They are
+        also the ones a joiner finds first, because search does not rank by ownership.
+
+    - id: sop.knowledge_bottleneck
+      statement: "A question about this procedure is sitting unanswered well past the normal reply pace — the answer lives in one head and that head is busy."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2, floor: 5}}
+      yields: {confidence_bp: 6500, attribute: single_point_of_failure, value: true,
+               corroborates: [sop.performed_by_exactly_one_person]}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        The question may be about the process rather than blocked on it, and holidays produce the
+        same shape. Baselined against this entity's own reply cadence rather than a fixed window
+        precisely so that a slow function is not permanently flagged.
+      note: >
+        The most administratively meaningful thing the shipped substrate can express about an SOP.
+        A procedure that exists and is documented should absorb the question; when it does not, and
+        the only person who can answer is unavailable, the document has failed at exactly the job
+        it was written for. That failure is invisible in every document-control report ever
+        produced, all of which would score this procedure green.
+
+    - id: sop.traffic_collapsed
+      statement: "Conversation about this procedure has halved against the prior fortnight — either the process stopped, or it moved somewhere this document does not describe."
+      status: executable
+      when:
+        - {path: derived.engagement, op: "<=", value: 0.5}
+        - {exists: thread.last_inbound}
+      yields: {confidence_bp: 5500, attribute: drift_state, value: suspected_drift}
+      evidence_fields: [derived.engagement, thread.last_inbound]
+      false_positive: >
+        Seasonality. A month-end procedure has a collapsed engagement trend for three weeks out of
+        four and is perfectly healthy. Low confidence for this reason, and it should never fire an
+        action on its own.
+      note: >
+        Kept because the ambiguity is the value. Both readings — process stopped, process moved —
+        are administratively significant and neither is visible any other way, and the cost of
+        resolving it is one question to the owner.
+
+    - id: sop.performed_by_exactly_one_person
+      statement: "Every recorded execution of this procedure was performed by the same person."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: single_point_of_failure, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: sop_executed, owner_layer: L2,
+           note: "No connector reaches the systems where procedures are actually executed — the ERP, the ticket queue, the finance platform. This is the highest-value ask in this file: performer diversity is the one number that says whether writing the SOP achieved anything, and it is computable from execution records the moment they exist."}
+        - {kind: derived, name: derived.performer_diversity, owner_layer: L2,
+           note: "Distinct performers over executions in a window. Trivial arithmetic once executions are visible, impossible without them."}
+
+    - id: sop.never_verified_against_practice
+      statement: "The procedure has been reviewed but never checked against anyone actually performing it."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: verification_method, value: none}
+      requires_signals:
+        - {kind: obs_kind, name: sop_execution_observed, owner_layer: L2,
+           note: "A gemba walk leaves no digital trace today. Even a calendar entry titled 'process walkthrough' with the performer as attendee would be a usable proxy, and nothing currently reads it."}
+        - {kind: fact_path, name: document.review_due_at, owner_layer: L1,
+           note: "Needed to separate 'reviewed, never verified' — the theatre case — from 'never reviewed at all', which is at least honest."}
+
+    - id: sop.control_steps_skipped
+      statement: "The steps being omitted in practice are disproportionately the ones that exist to satisfy a control."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: deviation_count, corroborates: [sop.cycle_time_diverged_from_the_written_duration]}
+      requires_signals:
+        - {kind: obs_kind, name: sop_step_skipped, owner_layer: L2}
+        - {kind: obs_kind, name: evidence_provided, owner_layer: L2,
+           note: "The control steps are the ones that produce evidence and do not advance the work, so their omission shows up as missing evidence rather than as a missing output. Nobody is inconvenienced by a control step being skipped until an auditor samples, which is why this drift is always found late and always found by an outsider."}
+
+    - id: sop.new_joiner_followed_a_stale_version
+      statement: "A joiner completed an onboarding task against a version of the procedure that was not the one in force."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: drift_state, value: known_drift}
+      requires_signals:
+        - {kind: obs_kind, name: joiner_confirmed, owner_layer: L2}
+        - {kind: fact_path, name: document.version, owner_layer: L1}
+        - {kind: fact_path, name: employee.start_at, owner_layer: L1,
+           note: "This is the object's central failure made detectable, and it is worth stating plainly: the only people who follow the SOP exactly are the people who cannot tell it is wrong. Everyone experienced corrects it silently. Detecting this requires knowing which version reached the joiner, which requires version identity on the copy rather than on the master."}
+
+    - id: sop.cycle_time_diverged_from_the_written_duration
+      statement: "The observed time to fulfil the request this procedure serves has separated from the duration the procedure claims."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: drift_state, value: suspected_drift}
+      requires_signals:
+        - {kind: fact_path, name: request.created_at, owner_layer: L1}
+        - {kind: fact_path, name: request.state, owner_layer: L1}
+        - {kind: baseline, name: admin_request_volume, owner_layer: L2,
+           note: "Divergence in either direction is a signal. Slower means steps have been added that the document does not carry; faster almost always means steps are being skipped, and the skipped ones are the controls. The second case is the dangerous one and it looks like a productivity improvement on every dashboard."}
+
+    - id: sop.tooling_renamed_underneath_it
+      statement: "A system the procedure names has been renamed, migrated or retired since the last review."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: system_changed_since_review, value: true}
+      requires_signals:
+        - {kind: fact_path, name: sop.tooling_referenced, owner_layer: L1,
+           note: "Requires the tool list to be structured rather than buried in prose."}
+        - {kind: obs_kind, name: system_change_recorded, owner_layer: L2,
+           note: "A change-management feed. The commonest silent invalidator of a procedure set, and the one that never reaches the document owner: a field rename in the finance system invalidates six procedures nobody has connected to it, and the first person to notice is a joiner who cannot find the field."}
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: document, signal: "the controlled artefact: steps, version, approval block, review date",
+     fills: [version, approved_at, review_due_at, step_count, control_steps], reliability_bp: 8000}
+  - {source: register, signal: "document control register: owner, cycle, criticality, supersession chain",
+     fills: [owner_ref, review_cycle_months, criticality, supersedes_ref], reliability_bp: 8500}
+  - {source: email, signal: "questions asked about the procedure and review traffic", path: thread.last_inbound,
+     fills: [last_touched_at, questions_raised_count], reliability_bp: 5000}
+  - {source: email, signal: "who owes the next move on a review or an unanswered how-do-I", path: thread.ball_in_court,
+     fills: [review_ball_in_court], reliability_bp: 5500}
+  - {source: derived, signal: "trajectory of conversation about the procedure", path: derived.engagement,
+     fills: [engagement_trend], reliability_bp: 4000}
+  - {source: erp, signal: "the transaction trail the procedure produces — sequence, timing, performer",
+     fills: [executions_recorded_30d, performer_count], reliability_bp: 9000,
+     description: "Not connected today. The single richest available source of truth about what the process actually is, read backwards from what it left behind."}
+  - {source: telemetry, signal: "system events showing the procedure being executed step by step",
+     fills: [executions_recorded_30d, deviation_count], reliability_bp: 9000}
+  - {source: knowledge_base, signal: "where the procedure is looked up, and how often",
+     fills: [executions_recorded_30d, is_orphaned], reliability_bp: 6000,
+     description: "Access data outranks the register on the only question the register cannot answer: does anybody open this."}
+  - {source: hris, signal: "owner and performer employment status, joiners and leavers",
+     fills: [owner_ref, single_point_of_failure], reliability_bp: 8500}
+  - {source: meeting_transcript, signal: "process walkthroughs and handover sessions",
+     fills: [last_verified_against_practice_at, verification_method], reliability_bp: 6500}
+  - {source: portal, signal: "the request queue the procedure serves — cycle time against the written duration",
+     fills: [expected_duration_minutes, executions_recorded_30d], reliability_bp: 7500}
+  - {source: manual_entry, signal: "the owner's assertion that the procedure is current",
+     fills: [drift_state, last_reviewed_at], reliability_bp: 3000}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: executable_by_a_stranger_bp, type: integer,
+     description: "Whether someone who has never done this task could complete it from the document today. The object's whole reason for existing, expressed as one number.",
+     derived_from: [readability, prerequisites, exception_path_documented, time_to_first_success_minutes, drift_state],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: drift_days, type: integer,
+     description: "Days since the document was last tested against practice, weighted by how fast the systems underneath it are moving.",
+     derived_from: [verification_age_days, system_changed_since_review, last_material_change_at],
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: bus_factor, type: integer,
+     description: "How many people can run this. The number an SOP set exists to raise, and the one nobody reports.",
+     derived_from: [performer_count, single_point_of_failure],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: continuity_risk, type: string,
+     description: "What stops working, and when, if the named owner leaves. Feeds leaver planning rather than document control.",
+     derived_from: [owner_ref, performer_count, criticality, exception_path_documented],
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: verification_plan, type: list,
+     description: "Which procedures to observe next, ordered by criticality times verification age rather than by review date.",
+     derived_from: [criticality, verification_age_days, system_changed_since_review],
+     consumed_by: [L5.execution_planning]}
+  - {name: version_in_force, type: string,
+     description: "The wording binding on a given date. The only version question that ever gets asked, and it gets asked after something has gone wrong.",
+     derived_from: [version, effective_from, supersedes_ref],
+     consumed_by: [L4.decision_maker]}
+  - {name: who_to_ask, type: string,
+     description: "The named fallback when the procedure does not cover the case. Routing, not documentation — and the honest answer where readability is tribal_only.",
+     derived_from: [owner_ref, process_owner_role, performer_count],
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+
+# ── 9 · Preconditions — what must be true before this object can be resolved ─────────────
+preconditions:
+
+  - id: sop.process_actually_recurs
+    statement: "The task is genuinely recurring and someone currently performs it."
+    if_unmet: >
+      Block. Do not author. A procedure written for a process nobody runs will be found by search,
+      followed by a joiner, and be wrong — and it will have a current review date, because nothing
+      triggers review on a process that never happens.
+
+  - id: sop.a_performer_is_observable
+    statement: "At least one person who currently performs the task is identified and available to be watched."
+    requires: [admin.obj.core.employee_record]
+    if_unmet: >
+      Degrade, do not block. Author backwards from the output artefacts and the system trail, and
+      cap drift_state at presumed_current with verification_method = owner_assertion. An SOP
+      written from a manager's description is a description of the process the manager believes is
+      happening, which is a genuinely different document.
+
+  - id: sop.owner_is_a_named_person
+    statement: "Ownership resolves to a named individual, with the owning role recorded alongside."
+    requires: [admin.obj.core.employee_record]
+    if_unmet: >
+      Block publication. Route to the function head to name someone, not to the function. A
+      departmentally owned procedure is reviewed by whoever is least busy, and nobody is least busy.
+
+  - id: sop.governing_rule_resolved
+    statement: "Where the procedure serves a policy or an external duty, that link is resolved before the steps are written."
+    requires: [admin.obj.core.policy, admin.obj.core.compliance_obligation]
+    if_unmet: >
+      Degrade. Author the steps and leave control_steps empty, but flag it: a procedure that does
+      not know which of its steps are controls cannot tell an editor which ones may be simplified
+      away, and the first efficiency review will remove them because they are precisely the steps
+      that do not help finish the work.
+
+  - id: sop.tooling_is_not_mid_migration
+    statement: "The systems the procedure names are stable, not part-way through a replacement."
+    if_unmet: >
+      Hold at on_hold rather than publishing. Publishing against a tool being replaced next quarter
+      guarantees the first version anyone reads is the wrong one, and it burns the credibility that
+      makes the second version get read at all.
+
+  - id: sop.criticality_is_set
+    statement: "The consequence of performing this wrongly is classified before any change control is applied."
+    requires: [criticality]
+    if_unmet: >
+      Default to routine and say so. Applying regulated-grade change control uniformly is how
+      organisations end up routing a typo fix in the stationery procedure through the same gate as
+      a sterilisation procedure, which teaches everyone that the gate is theatre.
+
+  - id: sop.version_in_force_is_determinable
+    statement: "The wording in force on a given date can be established from the record."
+    requires: [admin.obj.core.document]
+    when: [{exists: commitment.due_at}]
+    if_unmet: >
+      Block any use of the procedure as evidence — of training, of control operation, of what the
+      joiner was told. Version identity has to live on the copy the performer opened, not only on
+      the master, and almost nowhere does.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: sop.cannot_contradict_its_policy, hard: true,
+     statement: "A procedure cannot permit what the policy it implements forbids. Where they conflict the procedure is defective, not the policy negotiable.",
+     why: "The procedure is one chosen method of meeting a standard. A method that fails the standard is simply the wrong method."}
+  - {id: sop.cannot_bind_conduct_before_effective_from, hard: true,
+     statement: "Work performed before effective_from is judged against the version then in force, never against the current one."}
+  - {id: sop.regulated_change_requires_approval, hard: true,
+     statement: "Where criticality is regulated or safety_critical, no step change takes effect without recorded approval by the named approver.",
+     why: "Not bureaucracy — the evidence trail for the duty has to be able to say which method was authorised when the work was done."}
+  - {id: sop.control_step_removal_needs_the_control_owner, hard: true,
+     statement: "A step marked as a control may not be removed by the process owner alone.",
+     why: "The process owner is optimising for cycle time and the control step is pure cost to them. That is not a conflict of interest to be managed; it is the reason the two roles are separate."}
+  - {id: sop.cannot_evidence_its_own_execution, hard: true,
+     statement: "The existence of the procedure is never evidence that it was followed.",
+     why: "The commonest audit finding in document-heavy functions, and the reason evidence_produced exists as a field of its own."}
+  - {id: sop.stranger_test_before_publication, hard: false,
+     statement: "A business_critical or higher procedure should not be published until someone who has never performed the task has completed it from the document.",
+     why: "Soft because it costs a person a day and cannot always be afforded. Where it is skipped, record that it was skipped — an untested procedure believed tested is worse than an untested one known to be."}
+  - {id: sop.deviation_recorded_or_it_is_a_change, hard: true,
+     statement: "A departure from the written steps is either a recorded deviation or an unapproved change to the procedure. There is no third category.",
+     why: "The third category is what everyone actually operates, and it is called drift."}
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: sop.no_publish_without_named_owner
+    statement: A procedure with no named individual owner may not reach published.
+    then: block_publish
+    severity: blocking
+    why: Departmental ownership is the same as no ownership with better optics.
+
+  - id: sop.material_change_requires_reissue
+    statement: >
+      A change to a step, its order, or its performer is a new version with a new effective date,
+      not an edit to the existing one. Correcting a typo is an edit; correcting a step is a reissue.
+    then: require_version_increment
+    severity: blocking
+    why: >
+      Silent step edits destroy the only useful property of version control — the ability to say
+      what the person in front of you was told to do.
+
+  - id: sop.superseded_must_be_withdrawn
+    statement: >
+      On supersession, the previous version must be removed from every location performers look,
+      not merely marked superseded in a register.
+    then: require_withdrawal
+    severity: blocking
+    why: >
+      A superseded procedure still in the shared drive is followed by exactly the people the
+      register was supposed to protect — the ones who do not know there is a register.
+
+  - id: sop.regulated_change_needs_approval
+    statement: A step change to a regulated or safety_critical procedure without recorded approval is void, not provisional.
+    then: block_effective
+    severity: blocking
+
+  - id: sop.deviation_needs_a_record
+    statement: Every departure from the written steps carries a timestamp, a performer and a reason, recorded at the time rather than reconstructed.
+    then: require_deviation_record
+    severity: blocking
+    why: >
+      Contemporaneous recording is the whole of the ALCOA+ principle and the whole of its value.
+      A deviation reconstructed at audit is a story about a deviation.
+
+  - id: sop.overdue_verification_downgrades_assurance
+    statement: >
+      Past its verification date the procedure may not be cited as an operating control. It may
+      still be followed; it may not be relied on.
+    when: [{exists: commitment.due_at}, {fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    then: downgrade_assurance_claim
+    severity: warning
+
+  - id: sop.single_performer_flags_continuity_risk
+    statement: A business_critical or higher procedure with one performer carries a continuity risk flag regardless of how well it is written.
+    when: [{fn: edge_count, op: "<=", value: 1}]
+    then: flag_continuity_risk
+    severity: warning
+    why: The quality of the document is not the risk. The absence of a second person is.
+
+  - id: sop.presumed_current_is_not_verified
+    statement: >
+      drift_state = presumed_current may never be reported as verified, and a review with
+      verification_method = owner_assertion does not advance it.
+    severity: warning
+    why: >
+      This is the rule that stops a document-control system reporting a wholly unchecked procedure
+      set as green, which is what every such system does by default.
+
+  - id: sop.tribal_only_is_not_coverage
+    statement: A procedure with readability = tribal_only does not count towards documented-process coverage, however complete its metadata.
+    severity: advisory
+    why: The metadata is complete. The procedure does not exist.
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4, never a decision ─────────────────
+decision_factors:
+
+  - name: practice_fidelity
+    weight_bp: 2800
+    direction: increases
+    description: >
+      How recently and how rigorously the document was tested against what people actually do.
+      Everything else here is a property of the artefact; this is the only factor that is a claim
+      about the world, which is why it carries the most weight and why it is the hardest to source.
+    reads: [drift_state, verification_method, verification_age_days, last_verified_against_practice_at, system_changed_since_review]
+
+  - name: review_currency
+    weight_bp: 1600
+    direction: context
+    description: >
+      Context rather than increases. A procedure reviewed last month by owner assertion is not
+      better than one untouched for a year over a stable statutory form. Review currency without
+      verification method is a date, not a signal.
+    reads: [review_due_at, last_reviewed_at, last_material_change_at, has_overdue_action]
+
+  - name: executability_by_a_stranger
+    weight_bp: 1500
+    direction: increases
+    description: >
+      Whether the document does the job it was written for. Weighted separately from fidelity
+      because an accurate procedure nobody can follow and a followable procedure that is wrong fail
+      in different directions and need different fixes.
+    reads: [readability, prerequisites, exception_path_documented, time_to_first_success_minutes, tooling_referenced]
+
+  - name: continuity_exposure
+    weight_bp: 1500
+    direction: decreases
+    description: >
+      The bus factor read as risk. Rises sharply when the sole performer is also the sole owner,
+      and again when the exception path is undocumented — because that is the part that leaves with
+      them and the part nobody can reconstruct.
+    reads: [performer_count, single_point_of_failure, owner_ref, exception_path_documented]
+
+  - name: consequence_weighting
+    weight_bp: 1400
+    direction: context
+    description: >
+      What a wrong execution costs. Multiplies every other factor rather than adding to them: a
+      drifted routine procedure is rework, a drifted regulated one is an evidence trail describing
+      work that did not happen that way.
+    reads: [criticality, obligation_ref, policy_ref, control_steps, evidence_produced]
+
+  - name: adoption_evidence
+    weight_bp: 1200
+    direction: increases
+    description: >
+      Whether anyone opens it, runs it, or asks about it. Zero of all three is not a well-designed
+      procedure, it is an orphan — and orphans score well on every other factor here, which is
+      exactly why this one is present.
+    reads: [executions_recorded_30d, questions_raised_count, last_touched_at, engagement_trend, is_orphaned]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: telemetry, strength_bp: 9000, decays: true,
+     independent_of: [document, register, manual_entry, attestation],
+     description: "System events showing the procedure being executed. The only evidence that does not depend on somebody's account of their own work, and the only source that can prove a step was skipped."}
+  - {source: erp, strength_bp: 8500, decays: true,
+     independent_of: [document, register, manual_entry],
+     description: "The transaction trail the procedure leaves. The real process read backwards from what it produced — usually a surprise to the person who wrote the document."}
+  - {source: register, strength_bp: 8000, decays: true,
+     independent_of: [telemetry, erp, email],
+     description: "Document control register: owner, version, criticality, review date. Authoritative on currency and completely silent on fidelity, which is the confusion this whole object exists to break."}
+  - {source: document, strength_bp: 7500, decays: true,
+     independent_of: [telemetry, erp, hris],
+     description: "The controlled artefact. Proves what was written and the date it was approved. Proves nothing whatever about what was done."}
+  - {source: hris, strength_bp: 7500, decays: false,
+     independent_of: [document, register, telemetry],
+     description: "Owner and performer employment status. The source that turns a leaver date into a continuity risk before rather than after the handover window closes."}
+  - {source: meeting_transcript, strength_bp: 6500, decays: true,
+     independent_of: [document, register],
+     description: "A walkthrough with the performer. Better than reading the document and worse than watching the work — people describe the version they believe they follow."}
+  - {source: knowledge_base, strength_bp: 6000, decays: true,
+     independent_of: [document, register],
+     description: "Access and search data. Weak on content, uniquely strong on the one question the register cannot answer: does anyone open this."}
+  - {source: attestation, strength_bp: 5500, decays: true,
+     description: "A performer's recorded confirmation that they follow it. Evidence of willingness and of distribution. Not evidence of practice, and treating it as such is how attestation theatre starts."}
+  - {source: email, strength_bp: 4500, decays: true,
+     independent_of: [document, register, telemetry],
+     description: "Questions asked about the task. Diagnostic of the document's defects rather than of its content — and the defect list is more useful than the content review."}
+  - {source: portal, strength_bp: 5500, decays: true,
+     independent_of: [document, manual_entry],
+     description: "The request queue the procedure serves. Cycle time is an independent check on the written duration and needs nobody's cooperation."}
+  - {source: manual_entry, strength_bp: 3000, decays: true,
+     description: "Someone asserted this is the process. The weakest link in the chain and, in every organisation, the most common one."}
+  - {source: derived, strength_bp: 3000, decays: true,
+     description: "Inferred from graph shape and traffic. Corroborating only, never sole grounds."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: stranger_execution_success_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of first attempts by someone who has never performed the task that complete correctly and unaided. The only measure of an SOP that cannot be gamed by the author.",
+     calibrates: [sop.never_verified_against_practice, sop.knowledge_bottleneck]}
+  - {name: verification_age, unit: days, direction: lower_is_better, owner_layer: L6,
+     description: "Time since the document was last compared to observed practice. Almost universally unmeasured, because almost nobody records the second date.",
+     calibrates: [sop.review_date_passed_unverified, sop.traffic_collapsed]}
+  - {name: drifted_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of the procedure set at suspected_drift or worse. Reported honestly it is alarming; that is the point.",
+     calibrates: [sop.maintenance_promise_abandoned, sop.cycle_time_diverged_from_the_written_duration]}
+  - {name: bus_factor, unit: count, direction: higher_is_better, owner_layer: L6,
+     description: "Distinct people who have executed the procedure end to end. The number the whole exercise exists to move, and the one nobody puts on a dashboard.",
+     calibrates: [sop.performed_by_exactly_one_person, sop.knowledge_bottleneck]}
+  - {name: questions_per_execution, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "Questions asked per run. Read against access counts — zero questions means either an excellent procedure or an unopened one."}
+  - {name: cycle_time_vs_documented_duration, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Observed against written. Divergence in either direction is drift; faster is the dangerous direction and looks like a win on every dashboard.",
+     calibrates: [sop.cycle_time_diverged_from_the_written_duration]}
+  - {name: critical_process_coverage, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of business_critical and above processes with a verified, non-tribal procedure. Counts verified only — presumed_current does not qualify."}
+  - {name: time_from_change_to_reissue, unit: days, direction: lower_is_better, owner_layer: L6,
+     description: "System or process change to updated wording in the performers' hands. The window in which the document is known-wrong and still being followed by joiners.",
+     calibrates: [sop.tooling_renamed_underneath_it, sop.new_joiner_followed_a_stale_version]}
+  - {name: orphaned_procedure_count, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "Procedures with no owner, no executions and no traffic. Every procedure set has them and no report lists them.",
+     calibrates: [sop.orphaned_in_the_graph]}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: sop.published, name: Procedure Published, severity: info,
+     payload: [version, effective_from, criticality, owner_ref]}
+  - {id: sop.verified, name: Verified Against Practice, severity: notable,
+     payload: [verification_method, last_verified_against_practice_at, deviation_count],
+     description: "The event that should reset the clock and almost never fires, because verification is not something anyone is currently asked to record."}
+  - {id: sop.drift_suspected, name: Drift Suspected, severity: notable,
+     emitted_when: [{path: derived.engagement, op: "<=", value: 0.5}],
+     payload: [drift_state, verification_age_days, engagement_trend],
+     invalidates: [drift_state, time_to_first_success_minutes, expected_duration_minutes]}
+  - {id: sop.maintenance_overdue, name: Maintenance Overdue, severity: notable,
+     emitted_when: [{exists: commitment.due_at}, {fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [has_overdue_action, owner_ref, review_due_at]}
+  - id: sop.owner_departed
+    name: Procedure Owner Departed
+    severity: critical
+    payload: [owner_ref, process_owner_role, performer_count, criticality]
+    invalidates: [owner_ref, single_point_of_failure, last_verified_against_practice_at, exception_path_documented]
+    description: >
+      The most damaging uncaught event on this object. Everything the departing person carried
+      about the exception path is now void, and the document records only the happy path — which
+      is exactly the part the successor could have reconstructed anyway.
+  - {id: sop.tooling_changed, name: Underlying System Changed, severity: critical,
+     payload: [tooling_referenced, system_changed_since_review, version],
+     invalidates: [tooling_referenced, drift_state, time_to_first_success_minutes],
+     description: "Silent by nature. It reaches the system owner and never the document owner."}
+  - {id: sop.deviation_recorded, name: Deviation Recorded, severity: info,
+     payload: [deviation_count, criticality, version],
+     description: "Healthy. A procedure with zero of these is not a procedure without deviations, it is one without recording."}
+  - {id: sop.variant_discovered, name: Local Variant Discovered, severity: notable,
+     payload: [local_variants_count, process_name],
+     invalidates: [drift_state, step_count]}
+  - {id: sop.superseded, name: Procedure Superseded, severity: notable,
+     payload: [supersedes_ref, version, effective_from]}
+
+# ── 16 · Actions — what Layer 5 may operationalise. Naming one does not authorise it. ────
+actions:
+  - {id: sop.observe_execution, name: Watch someone perform it, actor: human, cost: moderate, reversible: true,
+     effect: "The gemba walk. Costs an hour and catches the steps the performer has stopped consciously noticing, which are the steps that are missing from the document."}
+  - {id: sop.stranger_test, name: Have someone who has never done it run it, actor: human, cost: moderate, reversible: true,
+     effect: "Every question they have to ask is a defect. An SOP its author can follow proves only that the author is carrying the missing steps in their head."}
+  - {id: sop.schedule_verification, name: Schedule the next verification, actor: system, cost: trivial, reversible: true,
+     preconditions: [{exists: commitment.due_at}, {fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     effect: "Ordered by criticality times verification age, not by review date. The two orderings are almost unrelated."}
+  - {id: sop.reissue, name: Reissue with a new version, actor: human, cost: low, reversible: false,
+     effect: "For any change to a step, its order or its performer. Silent step edits destroy the only useful property of versioning."}
+  - {id: sop.cross_train, name: Cross-train a second performer, actor: human, cost: high, reversible: false,
+     effect: "The only action here that changes the underlying risk rather than describing it. Everything else improves the document."}
+  - {id: sop.withdraw_superseded_copies, name: Withdraw superseded copies, actor: system, cost: low, reversible: false,
+     effect: "From every location performers look, not from the register. The register is read by the people who were never going to follow the old version."}
+  - {id: sop.log_deviation, name: Record a deviation, actor: agent, cost: trivial, reversible: true,
+     effect: "At the time, with performer and reason. A deviation reconstructed at audit is a story about a deviation."}
+  - {id: sop.mark_control_steps, name: Mark which steps are controls, actor: human, cost: low, reversible: true,
+     effect: "Makes the procedure safely editable. Until it is done, every efficiency review is a coin toss between removing a control and removing nothing."}
+  - {id: sop.capture_handover, name: Capture the procedure during a leaver handover, actor: human, cost: high, reversible: false,
+     effect: "With the successor as the tester and the exception paths as the required section. The one window in which the tribal knowledge is both present and motivated to leave."}
+  - {id: sop.retire, name: Retire the procedure, actor: human, cost: low, reversible: false,
+     effect: "With the reason recorded. A procedure retired without a reason returns in three years, reconstructed from memory and worse."}
+
+# ── 17 · Dependencies — facts about the compile, not about the world ─────────────────────
+dependencies:
+  - {target: admin.obj.core.document, kind: requires, strength: hard,
+     description: "The controlled artefact carrying version, approval and retention. Without it there is no answer to which wording was in force, and the SOP cannot be used as evidence of anything."}
+  - {target: admin.obj.core.employee_record, kind: requires, strength: hard,
+     description: "Owner and performers. Without it the bus factor is uncomputable and the leaver event that voids this object cannot be seen coming."}
+  - {target: admin.obj.core.policy, kind: enriches, strength: soft,
+     description: "Tells the procedure which of its steps are controls, and therefore which may not be simplified away by a well-meaning efficiency review."}
+  - {target: admin.obj.core.compliance_obligation, kind: enriches, strength: soft,
+     description: "Converts drift from a rework problem into an evidence problem. Absent, the criticality classification is somebody's judgement."}
+  - {target: admin.obj.core.approval, kind: requires, strength: soft,
+     description: "Only for regulated and safety_critical change control. Hard-wiring it everywhere is how a change gate becomes theatre."}
+  - {target: admin.obj.core.request, kind: enriches, strength: soft,
+     description: "Observed cycle time is the only drift detector that does not rely on anybody's account of their own work."}
+  - {target: admin.obj.core.service_level, kind: enriches, strength: soft,
+     description: "The promised turnaround the procedure has to deliver. Where the two were set independently, the promise is arithmetic nobody has done."}
+  - {target: admin.obj.core.audit_evidence, kind: enriches, strength: soft,
+     description: "Execution and deviation records. What the procedure is worth in an audit is decided here, not in its wording."}
+  - {target: admin.obj.core.contract, kind: invalidated_by, strength: soft,
+     description: "Outsourcing or novating the process invalidates the procedure wholesale — the steps now belong to a supplier and this document describes work nobody here performs."}
+  - {target: admin.obj.core.employee_record, kind: invalidated_by, strength: hard,
+     description: "The owner or sole performer leaving voids the exception-path knowledge this document only ever partly captured. Listed separately from the requires edge because it fires on a different event and at a different severity."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: sop.emergency_deviation_with_after_record
+    statement: >
+      Under a live incident a performer may depart from the written steps and record the deviation
+      afterwards rather than seeking approval first.
+    overrides: [sop.deviation_recorded_or_it_is_a_change, sop.regulated_change_needs_approval]
+    why: >
+      A procedure that cannot be departed from under fire is departed from permanently instead of
+      temporarily, and the departure is never recorded because recording it would have required
+      admitting the first breach. The after-the-fact record is what keeps the deviation an input to
+      the next revision rather than a private amendment.
+    frequency: occasional
+
+  - id: sop.safety_critical_stops_instead
+    statement: >
+      In safety_critical and most regulated procedures the emergency deviation right does not
+      exist. The work stops rather than proceeding off-procedure.
+    overrides: [sop.emergency_deviation_with_after_record]
+    why: >
+      Aviation and pharmaceutical manufacturing both settled here independently and for the same
+      reason: the expected cost of an unrecorded deviation exceeds the cost of a stopped line. The
+      exception to the exception matters because a single deviation policy applied across a mixed
+      procedure set is wrong at one end or the other.
+    frequency: rare
+
+  - id: sop.documented_workaround_supersedes_the_steps
+    statement: >
+      Where a named system is unavailable, a documented workaround temporarily replaces the
+      affected steps and expires with the incident.
+    overrides: [sop.material_change_requires_reissue]
+    why: >
+      Undated workarounds become the procedure — this is how half of any long-lived process set was
+      actually written. The expiry date is the entire control; without it the workaround outlives
+      the outage, the outage is forgotten, and nobody can explain why the step exists.
+    frequency: occasional
+
+  - id: sop.judgement_process_stays_unwritten
+    statement: >
+      A genuinely judgement-heavy process may legitimately be captured as principles and worked
+      examples rather than as steps, and marked readability = narrative deliberately.
+    overrides: [sop.tribal_only_is_not_coverage]
+    why: >
+      Some processes are decisions wearing a procedure's clothes — handling a distressed
+      complainant, deciding whether a spend is capital. Writing steps for them produces a document
+      that will be followed literally by exactly the person least equipped to notice it is the
+      wrong call. The honest admission that this one needs an experienced person is more useful
+      than a procedure that manufactures false confidence.
+    frequency: occasional
+
+  - id: sop.legitimate_local_variant
+    statement: >
+      Where two sites operate under different jurisdictions or different systems, a local variant
+      is correct and the single-source rule does not apply.
+    overrides: [sop.superseded_must_be_withdrawn]
+    why: >
+      Forcing one document across two legal regimes produces a document that is wrong in one of
+      them and is followed in both. The requirement in this case is a variant register with a named
+      owner per variant, not consolidation.
+    frequency: occasional
+
+  - id: sop.frozen_during_investigation
+    statement: >
+      A procedure that is the subject of an investigation, claim or regulatory enquiry is not
+      amended until the matter closes, even where it is known to be wrong.
+    overrides: [sop.material_change_requires_reissue, sop.overdue_verification_downgrades_assurance]
+    why: >
+      Amending it mid-enquiry reads as an admission and destroys the ability to establish what was
+      in force. The correct move is a documented interim instruction to performers plus a recorded
+      reason the review lapsed — not a quiet edit and not a pretence that the procedure is fine.
+    frequency: rare
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: sop.write_it_by_watching
+    statement: "Author the procedure by observing someone perform it, not by asking them to describe it."
+    why: >
+      People describe the version they believe they follow. The steps they have automated into
+      muscle memory are the ones they forget to mention, and those are the ones a stranger cannot
+      guess. The gap between the described process and the observed process is typically the whole
+      of the error rate.
+    applies_when: "First authoring, and any re-verification after a system change."
+    evidence: "Gemba walk / standard work, from the Toyota Production System."
+
+  - id: sop.the_new_joiner_is_the_test
+    statement: "Validate by having someone who has never performed the task complete it unaided, and log every question they ask."
+    why: >
+      The questions are the defect list, and they cluster — three or four gaps generate most of the
+      traffic. An SOP its author can follow proves nothing, because the author is supplying the
+      missing steps from memory without noticing.
+    applies_when: "Before publishing anything business_critical or above."
+
+  - id: sop.review_on_change_not_on_calendar
+    statement: "Trigger review from system and organisational change events; use the calendar only as a backstop."
+    why: >
+      The annual review of an unchanged procedure is theatre, and it consumes the review budget
+      that the procedure whose platform was replaced in March actually needed. Calendar review also
+      manufactures the most damaging artefact in document control: a record saying 'reviewed, no
+      change' for a procedure that changed in every particular.
+    applies_when: "Any procedure set large enough that reviewing all of it properly is impossible."
+
+  - id: sop.mark_the_control_steps
+    statement: "Distinguish steps that get the work done from steps that exist to satisfy a control."
+    why: >
+      Process improvement removes the steps that slow the work down, and the control steps are
+      exactly those — they produce evidence and advance nothing. An editor who cannot see which is
+      which either removes a control or refuses to remove anything, and both outcomes are bad.
+
+  - id: sop.name_the_exception_path
+    statement: "Document what to do when the happy path fails, not only the happy path."
+    why: >
+      The happy path is learned in a week. The exception path is the entire reason the one
+      experienced person is still needed, and removing that dependency was the point of writing the
+      procedure at all. A procedure covering only the happy path has documented the easy half and
+      claimed the hard one.
+
+  - id: sop.version_on_the_copy_not_the_register
+    statement: "Carry the version on the document the performer actually opens."
+    why: >
+      'Which version did they follow' is the only version question ever asked, and it is asked
+      after something has gone wrong. A register that knows the answer and a copy that does not is
+      a register that cannot help.
+
+  - id: sop.two_performers_before_it_matters
+    statement: "Cross-train a second performer while the process is still routine, not after it becomes critical."
+    why: >
+      Bus factor is discovered at the worst available moment by construction: the day the person is
+      unavailable is not correlated with the day the task is due, so eventually it coincides. The
+      training costs two days when nothing is on fire and cannot be bought at any price when
+      something is.
+
+  - id: sop.retire_loudly
+    statement: "Retire a superseded procedure by removing it from where people look, and record why."
+    why: >
+      A superseded procedure still in the shared drive is followed by exactly the population the
+      supersession was meant to protect. And a retirement with no recorded reason returns within
+      three years, reconstructed from memory by someone who was not there.
+
+  - id: sop.capture_at_handover
+    statement: "Make the procedure a deliverable of the leaver process, with the successor as its tester."
+    why: >
+      It is the only window where the tribal knowledge is both present and structurally motivated
+      to be transferred. Documentation written afterwards by the successor records what they could
+      reconstruct from the artefacts, which is the happy path and nothing else.
+    applies_when: "Any leaver who is the sole performer of a business_critical process."
+
+  - id: sop.count_steps_against_duration
+    statement: "Watch step_count and observed cycle time together over time."
+    why: >
+      Steps accumulate after incidents and are never removed. When the count rises and the observed
+      duration does not, people have started skimming — and skimming selects against the steps that
+      do not help finish the work, which are the controls that were added after the incidents.
+
+# ── 20 · Anti-Patterns ───────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: sop.written_for_the_auditor
+    statement: "A procedure describing what the auditor expects rather than what the team does."
+    why_it_happens: >
+      It was authored in the fortnight before a certification audit, by someone from the quality
+      function rather than from the team, and it passed. Passing confirmed the method, so it was
+      used again.
+    cost: >
+      Two processes now exist — the written one for the audit and the real one for the work. The
+      next audit tests the written one, so the divergence is never corrected, and the new joiner is
+      trained on the wrong one because the wrong one is the one in the document management system.
+    instead: >
+      Author from observation, then close the gap between the observed process and the control
+      requirement deliberately, as a change with a date, an owner and a training implication.
+    detectable_by: [sop.never_verified_against_practice, sop.control_steps_skipped, stranger_execution_success_rate]
+
+  - id: sop.annual_review_no_change
+    statement: "A review record reading 'reviewed, no change' every year for a procedure whose underlying systems have been replaced twice."
+    why_it_happens: >
+      The review is an obligation with a date attached and no test attached. Ticking it is cheap and
+      indistinguishable, in the record, from doing it properly.
+    cost: >
+      The review evidence is the very thing that stops anyone looking. A procedure with a current
+      review date is presumed current by every report and every auditor, so a fully drifted set can
+      score green indefinitely.
+    instead: >
+      Require the reviewer to name what they checked and against whom — observed execution,
+      performer walkthrough, output sampling — and let owner_assertion be recorded honestly when
+      that is what happened. A set that is 80% owner-asserted is a useful and uncomfortable fact.
+    detectable_by: [sop.review_date_passed_unverified, sop.never_verified_against_practice, verification_age]
+
+  - id: sop.screenshot_museum
+    statement: "A procedure whose operative steps are screenshots of an interface that no longer exists."
+    why_it_happens: >
+      Screenshots are the fastest way to write a clear procedure. They were correct the day they
+      were taken, and nothing about the document announces that they have stopped being correct.
+    cost: >
+      The performer cannot tell whether the screenshot is wrong or they are on the wrong screen, so
+      they stop and ask — which reinstates exactly the person the procedure was written to make
+      unnecessary. Worse, they lose confidence in the rest of the document at the same time.
+    instead: >
+      Name fields and menu paths in text; use screenshots for orientation and never for the
+      operative step. Track tooling_referenced as structured data so a rename invalidates the
+      affected procedures explicitly rather than silently.
+    detectable_by: [sop.tooling_renamed_underneath_it, sop.knowledge_bottleneck]
+
+  - id: sop.single_author_single_reader
+    statement: "Written by the only person who performs it, and never run by anyone else."
+    why_it_happens: >
+      They are the only one who knows, so they are the obvious author, and asking anybody else to
+      test it costs a day the function does not have.
+    cost: >
+      It reads as complete and is unusable, because every step the author performs automatically is
+      missing. The bus factor has not moved at all; the organisation now believes it has, which is
+      strictly worse than knowing it has not.
+    instead: >
+      A stranger executes it once before publication and their questions are treated as defects
+      against the document rather than as gaps in the stranger.
+    detectable_by: [sop.performed_by_exactly_one_person, sop.knowledge_bottleneck, bus_factor]
+
+  - id: sop.procedure_as_policy
+    statement: "A document stating what must be achieved, with no steps, filed as an SOP."
+    why_it_happens: >
+      Writing the rule takes a day and writing the steps takes a fortnight. The rule reads as
+      authoritative, satisfies the request, and closes the action.
+    cost: >
+      The question 'is there an SOP for this' is now answered yes, so nobody writes one. The gap is
+      discovered during a handover or an absence, at which point the person who could have written
+      it has gone.
+    instead: >
+      Apply the discriminator: could a competent stranger complete the task from this alone? If
+      not, file it as a policy and leave the SOP gap open and visible.
+    detectable_by: [sop.orphaned_in_the_graph, critical_process_coverage]
+
+  - id: sop.silent_local_variants
+    statement: "Three teams run three versions and each believes theirs is the SOP."
+    why_it_happens: >
+      One team hit a case the central procedure did not cover, forked a copy to fix it, and got on
+      with the work. That was the fastest correct action available at the time.
+    cost: >
+      Output differs by team and the difference stays invisible until an audit samples across teams.
+      Every subsequent improvement has to be made three times or is made once and lost twice, and
+      the two lost copies are the ones still being followed.
+    instead: >
+      Make forking legitimate and visible — a variant register with an owner and a merge-back date.
+      Unrecorded forking is guaranteed; the only choice available is whether it is recordable.
+    detectable_by: [sop.two_versions_in_circulation, sop.cycle_time_diverged_from_the_written_duration, drifted_share]
+
+  - id: sop.step_count_inflation
+    statement: "A procedure gains a step after every incident and never loses one."
+    why_it_happens: >
+      Adding a step is the cheapest visible response to an incident. Removing one requires arguing
+      that a control is unnecessary, and owning that argument the next time something goes wrong.
+    cost: >
+      The procedure becomes long enough that performers skim, and skimming selects hard against the
+      steps that do not help finish the work — which are precisely the controls added after the
+      previous incidents. The document is now longest and least followed exactly where it matters.
+    instead: >
+      Every added step carries an owner and a review date. Watch step_count against observed
+      duration; when the two stop moving together, people are skipping.
+    detectable_by: [sop.cycle_time_diverged_from_the_written_duration, sop.control_steps_skipped]
+
+  - id: sop.handover_written_by_the_successor
+    statement: "The procedure is documented after the leaver has gone, by the person taking over, from the artefacts."
+    why_it_happens: >
+      Notice periods are consumed by live work, and the departing person is the least motivated
+      author in the building. The successor is highly motivated and available.
+    cost: >
+      The result records what the successor could reconstruct, which is the happy path. Every
+      exception path — the reason the role took two years to learn — left with the person, and
+      nobody knows it is missing until the exception happens.
+    instead: >
+      Handover is a leaver deliverable with the successor as tester, and the exception paths are a
+      required section signed off before the last day.
+    detectable_by: [sop.owner_left_and_nobody_inherited, sop.knowledge_bottleneck]
+
+  - id: sop.publish_and_forget
+    statement: "Success is measured by procedures published, and the number only goes up."
+    why_it_happens: >
+      Coverage is countable, reportable and unambiguous. Fidelity is none of those things, so the
+      metric that exists drives the behaviour.
+    cost: >
+      An organisation with 400 published procedures and no verification programme has 400 documents
+      of unknown accuracy and a governance report saying it is well documented. The metric actively
+      rewards writing new procedures over fixing wrong ones.
+    instead: >
+      Report critical_process_coverage counting verified only, and publish drifted_share alongside
+      it. Two numbers, and the second one has to be allowed to be ugly.
+    detectable_by: [drifted_share, verification_age, sop.orphaned_in_the_graph]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Month-end supplier payment run", kind: typical,
+     note: "22 steps, two approval gates, one performer, run twelve times a year. Classic single point of failure — well documented, never executed by anyone else, and the exception path (supplier not on the approved list) lives entirely in the performer's head."}
+  - {label: "New starter account provisioning runbook", kind: typical,
+     note: "Executed weekly, high visibility, drifts fastest of anything in the set because the identity platform ships changes continuously. The procedure most likely to be screenshot-based and therefore most likely to be a museum."}
+  - {label: "Board pack assembly", kind: edge,
+     note: "Six executions a year, one performer, criticality business_critical. Too infrequent to build muscle memory and too infrequent to justify cross-training, which is why it is always the process discovered to be undocumented three days before a board meeting."}
+  - {label: "Fire evacuation procedure", kind: edge,
+     note: "safety_critical, never executed in anger, verified only by drill. The drill IS the verification and is the only evidence that exists — which makes verification_method the entire quality of the procedure."}
+  - {label: "Travel and expense policy filed under SOPs", kind: misclassification,
+     note: "States per-night caps and eligibility. No steps, no performer, no trigger. It is admin.obj.core.policy, and filing it here closes the SOP gap on paper while leaving it open in fact."}
+  - {label: "A pinned Slack checklist with no owner and no version", kind: misclassification,
+     note: "Has the appearance of a procedure and none of its properties. It is tribal knowledge with a URL — genuinely useful, and it should be recorded as readability = tribal_only rather than counted as coverage."}
+  - {label: "Handling a distressed complainant", kind: counterexample,
+     note: "A decision, not a procedure. Written as steps it will be followed literally by exactly the person least equipped to notice that this case needs something else. Principles and worked examples are the correct artefact and the honest answer."}
+  - {label: "Statutory annual return preparation", kind: typical,
+     note: "obligation_ref populated, criticality regulated. Drift here does not produce rework — it produces an evidence trail describing a process nobody performed, which is the finding rather than the error."}
+  - {label: "A procedure for a system decommissioned last year", kind: edge,
+     note: "drift_state = obsolete, review date current, owner still listed. Scores green on every document-control report in existence. It is retired by removal, not by correction, and until someone removes it search will keep offering it to joiners."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "ISO 9001:2015 — Quality management systems", kind: standard,
+     note: "Clause 7.5, documented information. The requirement is control of the document — identification, review, version, availability at point of use — not its existence. 'Available at the point of use' is the clause most sets fail."}
+  - {title: "Standard work (Toyota Production System)", kind: framework,
+     note: "Standard work is written by the people who do the work and revised whenever it is improved. The SOP-as-artefact-of-the-quality-department is precisely the failure this practice was constructed against."}
+  - {title: "Gemba walk", kind: methodology,
+     note: "Go and see. The direct answer to authoring by description, and the origin of verification_method = observed_execution being ranked above everything else."}
+  - {title: "Kaizen — standardise, then improve", kind: methodology,
+     note: "A standard exists to be the baseline for improvement. A standard nobody is permitted to change is not a baseline, it is a monument, and people route around monuments."}
+  - {title: "ALCOA+ data integrity principles", kind: framework,
+     note: "Attributable, legible, contemporaneous, original, accurate, plus complete, consistent, enduring, available. The source of the rule that a deviation is recorded at the time rather than reconstructed at audit."}
+  - {title: "Deviation and change control (GMP)", kind: framework,
+     note: "Pharmaceutical manufacturing practice. Where the emergency-deviation-with-ratification exception comes from, and where the counter-rule for safety-critical work comes from too."}
+  - {title: "Runbooks and playbooks in site reliability engineering", kind: practitioner,
+     note: "SRE arrived independently at the same test: a runbook is judged by whether an on-call engineer who has never seen this alert can act on it at 3am. Same discriminator, different century."}
+  - {title: "RACI", kind: framework,
+     note: "Separates the process owner from the performer. Without that separation the procedure is owned by whoever last ran it, which is how ownership evaporates at exactly the moment it is needed."}
+  - {title: "Bus factor", kind: practitioner,
+     note: "The number of people whose sudden absence stops the process. The one number an SOP programme exists to move, and almost never the one it reports."}
+  - {title: "Joiner-mover-leaver", kind: framework,
+     note: "The leaver handover is the single window in which tribal procedure knowledge is both present and motivated to be transferred. Most SOP debt is created or paid in that fortnight."}
+  - {title: "ITIL 4 — service management practices", kind: framework,
+     note: "Distinguishes practice, process, procedure and work instruction. Useful mainly for naming the layer this object sits at and refusing to be dragged up to the one above."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "The records side: what the procedure produces, how long it is kept, and what happens to the evidence when the procedure is retired."}
+  - {title: "The Checklist Manifesto", kind: book, author: "Atul Gawande",
+     note: "The case for the short procedure over the complete one, and the clearest available statement of why a checklist and an SOP are different artefacts for different readers — the checklist assumes competence, the SOP supplies it."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of thirteen patterns are executable today: an overdue maintenance commitment, a
+    maintenance promise abandoned for a quarter, graph orphaning, a knowledge bottleneck read off
+    reply cadence, and a collapse in traffic. That is an honest ceiling rather than a thin first
+    pass — the shipped substrate can see promises made about a procedure and conversation around
+    it, and can see nothing at all about whether the procedure is being followed.
+    The standout Layer 1/2 asks are sop_executed and derived.performer_diversity. Performer
+    diversity is the only number that says whether writing the SOP achieved anything, it is trivial
+    arithmetic once execution records exist, and nothing today reaches the systems where procedures
+    are actually executed. Second is version identity on the copy rather than the master
+    (document.version), without which the object's central failure — the joiner following a stale
+    version — is undetectable by construction.
+    The boundary with admin.obj.core.policy is deliberate and load-bearing in both directions. A
+    policy states what must be true and is self-imposed; an SOP states how and is one of several
+    possible methods. Filing a policy as an SOP closes the coverage gap on paper and leaves it open
+    in fact, and it is the commonest misclassification in this subdomain.

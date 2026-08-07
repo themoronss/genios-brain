@@ -1,10 +1,10 @@
-"""The delivery admission contract — what Layer 5.2 is allowed to answer, and nothing else.
+"""The Layer 5.2 delivery contract — execution intent in, governed delivery result out.
 
-Layer 5 decides **whether a person should be told something**.  This contract is the vocabulary
-of the question that comes after: *given that they should be told, may it happen now, to them,
-on this channel?*  Those are genuinely different questions and conflating them is how a system
-starts either paging people at 3am or quietly deciding on their behalf that a churn alert was
-not worth their evening.
+Layer 5 decides the commitment, work owner, actions, deadline and business priority. Layer 5.2
+resolves the final delivery audience, destination, channel, presentation, interruptibility and
+send time. Separating work ownership from attention routing prevents a delivery choice from
+silently reassigning the commitment while keeping every concrete route in the one layer that
+owns channels.
 
 Exactly three answers exist, and the set is deliberately closed:
 
@@ -51,8 +51,8 @@ from genios_engine.contracts.validators import (
 )
 
 DELIVERY_VERSION = "delivery.v1"
-DELIVERY_OBJECT_VERSION = "delivery-object.v1"
-DELIVERY_RESULT_VERSION = "delivery-result.v1"
+DELIVERY_OBJECT_VERSION = "delivery-object.v2"
+DELIVERY_RESULT_VERSION = "delivery-result.v2"
 
 #: The three urgency names, weakest first.  This orders them; it does not *assign* them —
 #: ``deliver/bands.py`` cuts a band from a score using the pack's own thresholds, and those
@@ -91,6 +91,11 @@ class DeliveryResultStatus(str, Enum):
     QUEUED = "queued"
     DEFERRED = "deferred"
     DELIVERED = "delivered"
+    VIEWED = "viewed"
+    IGNORED = "ignored"
+    ACCEPTED = "accepted"
+    EXECUTED = "executed"
+    EXPIRED = "expired"
     SUPPRESSED = "suppressed"
     CANCELLED = "cancelled"
     FAILED = "failed"
@@ -121,7 +126,7 @@ class DeliveryCandidate:
     channel: str                     # the concrete adapter: 'slack'
     channel_class: ChannelClass      # the intent: chat, digest, in_app, agent
     band: str                        # standard | high | critical
-    interrupt: bool                  # Layer 5's judgement that this is worth someone's attention
+    interrupt: bool                  # Layer 5.2's final decision for this route and moment
     recipient: str | None = None     # seat id; None = an org-wide surface with no single owner
 
     def __post_init__(self) -> None:
@@ -147,8 +152,8 @@ class DeliveryCandidate:
     def intrusive(self) -> bool:
         """Does landing this message cost the recipient attention they did not choose to spend?
 
-        This — not ``interrupt`` — is what quiet hours key on.  Layer 5 sets ``interrupt`` to mean
-        "this deserves attention"; a high-band card is pushed to Slack with ``interrupt=False``,
+        This — not ``interrupt`` — is what quiet hours key on. A high-band delivery can use Slack
+        with ``interrupt=False``,
         and it still pings a phone at midnight.  Gating on the channel's physics rather than on
         the sender's intent is what closes that gap.
         """
@@ -170,10 +175,9 @@ class DeliveryCandidate:
 class DeliveryObject:
     """The typed Layer 5.2 input materialised on an outbox row.
 
-    Layer 5 owns the recipient, priority and interruption decision. Layer 5.2 adds a concrete
-    destination, payload and retry policy. Keeping this immutable contract beside the admission
-    contract makes the existing "outbox row is the delivery object" design explicit without a
-    second persistence table or a second write that could drift.
+    Layer 5.2 resolves and stamps the recipient, priority class, destination, channel,
+    presentation, interruption decision, route ladder and retry policy. The outbox row is the
+    immutable logical intent; physical provider calls are append-only delivery attempts.
     """
 
     delivery_id: str
@@ -187,6 +191,16 @@ class DeliveryObject:
     recipient: str | None = None
     retry_minutes: tuple[int, ...] = ()
     created_at: datetime | None = None
+    execution_id: str | None = None
+    audience: str | None = None
+    destination: str | None = None
+    format_kind: str | None = None
+    priority_class: str = "medium"
+    priority_rank: int = 3
+    daily_budget: int = 7
+    route_reason: str | None = None
+    route_plan: tuple[str, ...] = ()
+    dedupe_key: str | None = None
     schema_version: str = DELIVERY_OBJECT_VERSION
 
     def __post_init__(self) -> None:
@@ -214,6 +228,22 @@ class DeliveryObject:
         setattr_(self, "retry_minutes", retry)
         if self.created_at is not None:
             setattr_(self, "created_at", require_aware(self.created_at, "created_at"))
+        for name in ("execution_id", "audience", "destination", "format_kind",
+                     "route_reason", "dedupe_key"):
+            value = getattr(self, name)
+            if value is not None:
+                setattr_(self, name, require_identifier(value, name.replace("_", " ")))
+        priority_classes = ("background", "low", "medium", "high", "critical")
+        if self.priority_class not in priority_classes:
+            raise ValueError(f"priority_class must be one of {priority_classes}")
+        if isinstance(self.priority_rank, bool) or not isinstance(self.priority_rank, int) \
+                or not 1 <= self.priority_rank <= 5:
+            raise ValueError("priority_rank must be an integer from 1 to 5")
+        if isinstance(self.daily_budget, bool) or not isinstance(self.daily_budget, int) \
+                or not 1 <= self.daily_budget <= 15:
+            raise ValueError("daily_budget must be an integer from 1 to 15")
+        setattr_(self, "route_plan", tuple(
+            require_identifier(item, "route channel") for item in self.route_plan))
         setattr_(self, "schema_version",
                  require_identifier(self.schema_version, "delivery object schema version"))
 
@@ -231,6 +261,16 @@ class DeliveryObject:
             "payload": self.payload,
             "retry_minutes": self.retry_minutes,
             "created_at": self.created_at,
+            "execution_id": self.execution_id,
+            "audience": self.audience,
+            "destination": self.destination,
+            "format_kind": self.format_kind,
+            "priority_class": self.priority_class,
+            "priority_rank": self.priority_rank,
+            "daily_budget": self.daily_budget,
+            "route_reason": self.route_reason,
+            "route_plan": self.route_plan,
+            "dedupe_key": self.dedupe_key,
         }
 
 
@@ -252,6 +292,11 @@ class DeliveryResult:
     deferrals: int
     recipient: str | None = None
     delivered_at: datetime | None = None
+    viewed_at: datetime | None = None
+    ignored_at: datetime | None = None
+    accepted_at: datetime | None = None
+    executed_at: datetime | None = None
+    expired_at: datetime | None = None
     reason_code: str | None = None
     metrics: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
     metadata: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
@@ -271,8 +316,11 @@ class DeliveryResult:
                 raise ValueError(f"{name} must be a non-negative integer")
         if self.recipient is not None:
             setattr_(self, "recipient", require_identifier(self.recipient, "recipient"))
-        if self.delivered_at is not None:
-            setattr_(self, "delivered_at", require_aware(self.delivered_at, "delivered_at"))
+        for name in ("delivered_at", "viewed_at", "ignored_at", "accepted_at",
+                     "executed_at", "expired_at"):
+            value = getattr(self, name)
+            if value is not None:
+                setattr_(self, name, require_aware(value, name))
         if self.reason_code is not None:
             setattr_(self, "reason_code", require_identifier(self.reason_code, "reason code"))
         setattr_(self, "metrics", freeze_mapping(self.metrics))
@@ -292,6 +340,11 @@ class DeliveryResult:
             "attempts": self.attempts,
             "deferrals": self.deferrals,
             "delivered_at": self.delivered_at,
+            "viewed_at": self.viewed_at,
+            "ignored_at": self.ignored_at,
+            "accepted_at": self.accepted_at,
+            "executed_at": self.executed_at,
+            "expired_at": self.expired_at,
             "reason_code": self.reason_code,
             "metrics": self.metrics,
             "metadata": self.metadata,

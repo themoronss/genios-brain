@@ -1,14 +1,17 @@
 # 11 · Slack / Teams Delivery
 
-**Status:** Built
+**Status:** Engine-ready; adapters active; tenant/provider configuration required
 
-Delivers formatted cards/digests to registered Slack or Teams webhook destinations.
+Delivers grounded execution cards/reminders to tenant-registered Slack or Microsoft Teams
+webhook/Workflow destinations. A raw legacy digest cannot independently authorize new delivery.
 
 | Boundary | Current truth |
 |---|---|
-| Runtime authority | `channels/slack.py`, `channels/teams.py`, channel routes |
-| Result | adapter/pull outcome projected into the shared DeliveryResult ledger |
+| Runtime | `channels/slack.py`, `channels/teams.py`, channel routes, durable outbox |
+| Active route | Slack incoming webhook and Teams webhook/Workflow adapters |
+| Result | provider acceptance/failure projected into attempts and DeliveryResult |
 | Business outcome | never inferred from transport alone |
+| Integration | tenant credentials/configuration, workspace permissions and live-provider proof |
 
 ## Component modules
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 
@@ -135,7 +137,7 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
 
 
 def _run_l2(org_id: str) -> None:
-    """Background L2 + L3 + L5 pass for one org. In-process (no Celery/Upstash). Wrapped so a
+    """Background L2 + L4 + L5 + card pass for one org. In-process (no Celery/Upstash). Wrapped so a
     single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
     if _graph is None:
         return
@@ -144,12 +146,17 @@ def _run_l2(org_id: str) -> None:
         process_pending(org_id=org_id, store=_graph, llm=_llm, crypto_key=get_settings().crypto_key)
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         run_l3(org_id=org_id, store=_graph, registry=_registry)
-        if _card_store is not None:                              # L5: new gated signals → cards
+        # ExecutionObject is the sole delivery boundary. Build/validate it before producing the
+        # card read model so a raw signal can never become independent outbound authority.
+        from genios_engine.executive.sweep import run_executive
+        effective, _ = (_registry.effective(org_id) if _registry else (None, None))
+        run_executive(_graph.engine, org_id, effective=effective)
+        if _card_store is not None:
             from genios_engine.deliver.pipeline import build_cards_for_org
             build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
                                 llm=_llm, registry=_registry)
     except Exception:
-        _log.exception("L2/L3/L5 background pass failed for org_id=%s", org_id)
+        _log.exception("L2/L4/L5/card background pass failed for org_id=%s", org_id)
 
 
 def _sync_connection(connection, mode: str, limit: int) -> None:
@@ -208,6 +215,25 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
 # Retained as a compatibility diagnostic only. Calibration authority is the durable
 # ``calibration_runs`` uniqueness key; process memory never decides whether tuning may repeat.
 _last_calibration_at = None
+
+
+def run_delivery_sweep() -> dict:
+    """Run only the minute-scale Layer 5.2 materialise/expire/drain heartbeat.
+
+    Kept separate from the heavy sync heartbeat because retry, quiet-hour and attention-window
+    clocks are measured in minutes. Claims, dedupe keys and route fencing make concurrent calls
+    from multiple application replicas safe.
+    """
+    if _graph is None:
+        return {}
+    from genios_engine.deliver.outbox import run_distribution
+    raw_url = get_settings().public_app_url.strip().rstrip("/")
+    if raw_url:
+        parsed = urlsplit(raw_url)
+        if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
+                or parsed.query or parsed.fragment):
+            raise RuntimeError("GENIOS_PUBLIC_APP_URL must be an HTTPS origin without credentials, query or fragment")
+    return run_distribution(_graph.engine, base_url=raw_url)
 
 
 def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
@@ -275,39 +301,43 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             _log.exception("executive sweep pass failed")
             executive = {"error": True}
 
-    # Layer 5.2 Delivery: enqueue new high/critical cards + the daily digest per org with an
-    # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
-    # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
+    # Layer 5.2 Delivery: materialise persisted ExecutionObjects into governed logical deliveries,
+    # expire stale lifecycle rows, then drain fenced provider attempts. Cards are linked read models,
+    # never independent outbound authority. Provider latency remains outside the reasoning sweep.
     distribution = {}
     if _graph is not None:
         try:
-            from genios_engine.deliver.outbox import run_distribution
-            distribution = run_distribution(_graph.engine)
+            distribution = run_delivery_sweep()
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("distribution pass failed")
             distribution = {"error": True}
     calibration = None
     if _graph is not None:
-        from genios_engine.feedback.calibrate import run_calibration
-        orgs = {c.org_id for c in _connections.list_active()}
-        runs = 0
-        already_ran = 0
-        for org in orgs:                                     # weekly: precision + auto-mute + nudges
-            try:
-                with _graph.engine.connect() as c:
-                    packs = [r[0] for r in c.execute(text(
-                        "select pack_id from tenant_packs where org_id=:o and state='active'"),
-                        {"o": org})]
-                for pid in (packs or ["sales"]):
-                    result = run_calibration(_graph, org, registry=_registry, pack_id=pid,
-                                             eval_time=now)
-                    runs += int(bool(result.get("applied")))
-                    already_ran += int(bool(result.get("already_ran")))
-            except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
-                _log.exception("calibration failed org=%s", org)
-        calibration = {"orgs": len(orgs), "pack_runs": runs,
-                       "already_ran": already_ran}
-        _log.info("calibration pass complete: %d org(s), %d applied pack-run(s)", len(orgs), runs)
+        try:
+            from genios_engine.feedback.calibrate import run_calibration
+            orgs = set(_executive_orgs())
+            runs = 0
+            already_ran = 0
+            for org in orgs:                                 # weekly: precision + auto-mute + nudges
+                try:
+                    with _graph.engine.connect() as c:
+                        packs = [r[0] for r in c.execute(text(
+                            "select pack_id from tenant_packs where org_id=:o and state='active'"),
+                            {"o": org})]
+                    for pid in (packs or ["sales"]):
+                        result = run_calibration(_graph, org, registry=_registry, pack_id=pid,
+                                                 eval_time=now)
+                        runs += int(bool(result.get("applied")))
+                        already_ran += int(bool(result.get("already_ran")))
+                except Exception:                            # noqa: BLE001 — one org's failure ≠ the rest
+                    _log.exception("calibration failed org=%s", org)
+            calibration = {"orgs": len(orgs), "pack_runs": runs,
+                           "already_ran": already_ran}
+            _log.info("calibration pass complete: %d org(s), %d applied pack-run(s)",
+                      len(orgs), runs)
+        except Exception:                                   # noqa: BLE001 — never kill heartbeat
+            _log.exception("calibration pass failed")
+            calibration = {"error": True}
     # Atlas Layer 6 LEARNING & EVOLUTION: the calibration loop above remains the exact-lineage
     # rule tuner; this pass runs the broader 11-unit contract over feedback, real execution
     # outcomes, normalized enterprise events and delivery results. Its weekly database claim is
@@ -316,8 +346,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     if _graph is not None:
         try:
             from genios_engine.feedback.orchestrator import run_learning
-            learning_orgs = sorted(
-                set(_executive_orgs()) | {c.org_id for c in _connections.list_active()})
+            learning_orgs = _learning_orgs()
             applied = already = published = held = 0
             for org in learning_orgs:
                 try:
@@ -383,6 +412,23 @@ def _executive_orgs() -> list[str]:
     with _graph.engine.connect() as c:
         return [row[0] for row in c.execute(text(
             "select distinct org_id from tenant_packs where state='active'"))]
+
+
+def _learning_orgs() -> list[str]:
+    """Every tenant with learning authority or state whose retention clock must advance.
+
+    This deliberately includes disabled policies and tenants without a live connector: consent
+    can stop new learning, but it cannot stop leased memories from expiring.
+    """
+    if _graph is None:
+        return []
+    with _graph.engine.connect() as c:
+        return [row[0] for row in c.execute(text(
+            "select org_id from learning_policies union "
+            "select org_id from temporary_memories where expired_at is null union "
+            "select org_id from learning_event_inbox union "
+            "select org_id from tenant_packs where state='active' "
+            "order by org_id"))]
 
 
 @router.post("/ingest/all")
@@ -522,6 +568,7 @@ def workspace_kill(action: str, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     if enabled is None:
         raise HTTPException(422, "action must be pause | resume")
     with _graph.engine.begin() as c:
+        c.execute(text("select id from orgs where id=:o for update"), {"o": org_id})
         c.execute(text("insert into feature_flags (key, enabled) values (:k, :e) "
                        "on conflict (key) do update set enabled=:e"),
                   {"k": f"kill_switch:{org_id}", "e": enabled})
@@ -1635,7 +1682,7 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
     from sqlalchemy import text
     with _card_store.engine.begin() as c:
         tier = str(c.execute(text(
-            "select subscription_tier from orgs where id=:o for share"),
+            "select subscription_tier from orgs where id=:o for update"),
             {"o": org_id}).scalar() or "trial").lower()
         seat_limit = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}.get(tier, 2)
         exists = c.execute(text(
@@ -1653,7 +1700,11 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
     return {"upserted": True, "seat_id": seat_id, "role": body.role}
 
 
-# ── L5 · Agent API (§5.16) · metered read-and-claim; execution stays client-side ────
+# ── Retired raw-signal agent API ─────────────────────────────────────────────────────
+# Active agents consume ExecutionObject-backed DeliveryObjects through /delivery/inbox and
+# submit lifecycle receipts there. Raw signal/card claim APIs bypassed L5 commitments, L5.2
+# admission and tenant kill switches, so they remain as authenticated 410 migration sentinels
+# rather than a second executable delivery plane.
 def _agent_scope(org_id: str, agent_id: str, key: str, scope: str) -> None:
     if scope not in AGENT_API_SCOPES:
         raise HTTPException(422, f"unknown scope: {scope}")
@@ -1661,14 +1712,22 @@ def _agent_scope(org_id: str, agent_id: str, key: str, scope: str) -> None:
         raise HTTPException(401, "agent key invalid or scope not granted")
 
 
+def _retired_agent_signal_api() -> None:
+    raise HTTPException(410, {
+        "error": "raw_signal_agent_api_retired",
+        "message": "Agents must consume ExecutionObject-backed deliveries from the scoped "
+                   "Delivery Inbox and submit delivery lifecycle receipts.",
+        "replacement": "/api/org/{org_id}/delivery/inbox?channel=api",
+    })
+
+
 @router.get("/v1/signals")
 def agent_poll(org_id: str, agent_id: str, since: str | None = None,
                x_agent_key: str = Header(...)) -> dict:
-    """Poll delivered cards' signals + presentation (machine-readable). Metered per read."""
+    """Retired: raw signals are intelligence, not executable agent instructions."""
     _require_l5()
     _agent_scope(org_id, agent_id, x_agent_key, "signals.read")
-    from genios_engine.deliver import agent_api
-    return {"signals": agent_api.poll_signals(_card_store, org_id, agent_id, since=since)}
+    _retired_agent_signal_api()
 
 
 @router.get("/v1/signals/{signal_id}/artifact")
@@ -1676,11 +1735,7 @@ def agent_artifact(signal_id: str, org_id: str, agent_id: str,
                    x_agent_key: str = Header(...)) -> dict:
     _require_l5()
     _agent_scope(org_id, agent_id, x_agent_key, "artifacts.read")
-    from genios_engine.deliver import agent_api
-    art = agent_api.get_artifact(_card_store, org_id, signal_id, agent_id)
-    if art is None:
-        raise HTTPException(404, "no card/artifact for this signal")
-    return art
+    _retired_agent_signal_api()
 
 
 class AgentClaim(BaseModel):
@@ -1690,14 +1745,10 @@ class AgentClaim(BaseModel):
 
 @router.post("/v1/signals/{signal_id}/claim")
 def agent_claim(signal_id: str, body: AgentClaim, x_agent_key: str = Header(...)) -> dict:
-    """Lock the card 15 min. Double claim → 409 with holder + expiry (first writer wins)."""
+    """Retired: card claims cannot authorize execution outside Layer 5.2."""
     _require_l5()
     _agent_scope(body.org_id, body.agent_id, x_agent_key, "signals.claim")
-    from genios_engine.deliver import agent_api
-    out = agent_api.claim(_card_store, body.org_id, signal_id, body.agent_id)
-    if not out.get("ok"):
-        raise HTTPException(out.get("status", 400), out)
-    return out
+    _retired_agent_signal_api()
 
 
 class AgentResult(BaseModel):
@@ -1709,11 +1760,9 @@ class AgentResult(BaseModel):
 
 @router.post("/v1/signals/{signal_id}/result")
 def agent_result(signal_id: str, body: AgentResult, x_agent_key: str = Header(...)) -> dict:
-    """done resolves; failed re-surfaces to the human with the failure detail (honest failures)."""
+    """Retired: agent outcomes are scoped DeliveryObject lifecycle receipts."""
     _require_l5()
     _agent_scope(body.org_id, body.agent_id, x_agent_key, "signals.result")
     if body.status not in ("done", "failed"):
         raise HTTPException(422, "status must be done | failed")
-    from genios_engine.deliver import agent_api
-    return agent_api.result(_card_store, body.org_id, signal_id, body.agent_id,
-                            body.status, detail=body.detail)
+    _retired_agent_signal_api()

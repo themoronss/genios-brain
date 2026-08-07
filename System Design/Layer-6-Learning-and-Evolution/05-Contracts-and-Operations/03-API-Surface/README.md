@@ -1,6 +1,7 @@
 # API Surface
 
-Exposes owner/governance operations and read-only learning state.
+Exposes ACL-filtered transparency, scoped review/rollback and owner-only retention, organization
+and policy commands. Authenticated tenant identity always comes from `AuthCtx`.
 
 **Primary authority:** `genios_engine/api/learning_routes.py`
 

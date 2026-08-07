@@ -20,9 +20,11 @@ Canonical product identity (docs/LAYER_MAP.md has the full table):
 There is no product Layer 7. The integer 7 below is only the last import rank used by the topology
 ratchet; package names and `PRODUCT_LAYERS` carry product identity.
 
-The Executive/Delivery split is live: `executive` owns the immutable commitment, owner,
-communication intent and lifecycle; `deliver` owns context-aware admission, concrete adapters,
-retry/failover and delivery results. `deliver` may import `executive`, never the reverse.
+The Executive/Delivery split is live: `executive` owns the immutable commitment, work owner,
+actions, deadline, business priority and lifecycle. `deliver` consumes that ExecutionObject and
+owns the current delivery audience/recipient, destination, channel, presentation, timing,
+interruptibility, retry/failover and DeliveryResult. `deliver` may import `executive`, never the
+reverse.
 """
 from __future__ import annotations
 
@@ -43,8 +45,8 @@ LAYERS: dict[str, int] = {
     "context": 2,      # Context Intelligence — the live digital twin
     "packs": 3,        # Domain Expertise — packs are one mechanism inside it
     "reason": 4,       # Reasoning Engine — deterministic cognition
-    "executive": 5,    # Executive Engine — commitment, who, communication intent, lifecycle
-    "deliver": 6,      # Product Layer 5.2 Delivery — admission, destination, transport, result
+    "executive": 5,    # Executive Engine — commitment, work owner, priority, lifecycle
+    "deliver": 6,      # Product L5.2 — final audience, route, timing, transport, result
     "feedback": 7,     # Product Layer 6 Learning & Evolution — no Expert writes
 }
 

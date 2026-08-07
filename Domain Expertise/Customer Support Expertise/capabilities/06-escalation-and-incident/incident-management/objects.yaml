@@ -1,0 +1,27 @@
+# Load-set for customer_support.escalation_and_incident.incident_management —
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.escalation_and_incident.incident_management
+
+core:
+  # incident and issue are the whole required set because an incident IS an issue with blast
+  # radius. Note what is deliberately not required: ticket. An incident is real before the first
+  # ticket arrives and is frequently largest when the fewest tickets exist, so requiring ticket
+  # would encode the exact reading error this capability warns about.
+  required:
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.issue
+  # ticket for the queue-side view of impact, product_area to scope who is affected, commitment
+  # for what has been promised to customers mid-incident, sla_target because clocks keep running
+  # through an incident and the breach arithmetic outlives the outage.
+  optional:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.sla_target
+
+scoped:
+  # Postmortem owns the only scoped object in this subdomain; during the incident itself there is
+  # nothing this capability alone needs.
+  required: []
+  optional: []

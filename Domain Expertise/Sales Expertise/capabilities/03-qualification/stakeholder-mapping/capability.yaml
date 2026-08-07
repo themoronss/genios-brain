@@ -1,0 +1,28 @@
+identity:
+  id: sales.qualification.stakeholder_mapping
+  name: Stakeholder Mapping
+  domain: sales
+  subdomain: qualification
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Building the map of everyone touching the decision and their individual stake. Broader than
+  committee analysis: it includes influencers with no vote whose objection still routes
+  through someone who has one.
+
+question: "Who is involved, what do they each want, and who can stop this?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.self_service_deflection.if_the_metric_can_be_improved_by_making_the_cont
+  name: If the metric can be improved by making the cont
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: If the metric can be improved by making the contact button harder to find, it is not measuring
+    what you think it is measuring.
+heuristic:
+  statement: If the metric can be improved by making the contact button harder to find, it is not measuring
+    what you think it is measuring.
+  why: Any instrument that infers success from the absence of a ticket rewards obstruction and answering
+    identically, and obstruction is cheaper. Success has to be claimed by the customer, not inferred
+    from their silence.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

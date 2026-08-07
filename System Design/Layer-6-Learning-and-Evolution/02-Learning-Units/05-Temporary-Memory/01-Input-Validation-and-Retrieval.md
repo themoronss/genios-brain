@@ -2,11 +2,16 @@
 
 ## Input / Validator
 
-The event must be explicit, unexpired and carry a future aware expiry. Missing/expired directives produce no object.
+The fact must have `explicit_memory=true`, kind `temporary_memory`, a structured mapping value,
+aware `occurred_at`, and `expires_at` later than both occurrence and current evaluation. It must also
+carry actor, source-stable event/trace/independence IDs, complete visibility and lineage.
 
 ## Retriever
 
-Only the bounded event batch is read. The unit cannot infer temporary memory from ordinary enterprise activity.
+The owner-only create API bounds the value (16 KiB, 512 nodes, depth 12), derives event/trace/
+independence IDs from tenant + authenticated actor + caller `source_ref`, assigns a private ACL to
+the resolved principal and performs preflight before storing the value in `learning_event_inbox`.
 
-The unit never crosses tenant boundaries and never replaces missing source evidence with generated
-facts.
+On retry, the API reloads the existing inbox row and requires its full canonical semantics to match.
+A reused source ref with different subject/value/expiry/ACL returns conflict instead of creating a
+second memory. Ordinary enterprise events and implicit recollection cannot enter this unit.

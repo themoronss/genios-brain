@@ -74,11 +74,38 @@ That single cap is why `GENIOS_L1_WORKERS` and `GENIOS_L2_WORKERS` both default 
 
 `pool_pre_ping` survives Supabase idle-connection drops.
 
+#### Tenant-root mutation and erasure lock
+
+`platform/db.py::lock_tenant_for_mutation` is the cross-layer PostgreSQL root lock. Every
+participating erasure-sensitive writer must first read that tenant's `orgs` row `FOR SHARE`; the
+audited scope now includes every Layer 6 mutation and dashboard/intelligence feedback source write.
+Settings reset/full deletion takes the same `orgs` row `FOR UPDATE` before graph, pack, execution or
+other child locks and before deletion. Consequently a participating writer either commits before
+erasure owns the tenant or waits and then fails because the organization no longer exists; it
+cannot recreate children after the wipe.
+
+Nested locks must follow the same direction:
+
+```text
+normal tenant mutation: orgs SHARE → policy/config authority → object/memory/advisory child locks
+account reset/delete:    orgs UPDATE → graph/pack authority → child retirement/deletion
+feedback source write:  orgs SHARE → graph_versions SHARE → card/signal UPDATE → audit/verdict
+```
+
+Discovery reads may identify which locks are required, but grant no mutation authority. Layer 6
+review rechecks after policy then object locking; rollback locks discovered policy keys in sorted
+order before subject advisory/object topology. This common parent-to-child order removes erasure
+versus foreign-key/child-writer lock inversion. Structural tests cover the order; populated
+PostgreSQL deadlock/blocking/erasure proof remains a deployment gate.
+
 ### 4.4 · `crypto.py` — 20 lines, two call sites
 
 Fernet symmetric encryption, `lru_cache`d per key. Used for **raw payload content at rest**
-(Layer 1's 30-day store) and **secret fields inside a connection config** (`db_url`, `token`,
-`password`, `api_key`, `secret`).
+(Layer 1's 30-day store), **secret fields inside a connection config** (`db_url`, `token`,
+`password`, `api_key`, `secret`), and new Layer 5.2 org-channel/agent webhook credentials.
+Migration `0046` deliberately leaves existing plaintext values readable during rotation; a
+deployment must set `GENIOS_CRYPTO_KEY` and re-save/rotate those credentials before declaring the
+plaintext compatibility columns retired.
 
 ### 4.5 · `identity.py` — ONE definition, imported downward
 
@@ -131,6 +158,10 @@ Two rules follow, stated in every runbook in this folder:
   refuses, by design.**
 - **Ship the next number, never edit in place.**
 
+PostgreSQL runs take a **session-scoped advisory lock** from the ledger read through every file's
+DDL transaction. Multiple replicas may boot together, but they cannot both decide the same
+non-idempotent migration is absent. The lock is released explicitly on success or failure.
+
 The app migrates at boot and **crashes loudly** if a migration fails. *A silent partial migration
 is how a column goes missing and a feature reads `None` forever.*
 
@@ -141,11 +172,15 @@ is how a column goes missing and a feature reads `None` forever.*
 | Credential | For | Dependency |
 |---|---|---|
 | Bearer session token | dashboard users | `get_current_org` |
-| API key | agents and integrations | `get_current_org` |
+| unscoped primary API key | legacy owner-equivalent integrations | `get_current_org` |
+| scoped API key | agents, extensions and product clients | explicit `require_scope(...)` |
 | `x-internal-token` | cross-org cron | `require_internal` |
 | owner check | destructive settings | `require_owner` |
 
-**`org_id` is never taken from the request body or a path parameter.** Layer 1's `/ingest/all` is
+`get_current_org` rejects scoped credentials by default. Layer 5.2 intentionally grants
+`delivery.read`, `delivery.receipts.write` and `delivery.context.write`; those routes additionally
+bind a scoped credential's `agent_id` to the requested recipient/seat. **`org_id` is never trusted
+from the body or path**: the authenticated value must match. Layer 1's `/ingest/all` is
 internal-only *so a tenant cannot trigger a cross-org run or learn which orgs exist.*
 
 ### 4.9 · `cache.py` — an accelerator, never a dependency
@@ -176,9 +211,11 @@ Four rules, stated in the module:
 **Refs and counts only, no content.** An audit trail that stored payloads would become a second
 copy of the data Layer 1 works so hard to TTL.
 
-### 4.12 · `scheduler.py` — one thread, no broker
+### 4.12 · `scheduler.py` — two cadences, no broker
 
-Detailed in [Layer 1 §3 P14](../Layer-1-Knowledge-Layer/00-Overview.md). *A plain thread plus the database,
-honouring the no-periodic-broker rule.*
+One thread runs heavy sync/maintenance at the configured hour cadence. A separate minute-scale
+thread runs only Layer 5.2 materialize/expire/drain, so quiet-hour wakeups and retry rungs do not
+inherit a six-hour delay. Both use plain threads plus PostgreSQL and are replica-safe through
+dedupe, guarded writes, `SKIP LOCKED` claims and fencing tokens.
 
 ---

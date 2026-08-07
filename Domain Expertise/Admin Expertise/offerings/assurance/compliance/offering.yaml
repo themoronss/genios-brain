@@ -1,0 +1,25 @@
+# Compliance Assurance — offering_type branch node under assurance.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.assurance.compliance
+  name: Compliance Assurance
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.assurance
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Continuous demonstration that obligations are being met, between audits rather than during
+  them.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

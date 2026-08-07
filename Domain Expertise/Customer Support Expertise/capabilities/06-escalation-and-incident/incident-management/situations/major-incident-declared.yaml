@@ -1,0 +1,151 @@
+# Situation — Major Incident Declared.
+#
+# This is the one situation in the domain that exists as much to SUPPRESS other situations as to
+# trigger its own. During a major incident the per-ticket reflexes are all individually correct
+# and collectively wrong: every SLA clock is genuinely running, every unanswered thread genuinely
+# has the ball with us, every promised update is genuinely due — and acting on each of them
+# produces a hundred personalised apologies for one shared fault, written by a hundred people who
+# each know a tenth of the truth. The correct output is one message from one commander.
+#
+# So the load-set below is aggressively account- and issue-shaped, and never_load carries the
+# objects that would drag reasoning back down to the individual. That exclusion is the point of
+# the file, not a detail of it.
+
+identity:
+  id: customer_support.sit.major_incident_declared
+  name: Major Incident Declared
+  domain: customer_support
+  owner_capability: customer_support.escalation_and_incident.incident_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  A fault has stopped being one customer's problem and has been declared as such. The declaration
+  is the event — not the fault, which was already happening, and not the ticket volume, which
+  arrives late and undercounts badly because the customers who did not write in have already
+  formed an opinion. From the moment of declaration the unit of work is the incident and not the
+  ticket: there is a commander who coordinates rather than debugs, one status narrative rather
+  than many replies, and a standing assumption that anything the individual-ticket machinery
+  wants to do right now is probably wrong. The situation stays live through the customer-side
+  cleanup, which routinely outlasts the technical restoration by days and is where the
+  relationship damage is actually repaired or confirmed.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: major_incident_declared
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        Must mean: a named human has declared an incident, with a severity, a start time, a blast
+        radius (which product areas, which accounts, or explicitly unknown) and a commander. The
+        declaration is an act, not an inference — a type that fires when the system thinks
+        something looks bad will be argued with in exactly the minutes nobody has spare. What the
+        engine may infer is a CANDIDATE; the type must carry whether it was declared or
+        suspected, because the suppression behaviour this situation drives is far too aggressive
+        to hang on a guess.
+        What would emit it: Layer 1 ingesting the incident tool or status page (the
+        incident_declared obs kind and the incident.severity / incident.status / incident.started_at
+        fact paths in planned_substrate), with Layer 2 additionally raising a candidate on a
+        correlated arrival spike — several unrelated requesters, same product area, short window.
+        Why the nearest is not good enough: the compromise available today is a burst of
+        unanswered_email across unrelated threads, and it is wrong in the way that costs most.
+        It arrives late, because it needs each thread to have aged; it is proportional to who
+        wrote in rather than to who is affected; and it prescribes precisely the wrong action,
+        namely N individual replies. It also cannot express the suppression — an incident-shaped
+        signal has to be able to tell the rest of the system to stand down, and a pile of
+        per-thread signals is structurally incapable of that.
+    - type: incident_unresolved
+      owner_layer: L2
+      nearest_today: commitment_overdue
+      note: >
+        Must mean: a declared incident is still open, with elapsed time since declaration and
+        since the last customer-facing update carried separately. The second clock is the one
+        that matters here and the one no incident tool tracks — an incident can be under control
+        technically and completely silent externally, and the silence is what generates the
+        escalations.
+        What would emit it: Layer 2 over incident.status and incident.started_at, ticking against
+        the update cadence promised at declaration rather than against any SLA.
+        Why commitment_overdue is not good enough: it is the right shape and the wrong grain. An
+        incident with forty affected accounts and a promised half-hourly update produces forty
+        overdue commitments, forty nudges to whichever agents own those threads, and forty
+        separately-worded updates — which is the exact failure this situation exists to prevent,
+        now automated. It also fires only where a promise was explicitly recorded, so the
+        accounts nobody thought to promise anything to generate nothing at all, and those are the
+        ones that find out from a competitor's status page.
+
+  # Account, not person. Impact is distributed across accounts and the communication decision is
+  # made per account tier and entitlement, never per requester.
+  scope: account
+
+also_serves:
+  - customer_support.escalation_and_incident.major_incident_communication
+  - customer_support.support_operations.queue_management
+  - customer_support.escalation_and_incident.engineering_handoff
+
+objects:
+  load:
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.product_area
+  optional:
+    # Ticket is optional and not required, matching the owning capability's load-set and for the
+    # same reason: an incident is real before the first ticket and is often largest when fewest
+    # tickets exist. Requiring it would encode the undercount as a precondition.
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.customer_account
+  never_load:
+    # Requester pulls reasoning down to one human. During a major incident that is the wrong
+    # altitude in a specific and expensive way: it produces personalised apologies for a shared
+    # fault, each written by someone who knows a fraction of the truth, and they contradict each
+    # other in public within the hour.
+    - customer_support.obj.core.requester
+    # Same argument one level up. Per-person sentiment reading during an incident invites
+    # individual placation of whoever is angriest, which reliably reallocates the commander's
+    # attention to the loudest account rather than the worst-affected one. Sentiment matters
+    # enormously afterwards, in the cleanup, where csat_detractor and de_escalation own it.
+    - customer_support.obj.core.customer_sentiment
+    # A knowledge article answers a question that has been asked before. Nothing about a live
+    # incident has been asked before, and the article a search would surface is the one about the
+    # feature that is currently down.
+    - customer_support.obj.core.knowledge_article
+
+priority_bp: 9600
+typical_duration_days: 3
+
+signals_of_progress:
+  - incident_resolved
+  - root_cause_identified
+  - workaround_provided
+  - followup_sent
+
+signals_of_decay:
+  - ticket_created
+  - escalation_requested
+  - cancellation_threat
+  - angry_language
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Almost every string in signals_of_progress and signals_of_decay is a support-native obs kind
+    from planned_substrate (incident_resolved, root_cause_identified, workaround_provided,
+    ticket_created, escalation_requested, cancellation_threat, angry_language) and is emitted by
+    nothing today; only followup_sent is real substrate. The schema does not validate these
+    strings, so the file loads — a reader should not read that as the situation being live.
+    ticket_created appears under decay, which looks backwards and is not. Once an incident has
+    been declared, new tickets are the lagging measure of how badly the public communication is
+    working: every ticket after the status page updated is a customer who did not find it, or did
+    not believe it.
+    typical_duration_days is 3 rather than the few hours a technical restoration takes, because
+    the situation is not over when the fault stops. It is over when the affected accounts have
+    been told what happened, and the gap between those two moments is where this capability
+    either keeps the relationship or loses it.

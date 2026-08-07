@@ -518,7 +518,7 @@ def test_the_maintenance_heartbeat_actually_drives_layer_five():
 
     source = inspect.getsource(routes.run_maintenance_sweep)
     assert "run_executive" in source, "the heartbeat never calls the executive sweep"
-    assert source.index("run_executive") < source.index("run_distribution"), (
+    assert source.index("run_executive") < source.index("run_delivery_sweep"), (
         "the executive pass must run before distribution, or a reminder decided this tick "
         "waits a whole interval to leave")
     assert '"executive"' in source, "the sweep result must report what Layer 5 did"

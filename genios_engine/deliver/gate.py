@@ -57,7 +57,6 @@ from genios_engine.deliver.timing import (
     describe_profile,
     evaluate_timing,
 )
-from genios_engine.executive.communication import CHAT_CHANNELS
 
 GATE_VERSION = "gate.v1"
 UNIT = "gate"
@@ -78,6 +77,7 @@ _MIN_DEFER = timedelta(minutes=1)
 #: Channel classes that count toward the burst limit — the same set the candidate's ``intrusive``
 #: property is defined by, expressed as strings for the SQL predicate.
 _INTRUSIVE_VALUES: tuple[str, ...] = tuple(sorted(c.value for c in INTRUSIVE_CHANNEL_CLASSES))
+_SHARED_ATTENTION_CHANNELS: tuple[str, ...] = ("slack", "teams")
 
 #: Preference specificity, most specific first.  A person's own setting beats an org-wide rule
 #: about a channel: the seat is a statement about a human, the channel is a statement about a
@@ -114,19 +114,18 @@ class DeliveryContext:
 def channel_class_for(channel: str) -> ChannelClass:
     """The physics of a concrete adapter — does arriving here cost unrequested attention?
 
-    Reads Layer 5's ``CHAT_CHANNELS`` rather than keeping a list, so registering a second chat
-    adapter makes it interruptive in both layers at once.  A channel this does not recognise is
+    The mapping belongs here so adding a channel touches only Layer 5.2. A channel this does not recognise is
     treated as an in-app surface: an unknown adapter is far more likely to be a dashboard than a
     pager, and guessing "pager" would gate a surface nobody was going to be woken by.
     """
     name = str(channel)
-    if name in CHAT_CHANNELS:
+    if name in {"slack", "teams"}:
         return ChannelClass.CHAT
     if name == "email":
         return ChannelClass.EMAIL
     if name == "digest":
         return ChannelClass.DIGEST
-    if name == "agent":
+    if name in {"agent", "webhook"}:
         return ChannelClass.AGENT
     return ChannelClass.IN_APP
 
@@ -374,9 +373,9 @@ def build_context(preferences: Mapping[str, Any], *, channel_enabled: bool,
 class PgDeliveryContext:
     """Reads live tenant state so the pure units can decide.
 
-    Memoised per (org, recipient, channel) for the life of one drain pass, because a pass
-    routinely holds several messages for the same person and re-reading their timezone once per
-    message is pure waste.
+    Policy/settings are intentionally re-read for every row. A pass can spend minutes in provider
+    calls, and consent, tenant holds or channel revocation committed after row one must govern row
+    two. Reusing those bytes would turn a throughput optimisation into a post-opt-out send.
 
     The one thing that is *not* memoised is the interruption count, and that omission is the
     interesting part.  Ten intrusive messages can come due in the same pass; if the count were
@@ -386,9 +385,9 @@ class PgDeliveryContext:
     fourth message sees the three that preceded it seconds earlier.
     """
 
-    def __init__(self, conn) -> None:
+    def __init__(self, conn, *, release_between: bool = True) -> None:
         self._conn = conn
-        self._settings: dict[tuple[str, str, str], tuple[dict[str, Any], bool, bool]] = {}
+        self._release_between = release_between
 
     # -- keys ---------------------------------------------------------------------------
     @staticmethod
@@ -400,15 +399,18 @@ class PgDeliveryContext:
         are what should govern a channel the whole team reads.  It also makes the burst limiter
         do the right thing for free, counting a shared channel's traffic as one stream.
         """
+        if candidate.channel in _SHARED_ATTENTION_CHANNELS:
+            return WILDCARD
+        return candidate.recipient or WILDCARD
+
+    @staticmethod
+    def preference_key(candidate: DeliveryCandidate) -> str:
+        """Whose consent/settings apply, independent of a shared transport's quota key."""
         return candidate.recipient or WILDCARD
 
     # -- reads --------------------------------------------------------------------------
     def _read_settings(self, candidate: DeliveryCandidate) -> tuple[dict[str, Any], bool, bool]:
-        seat = self.attention_key(candidate)
-        key = (candidate.org_id, seat, candidate.channel)
-        if key in self._settings:
-            return self._settings[key]
-
+        seat = self.preference_key(candidate)
         rows = self._conn.execute(text(
             "select * from delivery_preferences where org_id=:o "
             "and seat_id in (:seat, :any) and channel in (:ch, :any)"),
@@ -416,32 +418,60 @@ class PgDeliveryContext:
              "any": WILDCARD}).mappings().all()
         preferences = resolve_preferences([dict(row) for row in rows], seat, candidate.channel)
 
-        channel_enabled = self._conn.execute(text(
-            "select 1 from org_channels where org_id=:o and channel=:ch and active"),
-            {"o": candidate.org_id, "ch": candidate.channel}).first() is not None
+        agent_active: bool | None = None
+        if candidate.recipient is not None and candidate.channel in {"agent", "api"}:
+            registry_active = self._conn.execute(text(
+                "select 1 from agent_registry where org_id=:o and agent_id=:agent "
+                "and coalesce(status,'active')='active' "
+                "and 'delivery.read'=any(coalesce(allowed_actions,array[]::text[]))"),
+                {"o": candidate.org_id, "agent": candidate.recipient}).first() is not None
+            api_key_active = True
+            if candidate.channel == "api":
+                api_key_active = self._conn.execute(text(
+                    "select 1 from api_keys where org_id=:o and agent_id=:agent and is_active "
+                    "and 'delivery.read'=any(coalesce(scopes,array[]::text[]))"),
+                    {"o": candidate.org_id,
+                     "agent": candidate.recipient}).first() is not None
+            agent_active = registry_active and api_key_active
 
-        # A wildcard recipient is an org surface, not a seat, so there is no seat to be
-        # deactivated. Asking org_seats for '*' would find nothing and suppress every card.
+        from genios_engine.deliver.channels.surface import SURFACE_CHANNELS
+        channel_enabled = (candidate.channel in SURFACE_CHANNELS
+                           or (candidate.channel == "agent" and bool(agent_active))
+                           or self._conn.execute(text(
+                               "select 1 from org_channels where org_id=:o "
+                               "and channel=:ch and active"),
+                               {"o": candidate.org_id,
+                                "ch": candidate.channel}).first() is not None)
+
+        # A wildcard recipient is an org surface, not a seat, so there is no principal to
+        # deactivate. Agent routes use agent_registry identities; treating an agent_id as an
+        # org_seats.seat_id suppresses every correctly registered agent as `recipient_inactive`.
         if candidate.recipient is None:
             recipient_active = True
+        elif candidate.channel in {"agent", "api"}:
+            recipient_active = bool(agent_active)
         else:
             recipient_active = self._conn.execute(text(
                 "select 1 from org_seats where org_id=:o and seat_id=:s and active"),
                 {"o": candidate.org_id, "s": candidate.recipient}).first() is not None
 
-        self._settings[key] = (preferences, channel_enabled, recipient_active)
-        return self._settings[key]
+        return preferences, channel_enabled, recipient_active
 
     def _burst(self, candidate: DeliveryCandidate,
                now: datetime) -> tuple[int, datetime | None]:
         """How many intrusive messages this recipient has taken in the last hour, and when the
         window opened — the two numbers the burst limiter needs to say when it clears."""
         since = now - BURST_WINDOW
-        recipient_clause = ("recipient is null" if candidate.recipient is None
-                            else "recipient = :r")
+        if candidate.channel in _SHARED_ATTENTION_CHANNELS:
+            recipient_clause = "channel = any(:shared_channels)"
+        else:
+            recipient_clause = ("recipient is null" if candidate.recipient is None
+                                else "recipient = :r")
         params: dict[str, Any] = {"o": candidate.org_id, "since": since,
                                   "classes": list(_INTRUSIVE_VALUES)}
-        if candidate.recipient is not None:
+        if candidate.channel in _SHARED_ATTENTION_CHANNELS:
+            params["shared_channels"] = list(_SHARED_ATTENTION_CHANNELS)
+        elif candidate.recipient is not None:
             params["r"] = candidate.recipient
         row = self._conn.execute(text(
             "select count(*) as sent, min(delivered_at) as oldest from delivery_outbox "
@@ -504,7 +534,7 @@ class PgDeliveryContext:
         Guarded because the injected reader in tests is a plain object with no transaction.
         """
         rollback = getattr(self._conn, "rollback", None)
-        if callable(rollback):
+        if self._release_between and callable(rollback):
             rollback()
 
 def admit(candidate: DeliveryCandidate, resolver: PgDeliveryContext, *,

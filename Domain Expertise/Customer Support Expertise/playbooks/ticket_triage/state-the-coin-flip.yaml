@@ -1,0 +1,45 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.ticket_triage.state_the_coin_flip
+  name: State the coin flip
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'When two queues are genuinely equally plausible, choose the one with the shorter path
+    to a diagnosis and record that it was a coin flip.
+
+
+    Ambiguity resolved by a stated coin flip is auditable and improvable — the pattern shows up in reassignment
+    data and the taxonomy gets fixed. Ambiguity resolved by escalating to a lead moves the identical
+    coin flip to a more expensive person and leaves no trace.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: When two queues are genuinely equally plausible, choose the one with the shorter path to a diagnosis
+    and record that it was a coin flip.
+  actor: human
+  description: Ambiguity resolved by a stated coin flip is auditable and improvable — the pattern shows
+    up in reassignment data and the taxonomy gets fixed. Ambiguity resolved by escalating to a lead
+    moves the identical coin flip to a more expensive person and leaves no trace.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

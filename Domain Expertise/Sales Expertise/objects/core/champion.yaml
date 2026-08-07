@@ -1,0 +1,368 @@
+identity:
+  id: sales.obj.core.champion
+  scope: core
+  name: Champion
+  domain: sales
+  subdomain: qualification
+  owner_capability: sales.qualification.champion_identification
+  version: 1.0.0
+  status: draft
+  aliases: ["Internal Advocate", "Coach", "Mobilizer"]
+purpose:
+  statement: >
+    Someone inside the buying organisation who wants us to win and will spend their own
+    credibility to make it happen. Distinct from a friendly contact: a friendly contact
+    answers our emails, a champion argues for us in a room we are not in. The test is not
+    warmth, it is whether they take internal risk on our behalf. A champion without access
+    to the Decision Maker is pleasant and worthless.
+attributes:
+  - name: advocacy
+    purpose: Evidence they are actively selling internally.
+    type: composite
+    contains:
+      - advocacy_strength
+      - internal_actions_taken
+      - has_introduced_us
+  - name: access
+    purpose: Whether their advocacy can reach the person who decides.
+    type: composite
+    contains:
+      - access_to_decision_maker
+      - distance_to_approver
+      - department
+  - name: credibility
+    purpose: Whether the organisation listens to them.
+    type: composite
+    contains:
+      - internal_credibility
+      - tenure_months
+      - seniority
+  - name: engagement
+    purpose: Groups the Engagement attributes.
+    type: composite
+    contains:
+      - response_speed_vs_baseline
+      - last_engaged_at
+      - engagement_trend
+  - name: risk
+    purpose: What happens to us if this person leaves.
+    type: composite
+    contains:
+      - is_sole_advocate
+      - flight_risk
+      - role_change_detected
+  - name: advocacy_strength
+    purpose: passive = says nice things. active = does things on our behalf. committed = has publicly
+      attached their own name to the outcome. Only `committed` reliably survives a competing internal
+      proposal.
+    type: value
+    data_type: enum
+    allowed_values: [none, passive, active, committed]
+    required: true
+    description: >
+      passive = says nice things. active = does things on our behalf. committed = has
+      publicly attached their own name to the outcome. Only `committed` reliably survives
+      a competing internal proposal.
+  - name: internal_actions_taken
+    purpose: Introductions made, meetings arranged, internal documents circulated, budget requested.
+    type: value
+    data_type: list
+    description: Introductions made, meetings arranged, internal documents circulated, budget
+      requested.
+  - name: has_introduced_us
+    purpose: The single cheapest observable proxy for real advocacy.
+    type: value
+    data_type: boolean
+    description: The single cheapest observable proxy for real advocacy.
+  - name: access_to_decision_maker
+    purpose: A champion with no access is a dead end no amount of nurturing fixes.
+    type: value
+    data_type: enum
+    allowed_values: [none, indirect, direct, is_decision_maker]
+    required: true
+    description: A champion with no access is a dead end no amount of nurturing fixes.
+  - name: distance_to_approver
+    purpose: The distance_to_approver of this object.
+    type: value
+    data_type: integer
+    unit: hops
+  - name: department
+    purpose: The department of this object.
+    type: value
+    data_type: string
+  - name: internal_credibility
+    purpose: The internal_credibility of this object.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, unknown]
+  - name: tenure_months
+    purpose: Under six months, their advocacy carries less internal weight regardless of enthusiasm.
+    type: value
+    data_type: integer
+    unit: months
+    description: Under six months, their advocacy carries less internal weight regardless of
+      enthusiasm.
+  - name: seniority
+    purpose: The seniority of this object.
+    type: value
+    data_type: string
+  - name: response_speed_vs_baseline
+    purpose: Reply latency against this contact's own learned reply_cadence. Relative, because a
+      two-day reply is fast for one person and cold for another.
+    type: value
+    data_type: number
+    description: Reply latency against this contact's own learned reply_cadence. Relative, because a
+      two-day reply is fast for one person and cold for another.
+  - name: last_engaged_at
+    purpose: The last_engaged_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: engagement_trend
+    purpose: The engagement_trend of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+  - name: is_sole_advocate
+    purpose: True when no other advocate exists on the account. The definition of concentration risk.
+    type: value
+    data_type: boolean
+    description: True when no other advocate exists on the account. The definition of concentration
+      risk.
+  - name: flight_risk
+    purpose: The flight_risk of this object.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, departed]
+  - name: role_change_detected
+    purpose: The role_change_detected of this object.
+    type: value
+    data_type: boolean
+states:
+  initial: unknown
+  values:
+    - {name: unknown, description: No advocate identified.}
+    - {name: identified, description: A candidate is responsive and positive.}
+    - {name: engaged, description: "Two-way, sustained, faster than their own baseline.", entered_when: [
+        {fn: days_since, path: thread.last_inbound, op: "<=", value: {baseline: reply_cadence, mult:
+              1.0, floor: 1}}]}
+    - {name: active, description: Has taken an internal action on our behalf., entered_when: [has_obs:
+            introduction]}
+    - {name: at_risk, description: Advocacy decaying — engagement halved., entered_when: [{path: derived.engagement,
+          op: "<=", value: 0.5}]}
+    - {name: departed, description: Left the role or the company., entered_when: [has_obs: champion_change]}
+  transitions:
+    - {from: unknown, to: identified}
+    - {from: identified, to: engaged}
+    - {from: engaged, to: active, when: [has_obs: introduction]}
+    - {from: active, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}]}
+    - {from: at_risk, to: active}
+    - {from: active, to: departed, when: [has_obs: champion_change]}
+
+relationships:
+  - {type: works_with, target: sales.obj.core.decision_maker, cardinality: zero_or_many, description: "The\
+      route from advocacy to authority. Without it the champion cannot convert."}
+  - {type: member_of, target: sales.obj.core.buying_committee, cardinality: zero_or_one}
+  - {type: influences, target: sales.obj.core.timeline, cardinality: zero_or_one, description: "A committed\
+      champion compresses cycle time more reliably than any discount."}
+  - {type: belongs_to, target: sales.obj.core.account, cardinality: one}
+  - {type: produces, target: sales.obj.core.buying_signal, cardinality: zero_or_many}
+
+inference_patterns:
+
+  deterministic:
+    - id: ch.made_an_introduction
+      statement: "Introduced us to someone else inside their organisation."
+      status: executable
+      when: [has_obs: introduction]
+      yields: {confidence_bp: 9200, attribute: has_introduced_us, value: true}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        The strongest signal the pipeline can currently see. An introduction spends the
+        introducer's own credibility, which is exactly what distinguishes a champion from a
+        friendly contact.
+
+    - id: ch.departed
+      statement: "A champion-change observation fired on this node."
+      status: executable
+      when: [has_obs: champion_change]
+      yields: {confidence_bp: 9500, attribute: flight_risk, value: departed}
+
+    - id: ch.named_as_champion_in_crm
+      statement: "The CRM records this contact's role as champion."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: advocacy_strength, value: active}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.role, owner_layer: L1}
+
+  heuristic:
+    - id: ch.replies_faster_than_own_baseline
+      statement: "Replies materially faster than this contact's own learned reply cadence."
+      status: executable
+      when:
+        - {fn: days_since, path: thread.last_inbound, op: "<=", value: {baseline: reply_cadence, mult: 0.5,
+            floor: 1}}
+      yields: {confidence_bp: 6800, attribute: null}
+      note: >
+        Relative, not absolute, and that is the whole point. A single global "replies within
+        24h" threshold is wrong for every contact who is merely busy, and flatters every
+        contact who is merely idle.
+
+    - id: ch.introduced_and_still_engaged
+      statement: "Made an introduction and the two-way volume has not decayed."
+      status: executable
+      when:
+        - {has_obs: introduction}
+        - {path: derived.engagement, op: ">", value: 0.8}
+      yields: {confidence_bp: 8600, attribute: advocacy_strength, value: active}
+
+    - id: ch.drove_the_demo
+      statement: "Requested the demo and chased the follow-up — arranging our meetings is internal work
+        done on our behalf."
+      status: executable
+      when:
+        - {has_obs: demo_requested}
+        - {has_obs: followup_sent}
+      yields: {confidence_bp: 7200, attribute: null}
+
+    - id: ch.defends_us_against_a_competitor
+      statement: "A competitor is present on the account and this contact stays engaged and positive."
+      status: executable
+      when:
+        - {neighbor_has_obs: competitor}
+        - {path: derived.sentiment, op: ">", value: 0.3}
+      yields: {confidence_bp: 7500, attribute: null}
+      note: Advocacy is only observable under pressure. Enthusiasm in an uncontested deal proves
+        nothing.
+
+    - id: ch.circulated_material_internally
+      statement: "Forwarded our material to colleagues who then appeared on the thread."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: advocacy_strength, value: active}
+      requires_signals:
+        - {kind: obs_kind, name: internal_forward, owner_layer: L2, note: "Requires recipient-set diffing\
+            across a thread. High value: it is the clearest observable act of internal selling."}
+
+    - id: ch.argued_our_case_in_a_meeting
+      statement: "Spoke in favour of us during a meeting where the decision maker was present."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: advocacy_strength, value: committed}
+      requires_signals:
+        - {kind: obs_kind, name: internal_advocacy_statement, owner_layer: L2, note: "Requires speaker-attributed\
+            transcript analysis. The definitive signal, and the hardest to get."}
+
+inputs:
+  - {source: email, signal: reply latency against baseline, path: thread.last_inbound}
+  - {source: email, signal: introductions and recipient growth}
+  - {source: derived, signal: engagement trajectory, path: derived.engagement}
+  - {source: derived, signal: sentiment balance, path: derived.sentiment}
+  - {source: calendar, signal: meetings this person arranged}
+  - {source: meeting_transcript, signal: "who advocates, who stays silent"}
+  - {source: crm, signal: declared contact role}
+
+outputs:
+  - {name: advocacy_confidence_bp, type: integer, consumed_by: [L4.reasoning_unit]}
+  - {name: access_path, type: list, description: "Hops from this champion to the approver.", consumed_by: [
+      L4.reasoning_unit, L5.execution_planning]}
+  - {name: concentration_risk, type: boolean, consumed_by: [L4.reasoning_unit]}
+  - {name: internal_selling_ask, type: string, description: "What to arm them with for the room we are\
+      not in.", consumed_by: [L5.communication_planning]}
+
+constraints:
+  - {id: ch.cannot_approve, statement: "A champion cannot approve a purchase unless access_to_decision_maker\
+      = is_decision_maker.", hard: true}
+  - {id: ch.do_not_bypass, statement: "Approaching the decision maker around the champion, without telling\
+      them, reliably destroys the advocacy. Bypass is a last resort, not an optimisation.", hard: true}
+  - {id: ch.new_tenure_limits_weight, statement: "Under six months of tenure, advocacy carries reduced\
+      internal weight regardless of strength.", hard: false}
+
+business_rules:
+  - id: ch.no_access_no_forecast
+    statement: A deal whose only advocate has access_to_decision_maker = none must not be forecast
+      above best-case.
+    severity: blocking
+  - id: ch.sole_advocate_is_concentration_risk
+    statement: A live deal with exactly one advocate carries a concentration risk that must be
+      surfaced, not noted.
+    when: [{fn: edge_count, op: "<=", value: 1}, {neighbor_fact: deal.status, op: "=", value: open}]
+    then: flag_single_threaded
+    severity: warning
+  - id: ch.departure_voids_prior_qualification
+    statement: >
+      On champion_change, every qualification judgement that rested on this person's account
+      of the internal politics reverts to unverified. It does not merely lower confidence.
+    when: [has_obs: champion_change]
+    then: revert_qualification_to_unverified
+    severity: blocking
+  - id: ch.champion_is_not_decision_maker
+    statement: A champion may not be recorded as the approving authority unless
+      access_to_decision_maker = is_decision_maker.
+    severity: blocking
+
+decision_factors:
+  - {name: advocacy_strength, weight_bp: 3000, direction: increases, reads: [advocacy_strength, internal_actions_taken]}
+  - {name: access_to_authority, weight_bp: 2500, direction: increases, reads: [access_to_decision_maker,
+      distance_to_approver], description: "Weighted second only to advocacy because advocacy without access
+      converts nothing."}
+  - {name: internal_credibility, weight_bp: 1500, direction: increases, reads: [internal_credibility,
+        tenure_months, seniority]}
+  - {name: engagement_direction, weight_bp: 1500, direction: context, reads: [engagement_trend, response_speed_vs_baseline]}
+  - {name: concentration_risk, weight_bp: 1500, direction: decreases, reads: [is_sole_advocate, flight_risk]}
+
+evidence:
+  - {source: email, strength_bp: 8500, description: "An introduction in writing."}
+  - {source: meeting_transcript, strength_bp: 9000, description: "Advocating for us with the approver\
+      in the room."}
+  - {source: derived, strength_bp: 6000, description: "Reply cadence and engagement trajectory."}
+  - {source: calendar, strength_bp: 5500, description: "Meetings this person arranged rather than accepted."}
+  - {source: crm, strength_bp: 6500, description: "Declared role. Often aspirational."}
+
+metrics:
+  - {name: champion_identification_rate, unit: percent, owner_layer: L6}
+  - {name: introduction_conversion, unit: percent, description: "Share of champions who introduce us to\
+      an approver.", owner_layer: L6}
+  - {name: champion_departure_rate, unit: percent, description: "How often champion_change fires on a\
+      live deal. Drives whether multithreading is enforced.", owner_layer: L6}
+  - {name: win_rate_with_committed, unit: percent, description: "Win rate at advocacy_strength = committed\
+      vs everything below. The number that justifies this object.", owner_layer: L6}
+
+events:
+  - {id: ch.identified, name: Champion Identified, emitted_when: [has_obs: introduction], payload: [
+        advocacy_strength, confidence_bp]}
+  - {id: ch.went_quiet, name: Champion Went Quiet, emitted_when: [{path: derived.engagement, op: "<=",
+          value: 0.5}], payload: [last_engaged_at]}
+  - {id: ch.departed, name: Champion Departed, emitted_when: [has_obs: champion_change], payload: [
+        previous_ref], description: "Highest-severity event on this object. Prior qualification built on
+      their account of internal politics is now unverified."}
+  - {id: ch.gained_access, name: Champion Reached the Approver, payload: [decision_maker_ref]}
+
+actions:
+  - {id: ch.ask_for_introduction, name: Ask for an introduction to the approver, actor: human, effect: "Converts
+      advocacy into access. The highest-yield and most-skipped move in the qualification stage."}
+  - {id: ch.arm_champion, name: Send an internal-selling pack, actor: human, effect: "One page they can\
+      forward without editing. Most deals are decided in a room we are not in."}
+  - {id: ch.multithread, name: Build a second advocate, actor: human, preconditions: [{fn: edge_count,
+        op: "<=", value: 1}], effect: "Removes concentration risk."}
+  - {id: ch.re_engage, name: Re-engage a quiet champion, actor: human, preconditions: [{path: derived.engagement,
+        op: "<=", value: 0.5}]}
+
+examples:
+  - {label: "The Mobilizer", note: "Mid-level, high credibility, arranges everything. Best possible champion."}
+  - {label: "The friendly contact", note: "Warm, responsive, takes zero internal risk. Not a champion\
+      — the most common misclassification."}
+  - {label: "The champion who is also the buyer", note: "access_to_decision_maker = is_decision_maker.\
+      SMB norm; cycle collapses."}
+  - {label: "The departed champion", note: "champion_change fires and the deal quietly reverts to a cold\
+      outbound."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Five of seven patterns are executable, mostly because `introduction` already exists as an
+    observation kind. The two needs_signal entries — internal_forward and
+    internal_advocacy_statement — are what would separate real advocacy from politeness.

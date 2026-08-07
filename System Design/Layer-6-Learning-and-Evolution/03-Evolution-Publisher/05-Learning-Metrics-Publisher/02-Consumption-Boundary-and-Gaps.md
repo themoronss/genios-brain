@@ -2,5 +2,6 @@
 
 Metrics are evidence/observability, not permission to change runtime policy automatically.
 
-A durable/API-visible row proves publication, not product behavior change. Activation requires a
-separate topology-safe read contract, version/fallback rule and tests.
+Metrics carry source visibility and trace and remain observability artifacts. They cannot be rolled
+back through the dynamic-brain endpoint and never grant permission to modify routing, scoring,
+rate limits or policy automatically.

@@ -1,0 +1,26 @@
+# Load-set for customer_support.diagnosis_and_resolution.verification_and_closure
+# REFERENCES ONLY — never an inline object.
+
+capability: customer_support.diagnosis_and_resolution.verification_and_closure
+
+core:
+  # The ticket carries the clock and the state transition; the resolution is the claim being
+  # verified. Verifying without the resolution in hand produces the empty version of this
+  # capability — "are you happy?" with nothing named — which customers correctly read as a
+  # closing formality rather than a check.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.resolution
+  # satisfaction_score is the measurement that usually rides on closure, and it is optional
+  # rather than required because a verified close is valuable whether or not anyone surveys.
+  # requester because verification is confirmation from a specific human, not from an account.
+  # customer_sentiment because a grudging yes and a genuine yes close identically and reopen
+  # very differently, and that difference is the only early warning this capability has.
+  optional:
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.customer_sentiment
+
+scoped:
+  required: []
+  optional: []

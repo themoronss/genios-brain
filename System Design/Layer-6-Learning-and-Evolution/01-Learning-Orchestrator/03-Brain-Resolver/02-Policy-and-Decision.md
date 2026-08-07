@@ -1,6 +1,13 @@
 # Policy and decision
 
-Each unit selects from organization, behavior, adaptive, runtime, metrics or knowledge_suggestion. Callers cannot provide an arbitrary table/brain name.
+`BrainTarget` is intentionally narrower than `LearningTarget`:
 
-The same batch, policy and evaluation time produce the same decision. Every hold/reject/review path
-is reason-coded.
+- `BrainTarget` models the four Atlas concepts: Organization, Behavior, Adaptive and Runtime;
+- `LearningTarget` models every allowed persistence seam, adding Metrics and Knowledge Suggestion;
+- only Organization, Behavior and Adaptive can enter versioned `learned_brain_entries`;
+- Runtime requires `expires_at` and can enter only `temporary_memories`;
+- Metrics can enter only `learning_metrics`; and
+- Knowledge Suggestion can enter only the human-review queue and can never call `publish`.
+
+Contract validation also forbids TTL on non-Runtime objects and forbids the Knowledge unit from
+using any target other than Knowledge Suggestion. Publisher dispatch repeats these closed checks.

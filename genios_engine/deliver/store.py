@@ -115,14 +115,15 @@ class CardStore:
                 if held is None:
                     return None, False
             inserted = c.execute(text(
-                "insert into cards (card_id, signal_id, org_id, assignee, domain, level, "
+                "insert into cards (card_id, signal_id, org_id, execution_id, assignee, domain, level, "
                 "urgency_band, headline, situation, score, score_block, actions, why, "
                 "context_tags, artifact, render_mode, config_snapshot_id, template_version, "
-                "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
+                "state, expires_at) values (:id,:sig,:o,:execution,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,'queued',:exp) "
                 "on conflict (signal_id) do nothing returning card_id"),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
+                 "execution": card.get("_execution_id"),
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
                  "band": card["urgency_band"], "head": copy["headline"], "sit": copy["situation"],
                  "score": card["score"], "sb": json.dumps(card["score_block"], default=str),

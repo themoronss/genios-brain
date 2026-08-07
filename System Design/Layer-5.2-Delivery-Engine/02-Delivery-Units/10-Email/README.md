@@ -1,14 +1,17 @@
 # 10 · Email Delivery
 
-**Status:** Missing
+**Status:** Engine-ready contract; no native adapter; not operational
 
-Atlas expects delivery through email with provider, identity, preference and receipt controls.
+The Atlas target is represented in the capability model and governed by the common delivery
+contracts, but no `email` channel is registered in the adapter registry.
 
 | Boundary | Current truth |
 |---|---|
-| Runtime authority | No native adapter found in `genios_engine/deliver/channels/` |
-| Result | adapter/pull outcome projected into the shared DeliveryResult ledger |
+| Engine | can represent email class/requirements and would use the common outbox lifecycle |
+| Active route | none: `available_channels` is empty and `operational=false` |
+| Required integration | verified provider/domain, sender/recipient identity, preferences and feedback webhooks |
 | Business outcome | never inferred from transport alone |
+| Important distinction | an email-editor extension is Extension Delivery, not native Email Delivery |
 
 ## Component modules
 

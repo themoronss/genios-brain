@@ -1,0 +1,43 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.de_escalation.change_channel_when_unheard
+  name: Change channel when unheard
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'When the grievance is about not being heard, move to a channel with a voice in it.
+
+
+    Text strips the signals that prove listening happened, and a long written apology can read as a
+    longer defence. A short call does in minutes what a thread will not do at all — but only when the
+    grievance is about being unheard, not when it is about a missing fix.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: When the grievance is about not being heard, move to a channel with a voice in it.
+  actor: human
+  description: Text strips the signals that prove listening happened, and a long written apology can
+    read as a longer defence. A short call does in minutes what a thread will not do at all — but only
+    when the grievance is about being unheard, not when it is about a missing fix.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

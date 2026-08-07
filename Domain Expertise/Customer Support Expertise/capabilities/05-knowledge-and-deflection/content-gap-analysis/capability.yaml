@@ -1,0 +1,38 @@
+# STUB — identity, purpose and load-set only. Promote against
+# capabilities/05-knowledge-and-deflection/self-service-deflection/capability.yaml.
+
+identity:
+  id: customer_support.knowledge_and_deflection.content_gap_analysis
+  name: Content Gap Analysis
+  domain: customer_support
+  subdomain: knowledge_and_deflection
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Reading the queue backwards to find the answers that do not exist — and the ones that exist
+  and cannot be found. That distinction is the whole capability: a missing article and an
+  unfindable one generate identical ticket volume and require opposite fixes, and treating
+  them as the same thing is how a help center acquires duplicates that then compete with the
+  original in search and make findability worse. The richest inputs are the ones nobody reads:
+  zero-result searches, the same requester contacting twice about the same thing, and tickets
+  where the agent's answer was a link the customer had already opened.
+
+question: "Which questions keep arriving because we never answered them well enough?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes (chiefly: commissioning a duplicate instead of
+    fixing findability, and ranking gaps by ticket count so that every gap found is one we
+    were already surviving), heuristics with a why, decision_frameworks for the
+    missing-versus-unfindable sort, kpis and handoffs. This capability owns the
+    customer_support.sit.repeat_contact situation, which binds to pending L2 types
+    repeat_contact and knowledge_gap — neither is emitted today, so the analysis is currently
+    a human reading exports rather than anything the engine can trigger.

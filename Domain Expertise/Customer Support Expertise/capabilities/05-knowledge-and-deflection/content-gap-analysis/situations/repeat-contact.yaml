@@ -1,0 +1,157 @@
+# Situation — Repeat Contact.
+#
+# One event, two findings, and every ticketing system on the market keeps the wrong one.
+#
+#   Finding A: this customer is having a bad time. Recorded, worked, and closed with the ticket.
+#   Finding B: something upstream is missing — an answer that does not exist, or exists and
+#              cannot be found. Discarded, every time, because the second ticket is a new record
+#              with a new clock and nothing in the schema says "this is the second".
+#
+# B is the valuable one. It is the only finding in support that compounds: fixing it removes
+# future work rather than completing present work. This file exists to make B survive the closure
+# of the ticket that produced it, which is why the owner is content_gap_analysis and not
+# response_drafting, and why Content Gap is loaded rather than merely available.
+
+identity:
+  id: customer_support.sit.repeat_contact
+  name: Repeat Contact
+  domain: customer_support
+  owner_capability: customer_support.knowledge_and_deflection.content_gap_analysis
+  version: 1.0.0
+  status: draft
+
+description: >
+  The same person is back about the same thing. Not a reopened ticket — the previous contact was
+  answered, closed, and by the system's own account handled correctly — but a fresh arrival that
+  is, in substance, the same question. Read from the customer's side this is a broken promise
+  wearing a compliant record: they asked, we answered, and they still had to come back. Read from
+  the queue's side it is evidence that the answer was wrong, incomplete, unfindable, or correct
+  but delivered in a form the customer could not use. The second reading is the one that pays,
+  and it is only visible if the two contacts can be seen at once, which is exactly what the
+  ticket-per-contact model prevents.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: repeat_contact
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        Must mean: the same requester, or the same account, contacting again about the same
+        INTENT within a window — counted by intent and not by ticket, because "how do I export
+        this" and "where is the download button" are one gap in two phrasings, and counting
+        tickets splits the evidence exactly where it needs to be joined. It must survive the
+        earlier tickets being closed, merged or handled by a different agent, and it must carry
+        the ordinal (second, third, fifth) because the shape of the curve is the finding: a
+        second contact is noise, a fifth is a defect in the help centre with a customer attached
+        to it.
+        What would emit it: Layer 2 clustering ticket_created observations by requester and
+        intent over derived.contact_frequency, with Layer 1 supplying the intent classification.
+        The contact_rate_per_account baseline in planned_substrate is what makes the window
+        adaptive rather than arbitrary — a weekly contact is normal for some accounts and alarming
+        for others.
+        Why unanswered_email is not good enough: repeat contact is its exact opposite. Every one
+        of these contacts was answered — that is the whole point, that is what makes it
+        interesting, and it is why this situation is invisible on every dashboard a support team
+        already owns. Binding to unanswered_email would let the situation fire only in the single
+        case it does not describe. What goes wrong today is not that the customer is ignored; it
+        is that the second arrival is processed as a first arrival by someone who has never seen
+        the first, and the fact that made it worth reading is discarded at intake.
+    - type: knowledge_gap
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        Must mean: a question the help centre does not answer, or answers somewhere nobody finds.
+        Those are the same volume and opposite fixes — write the article versus fix the
+        findability — and a type that cannot distinguish them will be used to commission
+        duplicates, which then compete with the original in search and make findability worse.
+        So the type must carry the discriminator: was an article surfaced and rejected, or was
+        nothing surfaced at all. Its subject is an intent, not a ticket. A gap that exists only
+        as a property of a ticket dies when the ticket closes, and that death is the reason
+        content gap analysis is currently a person reading exports rather than anything the
+        engine does.
+        What would emit it: zero-result and abandoned help-centre searches (self_service_attempted
+        and self_service_abandoned in planned_substrate), knowledge_article_linked observations
+        where the customer had already opened that article, and Layer 2 aggregation of
+        deflection_failed across an intent.
+        Why the nearest is not good enough: there is no near miss available, and that is the
+        honest answer rather than an evasion. Every type the pipeline emits is customer-shaped —
+        a thread, a person, a deal — and this one is content-shaped. Naming any of them as the
+        binding would file the finding against a ticket, which is precisely the category error
+        that makes it disappear. unanswered_email is recorded here as the compromise someone
+        would reach for, not as an approximation worth making.
+
+  # Person, because that is where the repetition is observable. Note the limitation honestly: the
+  # gap this situation is really about belongs to an intent and affects everyone who has it, and
+  # the scope enum has no member for that. Person-scope finds the evidence; it does not describe
+  # the finding.
+  scope: person
+
+also_serves:
+  - customer_support.knowledge_and_deflection.knowledge_authoring
+  - customer_support.knowledge_and_deflection.self_service_deflection
+  - customer_support.voice_of_customer.product_feedback_routing
+
+objects:
+  load:
+    - customer_support.obj.core.content_gap
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.intent
+    - customer_support.obj.core.requester
+  optional:
+    # issue separates a documentation gap from a defect no article can fix — the most common
+    # misdiagnosis in this capability, and the one that produces beautifully written articles
+    # explaining how to live with a bug. product_area routes the finding to whoever can act.
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.customer_sentiment
+  never_load:
+    # Every contact in this sequence probably met its clock. That is the trap: the SLA view of a
+    # repeat contact says all is well, three times, and it is the reason this situation is
+    # invisible to the reports a support team looks at daily. Loading SLA Target here would
+    # import that blindness into the reasoning and let the compile conclude the customer was
+    # served on time, which is both true and beside the point.
+    - customer_support.obj.core.sla_target
+    # Escalation is the wrong upgrade path. A repeat contact is a content problem and treating it
+    # as an ownership transfer moves one customer to a better agent while leaving the gap that
+    # will produce the next forty.
+    - customer_support.obj.core.escalation
+
+priority_bp: 6800
+typical_duration_days: 14
+
+signals_of_progress:
+  - knowledge_article_linked
+  - self_service_attempted
+  - ticket_resolved
+  - followup_sent
+
+signals_of_decay:
+  - ticket_created
+  - self_service_abandoned
+  - ticket_reopened
+  - angry_language
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Every string in these lists except followup_sent is a support-native obs kind from
+    planned_substrate and is emitted by nothing today. They are free-form and unvalidated, so the
+    file loads without running.
+    The duration is set at 14 days against the gap, not against the customer's ticket. The
+    customer's contact resolves in hours; the situation is only genuinely over when the answer
+    exists and is findable, and a fortnight is the honest span for writing, publishing and seeing
+    whether contacts on that intent fall. Setting it to the ticket's lifetime would let the
+    system mark the valuable half of this situation closed at the moment it discarded it — which
+    is what the tooling already does and what the file is written to prevent.
+    knowledge_article_linked sits under progress with a caveat: linking an article the customer
+    has already read is one of the two failures this capability watches for, and no obs kind
+    currently distinguishes a first link from a repeat one. Until it does, that signal is weaker
+    than its position in the list implies.

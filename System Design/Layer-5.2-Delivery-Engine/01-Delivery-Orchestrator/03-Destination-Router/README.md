@@ -1,14 +1,16 @@
 # Destination Router
 
-**Status:** Built
+**Status:** Active
 
-Selects a stable primary and ordered fallbacks from tenant-registered destinations supported by known adapters.
+Answers **“where should this delivery go?”** It creates one stable primary plus an ordered,
+audience-safe fallback ladder from current context, priority and supported destinations.
 
 | Boundary | Current truth |
 |---|---|
-| Input | authorized recipient, channel intent and registered destination records |
-| Output | a primary `Destination` plus bounded fallback sequence |
-| Authority | `deliver/destination.py`, `deliver/channels/` |
+| Input | resolved audience/recipient, delivery priority, live presence and registered destinations |
+| Output | primary channel plus ordered `route_plan` |
+| Runtime | `deliver/orchestrator.py`, `deliver/destination.py`, `deliver/channels/` |
+| Safety | human/agent ladders are disjoint; participant/private content stays on scoped surfaces |
 
 ## Component modules
 

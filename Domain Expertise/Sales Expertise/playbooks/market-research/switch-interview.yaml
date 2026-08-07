@@ -1,0 +1,37 @@
+identity:
+  id: sales.pb.market_research.switch_interview
+  name: Interview people who recently switched — reconstruct the weeks before …
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Interview people who recently switched — reconstruct the weeks before the decision: what\
+    \ broke, who noticed, who was told, whose budget it came out of, what else was considered, and what\
+    \ nearly stopped it.\n Memory of a completed transaction is reliable in a way that stated intent\
+    \ never is. The switch is also the only moment when the buying process is visible from outside;\
+    \ before it there is nothin"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Interview people who recently switched — reconstruct the weeks before …
+  description: 'Memory of a completed transaction is reliable in a way that stated intent never is.
+    The switch is also the only moment when the buying process is visible from outside; before it there
+    is nothing to observe and after it the account rationalises.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

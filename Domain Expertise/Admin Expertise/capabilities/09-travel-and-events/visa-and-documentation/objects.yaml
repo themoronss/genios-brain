@@ -1,0 +1,23 @@
+# Load-set for admin.travel_and_events.visa_and_documentation — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/visa-and-documentation/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.travel_and_events.visa_and_documentation
+
+core:
+  required:
+    - admin.obj.core.document
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.employee_record
+    - admin.obj.core.compliance_obligation
+
+scoped:
+  required: []
+  optional: []

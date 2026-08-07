@@ -1,0 +1,26 @@
+# Load-set for customer_support.voice_of_customer.satisfaction_measurement
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.voice_of_customer.satisfaction_measurement
+
+core:
+  # A score with no ticket attached cannot be interpreted — the same number after a same-day
+  # answer and after a fortnight of silence are different findings, and only the ticket says
+  # which one this is. Both are therefore required.
+  required:
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.ticket
+
+  # effort_score is optional only because it is rarely collected, not because it matters less;
+  # where it exists it should outrank the satisfaction reading. requester carries who answered,
+  # which is how response bias becomes visible at all. support_agent is present for attribution
+  # and is deliberately optional — attributing a product failure to the agent who delivered the
+  # news is the characteristic misuse of this capability.
+  optional:
+    - customer_support.obj.core.effort_score
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.support_agent
+
+scoped:
+  required: []
+  optional: []

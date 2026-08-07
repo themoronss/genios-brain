@@ -1,0 +1,46 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.root_cause_analysis.change_first_search
+  name: Change first search
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Ask what changed before asking what is broken. Most faults in a running system are not
+    new faults; they are old faults newly reachable because something moved — a version, a limit, a
+    data shape, a permission, a dependency.
+
+
+    Systems that worked yesterday and fail today have a smaller explanation space than systems examined
+    from first principles. Starting from the code is starting from the largest search space available.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Ask what changed before asking what is broken. Most faults in a running system are not new faults;
+    they are old faults newly reachable because something moved — a version, a limit, a data shape,
+    a permission, a dependency.
+  actor: human
+  description: Systems that worked yesterday and fail today have a smaller explanation space than systems
+    examined from first principles. Starting from the code is starting from the largest search space
+    available.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

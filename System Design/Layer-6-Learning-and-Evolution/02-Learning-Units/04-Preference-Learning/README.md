@@ -1,15 +1,21 @@
 # 4 · Preference Learning
 
-**Status:** Partial
+**Status:** Built
 
-Proposes user or organization preference state only from repeated explicit structured key/value/scope facts.
+Proposes actor-scoped user preferences or owner-authorized organization preferences only from
+explicit structured facts. Winner selection is deterministic, and competing values remain visible
+as conflict evidence.
 
 | Boundary | Value |
 |---|---|
-| Input | explicit FeedbackFacts with preference key, value, scope and category |
-| Output | Behavior or Organization LearningObject |
+| Input | explicit FeedbackFacts with complete key/value/scope/category fields |
+| User identity | actor-scoped subject; two users never share one preference cohort |
+| User ACL | always private to one resolved subject; unresolved/excluded source ACL is rejected before persistence |
+| Organization authority | frozen by authenticated feedback writer, not caller JSON |
+| Winner | greatest support; canonical serialized value breaks an exact tie |
+| Output | private subject-capped Behavior target for user scope; source-ACL Organization target for organization scope |
 | Primary code | `feedback/units.py::preference_learning` |
-| Honest gap | No free-text preference extraction is performed here; upstream must create trustworthy structured facts. |
+| Integration requirement | UI/upstream structurer must emit the closed preference envelope; free text is not guessed here |
 
 ## Component modules
 

@@ -1,0 +1,28 @@
+# Load-set for customer_support.knowledge_and_deflection.content_gap_analysis
+# REFERENCES ONLY — never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.knowledge_and_deflection.content_gap_analysis
+
+core:
+  # All three are required because a gap claim needs all three legs: the gap itself, the
+  # article that should have covered it (its absence or its unfindability is the finding), and
+  # the ticket that proves a real customer paid for the gap. Drop Ticket and this becomes an
+  # editorial opinion about what ought to be documented.
+  required:
+    - customer_support.obj.core.content_gap
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.ticket
+  # Intent is the unit gaps should be counted in — one gap, many phrasings. Issue distinguishes
+  # a documentation gap from a defect that no article can fix. Product Area routes the finding
+  # to whoever can act on it.
+  optional:
+    - customer_support.obj.core.intent
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.product_area
+
+scoped:
+  required: []
+  optional: []

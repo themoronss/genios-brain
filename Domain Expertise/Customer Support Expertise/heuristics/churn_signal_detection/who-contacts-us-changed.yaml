@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.churn_signal_detection.who_contacts_us_changed
+  name: Who contacts us changed
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A change in who contacts us matters as much as a change in how much.
+heuristic:
+  statement: A change in who contacts us matters as much as a change in how much.
+  why: The named power user disappearing and an unfamiliar junior name appearing means the internal
+    advocate has been reassigned or has given up. Volume can look stable while the person who would
+    have defended the renewal has left the conversation.
+  reads:
+  - customer_support.obj.core.requester
+  - customer_support.obj.core.customer_account
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,15 +1,20 @@
 # 5 · Temporary Memory
 
-**Status:** Partial
+**Status:** Built
 
-Turns an explicit memory directive into leased Runtime context that must expire.
+Turns only an explicit, owner-authenticated memory directive into private, leased Runtime context.
+Source-stable idempotency, bounded value shape, maximum TTL preflight and committed expiry are built.
 
 | Boundary | Value |
 |---|---|
-| Input | EnterpriseFact with `explicit_memory=true`, value and future expires_at |
-| Output | Runtime LearningObject with one-observation explicit evidence |
-| Primary code | `feedback/units.py::temporary_memory`, store/API |
-| Honest gap | PostgreSQL TTL publication/API are built; Redis cache and lower runtime consumption are absent. |
+| Input | explicit `EnterpriseFact` with structured value and future aware expiry |
+| API identity | tenant + authenticated actor + caller source ref; retries are idempotent |
+| ACL | private to resolved owner principal, with explicit derivation |
+| Validation | one-shot Runtime exception only after explicit/lineage/TTL preflight; API and DB forbid human-review policy |
+| Lifecycle | governed temporary lease is published immediately, then only expires |
+| Output | Runtime LearningObject and `temporary_memories` lease |
+| Primary code | `feedback/units.py::temporary_memory`; `/v1/learning/memories`; store expiry |
+| Integration requirement | runtime reader/cache may consume active leases; PostgreSQL remains expiry authority |
 
 ## Component modules
 

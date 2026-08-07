@@ -1,0 +1,26 @@
+# B2B SaaS — vertical branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.b2b.saas
+  name: B2B SaaS
+  kind: vertical
+  domain: sales
+  parent: sales.model.b2b
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Recurring software sold to organisations. Land-and-expand economics make retention part of
+  the sales capability, not only of customer success.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -2,24 +2,27 @@
 
 **Status:** Built
 
-Determines whether each proposal has enough repetition, diversity, confidence, freshness and value without excessive noise/conflict.
+Applies consent/lineage preflight and deterministic evidence quality checks to every proposal. It
+returns a verdict; it does not emit a second LearningObject or publish anything.
 
 | Boundary | Value |
 |---|---|
-| Input | LearningObject evidence plus tenant/default LearningPolicy |
-| Output | Observed, Candidate, Validated or Rejected result with stable reason |
+| Input | immutable v2 LearningObject, pinned tenant policy and explicit evaluation/review time |
+| Preflight | enabled/blocked policy, ACL, exact lineage, subject visibility and Runtime lease |
+| Evidence | independent support, distinct days, confidence, noise, conflict, value and freshness |
+| Output | Observed, Candidate, Validated or Rejected reason-coded result |
 | Primary code | `feedback/governance.py::validate_learning` |
-| Honest gap | Policy thresholds require production calibration, but the enforcement path is complete. |
+| Operations requirement | production cohorts should calibrate policy values through revisioned updates |
 
 ## Atlas-named component map
 
 | Atlas component | Live implementation |
 |---|---|
-| Evidence Validator | observation/source-ref/count contract |
+| Evidence Validator | exact source/independence/trace and count contract plus preflight lineage |
 | Confidence Validator | minimum confidence basis points |
 | Conflict Resolver | rejects excessive conflict; it does not invent a winning claim |
 | Noise Filter | maximum noise basis points |
-| Promotion Validator | returns reasoned validation state before governance/lifecycle |
+| Promotion Validator | returns reasoned validation state before separate governance/lifecycle |
 
 ## Component modules
 

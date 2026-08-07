@@ -1,0 +1,39 @@
+# B2B2C — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.b2b2c
+  name: B2B2C
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Selling to a business that puts the product in front of its own consumers. Two buyers with
+  different criteria: the business buys economics and control, the end consumer decides
+  whether it survives contact with reality.
+
+characteristics:
+  buyer: "a business, on behalf of its consumers"
+  typical_cycle_days: 75
+  committee_size: "4-8"
+  decision_style: "committee, with end-user adoption as an explicit criterion"
+
+capabilities:
+  emphasises:
+    - sales.discovery_and_solution.value_proposition
+    - sales.post_sale_and_growth.onboarding
+    - sales.post_sale_and_growth.customer_success
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

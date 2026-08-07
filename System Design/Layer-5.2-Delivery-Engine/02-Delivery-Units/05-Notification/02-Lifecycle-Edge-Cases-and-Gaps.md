@@ -1,6 +1,9 @@
 # Lifecycle, edge cases and gaps
 
-There is no OS push provider, device-token registry or permission lifecycle. Slack/Teams are not equivalent to complete native notification support.
+The shared in-app seam is active under Human/Application. There is no OS push adapter, device-token registry, token rotation,
+permission lifecycle, collapse-key policy, provider receipt reconciliation or uninstall cleanup.
+Slack/Teams acceptance is not equivalent to native push delivery.
 
-Where the target is partial or missing, the status is intentionally not promoted merely because a
-generic pull or webhook primitive could be adapted later.
+Until those integrations exist, capabilities report the Notification contract engine-ready but
+non-operational, without relabeling ordinary in-app availability as native delivery. Native notifications will also need a precise intrusive
+channel classification so device alerts cannot bypass humane timing.

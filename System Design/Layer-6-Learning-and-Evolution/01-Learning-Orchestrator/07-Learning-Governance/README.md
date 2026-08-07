@@ -2,13 +2,20 @@
 
 **Status:** Built
 
-Applies enterprise permission after evidence validation and before any publication.
+Enforces consent, retention, lineage and audience rules before a proposal value can be stored, then
+decides whether an otherwise valid proposal may publish automatically, requires human review or
+must be rejected.
 
 | Boundary | Current truth |
 |---|---|
-| Input | validated LearningObject plus tenant enablement, blocked subjects/targets, review rules and TTL ceiling |
-| Output | governed, human-review or rejected decision with reason |
-| Authority | `feedback/governance.py::govern_learning`, store-loaded tenant policy |
+| Input | `LearningObject`, immutable tenant policy revision and acting/viewing principal |
+| Preflight | enablement, blocked target/subject, exact lineage, ACL audience, resolved user-subject visibility, explicit Runtime TTL |
+| Governance | Runtime immediately temporary and never reviewed; configured/constrained durable targets reviewed; remaining targets promoted |
+| Human control | scoped review/rollback APIs; owner authority for organization-wide change |
+| Policy history | immutable snapshots in `learning_policy_revisions` |
+| Lock authority | tenant root first; policy before LearningObject/memory/subject locks; erasure owns tenant `FOR UPDATE` |
+| Output | reason-coded refusal, human-review, temporary or promoted decision |
+| Authority | `feedback/governance.py`; policy API; migration `0047` |
 
 ## Component modules
 

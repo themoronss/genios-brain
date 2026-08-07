@@ -1,14 +1,17 @@
 # Audience Resolver
 
-**Status:** Upstream-owned
+**Status:** Active
 
-Preserves the resolved owner/audience chosen by Layer 5 and prevents Delivery from becoming a second assignment authority.
+Answers **“who should receive this delivery now?”** Layer 5’s work owner remains unchanged, but
+Layer 5.2 resolves the final attention recipient from the requested audience class, current seat
+directory and active agent registry.
 
 | Boundary | Current truth |
 |---|---|
-| Input | ExecutionObject communication plan or another authenticated candidate with explicit recipient |
-| Output | the same authorized audience plus eligible registered destinations |
-| Authority | Layer 5 `executive/assignment.py` and the frozen communication plan |
+| Input | execution work-owner seed, audience intent, optional reminder target, current seats and scoped agents |
+| Output | `AudienceResolution(audience, recipient, reason_code)` |
+| Runtime | `deliver/audience.py`, `deliver/orchestrator.py` |
+| Non-goal | reassigning the execution or changing its action ownership |
 
 ## Component modules
 

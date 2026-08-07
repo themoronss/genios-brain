@@ -1,0 +1,733 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Business Need — core. Loaded by need analysis, discovery, value proposition, demo,
+# proposal creation, closing, customer success, renewal and expansion.
+#
+# The object that survives the sale. Pain Point justifies the purchase; Business Need is
+# what the purchase gets measured against eighteen months later, in the buyer's own units.
+# Five of eleven patterns fire today. The blocked six are all variations on one absence:
+# the pipeline can watch money move and cannot see the number the money is meant to change.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.business_need
+  scope: core
+  name: Business Need
+  domain: sales
+  subdomain: discovery_and_solution
+  owner_capability: sales.discovery_and_solution.need_analysis
+  version: 1.0.0
+  status: draft
+  aliases: ["Desired Outcome", "Business Objective", "Requirement", "Success Criteria"]
+purpose:
+  statement: >
+    The outcome the buyer is trying to reach, stated in their own metrics. Distinct from Pain
+    Point on tense and direction: pain is what hurts now, need is what better looks like. The
+    test is whether it can be written as "from X to Y by Z" using a number the buyer already
+    reports on — if it cannot, it is a preference wearing business language. A solution mapped
+    to pain without a need has nothing to be measured against after the sale, which is why
+    deals that closed on a compelling problem statement so often churn at the first renewal:
+    nobody ever agreed what winning would look like, so nobody can show it happened.
+attributes:
+  - name: outcome
+    purpose: What better looks like, and by when.
+    type: composite
+    contains:
+      - statement
+      - outcome_type
+      - must_have_by
+      - time_horizon
+  - name: measurement
+    purpose: >
+      The from-X-to-Y. Without a baseline there is no delta, and without a delta the value
+      claim is arithmetic performed on an invented number.
+    type: composite
+    contains:
+      - target_metric
+      - baseline_value
+      - target_value
+      - metric_unit
+      - financial_value
+      - value_basis
+  - name: sponsorship
+    purpose: Whose objective this is, and how far up the organisation it is written down.
+    type: composite
+    contains:
+      - sponsor_ref
+      - funded_by_ref
+      - org_level
+      - mandate_source
+  - name: priority
+    purpose: What this outcome is competing with for the same budget and the same attention.
+    type: composite
+    contains:
+      - priority_rank
+      - competing_initiatives
+      - status_quo_acceptable
+  - name: proof
+    purpose: What the buyer needs to see before believing we can move the number.
+    type: composite
+    contains:
+      - proof_required
+      - success_criteria_agreed
+      - addressed_by_us
+  - name: live_state
+    purpose: Observable trajectory of the need inside the deal, as opposed to its declared attributes.
+    type: composite
+    contains:
+      - last_referenced_at
+      - momentum
+      - opportunity_ref
+  - name: statement
+    purpose: The outcome in the buyer's words. If it cannot be phrased as a movement between two
+      values by a date, the need is not yet a need and the discovery is not yet finished.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The outcome in the buyer's words. If it cannot be phrased as a movement between two
+      values by a date, the need is not yet a need and the discovery is not yet finished.
+  - name: outcome_type
+    purpose: Note that avoid_cost is separate from reduce_cost. Finance treats them completely
+      differently — a reduction shows up in next year's budget, an avoidance does not show up
+      anywhere, which is why avoid_cost cases lose to reduce_cost cases in the same review.
+    type: value
+    data_type: enum
+    allowed_values: [increase_revenue, reduce_cost, avoid_cost, reduce_risk, meet_compliance,
+        improve_speed, improve_quality, enable_capability, retain_customers, unknown]
+    description: >
+      Note that avoid_cost is separate from reduce_cost. Finance treats them completely
+      differently — a reduction shows up in next year's budget, an avoidance does not show
+      up anywhere, which is why avoid_cost cases lose to reduce_cost cases in the same review.
+  - name: target_metric
+    purpose: The buyer's own KPI, named as they name it. Not our category, not our value pillar. This
+      is the single field that makes a QBR possible after the sale, and the one most often replaced
+      with a vendor phrase during proposal writing.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The buyer's own KPI, named as they name it. Not our category, not our value pillar.
+      This is the single field that makes a QBR possible after the sale, and the one most
+      often replaced with a vendor phrase during proposal writing.
+  - name: baseline_value
+    purpose: Where the metric stands today. Missing baselines are why post-sale value reviews turn
+      into arguments about what the number used to be.
+    type: value
+    data_type: number
+    description: Where the metric stands today. Missing baselines are why post-sale value reviews turn
+      into arguments about what the number used to be.
+  - name: target_value
+    purpose: Where it needs to stand. A target the buyer set beats a target we proposed by a wide
+      margin, because only theirs is already in someone's objectives.
+    type: value
+    data_type: number
+    description: Where it needs to stand. A target the buyer set beats a target we proposed by a wide
+      margin, because only theirs is already in someone's objectives.
+  - name: metric_unit
+    purpose: Hours, percent, currency, tickets, days. Recorded explicitly because a delta with no unit
+      is the most common way a business case inflates.
+    type: value
+    data_type: string
+    description: Hours, percent, currency, tickets, days. Recorded explicitly because a delta with no
+      unit is the most common way a business case inflates.
+  - name: financial_value
+    purpose: Annualised value of closing the gap between baseline_value and target_value.
+    type: value
+    data_type: money
+    description: Annualised value of closing the gap between baseline_value and target_value.
+  - name: value_basis
+    purpose: Who did the arithmetic. A vendor_modelled figure has roughly the persuasive weight of a
+      brochure claim inside a finance review, and presenting it as the buyer's own is a credibility
+      loss that outlives the deal.
+    type: value
+    data_type: enum
+    allowed_values: [buyer_modelled, jointly_modelled, vendor_modelled, assumed, unknown]
+    description: >
+      Who did the arithmetic. A vendor_modelled figure has roughly the persuasive weight of
+      a brochure claim inside a finance review, and presenting it as the buyer's own is a
+      credibility loss that outlives the deal.
+  - name: must_have_by
+    purpose: The date the outcome is required, which is a different question from the date they would
+      like it. Ask which one it is; the answers differ and only one of them holds.
+    type: value
+    data_type: timestamp
+    description: The date the outcome is required, which is a different question from the date they
+      would like it. Ask which one it is; the answers differ and only one of them holds.
+  - name: time_horizon
+    purpose: Exists so a need with no date is still rankable. `undefined` is the honest default and
+      should not be quietly recorded as this_year.
+    type: value
+    data_type: enum
+    allowed_values: [this_quarter, this_year, next_fiscal_year, multi_year, undefined]
+    description: Exists so a need with no date is still rankable. `undefined` is the honest default
+      and should not be quietly recorded as this_year.
+  - name: sponsor_ref
+    purpose: The executive whose objective this is. Not the person who briefed us — the person whose
+      review it appears in.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: The executive whose objective this is. Not the person who briefed us — the person
+      whose review it appears in.
+  - name: funded_by_ref
+    purpose: The budget line. An unfunded need is a wish with a spreadsheet attached.
+    type: reference
+    ref: sales.obj.core.budget
+    data_type: ref
+    description: The budget line. An unfunded need is a wish with a spreadsheet attached.
+  - name: org_level
+    purpose: A company-wide need survives its sponsor leaving; a team-level one usually does not. This
+      field predicts what happens to the deal after a champion_change better than any relationship
+      attribute does.
+    type: value
+    data_type: enum
+    allowed_values: [individual, team, department, business_unit, company_wide]
+    description: >
+      A company-wide need survives its sponsor leaving; a team-level one usually does not.
+      This field predicts what happens to the deal after a champion_change better than any
+      relationship attribute does.
+  - name: mandate_source
+    purpose: Where the pressure originates. A regulator-driven need does not get cut in a budget round
+      and its date is not the buyer's to move. A team_initiative can always be postponed, which is why
+      it slips — the mandate was soft, not the calendar.
+    type: value
+    data_type: enum
+    allowed_values: [regulator, board, customer_contract, executive_objective, team_initiative, none]
+    description: >
+      Where the pressure originates. A regulator-driven need does not get cut in a budget
+      round and its date is not the buyer's to move. A team_initiative can always be
+      postponed, which is why it slips — the mandate was soft, not the calendar.
+  - name: priority_rank
+    purpose: The buyer's ranking of this outcome among their funded initiatives this period.
+    type: value
+    data_type: integer
+    description: The buyer's ranking of this outcome among their funded initiatives this period.
+  - name: competing_initiatives
+    purpose: The other projects contending for the same money and the same implementation capacity.
+      Needs lose to other needs far more often than to competitors, and this is the only field that
+      records the actual opponent.
+    type: value
+    data_type: list
+    description: >
+      The other projects contending for the same money and the same implementation capacity.
+      Needs lose to other needs far more often than to competitors, and this is the only
+      field that records the actual opponent.
+  - name: status_quo_acceptable
+    purpose: Whether the buyer can live with the current number for another year. If true, this is not
+      a need — it is a preference, whatever else is documented.
+    type: value
+    data_type: boolean
+    description: Whether the buyer can live with the current number for another year. If true, this is
+      not a need — it is a preference, whatever else is documented.
+  - name: proof_required
+    purpose: What must be shown before they believe the number will move — pilot, reference in their
+      sector, ROI model, security sign-off, analyst validation.
+    type: value
+    data_type: list
+    description: What must be shown before they believe the number will move — pilot, reference in
+      their sector, ROI model, security sign-off, analyst validation.
+  - name: success_criteria_agreed
+    purpose: Whether both sides have written down what done looks like. The field that decides whether
+      the first renewal is a conversation or an argument, and it costs one email before signature.
+    type: value
+    data_type: boolean
+    description: >
+      Whether both sides have written down what done looks like. The field that decides
+      whether the first renewal is a conversation or an argument, and it costs one email
+      before signature.
+  - name: addressed_by_us
+    purpose: Honest coverage. `partially` recorded as `fully` is how an implementation dispute is
+      booked as revenue.
+    type: value
+    data_type: enum
+    allowed_values: [fully, partially, not_at_all, unknown]
+    description: Honest coverage. `partially` recorded as `fully` is how an implementation dispute is
+      booked as revenue.
+  - name: last_referenced_at
+    purpose: Proxy only. Thread recency is not outcome recency, but it is what the pipeline can
+      currently see.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: Proxy only. Thread recency is not outcome recency, but it is what the pipeline can
+      currently see.
+  - name: momentum
+    purpose: Engine-computed trajectory of the surrounding deal. Read as corroboration for urgency,
+      never as evidence a metric exists.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+    description: Engine-computed trajectory of the surrounding deal. Read as corroboration for
+      urgency, never as evidence a metric exists.
+  - name: opportunity_ref
+    purpose: The opportunity created to serve this need, when one exists. Needs legitimately outlive
+      opportunities and should not be deleted with them.
+    type: reference
+    ref: sales.obj.core.opportunity
+    data_type: ref
+    description: The opportunity created to serve this need, when one exists. Needs legitimately
+      outlive opportunities and should not be deleted with them.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: No outcome recorded.
+    - name: hypothesised
+      description: We inferred the outcome from the industry and the role. Useful for a first meeting,
+        dangerous in a proposal.
+    - name: stated
+      description: The buyer has described the outcome, in prose, without numbers.
+    - name: quantified
+      description: A target_metric with a baseline and a target exists.
+    - name: sponsored
+      description: A named executive owns the outcome and it appears in their objectives.
+    - name: funded
+      description: Budget is approved against it.
+      entered_when: [has_obs: budget_approved]
+    - name: at_risk
+      description: Funding suspended, sponsor changed, or the date moved.
+      entered_when: [has_obs: budget_freeze]
+    - name: superseded
+      description: Replaced by a different outcome. Retained, never deleted — it is the record of what
+        the buyer used to want.
+      entered_when: [has_obs: closed_lost_mention]
+  transitions:
+    - {from: unknown, to: hypothesised}
+    - {from: hypothesised, to: stated}
+    - {from: stated, to: quantified}
+    - {from: quantified, to: sponsored}
+    - {from: sponsored, to: funded, when: [has_obs: budget_approved]}
+    - {from: funded, to: at_risk, when: [has_obs: budget_freeze]}
+    - {from: funded, to: at_risk, when: [has_obs: champion_change]}
+    - {from: sponsored, to: at_risk, when: [has_obs: timeline_slip]}
+    - {from: at_risk, to: funded}
+    - {from: at_risk, to: superseded, when: [has_obs: closed_lost_mention]}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.stakeholder
+    cardinality: zero_or_one
+    description: The sponsor. Zero is common and is a finding, not a data-entry gap — an unsponsored
+      need is being maintained by us on the buyer's behalf.
+
+  - type: attaches_to
+    target: sales.obj.core.account
+    cardinality: one
+
+  - type: attaches_to
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_one
+
+  - type: requires
+    target: sales.obj.core.pain_point
+    cardinality: zero_or_many
+    description: >
+      Every funded need traces back to at least one pain. A need with no pain behind it is
+      an aspiration and is the first line struck out when the budget round tightens.
+
+  - type: requires
+    target: sales.obj.core.budget
+    cardinality: zero_or_one
+    description: The edge that turns an outcome into a deal. Its absence is the most common reason a
+      well-run discovery produces no pipeline.
+
+  - type: gates
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+    description: The proposal is measured against this need's target_metric, or it is measured against
+      nothing and defended on price.
+
+  - type: competes_with
+    target: sales.obj.core.business_need
+    cardinality: zero_or_many
+    description: >
+      Self-referential and the most under-modelled edge in the library. The realistic loss
+      scenario in enterprise is not a competitor winning; it is the buyer's own third
+      initiative winning the money.
+
+  - type: influences
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+    description: must_have_by, not our quarter end, sets the achievable close date. Forecasts built on
+      our calendar instead of theirs slip and look like surprises.
+
+  - type: supersedes
+    target: sales.obj.core.business_need
+    cardinality: zero_or_one
+    description: A reorganisation or new sponsor commonly replaces the outcome wholesale. Superseding
+      preserves the history; overwriting destroys the evidence that the goalposts moved.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: bn.budget_approval_proves_an_accepted_need
+      statement: "Budget was approved on this deal."
+      status: executable
+      when:
+        - {has_obs: budget_approved}
+      yields: {confidence_bp: 8500, attribute: null}
+      evidence_fields: [deal.value, thread.last_inbound]
+      note: >
+        Runs against the assumed order of events. Sellers believe discovery produces a need
+        which produces budget; in practice a budget is frequently approved against an outcome
+        that was agreed internally and never articulated to us. Budget approval is therefore
+        the cheapest available proof a need exists, and the correct follow-up is not to
+        celebrate but to ask what number the money is meant to move — because somebody
+        already wrote it down and we are not holding it.
+
+    - id: bn.freeze_moves_the_horizon
+      statement: "A budget freeze was observed."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 8000, attribute: time_horizon, value: next_fiscal_year}
+      evidence_fields: [deal.status]
+      note: >
+        A freeze is a statement about the fiscal calendar, not about the outcome. Setting the
+        horizon rather than closing the object keeps the metric, the sponsor and the proof
+        burden intact, so the re-approach at the fiscal turn starts from a documented need
+        while the competitor starts from a cold call.
+
+    - id: bn.sponsor_change_unverifies_the_mandate
+      statement: "The sponsoring contact changed."
+      status: executable
+      when:
+        - {has_obs: champion_change}
+      yields: {confidence_bp: 9000, attribute: mandate_source, value: none}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Deliberately sets mandate_source to none rather than leaving the previous value in
+        place. Inheriting a mandate is the most expensive optimism in enterprise sales: the
+        successor's objectives were set by whoever hired them, and the predecessor's business
+        case is now an artefact rather than a commitment.
+
+    - id: bn.target_metric_stated_by_the_buyer
+      statement: "The buyer named the KPI this initiative is measured on."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: target_metric, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: metric_stated, owner_layer: L2, note: "The defining gap for this object.\
+            Layer 2 can see budget approved, price discussed and contracts requested — every commercial event
+            — and cannot see the number the commerce is for. Everything measurable about the sale after signature
+            depends on this one observation kind."}
+        - {kind: fact_path, name: need.target_metric, owner_layer: L2}
+
+    - id: bn.baseline_and_target_captured
+      statement: "Both the current value and the target value of the metric are on record."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: value_basis, value: buyer_modelled}
+      requires_signals:
+        - {kind: fact_path, name: need.baseline_value, owner_layer: L2}
+        - {kind: fact_path, name: need.target_value, owner_layer: L2, note: "Baseline without target is\
+            half a business case and reads as complete, which is worse than having neither."}
+
+  heuristic:
+
+    - id: bn.priced_before_the_metric_exists
+      statement: "Pricing was discussed and no budget event has occurred anywhere on the deal."
+      status: executable
+      when:
+        - {has_obs: pricing_discussed}
+        - {no_obs: budget_approved}
+      yields: {confidence_bp: 6000, attribute: value_basis, value: unknown}
+      evidence_fields: [deal.value]
+      note: >
+        Price arriving before a quantified outcome means the buyer is evaluating our cost
+        against zero rather than against a delta. Deals in this shape lose to no-decision far
+        more often than to a competitor, and the remedy is a quantification conversation, not
+        a sharper quote.
+
+    - id: bn.a_slip_reveals_a_soft_mandate
+      statement: "A timeline slip was observed."
+      status: executable
+      when:
+        - {has_obs: timeline_slip}
+      yields: {confidence_bp: 6500, attribute: mandate_source, value: team_initiative}
+      evidence_fields: [meeting.start_at, commitment.due_at]
+      note: >
+        Reads backwards to most reviewers, who treat a slip as a scheduling problem. A
+        regulator-driven or board-driven date is not the buyer's to move, so the fact that
+        it moved is evidence about mandate_source rather than about the calendar. Two slips
+        is no longer evidence about the mandate; it is evidence the mandate was never there.
+
+    - id: bn.momentum_without_a_dated_commitment
+      statement: "The deal is moving quickly and no commitment carries a due date."
+      status: executable
+      when:
+        - {path: derived.momentum, op: ">=", value: 0.7}
+        - {absent: commitment.due_at}
+      yields: {confidence_bp: 5500, attribute: time_horizon, value: undefined}
+      evidence_fields: [derived.momentum]
+      note: >
+        Enthusiasm is not a horizon. Fast, dateless deals slip at the fiscal boundary and the
+        slip surprises everyone who mistook activity for urgency. Only 5500 because an
+        undated commitment record is as likely to be a logging gap as a real absence.
+
+    - id: bn.a_competing_initiative_was_named
+      statement: "The buyer referred to another project contending for the same budget."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: priority_rank, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: competing_initiative, owner_layer: L2, note: "Layer 2 has a vocabulary\
+            for rival vendors and none for rival projects, which is the wrong way round: most enterprise losses
+            are to the buyer's own roadmap, not to a competitor's proposal."}
+
+    - id: bn.success_criteria_written_down
+      statement: "A document defining what success looks like has been exchanged."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: success_criteria_agreed, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: success_criteria_shared, owner_layer: L2, note: "Distinguishable from proposal_sent\
+            by direction and content. A mutual action plan or evaluation-criteria document is the strongest
+            late-stage predictor available and currently indistinguishable from any other attachment."}
+
+    - id: bn.an_executive_joined_the_thread
+      statement: "A person more senior than the existing participants entered the conversation."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: org_level, value: business_unit}
+      requires_signals:
+        - {kind: fact_path, name: person.seniority, owner_layer: L1, note: "Requires title normalisation\
+            from the directory or CRM."}
+        - {kind: derived, name: derived.thread_seniority_delta, owner_layer: L2, note: "The delta is the\
+            signal, not the absolute. An outcome that pulls a new executive in has just been promoted inside
+            the account, and the org_level recorded during discovery is now understated."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: meeting_transcript, signal: "the outcome in the buyer's words, and the metric they are measured\
+      on"}
+  - {source: document, signal: "board packs, OKR documents, RFP evaluation criteria, mutual action plans"}
+  - {source: email, signal: recency of the outcome in conversation, path: thread.last_inbound}
+  - {source: derived, signal: deal trajectory as corroboration for urgency, path: derived.momentum}
+  - {source: crm, signal: "opportunity close date, forecast category, prior needs on the account"}
+  - {source: contract, signal: "service levels and success criteria already committed to"}
+  - {source: website, signal: "published strategy, investor guidance, annual report objectives"}
+  - {source: call_recording, signal: "which outcome the sponsor repeats without prompting"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: need_confidence_bp, type: integer, description: "How sure we are this is a funded, sponsored,\
+      measurable outcome rather than a stated intention.", consumed_by: [L4.reasoning_unit]}
+  - {name: value_delta, type: money, description: "Annualised value of the gap, tagged with value_basis\
+      so a vendor model never travels as the buyer's own.", consumed_by: [L4.reasoning_unit,
+        L5.communication_planning]}
+  - {name: measurement_gaps, type: list, description: "Which of metric, baseline, target and date are\
+      missing. The discovery agenda, in order.", consumed_by: [L5.execution_planning]}
+  - {name: sponsor_risk, type: boolean, description: "True when org_level is individual or team — the\
+      need will not survive the sponsor leaving.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: required_close_date, type: timestamp, description: "must_have_by, propagated to the timeline.\
+      Their date, not our quarter.", consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: post_sale_success_spec, type: list, description: "The metric, baseline, target and criteria\
+      handed to customer success. Without it onboarding invents its own definition of success.",
+      consumed_by: [L6.learning_unit, L5.execution_planning]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: bn.metric_must_be_theirs, statement: "target_metric must be a KPI the buyer already reports on.\
+      A metric we invented cannot be tracked after the sale and will not appear in their review.",
+      hard: true}
+  - {id: bn.delta_requires_a_baseline, statement: "target_value is meaningless without baseline_value;\
+      the pair is atomic.", hard: true}
+  - {id: bn.need_requires_a_pain, statement: "A need with no pain point behind it may be recorded but\
+      may not carry funding confidence. Aspirations are cut first.", hard: false}
+  - {id: bn.horizon_is_the_buyers, statement: "must_have_by is set from the buyer's obligation, never\
+      back-filled from our quarter end.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: bn.no_metric_no_proposal
+    statement: >
+      A business need with no target_metric may not be the basis of a proposal. There is
+      nothing to measure the sale against afterwards, and post-sale value reviews without a
+      metric become arguments about memory.
+    then: block_proposal_send
+    severity: blocking
+
+  - id: bn.value_claim_requires_a_baseline
+    statement: >
+      financial_value may not be asserted without baseline_value. Without a baseline the
+      delta is invented, and the buyer's finance team will be the ones to establish that.
+    then: suppress_value_claim
+    severity: blocking
+
+  - id: bn.vendor_modelled_value_must_be_labelled
+    statement: Where value_basis is vendor_modelled or assumed, the figure carries that label
+      everywhere it appears, including in slides.
+    severity: blocking
+
+  - id: bn.sponsor_change_voids_the_mandate
+    statement: >
+      When champion_change is observed, sponsor_ref, mandate_source and priority_rank must be
+      re-verified before the need is treated as live. Objectives belong to people, not to
+      seats, and the successor almost always arrives with their own.
+    when: [has_obs: champion_change]
+    then: require_sponsor_reverification
+    severity: blocking
+
+  - id: bn.freeze_does_not_change_the_target
+    statement: >
+      A budget freeze changes time_horizon and nothing else. Re-running discovery after the
+      fiscal turn wastes the only durable asset the deal produced.
+    when: [has_obs: budget_freeze]
+    then: set_horizon_next_fiscal_year
+    severity: advisory
+
+  - id: bn.success_criteria_before_commit
+    statement: A deal may not be forecast as committed while success_criteria_agreed is false. One
+      email before signature; a renewal negotiation after it.
+    severity: warning
+
+# ── 8 · Decision Factors — sums to 10000 ─────────────────────────────────────────────────
+decision_factors:
+
+  - name: measurability
+    weight_bp: 2200
+    direction: increases
+    description: A need with a baseline and a target is defensible in a review we are not in. One
+      without is a story that needs us in the room.
+    reads: [target_metric, baseline_value, target_value, metric_unit]
+
+  - name: sponsorship
+    weight_bp: 2200
+    direction: increases
+    description: Weighted by org_level and mandate_source rather than by seniority. A
+      regulator-mandated need with a mid-level owner outranks an executive's personal enthusiasm.
+    reads: [sponsor_ref, org_level, mandate_source]
+
+  - name: funding
+    weight_bp: 2000
+    direction: increases
+    reads: [funded_by_ref, financial_value, value_basis]
+
+  - name: urgency
+    weight_bp: 1600
+    direction: increases
+    reads: [must_have_by, time_horizon]
+
+  - name: competition_for_the_budget
+    weight_bp: 1200
+    direction: decreases
+    description: The buyer's other initiatives. Reduces confidence even when our competitive position
+      is strong, because being the best answer to the fourth priority still loses.
+    reads: [competing_initiatives, priority_rank, status_quo_acceptable]
+
+  - name: proof_burden
+    weight_bp: 800
+    direction: context
+    description: Not a negative. A heavy proof burden lengthens the cycle and raises the win rate of
+      whoever carries it, because the buyer will not repeat the exercise.
+    reads: [proof_required, addressed_by_us, success_criteria_agreed]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+evidence:
+  - {source: document, strength_bp: 9500, description: "The buyer's own board pack, OKR sheet or evaluation\
+      criteria. Written for an internal audience, so it is what they actually intend to be judged on."}
+  - {source: contract, strength_bp: 9000, description: "Service levels and success criteria already committed\
+      to elsewhere. Binding, dated and unarguable."}
+  - {source: meeting_transcript, strength_bp: 8500, description: "The sponsor stating the metric unprompted.\
+      Strongest conversational evidence and currently unmined."}
+  - {source: crm, strength_bp: 6000, description: "Recorded close date and forecast category. Reflects\
+      our beliefs about the need at least as much as theirs."}
+  - {source: email, strength_bp: 6000, description: "Written confirmation of a target. Reliable when present\
+      and rarely present, since numbers move to attachments."}
+  - {source: website, strength_bp: 4000, description: "Investor guidance and published objectives. Excellent\
+      for hypothesising the outcome, never sufficient to assert it."}
+  - {source: derived, strength_bp: 3000, description: "Momentum and slip signals. Corroborate urgency;\
+      say nothing at all about the metric."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: quantified_need_rate, unit: percent, description: "Share of open opportunities carrying a metric,\
+      a baseline and a target.", owner_layer: L6}
+  - {name: buyer_modelled_value_rate, unit: percent, description: "Share where value_basis is buyer or\
+      jointly modelled. The clearest proxy for business-case durability.", owner_layer: L6}
+  - {name: time_to_quantify, unit: days, description: "bn.stated to bn.quantified. Long tails predict\
+      deals that die in the finance review.", owner_layer: L6}
+  - {name: criteria_agreement_rate, unit: percent, description: "Share of won deals with written success\
+      criteria. Correlates with renewal more strongly than deal size.", owner_layer: L6}
+  - {name: need_survival_rate, unit: percent, description: "Share of needs surviving a sponsor change.\
+      Reads directly on org_level and mandate_source.", owner_layer: L6}
+  - {name: value_realisation_gap, unit: percent, description: "Promised delta against measured delta at\
+      first renewal. The only honest calibration of every value claim above.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: bn.stated, name: Business Need Stated, payload: [statement, outcome_type]}
+  - {id: bn.quantified, name: Business Need Quantified, payload: [target_metric, baseline_value, target_value,
+      metric_unit], description: "The event that turns discovery into a business case. Time from bn.stated
+      to here is the honest measure of a discovery motion."}
+  - {id: bn.sponsored, name: Sponsor Established, payload: [sponsor_ref, org_level, mandate_source]}
+  - {id: bn.funded, name: Need Funded, emitted_when: [has_obs: budget_approved], payload: [
+        funded_by_ref, financial_value]}
+  - {id: bn.horizon_moved, name: Horizon Moved, emitted_when: [has_obs: budget_freeze], payload: [
+        time_horizon, must_have_by], description: "Emit instead of closing. The need is intact; only the
+      fiscal calendar moved."}
+  - {id: bn.mandate_lost, name: Mandate Unverified, emitted_when: [has_obs: champion_change],
+      payload: [sponsor_ref, mandate_source]}
+  - {id: bn.criteria_agreed, name: Success Criteria Agreed, payload: [success_criteria_agreed, proof_required],
+    description: "The cheapest insurance against a contested renewal, and routinely skipped because the
+      deal already feels won."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: bn.ask_for_the_metric, name: Ask which number this is measured on, actor: human, effect: "Converts\
+      a stated outcome into a measurable one. The question sellers replace with a value-pillar slide."}
+  - {id: bn.capture_the_baseline, name: Capture the current value, actor: human, effect: "Makes the delta\
+      real and makes the post-sale review possible. Costs one question during discovery and is unrecoverable
+      afterwards."}
+  - {id: bn.model_value_jointly, name: Build the value model with the buyer, actor: human, effect: "Moves\
+      value_basis to jointly_modelled. A number the sponsor helped produce is one they will defend in a
+      review we cannot attend."}
+  - {id: bn.confirm_the_mandate, name: Establish where the pressure comes from, actor: human, effect: "Separates\
+      a regulator or board mandate from a team initiative, which predicts slip risk better than any pipeline
+      stage."}
+  - {id: bn.map_competing_initiatives, name: Ask what else is competing for the budget, actor: human,
+      effect: "Names the actual opponent. Most deals are lost to the buyer's third priority, and nobody
+      records it."}
+  - {id: bn.write_success_criteria, name: Agree written success criteria before signature, actor: human,
+    effect: "Sets success_criteria_agreed. One email now, or a renewal argument in twelve months."}
+  - {id: bn.rediarise_at_fiscal_turn, name: Diarise a re-approach at the fiscal turn, actor: human, preconditions: [
+      has_obs: budget_freeze], effect: "The highest-conversion outbound available, because the need is documented
+      and the competitor is starting from nothing."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "\"Cut month-end close from 11 days to 5 by Q3, because the board sees the numbers late\"",
+      note: "The complete shape: metric, baseline, target, date, mandate. Everything after the sale can
+      be measured against it and the sponsor can defend it without us."}
+  - {label: "\"We need better visibility\"", note: "THE CLASSIC MISCLASSIFICATION. A stated outcome with\
+      no metric, filed as a business need because it sounds like one. It survives discovery, fails the finance
+      review, and the loss is recorded as price."}
+  - {label: "\"Reduce onboarding time\" with a pain point behind it and no baseline", note: "Half a need.\
+      Nobody can say afterwards whether it worked, so the renewal turns on relationship rather than results."}
+  - {label: "DORA operational-resilience compliance by the regulatory deadline", note: "mandate_source\
+      regulator. The date is not the buyer's to move, discount pressure is weak, and the competitor is the
+      internal build team."}
+  - {label: "A VP's personal efficiency initiative, org_level team, sponsor eight months in role", note: "Real,
+      funded, and structurally fragile. It disappears with the sponsor, and org_level predicts that better
+      than any warmth in the relationship."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Eleven inference patterns: five executable today, six blocked. Every executable pattern
+    reads the need indirectly through commercial and calendar events — budget approval,
+    freezes, slips, sponsor changes — because the substrate can observe money moving and
+    cannot observe the number the money is meant to change. The single highest-value signal
+    gap is obs_kind `metric_stated` paired with fact paths need.target_metric,
+    need.baseline_value and need.target_value (L2): it unblocks two patterns here directly,
+    is the precondition for every post-sale value measurement in Layer 6, and its absence is
+    why a system that can see a contract being requested still cannot say what the contract
+    is supposed to achieve. Second is obs_kind `competing_initiative` — the buyer's own
+    roadmap is the most frequent winner of enterprise deals and Layer 2 has no word for it.

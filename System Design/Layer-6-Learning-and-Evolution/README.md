@@ -25,6 +25,8 @@ Layer-6-Learning-and-Evolution/
 │   └── 05-Learning-Metrics-Publisher/
 ├── 04-Promotion-Lifecycle/
 ├── 05-Contracts-and-Operations/
+│   ├── 01-LearningObject-Contract/ ... 05-Tests-and-Ratchets/
+│   └── 06-LLM-Policy/
 └── _reference/
 ```
 
@@ -50,6 +52,24 @@ There is deliberately **no Expert Brain publisher**. The closed contract has no 
 | Package | `genios_engine/feedback/` |
 | Contract | `genios_engine/contracts/learning.py` |
 | API | `genios_engine/api/learning_routes.py` |
-| Migration | `migrations/0045_atlas_l6_learning.sql` |
+| Migrations | `0045_atlas_l6_learning.sql` + additive hardening `0047_l6_learning_hardening.sql` |
+| Verification | 50 canonical Layer 6; 144 expanded cross-seam; full local suite 1,896 passed |
+
+## Current boundary
+
+The internal Layer 6 engine is built: immutable v2 proposals, all 11 units, frozen policy
+revisions, pre-persistence consent/retention gates, visibility-preserving publishers, review,
+expiry, supersession, predecessor-restoring rollback, APIs and scheduler are connected. The
+closed seams also keep user preference state private to one source-authorized subject, prohibit a
+Runtime review hold, distinguish canonical judgments from timing-only snooze/requeue, and treat
+only a failure before first delivery as transport-negative. Delivery freshness still advances on
+every latest durable lifecycle event. Identical held objects can be reconsidered in a later weekly
+run under its frozen current policy and evaluation time without changing evidence identity;
+Candidate never regresses, later lifecycle states never reopen, and each decision is appended to a
+per-run evaluation ledger. The
+remaining product integration is deliberately downstream: typed consumers for Organization,
+Behavior, Adaptive and Runtime state, provider/engagement receipts, optional free-text extraction and a
+human-owned Knowledge PR workflow. PostgreSQL deployment and multi-replica proof remain required
+before a production-complete claim.
 
 [← System Design index](../README.md)

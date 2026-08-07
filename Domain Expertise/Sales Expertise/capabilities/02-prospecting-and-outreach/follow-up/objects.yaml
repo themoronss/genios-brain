@@ -1,0 +1,23 @@
+# Load-set for sales.prospecting_and_outreach.follow_up — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/follow-up/              loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.prospecting_and_outreach.follow_up
+
+core:
+  required:
+    - sales.obj.core.next_action
+  optional:
+    - sales.obj.core.champion
+    - sales.obj.core.lead
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

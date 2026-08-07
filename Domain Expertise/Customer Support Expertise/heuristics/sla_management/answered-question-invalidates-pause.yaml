@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.sla_management.answered_question_invalidates_pause
+  name: Answered question invalidates pause
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: If the pause depends on the customer doing something they have already done, the clock
+    is running whatever the system says.
+heuristic:
+  statement: If the pause depends on the customer doing something they have already done, the clock
+    is running whatever the system says.
+  why: The contractual position and the moral position coincide here, and the customer will argue the
+    moral one. A pause is only valid while the ball is genuinely in their court; the moment they reply
+    it is ours, whether or not an automation noticed.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

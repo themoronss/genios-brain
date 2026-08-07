@@ -1,0 +1,335 @@
+identity:
+  id: sales.obj.core.buying_committee
+  scope: core
+  name: Buying Committee
+  domain: sales
+  subdomain: qualification
+  owner_capability: sales.qualification.buying_committee_analysis
+  version: 1.0.0
+  status: draft
+  aliases: ["Buying Group", "DMU", "Decision Making Unit"]
+purpose:
+  statement: >
+    The set of people whose agreement is jointly necessary for a purchase. Not everyone on the
+    thread and not everyone in the meeting — only those who can stop it. The committee is a
+    first-class object rather than a list of contacts because its SHAPE predicts outcomes that
+    no individual does: size, coverage, and whether anyone with a veto has gone unengaged. In
+    most enterprise losses the committee was never wrong about us; it was never fully mapped.
+attributes:
+  - name: composition
+    purpose: Groups the Composition attributes.
+    type: composite
+    contains:
+      - size
+      - known_members
+      - unmapped_seats
+      - roles_covered
+  - name: coverage
+    purpose: How much of the committee we have actually engaged, as opposed to merely identified.
+    type: composite
+    contains:
+      - engaged_count
+      - coverage_ratio_bp
+      - single_threaded
+  - name: alignment
+    purpose: Groups the Alignment attributes.
+    type: composite
+    contains:
+      - consensus_state
+      - dissent_detected
+      - blocker_present
+  - name: process
+    purpose: Groups the Process attributes.
+    type: composite
+    contains:
+      - decision_style
+      - requires_unanimity
+      - process_stage
+  - name: size
+    purpose: Total seats believed to exist, including ones we cannot name yet.
+    type: value
+    data_type: integer
+    description: Total seats believed to exist, including ones we cannot name yet.
+  - name: known_members
+    purpose: Refs to Decision Maker, Champion and Stakeholder objects.
+    type: value
+    data_type: list
+    description: Refs to Decision Maker, Champion and Stakeholder objects.
+  - name: unmapped_seats
+    purpose: size minus known_members. The most useful number on this object and the one no CRM
+      records, because it is a count of what we do not know.
+    type: value
+    data_type: integer
+    description: >
+      size minus known_members. The most useful number on this object and the one no CRM
+      records, because it is a count of what we do not know.
+  - name: roles_covered
+    purpose: Which functional roles are accounted for — economic, technical, user, legal, security,
+      procurement.
+    type: value
+    data_type: list
+    description: "Which functional roles are accounted for — economic, technical, user, legal, security,
+      procurement."
+  - name: engaged_count
+    purpose: Members with two-way contact. Identified is not engaged.
+    type: value
+    data_type: integer
+    description: Members with two-way contact. Identified is not engaged.
+  - name: coverage_ratio_bp
+    purpose: engaged_count / size in basis points. Below ~4000 on an enterprise deal, the forecast is
+      fiction.
+    type: value
+    data_type: integer
+    description: engaged_count / size in basis points. Below ~4000 on an enterprise deal, the forecast
+      is fiction.
+  - name: single_threaded
+    purpose: Exactly one contact on a live deal.
+    type: value
+    data_type: boolean
+    description: Exactly one contact on a live deal.
+  - name: consensus_state
+    purpose: The consensus_state of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, aligned, split, blocked]
+  - name: dissent_detected
+    purpose: The dissent_detected of this object.
+    type: value
+    data_type: boolean
+  - name: blocker_present
+    purpose: A member with veto authority who is unengaged or negative.
+    type: value
+    data_type: boolean
+    description: A member with veto authority who is unengaged or negative.
+  - name: decision_style
+    purpose: The decision_style of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, consensus, top_down, committee_vote, delegated]
+  - name: requires_unanimity
+    purpose: The requires_unanimity of this object.
+    type: value
+    data_type: boolean
+  - name: process_stage
+    purpose: The process_stage of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, forming, evaluating, deliberating, approving, decided]
+states:
+  initial: unknown
+  values:
+    - {name: unknown, description: "No mapping attempted."}
+    - {name: partial, description: "Some seats named, coverage incomplete. Where most deals actually sit."}
+    - {name: mapped, description: "All believed seats named."}
+    - {name: engaged, description: "Majority of seats in two-way contact."}
+    - {name: blocked, description: "A veto holder is negative or unreachable."}
+    - {name: decided, description: "Committee has reached a verdict, either way."}
+  transitions:
+    - {from: unknown, to: partial}
+    - {from: partial, to: mapped}
+    - {from: mapped, to: engaged}
+    - {from: engaged, to: blocked}
+    - {from: blocked, to: engaged}
+    - {from: engaged, to: decided}
+
+relationships:
+  - {type: owns, target: sales.obj.core.decision_maker, cardinality: zero_or_many, description: "One or\
+      more approvers sit inside the committee."}
+  - {type: owns, target: sales.obj.core.champion, cardinality: zero_or_many}
+  - {type: owns, target: sales.obj.core.stakeholder, cardinality: zero_or_many}
+  - {type: gates, target: sales.obj.core.deal, cardinality: zero_or_one}
+  - {type: requires, target: sales.obj.core.timeline, cardinality: zero_or_one, description: "Committee\
+      cadence, not ours, sets the achievable pace."}
+
+inference_patterns:
+
+  deterministic:
+    - id: bc.single_threaded
+      statement: "One or fewer contacts attached to an open deal."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 9500, attribute: single_threaded, value: true}
+      note: The one committee fact the graph can assert without any new signal, and the one most worth
+        acting on.
+
+    - id: bc.committee_exists
+      statement: "Three or more contacts attached to an open deal."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 3}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 8000, attribute: null}
+
+    - id: bc.veto_seats_opened
+      statement: "Security review has started, so a security seat exists whether or not we have met them."
+      status: executable
+      when: [has_obs: security_review_started]
+      yields: {confidence_bp: 9000, attribute: blocker_present, value: true}
+
+    - id: bc.legal_seat_opened
+      statement: "Legal review has started."
+      status: executable
+      when: [has_obs: legal_review]
+      yields: {confidence_bp: 9000, attribute: null}
+
+    - id: bc.roles_from_crm
+      statement: "CRM contact roles map onto committee seats."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: roles_covered, value: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.role, owner_layer: L1}
+
+  heuristic:
+    - id: bc.growing_thread_signals_forming_committee
+      statement: "Contact count on a live deal is rising while engagement holds — the committee is forming,
+        not fragmenting."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 2}
+        - {path: derived.engagement, op: ">", value: 0.8}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 7000, attribute: process_stage, value: evaluating}
+
+    - id: bc.dissent_from_sentiment_split
+      statement: "Overall sentiment has turned negative while the deal remains active — someone in the room
+        disagrees."
+      status: executable
+      when:
+        - {path: derived.sentiment, op: "<", value: 0.0}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 6000, attribute: dissent_detected, value: true}
+
+    - id: bc.per_member_sentiment
+      statement: "Sentiment computed per committee member, not per deal, to locate WHICH member dissents."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: consensus_state, value: split}
+      requires_signals:
+        - {kind: derived, name: derived.sentiment_by_person, owner_layer: L2, note: "derived.sentiment is\
+            deal-scoped today, so it can say the room is unhappy but never who. Locating the dissenter is
+            the entire value of this object."}
+
+    - id: bc.decision_style_from_history
+      statement: "Prior deals at this account resolved top-down or by consensus."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: decision_style, value: null}
+      requires_signals:
+        - {kind: fact_path, name: account.prior_deal_outcomes, owner_layer: L2}
+
+inputs:
+  - {source: email, signal: recipient sets and how they grow over a thread}
+  - {source: calendar, signal: meeting attendee lists}
+  - {source: crm, signal: declared contact roles and account hierarchy}
+  - {source: meeting_transcript, signal: "who defers to whom, who is absent from decisions"}
+  - {source: derived, signal: graph degree on the deal node}
+  - {source: derived, signal: sentiment balance, path: derived.sentiment}
+
+outputs:
+  - {name: coverage_ratio_bp, type: integer, consumed_by: [L4.reasoning_unit]}
+  - {name: unmapped_seats, type: integer, consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: single_threaded_risk, type: boolean, consumed_by: [L4.reasoning_unit]}
+  - {name: next_seat_to_open, type: string, description: "Which functional role to engage next.", consumed_by: [
+      L5.execution_planning]}
+  - {name: forecast_eligibility, type: boolean, consumed_by: [L4.decision_maker]}
+
+constraints:
+  - {id: bc.cannot_close_with_open_veto, statement: "A negative or unengaged veto seat blocks close.",
+      hard: true}
+  - {id: bc.unanimity_requires_full_coverage, statement: "When requires_unanimity is true, coverage below\
+      100% cannot support a committed forecast.", hard: true}
+  - {id: bc.do_not_bypass_procurement, statement: "In procurement-led accounts, approaching seats around\
+      the process can breach their policy.", hard: true}
+
+business_rules:
+  - id: bc.single_threaded_caps_forecast
+    statement: A live deal with one contact must not be forecast above best-case, regardless of that
+      contact's seniority.
+    when: [{fn: edge_count, op: "<=", value: 1}, {neighbor_fact: deal.status, op: "=", value: open}]
+    then: cap_forecast_at_best_case
+    severity: blocking
+  - id: bc.unmapped_seats_block_commit
+    statement: unmapped_seats greater than zero blocks a committed forecast on an enterprise-model
+      deal.
+    severity: blocking
+  - id: bc.blocker_must_be_named
+    statement: If blocker_present is true, the specific member and their objection must be recorded.
+      An unnamed blocker is an excuse, not a finding.
+    severity: warning
+  - id: bc.security_and_legal_are_veto_seats
+    statement: Once security or legal review starts, those functions occupy veto seats and count
+      toward size whether or not anyone has spoken to them.
+    when: [has_obs: security_review_started]
+    then: add_veto_seat
+    severity: warning
+
+decision_factors:
+  - {name: coverage, weight_bp: 3000, direction: increases, reads: [coverage_ratio_bp, engaged_count,
+        size], description: "Coverage predicts enterprise outcomes better than any individual relationship
+      strength."}
+  - {name: unmapped_risk, weight_bp: 2500, direction: decreases, reads: [unmapped_seats]}
+  - {name: blocker_presence, weight_bp: 2000, direction: decreases, reads: [blocker_present, dissent_detected]}
+  - {name: decision_style, weight_bp: 1500, direction: context, reads: [decision_style, requires_unanimity],
+    description: "Consensus committees need breadth; top-down ones need one right relationship. Getting
+      this backwards wastes the whole cycle."}
+  - {name: process_maturity, weight_bp: 1000, direction: context, reads: [process_stage]}
+
+evidence:
+  - {source: calendar, strength_bp: 8000, description: "Attendee lists are the most reliable committee\
+      evidence available."}
+  - {source: email, strength_bp: 7500, description: "Recipient sets and who gets added when."}
+  - {source: crm, strength_bp: 6500, description: "Declared roles. Usually incomplete rather than wrong."}
+  - {source: meeting_transcript, strength_bp: 8500, description: "Who defers to whom, spoken aloud."}
+  - {source: derived, strength_bp: 5500, description: "Graph degree and sentiment. Structural, not identifying."}
+
+metrics:
+  - {name: average_committee_size, unit: count, description: "Per model. The single most useful number\
+      for calibrating enterprise vs SMB behaviour.", owner_layer: L6}
+  - {name: coverage_at_close, unit: percent, owner_layer: L6}
+  - {name: single_threaded_loss_rate, unit: percent, description: "Loss rate of single-threaded deals\
+      vs multi-threaded. The evidence for bc.single_threaded_caps_forecast.", owner_layer: L6}
+  - {name: unmapped_seat_slip_rate, unit: percent, description: "How often an unmapped seat surfaces late\
+      and slips the deal.", owner_layer: L6}
+
+events:
+  - {id: bc.member_added, name: Committee Member Added, payload: [member_ref, role]}
+  - {id: bc.veto_seat_opened, name: Veto Seat Opened, emitted_when: [has_obs: security_review_started],
+    payload: [function]}
+  - {id: bc.went_single_threaded, name: Deal Went Single-Threaded, emitted_when: [{fn: edge_count, op: "<=",
+        value: 1}], payload: [remaining_contact]}
+  - {id: bc.dissent_detected, name: Dissent Detected, emitted_when: [{path: derived.sentiment, op: "<",
+          value: 0.0}]}
+
+actions:
+  - {id: bc.map_committee, name: Map the committee, actor: human, effect: "Ask the champion who else must\
+      agree. One question, most of the value."}
+  - {id: bc.open_next_seat, name: Engage an unmapped seat, actor: human}
+  - {id: bc.multithread, name: Break single-threading, actor: human, preconditions: [{fn: edge_count,
+          op: "<=", value: 1}]}
+  - {id: bc.address_blocker, name: Address the blocker directly, actor: human, preconditions: [has_obs:
+          security_review_started]}
+  - {id: bc.run_group_session, name: Run a joint session, actor: human, effect: "Surfaces dissent that\
+      one-to-one calls hide."}
+
+examples:
+  - {label: "Enterprise SaaS, 7 seats", note: "Economic, technical, user, security, legal, procurement,\
+      exec sponsor. Coverage below 40% means the forecast is fiction."}
+  - {label: "SMB, 1 seat", note: "Founder decides. The committee object still exists with size 1 — single_threaded\
+      is correct here, not a risk."}
+  - {label: "Consensus committee with an unnamed blocker", note: "Everyone we speak to is positive and\
+      the deal never moves. The classic unmapped-seat loss."}
+  - {label: "Top-down with a friendly committee", note: "Broad engagement, wrong strategy. One relationship\
+      decides it and we spent the quarter on the others."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of nine patterns are executable purely from graph degree and review observations,
+    which makes this the cheapest high-value object in the set. The decisive gap is
+    derived.sentiment_by_person: today the engine can say the room is unhappy but never who,
+    and locating the dissenter is what this object exists to do.

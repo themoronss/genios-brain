@@ -1,0 +1,48 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.self_service_deflection.release_coupled_review
+  name: Release coupled review
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Bind the highest-traffic answers to the product areas they describe, so a shipped change
+    forces a content check rather than waiting for someone to notice.
+
+
+    Decay is the default state of knowledge and it produces no signal. An article nobody reports as
+    wrong is not therefore right — it may simply be read by people who assume the mistake is theirs.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Bind the highest-traffic answers to the product areas they describe, so a shipped change forces
+    a content check rather than waiting for someone to notice.
+  actor: human
+  description: Decay is the default state of knowledge and it produces no signal. An article nobody
+    reports as wrong is not therefore right — it may simply be read by people who assume the mistake
+    is theirs.
+  objects_read: &id001
+  - customer_support.obj.core.knowledge_article
+  - customer_support.obj.core.product_area
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

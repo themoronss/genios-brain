@@ -1,6 +1,10 @@
 # Validation and Governance
 
-Keeps evidence sufficiency separate from enterprise permission.
+Keeps three questions separate: may this value be retained, does its evidence support the claim,
+and may the resulting claim be promoted. Each answer has a closed reason code and the policy
+revision used by the run/object is durably bound. For every actual new/held-object evaluation, the
+separate evaluation ledger binds the final lifecycle/publisher reason to the exact run policy and
+evaluation clock.
 
 ## Component modules
 

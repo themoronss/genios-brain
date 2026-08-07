@@ -1,6 +1,12 @@
 # State Machine
 
-Defines the legal lifecycle around an immutable LearningObject.
+Defines the legal lifecycle around an immutable `learning.v2` LearningObject. Preflight refusal is
+deliberately outside this state graph: forbidden payloads are not inserted into `learning_objects`
+and receive only a sanitized rejection record.
+
+The weekly scheduler may revisit an identical stored object only in Observed/Candidate. That is a
+new policy/time evaluation of the same immutable evidence, not a new state graph or object rewrite;
+Candidate never regresses and later lifecycle states never reopen.
 
 ## Component modules
 

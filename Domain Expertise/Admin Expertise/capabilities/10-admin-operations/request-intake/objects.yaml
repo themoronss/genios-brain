@@ -1,0 +1,25 @@
+# Load-set for admin.admin_operations.request_intake — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/request-intake/        loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.admin_operations.request_intake
+
+core:
+  required:
+    - admin.obj.core.request
+    - admin.obj.core.sop
+  optional:
+    - admin.obj.core.escalation
+    - admin.obj.core.approver
+    - admin.obj.core.policy
+    - admin.obj.core.commitment
+
+scoped:
+  required: []
+  optional: []

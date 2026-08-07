@@ -1,0 +1,26 @@
+# Offshore Capability Centre — vertical branch node under outsourced.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.outsourced.offshore_gcc
+  name: Offshore Capability Centre
+  kind: vertical
+  domain: admin
+  parent: admin.model.outsourced
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  A wholly-owned offshore centre. Cost and control are good, time-zone separation makes
+  handover discipline the constraint.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

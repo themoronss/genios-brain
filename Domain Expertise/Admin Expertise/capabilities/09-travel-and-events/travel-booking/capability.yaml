@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.travel_and_events.travel_booking
+  name: Travel Booking
+  domain: admin
+  subdomain: travel_and_events
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Arranging travel against policy and budget: approval before commitment, fare and class
+  rules, preferred suppliers, changes and cancellations. The economics are dominated by lead
+  time, which makes late approval the most expensive administrative failure in this
+  capability.
+
+question: "Is this trip approved, within policy, and booked at a sensible cost?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

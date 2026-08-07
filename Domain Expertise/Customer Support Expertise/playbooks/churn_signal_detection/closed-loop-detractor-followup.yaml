@@ -1,0 +1,50 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.churn_signal_detection.closed_loop_detractor_followup
+  name: Closed loop detractor followup
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Follow up on a detractor with a named human who can change something, and close the loop
+    by telling the customer what changed.
+
+
+    An unanswered complaint confirms the customer''s thesis that we do not listen, which is usually
+    the underlying grievance rather than the incident itself. A survey that solicits criticism and then
+    absorbs it silently is worse than no survey.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Follow up on a detractor with a named human who can change something, and close the loop by
+    telling the customer what changed.
+  actor: human
+  description: An unanswered complaint confirms the customer's thesis that we do not listen, which is
+    usually the underlying grievance rather than the incident itself. A survey that solicits criticism
+    and then absorbs it silently is worse than no survey.
+  objects_read: &id001
+  - customer_support.obj.core.satisfaction_score
+  - customer_support.obj.core.customer_sentiment
+  - customer_support.obj.core.requester
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

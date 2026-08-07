@@ -1,0 +1,39 @@
+identity:
+  id: sales.heu.icp_definition.retained_not_merely_won
+  name: Define the profile from accounts that were won AND kept, never from ac…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Define the profile from accounts that were won AND kept, never from accounts that were\
+    \ won.\n Win-rate feedback arrives in weeks and retention feedback arrives in years, so the fast\
+    \ loop is the wrong loop. A segment that closes quickly and churns early inflates every leading\
+    \ indicator on the dashboard and surfaces as a hole in next year's number, by which point the profile\
+    \ has been reinforcing it f"
+heuristic:
+  statement: 'Define the profile from accounts that were won AND kept, never from accounts that were
+    won.
+
+    '
+  why: 'Win-rate feedback arrives in weeks and retention feedback arrives in years, so the fast loop
+    is the wrong loop. A segment that closes quickly and churns early inflates every leading indicator
+    on the dashboard and surfaces as a hole in next year''s number, by which point the profile has been
+    reinforcing it for four quarters.
+
+    '
+  reads:
+  - sales.obj.core.icp
+  - expected_retention_months
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

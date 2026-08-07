@@ -1,0 +1,40 @@
+# STUB — identity, purpose and load-set only. Promote against
+# capabilities/05-knowledge-and-deflection/self-service-deflection/capability.yaml.
+
+identity:
+  id: customer_support.knowledge_and_deflection.ai_deflection
+  name: AI Deflection
+  domain: customer_support
+  subdomain: knowledge_and_deflection
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Putting a model between the question and the queue, and owning what it says. The failure
+  that matters is not the occasional wrong answer — it is that a confident wrong answer costs
+  more than no answer at all, because the customer acts on it and returns with a second
+  problem plus a grievance, and the transcript is now evidence. The operator judgement is
+  about handover and grounding: when the assistant must escalate without being asked, what it
+  may assert versus what it must cite, and whether a conversation it contained was actually
+  resolved or merely outlasted. Containment is the number the vendor sells; it is not the
+  number to run the programme on.
+
+question: "Can a model answer this safely, and does it know when to stop trying?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes (start with: containment reported as resolution,
+    no unprompted handover on frustration or on commercial intent, and answers ungrounded in a
+    citable article), heuristics with a why, decision_frameworks for the assert-versus-cite
+    boundary, kpis and handoffs. This is the capability most likely to be promoted for the
+    wrong reason — a vendor demo rather than a queue reading — so it deliberately stays a stub
+    until self_service_deflection's measurement discipline exists to inherit, because an AI
+    deflection programme built on an unaudited containment metric inherits every failure mode
+    of the human one and adds fabrication to it.

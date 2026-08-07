@@ -303,6 +303,8 @@ class _FeedbackConnection:
     def execute(self, statement, params=None):
         sql = str(statement)
         self.statements.append((sql, dict(params or {})))
+        if "select id from orgs" in sql:
+            return _Result(first=SimpleNamespace(id="org_1"))
         if "select k.card_id, k.assignee" in sql:
             return _Result(first=(SimpleNamespace(
                 card_id="card_1", assignee="seat_1", pack_id="sales",
@@ -337,6 +339,8 @@ def test_card_feedback_is_current_authority_checked_and_idempotent(monkeypatch):
     insert_params = next(params for statement, params in engine.connection.statements
                          if "insert into card_feedback_verdicts" in statement.lower())
     assert response["routed_to_g_i_3"] is True
+    assert "select id from orgs where id=:o for share" in sql
+    assert "select id from orgs" in engine.connection.statements[0][0].lower()
     assert "select graph_version from graph_versions" in sql and "for share" in sql
     assert "join reasoning_runs rr" in sql
     assert "k.state in ('queued','surfaced','snoozed','delivered')" in sql
@@ -345,6 +349,81 @@ def test_card_feedback_is_current_authority_checked_and_idempotent(monkeypatch):
     assert insert_params["cause"] == "wrong"
     assert insert_params["actor"] == "seat_1"
     assert "spoofed" not in insert_params.values()
+
+
+def test_snooze_feedback_is_timing_audit_not_a_negative_l6_verdict(monkeypatch):
+    class TimingConnection(_FeedbackConnection):
+        def execute(self, statement, params=None):
+            result = super().execute(statement, params)
+            if "insert into card_events" in str(statement):
+                return _Result(first=SimpleNamespace(id=params["id"]))
+            return result
+
+    engine = _FeedbackEngine()
+    engine.connection = TimingConnection()
+    monkeypatch.setattr(routes, "_graph", SimpleNamespace(engine=engine))
+
+    response = routes.intelligence_feedback(
+        routes.FeedbackBody(action="snooze", insight_id="card_1"),
+        ctx=AuthCtx(org_id="org_1", actor_id="seat_1", scopes=["feedback.write"]),
+    )
+
+    sql = "\n".join(statement.lower() for statement, _ in engine.connection.statements)
+    event_params = next(params for statement, params in engine.connection.statements
+                        if "insert into card_events" in statement.lower())
+    assert "human.feedback_signal" in sql and "on conflict (id) do nothing" in sql
+    assert "card_feedback_verdicts" not in sql
+    assert "card_feedback_revisions" not in sql
+    assert event_params["cause"] == "snooze"
+    assert response["changed"] is True and response["verdict_version"] is None
+
+
+def test_owner_can_reauthorize_identical_legacy_organization_preference(monkeypatch):
+    class LegacyPreferenceConnection(_FeedbackConnection):
+        def execute(self, statement, params=None):
+            sql = str(statement)
+            self.statements.append((sql, dict(params or {})))
+            if "select id from orgs" in sql:
+                return _Result(first=SimpleNamespace(id="org_1"))
+            if "select k.card_id, k.assignee" in sql:
+                return _Result(first=SimpleNamespace(
+                    card_id="card_1", assignee="seat_1", pack_id="sales",
+                    pack_version="1.0.0", authority_pack_revision=3,
+                    capability_id="legacy.sales.cooling_deal", capability_version="1.0.0",
+                    rule_id="cooling_deal"))
+            if "insert into card_feedback_verdicts" in sql:
+                return _Result()
+            if "update card_feedback_verdicts" in sql:
+                return _Result(first=SimpleNamespace(
+                    feedback_id="fb_existing", verdict_version=4))
+            return _Result()
+
+    engine = _FeedbackEngine()
+    engine.connection = LegacyPreferenceConnection()
+    monkeypatch.setattr(routes, "_graph", SimpleNamespace(engine=engine))
+
+    response = routes.intelligence_feedback(
+        routes.FeedbackBody(
+            action="edit", insight_id="card_1",
+            edit_diff={"preference": {
+                "key": "meeting_window", "value": "morning",
+                "scope": "organization", "category": "calendar",
+            }}),
+        ctx=AuthCtx(org_id="org_1", actor_id="owner_1", scopes=None),
+    )
+
+    update_sql, update_params = next(
+        (sql, params) for sql, params in engine.connection.statements
+        if "update card_feedback_verdicts" in sql)
+    revision_params = next(
+        params for sql, params in engine.connection.statements
+        if "insert into card_feedback_revisions" in sql)
+    assert "organization_authorized" in update_sql
+    assert update_params["owner"] is True
+    assert revision_params["owner"] is True
+    assert revision_params["fid"] == "fb_existing"
+    assert response["changed"] is True
+    assert response["verdict_version"] == 4
 
 
 def test_card_feedback_rejects_stale_or_cross_tenant_card(monkeypatch):

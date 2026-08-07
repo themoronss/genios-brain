@@ -1,0 +1,46 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.root_cause_analysis.five_whys
+  name: Five whys
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Five Whys — chain each answer into the next question until the chain reaches a control
+    the organisation owns.
+
+
+    Cheap, teachable, and wrong more often than its reputation suggests: it produces a single linear
+    chain when real failures branch, and it stops wherever the asker gets comfortable. Its value is
+    entirely in the stopping rule — never on a person, never on an act of nature — and without that
+    rule it is a machine for generating blame.'
+criteria:
+- name: Five whys
+  description: Five Whys — chain each answer into the next question until the chain reaches a control
+    the organisation owns.
+how_to_apply:
+- Five Whys — chain each answer into the next question until the chain reaches a control the organisation
+  owns.
+- 'Cheap, teachable, and wrong more often than its reputation suggests: it produces a single linear
+  chain when real failures branch, and it stops wherever the asker gets comfortable. Its value is entirely
+  in the stopping rule — never on a person, never on an act of nature — and without that rule it is
+  a machine for generating blame.'
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

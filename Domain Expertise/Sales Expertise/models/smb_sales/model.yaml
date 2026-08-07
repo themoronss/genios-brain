@@ -1,0 +1,41 @@
+# SMB Sales — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.smb_sales
+  name: SMB Sales
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Small businesses. Often one decision maker, short cycles and price sensitivity. Volume and
+  efficiency matter more than depth, and running an enterprise motion here loses money on
+  every won deal.
+
+characteristics:
+  buyer: "a small business owner or department head"
+  typical_cycle_days: 14
+  committee_size: "1-2"
+  decision_style: "single approver, fast"
+
+capabilities:
+  deactivates:
+    - sales.qualification.buying_committee_analysis
+    - sales.closing.procurement
+  emphasises:
+    - sales.prospecting_and_outreach.outreach
+    - sales.post_sale_and_growth.renewal
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

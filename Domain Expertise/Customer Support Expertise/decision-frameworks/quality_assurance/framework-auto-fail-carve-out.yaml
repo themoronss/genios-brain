@@ -1,0 +1,39 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.quality_assurance.framework_auto_fail_carve_out
+  name: Framework auto fail carve out
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A short, unarguable auto-fail list held entirely separate from the graded rubric.
+
+
+    Some errors genuinely cannot be offset by good handling elsewhere. Keeping them off the graded sheet
+    preserves the resolution of the grade while still stopping the unrecoverable.'
+criteria:
+- name: Framework auto fail carve out
+  description: A short, unarguable auto-fail list held entirely separate from the graded rubric.
+how_to_apply:
+- A short, unarguable auto-fail list held entirely separate from the graded rubric.
+- Some errors genuinely cannot be offset by good handling elsewhere. Keeping them off the graded sheet
+  preserves the resolution of the grade while still stopping the unrecoverable.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,26 @@
+identity:
+  id: sales.mm.lead_qualification.qualification_is_subtraction_the_value_is
+  name: Qualification is subtraction. The value is in what leaves the pipeline
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.lead_qualification
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: Qualification is subtraction. The value is in what leaves the pipeline.
+dimensions:
+- name: Qualification is subtraction. The value is in what leaves the pipeline
+  asks: Qualification is subtraction. The value is in what leaves the pipeline.
+how_to_apply:
+- Qualification is subtraction. The value is in what leaves the pipeline.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.qualification.lead_qualification. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

@@ -1,0 +1,171 @@
+# GENERATED FILE — do not hand-edit.
+#   regenerate:  python "Domain Expertise/_tools/index.py"
+#
+# The reverse index: Layer 2 emits a situation type, this map says which capabilities apply and
+# which objects to load. Without it the compiler would scan every capability in the domain; with
+# it the lookup is O(1) into the relevant slice — the single biggest performance win in Layer 3
+# once a domain grows past a handful of capabilities.
+#
+# `load` is the union of the situation's own load-set and every serving capability's required
+# objects, minus anything either marks never_load.
+
+domain: Customer Support Expertise
+
+map:
+  commitment_overdue:
+    situations:
+      - customer_support.sit.promised_followup_overdue
+    capabilities:
+      - customer_support.customer_communication.de_escalation
+      - customer_support.customer_communication.response_drafting
+      - customer_support.entitlement_and_sla.commitment_tracking
+    objects:
+      load:
+        - customer_support.obj.core.commitment
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.churn_risk
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.sla_target
+      never_load:
+        - customer_support.obj.core.knowledge_article
+
+  unanswered_email:
+    situations:
+      - customer_support.sit.customer_awaiting_reply
+    capabilities:
+      - customer_support.customer_communication.response_drafting
+      - customer_support.entitlement_and_sla.breach_prevention
+      - customer_support.entitlement_and_sla.commitment_tracking
+    objects:
+      load:
+        - customer_support.obj.core.commitment
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.sla_target
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.coverage_window
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.knowledge_article
+        - customer_support.obj.core.queue
+        - customer_support.obj.core.support_agent
+      never_load:
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.incident
+
+  meeting_no_followup:
+    situations:
+      - customer_support.sit.support_call_no_recap
+    capabilities:
+      - customer_support.customer_communication.proactive_status_updates
+      - customer_support.diagnosis_and_resolution.diagnostics
+      - customer_support.entitlement_and_sla.commitment_tracking
+    objects:
+      load:
+        - customer_support.obj.core.commitment
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.issue
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.incident
+        - customer_support.obj.core.product_area
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.root_cause
+        - customer_support.obj.core.sla_target
+      never_load:
+        - customer_support.obj.core.knowledge_article
+
+# ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
+# These situations are authored and route NOTHING, because the type that would
+# trigger them is not in any shipped pack's signal_vocab. Not a defect in the
+# authoring — it is the requirement list, stated where the compiler can count it.
+pending_l2_types:
+  escalation_requested:
+    situations:
+      - customer_support.sit.escalation_requested
+
+# ── Coverage ──────────────────────────────────────────────────────────────
+# Types this domain routes.
+routed_l2_types:
+  - commitment_overdue
+  - meeting_no_followup
+  - unanswered_email
+
+# Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
+# that compiles to nothing, silently. Global, not this domain's fault.
+unrouted_l2_types:
+  - budget_freeze
+  - champion_left
+  - deal_sentiment_negative
+  - objection_open
+  - proposal_no_response
+  - timeline_slip
+
+# Authored but unreachable — no situation routes into them.
+orphan_capabilities:
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.customer_communication.tone_and_localization
+  - customer_support.diagnosis_and_resolution.issue_reproduction
+  - customer_support.diagnosis_and_resolution.resolution_delivery
+  - customer_support.diagnosis_and_resolution.root_cause_analysis
+  - customer_support.diagnosis_and_resolution.verification_and_closure
+  - customer_support.diagnosis_and_resolution.workaround_management
+  - customer_support.entitlement_and_sla.coverage_and_on_call
+  - customer_support.entitlement_and_sla.entitlement_verification
+  - customer_support.entitlement_and_sla.sla_management
+  - customer_support.escalation_and_incident.engineering_handoff
+  - customer_support.escalation_and_incident.escalation_management
+  - customer_support.escalation_and_incident.executive_escalation
+  - customer_support.escalation_and_incident.incident_management
+  - customer_support.escalation_and_incident.major_incident_communication
+  - customer_support.escalation_and_incident.postmortem
+  - customer_support.intake_and_triage.channel_intake
+  - customer_support.intake_and_triage.duplicate_and_merge
+  - customer_support.intake_and_triage.intent_classification
+  - customer_support.intake_and_triage.priority_and_severity
+  - customer_support.intake_and_triage.routing_and_assignment
+  - customer_support.intake_and_triage.ticket_triage
+  - customer_support.knowledge_and_deflection.ai_deflection
+  - customer_support.knowledge_and_deflection.content_gap_analysis
+  - customer_support.knowledge_and_deflection.knowledge_authoring
+  - customer_support.knowledge_and_deflection.macro_management
+  - customer_support.knowledge_and_deflection.self_service_deflection
+  - customer_support.support_management.account_relationship_management
+  - customer_support.support_management.agent_coaching
+  - customer_support.support_management.performance_management
+  - customer_support.support_management.quality_assurance
+  - customer_support.support_management.team_health
+  - customer_support.support_management.ticket_review
+  - customer_support.support_operations.capacity_planning
+  - customer_support.support_operations.cost_to_serve
+  - customer_support.support_operations.queue_management
+  - customer_support.support_operations.support_analytics
+  - customer_support.support_operations.workload_balancing
+  - customer_support.voice_of_customer.churn_signal_detection
+  - customer_support.voice_of_customer.feedback_synthesis
+  - customer_support.voice_of_customer.product_feedback_routing
+  - customer_support.voice_of_customer.satisfaction_measurement
+  - customer_support.voice_of_customer.sentiment_analysis
+
+# Authored but no capability's objects.yaml loads them.
+unreachable_objects: []
+
+stats:
+  l2_types_total: 26
+  l2_types_routed_here: 3
+  l2_types_unrouted_globally: 6
+  l2_types_pending: 1
+  situations: 4
+  capabilities: 49
+  capabilities_stub: 40
+  capabilities_complete: 9
+  capabilities_routed: 6
+  objects_total: 8
+  objects_core: 8
+  objects_scoped: 0

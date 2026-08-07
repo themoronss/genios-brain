@@ -1,0 +1,28 @@
+identity:
+  id: sales.sales_management.deal_review
+  name: Deal Review
+  domain: sales
+  subdomain: sales_management
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Structured inspection of a live deal against evidence: is the approver verified, is the
+  budget real, is there a compelling event. A review that only asks what is next is a status
+  meeting.
+
+question: "Is this deal what the rep believes it is?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

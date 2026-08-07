@@ -1,0 +1,38 @@
+identity:
+  id: sales.heu.market_research.willingness_to_pay_is_already_being_spent
+  name: Read willingness to pay from what the segment already spends on the jo…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Read willingness to pay from what the segment already spends on the job — including the\
+    \ internal headcount doing it manually — not from what buyers say a fair price would be.\n Stated\
+    \ fair price is anchored on what people wish things cost and is uniformly low. Money already leaving\
+    \ the building every month is revealed preference, and the salary of the person doing it by hand\
+    \ is usually the largest "
+heuristic:
+  statement: 'Read willingness to pay from what the segment already spends on the job — including the
+    internal headcount doing it manually — not from what buyers say a fair price would be.
+
+    '
+  why: 'Stated fair price is anchored on what people wish things cost and is uniformly low. Money already
+    leaving the building every month is revealed preference, and the salary of the person doing it by
+    hand is usually the largest and least-quoted number on the map.
+
+    '
+  reads:
+  - sales.obj.core.pricing
+  - sales.obj.market_research.market_map
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

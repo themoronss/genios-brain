@@ -28,6 +28,30 @@ def format_card_message(card: dict, *, base_url: str = "") -> dict:
                         "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
 
 
+def format_execution_message(payload: dict, *, base_url: str = "") -> dict:
+    """Grounded initial commitment with its action and deadline preserved in chat."""
+    icon = _URGENCY_ICON.get(str(payload.get("urgency") or "firm"), "🟠")
+    head = str(payload.get("headline") or "")[:150]
+    lines = [f"{icon} *{head}*"]
+    situation = str(payload.get("situation") or "")
+    if situation:
+        lines.append(situation[:300])
+    next_action = str(payload.get("next_action") or "")
+    if next_action:
+        lines.append(f"Next: {next_action[:200]}")
+    deadline = str(payload.get("deadline") or "")
+    if deadline:
+        lines.append(f"Due: {deadline[:64]}")
+    card_id = payload.get("card_id")
+    execution_id = payload.get("execution_id")
+    if base_url and (card_id or execution_id):
+        path = f"cards/{card_id}" if card_id else f"commitments/{execution_id}"
+        lines.append(f"<{base_url.rstrip('/')}/{path}|Open in GeniOS →>")
+    return {"text": f"{icon} {head}",
+            "blocks": [{"type": "section",
+                        "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
+
+
 def format_digest_message(digest: dict) -> dict:
     """Pure: the morning digest dict → one Slack message. Counted numbers only."""
     one_line = str(digest.get("one_line") or "Nothing needs you right now.")
@@ -69,8 +93,10 @@ def format_reminder_message(payload: dict, *, base_url: str = "") -> dict:
     if next_action:
         lines.append(f"Next: {next_action[:200]}")
     card_id = payload.get("card_id")
-    if base_url and card_id:
-        lines.append(f"<{base_url.rstrip('/')}/cards/{card_id}|Open the card →>")
+    execution_id = payload.get("execution_id")
+    if base_url and (card_id or execution_id):
+        path = f"cards/{card_id}" if card_id else f"commitments/{execution_id}"
+        lines.append(f"<{base_url.rstrip('/')}/{path}|Open in GeniOS →>")
     return {"text": f"{icon} Still open — {head}",
             "blocks": [{"type": "section",
                         "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
@@ -91,7 +117,16 @@ class SlackWebhookChannel:
             import httpx
             r = httpx.post(url, json=payload, timeout=10.0)
             if r.status_code == 200:
-                return ChannelResult(ok=True)
-            return ChannelResult(ok=False, detail=f"slack http {r.status_code}: {r.text[:120]}")
+                return ChannelResult(ok=True, http_status=r.status_code,
+                                     provider_message_id=r.headers.get("x-slack-req-id"))
+            retry_after = r.headers.get("retry-after")
+            return ChannelResult(
+                ok=False, detail=f"slack http {r.status_code}: {r.text[:120]}",
+                retryable=(r.status_code in {408, 425, 429} or r.status_code >= 500),
+                unknown=(r.status_code in {408, 425} or r.status_code >= 500),
+                http_status=r.status_code,
+                retry_after_seconds=(int(retry_after) if retry_after and retry_after.isdigit()
+                                     else None))
         except Exception as e:      # noqa: BLE001 — failure is a result; the outbox owns retry
-            return ChannelResult(ok=False, detail=f"{type(e).__name__}: {str(e)[:160]}")
+            return ChannelResult(ok=False, retryable=True, unknown=True,
+                                 detail=f"{type(e).__name__}: {str(e)[:160]}")

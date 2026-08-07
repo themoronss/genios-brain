@@ -1,0 +1,22 @@
+# Load-set for sales.sales_management.sales_coaching — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/sales-coaching/         loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.sales_management.sales_coaching
+
+core:
+  required:
+    - sales.obj.core.deal
+  optional:
+    - sales.obj.core.next_action
+    - sales.obj.core.objection
+
+scoped:
+  required: []
+  optional: []

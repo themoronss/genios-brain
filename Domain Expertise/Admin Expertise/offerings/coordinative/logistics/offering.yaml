@@ -1,0 +1,25 @@
+# Logistics — offering_type branch node under coordinative.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.coordinative.logistics
+  name: Logistics
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.coordinative
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Physical movement and provisioning — travel, events, equipment. Long external lead times
+  make late decisions expensive rather than merely inconvenient.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

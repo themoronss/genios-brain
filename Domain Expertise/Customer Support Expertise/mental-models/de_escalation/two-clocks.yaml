@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.de_escalation.two_clocks
+  name: Two clocks
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Two clocks run on every heated contact: the resolution clock and the reassurance clock.
+    They run at different speeds and only one of them is on the ticket.
+
+
+    Most support tooling instruments the resolution clock alone, so a team can be doing well on everything
+    it measures while the customer''s experience is governed entirely by the other one. The reassurance
+    clock resets with every outbound message and expires much faster.'
+dimensions:
+- name: Two clocks
+  asks: 'Two clocks run on every heated contact: the resolution clock and the reassurance clock. They
+    run at different speeds and only one of them is on the ticket.'
+how_to_apply:
+- 'Two clocks run on every heated contact: the resolution clock and the reassurance clock. They run
+  at different speeds and only one of them is on the ticket.'
+- Most support tooling instruments the resolution clock alone, so a team can be doing well on everything
+  it measures while the customer's experience is governed entirely by the other one. The reassurance
+  clock resets with every outbound message and expires much faster.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

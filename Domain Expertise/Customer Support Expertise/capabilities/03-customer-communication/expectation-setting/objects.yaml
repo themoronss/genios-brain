@@ -1,0 +1,30 @@
+# Load-set for customer_support.customer_communication.expectation_setting — REFERENCES ONLY,
+# never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.customer_communication.expectation_setting
+
+core:
+  # Three required because a promise is only sound when all three are visible: the work it is
+  # about (Ticket), the promise itself as a tracked object with an owner and a due time
+  # (Commitment), and the contractual floor it must not undercut or misquote (SlaTarget). Setting
+  # an expectation without the SLA target is how a team promises less than it owes; setting one
+  # without a Commitment is how a promise evaporates the moment the agent goes off shift.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.sla_target
+  # Requester tells us who is exposed if the promise slips and therefore how much margin to build
+  # in. Workaround changes the shape of the promise entirely — "working by Thursday" and "usable
+  # today, fixed by Thursday" are different commitments and the second is usually available.
+  optional:
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.workaround
+
+scoped:
+  # Nothing scoped — Commitment is shared with commitment_tracking in subdomain 04 by design, so
+  # that the promise made here and the promise chased there are the same object.
+  required: []
+  optional: []

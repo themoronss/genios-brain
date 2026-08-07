@@ -1,15 +1,18 @@
 # 8 · Recommendation Learning
 
-**Status:** Partial
+**Status:** Built
 
-Converts measured play effectiveness and attention cost into an Adaptive efficacy proposal.
+Converts grounded capability/play outcome measurement into an Adaptive recommendation-efficacy
+proposal. It preserves successes, failures, neutral/unproven outcomes, progress and attention cost
+rather than learning from delivery or click-through alone.
 
 | Boundary | Value |
 |---|---|
 | Input | Outcome Analysis LearningObjects |
-| Output | Adaptive recommendation LearningObject per capability/play |
+| Derivation | exact parent value/evidence/ACL; only target and subject namespace change |
+| Output | Adaptive recommendation LearningObject per capability/play/ACL cohort |
 | Primary code | `feedback/units.py::recommendation_learning` |
-| Honest gap | Proposal/publisher exist; no generic downstream selector currently changes recommendations from these entries. |
+| Integration requirement | downstream selector must read the versioned Adaptive recommendation entry |
 
 ## Component modules
 

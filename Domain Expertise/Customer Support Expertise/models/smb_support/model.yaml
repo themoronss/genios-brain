@@ -1,0 +1,178 @@
+# SMB Support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+#
+# NOT the same branch as plg_self_serve, and the difference is worth stating before the file
+# starts. A PLG user is evaluating; an SMB customer is running their livelihood on the product.
+# The volume shape and the price point look alike, the stakes in any individual ticket do not.
+
+identity:
+  id: customer_support.model.smb_support
+  name: SMB Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Small businesses, bought from a pricing page or after one call, on a plan anyone can cancel
+  this afternoon. The defining inversion is that the stakes per contact are high and the revenue
+  per contact is tiny. The person in the ticket is the owner, the payer, the admin and the one
+  currently losing money; "could you ask your IT team to check that" has no referent, and
+  neither does "let me pick this up with your account manager on Monday".
+  .
+  Volume is high against revenue that cannot fund a human on the majority of contacts, so the
+  model only closes if self-service, macros and automated answers carry the mass. Deflection
+  here is not an efficiency programme layered on top of a support org — it is the support org,
+  and every point of it is the margin that pays for the humans who handle what is left.
+  .
+  Entitlement exists but is uniform. It is a plan tier from a price list, not a negotiated
+  schedule, so verification collapses to a lookup and the expensive enterprise work of
+  interpreting a bespoke contract does not exist at all. What exists instead is the plan
+  boundary as an upsell surface that every agent stands on daily. There is likewise no
+  escalation path in either direction: no procurement, no sponsor, no committee — the owner IS
+  the executive and they are already in the thread. When an SMB customer escalates, the channel
+  is a review site, a chargeback or the cancel button, and none of the three route to us.
+  .
+  What an operator carries over wrongly from enterprise or mid-market: investigating properly.
+  Forty minutes of careful diagnosis on an account paying fifty a month is that account's entire
+  year of margin, and a known workaround delivered in four minutes with an article attached is
+  the correct answer rather than a lazy one. The carry-over error in the other direction,
+  imported from self-serve, is treating every deflection as a saving. A retailer locked out of
+  their till at nine on a Saturday is not deflectable, will not file a ticket and wait, and the
+  coverage gap on the day their business actually trades is what ends the account — silently,
+  because nobody in an SMB base writes a churn explanation.
+
+characteristics:
+  requester: "the owner or one of a handful of employees; buyer, payer, admin and affected user in the same person, with no internal IT to escalate to"
+  typical_resolution_hours: 4
+  volume_shape: "high volume against low revenue per account; sharply peaked at the start of the business day, at month-end billing, and on any pricing or packaging change"
+  staffing_model: "pooled generalists behind heavy self-service, no tiers and no named owners; specialist pods only for billing and fraud"
+  coverage: "extended weekday hours, with weekend cover wherever the customer base trades at weekends — a retail or hospitality SMB base has its worst hour on a Saturday and its thinnest staffing at the same time"
+  automation_level: "very high by necessity — the price point cannot fund a human on the majority of contacts, and the ones that do reach a human are therefore the hard ones by construction"
+  buyer: "the owner, on a card, from a pricing page or after a single call"
+  typical_cycle_days: 7
+  typical_acv: "three to low four figures a year, frequently billed monthly and cancellable in a click without speaking to anyone"
+  committee_size: "one"
+  decision_style: "immediate, emotional and reversible; the same person can buy on Tuesday and cancel on Thursday, and will tell a review site before they tell us"
+  primary_channels: [chat, help_center, email, phone]
+  notes: >
+    Billing is the highest-emotion queue in this branch and it is not a finance concern. A card
+    decline or a failed renewal charge on an SMB account arrives as an existential problem —
+    the business stops — and routing it by ticket type into a back-office queue with a slower
+    service standard is the most reliable way to manufacture a public complaint out of a
+    two-minute fix.
+
+capabilities:
+
+  # Nominal in most orgs, load-bearing here. cost_to_serve is not a finance report in this
+  # branch — it is the constraint that decides whether a contact may be handled by a human at
+  # all, and an org that cannot see minutes-per-account-per-month will discover the answer from
+  # its gross margin two quarters late. ai_deflection is activated rather than emphasised
+  # because at this price point automated answering is load-bearing capacity, not an experiment.
+  activates:
+    - customer_support.support_operations.cost_to_serve
+    - customer_support.knowledge_and_deflection.ai_deflection
+
+  deactivates:
+    # There is no named contact at a named account, and there is no one on our side who could
+    # ever hold thousands of these relationships. The capability's object graph — customer
+    # account, named contact — has referents on paper and none in practice, and running it
+    # produces relationship management of a spreadsheet row.
+    - customer_support.support_management.account_relationship_management
+    # There is no executive matrix on either side. The customer's executive is the person
+    # already in the thread, and ours cannot be reached by anything the customer can do. What
+    # replaces this capability is public exposure, which de_escalation and sentiment_analysis
+    # handle. NOTE the deletion that would be wrong: escalation_management stays. A customer
+    # asking for a manager is not making a claim about our org chart, and a branch that removes
+    # both has nothing left to handle the single most common angry-customer request there is.
+    - customer_support.escalation_and_incident.executive_escalation
+
+  emphasises:
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.knowledge_and_deflection.macro_management
+    - customer_support.intake_and_triage.intent_classification
+    - customer_support.intake_and_triage.channel_intake
+    # Speed of relief beats completeness of diagnosis at this price point, which is a real
+    # trade and not a compromise: the customer wants to trade again this afternoon.
+    - customer_support.diagnosis_and_resolution.workaround_management
+    - customer_support.diagnosis_and_resolution.resolution_delivery
+    - customer_support.customer_communication.de_escalation
+    - customer_support.voice_of_customer.churn_signal_detection
+    - customer_support.support_operations.queue_management
+
+objects:
+  extends:
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [findability, zero_result_query_count, intent_covered, locale]
+      note: >
+        The article is the first line, not the documentation of a resolution, and the reader is
+        a busy owner on a phone between customers of their own. An article that is correct and
+        unfindable is operationally identical to one that does not exist.
+        `zero_result_query_count` is the branch's best leading indicator of queue volume: every
+        failed search is a ticket that has not been filed yet, and it arrives roughly a day
+        later with a frustrated tone that the ticket record will attribute to the wrong cause.
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, entitled_channels]
+      note: >
+        Entitlement here is a tier from a price list — uniform, machine-readable, never
+        negotiated — so the expensive part of entitlement_verification (interpreting a bespoke
+        schedule) simply does not exist, and an org importing an enterprise verification
+        procedure is paying for a lookup. What does exist is the plan boundary as an upsell
+        surface, and the judgement call is whether "your plan does not include phone support"
+        is said to a customer whose business is currently stopped.
+    - object: customer_support.obj.core.requester
+      require_properties: [is_affected_user, preferred_channel, technical_fluency]
+      note: >
+        The requester is the affected user and there is nobody behind them. Every diagnostic
+        step that begins "ask your administrator to" terminates immediately, so fluency is not
+        a nice-to-have on this object — it decides whether the diagnosis can be run at all or
+        whether we have to infer from symptoms. Channel preference is equally load-bearing:
+        this person cannot sit in a chat queue while their shop is open.
+    - object: customer_support.obj.core.churn_risk
+      note: >
+        Cancellation is self-serve and instantaneous. There is no renewal conversation in which
+        the risk surfaces and no CSM who notices — the support ticket IS the renewal
+        conversation, and it is happening right now, mid-thread. The corollary is unpleasant and
+        true: by the time churn risk is derived from behaviour after the fact, the account has
+        usually already gone, so the only useful reads on this object in this branch are the
+        in-conversation ones.
+    - object: customer_support.obj.core.ticket
+      require_properties: [channel, ticket_type, requester_ref]
+      note: >
+        Ticket type carries urgency that the severity field does not. Billing, access and
+        payout tickets are revenue-stopping for this customer whatever their technical severity,
+        and a queue sorted purely on severity puts them behind genuinely lower-stakes defects
+        every single day.
+
+overrides:
+  capabilities.customer_support.knowledge_and_deflection.self_service_deflection.is_primary_resolution_channel: true
+  capabilities.customer_support.entitlement_and_sla.entitlement_verification.mode: "plan_lookup"
+  capabilities.customer_support.support_operations.cost_to_serve.budget_unit: "agent_minutes_per_account_per_month"
+  capabilities.customer_support.escalation_and_incident.escalation_management.exposure_channel: "public"
+  capabilities.customer_support.intake_and_triage.priority_and_severity.business_stopped_overrides_severity: true
+  capabilities.customer_support.entitlement_and_sla.coverage_and_on_call.coverage_follows_customer_trading_hours: true
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Segment branch. Deliberately distinguished from plg_self_serve, which shares its economics
+    and not its stakes: a PLG contact is usually a comprehension failure by someone evaluating,
+    an SMB contact is frequently a business interruption for someone committed. The two branches
+    emphasise similar capabilities for opposite reasons, and an org that merges them will get
+    the deflection strategy right and the coverage strategy badly wrong.

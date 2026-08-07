@@ -1,0 +1,26 @@
+capability: sales.qualification.lead_qualification
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.lead_qualification.bant_budget_authority_need_timing_older
+  - sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available
+  - sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.lead_qualification.a_date_with_no_compelling_event
+  - sales.heu.lead_qualification.a_price_objection_is_evidence_a
+  - sales.heu.lead_qualification.title_is_not_authority_a_vp
+  - sales.heu.lead_qualification.two_slips_are_not_a_timing
+  - sales.heu.lead_qualification.unknown_budget_fails_closed_treating_unknown
+mental_models:
+  core: []
+  scoped:
+  - sales.mm.lead_qualification.qualification_is_subtraction_the_value_is
+  - sales.mm.lead_qualification.three_independent_gates_money_authority_urgency
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -551,7 +551,7 @@ def test_an_unregistered_channel_suppresses_rather_than_burning_the_retry_ladder
                              now=MORNING).reason_code == "channel_inactive"
 
 
-def test_settings_are_read_once_per_person_but_the_burst_count_never_is():
+def test_settings_and_burst_are_re_read_so_mid_batch_consent_changes_take_effect():
     """Ten intrusive messages coming due together against a limit of three must send three and
     hold seven. A memoised count would read "0 delivered this hour" ten times and let every one
     of them through — the exact flood the limiter exists to prevent."""
@@ -573,7 +573,7 @@ def test_settings_are_read_once_per_person_but_the_burst_count_never_is():
 
     settings_reads = [sql for sql in conn.seen if "from delivery_preferences" in sql]
     burst_reads = [sql for sql in conn.seen if "from delivery_outbox" in sql]
-    assert len(settings_reads) == 1
+    assert len(settings_reads) == 10
     assert len(burst_reads) == 10
 
 
@@ -585,16 +585,16 @@ def test_a_committed_delivery_is_counted_exactly_once():
     assert context.state.interrupts_last_hour == 1
 
 
-def test_the_burst_query_scopes_an_org_surface_to_rows_with_no_recipient():
-    """`coalesce(recipient,'*')` would read correctly and use no index. The null-aware predicate
-    is what keeps the partial index on (org_id, recipient, delivered_at) usable."""
+def test_shared_chat_burst_is_org_wide_while_private_surfaces_remain_recipient_scoped():
+    """One Slack/Teams incoming webhook is shared attention, regardless of logical recipient."""
     conn = _FakeConn()
     resolver = PgDeliveryContext(conn)
     resolver.resolve(candidate(recipient=None), now=MORNING)
     burst = next(sql for sql in conn.seen if "from delivery_outbox" in sql)
-    assert "recipient is null" in burst
+    assert "channel = any(:shared_channels)" in burst
     conn.seen.clear()
-    resolver.resolve(candidate(recipient="seat_2"), now=MORNING)
+    resolver.resolve(candidate(channel="email", channel_class=ChannelClass.EMAIL,
+                               recipient="seat_2"), now=MORNING)
     assert "recipient = :r" in next(sql for sql in conn.seen if "from delivery_outbox" in sql)
 
 
@@ -608,10 +608,16 @@ class _DrainConn:
     def __init__(self, log: list, burst_conn: _FakeConn | None = None):
         self.log = log
         self.burst_conn = burst_conn
+        self.active = False
 
     def execute(self, statement, params=None):
         sql = " ".join(str(statement).split())
         self.log.append((sql, dict(params or {})))
+        if self.burst_conn is not None and (
+                "from delivery_preferences" in sql or "select 1 from org_channels" in sql
+                or "from org_seats" in sql or "from delivery_presence" in sql
+                or "count(*) as sent" in sql):
+            return self.burst_conn.execute(statement, params)
         if (self.burst_conn is not None and sql.startswith("update delivery_outbox")
                 and "status='delivered'" in sql):
             sent, oldest = self.burst_conn.burst
@@ -619,14 +625,20 @@ class _DrainConn:
             self.burst_conn.burst = (sent + 1, oldest or delivered_at)
         if "from org_channels" in sql:
             return _Result([_Row(config={"webhook_url": "https://example.invalid/hook"})])
+        if "from feature_flags" in sql:
+            return _Result([_Row(enabled=True)])
+        if "from orgs" in sql:
+            return _Result([_Row(id="org_1")])
         if "from cards k join signals s" in sql:
             return _Result([_Row(one=1)])
         return _Result([])
 
     def __enter__(self):
+        self.active = True
         return self
 
     def __exit__(self, *exc):
+        self.active = False
         return False
 
 
@@ -681,6 +693,8 @@ def run_drain(monkeypatch, rows, *, now, preferences=(), burst=(0, None), gate=N
     if gate is None:
         burst_conn = _FakeConn(preferences=preferences, burst=burst)
         gate = PgDeliveryContext(burst_conn)
+    else:
+        burst_conn = getattr(gate, "_conn", None)
     engine = _DrainEngine(burst_conn)
     out = {"delivered": 0, "retried": 0, "terminal": 0, "cancelled": 0,
            "deferred": 0, "suppressed": 0}
@@ -767,6 +781,60 @@ def test_a_successful_executive_send_confirms_delivery_on_the_commitment(monkeyp
     assert out["delivered"] == 1 and len(adapter.calls) == 1
     assert confirmed == [("org_1", "exec:exec_1:exev_1",
                           {"at": MORNING, "channel": "slack"})]
+
+
+def test_a_stale_execution_hash_is_classified_before_authority_connection_closes(monkeypatch):
+    from genios_engine.deliver import outbox as outbox_module
+
+    calls = []
+
+    def live(conn, *_args, **kwargs):
+        assert conn.active, "authority query reused a closed transaction connection"
+        calls.append(kwargs.get("expected_route") is not None)
+        return kwargs.get("expected_route") is None  # exact route stale; commitment still live
+
+    monkeypatch.setattr(outbox_module, "executive_delivery_is_live", live)
+    row = outbox_row(card_id="exec:exec_1:exev_1", execution_hash="old_hash")
+    _out, engine, adapter = run_drain(monkeypatch, [row], now=MORNING)
+
+    assert calls == [True, False]
+    assert adapter.calls == []
+    assert any("awaiting route refresh" in str(params.get("e"))
+               for _sql, params in engine.log)
+
+
+def test_opt_out_committed_between_initial_gate_and_send_is_rechecked(monkeypatch):
+    class _ConsentFlip(_FakeConn):
+        reads = 0
+
+        def execute(self, statement, params=None):
+            sql = str(statement)
+            if "from delivery_preferences" in sql:
+                self.reads += 1
+                return _Result([] if self.reads == 1 else [
+                    {"seat_id": "seat_1", "channel": "slack", "opted_out": True}])
+            return super().execute(statement, params)
+
+    state = _ConsentFlip()
+    out, _engine, adapter = run_drain(
+        monkeypatch, [outbox_row()], now=MORNING, gate=PgDeliveryContext(state))
+    assert state.reads == 2
+    assert out["suppressed"] == 1 and out["delivered"] == 0
+    assert adapter.calls == []
+
+
+def test_workspace_pause_after_claim_defers_instead_of_cancelling_valid_work(monkeypatch):
+    from genios_engine.deliver import outbox as outbox_module
+
+    monkeypatch.setattr(outbox_module, "executive_delivery_is_live",
+                        lambda *_args, **_kwargs: False)
+    monkeypatch.setattr(outbox_module, "_tenant_delivery_live",
+                        lambda *_args, **_kwargs: False)
+    row = outbox_row(card_id="exec:exec_1:exev_1", execution_hash="hash")
+    out, engine, adapter = run_drain(monkeypatch, [row], now=MORNING)
+    assert adapter.calls == [] and out["cancelled"] == 0
+    assert any("awaiting resume" in str(params.get("e")) for _sql, params in engine.log)
+    assert not any("status='cancelled'" in sql for sql, _params in engine.log)
 
 
 def test_a_burst_arriving_at_once_sends_the_limit_and_holds_the_rest(monkeypatch):

@@ -1,0 +1,38 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.de_escalation.anger_is_uncertainty
+  name: Anger is uncertainty
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Anger is almost always about uncertainty or about not being heard, not about the defect.
+heuristic:
+  statement: Anger is almost always about uncertainty or about not being heard, not about the defect.
+  why: The defect existed before the anger did and produced none of it. What produced it was a period
+    in which the customer could not tell whether anyone was working, or a retelling that landed on someone
+    who started from the beginning. Teams that treat the fault as the grievance ship the fix and are
+    genuinely surprised the customer is still angry.
+  reads:
+  - customer_support.obj.core.customer_sentiment
+  - customer_support.obj.core.conversation
+  - customer_support.obj.core.ticket
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,8 +1,10 @@
 # Card Production
 
-Builds and validates the human-readable intelligence artifact consumed by several Delivery Units.
+Builds and validates an execution-bound human-readable intelligence artifact. A card is a grounded presentation/read model consumed by Delivery Units; it is not an independent transport job or execution authority.
 
 **Primary authority:** `card_builder.py`, `pipeline.py`, `render.py`, `slots.py`, `store.py`, `actions.py`
+
+Only open signals with a live execution are eligible for card production. The card persists `execution_id`, source evidence and authority lineage. The Delivery Engine separately materializes the outbound logical delivery from the execution/event seam.
 
 ## Component modules
 

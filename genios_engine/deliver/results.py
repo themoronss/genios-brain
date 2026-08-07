@@ -28,6 +28,12 @@ _STATUS = {
     "suppressed": DeliveryResultStatus.SUPPRESSED,
     "cancelled": DeliveryResultStatus.CANCELLED,
     "failed_terminal": DeliveryResultStatus.FAILED,
+    "viewed": DeliveryResultStatus.VIEWED,
+    "ignored": DeliveryResultStatus.IGNORED,
+    "accepted": DeliveryResultStatus.ACCEPTED,
+    "executed": DeliveryResultStatus.EXECUTED,
+    "expired": DeliveryResultStatus.EXPIRED,
+    "failed": DeliveryResultStatus.FAILED,
 }
 
 
@@ -70,16 +76,39 @@ def delivery_object_from_row(row: Mapping[str, Any] | Any) -> DeliveryObject:
         payload=_payload(item.get("payload")),
         retry_minutes=BACKOFF_MINUTES,
         created_at=item.get("created_at"),
+        execution_id=(str(item["execution_id"]) if item.get("execution_id") else None),
+        audience=(str(item["audience"]) if item.get("audience") else None),
+        destination=(str(item["destination"]) if item.get("destination") else None),
+        format_kind=(str(item["format_kind"]) if item.get("format_kind") else None),
+        priority_class=str(item.get("priority_class") or "medium"),
+        priority_rank=max(1, min(5, int(item.get("priority_rank") or 3))),
+        daily_budget=max(1, min(15, int(item.get("daily_budget") or 7))),
+        route_reason=(str(item["route_reason"]) if item.get("route_reason") else None),
+        route_plan=tuple(_route_plan(item.get("route_plan"))),
+        dedupe_key=(str(item["dedupe_key"]) if item.get("dedupe_key") else None),
     )
+
+
+def _route_plan(value: Any) -> list[str]:
+    if isinstance(value, (list, tuple)):
+        return [str(item) for item in value]
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except ValueError:
+            return []
+        return [str(item) for item in parsed] if isinstance(parsed, list) else []
+    return []
 
 
 def delivery_result_from_row(row: Mapping[str, Any] | Any) -> DeliveryResult:
     """Project one outbox row into the stable Layer 5.2 result vocabulary."""
     item = _mapping(row)
-    raw_status = str(item.get("status") or "queued")
+    transport_status = str(item.get("status") or "queued")
+    raw_status = str(item.get("lifecycle_status") or transport_status)
     deferrals = max(0, int(item.get("defer_count") or 0))
     status = (_STATUS.get(raw_status, DeliveryResultStatus.FAILED)
-              if not (raw_status == "queued" and deferrals)
+              if not (raw_status in {"queued", "deferred"} and deferrals)
               else DeliveryResultStatus.DEFERRED)
     created = item.get("created_at")
     delivered = item.get("delivered_at")
@@ -90,6 +119,9 @@ def delivery_result_from_row(row: Mapping[str, Any] | Any) -> DeliveryResult:
         "transport_attempts": max(0, int(item.get("attempts") or 0)),
         "deferrals": deferrals,
     }
+    control_failures = max(0, int(item.get("control_failures") or 0))
+    if control_failures:
+        metrics["control_failures"] = control_failures
     if latency_ms is not None:
         metrics["delivery_latency_ms"] = latency_ms
     reason = item.get("gate_reason")
@@ -105,9 +137,15 @@ def delivery_result_from_row(row: Mapping[str, Any] | Any) -> DeliveryResult:
         attempts=max(0, int(item.get("attempts") or 0)),
         deferrals=deferrals,
         delivered_at=delivered,
+        viewed_at=item.get("viewed_at"),
+        ignored_at=item.get("ignored_at"),
+        accepted_at=item.get("accepted_at"),
+        executed_at=item.get("executed_at"),
+        expired_at=item.get("expired_at"),
         reason_code=str(reason) if reason else None,
         metrics=metrics,
-        metadata={"outbox_status": raw_status,
+        metadata={"transport_status": transport_status,
+                  "lifecycle_status": raw_status,
                   "gate_unit": item.get("gate_unit"),
                   "last_error": item.get("last_error")},
     )
@@ -115,8 +153,11 @@ def delivery_result_from_row(row: Mapping[str, Any] | Any) -> DeliveryResult:
 
 _RESULT_COLUMNS = (
     "id, org_id, card_id, channel, payload, status, attempts, recipient, band, "
-    "channel_class, interrupt, defer_count, gate_unit, gate_reason, last_error, "
-    "created_at, delivered_at"
+    "channel_class, interrupt, defer_count, control_failures, gate_unit, gate_reason, last_error, "
+    "created_at, delivered_at, execution_id, audience, destination, format_kind, "
+    "priority_class, priority_rank, daily_budget, route_reason, route_plan, dedupe_key, "
+    "lifecycle_status, "
+    "viewed_at, ignored_at, accepted_at, executed_at, expired_at"
 )
 
 
@@ -145,18 +186,24 @@ def load_delivery(conn, org_id: str, delivery_id: str) \
 
 
 def load_inbox(conn, org_id: str, *, channel: str, recipient: str | None = None,
+               include_org_wide: bool = True, audience: str | None = None,
                limit: int = 100) -> list[tuple[DeliveryObject, DeliveryResult]]:
     """Read deliveries materialised on a pull surface such as app, API or extension."""
     params: dict[str, Any] = {
         "o": org_id, "ch": channel, "l": max(1, min(int(limit), 500))}
     recipient_sql = ""
+    audience_sql = ""
     if recipient:
-        recipient_sql = " and (recipient=:r or recipient is null)"
+        recipient_sql = (" and (recipient=:r or recipient is null)" if include_org_wide
+                         else " and recipient=:r")
         params["r"] = recipient
+    if audience:
+        audience_sql = " and audience=:audience"
+        params["audience"] = audience
     rows = conn.execute(text(
         f"select {_RESULT_COLUMNS} from delivery_outbox "
         "where org_id=:o and channel=:ch and status='delivered'"
-        f"{recipient_sql} order by delivered_at desc limit :l"), params).mappings().all()
+        f"{recipient_sql}{audience_sql} order by delivered_at desc limit :l"), params).mappings().all()
     return [(delivery_object_from_row(row), delivery_result_from_row(row)) for row in rows]
 
 

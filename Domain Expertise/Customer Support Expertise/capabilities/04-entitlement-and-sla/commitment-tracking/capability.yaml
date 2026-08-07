@@ -1,0 +1,42 @@
+# STUB — identity, purpose and load-set only. See ../sla-management/capability.yaml for shape.
+
+identity:
+  id: customer_support.entitlement_and_sla.commitment_tracking
+  name: Commitment Tracking
+  domain: customer_support
+  subdomain: entitlement_and_sla
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Holding the promises made inside a ticket that no contract ever created — the callback before
+  end of day, the update on Friday, the bug someone said they would file with engineering. These
+  are the promises customers remember most sharply, because a human said them directly and
+  specifically, and they are the ones no clock is watching. The working rule is that an
+  unrecorded commitment is an unmade one, and the discipline that matters most is closing the
+  loop on the due date even when the answer is that there is no news yet, because silence is
+  read as being forgotten rather than as being unfinished.
+
+question: "What did we personally promise this customer, and is it still going to happen?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following ../sla-management/capability.yaml, and by
+    authoring situations/promised-followup-overdue.yaml
+    (customer_support.sit.promised_followup_overdue), which this capability owns and which is
+    one of the few support situations that binds to a REAL L2 type today — commitment_overdue,
+    over commitment.due_at and commitment.action. That makes this the most executable capability
+    in the subdomain despite being a stub, and it should probably be promoted before the others.
+
+    The expertise to capture on promotion: extracting a commitment from conversational language
+    that never says "I commit"; the fact that a soft promise made to defuse a moment is
+    remembered as a hard one; renegotiating before the due time rather than apologising after;
+    and why a commitment owned by a team is owned by nobody.

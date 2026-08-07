@@ -1,0 +1,43 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.de_escalation.keep_the_cadence_when_empty
+  name: Keep the cadence when empty
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Send the promised update on time even when it contains no progress.
+
+
+    The empty update is the only one that proves the cadence is real, because it is the only one that
+    had no other reason to be sent. Teams skip precisely these and then wonder why the customer stopped
+    believing the schedule.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Send the promised update on time even when it contains no progress.
+  actor: human
+  description: The empty update is the only one that proves the cadence is real, because it is the only
+    one that had no other reason to be sent. Teams skip precisely these and then wonder why the customer
+    stopped believing the schedule.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

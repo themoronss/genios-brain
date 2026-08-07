@@ -1,0 +1,1683 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# MEETING — the coordination object, and the one most often mistaken for its own output.
+#
+# A meeting is not the event in the diary. It is a machine for producing three things —
+# a record, a set of decisions, and a set of owned actions — and the diary entry is only
+# its scaffolding. Judge the object by what survives it. A meeting that happened and left
+# nothing behind did not happen, in exactly the sense that matters administratively: there
+# is nothing to point at, nothing to chase, and six weeks later three people remember three
+# different outcomes and all of them are sincere.
+#
+# This is the best-served Admin object in the current substrate. meeting.start_at,
+# meeting.status and the followup_sent observation are live, and together they express the
+# domain's central meeting failure — held, and nothing sent afterwards. What they cannot
+# express is everything governance needs: who actually attended, whether the meeting was
+# quorate, whether papers went out in time, and whether the thing that was sent was a
+# minute or a thank-you note.
+#
+# Five of fourteen patterns are executable.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.meeting
+  scope: core
+  name: Meeting
+  domain: admin
+  subdomain: meeting_operations
+  owner_capability: admin.meeting_operations.minutes_and_documentation
+  version: 2.0.0
+  status: draft
+  aliases: ["Committee Meeting", "Board Meeting", "Sitting", "One-to-One", "Standing Meeting", "Session"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A convened gathering with a purpose, together with everything that makes it accountable —
+    the agenda that framed it, the papers that fed it, the attendance that made it valid, the
+    minute that records it and the actions it left behind. The administrative view is
+    deliberately unromantic: coordination is the cheap part and follow-through is the
+    expensive part, so this object weights the aftermath far more heavily than the event.
+    A meeting of a body — a board, a committee, a works council — is a record-producing
+    instrument whose minute is a legal artefact, and in practice it is a different animal
+    from the team catch-up that shares a data model with it.
+  discriminator: >
+    A Meeting is the instrument; the minute, the decisions and the actions are the product.
+    The test is what it is obliged to leave behind. If nothing is owed once everyone has
+    left, it is a Time Block in somebody's diary, not a Meeting. And if a decision taken in
+    it can bind, it is a meeting of a body and every governance attribute below is mandatory.
+  answers:
+    - "Is a record owed by this meeting, and by whom, and by when?"
+    - "Could the room possibly have been ready — did the papers go out in time to be read?"
+    - "Was this meeting validly constituted, so that what it decided actually stands?"
+    - "What left the room owned and dated, and what left the room as a sentiment?"
+    - "Is this recurring series still producing decisions, or has it become a status broadcast that costs nine hours a week?"
+    - "Who receives the minute, and who must not receive the in-camera part of it?"
+    - "What is carried over from the last sitting, and is that number rising?"
+  not:
+    - "NOT the diary slot — that is admin.obj.calendar_management.time_block. A booked room with no purpose is a time block."
+    - "NOT the minute itself — that is admin.obj.core.document, with its own version, approval and retention."
+    - "NOT the actions it raised — those are admin.obj.core.action_item, which outlive the meeting and are chased separately."
+    - "NOT the promises made in the room to people outside it — those are admin.obj.core.commitment."
+    - "NOT the decision authority it exercises — that lives on admin.obj.core.approval and admin.obj.core.approver. A committee is an approver with a diary."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ── composites ──
+  - name: scheduling
+    purpose: The diary layer. The easiest part, and the part most systems stop at.
+    type: composite
+    contains: [start_at, status, duration_minutes, modality, location, timezone, recurrence]
+
+  - name: governance
+    purpose: What makes this a meeting of a body rather than a gathering of people.
+    type: composite
+    contains: [meeting_type, governing_body, is_minuted_of_record, decision_authority,
+               confidentiality, quorum_required, is_quorate, notice_period_days, interests_declared]
+
+  - name: participation
+    purpose: Who was expected, who came, and who sent apologies. Rarely the same three sets.
+    type: composite
+    contains: [chair_ref, secretary_ref, attendees_expected, attendees_actual,
+               apologies_received, external_attendees, attendance_rate]
+
+  - name: preparation
+    purpose: Whether the room could possibly have been ready.
+    type: composite
+    contains: [agenda_ref, agenda_circulated_at, papers_deadline_at, papers_circulated_at,
+               prep_state, prebrief_delivered]
+
+  - name: record
+    purpose: The output. In a governed context this is the deliverable and the meeting was the method.
+    type: composite
+    contains: [minutes_ref, minutes_status, minutes_circulated_at, minutes_adopted_at,
+               decisions_recorded, matters_arising_count, record_owed, retention_until]
+
+  - name: follow_through
+    purpose: What the meeting left owed. The half of the object that actually predicts whether it was worth holding.
+    type: composite
+    contains: [action_items_raised, actions_open_from_prior, followup_sent,
+               action_closure_rate, next_meeting_at]
+
+  - name: cost
+    purpose: Two numbers, present so that somebody eventually reads them.
+    type: composite
+    contains: [attendee_minutes, decision_density]
+
+  # ── scheduling ──
+  - name: start_at
+    purpose: When it begins. The one administrative deadline the current pipeline can genuinely see.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [meeting.start_at]
+    sensitivity: internal
+    description: Live today, and the anchor for every executable pattern on this object.
+
+  - name: status
+    purpose: What the diary says happened to it.
+    type: value
+    data_type: enum
+    allowed_values: [scheduled, confirmed, in_progress, held, cancelled, postponed, quorum_failed]
+    required: true
+    default: scheduled
+    source_paths: [meeting.status]
+    sensitivity: internal
+    description: >
+      `postponed` and `cancelled` are different endings and Layer 6 learns opposite lessons
+      from them — one is a scheduling failure, the other is a decision. `quorum_failed` is
+      the ending most calendars cannot express and most governance bodies suffer at least
+      once a year.
+
+  - name: duration_minutes
+    purpose: Scheduled length. Half of the only cost figure this object produces.
+    type: value
+    data_type: integer
+    unit: minutes
+    sensitivity: internal
+
+  - name: modality
+    purpose: How people are present, which changes who is actually heard.
+    type: value
+    data_type: enum
+    allowed_values: [in_person, video, phone, hybrid, asynchronous]
+    default: video
+    sensitivity: internal
+    description: >
+      `hybrid` is not a convenience flag. A chair who does not deliberately manage it produces
+      minutes that under-record every remote participant's contribution, and the remote
+      participants notice long before the chair does.
+
+  - name: location
+    purpose: Where it is held. Load-bearing for statutory meetings, where jurisdiction can depend on it.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: timezone
+    purpose: The zone the series is anchored in.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: Held separately from start_at because the recurring cross-timezone series is where scheduling errors concentrate — twice a year, predictably, at the clock changes.
+
+  - name: recurrence
+    purpose: Whether this is a one-off or a standing commitment.
+    type: value
+    data_type: enum
+    allowed_values: [one_off, weekly, fortnightly, monthly, quarterly, annual, ad_hoc]
+    default: one_off
+    sensitivity: internal
+    description: A standing meeting is an obligation nobody re-approved. It should have to justify itself on a cycle, and it never does.
+
+  # ── governance ──
+  - name: meeting_type
+    purpose: The field that decides how much of the rest of this object is mandatory.
+    type: value
+    data_type: enum
+    allowed_values: [board, committee, statutory, governance, decision, review,
+                     one_to_one, team, information, workshop, external]
+    required: true
+    default: team
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      For `board`, `committee` and `statutory` the minute is the deliverable and the meeting
+      was merely the method of producing it. For `team` and `one_to_one` the reverse holds,
+      and applying board discipline to a catch-up is the fastest way to get the whole practice
+      discarded.
+
+  - name: governing_body
+    purpose: The body whose meeting this is.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: Board, Audit Committee, Works Council, Trustees. Populated only when the meeting belongs to a body — that is what makes its minutes a record rather than notes.
+
+  - name: is_minuted_of_record
+    purpose: Whether the minute becomes a formal record subject to retention, disclosure and adoption.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Getting this wrong in either direction is expensive in opposite ways — an unretained legal record, or a team stand-up minuted like a board.
+
+  - name: decision_authority
+    purpose: Whether anything decided here binds.
+    type: value
+    data_type: enum
+    allowed_values: [none, advisory, delegated, full]
+    default: none
+    sensitivity: internal
+    description: >
+      The commonest governance defect in a growing organisation is a meeting with `advisory`
+      authority whose participants have believed for two years that it has `full`. Nobody
+      discovers it until someone asks who approved something.
+
+  - name: confidentiality
+    purpose: Who may see the record, and which part of it.
+    type: value
+    data_type: enum
+    allowed_values: [open, internal, restricted, in_camera]
+    default: internal
+    sensitivity: confidential
+    description: In-camera items are minuted separately or they are not confidential. The restricted item recorded in the general minute is the leak.
+
+  - name: quorum_required
+    purpose: The number of entitled members needed for the meeting to be validly constituted.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: Null where no quorum applies. Zero is never the right value and always means nobody checked.
+
+  - name: is_quorate
+    purpose: Whether the meeting was validly constituted.
+    type: value
+    data_type: boolean
+    sensitivity: internal
+    description: A decision taken inquorate is void, and the room finds out months later from the auditor rather than at the time from the chair.
+
+  - name: notice_period_days
+    purpose: The minimum notice the body's terms of reference require.
+    type: value
+    data_type: integer
+    unit: days
+    sensitivity: internal
+    description: A statutory or constitutional meeting convened inside its notice period is not validly convened, whatever happens in the room.
+
+  - name: interests_declared
+    purpose: Whether declarations of interest were taken and recorded before the business.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: A member with a declared interest may not be counted towards quorum on that item, which is the part everyone forgets after the declaration has been made.
+
+  # ── participation ──
+  - name: chair_ref
+    purpose: Who ran it, and who may take chair's action between sittings.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    sensitivity: internal
+
+  - name: secretary_ref
+    purpose: The one person who owes the minute.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    sensitivity: internal
+    description: Unnamed, the minute is owed by everyone present, which is to say by nobody.
+
+  - name: attendees_expected
+    purpose: Who was invited. Half of the attendee-minutes calculation.
+    type: value
+    data_type: integer
+    sensitivity: internal
+
+  - name: attendees_actual
+    purpose: Who actually came.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: >
+      The number nothing currently produces. The calendar connector reads the invitee list and
+      discards the acceptance list, so attendance is stored as intent. Everything governance
+      needs — quorum, attendance trend, chronic apologies — is downstream of this one integer.
+
+  - name: apologies_received
+    purpose: Who sent apologies, counted rather than remembered.
+    type: value
+    data_type: integer
+    sensitivity: internal
+    description: Apologies are governance data, not politeness. A member who apologises three sittings running is a vacancy that has not been declared.
+
+  - name: external_attendees
+    purpose: Who was present who is not of the body.
+    type: value
+    data_type: list
+    sensitivity: confidential
+    description: Auditors, advisers, counsel, candidates. Their presence changes both confidentiality and what may be minuted verbatim, and it changes the quorum arithmetic because they do not count towards it.
+
+  - name: attendance_rate
+    purpose: Attendance against expectation, per member across a series.
+    type: derived
+    data_type: number
+    derived_from: [attendees_actual, attendees_expected, apologies_received]
+    sensitivity: internal
+
+  # ── preparation ──
+  - name: agenda_ref
+    purpose: The document that framed the business.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    sensitivity: internal
+    description: An agenda item phrased as a topic invites discussion; phrased as a decision it invites a decision. The agenda is the cheapest lever on the whole object.
+
+  - name: agenda_circulated_at
+    purpose: When the agenda went out, which is when members could first prepare.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: papers_deadline_at
+    purpose: The date by which the pack must be circulated.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: >
+      Typically five to seven clear days ahead. A real administrative deadline with a real
+      consequence, enforced by exactly one person, who is usually the most junior in the
+      process and has no authority over any of the contributors.
+
+  - name: papers_circulated_at
+    purpose: When the pack actually went out.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: prep_state
+    purpose: Whether the room could be ready.
+    type: value
+    data_type: enum
+    allowed_values: [not_started, in_progress, complete, late, not_required]
+    default: not_started
+    sensitivity: internal
+
+  - name: prebrief_delivered
+    purpose: Whether the principal was briefed before walking in.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Executive support's core deliverable and its least measurable one, because a brief is either an attachment or a five-minute conversation on the way down the corridor.
+
+  # ── record ──
+  - name: minutes_ref
+    purpose: The minute itself.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    sensitivity: confidential
+
+  - name: minutes_status
+    purpose: How far the record has got.
+    type: value
+    data_type: enum
+    allowed_values: [none, drafted, in_review, circulated, approved, adopted]
+    default: none
+    sensitivity: internal
+    description: >
+      `adopted` — signed off at the following sitting — is the only status that makes a minute
+      a record. A minute circulated and never adopted is a draft with a wide distribution
+      list, and it will be produced in evidence as though it were more than that.
+
+  - name: minutes_circulated_at
+    purpose: When the minute went out, for turnaround measurement.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: minutes_adopted_at
+    purpose: When the following meeting accepted it as a true record.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: Untracked almost everywhere, including in organisations that would tell you they track it.
+
+  - name: decisions_recorded
+    purpose: How many decisions the meeting actually took.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: Decisions, not discussion. A meeting with full attendance and zero recorded decisions is a broadcast, and should have been an email.
+
+  - name: matters_arising_count
+    purpose: Items carried from the previous sitting.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: A rising count across a series is the clearest evidence that the series has stopped closing things and started accumulating them.
+
+  - name: record_owed
+    purpose: Whether a minute is still owed by this meeting.
+    type: derived
+    data_type: boolean
+    derived_from: [status, is_minuted_of_record, minutes_status, followup_sent, start_at]
+    sensitivity: internal
+    description: >
+      The single most actionable derived field on the object, and the one the executable
+      patterns set. It is deliberately separate from minutes_status: `none` says nothing has
+      been produced, `record_owed` says somebody is late.
+
+  - name: retention_until
+    purpose: How long the minute must be kept.
+    type: value
+    data_type: timestamp
+    sensitivity: confidential
+    description: >
+      For minutes of directors' meetings this is ten years under Companies Act 2006 s.248 —
+      routinely longer than whatever retention default was configured by somebody in IT who
+      was never told the difference between a minute and a meeting note.
+
+  # ── follow-through ──
+  - name: action_items_raised
+    purpose: How many owned, dated actions left the room.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+
+  - name: actions_open_from_prior
+    purpose: How many actions from the last sitting are still open.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: The single best predictor that this meeting will be a status update rather than a decision. Bring the number into the room and the room behaves differently.
+
+  - name: followup_sent
+    purpose: Whether anything at all went out afterwards.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      Populated today from the followup_sent observation, which proves contact and nothing
+      more. It cannot distinguish a circulated minute from a thank-you note, and in a governed
+      context that difference is the whole object.
+
+  - name: action_closure_rate
+    purpose: Actions raised and closed by their due date, across the series.
+    type: derived
+    data_type: number
+    derived_from: [action_items_raised, actions_open_from_prior]
+    sensitivity: internal
+
+  - name: next_meeting_at
+    purpose: The next sitting, at which this minute is adopted and these actions are reviewed.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  # ── cost ──
+  - name: attendee_minutes
+    purpose: Expected attendees multiplied by duration.
+    type: derived
+    data_type: integer
+    derived_from: [attendees_expected, duration_minutes]
+    unit: minutes
+    sensitivity: internal
+    description: The only number that has ever reliably ended a standing meeting.
+
+  - name: decision_density
+    purpose: Decisions recorded per hour of attendee time.
+    type: derived
+    data_type: number
+    derived_from: [decisions_recorded, attendee_minutes]
+    sensitivity: internal
+    description: Near zero across a quarter of a recurring series is an argument to stand it down, and it is the only argument that ever works.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [archived, cancelled]
+  values:
+    - name: draft
+      description: Proposed. A date is being sought; no invitation has been issued and nothing is owed yet.
+    - name: active
+      description: In the diary with a date. The preparation clock starts here, not on the morning of.
+      entered_when: [{exists: meeting.start_at}]
+      implies: Papers, agenda and pre-brief are now all on countdown against papers_deadline_at.
+    - name: in_progress
+      description: Happening now.
+    - name: on_hold
+      description: Postponed. Distinct from cancelled — the obligation to hold it survives, and so does everything owed to it.
+      implies: The pack, if already circulated, is a sunk cost that only attendee_minutes ever records.
+    - name: cancelled
+      description: Not happening. For a statutory meeting this is an event with consequences, not an administrative tidy-up.
+      entered_when: [{path: meeting.status, op: "=", value: cancelled}]
+    - name: overdue
+      description: >
+        Held, and the record is owed. The state this object exists to make visible. Nothing is
+        late in the diary and everything is late in reality, which is why it goes unnoticed
+        for a fortnight and then all at once.
+      entered_when:
+        - {fn: days_since, path: meeting.start_at, op: ">", value: 2}
+        - {path: meeting.status, op: "!=", value: cancelled}
+        - {no_obs: followup_sent}
+      implies: The secretary is now reconstructing rather than minuting, and the quality of the record falls every day.
+    - name: closed
+      description: Held, minuted, circulated, actions raised and owned. Everything owed BY the meeting is discharged; the actions themselves live on separately.
+    - name: verified
+      description: Minute adopted at the following sitting. The only point at which the record becomes a record.
+    - name: archived
+      description: Filed under its retention schedule and removed from active circulation.
+  transitions:
+    - {from: draft, to: active, when: [{exists: meeting.start_at}], trigger: invitation_issued}
+    - {from: active, to: in_progress}
+    - {from: active, to: on_hold, reversible: true, trigger: postponed}
+    - {from: active, to: cancelled, when: [{path: meeting.status, op: "=", value: cancelled}], reversible: false}
+    - {from: on_hold, to: active}
+    - {from: in_progress, to: overdue, when: [{no_obs: followup_sent}]}
+    - {from: in_progress, to: closed, when: [{has_obs: followup_sent}]}
+    - {from: overdue, to: closed, when: [{has_obs: followup_sent}]}
+    - {from: closed, to: verified, trigger: minute_adopted_at_next_sitting}
+    - {from: verified, to: archived, trigger: retention_schedule_applied}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: produces
+    target: admin.obj.core.action_item
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 2000
+    confidence_bp: 8500
+    priority: 1
+    conditions: [{fn: days_since, path: meeting.start_at, op: ">", value: 0}]
+    evidence: [document, meeting_transcript]
+    description: The meeting's actual output. An action item without an owner and a date is a sentiment that was written down.
+
+  - type: produces
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1800
+    confidence_bp: 8000
+    priority: 2
+    evidence: [document, email]
+    description: The minute, and the decision log extracted from it. In a governed context this edge is the reason the meeting was held.
+
+  - type: requires
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 7500
+    priority: 3
+    evidence: [email, document]
+    description: >
+      The agenda and the papers. A distinct edge from `produces` on purpose — the inputs have
+      a deadline of their own, days before the meeting, and it is that deadline rather than
+      the meeting date which determines whether the meeting works.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 6000
+    priority: 4
+    evidence: [document, register]
+    description: Terms of reference or standing orders. They set quorum, notice period and what may be decided — and they are the first document nobody can find.
+
+  - type: produces
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 7000
+    priority: 5
+    conditions: [{exists: commitment.action}]
+    evidence: [email, meeting_transcript]
+    description: Promises made in the room to people outside it. They outlive the meeting record and are chased separately, which is why they are not action items.
+
+  - type: gates
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 7000
+    priority: 6
+    description: >
+      A committee is an approver with a diary. Routing an approval to a monthly committee adds
+      up to a month before anyone has decided anything, and nobody costs that when the routing
+      is designed.
+
+  - type: evidences
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 7500
+    priority: 7
+    evidence: [register, document, regulator]
+    description: For a statutory body, holding and minuting the meeting is itself the discharge of the obligation. The minute is the evidence and the meeting was the method.
+
+  - type: precedes
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 8000
+    priority: 8
+    description: Self-referential. Matters arising and minute adoption exist only as an edge between two sittings; a meeting considered alone cannot express either.
+
+  - type: references
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 7000
+    priority: 9
+    evidence: [calendar, register]
+    description: Chair, secretary, attendees and apologies as roles rather than as names on an invitation.
+
+  - type: delegates_to
+    target: admin.obj.core.approver
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 5000
+    priority: 10
+    description: >
+      Chair's action between sittings. The edge exists so that a decision taken outside the
+      room has somewhere legitimate to live and a ratification obligation attached to it.
+
+  - type: requires
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 11
+    description: The papers deadline and the notice period. Both are dated obligations that precede the meeting and neither is visible to anything that only knows the meeting date.
+
+# ── 6 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# ANDed within a pattern. Express OR as two patterns — that is exactly how the engine works,
+# so authoring it any other way produces something that cannot run.
+inference_patterns:
+
+  deterministic:
+
+    - id: mtg.held_and_nothing_sent
+      statement: "The meeting date has passed, it was not cancelled, and nothing has gone out since."
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">", value: 2}
+        - {path: meeting.status, op: "!=", value: cancelled}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 9000, attribute: record_owed, value: true}
+      evidence_fields: [meeting.start_at, meeting.status]
+      false_positive: >
+        A minute circulated outside the connected mailbox — posted to a board portal, handed
+        round on paper at a works council, or sent from the chair's personal account — reads
+        as silence. In exactly the governance settings where this matters most, out-of-band
+        circulation is commonest.
+      note: >
+        The most valuable executable pattern in the Admin brain, and it works because the
+        substrate was built for this shape in a sales context. Written against elapsed time
+        and `status != cancelled` rather than an equality test on a held-token, because the
+        pack's status vocabulary is not published — and the inequality form fails NOISY while
+        an equality form on a guessed literal fails SILENT. Given the choice, take the failure
+        mode that tells you it is happening.
+
+    - id: mtg.followup_landed
+      statement: "Something went out after the meeting."
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">", value: 0}
+        - {has_obs: followup_sent}
+      yields: {confidence_bp: 9000, attribute: followup_sent, value: true}
+      evidence_fields: [meeting.start_at]
+      false_positive: >
+        followup_sent fires on "great to see everyone" exactly as it fires on a circulated
+        minute. Every false positive here is a governance dashboard reporting a minute that
+        does not exist.
+      note: >
+        Proves contact, not record. This pattern may set followup_sent and must NEVER be
+        allowed to set minutes_status. Treating the two as one field is how an organisation
+        reports 100% minuted with an empty minute book, and it is the single most likely
+        misuse of this object.
+
+    - id: mtg.cancelled_so_nothing_is_owed
+      statement: "The diary says this meeting was cancelled, so no record is owed by it."
+      status: executable
+      when:
+        - {path: meeting.status, op: "=", value: cancelled}
+      yields: {confidence_bp: 9200, attribute: record_owed, value: false}
+      evidence_fields: [meeting.status]
+      false_positive: >
+        A statutory or board meeting cancelled inside its notice period still generates a
+        record — the cancellation itself is minuted at the next sitting, and for some bodies
+        the cancellation is a reportable event. Right for a team catch-up, wrong for a board,
+        and the object cannot yet tell them apart without meeting_type as a fact.
+      note: >
+        The suppressor, and the only pattern here that bets on a literal string. If the pack
+        spells cancellation any other way this fires never and says nothing, which is why the
+        two patterns above avoid the equality form. It is worth the bet only because a wrong
+        nudge about a minute for a meeting that did not happen is the fastest way to lose an
+        administrator's trust in the whole system.
+
+    - id: mtg.attendance_and_quorum
+      statement: "Actual attendance is known, and it meets or misses the body's quorum."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: is_quorate, value: null}
+      requires_signals:
+        - kind: fact_path
+          name: meeting.attendees_actual
+          owner_layer: L1
+          note: >
+            The calendar connector projects start_at and status and discards the response list
+            entirely. Acceptances, declines and tentatives are already in the payload — this
+            is a projection gap, not a source gap, and it is the cheapest high-value fix in
+            the Admin backlog.
+        - kind: fact_path
+          name: meeting.quorum_required
+          owner_layer: L1
+          note: >
+            Quorum lives in terms of reference, which are a document nobody has parsed. Until
+            it is a number, no system can tell a valid board meeting from an invalid one, and
+            neither can the room.
+
+    - id: mtg.minutes_actually_circulated
+      statement: "A document identifiable as the minute was circulated to the attendee list."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: minutes_status, value: circulated}
+      requires_signals:
+        - kind: obs_kind
+          name: minutes_circulated
+          owner_layer: L2
+          note: >
+            Distinguishing a minute from any other post-meeting email needs attachment-level
+            extraction, not thread-level. Without it the governance metric that matters most
+            is approximated by the weakest observation in the vocabulary.
+
+    - id: mtg.minute_adopted_at_the_next_sitting
+      statement: "The following meeting of the body accepted the minute as a true record."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: minutes_status, value: adopted}
+      requires_signals:
+        - {kind: obs_kind, name: minutes_adopted, owner_layer: L2}
+        - kind: fact_path
+          name: document.approved_at
+          owner_layer: L1
+          note: >
+            Adoption, not circulation, is what turns a minute into a record. It happens once a
+            month in every governed organisation, it is announced aloud, and nothing captures
+            it — so `minuted_rate` is everywhere computed on circulation and everywhere
+            overstates compliance.
+
+    - id: mtg.papers_missed_their_deadline
+      statement: "The board pack went out after the papers deadline."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: prep_state, value: late}
+      requires_signals:
+        - kind: fact_path
+          name: meeting.papers_deadline_at
+          owner_layer: L1
+          note: >
+            A real, dated, enforced administrative deadline that exists only in the
+            secretary's head and a recurring reminder. Nothing else in the stack knows the
+            pack was two days late, so the pattern of lateness never becomes evidence at the
+            board — which is the one place it would change behaviour.
+        - {kind: obs_kind, name: agenda_circulated, owner_layer: L2}
+
+    - id: mtg.convened_inside_the_notice_period
+      statement: "The meeting was called with less notice than its terms of reference require."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: notice_period_days, value: null}
+      requires_signals:
+        - kind: fact_path
+          name: meeting.notice_period_days
+          owner_layer: L1
+          note: >
+            Notice is a validity condition, not a courtesy. A statutory meeting convened
+            short of notice is not validly convened whatever happens in the room, and the
+            defect is discovered by whoever later dislikes the decision.
+        - {kind: fact_path, name: meeting.convened_at, owner_layer: L1}
+
+  heuristic:
+
+    - id: mtg.circulated_but_nothing_left_the_room
+      statement: "Something went out after the meeting, and no dated action came out of it."
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">", value: 1}
+        - {has_obs: followup_sent}
+        - {absent: commitment.action}
+      yields: {confidence_bp: 6500, attribute: action_items_raised, value: 0,
+               corroborates: [mtg.followup_landed]}
+      evidence_fields: [meeting.start_at, commitment.action]
+      false_positive: >
+        Actions recorded only inside the minute document, never restated in the thread, are
+        invisible to commitment extraction. A well-run board looks identical to an empty one
+        from here.
+      note: >
+        The pattern that catches the meeting whose paperwork is perfect and whose output is
+        nothing. Held at 6500 because absence of a recorded commitment is evidence of absent
+        record rather than of absent action — but in an administrative context those are
+        closer to the same thing than anyone likes, because the action nobody wrote down is
+        the action that does not happen when its owner is off sick.
+
+    - id: mtg.its_actions_have_gone_past_their_dates
+      statement: "The meeting is over and an action arising from it is past its due date."
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">", value: 0}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8800, attribute: action_closure_rate, value: 0,
+               corroborates: [mtg.held_and_nothing_sent]}
+      evidence_fields: [meeting.start_at, commitment.due_at]
+      false_positive: >
+        An action completed and never closed out reads identical to one abandoned. The same
+        false positive as every date-based pattern in this domain and the reason none of them
+        should nudge without asking.
+      note: >
+        The meeting closed and its output did not. This is what stops a follow-up dashboard
+        reporting a meeting as complete because a minute was sent — the record can be perfect
+        while every action in it is late. The corroboration with mtg.held_and_nothing_sent is
+        PARTIAL: both read meeting.start_at, but one reads the calendar and an observation
+        absence while the other reads commitment extraction, so the independent component is
+        real and smaller than it looks.
+
+    - id: mtg.standing_series_producing_no_decisions
+      statement: "A recurring meeting has run for months and recorded no decisions."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: decision_authority, value: none}
+      requires_signals:
+        - kind: derived
+          name: derived.decision_density
+          owner_layer: L2
+          note: >
+            Decisions per meeting across a series. Needs a decision_recorded observation
+            extracted from the minute, which means reading the attachment rather than the
+            thread. The cheapest recurring saving in the whole domain and entirely unprovable
+            today.
+        - {kind: obs_kind, name: decision_recorded, owner_layer: L2}
+
+    - id: mtg.chronic_apologies_are_a_vacancy
+      statement: "A member has sent apologies for three consecutive sittings of the same body."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: attendance_rate, value: null}
+      requires_signals:
+        - {kind: fact_path, name: meeting.attendees_actual, owner_layer: L1}
+        - kind: derived
+          name: derived.meeting_attendance_rate
+          owner_layer: L2
+          note: >
+            Per-member attendance across a series. A committee whose quorum depends on someone
+            who has not come since March is one apology away from being unable to decide
+            anything, and the first person to notice is usually the auditor.
+
+    - id: mtg.prebrief_never_delivered
+      statement: "The principal walked into the meeting without a briefing."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: prebrief_delivered, value: false}
+      requires_signals:
+        - kind: obs_kind
+          name: prebrief_delivered
+          owner_layer: L2
+          note: >
+            Executive support's core deliverable and it leaves no typed trace — a brief is an
+            attachment or a five-minute corridor conversation. Without it the function's most
+            valuable output is also its least measurable, which is a familiar and expensive
+            combination.
+
+    - id: mtg.conflicted_member_counted_towards_quorum
+      statement: "A member with a declared interest was counted towards quorum on the item they are conflicted on."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: is_quorate, value: false}
+      requires_signals:
+        - {kind: fact_path, name: meeting.interests_declared, owner_layer: L1}
+        - kind: fact_path
+          name: meeting.attendees_actual
+          owner_layer: L1
+          note: >
+            The quiet governance failure. The declaration is made, minuted and then forgotten
+            for the arithmetic, so the item is decided by a meeting that was not quorate for
+            that item alone. Discovered, when it is discovered, by someone contesting the
+            decision.
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: calendar, signal: "date, time and diary status", path: meeting.start_at,
+     fills: [start_at, duration_minutes, timezone], reliability_bp: 9000}
+  - {source: calendar, signal: "cancellation and rescheduling", path: meeting.status,
+     fills: [status], reliability_bp: 8500}
+  - {source: calendar, signal: "invitee list and responses",
+     fills: [attendees_expected, attendees_actual, apologies_received], reliability_bp: 5000,
+     description: "Responses are in the payload and discarded before Layer 2 — a projection gap, not a source gap. See mtg.attendance_and_quorum."}
+  - {source: email, signal: "agenda and papers circulation, with the timestamps that prove or disprove the deadline",
+     path: thread.last_inbound, fills: [agenda_circulated_at, papers_circulated_at], reliability_bp: 7500}
+  - {source: email, signal: "post-meeting follow-up, as an observation",
+     fills: [followup_sent], reliability_bp: 6000}
+  - {source: derived, signal: "actions arising and their due dates", path: commitment.due_at,
+     fills: [action_items_raised, action_closure_rate], reliability_bp: 7000}
+  - {source: document, signal: "agenda, board pack, minute, decision log",
+     fills: [minutes_ref, agenda_ref, decisions_recorded, matters_arising_count], reliability_bp: 9500}
+  - {source: register, signal: "attendance register and declarations of interest for statutory bodies",
+     fills: [attendees_actual, interests_declared, is_quorate], reliability_bp: 9800}
+  - {source: meeting_transcript, signal: "decisions, dissent, and who committed to what",
+     fills: [decisions_recorded, action_items_raised], reliability_bp: 7500}
+  - {source: attestation, signal: "the chair's confirmation that the minute is a true record",
+     fills: [minutes_status, minutes_adopted_at], reliability_bp: 8500}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: followup_debt, type: boolean,
+     description: "Held, not cancelled, nothing sent. The domain's most actionable single fact.",
+     derived_from: [record_owed, followup_sent, status, start_at],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: preparation_risk_bp, type: integer,
+     description: "Likelihood the room will not be ready, computed from papers and agenda timing against the deadline.",
+     derived_from: [papers_deadline_at, papers_circulated_at, agenda_circulated_at, prep_state],
+     consumed_by: [L4.reasoning_unit]}
+  - {name: validity_flag, type: boolean,
+     description: "Whether decisions taken here can stand. Quorum, notice and authority — not attendance.",
+     derived_from: [is_quorate, quorum_required, notice_period_days, decision_authority, interests_declared],
+     consumed_by: [L4.decision_maker]}
+  - {name: record_obligation, type: boolean,
+     description: "Whether a formal minute is owed, by whom, and under what retention.",
+     derived_from: [is_minuted_of_record, meeting_type, minutes_status, retention_until],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: action_manifest, type: list,
+     description: "Owned, dated actions extracted from the meeting, for separate chasing.",
+     derived_from: [action_items_raised, actions_open_from_prior],
+     consumed_by: [L5.execution_planning]}
+  - {name: circulation_list, type: list,
+     description: "Who receives the minute, and who receives the in-camera one. Two lists, never one.",
+     derived_from: [confidentiality, external_attendees, attendees_expected],
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: prep_brief_due, type: boolean,
+     description: "The principal needs briefing before this sitting and has not been.",
+     derived_from: [prebrief_delivered, start_at, actions_open_from_prior],
+     consumed_by: [L5.communication_planning]}
+  - {name: series_health, type: string,
+     description: "Decisions per attendee-hour, carried items and attendance trend across a recurring series.",
+     derived_from: [decision_density, matters_arising_count, attendance_rate, recurrence],
+     consumed_by: [L6.learning_unit]}
+
+# ── 9 · Preconditions ────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: mtg.purpose_declared
+    statement: The meeting has a stated purpose naming what will be decided, reviewed or informed.
+    requires: [meeting_type, agenda_ref]
+    if_unmet: >
+      Degrade to an email and say so. A meeting with no decision in it is a broadcast, and
+      broadcasting to twelve people for an hour costs twelve hours to save one person twenty
+      minutes of writing.
+
+  - id: mtg.authority_known
+    statement: It is known whether decisions taken here bind, and up to what limit.
+    requires: [admin.obj.core.policy, decision_authority]
+    if_unmet: >
+      Block the recording of any decision and route to the terms of reference owner. A meeting
+      that has been deciding things for two years on authority it does not have is a problem
+      that grows with every sitting, and it is only ever discovered backwards.
+
+  - id: mtg.quorum_known
+    statement: For a meeting of a body, the quorum is a number before the meeting opens.
+    requires: [quorum_required, admin.obj.core.policy]
+    when: [{exists: meeting.start_at}]
+    if_unmet: >
+      Block for board, committee and statutory types; degrade to advisory for the rest. There
+      is no safe default: a guessed quorum that is too low voids decisions, and one that is
+      too high stops the body functioning.
+
+  - id: mtg.secretary_named
+    statement: One named person owes the minute before the meeting opens.
+    requires: [admin.obj.core.employee_record, secretary_ref]
+    if_unmet: >
+      Assign at the top of the meeting, aloud, and record it in the minute. A minute owed by
+      everyone present is owed by nobody, and the discovery is made a week later by whoever
+      asks where it is.
+
+  - id: mtg.papers_available
+    statement: Papers have been circulated by their deadline, in clear days.
+    requires: [papers_deadline_at, papers_circulated_at]
+    when: [{exists: meeting.start_at}]
+    if_unmet: >
+      Defer the ITEM, not the meeting. Deferring the whole meeting punishes every contributor
+      who was on time and teaches the late one nothing, because the cost lands on other people.
+
+  - id: mtg.interests_declared_before_business
+    statement: Declarations of interest are taken and recorded before the substantive business.
+    requires: [interests_declared]
+    if_unmet: >
+      Block decisions on any item where a conflict may exist. Taking declarations after the
+      discussion is a formality; taking them before it changes who speaks.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - id: mtg.quorum_binds
+    statement: No binding decision may be recorded from an inquorate meeting.
+    hard: true
+    why: The decision is void whether or not it is recorded, so recording it creates a false record on top of an invalid decision.
+
+  - id: mtg.notice_period
+    statement: A governance meeting cannot be validly convened inside the notice period set by its terms of reference.
+    hard: true
+    why: Notice is a validity condition. Short notice is the defect most often used to challenge a decision somebody dislikes.
+
+  - id: mtg.conflicts_do_not_count_to_quorum
+    statement: A member with a declared interest may not be counted towards quorum on that item.
+    hard: true
+    why: The declaration is remembered and the arithmetic is not, which makes an item quorate on paper and inquorate in fact.
+
+  - id: mtg.in_camera_distribution
+    statement: In-camera items may not be distributed on the general circulation list.
+    hard: true
+    why: A restricted item recorded in the general minute has already leaked; the only question left is when somebody notices.
+
+  - id: mtg.retention_of_minutes
+    statement: Minutes of a statutory body are retained for their statutory period regardless of any subsequent deletion policy.
+    hard: true
+    why: >
+      Ten years for directors' meeting minutes under Companies Act 2006 s.248, which is longer
+      than the retention default anyone has configured, and the default was configured by
+      somebody who was not told the difference between a minute and a meeting note.
+
+  - id: mtg.papers_deadline_binds
+    statement: Papers must be circulated by papers_deadline_at; later circulation makes the item deferrable at any member's request.
+    hard: false
+    why: >
+      A soft constraint on purpose. Making it hard means the meeting is cancelled and the
+      contributors who were on time pay for the one who was not. Making it deferrable puts the
+      cost on the late paper.
+
+# ── 11 · Business Rules ──────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: mtg.no_papers_no_decision
+    statement: >
+      An item whose paper missed papers_deadline_at is deferred at any member's request rather
+      than decided. A decision taken on a paper read in the car park is recorded in the minute
+      as agreement, when what actually happened was acquiescence — and the minute is what
+      survives.
+    then: mark_item_deferrable
+    severity: warning
+
+  - id: mtg.inquorate_decisions_are_void
+    statement: No decision may be recorded from a meeting where is_quorate is false. The item is carried, or taken by written resolution.
+    then: block_decision_record
+    severity: blocking
+    why: Both alternatives are legitimate. Recording it anyway is not, and it is the option that requires no conversation at the time.
+
+  - id: mtg.minutes_within_the_window
+    statement: >
+      The minute is owed within the body's stated window, and five working days is the common
+      default. After a fortnight the secretary is no longer minuting the meeting; they are
+      reconstructing it from a diary entry and their own handwriting.
+    when:
+      - {fn: days_since, path: meeting.start_at, op: ">", value: 5}
+      - {path: meeting.status, op: "!=", value: cancelled}
+      - {no_obs: followup_sent}
+    then: flag_minutes_overdue
+    severity: warning
+
+  - id: mtg.every_action_has_one_owner_and_a_date
+    statement: An action item leaves the room with exactly one named owner and a date, or it does not leave the room.
+    then: return_action_to_chair
+    severity: blocking
+    why: "\"The team will look at it\" is a way of ending a discussion, not of starting a piece of work."
+
+  - id: mtg.decisions_recorded_not_narrated
+    statement: >
+      Minutes record decisions, actions and dissent — not the discussion. A verbatim minute is
+      a liability in any later dispute and is read by nobody, which are two arguments pointing
+      in opposite directions that happen to reach the same conclusion.
+    severity: advisory
+
+  - id: mtg.in_camera_separately_minuted
+    statement: Confidential and in-camera items are minuted in a separate record with a separate distribution.
+    then: split_minute_record
+    severity: warning
+
+  - id: mtg.standing_series_needs_re_approval
+    statement: A recurring meeting is re-approved on a cycle by the person paying for the room.
+    severity: advisory
+    why: A standing meeting is the only organisational commitment that renews itself without anyone deciding to renew it.
+
+  - id: mtg.no_decision_without_an_agenda_item
+    statement: A decision may not be recorded against an item that was not on the circulated agenda, other than by explicit chair's ruling recorded in the minute.
+    severity: warning
+    why: Any-other-business is where governance quietly fails, because the people who would have objected did not know to attend.
+
+  - id: mtg.dissent_is_recorded
+    statement: A member who dissents from a decision has that dissent recorded in the minute if they ask for it.
+    severity: blocking
+    why: It is the individual's only protection, and refusing it — usually in the interest of a tidy record — converts a disagreement into a liability.
+
+# ── 12 · Decision Factors ────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: decision_authority
+    weight_bp: 2000
+    direction: increases
+    description: Whether anything decided here binds. A meeting with real authority deserves preparation proportional to it; one with none deserves an email.
+    reads: [decision_authority, meeting_type, governing_body]
+
+  - name: follow_through_debt
+    weight_bp: 1800
+    direction: increases
+    description: Open actions and matters arising carried in from the last sitting. The best available predictor that this meeting will be a status update.
+    reads: [actions_open_from_prior, matters_arising_count, followup_sent, action_closure_rate]
+
+  - name: preparation_state
+    weight_bp: 1800
+    direction: context
+    description: >
+      Whether the room could possibly be ready. Late papers do not make a meeting worse in the
+      room; they make the decision worse afterwards, which is harder to see and harder to
+      reverse.
+    reads: [papers_circulated_at, papers_deadline_at, agenda_circulated_at, prep_state, prebrief_delivered]
+
+  - name: record_obligation
+    weight_bp: 1600
+    direction: increases
+    description: Whether the minute is a legal record. For a statutory body the meeting is not the deliverable; the minute is.
+    reads: [is_minuted_of_record, meeting_type, minutes_status, retention_until]
+
+  - name: attendance_and_quorum
+    weight_bp: 1600
+    direction: context
+    description: Validity first, attendance second. A well-attended inquorate meeting decides nothing and everyone leaves believing otherwise.
+    reads: [is_quorate, quorum_required, attendees_actual, apologies_received, interests_declared]
+
+  - name: cost_of_the_room
+    weight_bp: 1200
+    direction: decreases
+    description: Attendee minutes against decisions produced. Rarely decisive on its own, and the only argument that has ever killed a standing meeting.
+    reads: [attendee_minutes, decisions_recorded, decision_density, recurrence]
+
+# ── 13 · Evidence ────────────────────────────────────────────────────────────────────────
+evidence:
+  - {source: register, strength_bp: 9800, decays: false, independent_of: [calendar, email, derived],
+     description: "Signed attendance register and register of interests. For a statutory body this outranks everything, including the calendar."}
+  - {source: document, strength_bp: 9500, decays: false, independent_of: [calendar, email],
+     description: "The adopted minute. Adoption, not circulation, is what makes it worth this."}
+  - {source: attestation, strength_bp: 8500, decays: false, independent_of: [email, derived],
+     description: "The chair's confirmation that the minute is a true record. The act that converts a document into evidence."}
+  - {source: calendar, strength_bp: 8000, decays: false, independent_of: [document, register],
+     description: "Date, duration, invitee list. Authoritative for scheduling and silent on attendance, which is the whole problem."}
+  - {source: meeting_transcript, strength_bp: 7500, decays: false, independent_of: [document, calendar],
+     description: "Excellent evidence of what was said, poor evidence of what was decided — and the two diverge most in exactly the meetings that matter."}
+  - {source: email, strength_bp: 7000, decays: true, independent_of: [document, calendar],
+     description: "Circulation of agenda, papers and minute, with the timestamps that prove or disprove the deadline."}
+  - {source: regulator, strength_bp: 9000, decays: false, independent_of: [email, calendar, document],
+     description: "Filed or inspected minutes of a statutory body. External, dated, and not editable by anyone here."}
+  - {source: derived, strength_bp: 4000, decays: true,
+     description: "Inferred from diary shape and follow-up observations. Corroborating only."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: minutes_turnaround, unit: days, direction: lower_is_better, owner_layer: L2,
+     description: "Meeting to circulation. The function's most visible quality signal and the easiest to fix.",
+     calibrates: [mtg.held_and_nothing_sent, mtg.followup_landed]}
+  - {name: minuted_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of meetings of record with an ADOPTED minute. Adopted, not sent — computed on circulation it overstates compliance everywhere.",
+     calibrates: [mtg.minutes_actually_circulated, mtg.minute_adopted_at_the_next_sitting]}
+  - {name: action_closure_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Actions raised and closed by their due date. The number that says whether meetings work at all.",
+     calibrates: [mtg.its_actions_have_gone_past_their_dates, mtg.circulated_but_nothing_left_the_room]}
+  - {name: papers_on_time_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Packs circulated by the deadline, by contributor. Presented at the board once a year it changes contributor behaviour more than any reminder ever has.",
+     calibrates: [mtg.papers_missed_their_deadline]}
+  - {name: quorum_failure_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     calibrates: [mtg.attendance_and_quorum, mtg.chronic_apologies_are_a_vacancy]}
+  - {name: decisions_per_meeting, unit: count, direction: target_band, owner_layer: L6,
+     description: "Across a recurring series. Near zero for a quarter is an argument to stand it down; implausibly high means decisions are being rubber-stamped elsewhere.",
+     calibrates: [mtg.standing_series_producing_no_decisions]}
+  - {name: matters_arising_trend, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "Carried items across consecutive sittings. Rising means the series has stopped closing things."}
+  - {name: attendee_minutes_consumed, unit: minutes, direction: lower_is_better, owner_layer: L6,
+     description: "Attendees multiplied by duration, aggregated. The number nobody wants published and everybody should see."}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: mtg.scheduled, name: Meeting Scheduled, severity: info,
+     emitted_when: [{exists: meeting.start_at}], payload: [start_at, meeting_type, attendees_expected]}
+  - {id: mtg.papers_due, name: Board Papers Due, severity: notable,
+     payload: [papers_deadline_at, agenda_ref, secretary_ref],
+     description: "Fires days before the meeting. The only prompt in the whole cycle that can still change the outcome."}
+  - {id: mtg.cancelled, name: Meeting Cancelled, severity: notable,
+     emitted_when: [{path: meeting.status, op: "=", value: cancelled}],
+     payload: [start_at, meeting_type], invalidates: [prep_state, prebrief_delivered],
+     description: "For a statutory body this is a governance event with consequences, not a diary tidy-up."}
+  - {id: mtg.held, name: Meeting Held, severity: info,
+     payload: [start_at, attendees_actual, is_quorate, decisions_recorded]}
+  - {id: mtg.quorum_failed, name: Quorum Not Met, severity: critical,
+     payload: [attendees_actual, quorum_required], invalidates: [decisions_recorded, minutes_status],
+     description: "Nothing decided in this meeting stands. The most expensive event in the object and the one nobody notices in the room."}
+  - {id: mtg.minutes_overdue, name: Minutes Overdue, severity: notable,
+     emitted_when: [{fn: days_since, path: meeting.start_at, op: ">", value: 5},
+                    {path: meeting.status, op: "!=", value: cancelled},
+                    {no_obs: followup_sent}],
+     payload: [start_at, secretary_ref, record_owed]}
+  - {id: mtg.minutes_circulated, name: Minutes Circulated, severity: info,
+     emitted_when: [{has_obs: followup_sent}], payload: [minutes_ref, minutes_circulated_at],
+     description: "Emitted on the weakest possible evidence today. Downstream consumers must treat it as contact, not as record — see mtg.followup_landed."}
+  - {id: mtg.minutes_adopted, name: Minutes Adopted, severity: notable,
+     payload: [minutes_ref, minutes_adopted_at, next_meeting_at],
+     description: "The point at which the minute becomes a record. Untracked almost everywhere, including in organisations that would tell you they track it."}
+  - {id: mtg.chairs_action_taken, name: Chair's Action Taken Between Sittings, severity: notable,
+     payload: [chair_ref, next_meeting_at],
+     description: "Creates a ratification obligation at the next sitting. Unratified chair's action accumulates into a body that has been bypassed rather than one that decided."}
+
+# ── 16 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - id: mtg.schedule
+    name: Find and book a time
+    actor: agent
+    effect: "Places the meeting in the diary and starts the preparation clock."
+    cost: low
+    reversible: true
+    description: The visible part of meeting operations and the smallest part of its value.
+
+  - id: mtg.circulate_agenda
+    name: Circulate the agenda
+    actor: agent
+    preconditions: [{exists: meeting.start_at}]
+    effect: "Sets the frame for the business."
+    cost: trivial
+    reversible: true
+    description: An agenda item phrased as a topic invites discussion; phrased as a decision it invites a decision.
+
+  - id: mtg.chase_papers
+    name: Chase contributors for papers
+    actor: agent
+    effect: "Recovers the pack against the deadline rather than against the meeting date."
+    cost: low
+    reversible: true
+    description: Chasing on the day is theatre — nobody can read a pack that arrives on the morning, and everyone will say they did.
+
+  - id: mtg.prebrief_the_chair
+    name: Brief the chair before the sitting
+    actor: human
+    effect: "Puts the carried actions and the contentious items in front of the chair before the room sees them."
+    cost: low
+    reversible: true
+
+  - id: mtg.confirm_quorum
+    name: Confirm quorum before the meeting opens
+    actor: human
+    effect: "Establishes validity, including the conflict arithmetic on individual items."
+    cost: trivial
+    reversible: false
+    description: Two minutes at the start against months of unpicking afterwards.
+
+  - id: mtg.take_minutes
+    name: Take the minute
+    actor: human
+    effect: "Records decisions, actions, dissent and abstentions. Not the discussion."
+    cost: moderate
+    reversible: true
+
+  - id: mtg.read_back_the_actions
+    name: Read the actions back before anyone leaves
+    actor: human
+    effect: "Fixes owner and date while every owner is in the room and able to object."
+    cost: trivial
+    reversible: false
+
+  - id: mtg.circulate_minutes
+    name: Circulate the minute
+    actor: agent
+    effect: "Sends within the body's window, to the correct list, with in-camera items on a separate one."
+    cost: low
+    reversible: false
+
+  - id: mtg.raise_action_items
+    name: Raise the action items
+    actor: system
+    effect: "Creates one action item per decision, each with one owner and one date."
+    cost: trivial
+    reversible: true
+    description: Items lacking both are returned to the chair, not filed.
+
+  - id: mtg.carry_matters_arising
+    name: Carry matters arising forward
+    actor: system
+    effect: "Places unclosed items at the top of the next agenda rather than at the bottom."
+    cost: trivial
+    reversible: true
+
+  - id: mtg.seek_written_resolution
+    name: Seek a written resolution
+    actor: human
+    effect: "Takes a decision that failed for quorum to all members in writing, keeping it inside the record."
+    cost: moderate
+    reversible: false
+
+  - id: mtg.propose_standing_down_the_series
+    name: Propose standing down the series
+    actor: agent
+    effect: "Puts attendee-minutes against decisions recorded in front of the person paying for the room."
+    cost: moderate
+    reversible: true
+    description: Correct when decision density is near zero. Requires evidence, which is why it is almost never proposed.
+
+# ── 17 · Dependencies ────────────────────────────────────────────────────────────────────
+dependencies:
+  - target: admin.obj.core.document
+    kind: requires
+    strength: hard
+    description: >
+      Agenda, papers and minute. The meeting is unresolvable as an object without them — the
+      diary entry alone tells you only that a room was booked.
+
+  - target: admin.obj.core.policy
+    kind: requires
+    strength: hard
+    description: Terms of reference or standing orders supply quorum, notice period and decision authority. Without them, validity is unanswerable.
+
+  - target: admin.obj.core.employee_record
+    kind: requires
+    strength: hard
+    description: Chair, secretary, attendance and apologies. Every governance question on this object is a question about named people.
+
+  - target: admin.obj.core.action_item
+    kind: enriches
+    strength: hard
+    description: Follow-through is the half of this object that predicts whether it was worth holding, and it lives entirely on the action items.
+
+  - target: admin.obj.core.meeting
+    kind: derived_from
+    strength: soft
+    description: The previous sitting in the series. Matters arising and minute adoption exist only as an edge between two meetings and cannot be computed from one.
+
+  - target: admin.obj.core.commitment
+    kind: enriches
+    strength: soft
+    description: Supplies the only dated output the engine can currently see, which is why two of the executable patterns read it.
+
+  - target: admin.obj.core.compliance_obligation
+    kind: enriches
+    strength: soft
+    description: For a statutory body, holding and minuting the meeting discharges the obligation, and the obligation supplies the deadline the diary does not carry.
+
+  - target: admin.obj.core.approver
+    kind: enriches
+    strength: soft
+    description: For chair's action between sittings, and for the committee acting as an approver with a diary.
+
+# ── 18 · Exceptions ──────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: mtg.written_resolution_when_inquorate
+    statement: Where the constitution allows, a decision that failed for quorum may be taken by written resolution circulated to all members.
+    overrides: [mtg.inquorate_decisions_are_void, mtg.no_decision_without_an_agenda_item]
+    why: >
+      The alternative — waiting a month — is how a governance body becomes a bottleneck and
+      then gets bypassed permanently. The written resolution keeps the decision inside the
+      record instead of in an email chain that nobody will be able to find.
+    frequency: occasional
+
+  - id: mtg.chairs_action
+    statement: A chair may act between sittings on a matter that cannot wait, reporting it for ratification at the next meeting.
+    overrides: [mtg.no_decision_without_an_agenda_item, mtg.quorum_binds]
+    why: >
+      Bodies meet monthly and the world does not. The ratification obligation is the whole of
+      what keeps this an exception; unratified chair's action accumulating over a year is a
+      board that has been quietly replaced by one person.
+    frequency: occasional
+
+  - id: mtg.emergency_meeting_short_notice
+    statement: A meeting may be convened inside the notice period with the consent of all members entitled to attend.
+    overrides: [mtg.notice_period]
+    when: [{exists: meeting.start_at}]
+    why: >
+      Consent of everyone entitled is what cures the defect, and it must be recorded in the
+      minute. Consent of everyone who happened to be available is not the same thing and is
+      the version that actually gets done.
+    frequency: rare
+
+  - id: mtg.one_to_one_needs_no_minute
+    statement: A recurring one-to-one produces action items and no minute of record.
+    overrides: [mtg.minutes_within_the_window, mtg.decisions_recorded_not_narrated]
+    why: >
+      Applying board discipline to a catch-up is the fastest way to make administrators look
+      obstructive and get the whole practice discarded — including in the meetings where it
+      genuinely matters. The exception protects the rule.
+    frequency: common
+
+  - id: mtg.cancelled_statutory_meeting_is_still_minuted
+    statement: Cancelling a meeting of a statutory body is itself a minuted event, and for some bodies a reportable one.
+    overrides: [mtg.cancelled_so_nothing_is_owed]
+    when: [{path: meeting.status, op: "=", value: cancelled}]
+    why: >
+      The cancellation is the governance fact. A body that fails to meet as constituted has
+      failed to do something, and the record of why is the only defence available afterwards.
+    frequency: rare
+
+  - id: mtg.in_camera_minuted_as_decision_only
+    statement: Personnel, litigation and acquisition items are minuted as the decision alone, with the discussion recorded nowhere.
+    overrides: [mtg.decisions_recorded_not_narrated, mtg.dissent_is_recorded]
+    why: >
+      Anything written about a live grievance or a contemplated acquisition is disclosable in
+      the dispute it concerns. The decision is the record; the reasoning is a liability, and
+      this is the one case where a member's dissent may be recorded in the confidential minute
+      only.
+    frequency: occasional
+
+  - id: mtg.no_papers_but_the_deadline_is_external
+    statement: An item with late papers is still taken when deferring it would miss a statutory or contractual deadline.
+    overrides: [mtg.no_papers_no_decision, mtg.papers_deadline_binds]
+    why: >
+      Deferring to protect the process is the right instinct and the wrong answer when the
+      process exists to discharge an obligation with a harder date than the meeting cycle.
+      Minute the fact that papers were late; it is the only way the pattern ever gets fixed.
+    frequency: occasional
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: mtg.agenda_items_as_decisions
+    statement: Write each agenda item as the decision required, with the person bringing it and a time box.
+    why: >
+      "Budget update" produces forty minutes of update. "Approve the revised Q3 budget —
+      Priya, 15 minutes" produces a decision or an explicit deferral, and either is an outcome.
+    applies_when: Any meeting with decision_authority above `none`.
+
+  - id: mtg.papers_in_clear_days
+    statement: Count the papers deadline in clear days and publish the arithmetic with the date.
+    why: "\"Five days before\" means four to a contributor and six to a chair, and both are arguing in good faith. Clear days plus a stated date removes the argument entirely."
+    applies_when: Any body with a papers deadline.
+    evidence: papers_on_time_rate
+
+  - id: mtg.read_the_actions_back
+    statement: Read the actions back before anyone leaves, with owner and date, and record any objection there and then.
+    why: >
+      It is the only moment at which every owner is present, listening, and able to say no. An
+      action assigned to an absent person in a minute circulated three days later is assigned
+      to nobody.
+    applies_when: Every meeting that raises actions, which is every meeting worth holding.
+
+  - id: mtg.matters_arising_first
+    statement: Put matters arising at the top of the agenda, not at the bottom.
+    why: Placed last they are cut for time, every time, which is precisely how a series stops closing anything and starts accumulating.
+    applies_when: Any recurring series.
+    evidence: matters_arising_trend
+
+  - id: mtg.minute_within_five_working_days
+    statement: Circulate the minute within five working days, in draft if necessary.
+    why: >
+      Accuracy decays fast. After a fortnight the secretary is reconstructing from a diary
+      entry and their own handwriting, and the reconstruction is what will be adopted as a
+      true record.
+    applies_when: Any meeting of record.
+    evidence: minutes_turnaround
+
+  - id: mtg.decision_log_separate_from_the_minute
+    statement: Extract decisions into a standing decision log, separate from the minutes.
+    why: >
+      Nobody rereads minutes. A decision log is the artefact that actually gets consulted, and
+      it is the one the auditor asks for — usually about a decision taken four years and two
+      secretaries ago.
+    applies_when: Any body with more than a year of sittings.
+
+  - id: mtg.attendance_register_for_bodies_of_record
+    statement: Keep a signed attendance register and a register of interests for every meeting of a body.
+    why: The calendar records who was invited. Only the register records who was there, and only attendance decides whether what was decided stands.
+    applies_when: board, committee and statutory meeting types.
+
+  - id: mtg.annual_review_of_the_series
+    statement: Review every standing meeting annually against attendee minutes and decisions recorded, and require the sponsor to re-approve it.
+    why: >
+      A standing meeting is the only organisational commitment that renews itself without
+      anyone deciding to renew it. The arithmetic is the only argument that has ever ended one.
+    applies_when: Any recurring meeting older than a year.
+    evidence: attendee_minutes_consumed
+
+  - id: mtg.two_circulation_lists
+    statement: Maintain two circulation lists from the outset — general and in-camera — rather than editing one before sending.
+    why: A list edited under time pressure at the moment of sending is the mechanism by which confidential items reach the wrong people, and it fails silently.
+    applies_when: Any body that takes personnel, litigation or acquisition items.
+
+# ── 20 · Anti-Patterns ───────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: mtg.followup_counted_as_a_minute
+    statement: A post-meeting thank-you note recorded as the meeting's record.
+    why_it_happens: >
+      It is what the available signal supports. Any system built on "was something sent
+      afterwards" will count a thank-you note as a minute, and the dashboard turns green
+      without anybody intending the deception.
+    cost: "A governance dashboard reporting 100% minuted against an empty minute book. Discovered by the auditor, or by the first person who needs a decision from eighteen months ago."
+    instead: "Keep followup_sent and minutes_status as separate fields and never let an observation set the second. Report minuted_rate on adoption, not on circulation."
+    detectable_by: [mtg.followup_landed, mtg.minutes_actually_circulated, minuted_rate]
+
+  - id: mtg.the_action_with_no_owner
+    statement: "\"The team will look at it\" recorded as an action."
+    why_it_happens: It ends the discussion, it sounds collaborative, and naming one person in a room of peers feels like an accusation.
+    cost: "Nothing happens, and the item reappears as matters arising for three consecutive sittings before someone finally owns it or it is quietly dropped."
+    instead: "One name and one date, read back in the room. Items without both are returned to the chair rather than filed."
+    detectable_by: [mtg.circulated_but_nothing_left_the_room, action_closure_rate]
+
+  - id: mtg.minutes_as_transcript
+    statement: A verbatim minute recording who said what, at length.
+    why_it_happens: It feels like thoroughness, it is what a new secretary assumes is wanted, and nobody has ever been criticised for writing too much down.
+    cost: "Unread by members, and a liability in any later dispute — every half-formed remark on the way to a decision is now on the record and disclosable."
+    instead: "Record the decision, the actions, the dissent and the abstentions. The discussion belongs to the room."
+    detectable_by: [minutes_turnaround, decisions_per_meeting]
+
+  - id: mtg.zombie_standing_meeting
+    statement: A recurring meeting that has produced no decision in six months and continues because it is in everyone's calendar.
+    why_it_happens: >
+      Cancelling it requires somebody to say it was not worth it, which reflects on whoever
+      set it up — usually a person still in the room. The calendar entry, meanwhile, requires
+      nothing from anyone.
+    cost: "Nine hours a week of attendee time in a twelve-person weekly hour, spent on a status update that could be read in four minutes."
+    instead: "Publish attendee minutes against decisions recorded, annually, and make the sponsor re-approve the series."
+    detectable_by: [mtg.standing_series_producing_no_decisions, attendee_minutes_consumed, decisions_per_meeting]
+
+  - id: mtg.quorum_by_headcount
+    statement: Counting everyone in the room towards quorum, including guests and members with a declared conflict.
+    why_it_happens: The declaration was made at the top of the meeting and everyone moved on. The arithmetic happens in someone's head, once, under time pressure.
+    cost: "The item is quorate on paper and inquorate in fact, so the decision is void — and it is discovered by whoever later has cause to contest it."
+    instead: "State the quorum arithmetic aloud per item where a conflict exists, and record it. Attendees by invitation are never counted."
+    detectable_by: [mtg.conflicted_member_counted_towards_quorum, mtg.attendance_and_quorum, quorum_failure_rate]
+
+  - id: mtg.pack_padding
+    statement: A two-hundred-page board pack circulated three days late.
+    why_it_happens: Nobody wants to be the person who left something out, and every contributor is optimising their own item rather than the reader's evening.
+    cost: "Nothing is read. The decision is taken on the covering summary, which was written by whoever was most junior and had the least context."
+    instead: "A page limit per item, enforced by the secretary, and a cover paper that states the decision required. Late items go to the next sitting."
+    detectable_by: [mtg.papers_missed_their_deadline, papers_on_time_rate]
+
+  - id: mtg.the_pre_meeting
+    statement: A pre-meeting where the real decision is taken, followed by a formal meeting that ratifies it.
+    why_it_happens: The formal meeting is too large to decide anything, so the work moves to a smaller room. Every individual step is sensible.
+    cost: >
+      The minute records a decision taken by people who were not in the room. The record is now
+      false in a way that survives everyone involved, and the members excluded from the small
+      room stop preparing for the large one.
+    instead: "Shrink the deciding body, or give the pre-meeting formal delegated authority and minute it. Do not leave the decision homeless."
+    detectable_by: [decisions_per_meeting, mtg.standing_series_producing_no_decisions]
+
+  - id: mtg.rescheduling_instead_of_deciding
+    statement: A contentious item deferred at three consecutive sittings for more information.
+    why_it_happens: Deferral is unanimous when a decision would not be, and asking for more information is the most respectable way to avoid a choice.
+    cost: "The decision is made by the passage of time, in whichever direction the delay favours, and nobody is accountable for it because nobody made it."
+    instead: "Record the deferral WITH the specific information required, its owner and its date. A second deferral without new information is taken as a decision not to proceed."
+    detectable_by: [matters_arising_trend, mtg.chronic_apologies_are_a_vacancy]
+
+  - id: mtg.hybrid_by_default
+    statement: Every meeting made hybrid so that nobody has to choose, and nobody manages the remote half.
+    why_it_happens: It is inclusive by intention and free to configure. The failure is entirely in the running of it, which nobody owns.
+    cost: "Remote participants contribute less and are minuted less, so the record under-represents them — and over a series, so does the body's memory of who contributed."
+    instead: "Choose: fully remote with everyone on their own screen, or in-person with a named person in the room responsible for bringing remote voices in."
+    detectable_by: [decisions_per_meeting, mtg.circulated_but_nothing_left_the_room]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - label: "Quarterly board meeting"
+    kind: typical
+    note: >
+      Papers due seven clear days ahead, quorum defined in the articles, minute is a legal
+      record retained ten years and adopted at the next sitting. Every attribute in this
+      object is mandatory here, and the secretary is usually the only person who knows that.
+    attributes: {meeting_type: board, is_minuted_of_record: true, decision_authority: full, recurrence: quarterly}
+
+  - label: "Audit committee with the external auditor present"
+    kind: edge
+    note: >
+      External attendee who does not count towards quorum, plus an in-camera session at the
+      end without management present. Two minutes, two distribution lists, one meeting — and
+      the commonest place a restricted item reaches the wrong list.
+    attributes: {meeting_type: committee, confidentiality: in_camera, external_attendees: [external_auditor]}
+
+  - label: "Weekly ops stand-up that has run for three years"
+    kind: typical
+    note: >
+      Twelve people, one hour: roughly nine hours of attendee time a week, decisions recorded
+      approximately zero. Nobody will stand it down without the arithmetic on a slide, and
+      with the arithmetic it takes about four minutes.
+    attributes: {meeting_type: team, recurrence: weekly, decisions_recorded: 0, decision_authority: none}
+
+  - label: "One-to-one with the principal"
+    kind: typical
+    note: >
+      No minute of record and high commitment density. Its entire output is action items, and
+      it is the meeting whose follow-up is most often carried in somebody's head rather than
+      in a system.
+    attributes: {meeting_type: one_to_one, is_minuted_of_record: false, recurrence: weekly}
+
+  - label: "Works council consultation"
+    kind: edge
+    note: >
+      Statutory. Notice period, quorum and minute content are all prescribed, and being late
+      is a legal exposure rather than a scheduling problem. The one meeting type where
+      cancelling correctly is harder than holding it.
+    attributes: {meeting_type: statutory, notice_period_days: 14, is_minuted_of_record: true}
+
+  - label: "Recurring project sync that has quietly started approving spend"
+    kind: misclassification
+    note: >
+      Recorded as meeting_type = team with decision_authority = none, and it has been
+      approving purchase commitments for eighteen months. The classification is wrong, every
+      approval is unsupported, and it will be found by finance rather than by governance.
+    attributes: {meeting_type: team, decision_authority: none, is_minuted_of_record: false}
+
+  - label: "Meeting cancelled two hours before, after the pack went out"
+    kind: edge
+    note: >
+      status = cancelled, papers already circulated, preparation cost entirely sunk and
+      entirely invisible. Only attendee_minutes ever records it, and only if somebody
+      calculates it.
+    attributes: {status: cancelled, prep_state: complete, papers_circulated_at: circulated}
+
+  - label: "A booked room with eight people and no agenda"
+    kind: counterexample
+    note: >
+      Not a Meeting for the purposes of this object. Nothing is owed once everyone leaves, so
+      it is a time block with company. Modelling it as a meeting produces a minutes-overdue
+      nudge that is simply wrong, and one wrong nudge of that kind costs more trust than ten
+      right ones earn.
+    attributes: {meeting_type: information, is_minuted_of_record: false, decision_authority: none}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Robert's Rules of Order", kind: book, author: "Henry M. Robert",
+     note: "The standard parliamentary authority in Anglophone practice. Quorum, motions, points of order, and the principle that business conducted without a quorum is void rather than merely irregular."}
+  - {title: "Companies Act 2006 s.248 — minutes of directors' meetings", kind: standard,
+     note: "Minutes of directors' meetings must be kept for ten years. A seven-year retention default configured by IT silently breaches this, and nobody discovers it until the records are gone."}
+  - {title: "UK Corporate Governance Code", kind: standard,
+     note: "Board effectiveness, timely and quality information ahead of meetings, and the expectation that concerns which cannot be resolved are recorded in the minutes."}
+  - {title: "Chartered Governance Institute (formerly ICSA) — guidance on minute taking", kind: practitioner,
+     note: "The profession's settled position: minutes record decisions and enough of the reasoning to show the decision was properly taken — not the discussion. The source for most of this object's record section."}
+  - {title: "Terms of reference and standing orders", kind: framework,
+     note: "The instrument that sets quorum, notice period, decision authority and what may be delegated. Universally referenced and almost never findable at the moment it is needed."}
+  - {title: "Written resolution", kind: framework,
+     note: "The standard mechanism for taking a decision outside a meeting while keeping it inside the record. The alternative to waiting a month, and the thing that stops a slow body being bypassed permanently."}
+  - {title: "Chair's action and ratification", kind: framework,
+     note: "Authority for the chair to act between sittings on matters that cannot wait, subject to report and ratification at the next meeting. Unratified chair's action is how a board becomes one person."}
+  - {title: "Decision log", kind: framework,
+     note: "A standing register of decisions extracted from minutes. The artefact people actually consult, and the one an auditor asks for."}
+  - {title: "RACI", kind: framework,
+     note: "One accountable owner per action. The whole of mtg.every_action_has_one_owner_and_a_date is the A applied to what leaves a room."}
+  - {title: "Retention schedule", kind: framework,
+     note: "Minutes of a body of record are retained on a statutory schedule that is usually longer than any default deletion policy, and the two are configured by different people who never meet."}
+  - {title: "Silent-read memo practice", kind: practitioner,
+     note: "Circulating a written paper and reading it in the room instead of presenting it. Solves the unread-pack problem directly, at the cost of an uncomfortable first twenty minutes, and is the only approach that reliably works when papers are chronically late."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of fourteen patterns are executable, which makes this the best-served Admin object in
+    the current substrate — meeting.start_at, meeting.status and followup_sent were built for
+    a sales follow-up motion and happen to describe the domain's central meeting failure
+    exactly. The catch is stated in mtg.followup_landed and should be read before anyone
+    builds a governance dashboard on this object: followup_sent proves that something was
+    sent, not that a minute was, and the anti-pattern mtg.followup_counted_as_a_minute exists
+    to make that misuse namable. mtg.cancelled_so_nothing_is_owed is the one pattern here that
+    bets on a literal status string; it is worth the bet only because a wrong minutes-overdue
+    nudge for a meeting that did not happen is the fastest way to lose an administrator's
+    trust. The two highest-value asks are meeting.attendees_actual — a projection gap, since
+    the calendar payload already carries the responses — and a minutes_adopted observation.
+    With those two, quorum, attendance trend and the real minuted rate all become computable,
+    and this object stops guessing about the only questions a board secretary is ever asked.

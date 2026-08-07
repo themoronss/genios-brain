@@ -1,0 +1,91 @@
+# Consumer ecommerce support — vertical branch under customer_support.model.b2c.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2c.ecommerce
+  name: Consumer Ecommerce Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2c
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting consumers who bought a physical thing online. Almost nothing in this queue is a
+  question about how the product works; it is a question about where an order is, what state it
+  arrived in, and whether the money is coming back. That changes the shape of the work in three
+  ways.
+  Resolution transfers value, not information. Refunds, replacements, credits and goodwill are
+  the agent's actual toolkit, which means cost-to-serve includes the goods and not just the
+  minutes, and an agent's authority limit is a real operating parameter. It also means
+  resolutions are not reversible: a software answer given wrongly can be corrected, a dispatched
+  replacement cannot be un-shipped.
+  The facts belong to a carrier. For the largest single intent — where is my order — the truth
+  is in a tracking system we do not control and cannot correct, so a large fraction of the queue
+  is us relaying somebody else's information to an increasingly annoyed person while holding the
+  liability.
+  Generosity is farmed. The policy that resolves an honest customer in one message is the same
+  policy an organised abuser runs at scale, so the tension between resolution speed and abuse
+  control is permanent and cannot be settled by picking one.
+  The error carried in from streaming or gaming is treating resolution as information delivery.
+  The error carried in from B2B is investigating: at this volume, on this basket value, a
+  fifteen-minute investigation to avoid a small refund is a loss, and the operator who cannot
+  make that trade quickly clogs the queue behind them.
+
+characteristics:
+  requester: "the consumer who placed the order, or the recipient who did not — gifts and household orders routinely mean the person contacting us is not on the account"
+  typical_resolution_hours: 6
+  volume_shape: "very high volume tracking order volume with a lag, spiking through promotional events and peak season and again two to three weeks later when returns land"
+  staffing_model: "pooled agents on shared queues with separate fraud/chargeback and returns pods, heavy seasonal contractor use"
+  coverage: "extended hours seven days, with chat and messaging carrying most of the interaction"
+  automation_level: "very high — order status, tracking and returns initiation are the most deflectable intents in the whole domain, and the economics assume they are deflected"
+  notes: >
+    The returns wave is a second peak most staffing models forget. It arrives after the trading
+    peak has been declared survived and it is staffed by whoever is left.
+
+capabilities:
+  emphasises:
+    # Order status is the single largest deflectable intent anywhere in consumer support.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+    - customer_support.intake_and_triage.intent_classification
+    # Resolutions cost goods and money, so the unit economics of a decision are the decision.
+    - customer_support.support_operations.cost_to_serve
+    # What we can promise about a parcel we cannot see is the hardest sentence in this vertical.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.customer_communication.de_escalation
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [intent_ref, resolution_type]
+      note: >
+        Resolution type has to distinguish refund, replacement, credit, return-authorised and
+        information-only, because those five have different cost, different reversibility and
+        completely different abuse profiles. A queue that records them all as "resolved" can
+        report excellent performance while giving away the margin.
+    - object: customer_support.obj.core.requester
+      require_properties: [is_affected_user]
+      note: >
+        Gift and household orders break the assumption that the contacting person is the buyer.
+        The recipient has the problem and the buyer has the account, the payment method and the
+        refund right — and an agent who resolves with whoever wrote in has created a dispute
+        with someone who has not spoken yet.
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [public_exposure]
+      note: >
+        Anger here is cheap to broadcast and expensive to receive. A marketplace review, a
+        chargeback and a social post are all one click away, and the same reading of frustration
+        justifies a faster and more generous response than it would in B2B — not because the
+        customer is angrier, but because the alternative channel is worse for us.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional

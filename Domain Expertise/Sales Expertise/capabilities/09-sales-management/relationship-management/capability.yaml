@@ -1,0 +1,28 @@
+identity:
+  id: sales.sales_management.relationship_management
+  name: Relationship Management
+  domain: sales
+  subdomain: sales_management
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Sustained upkeep of key relationships independent of any live deal — investors, partners,
+  executive sponsors, past champions who moved. Almost entirely non-deal-linked, which is why
+  the engine keeps its rules in the general pack rather than the sales one.
+
+question: "Are the relationships that matter being maintained?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

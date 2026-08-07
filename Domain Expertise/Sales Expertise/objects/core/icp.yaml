@@ -1,0 +1,425 @@
+identity:
+  id: sales.obj.core.icp
+  scope: core
+  name: ICP
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 1.0.0
+  status: draft
+  aliases: ["Ideal Customer Profile", "Target Profile"]
+purpose:
+  statement: >
+    The shape of an account that reliably succeeds with us — defined by what actually
+    correlates with winning and retaining, not by who we would like as a customer. This object
+    holds the PROFESSION's model of an ICP: which dimensions matter, how fit is tested, and
+    how a profile is falsified. It deliberately holds no values. Whether this company sells to
+    50-person agencies or 5,000-person banks is Organization Brain content, learned per tenant
+    and read at compile time; putting it here would make one company's answer look like the
+    profession's.
+attributes:
+  - name: firmographics
+    purpose: What the account is.
+    type: composite
+    contains:
+      - industry
+      - employee_band
+      - revenue_band
+      - geography
+      - funding_stage
+      - business_model
+  - name: technographics
+    purpose: What they already run, and whether we fit beside it.
+    type: composite
+    contains:
+      - tech_stack
+      - incumbent_vendor
+      - integration_requirements
+  - name: behavioural_fit
+    purpose: How they buy. Usually more predictive than what they are, and almost always
+      under-weighted.
+    type: composite
+    contains:
+      - buying_maturity
+      - typical_committee_size
+      - typical_cycle_days
+      - decision_style
+  - name: need_fit
+    purpose: Groups the Need fit attributes.
+    type: composite
+    contains:
+      - primary_pain
+      - trigger_events
+      - urgency_drivers
+  - name: economic_fit
+    purpose: Groups the Economic fit attributes.
+    type: composite
+    contains:
+      - target_acv_low
+      - target_acv_high
+      - expected_gross_margin
+      - expected_retention_months
+  - name: anti_fit
+    purpose: The half of an ICP most companies never write down.
+    type: composite
+    contains:
+      - disqualifiers
+      - known_loss_patterns
+      - churn_predictors
+  - name: industry
+    purpose: The industry of this object.
+    type: value
+    data_type: list
+  - name: employee_band
+    purpose: The employee_band of this object.
+    type: value
+    data_type: string
+  - name: revenue_band
+    purpose: The revenue_band of this object.
+    type: value
+    data_type: string
+  - name: geography
+    purpose: The geography of this object.
+    type: value
+    data_type: list
+  - name: funding_stage
+    purpose: The funding_stage of this object.
+    type: value
+    data_type: enum
+    allowed_values: [bootstrapped, seed, series_a, series_b, series_c_plus, public, private_equity,
+        unknown]
+  - name: business_model
+    purpose: The business_model of this object.
+    type: value
+    data_type: enum
+    allowed_values: [b2b, b2c, b2b2c, marketplace, d2c, mixed, unknown]
+  - name: tech_stack
+    purpose: The tech_stack of this object.
+    type: value
+    data_type: list
+  - name: incumbent_vendor
+    purpose: Who they use today. A displacement sale and a greenfield sale share almost no mechanics.
+    type: value
+    data_type: string
+    description: Who they use today. A displacement sale and a greenfield sale share almost no
+      mechanics.
+  - name: integration_requirements
+    purpose: The integration_requirements of this object.
+    type: value
+    data_type: list
+  - name: buying_maturity
+    purpose: The buying_maturity of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, ad_hoc, structured, procurement_led]
+  - name: typical_committee_size
+    purpose: The typical_committee_size of this object.
+    type: value
+    data_type: integer
+  - name: typical_cycle_days
+    purpose: The typical_cycle_days of this object.
+    type: value
+    data_type: integer
+    unit: days
+  - name: decision_style
+    purpose: The decision_style of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, consensus, top_down, committee_vote, delegated]
+  - name: primary_pain
+    purpose: The primary_pain of this object.
+    type: value
+    data_type: string
+  - name: trigger_events
+    purpose: What has to have happened for this account to be in market at all. The difference between
+      a target list and a pipeline.
+    type: value
+    data_type: list
+    description: What has to have happened for this account to be in market at all. The difference
+      between a target list and a pipeline.
+  - name: urgency_drivers
+    purpose: The urgency_drivers of this object.
+    type: value
+    data_type: list
+  - name: target_acv_low
+    purpose: The target_acv_low of this object.
+    type: value
+    data_type: money
+  - name: target_acv_high
+    purpose: The target_acv_high of this object.
+    type: value
+    data_type: money
+  - name: expected_gross_margin
+    purpose: The expected_gross_margin of this object.
+    type: value
+    data_type: number
+  - name: expected_retention_months
+    purpose: Retention belongs in the ICP, not only in Customer Success. A segment that closes fast
+      and churns at twelve months is not an ICP, and a definition built only on win rate cannot tell
+      you that.
+    type: value
+    data_type: integer
+    unit: months
+    description: >
+      Retention belongs in the ICP, not only in Customer Success. A segment that closes fast
+      and churns at twelve months is not an ICP, and a definition built only on win rate
+      cannot tell you that.
+  - name: disqualifiers
+    purpose: Conditions that make an account unwinnable or unprofitable regardless of interest.
+    type: value
+    data_type: list
+    description: Conditions that make an account unwinnable or unprofitable regardless of interest.
+  - name: known_loss_patterns
+    purpose: The known_loss_patterns of this object.
+    type: value
+    data_type: list
+  - name: churn_predictors
+    purpose: The churn_predictors of this object.
+    type: value
+    data_type: list
+  - name: fit_score_bp
+    purpose: Computed fit, 0-10000. Deterministic weighting over the dimensions above; never a model
+      output.
+    type: value
+    data_type: integer
+    description: Computed fit, 0-10000. Deterministic weighting over the dimensions above; never a
+      model output.
+states:
+  initial: unknown
+  values:
+    - {name: unknown, description: "No profile defined. Everything is a target and nothing is."}
+    - {name: hypothesis, description: "Asserted from belief, not from outcomes. Where every ICP starts\
+        and where too many stay."}
+    - {name: validated, description: "Supported by enough won-and-retained accounts to be more than a\
+        story."}
+    - {name: drifting, description: "Recent wins no longer match the profile."}
+    - {name: retired, description: "Superseded by a newer profile."}
+  transitions:
+    - {from: unknown, to: hypothesis}
+    - {from: hypothesis, to: validated}
+    - {from: validated, to: drifting}
+    - {from: drifting, to: validated}
+    - {from: drifting, to: retired}
+
+relationships:
+  - {type: gates, target: sales.obj.core.lead, cardinality: zero_or_many, description: "Fit is the first\
+      gate. A lead outside the ICP is not an early-stage deal, it is a distraction."}
+  - {type: references, target: sales.obj.core.persona, cardinality: zero_or_many}
+  - {type: references, target: sales.obj.core.company, cardinality: zero_or_many}
+  - {type: influences, target: sales.obj.core.pain_point, cardinality: zero_or_many}
+  - {type: influences, target: sales.obj.core.buying_committee, cardinality: zero_or_one, description: "typical_committee_size
+      sets the expected shape before anything is mapped."}
+
+inference_patterns:
+
+  deterministic:
+    - id: icp.acv_in_target_band
+      statement: "The deal value sits inside the target ACV band."
+      status: executable
+      when:
+        - {path: deal.value, op: ">=", value: 10000}
+        - {path: deal.value, op: "<=", value: 250000}
+      yields: {confidence_bp: 6000, attribute: null}
+      note: >
+        The literal bounds here are placeholders for the SHAPE of the test. At runtime they
+        resolve from the Organization Brain's target_acv_low / target_acv_high, because the
+        band is per-tenant. This pattern is included precisely to show where the seam is.
+
+    - id: icp.firmographic_match
+      statement: "Industry, size and geography all match the declared profile."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: fit_score_bp, value: null}
+      requires_signals:
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+        - {kind: fact_path, name: account.employee_count, owner_layer: L1}
+        - {kind: fact_path, name: account.geography, owner_layer: L1, note: "Firmographics are the cheapest\
+            enrichment in the stack and none of it is projected today. This one gap disables most of this
+            object."}
+
+    - id: icp.disqualifier_hit
+      statement: "The account matches a recorded disqualifier."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+
+    - id: icp.incumbent_detected
+      statement: "A known incumbent vendor is present, making this a displacement rather than a greenfield
+        sale."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: incumbent_vendor, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: incumbent_named, owner_layer: L2, note: "The `competitor` observation exists\
+            but does not distinguish an incumbent from an evaluated alternative. Those are different sales."}
+
+  heuristic:
+    - id: icp.enterprise_shape_from_graph
+      statement: "Three or more contacts on an open deal — the account behaves like an enterprise buyer
+        regardless of what its size band says."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 3}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 6500, attribute: buying_maturity, value: structured}
+      note: >
+        Behavioural fit inferred from graph shape alone. Weak but genuinely free, and it
+        catches the 80-person company that buys like a bank.
+
+    - id: icp.procurement_led_shape
+      statement: "Both legal and security review started — a procurement-led buying motion."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 7500, attribute: buying_maturity, value: procurement_led}
+
+    - id: icp.healthy_progression
+      statement: "Strong momentum on an open deal — behavioural evidence of fit, before any outcome exists."
+      status: executable
+      when:
+        - {path: derived.momentum, op: ">", value: 0.7}
+        - {path: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 5500, attribute: null}
+
+    - id: icp.churn_predictor_present
+      statement: "The account matches a pattern that preceded prior churn."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: account.health_score, owner_layer: L2}
+        - {kind: fact_path, name: account.prior_deal_outcomes, owner_layer: L2}
+
+    - id: icp.trigger_event_present
+      statement: "A trigger event fired at this account — funding, leadership change, expansion, incident."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: null}
+      requires_signals:
+        - {kind: obs_kind, name: account_trigger_event, owner_layer: L1, note: "Requires an external-signal\
+            connector. The difference between a target list and a pipeline."}
+
+inputs:
+  - {source: crm, signal: account firmographics and closed-won history}
+  - {source: website, signal: public firmographics and tech stack}
+  - {source: derived, signal: graph shape on the deal, path: derived.engagement}
+  - {source: derived, signal: progression rate, path: derived.momentum}
+  - {source: email, signal: incumbent and competitor mentions}
+  - {source: manual_entry, signal: the profile as the organisation currently believes it}
+
+outputs:
+  - {name: fit_score_bp, type: integer, description: "Deterministic weighted fit. Never a model output.",
+      consumed_by: [L4.reasoning_unit]}
+  - {name: fit_verdict, type: string, description: "in_profile | adjacent | out_of_profile | disqualified.",
+      consumed_by: [L4.decision_maker]}
+  - {name: expected_cycle_days, type: integer, description: "Prior for how long this should take. Bounds\
+      Timeline's plausibility check.", consumed_by: [L4.reasoning_unit]}
+  - {name: expected_committee_size, type: integer, description: "Prior for how many seats to expect before\
+      any are mapped.", consumed_by: [L4.reasoning_unit]}
+  - {name: anti_fit_reasons, type: list, consumed_by: [L4.decision_maker, L5.communication_planning]}
+
+constraints:
+  - {id: icp.values_are_tenant_scoped, statement: "Concrete profile values live in the Organization Brain,\
+      never in this file.", hard: true}
+  - {id: icp.no_widening_without_review, statement: "A profile may not be widened automatically on the\
+      basis of out-of-profile wins.", hard: true}
+  - {id: icp.disqualifier_overrides_fit, statement: "A disqualifier match overrides any fit score, however\
+      high.", hard: true}
+
+business_rules:
+  - id: icp.anti_fit_is_mandatory
+    statement: >
+      A profile without disqualifiers is incomplete and must not reach validated. An ICP that
+      only says yes cannot say no, and saying no is the entire operational value of one.
+    severity: blocking
+  - id: icp.validation_requires_retention
+    statement: A profile may not move to validated on win rate alone; expected_retention_months must
+      be evidenced.
+    severity: blocking
+  - id: icp.out_of_profile_needs_a_reason
+    statement: A deal opened against an account outside the profile must record why. Silent exceptions
+      are how a profile quietly becomes fiction.
+    severity: warning
+  - id: icp.drift_is_a_finding
+    statement: When recent wins stop matching the profile, that is a finding to be raised, not a
+      threshold to be widened.
+    severity: warning
+  - id: icp.no_tenant_values_here
+    statement: >
+      This object defines the SHAPE of an ICP. Concrete values belong to the Organization
+      Brain. Authoring a specific industry list into the Expert Brain makes one company's
+      answer look like the profession's.
+    severity: blocking
+
+decision_factors:
+  - {name: economic_fit, weight_bp: 2500, direction: increases, reads: [target_acv_low, target_acv_high,
+      expected_gross_margin, expected_retention_months]}
+  - {name: behavioural_fit, weight_bp: 2500, direction: increases, reads: [buying_maturity, typical_committee_size,
+      decision_style], description: "Weighted equal to economics on purpose. How an account buys predicts
+      outcomes at least as well as what it is, and is routinely ignored."}
+  - {name: need_fit, weight_bp: 2000, direction: increases, reads: [primary_pain, trigger_events]}
+  - {name: firmographic_fit, weight_bp: 1500, direction: increases, reads: [industry, employee_band, revenue_band,
+      geography]}
+  - {name: anti_fit, weight_bp: 1500, direction: decreases, reads: [disqualifiers, known_loss_patterns,
+      churn_predictors]}
+
+evidence:
+  - {source: crm, strength_bp: 8500, description: "Closed-won and churned history. The only evidence that\
+      actually validates a profile."}
+  - {source: website, strength_bp: 6000, description: "Public firmographics. Cheap, current, shallow."}
+  - {source: derived, strength_bp: 5000, description: "Buying-shape inference from the graph."}
+  - {source: manual_entry, strength_bp: 4000, description: "The believed profile. A hypothesis, and should\
+      be labelled as one."}
+
+metrics:
+  - {name: in_profile_win_rate, unit: percent, description: "Win rate inside the profile vs outside. If\
+      they are equal the profile is not a profile.", owner_layer: L6}
+  - {name: in_profile_retention, unit: months, description: "The validation gate. Win rate alone cannot\
+      detect a fast-closing, fast-churning segment.", owner_layer: L6}
+  - {name: out_of_profile_pipeline_share, unit: percent, description: "How much of the pipeline ignores\
+      the profile. Measures whether it is used or merely written.", owner_layer: L6}
+  - {name: disqualification_rate, unit: percent, owner_layer: L6}
+  - {name: profile_drift, unit: percent, description: "Share of recent wins outside the profile.", owner_layer:
+      L6}
+
+events:
+  - {id: icp.fit_scored, name: Account Fit Scored, payload: [fit_score_bp, fit_verdict]}
+  - {id: icp.disqualified, name: Account Disqualified, payload: [disqualifier]}
+  - {id: icp.drift_detected, name: Profile Drift Detected, payload: [recent_wins_outside_profile],
+      description: "Raised for a human. Layer 6 may propose a profile change; it may never widen the profile
+      itself."}
+  - {id: icp.trigger_fired, name: Trigger Event at Account, payload: [trigger]}
+
+actions:
+  - {id: icp.score_fit, name: Score account fit, actor: system}
+  - {id: icp.disqualify, name: Disqualify the account, actor: human, effect: "Cheapest action in sales\
+      and the least used. A disqualified account costs nothing; a poor-fit deal costs a quarter."}
+  - {id: icp.enrich_account, name: Enrich firmographics, actor: agent}
+  - {id: icp.propose_refinement, name: Propose a profile refinement, actor: system, effect: "A suggestion\
+      for a human. Layer 6 never edits a profile directly — Rule 06."}
+
+examples:
+  - {label: "Validated profile", note: "Series B SaaS, 100-500 staff, procurement-led, 45-day cycle, 30-month\
+      retention. Evidenced by outcomes."}
+  - {label: "Hypothesis dressed as a profile", note: "\"Mid-market companies who care about efficiency.\"\\\
+      \ Untestable, and therefore unfalsifiable."}
+  - {label: "Anti-fit", note: "Sub-20 staff, no procurement, buys on price. Closes fast, churns at nine\
+      months, and looks like a win all quarter."}
+  - {label: "Behavioural mismatch", note: "Perfect firmographics, ad-hoc buying maturity. Every deal stalls\
+      at the approval step nobody in the account owns."}
+  - {label: "Drift", note: "Six of the last ten wins were in an industry not on the list. A finding to\
+      raise, not a threshold to widen."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Deliberately the worst-served object in the set — four of ten patterns executable, and the
+    four that run infer buying BEHAVIOUR from graph shape rather than firmographics from data.
+    That imbalance is the finding: account.industry, account.employee_count and
+    account.geography are the cheapest enrichment in the stack and none of them is projected
+    into a typed fact, which disables most of this object's deterministic half.
+    Note also icp.acv_in_target_band, whose literal bounds mark the seam where the Expert
+    Brain's shape meets the Organization Brain's values.

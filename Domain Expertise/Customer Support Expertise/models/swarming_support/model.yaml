@@ -1,0 +1,112 @@
+# Swarming Support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+
+identity:
+  id: customer_support.model.swarming_support
+  name: Swarming Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  No tiers. A contact is owned end to end by whoever picks it up, and when that person cannot
+  finish it they convene the people who can — synchronously, in the open — rather than passing
+  it upward. The structural claim is that handoffs, not skill gaps, are what make support slow:
+  every transfer re-reads the ticket, re-asks the customer, and re-decides what was already
+  decided. Swarming pays for that with senior attention spent on ordinary tickets, and the
+  entire question of whether the model works is whether the interruptions cost less than the
+  handoffs did.
+  .
+  What breaks structurally is the escalation ladder. There is no tier-2 queue to escalate INTO,
+  so "escalated within two hours" — a clause that appears in a great many support contracts —
+  has no referent here. Commercial and support leadership routinely discover this after signing.
+  .
+  What an operator carries over wrongly from a tiered org: per-agent throughput. When five
+  people touch one resolution, tickets-per-agent-per-day measures nothing, first-contact
+  resolution by agent measures less, and a manager reading last quarter's dashboard will see a
+  productivity collapse in month one and kill the model in month three. The unit of measurement
+  has to move from the agent to the resolution before the model is switched on, not after.
+
+characteristics:
+  requester: "the same mix as the canonical motion — swarming changes who answers, never who asks"
+  typical_resolution_hours: 6
+  volume_shape: "moderate volume, high variance in difficulty; the tail is what swarming attacks"
+  staffing_model: "flat pool with published skill tags; work is claimed, never routed upward"
+  coverage: "single region or overlapping regions — a swarm needs people awake at the same time"
+  automation_level: "low to moderate; deflection sits in front of the pool, not inside it"
+  primary_channels: [ticket_portal, email, chat]
+  notes: >
+    Swarming has a hard prerequisite most adopters skip: the swarm's reasoning has to land
+    somewhere durable. If the resolution lives in the chat channel where it happened, nothing
+    was learned, and the same four people reconvene on the same problem the following week.
+    A swarming org without a functioning knowledge motion is just an expensive tiered org.
+
+capabilities:
+
+  # Dormant almost everywhere else; unavoidable here. Interruption load is the failure mode of
+  # this model, and senior time spent on ordinary tickets is its cost line. Neither is visible
+  # in a queue dashboard, so both have to be run deliberately.
+  activates:
+    - customer_support.support_management.team_health
+    - customer_support.support_operations.cost_to_serve
+
+  # Nothing. This is deliberate and worth stating: the absence of a ladder changes what
+  # escalation_management MEANS — convening rather than transferring — but not whether it runs.
+  # A customer who asks for a manager is not making a claim about our staffing model, and a
+  # branch that deletes escalation_management loses the only capability that handles them.
+  deactivates: []
+
+  emphasises:
+    - customer_support.intake_and_triage.routing_and_assignment
+    - customer_support.support_operations.workload_balancing
+    - customer_support.diagnosis_and_resolution.root_cause_analysis
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.support_management.quality_assurance
+    - customer_support.support_management.agent_coaching
+    - customer_support.escalation_and_incident.escalation_management
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [assignee, status]
+      note: >
+        The assignee is the accountable human for the life of the ticket and does not change
+        when help arrives. This is the one invariant of the model — the moment reassignment
+        becomes normal, the swarm has quietly reinvented tier two with worse bookkeeping.
+    - object: customer_support.obj.core.escalation
+      require_properties: [reason]
+      note: >
+        An escalation here adds attention without moving ownership, so `reason` carries the
+        whole payload: what specifically is stuck. "Customer is angry" convenes nobody useful.
+        There is no receiving owner to name, which is exactly why contracts written against a
+        tier ladder cannot be satisfied by this branch as written.
+    - object: customer_support.obj.core.knowledge_article
+      note: >
+        The swarm's output is a draft article whether anyone writes it or not. Treating
+        knowledge as a downstream chore rather than the swarm's actual deliverable is the
+        single most common reason this model gets more expensive over time instead of less.
+
+overrides:
+  capabilities.customer_support.intake_and_triage.routing_and_assignment.assignment_mode: "claim_by_skill"
+  capabilities.customer_support.escalation_and_incident.escalation_management.ownership_transfers: false
+  capabilities.customer_support.support_management.quality_assurance.scoring_unit: "resolution"
+  capabilities.customer_support.support_operations.support_analytics.per_agent_throughput: "not_meaningful"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

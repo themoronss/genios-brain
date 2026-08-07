@@ -4,7 +4,7 @@
 
 | Target | Durable store | Authority |
 |---|---|---|
-| `BrainTarget.METRICS` | `learning_metrics` | `feedback/store.py::publish` |
+| `LearningTarget.METRICS` (not a brain) | `learning_metrics` | `feedback/store.py::publish` |
 
 ## Component modules
 

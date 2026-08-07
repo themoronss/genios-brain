@@ -1,0 +1,49 @@
+# PLG — Product Led Growth — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.plg
+  name: PLG — Product Led Growth
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  The product acquires and converts; sellers arrive after usage exists. Qualification inverts
+  entirely — instead of asking whether they might buy, we can see what they already do.
+
+characteristics:
+  buyer: "an existing user who becomes an economic buyer"
+  typical_cycle_days: 14
+  decision_style: "bottom-up adoption, top-down approval only at scale"
+  primary_channels: [in_product, email]
+
+capabilities:
+  deactivates:
+    - sales.prospecting_and_outreach.cold_calling
+  emphasises:
+    - sales.post_sale_and_growth.onboarding
+    - sales.post_sale_and_growth.expansion
+    - sales.post_sale_and_growth.upsell
+    - sales.revenue_operations.revenue_intelligence
+
+objects:
+  extends:
+    - object: sales.obj.core.icp
+      note: >
+        In PLG, fit is observed from usage rather than inferred from firmographics. The
+        behavioural half of the ICP outranks the firmographic half, reversing the usual
+        weighting.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,163 @@
+# CORE HEURISTIC — A price objection is evidence of a budget
+#
+# This is the heuristic that reads backwards to almost every seller who has not been taught it,
+# and it is the reason the Objection object exists as a unit of ENGAGEMENT rather than of
+# resistance. The whole file turns on one asymmetry: arguing is expensive and disengaging is
+# free, so people only argue about money they have.
+
+identity:
+  id: sales.heu.core.price_objection_implies_budget
+  name: A price objection implies a budget
+  kind: heuristic
+  domain: sales
+  scope: core
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+  aliases: ["They haggle because they intend to buy", "Objection is engagement"]
+
+purpose:
+  statement: >
+    Corrects the most common misreading in commercial conversation — that pushback on price is
+    a signal the deal is dying. It is the opposite: it establishes that a number exists on the
+    buyer's side and that ours sits above it. The professional response is to find their number,
+    not to move ours.
+  answers:
+    - "Does this buyer have money, when nobody has stated a budget?"
+    - "Is a price objection good news or bad news for this deal?"
+    - "Which is the more dangerous account — the one arguing about price or the one that has gone quiet?"
+  not:
+    - "Not a licence to discount. It says lean in and diagnose, not concede."
+    - "Not a measure of HOW MUCH budget exists, nor of who controls it."
+    - "Not applicable to an objection raised before any price was presented — that is a value objection borrowing the vocabulary of price."
+
+heuristic:
+  statement: >
+    A price objection is evidence that a budget exists. Buyers with no money disengage; they do
+    not haggle. Read "it is too expensive" as "there is a number and yours is above it", and make
+    the next move a question about their number rather than a concession on ours.
+  why: >
+    Objecting is costly behaviour for the buyer. It takes their time, it commits them to a
+    position in front of colleagues, and it invites a follow-up conversation they must then
+    attend. Nobody pays those costs to exit a purchase they were never going to make — exiting is
+    free and silent. The counterfactual is the whole argument: an unfunded buyer does not write
+    "your pricing is aggressive", they write nothing, or they write "let us revisit next year".
+    So haggling is a revealed preference for transacting, and the correct inference is not about
+    our price at all. It is that somewhere in that organisation a figure has been thought about,
+    and the seller's job is to find out what it is, who set it, and against which alternative it
+    was set.
+  confidence_bp: 7000
+  applies_when: >
+    Pricing has been presented or discussed, and the objection is raised by someone inside the
+    buying organisation about our specific number.
+  breaks_down_when: >
+    Five regimes. (1) The objection precedes any price we presented — then it is a value
+    objection wearing a price costume, they cannot justify ANY number, and discounting deepens
+    the problem. (2) Procurement is running the conversation: professional buyers are paid to
+    object to price irrespective of funding, so the objection reports process stage rather than
+    wallet. (3) The objection is relayed on behalf of an absent party — an unnamed finance
+    director, a supposed board — in which case it has no owner and no number behind it. (4)
+    Self-serve, SMB and consumer motions, where the individual IS the budget and "too expensive"
+    is a genuine, final exit with no committee to appeal to. (5) A budget freeze has been
+    observed: money existed and has since been withdrawn, and the freeze is newer information
+    about the same fact rather than corroborating evidence.
+  reads:
+    - sales.obj.core.objection
+    - sales.obj.core.budget
+    - sales.obj.core.pricing
+    - objection.stated_category
+    - objection.real_category
+    - budget.budget_state
+    - pricing.quoted_price
+  contradicts:
+    - sales.rule.core.unknown_budget_fails_closed
+    - sales.heu.core.disqualify_early_is_cheapest
+  pattern_ref:
+    - bg.priced_and_objected
+    - lead.price_objection_proves_the_money_exists
+    - dm.owns_the_commercial_objection
+    - pr.priced_above_their_money
+    - obj.price_objection_before_any_price
+    - obj.budget_freeze_is_a_funding_objection
+    - persona.sustained_discount_pressure_is_procurement
+
+objects_used:
+  - sales.obj.core.objection
+  - sales.obj.core.budget
+  - sales.obj.core.pricing
+  - sales.obj.core.decision_maker
+  - sales.obj.core.deal
+  - sales.obj.core.proposal
+
+outcomes:
+  - "Budget state moves from unknown to unfunded_intent — money exists, it is not yet pointed at us."
+  - "The objector is promoted as a decision-maker candidate: people without authority rarely argue about money."
+  - "The next action becomes a diagnostic question about their figure, not a revised quote."
+
+limits:
+  - "Establishes that money exists somewhere in the organisation. It says nothing about the amount, whose cost centre it sits in, or whether it is allocated to this problem."
+  - "It is evidence about the buying organisation, not about the individual objecting — a junior can voice a constraint set three levels above them."
+  - "Confidence decays with time. Money observed during a pricing conversation is not money at signature, and a fiscal-year boundary voids it outright."
+  - "It cannot distinguish a budget sized at 80% of our price from one sized at 20%. Both produce the same objection and only one is a deal."
+
+failure_modes:
+  - "Reading it as permission to discount. Conceding on the first price objection teaches the buyer the number was never real, and every subsequent term is then negotiated from that lesson."
+  - "Recording budget_state = approved when the only evidence is an argument. The honest state is unfunded_intent."
+  - "Treating the absence of a price objection as good news. Silence after pricing more often means the number ended the evaluation, or that we left money on the table."
+  - "Answering the stated objection. 'Too expensive' is answered by re-establishing value or re-scoping, almost never by explaining the price list."
+  - "Applying it to discount pressure from procurement and concluding the deal is healthy, when sustained pressure with no product questions is the shape of a purchase already decided elsewhere."
+
+variants:
+  - applies_to: sales.model.plg
+    change: "Treat a price objection as a tier-fit signal and a churn event, not as a negotiation opening."
+    why: "There is no counterparty to haggle with in self-serve. The user's exit is the objection and the pricing page is the only lever."
+  - applies_to: sales.model.government_sales
+    change: "Read price objections as procedural. The published ceiling was set before any conversation."
+    why: "An objection reflects a rule of the tender rather than the state of a wallet, so it carries no budget information."
+  - applies_to: sales.model.channel_sales
+    change: "Establish which balance sheet is complaining — the partner's margin or the end customer's budget — before inferring anything."
+    why: "A reseller objecting to price is usually protecting their spread, which is a commercial-terms problem, not a demand problem."
+  - applies_to: sales.offering.service
+    change: "Reprice the scope, not the rate."
+    why: "In services the price is a function of days. A price objection is nearly always a disagreement about how much work is required, and cutting the rate hides that disagreement into delivery."
+
+metrics:
+  - name: win_rate_of_deals_carrying_a_price_objection
+    unit: bp
+    description: "Win rate of deals with at least one price objection against deals with none. In a healthy B2B pipeline the objecting cohort converts higher."
+    direction: higher_is_better
+  - name: discount_conceded_on_first_objection
+    unit: bp
+    description: "Share of deals where a discount was offered before the buyer's own number was established."
+    direction: lower_is_better
+
+references:
+  - title: SPIN Selling
+    kind: book
+    author: Neil Rackham
+    note: "Rackham's field data: in large sales, price objections raised early correlate with failure and raised late with success. The timing of the objection carries more information than the objection."
+  - title: MEDDICC
+    kind: methodology
+    author: Jack Napoli and Dick Dunkel (PTC)
+    note: "Metrics and Economic Buyer are the two dimensions that convert a price objection into a testable question — against what value, approved by whom."
+  - title: The Challenger Sale
+    kind: book
+    author: Matthew Dixon and Brent Adamson
+    note: "Teaching-led framing as the alternative to conceding; the argument that reframing the problem outperforms adjusting the number."
+  - title: Gap Selling
+    kind: book
+    author: Keenan
+    note: "Price is only expensive relative to a cost of the current state that has not been quantified."
+  - title: Pricing with Confidence
+    kind: book
+    author: Reed Holden and Mark Burton
+    note: "The discipline of separating a buyer's negotiating behaviour from their willingness to pay."
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete

@@ -1,5 +1,16 @@
 # Output, edge cases and gaps
 
-**Output:** a grounded delivery context containing timezone, quiet window, channel policy, busy/activity/current-surface state and burst facts.
+**Output:** a grounded `DeliveryContext` containing resolved policy, attention profile, live
+attention state and any safe-fallback configuration error.
 
-**Edge cases / honest gap:** A malformed timezone degrades to a protective default in the engine but is rejected on preference write. Stale leases disappear automatically. Automatic trusted publishing from every real client is not built.
+**Fail-safe behavior**
+
+- A malformed timezone is rejected by write APIs; corrupt legacy state falls back visibly.
+- Stale presence disappears automatically and cannot leave a seat permanently busy.
+- Missing presence means “unknown,” not invented activity.
+- A context read failure never becomes permission to send; the row is retried without a provider
+  attempt.
+
+**Integration gap:** the engine and authenticated presence API are active, but trusted publishers
+from every browser, desktop, mobile, CRM and IDE client are not all present in this repository.
+Consequently contextual routing is only as current as the clients that report it.

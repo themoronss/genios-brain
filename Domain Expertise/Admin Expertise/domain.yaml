@@ -1,0 +1,282 @@
+# Admin — domain root
+#
+# The one question this domain answers, in Layer 3 terms:
+#   "How would a seasoned administrator read this situation?"
+#
+# Not what is true (Layer 2). Not what to do (Layer 4). Only how an expert would understand it.
+#
+# WHY ADMIN IS A DOMAIN AND NOT A UTILITY FOLDER
+#
+# Sales generates revenue; Support retains it; Admin is the function that keeps the organisation
+# able to operate and able to prove that it did. Its expertise is genuinely distinct and it is
+# almost never written down, because the people who hold it are measured on throughput rather
+# than on documentation. Three properties make it a domain in its own right:
+#
+#   1. Its atom is an OBLIGATION, not an opportunity. A commitment, an approval, a filing, a
+#      retention period. Obligations have owners and deadlines and they do not close by being
+#      ignored — they convert into penalties, findings and incidents.
+#   2. Most of its deadlines are EXTERNAL and non-negotiable. A statutory filing date, a notice
+#      period, a payroll cut-off. No amount of prioritisation moves them.
+#   3. Its output is frequently EVIDENCE rather than an action. In a governed context, work
+#      performed correctly and undocumented did not happen.
+#
+# ARCHITECTURE
+#
+#   objects/core/<name>.yaml              shared — loaded by MORE THAN ONE capability
+#   objects/<capability>/<name>.yaml      scoped — loaded by EXACTLY ONE
+#
+#   capabilities/<NN-subdomain>/<capability>/
+#       capability.yaml     purpose, expertise, KPIs, handoffs
+#       objects.yaml        the load-set — references only, core and scoped split
+#       situations/         the situations this capability owns
+#
+# Admin MODELS (in-house, shared services, outsourced, regulated...) and OFFERINGS
+# (transactional, coordinative, custodial, assurance) do not re-list capabilities. They live
+# under models/ and offerings/ and change how these capabilities behave, never whether the
+# profession has them.
+
+identity:
+  id: admin
+  name: Admin
+  version: 1.0.0
+  status: draft
+
+description: >
+  The administrative function of an organisation: holding it to its own commitments, moving
+  decisions through the people entitled to make them, keeping the records that prove what
+  happened, meeting the statutory and contractual obligations it is bound by, and running the
+  people, money, supplier, facility and travel logistics that let everyone else do their job.
+
+question: "How would a seasoned administrator read this situation?"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Subdomains — from the principal outward, then the resource domains, then the
+# oversight of the function itself
+# ─────────────────────────────────────────────────────────────────────────────
+subdomains:
+
+  - id: executive_support
+    dir: "01-executive-support"
+    name: Executive Support
+    question: "Is the principal's time, attention and word under control?"
+    capabilities: [calendar_management, inbox_and_correspondence, commitment_tracking,
+                   approval_coordination, briefing_and_preparation, gatekeeping,
+                   delegation_and_task_routing]
+    note: >
+      The only subdomain organised around a PERSON rather than a process. Everything here is
+      scarce-attention allocation, which is why the same work looks trivial in a queue and is
+      not: the cost of a mistake is measured in the principal's time, not in cycle time.
+
+  - id: meeting_operations
+    dir: "02-meeting-operations"
+    name: Meeting Operations
+    question: "Does every meeting produce a decision, an owner and a record?"
+    capabilities: [meeting_scheduling, agenda_preparation, minutes_and_documentation,
+                   action_item_tracking, follow_up_coordination]
+
+  - id: records_and_documentation
+    dir: "03-records-and-documentation"
+    name: Records & Documentation
+    question: "Can we find, trust and defend the document we need?"
+    capabilities: [document_control, filing_and_retrieval, version_control,
+                   retention_and_archival, knowledge_base_maintenance]
+
+  - id: compliance_and_governance
+    dir: "04-compliance-and-governance"
+    name: Compliance & Governance
+    question: "Are we meeting the obligations we are legally and contractually bound by?"
+    capabilities: [policy_administration, statutory_filing, licence_and_registration,
+                   board_and_secretarial, audit_support, data_protection_administration]
+    note: >
+      Administration, not law. The obligation is drafted elsewhere; this subdomain is about
+      whether anybody is maintaining the register, the calendar and the evidence behind it.
+
+  - id: contract_and_vendor
+    dir: "05-contract-and-vendor-administration"
+    name: Contract & Vendor Administration
+    question: "Do we know what we have agreed to, with whom, and until when?"
+    capabilities: [contract_administration, renewal_management, vendor_onboarding,
+                   vendor_performance_management, procurement_administration,
+                   purchase_order_management]
+
+  - id: finance_administration
+    dir: "06-finance-administration"
+    name: Finance Administration
+    question: "Is money moving correctly, on time, and against something we agreed to?"
+    capabilities: [invoice_processing, payables_administration, receivables_follow_up,
+                   expense_management, reimbursement_processing, budget_tracking]
+    note: >
+      The administrative half of finance, not the analytical half. Processing, control and
+      evidence — never forecasting, pricing or capital allocation, which belong to a Finance
+      domain that does not exist yet.
+
+  - id: people_administration
+    dir: "07-people-administration"
+    name: People Administration
+    question: "Is the paperwork, access and record behind every employee correct today?"
+    capabilities: [onboarding_administration, offboarding_administration,
+                   employee_records_administration, attendance_and_leave,
+                   payroll_input_administration, access_and_identity_administration]
+    note: >
+      Adjacent to HR and deliberately narrower. Hiring, performance and compensation design are
+      an HR domain. What lives here is the record, the access, the entitlement and the deadline.
+
+  - id: facilities_and_assets
+    dir: "08-facilities-and-assets"
+    name: Facilities & Assets
+    question: "Is the physical environment safe, working, and accounted for?"
+    capabilities: [workplace_management, asset_register, asset_issuance_and_recovery,
+                   maintenance_coordination, health_and_safety_administration]
+
+  - id: travel_and_events
+    dir: "09-travel-and-events"
+    name: Travel & Events
+    question: "Will they get there, be able to work, and be able to claim it back?"
+    capabilities: [travel_booking, visa_and_documentation, itinerary_management,
+                   event_coordination, travel_expense_administration]
+
+  - id: admin_operations
+    dir: "10-admin-operations"
+    name: Admin Operations
+    question: "Is the administrative function itself measurable, repeatable and resilient?"
+    capabilities: [request_intake, sop_management, service_level_management, admin_analytics,
+                   business_continuity_administration, process_improvement]
+    note: >
+      The function administering itself. This is the subdomain most administrative teams never
+      staff, and its absence is why the other nine are invisible until they fail.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Naming — enforced by _tools/validate.py
+# ─────────────────────────────────────────────────────────────────────────────
+id_scheme:
+  domain: "admin"
+  subdomain: "admin.<subdomain>"
+  capability: "admin.<subdomain>.<capability>"
+  situation: "admin.sit.<name>"
+  core_object: "admin.obj.core.<name>"
+  scoped_object: "admin.obj.<capability>.<name>"
+  model: "admin.model.<model>[.<vertical>]"
+  offering: "admin.offering.<family>[.<type>]"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The core / scoped rule
+#
+# CORE      loaded by MORE THAN ONE capability   -> objects/core/
+# SCOPED    loaded by EXACTLY ONE                -> objects/<capability>/
+#
+# Decided by the reference graph, not by intent, and validate.py enforces it in both directions:
+# a scoped object that two capabilities load is an ERROR telling you to promote it; a core object
+# that one capability loads is a WARNING telling you it may want demoting.
+# ─────────────────────────────────────────────────────────────────────────────
+core_objects:
+  # The shared library. Every one of these is loaded by at least two capabilities.
+  work_and_obligation: [commitment, action_item, approval, request, escalation, deadline]
+  people_and_authority: [approver, employee_record, access_right, stakeholder, delegate]
+  records_and_governance: [document, policy, sop, compliance_obligation, record_series,
+                           audit_evidence]
+  counterparty_and_money: [contract, vendor, invoice, expense, budget_line, purchase_order]
+  resources_and_coordination: [meeting, asset, facility, itinerary, service_level, admin_risk]
+
+# Referenced but not yet authored. A reference to an id here is a tracked WARNING; a
+# reference to an id that appears nowhere is an ERROR. Regenerate with:
+#   python "Domain Expertise/_tools/plan.py"
+planned_objects:
+  - {id: admin.obj.attendance_and_leave.leave_request, scope: attendance_and_leave, referenced_by: 1}
+  - {id: admin.obj.core.access_right, scope: core, referenced_by: 9}
+  - {id: admin.obj.core.admin_risk, scope: core, referenced_by: 1}
+  - {id: admin.obj.core.audit_evidence, scope: core, referenced_by: 8}
+  - {id: admin.obj.core.compliance_obligation, scope: core, referenced_by: 23}
+  - {id: admin.obj.core.deadline, scope: core, referenced_by: 23}
+  - {id: admin.obj.core.delegate, scope: core, referenced_by: 4}
+  - {id: admin.obj.core.facility, scope: core, referenced_by: 2}
+  - {id: admin.obj.core.purchase_order, scope: core, referenced_by: 2}
+  - {id: admin.obj.core.record_series, scope: core, referenced_by: 2}
+  - {id: admin.obj.core.service_level, scope: core, referenced_by: 5}
+  - {id: admin.obj.core.stakeholder, scope: core, referenced_by: 8}
+  - {id: admin.obj.event_coordination.event, scope: event_coordination, referenced_by: 1}
+  - {id: admin.obj.travel_booking.trip, scope: travel_booking, referenced_by: 2}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Glossary — terms that mean something specific HERE and are routinely confused
+# ─────────────────────────────────────────────────────────────────────────────
+glossary:
+
+  - term: Commitment
+    means: >
+      A promise made by someone in this organisation to someone else, with an owner, a
+      recipient and a due date. The atom of the Admin domain. Distinct from an Action Item,
+      which is a commitment created inside a meeting and inherits that meeting's record.
+
+  - term: Approval
+    means: >
+      A required sign-off on a specific decision, held by a specific person under a specific
+      authority. `pending` and `stuck` are different states and conflating them is why
+      approval queues are the largest source of invisible administrative delay.
+
+  - term: Obligation
+    means: >
+      Something the organisation must do because a law, a regulator or a contract says so.
+      Unlike a commitment, nobody in the organisation agreed to it and nobody can renegotiate
+      it. Its deadline is external and its breach is automatic.
+
+  - term: Evidence
+    means: >
+      The artefact that proves a control operated or an obligation was met. In a regulated
+      model the evidence IS the deliverable — work performed correctly and undocumented did
+      not happen.
+
+  - term: Custody
+    means: >
+      Holding something on the organisation's behalf — a record, an asset, an entitlement —
+      and being able to account for it later. Custodial failures are silent for years and then
+      discovered all at once, by an auditor or an insurer.
+
+  - term: Admin Model
+    means: >
+      HOW the function is operated — in-house, shared services, outsourced, executive office,
+      regulated. Changes turnaround, approval depth and which capabilities are in play. Never
+      changes what the profession knows.
+
+  - term: Offering (service line)
+    means: >
+      WHAT the function delivers — transactional, coordinative, custodial or assurance work.
+      Orthogonal to model: Shared Services x Custodial is real and neither branch owns the
+      other. The discriminator is when the value is realised — at completion, at the moment of
+      use, at retrieval, or at audit.
+
+  - term: Situation
+    means: >
+      The load-set selector between a capability and its objects. Exists so a compile loads
+      five objects instead of forty. Lives in situations/ inside its owning capability.
+
+  - term: pending_l2_situation_types
+    means: >
+      A situation whose real trigger no shipped pack emits. Admin has more of these than any
+      domain so far, because the pipeline was built for a revenue motion: it can see an
+      unanswered email but not an unreturned laptop, an overdue promise but not an overdue
+      statutory filing. Declaring the gap is the point — binding "filing overdue" to
+      `commitment_overdue` because it is the closest available type would look like coverage
+      and be worse than none.
+
+  - term: Inference Pattern
+    means: >
+      How an object is discovered when nobody states it. Carries a human `statement` and a
+      machine `when` in the engine's whitelisted grammar. Prose alone cannot fire.
+
+  - term: needs_signal
+    means: >
+      An authored pattern whose fact paths or observation kinds the pipeline does not emit
+      yet. Not a defect — it is the Layer 1/2 backlog, ranked by _tools/backlog.py.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Admin is the third domain in this library and the first that does not sell anything. It is
+    therefore the domain that stress-tests whether the framework is genuinely domain-neutral —
+    every place where a Sales assumption had leaked into the schema shows up here as an
+    awkward field or a dishonest binding.

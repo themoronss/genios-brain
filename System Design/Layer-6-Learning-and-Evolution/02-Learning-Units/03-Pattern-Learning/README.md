@@ -1,15 +1,19 @@
 # 3 · Pattern Learning
 
-**Status:** Partial
+**Status:** Built baseline
 
-Finds repeated normalized enterprise-event pattern key plus kind across distinct days.
+Finds repeated normalized enterprise observations by pattern key and kind without claiming
+causality or interpreting raw prose. The current Atlas baseline is a deterministic recurrence
+detector; richer sequences/correlations can be added later as separately versioned models.
 
 | Boundary | Value |
 |---|---|
-| Input | non-memory `EnterpriseFact` values |
-| Output | Organization-target pattern LearningObject |
+| Input | non-memory `EnterpriseFact` values grouped by key, kind and source ACL |
+| Grounding | graph observation → exact graph source refs → source events, or structured inbox event |
+| Confidence | average source confidence × independent source-group support |
+| Output | Organization-target pattern LearningObject requiring review by default |
 | Primary code | `feedback/units.py::pattern_learning` |
-| Honest gap | Current grouping is intentionally simple; richer temporal sequences, multi-entity correlations and causal claims are absent. |
+| Extension boundary | temporal sequences, multi-entity correlations and causal models are not fabricated by this baseline |
 
 ## Component modules
 

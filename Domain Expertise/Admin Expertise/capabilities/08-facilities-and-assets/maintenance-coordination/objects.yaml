@@ -1,0 +1,24 @@
+# Load-set for admin.facilities_and_assets.maintenance_coordination — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/maintenance-coordination/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.facilities_and_assets.maintenance_coordination
+
+core:
+  required:
+    - admin.obj.core.asset
+    - admin.obj.core.vendor
+  optional:
+    - admin.obj.core.request
+    - admin.obj.core.contract
+    - admin.obj.core.deadline
+
+scoped:
+  required: []
+  optional: []

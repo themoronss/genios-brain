@@ -1,0 +1,25 @@
+# Exception Processing — offering_type branch node under transactional.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.transactional.exception_processing
+  name: Exception Processing
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.transactional
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Everything the rule did not anticipate. Small in volume, disproportionate in effort, and the
+  only place where transactional administration needs judgement.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

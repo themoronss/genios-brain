@@ -1,0 +1,37 @@
+identity:
+  id: sales.mm.icp_definition.past_evidence_future_bet
+  name: The profile is a bet about the next year, evidenced by the last two
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "The profile is a bet about the next year, evidenced by the last two.\n Markets move, categories\
+    \ mature and competitors reprice. A profile validated on a market that has since consolidated describes\
+    \ a shape that no longer exists, and it will keep validating cleanly against history the whole time\
+    \ it is wrong about the future.\n"
+dimensions:
+- name: The profile is a bet about the next year, evidenced by the last two
+  asks: 'Markets move, categories mature and competitors reprice. A profile validated on a market that
+    has since consolidated describes a shape that no longer exists, and it will keep validating cleanly
+    against history the whole time it is wrong about the future.
+
+    '
+how_to_apply:
+- 'Markets move, categories mature and competitors reprice. A profile validated on a market that has
+  since consolidated describes a shape that no longer exists, and it will keep validating cleanly against
+  history the whole time it is wrong about the future.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

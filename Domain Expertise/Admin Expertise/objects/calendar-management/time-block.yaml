@@ -1,0 +1,731 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CAPABILITY-SCOPED OBJECT — loaded by admin.executive_support.calendar_management alone.
+#
+# The premise of this object: a calendar is a BUDGET, not a queue. A queue accepts
+# everything and orders it. A budget has a fixed size, every allocation displaces another,
+# and the displaced thing has to be named. Almost every calendar in existence is run as a
+# queue, which is why "the diary is full" is said as though it were a scheduling problem
+# rather than a spending one.
+#
+# Four of eleven patterns below are executable. The seven that are not are the reason a
+# calendar connector that only reads events cannot run a calendar: it can see what is
+# booked and never what was moved to make room for it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.calendar_management.time_block
+  name: Time Block
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.calendar_management
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+  aliases: ["Diary Block", "Hold", "Protected Time", "Calendar Slot"]
+purpose:
+  statement: >
+    A defended span of a principal's time with a stated purpose and a named displacement cost.
+    Not an event — an event is what a calendar system stores; a time block is what an
+    administrator defends. The distinction is load-bearing: an event has attendees and a room,
+    a block has a purpose, a protection level, and a record of what it pushed out. A block with
+    no purpose cannot be defended, because the only argument against a request for the
+    principal's time is a better use of the same hour, and an unlabelled hour has no argument.
+    This object exists so that the second question after "is he free?" — "free instead of
+    what?" — has somewhere to live.
+attributes:
+  - name: span
+    purpose: When the block is and how long it runs. The only part most calendars model.
+    type: composite
+    contains:
+      - start_at
+      - end_at
+      - duration_minutes
+      - is_recurring
+      - recurrence_rule
+  - name: purpose
+    purpose: What the hour is for. Without this the block cannot be ranked against a request.
+    type: composite
+    contains:
+      - purpose
+      - decision_expected
+      - agenda_ref
+      - origin
+  - name: defence
+    purpose: How hard this block resists a request, and on what grounds.
+    type: composite
+    contains:
+      - protection_level
+      - immovable_reason
+      - holder_ref
+      - requester_ref
+  - name: displacement
+    purpose: >
+      The ledger. What this block pushed out, and what pushing it out would cost. The section
+      that turns a calendar into a budget.
+    type: composite
+    contains:
+      - displaces_ref
+      - displacement_cost
+      - last_moved_at
+      - move_count
+  - name: readiness
+    purpose: Whether the block can actually do its job when it arrives.
+    type: composite
+    contains:
+      - preparation_minutes_required
+      - preparation_block_ref
+      - travel_buffer_minutes
+  - name: realisation
+    purpose: Observed state, as opposed to intent.
+    type: composite
+    contains:
+      - confirmed
+      - attendee_count
+      - external_attendees
+  - name: start_at
+    purpose: The one property with a live Layer 2 source today, and only when the block happens to
+      carry a meeting.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [meeting.start_at]
+    description: The one property with a live Layer 2 source today, and only when the block happens to
+      carry a meeting.
+  - name: end_at
+    purpose: The end_at of this object.
+    type: value
+    data_type: timestamp
+    required: true
+  - name: duration_minutes
+    purpose: Held separately from start/end because the requested duration and the granted duration
+      differ constantly, and the gap between them is the clearest measure of whether a calendar is
+      being administered or merely recorded.
+    type: value
+    data_type: integer
+    unit: minutes
+    description: >
+      Held separately from start/end because the requested duration and the granted duration
+      differ constantly, and the gap between them is the clearest measure of whether a
+      calendar is being administered or merely recorded.
+  - name: purpose
+    purpose: 'The most load-bearing field on this object. `speculative_hold` exists because half the congestion
+      in a senior diary is optionality nobody has released — three holds for one trip, two of which will
+      never convert and neither of which anyone will cancel. `recovery` and `buffer` are separate on purpose:
+      recovery is earned after load, buffer is structural, and an assistant who deletes buffer to make room
+      has removed the thing that absorbs the overrun, not found free time.'
+    type: value
+    data_type: enum
+    allowed_values: [decision, deep_work, external_commitment, internal_operating, preparation, travel,
+      recovery, personal, buffer, speculative_hold]
+    required: true
+    description: >
+      The most load-bearing field on this object. `speculative_hold` exists because half the
+      congestion in a senior diary is optionality nobody has released — three holds for one
+      trip, two of which will never convert and neither of which anyone will cancel.
+      `recovery` and `buffer` are separate on purpose: recovery is earned after load, buffer
+      is structural, and an assistant who deletes buffer to make room has removed the thing
+      that absorbs the overrun, not found free time.
+  - name: protection_level
+    purpose: How hard this block argues back. `defended` means it will be moved only for a stated
+      higher purpose; `immovable` means it will not be moved and the requester is told no.
+    type: value
+    data_type: enum
+    allowed_values: [unprotected, soft_hold, defended, immovable]
+    description: >
+      How hard this block argues back. `defended` means it will be moved only for a stated
+      higher purpose; `immovable` means it will not be moved and the requester is told no.
+  - name: immovable_reason
+    purpose: Immovability must be justified by something external to the principal's preference,
+      otherwise every block becomes immovable within a quarter and the level stops meaning anything.
+    type: value
+    data_type: enum
+    allowed_values: [statutory, contractual, board, external_counterparty, medical, family, none]
+    description: >
+      Immovability must be justified by something external to the principal's preference,
+      otherwise every block becomes immovable within a quarter and the level stops meaning
+      anything.
+  - name: displaces_ref
+    purpose: Self-referential. What this block was placed on top of. Null is a legitimate answer;
+      unrecorded is not.
+    type: reference
+    ref: admin.obj.calendar_management.time_block
+    data_type: ref
+    description: Self-referential. What this block was placed on top of. Null is a legitimate answer;
+      unrecorded is not.
+  - name: displacement_cost
+    purpose: What is actually lost by moving this block. `credibility` covers the external party moved
+      twice; `contractual` covers the block whose displacement triggers a fee or a notice period;
+      `irrecoverable` covers the hour that had a fixed external counterparty and cannot be re-run.
+    type: value
+    data_type: enum
+    allowed_values: [none, reschedulable, credibility, contractual, irrecoverable]
+    description: >
+      What is actually lost by moving this block. `credibility` covers the external party
+      moved twice; `contractual` covers the block whose displacement triggers a fee or a
+      notice period; `irrecoverable` covers the hour that had a fixed external counterparty
+      and cannot be re-run.
+  - name: is_recurring
+    purpose: Recurrence is where diaries silently die. A recurring block is created once with a
+      justification and inherited forever without one.
+    type: value
+    data_type: boolean
+    description: >
+      Recurrence is where diaries silently die. A recurring block is created once with a
+      justification and inherited forever without one.
+  - name: recurrence_rule
+    purpose: The recurrence_rule of this object.
+    type: value
+    data_type: string
+  - name: holder_ref
+    purpose: The principal whose budget this hour is drawn from.
+    type: reference
+    ref: admin.obj.core.employee_record
+    data_type: ref
+    description: The principal whose budget this hour is drawn from.
+  - name: requester_ref
+    purpose: Who asked for it. Distinguishes time the principal chose from time that was taken.
+    type: reference
+    ref: admin.obj.core.stakeholder
+    data_type: ref
+    description: Who asked for it. Distinguishes time the principal chose from time that was taken.
+  - name: attendee_count
+    purpose: The attendee_count of this object.
+    type: value
+    data_type: integer
+  - name: external_attendees
+    purpose: Changes both the displacement cost and the notice obligation. Moving an internal meeting
+      costs coordination; moving an external one spends relationship capital that belongs to the
+      principal, not the assistant.
+    type: value
+    data_type: boolean
+    description: >
+      Changes both the displacement cost and the notice obligation. Moving an internal
+      meeting costs coordination; moving an external one spends relationship capital that
+      belongs to the principal, not the assistant.
+  - name: preparation_minutes_required
+    purpose: Unbooked preparation is the largest hidden overdraft in an executive diary. A block that
+      needs forty minutes of reading and has none scheduled has silently drawn on the block before it.
+    type: value
+    data_type: integer
+    unit: minutes
+    description: >
+      Unbooked preparation is the largest hidden overdraft in an executive diary. A block that
+      needs forty minutes of reading and has none scheduled has silently drawn on the block
+      before it.
+  - name: preparation_block_ref
+    purpose: Self-referential. The block that prepares for this one.
+    type: reference
+    ref: admin.obj.calendar_management.time_block
+    data_type: ref
+    description: Self-referential. The block that prepares for this one.
+  - name: travel_buffer_minutes
+    purpose: The travel_buffer_minutes of this object.
+    type: value
+    data_type: integer
+    unit: minutes
+  - name: agenda_ref
+    purpose: The agenda_ref of this object.
+    type: reference
+    ref: admin.obj.core.document
+    data_type: ref
+  - name: decision_expected
+    purpose: Whether a decision is supposed to come out of this hour. Where this is true and no
+      pre-read exists, the block will produce a discussion and a request for another block.
+    type: value
+    data_type: boolean
+    description: >
+      Whether a decision is supposed to come out of this hour. Where this is true and no
+      pre-read exists, the block will produce a discussion and a request for another block.
+  - name: confirmed
+    purpose: Whether the block's occupant has actually been accepted, as opposed to proposed.
+    type: value
+    data_type: boolean
+    source_paths: [meeting.status]
+    description: Whether the block's occupant has actually been accepted, as opposed to proposed.
+  - name: last_moved_at
+    purpose: The last_moved_at of this object.
+    type: value
+    data_type: timestamp
+  - name: move_count
+    purpose: The most predictive number on the object and the one no calendar keeps. A block moved
+      three times has been cancelled by everyone except the calendar.
+    type: value
+    data_type: integer
+    description: >
+      The most predictive number on the object and the one no calendar keeps. A block moved
+      three times has been cancelled by everyone except the calendar.
+  - name: origin
+    purpose: Blocks created by a recurring template behave completely differently from blocks the
+      principal asked for, and merging the two makes the diary look chosen when it was inherited.
+    type: value
+    data_type: enum
+    allowed_values: [principal, assistant, external_request, recurring_template, system]
+    description: >
+      Blocks created by a recurring template behave completely differently from blocks the
+      principal asked for, and merging the two makes the diary look chosen when it was
+      inherited.
+states:
+  initial: draft
+  values:
+    - name: draft
+      description: Proposed, not communicated. Exists in the assistant's head and nowhere binding.
+    - name: on_hold
+      description: >
+        A speculative hold. Occupies the budget while committing to nothing, and is the single
+        largest source of phantom congestion in a senior diary.
+    - name: approved
+      description: Accepted by the principal and, where relevant, by the attendees.
+      entered_when: [exists: meeting.start_at]
+    - name: active
+      description: Currently running.
+    - name: closed
+      description: Elapsed. Whether it produced anything is a separate question and usually an unasked
+        one.
+      entered_when: [{fn: hours_since, path: meeting.start_at, op: ">", value: 0}]
+    - name: superseded
+      description: Displaced by another block. The displacing block should carry displaces_ref back to
+        this one.
+    - name: cancelled
+      description: Released without being replaced. The only state that actually returns budget.
+      entered_when: [{path: meeting.status, op: "=", value: cancelled}]
+  transitions:
+    - {from: draft, to: on_hold}
+    - {from: draft, to: approved, when: [exists: meeting.start_at]}
+    - {from: on_hold, to: approved}
+    - {from: on_hold, to: cancelled, when: [{path: meeting.status, op: "=", value: cancelled}]}
+    - {from: approved, to: active}
+    - {from: approved, to: superseded}
+    - {from: approved, to: cancelled, when: [{path: meeting.status, op: "=", value: cancelled}]}
+    - {from: active, to: closed, when: [{fn: hours_since, path: meeting.start_at, op: ">", value: 0}]}
+
+# ── 7 · Business Rules — deterministic. No model evaluates these. ────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: admin.obj.core.employee_record
+    cardinality: one
+    description: The principal. A block without a named holder is a room booking.
+
+  - type: covers
+    target: admin.obj.core.meeting
+    cardinality: zero_or_one
+    description: >
+      A block may realise a meeting or may defend an hour with nothing in it. The second kind
+      is the one that gets deleted first and matters most.
+
+  - type: blocks
+    target: admin.obj.calendar_management.time_block
+    cardinality: zero_or_many
+    description: Self-referential displacement. The edge that makes the calendar a budget.
+
+  - type: precedes
+    target: admin.obj.calendar_management.time_block
+    cardinality: zero_or_one
+    description: A preparation block precedes the block it prepares for. Deleting the first quietly
+      guts the second.
+
+  - type: requires
+    target: admin.obj.core.document
+    cardinality: zero_or_many
+    description: Pre-read, agenda, briefing pack.
+
+  - type: gates
+    target: admin.obj.core.commitment
+    cardinality: zero_or_many
+    description: >
+      A commitment can only be delivered inside an hour reserved to deliver it. Commitment
+      tracking that never touches the calendar produces accurate lists of work that will not
+      happen.
+
+  - type: allocated_to
+    target: admin.obj.core.request
+    cardinality: zero_or_one
+    description: When the block exists to satisfy an inbound scheduling request.
+
+  - type: requires
+    target: admin.obj.core.approval
+    cardinality: zero_or_one
+    description: Some blocks — board time, external commitments — cannot be moved without the
+      principal's own sign-off.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: tb.meeting_is_a_block
+      statement: "A scheduled meeting on the principal's calendar occupies a time block, whether or not
+        anyone defended it."
+      status: executable
+      when:
+        - {exists: meeting.start_at}
+      yields: {confidence_bp: 9200, attribute: null}
+      evidence_fields: [meeting.start_at]
+      note: >
+        The weakest strong pattern in the file. It establishes that the hour is spent, which is
+        all a calendar feed can tell us; it says nothing about purpose, protection or what was
+        displaced, which is everything this object was created to hold.
+
+    - id: tb.cancellation_releases_the_block
+      statement: "The meeting occupying this block has been cancelled, so the hour is back in the budget."
+      status: executable
+      when:
+        - {path: meeting.status, op: "=", value: cancelled}
+      yields: {confidence_bp: 9600, attribute: confirmed, value: false}
+      evidence_fields: [meeting.status]
+      note: >
+        Recovered time is the cheapest capacity an executive office ever finds and it is
+        almost never reallocated — it silently becomes overflow for whatever is loudest that
+        morning.
+
+    - id: tb.declared_focus_block
+      statement: "The calendar system's own focus-time or out-of-office event type marks this as protected."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: protection_level, value: defended}
+      requires_signals:
+        - {kind: fact_path, name: calendar.event.category, owner_layer: L1, note: "Both Google and Microsoft\
+            emit a native event type for focus time, out of office and working location. The connector reads
+            title, time and attendees and drops the type, so the one field where the principal has already
+            declared intent is discarded at ingest."}
+        - {kind: fact_path, name: calendar.event.transparency, owner_layer: L1, note: "Busy/free transparency\
+            distinguishes a hold from a commitment and is present on every event object in both APIs."}
+
+    - id: tb.displacement_recorded
+      statement: "This block was created over a previously scheduled block, and the prior start time is
+        known."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: displaces_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: calendar.event.previous_start_at, owner_layer: L1, note: "The connector\
+            overwrites the event on update rather than retaining the prior start. The single most valuable
+            administrative fact in a calendar — what moved, and for what — is destroyed by the sync that ingests
+            it."}
+
+    - id: tb.hold_expired_unreleased
+      statement: "A speculative hold has passed its release date and nobody has given the hour back."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: purpose, value: speculative_hold}
+      requires_signals:
+        - {kind: fact_path, name: calendar.event.hold_expires_at, owner_layer: L1, note: "No system stores\
+            a hold expiry, because no system distinguishes a hold from a booking. Holds are released by an
+            assistant remembering, which means they are not released."}
+
+  heuristic:
+
+    - id: tb.elapsed_and_produced_nothing
+      statement: "The block has been over for a day and no follow-up left it — an hour of the principal's
+        budget with no output."
+      status: executable
+      when:
+        - {fn: hours_since, path: meeting.start_at, op: ">", value: 24}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 6500, attribute: displacement_cost, value: irrecoverable}
+      evidence_fields: [meeting.start_at]
+      note: >
+        Deliberately 6500. Plenty of valuable hours produce no email. But the recurring block
+        that has produced nothing for six weeks running is the single most reliable candidate
+        for deletion in any diary, and this is the only signal available today that points at it.
+
+    - id: tb.coordination_rather_than_work
+      statement: "A block attached to many parties is a coordination block, not a working block, and should
+        be priced as one."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 8}
+      yields: {confidence_bp: 6000, attribute: purpose, value: internal_operating}
+      note: >
+        Large attendance is a near-perfect inverse indicator of decision content. The block
+        that could have been a document is almost always the one with fourteen people in it.
+
+    - id: tb.commitment_due_with_no_hour_reserved
+      statement: "A commitment falls due and no block exists in which to do it, so it will be done in the
+        margin of another meeting or not at all."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: calendar.free_capacity_minutes, owner_layer: L2, note: "Requires a working-hours\
+            model plus an aggregation over the block set. commitment.due_at exists today and is genuinely
+            administrative; what is missing is the other half — whether there is anywhere for the work to
+            go."}
+
+    - id: tb.back_to_back_density
+      statement: "The day has no gaps, so every overrun is paid for by the next block and preparation has
+        nowhere to happen."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: displacement_cost, value: reschedulable}
+      requires_signals:
+        - {kind: derived, name: derived.calendar_density, owner_layer: L2, note: "Computable today from\
+            the event stream and computed by nothing. Density is the property that determines whether adding
+            one more thirty-minute block costs thirty minutes or costs the afternoon."}
+
+    - id: tb.repeatedly_moved
+      statement: "This block has been rescheduled more than twice, which in practice means it has been cancelled
+        without anyone saying so."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: move_count, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.reschedule_count, owner_layer: L2, note: "Derivable only if calendar.event.previous_start_at\
+            is retained. Depends on the same discarded field as tb.displacement_recorded, which is why that
+            one is the highest-value calendar ask in the library."}
+
+    - id: tb.outside_working_hours
+      statement: "The block sits outside the principal's declared working pattern, which makes it a cost
+        to somebody rather than a use of budget."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: protection_level, value: unprotected}
+      requires_signals:
+        - {kind: fact_path, name: person.working_hours, owner_layer: L1, note: "No working-hours or timezone\
+            model exists, so a 07:00 block in London and a 07:00 block in Singapore are indistinguishable
+            to the pipeline even when the same person holds both."}
+
+    - id: tb.travel_with_no_recovery
+      statement: "The block immediately follows a return leg with no recovery, which is where a diary starts
+        generating cancellations two days later."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: purpose, value: recovery}
+      requires_signals:
+        - {kind: fact_path, name: trip.return_at, owner_layer: L1, note: "The Trip object is authored in\
+            Layer 3 and no connector projects an itinerary into a fact, so the calendar cannot see the one
+            thing that most reliably predicts the next fortnight's rescheduling."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: calendar, signal: "event start, end, status and attendees", path: meeting.start_at}
+  - {source: calendar, signal: "acceptance and cancellation", path: meeting.status}
+  - {source: email, signal: "scheduling requests and reschedule threads", path: thread.last_inbound}
+  - {source: email, signal: "whether the next move on a scheduling thread is ours", path: thread.ball_in_court}
+  - {source: manual_entry, signal: "the principal's standing instructions on what is defended and why"}
+  - {source: document, signal: "pre-reads and agendas attached to a block"}
+  - {source: hris, signal: "working pattern, leave and public holidays", description: "No HRIS connector\
+      today; see tb.outside_working_hours."}
+  - {source: derived, signal: "density, reschedule frequency, free capacity"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: defensibility_bp, type: integer, description: "How strong the argument for keeping this hour\
+      is against a specific incoming request.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: displacement_ledger, type: list, description: "Ordered record of what this block pushed out\
+      and at what cost. The artefact that makes a quarter's diary auditable.", consumed_by: [
+        L4.reasoning_unit, L6.learning_unit]}
+  - {name: preparation_gap_minutes, type: integer, description: "Preparation required minus preparation\
+      scheduled. Positive means the block is drawing on time nobody has allocated.", consumed_by: [
+        L5.execution_planning]}
+  - {name: reschedule_proposal, type: list, description: "Ranked alternative slots when displacement is\
+      unavoidable.", consumed_by: [L5.execution_planning]}
+  - {name: decline_rationale, type: string, description: "The stated higher use of the hour. A decline\
+      without one is refused capacity; a decline with one is administration.", consumed_by: [
+        L5.communication_planning]}
+  - {name: attendee_notice, type: string, description: "Who must be told, how, and how far ahead.", consumed_by: [
+      "L5.2.channel_planner"]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: tb.immovable_no_displacement, statement: "An immovable block is never overwritten, regardless\
+      of the seniority of the requester.", hard: true}
+  - {id: tb.no_double_booking, statement: "Two blocks may not occupy the same span for the same holder.\
+      A double booking is a decision deferred and dressed as a diary.", hard: true}
+  - {id: tb.travel_time_is_not_free, statement: "Physical movement between venues consumes the budget\
+      and must be blocked, not assumed.", hard: true}
+  - {id: tb.mandate_bounds_the_decline, statement: "An assistant may only decline within the principal's\
+      standing instruction; outside it, the request is surfaced.", hard: true}
+  - {id: tb.working_hours_are_soft, statement: "Blocks outside declared working hours are permitted but\
+      must be visible as such and carry consent.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: tb.purpose_is_mandatory
+    statement: >
+      A block with no purpose cannot be defended and must be treated as available. This is
+      deliberately harsh: it is the only rule that forces the diary to be labelled.
+    then: treat_as_available
+    severity: warning
+
+  - id: tb.displacement_must_name_the_displaced
+    statement: >
+      No block may be created over another without recording displaces_ref. A calendar that
+      cannot say what was moved cannot say what was lost, and by the end of a quarter nobody
+      can explain where the strategy time went.
+    then: block_creation_until_displacement_recorded
+    severity: blocking
+
+  - id: tb.immovable_cannot_be_displaced
+    statement: A block at protection_level = immovable is never displaced; the incoming request is
+      declined instead.
+    then: decline_request
+    severity: blocking
+
+  - id: tb.decision_block_needs_a_pre_read
+    statement: >
+      A block where decision_expected is true and no agenda_ref exists will not produce a
+      decision. Booking it anyway converts an hour of decision time into an hour of context
+      transfer and generates a second block.
+    severity: warning
+
+  - id: tb.external_block_carries_a_travel_buffer
+    statement: A block with external_attendees and a physical venue requires travel_buffer_minutes on
+      both sides.
+    severity: warning
+
+  - id: tb.third_move_is_a_cancellation
+    statement: >
+      A block moved three times should be cancelled and re-proposed rather than moved again.
+      The fourth move is the one that costs the relationship, and by then everyone has stopped
+      preparing for it.
+    when: [exists: meeting.start_at]
+    then: propose_cancel_and_rebook
+    severity: advisory
+
+  - id: tb.holds_expire
+    statement: >
+      A speculative hold with no expiry is a permanent allocation. Every hold must carry a
+      release date, and releasing it must be automatic rather than remembered.
+    severity: warning
+
+# ── 8 · Decision Factors — advisory inputs to Layer 4, never a decision. ─────────────────
+decision_factors:
+
+  - name: external_irreversibility
+    weight_bp: 2200
+    direction: increases
+    description: >
+      Whether the counterparty is outside our control. Internal time can be rearranged at a
+      cost we bear; external time is rearranged at a cost someone else bears and remembers.
+    reads: [external_attendees, immovable_reason, displacement_cost]
+
+  - name: purpose_value
+    weight_bp: 2000
+    direction: increases
+    description: A decision block outranks an operating block outranks a status block, regardless of
+      who asked.
+    reads: [purpose, decision_expected]
+
+  - name: displacement_cost
+    weight_bp: 1800
+    direction: decreases
+    reads: [displacement_cost, displaces_ref]
+
+  - name: preparation_readiness
+    weight_bp: 1500
+    direction: context
+    description: A block that cannot be prepared for should be moved to when it can, not defended
+      where it is.
+    reads: [preparation_minutes_required, preparation_block_ref, agenda_ref]
+
+  - name: load_and_recovery
+    weight_bp: 1200
+    direction: context
+    description: >
+      The seventh consecutive hour is not worth the first. Density is a property of the day,
+      not of the block, and it is the factor most often ignored when the diary is filled by
+      someone who does not have to sit in it.
+    reads: [purpose, travel_buffer_minutes]
+
+  - name: reschedule_history
+    weight_bp: 800
+    direction: decreases
+    reads: [move_count, last_moved_at]
+
+  - name: notice_to_attendees
+    weight_bp: 500
+    direction: context
+    reads: [attendee_count, external_attendees]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: calendar, strength_bp: 9000, description: "The invitation itself. Proves the hour is spent,\
+      proves nothing about purpose."}
+  - {source: manual_entry, strength_bp: 8000, description: "The principal's own standing instruction,\
+      recorded by the assistant. The only authoritative source for protection_level."}
+  - {source: email, strength_bp: 7000, description: "The scheduling thread — who asked, what was offered,\
+      what was moved."}
+  - {source: meeting_transcript, strength_bp: 6000, description: "Retrospective evidence of whether the\
+      block did what it was booked for."}
+  - {source: document, strength_bp: 6500, description: "An agenda or pre-read attached to the block is\
+      the strongest available proxy for a real purpose."}
+  - {source: hris, strength_bp: 5000, description: "Working pattern and leave. Absent today."}
+  - {source: derived, strength_bp: 4000, description: "Density and reschedule inference. Corroborating\
+      only."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: defended_time_share, unit: percent, description: "Share of working hours held at defended or\
+      immovable. The headline number of an executive office.", owner_layer: L6}
+  - {name: displacement_rate, unit: percent, description: "Share of new blocks that displaced an existing\
+      one. Above roughly a third the calendar is being run as a queue.", owner_layer: L6}
+  - {name: preparation_coverage, unit: percent, description: "Share of blocks requiring preparation that\
+      had preparation scheduled.", owner_layer: L6}
+  - {name: reschedule_count_per_block, unit: count, owner_layer: L2}
+  - {name: block_output_rate, unit: percent, description: "Share of elapsed blocks that produced a follow-up,\
+      minutes or a commitment.", owner_layer: L6}
+  - {name: after_hours_share, unit: percent, description: "Share of blocks outside declared working hours.\
+      A load metric, not a productivity one.", owner_layer: L6}
+  - {name: hold_release_lag, unit: days, description: "Days between a speculative hold becoming moot and\
+      being released.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: tb.created, name: Time Block Created, emitted_when: [exists: meeting.start_at], payload: [
+        purpose, protection_level, holder_ref]}
+  - {id: tb.displaced, name: Time Block Displaced, payload: [displaces_ref, displacement_cost, requester_ref],
+    description: "The event the whole object exists to emit. Nothing in a calendar system emits it today."}
+  - {id: tb.rescheduled, name: Time Block Rescheduled, payload: [last_moved_at, move_count]}
+  - {id: tb.released, name: Time Block Released, emitted_when: [{path: meeting.status, op: "=", value:
+          cancelled}], payload: [start_at, duration_minutes], description: "Recovered capacity. Should trigger
+      reallocation rather than absorption."}
+  - {id: tb.elapsed_empty, name: Block Elapsed Without Output, emitted_when: [{fn: hours_since, path: meeting.start_at,
+        op: ">", value: 24}, no_obs: followup_sent], payload: [purpose, duration_minutes]}
+  - {id: tb.protection_breached, name: Protected Block Overwritten, payload: [protection_level, immovable_reason,
+      requester_ref]}
+
+# ── 13 · Actions — Layer 5 may operationalise these. Naming one here does not authorise it. ─
+actions:
+  - {id: tb.defend, name: Defend the block, actor: human, effect: "Decline the request and state the competing\
+      use of the hour."}
+  - {id: tb.decline_on_behalf, name: Decline a request on the principal's behalf, actor: agent, preconditions: [
+      exists: meeting.start_at], effect: "Only where the standing instruction covers the case. An assistant
+      who declines outside the mandate loses the mandate."}
+  - {id: tb.propose_alternative, name: Propose alternative slots, actor: agent, effect: "Three options,\
+      not an invitation to negotiate."}
+  - {id: tb.insert_preparation, name: Insert a preparation block, actor: agent, effect: "Books the reading\
+      time the meeting silently assumed."}
+  - {id: tb.release_hold, name: Release an expired hold, actor: system, effect: "Returns speculative capacity\
+      to the budget automatically rather than by memory."}
+  - {id: tb.batch, name: Batch like blocks together, actor: human, effect: "Consolidates context-switching\
+      cost. The highest-yield and least-used calendar move."}
+  - {id: tb.escalate_conflict, name: Escalate a conflict to the principal, actor: human, effect: "For\
+      collisions between two immovables, which is the only case an assistant should not resolve alone."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Two hours of board pack reading, every quarter", note: "purpose = preparation, protection_level\
+      = defended, immovable_reason = board. The first thing offered up when a customer asks for a call,
+      and the one whose loss is discovered in the board meeting."}
+  - {label: "Standing Monday leadership meeting", note: "origin = recurring_template. Created once with\
+      a reason, inherited for three years without one. The single largest recoverable block in most diaries."}
+  - {label: "Speculative hold for a customer visit that never confirmed", note: "purpose = speculative_hold\
+      with no expiry. Occupies the budget for six weeks and is released by nobody."}
+  - {label: "Thirty minutes moved four times", note: "move_count = 4. Everyone has stopped preparing for\
+      it. Cancel and re-propose rather than move it a fifth time."}
+  - {label: "Airport-to-office gap treated as free", note: "travel_buffer_minutes = 0. The block booked\
+      into it will start late and the one after that will start later."}
+  - {label: "Decision block with no pre-read", note: "decision_expected = true, agenda_ref null. Produces\
+      a discussion and a request for a second block."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Four of eleven patterns are executable. The standout gap is
+    calendar.event.previous_start_at: two separate high-value patterns
+    (tb.displacement_recorded, tb.repeatedly_moved) both depend on it, both are cheap once it
+    exists, and it is currently destroyed by the sync that ingests the event. The second gap
+    is calendar.event.category — Google and Microsoft both already emit a native focus-time
+    and out-of-office type, and dropping it discards the only field where the principal has
+    stated intent without being asked. Everything this object does that a calendar cannot is
+    downstream of those two fields.

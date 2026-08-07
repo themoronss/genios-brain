@@ -1,0 +1,24 @@
+# Load-set for admin.records_and_documentation.document_control — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/document-control/      loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.records_and_documentation.document_control
+
+core:
+  required:
+    - admin.obj.core.document
+    - admin.obj.core.policy
+  optional:
+    - admin.obj.core.compliance_obligation
+    - admin.obj.core.sop
+    - admin.obj.core.contract
+
+scoped:
+  required: []
+  optional: []

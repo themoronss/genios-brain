@@ -1,0 +1,1677 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# VENDOR — the counterparty, held as a live risk position rather than a payee record.
+#
+# Five of fifteen patterns are executable, and all five read the onboarding
+# correspondence rather than the vendor. The pipeline can see us negotiating with a
+# counterparty and can see nothing about the counterparty itself.
+#
+# The most important pattern in this file cannot fire, and it is worth naming at the
+# top: nothing in the stack can see a supplier's bank details change. That single
+# event is the highest-risk moment in the entire administrative function — the money
+# leaves the same day and is recoverable for hours, not weeks — and today it is
+# invisible until reconciliation.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.vendor
+  name: Vendor
+  domain: admin
+  scope: core
+  owner_capability: admin.contract_and_vendor.vendor_onboarding
+  subdomain: contract_and_vendor
+  version: 2.0.0
+  status: draft
+  aliases:
+    - Supplier
+    - Counterparty
+    - Third Party
+    - Payee
+    - Trade Creditor
+    - Processor
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    An external party we buy from, pay, and are exposed to. A vendor record is three things at
+    once and confusing them is how the function fails. It is a PAYMENT INSTRUCTION, and that is
+    the part that gets attacked — a changed bank account on a plausible email is the cheapest
+    large fraud in existence, and it succeeds because the change arrives through a channel we
+    already trust. It is a DILIGENCE POSITION, and that decays silently: insurance lapses, a DPA
+    goes unsigned, a screening result ages out, and nothing in the vendor master ever turns red
+    on its own. And it is a DEPENDENCY, which nobody measures until the vendor fails, at which
+    point substitutability — not price, not performance, not spend — is the only property that
+    matters.
+  discriminator: >
+    A vendor is a party we can PAY. The test is the payment instruction, not the relationship:
+    a partner we exchange data with but never pay is a stakeholder; a counterparty on a signed
+    agreement with live bank details in our ledger is a Vendor, however small the spend and
+    however long since anyone spoke to them.
+  answers:
+    - "May this party be contracted with and paid today, and on whose authority?"
+    - "Have the bank details changed, who verified them, and by what channel?"
+    - "Is the diligence still true, or merely still on file?"
+    - "What stops if this vendor stops tomorrow, and how long would a replacement take?"
+    - "How much of this category's spend sits with this one party, across how many contracts?"
+    - "Has anybody looked at this relationship even once since the day it was onboarded?"
+    - "If we offboarded them this week, what would still be live — access, assets, mandates, data?"
+  not:
+    - "NOT the paper. admin.obj.core.contract owns term, notice, obligations and the exit window; this object owns the party those obligations run against."
+    - "NOT the bill. admin.obj.core.invoice owns the individual claim for payment and the three-way match."
+    - "NOT the commitment of funds. admin.obj.core.budget_line owns whether the money exists."
+    - "NOT the service targets. admin.obj.core.service_level owns the thresholds and the credits."
+    - "NOT an employee, however long the contractor has been here. admin.obj.core.employee_record owns people we employ, and the boundary between the two is a tax and employment-status question, not an administrative preference."
+    - "NOT the internal owner of the relationship — admin.obj.core.stakeholder is the person, this is the party."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ---- Legal identity ------------------------------------------------------------------
+  - name: legal_identity
+    purpose: Who they legally are, as opposed to what we call them in conversation.
+    type: composite
+    contains: [legal_name, trading_name, registration_number, tax_id, jurisdiction, category, parent_entity_ref]
+
+  - name: legal_name
+    purpose: The name on the contract and on the invoice, and the name the money must go to.
+    type: value
+    data_type: string
+    required: true
+    sensitivity: internal
+    description: >
+      Where it differs from the trading name, a payment to the wrong entity is recoverable only
+      with difficulty and sometimes not at all. The mismatch is normal and benign; not noticing
+      it is neither.
+
+  - name: trading_name
+    purpose: What the business calls them, which is what everyone will search for.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: registration_number
+    purpose: The only identifier that survives a rebrand, an acquisition or a re-registration.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      Companies registry number, CIN, EIN. A vendor master keyed on name rather than on this is a
+      vendor master with duplicates in it, and duplicates are how the same invoice gets paid
+      twice and how a rejected supplier returns under a variant spelling.
+
+  - name: tax_id
+    purpose: VAT or equivalent registration, which decides withholding and reclaim.
+    type: value
+    data_type: string
+    sensitivity: confidential
+
+  - name: jurisdiction
+    purpose: Where they are established, which sets what we owe about them.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      Drives screening obligations, withholding, and whether a cross-border transfer mechanism is
+      needed at all. A processor established outside the adequacy perimeter is a different
+      compliance object wearing the same vendor label.
+
+  - name: category
+    purpose: What they supply, which sets the diligence template.
+    type: value
+    data_type: enum
+    allowed_values: [goods, services, saas, professional_services, contingent_labour, facilities, logistics, regulated_service, utility, intra_group]
+    description: >
+      A cleaning contractor and a cloud processor should not pass through the same checklist, and
+      in most organisations they do — which over-asks the cleaner, under-asks the processor, and
+      teaches everybody that the checklist is paperwork.
+
+  - name: parent_entity_ref
+    purpose: The group parent, where this is a subsidiary or a re-registered successor.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.vendor
+    description: >
+      Self-referential. Concentration and criticality are properties of the GROUP, not of the
+      registered entity we happen to have contracted with. Three tolerable dependencies on three
+      subsidiaries can be one intolerable dependency on their parent.
+
+  # ---- Due diligence -------------------------------------------------------------------
+  - name: due_diligence
+    purpose: >
+      What we checked, when, and when it stops being true. Every field here is a claim with a
+      shelf life; a diligence pack with no expiry date is a photograph of a moving thing.
+    type: composite
+    contains: [onboarding_state, diligence_tier, diligence_completed_at, diligence_expires_at, diligence_current, sanctions_screened_at, sanctions_screen_result, insurance_expires_at, data_processor, dpa_signed, subprocessors_disclosed]
+
+  - name: onboarding_state
+    purpose: Where this party sits in the admission process.
+    type: value
+    data_type: enum
+    allowed_values: [requested, screening, diligence, pending_approval, approved, rejected, suspended, offboarded]
+    required: true
+    default: requested
+    validation: must be one of allowed_values
+    description: >
+      Held separately from the object's lifecycle state because a vendor can be `active` in the
+      ledger and `suspended` in diligence at the same time, and that combination is exactly the
+      one worth reporting.
+
+  - name: diligence_tier
+    purpose: How much checking this party earns, set before the checking starts.
+    type: value
+    data_type: enum
+    allowed_values: [none, simplified, standard, enhanced]
+    default: standard
+    description: >
+      Proportionality decided in advance is a control. Proportionality decided while chasing a
+      certificate is an excuse. Enhanced belongs to processors, regulated services and anyone
+      with access to our systems or our people.
+
+  - name: diligence_completed_at
+    purpose: When the checks were finished.
+    type: value
+    data_type: timestamp
+
+  - name: diligence_expires_at
+    purpose: When the checks stop being a statement about today.
+    type: value
+    data_type: timestamp
+    description: >
+      The field that makes diligence a control rather than a ceremony. Without an expiry, a check
+      performed once in 2021 is still showing green, and the master reports a clean supply base
+      it has not verified in four years.
+
+  - name: diligence_current
+    purpose: Whether the diligence position is true right now.
+    type: derived
+    data_type: boolean
+    derived_from: [diligence_expires_at, insurance_expires_at, sanctions_screened_at, dpa_signed]
+    description: >
+      Composite of every dated item, not an average. One lapsed certificate makes the position
+      not current — expressing it as a score lets a red item hide behind four green ones.
+
+  - name: sanctions_screened_at
+    purpose: When we last screened, which decays faster than anything else here.
+    type: value
+    data_type: timestamp
+    sensitivity: confidential
+    description: Lists change weekly. An annual screen is a screen that is wrong for up to fifty-one weeks at a time.
+
+  - name: sanctions_screen_result
+    purpose: What the screen returned.
+    type: value
+    data_type: enum
+    allowed_values: [clear, hit, pending, not_screened]
+    default: not_screened
+    sensitivity: confidential
+    description: >
+      not_screened is the honest default and must never be silently rendered as clear in a
+      dashboard. The two look identical to a reader and mean opposite things to a regulator.
+
+  - name: insurance_expires_at
+    purpose: When their cover lapses, which is annually and quietly.
+    type: value
+    data_type: timestamp
+    description: >
+      Employers' and public liability, professional indemnity, cyber. Chased annually only where
+      an expiry date was captured; where only the certificate was filed, the lapse is discovered
+      after the incident it would have covered.
+
+  - name: data_processor
+    purpose: Whether they process personal data on our behalf.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      Where true, a signed DPA and an Article 30 entry are conditions of them being used at all,
+      not documents to obtain afterwards. Most organisations discover a processor relationship
+      when someone asks where the data actually sits.
+
+  - name: dpa_signed
+    purpose: Whether the processing terms are executed.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+
+  - name: subprocessors_disclosed
+    purpose: Whether we know who sits behind them.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      The tier nobody maps. Our exposure runs through their suppliers whether or not we ever
+      asked who those are, and Article 28 says we agreed to the list — a list almost nobody in
+      the building could produce.
+
+  # ---- Payment instruction -------------------------------------------------------------
+  - name: payment_instruction
+    purpose: >
+      The fraud surface. Held as a fingerprint rather than as digits, because what the function
+      needs to detect is CHANGE, and change is detectable without holding the account number.
+    type: composite
+    contains: [bank_account_fingerprint, bank_details_verified_at, bank_details_verified_by, bank_verification_method, bank_details_change_count, payment_hold_active, payment_terms_days]
+
+  - name: bank_account_fingerprint
+    purpose: A stable hash of the payment destination, held so change can be seen.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      Store the fingerprint, compare the fingerprint. The function does not need the digits to
+      detect the only thing that matters — that they changed — and holding the hash rather than
+      the account keeps the highest-risk field out of every downstream copy of the record.
+
+  - name: bank_details_verified_at
+    purpose: When the payment destination was last independently confirmed.
+    type: value
+    data_type: timestamp
+    sensitivity: confidential
+
+  - name: bank_details_verified_by
+    purpose: The named human who confirmed it.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: A named person, never a system and never a team mailbox. Verification is an accountable act and its value is entirely in the accountability.
+
+  - name: bank_verification_method
+    purpose: How the confirmation was actually obtained.
+    type: value
+    data_type: enum
+    allowed_values: [callback_to_known_number, in_person, bank_account_check_service, portal_self_service, email_confirmation, none]
+    default: none
+    sensitivity: confidential
+    description: >
+      email_confirmation is not a verification method; it is the attack surface. If the request
+      arrived by email and was confirmed by email, one compromised mailbox controls both sides of
+      the check. Only a callback to a number held BEFORE the request arrived counts, and the
+      enum is written this way so that the weak methods cannot hide behind the word "verified".
+
+  - name: bank_details_change_count
+    purpose: How often this supplier's payment destination has moved.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    sensitivity: confidential
+    description: >
+      Legitimate suppliers change bank details roughly once a decade. A second change inside a
+      year is not a pattern to note; it is an incident to open.
+
+  - name: payment_hold_active
+    purpose: Whether payments to this party are currently frozen.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      The default posture from the moment a change is requested until verification completes.
+      Held as a field rather than a process step because the pressure to release "just this one,
+      they are chasing" is itself part of the attack, and a field can be audited.
+
+  - name: payment_terms_days
+    purpose: Agreed days to pay, which is what the ledger should enforce rather than what finance prefers.
+    type: value
+    data_type: integer
+    unit: days
+
+  # ---- Exposure ------------------------------------------------------------------------
+  - name: exposure
+    purpose: What it would cost us if this vendor stopped tomorrow.
+    type: composite
+    contains: [criticality, single_source, substitutability, exit_plan_held, spend_ytd, spend_share_bp, contract_count, primary_contract_ref]
+
+  - name: criticality
+    purpose: What stops if they stop.
+    type: value
+    data_type: enum
+    allowed_values: [non_critical, important, critical, systemically_critical]
+    default: non_critical
+    description: >
+      Measured by what stops, never by what we spend. The most critical vendor in most
+      organisations is a small one — the single-source integration nobody has heard of that sits
+      between payroll and the bank.
+
+  - name: single_source
+    purpose: Whether an alternative exists at all today.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: substitutability
+    purpose: How long a replacement would actually take.
+    type: value
+    data_type: enum
+    allowed_values: [immediate, weeks, months, none]
+    default: weeks
+    description: >
+      The only honest measure of dependency. A vendor with substitutability `none` holds pricing
+      power regardless of what the contract says, and every renewal negotiation with them is a
+      conversation we have already lost.
+
+  - name: exit_plan_held
+    purpose: Whether a documented, dated way out exists.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Where criticality is critical and substitutability is none, the absence of this is not an
+      accepted risk — it is an unmanaged one, because nobody has ever priced the alternative.
+
+  - name: spend_ytd
+    purpose: What we have actually paid them this year.
+    type: value
+    data_type: money
+    sensitivity: confidential
+
+  - name: spend_share_bp
+    purpose: This vendor's share of category spend, in basis points.
+    type: derived
+    data_type: integer
+    derived_from: [spend_ytd]
+    validation: "0 <= spend_share_bp <= 10000"
+    sensitivity: confidential
+    description: >
+      Concentration is invisible while each contract is reviewed on its own, which is how every
+      contract is reviewed. This is the number that makes it visible, and it should be computed
+      at group level via parent_entity_ref rather than at the entity we happened to sign with.
+
+  - name: contract_count
+    purpose: How many instruments we hold with this counterparty.
+    type: value
+    data_type: integer
+    default: 0
+    description: >
+      Exposure is the sum and the renewal calendar treats each as unrelated. Four contracts
+      renewing on four dates is four small decisions; taken together it is one large one that
+      nobody ever gets to make.
+
+  - name: primary_contract_ref
+    purpose: The governing instrument, usually the MSA rather than the newest order form.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.contract
+
+  # ---- Performance ---------------------------------------------------------------------
+  - name: performance
+    purpose: Whether they are doing what the contract says.
+    type: composite
+    contains: [service_level_ref, sla_breach_count, credits_claimed, performance_score_bp, open_issue_count]
+
+  - name: service_level_ref
+    purpose: The agreed targets this vendor is measured against.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.service_level
+
+  - name: sla_breach_count
+    purpose: Recorded failures against the agreed level.
+    type: value
+    data_type: integer
+    default: 0
+    description: >
+      In most organisations this means breaches somebody bothered to record, which is a smaller
+      and more flattering number than breaches that happened. Read it as a measure of our
+      recording as much as of their performance.
+
+  - name: credits_claimed
+    purpose: Whether we actually claimed the service credits we earned.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Credits nobody claims are a discount we chose not to take, and they expire on a clock
+      written into the same clause that grants them. The claim window is usually shorter than
+      the review cycle that would have found the breach.
+
+  - name: performance_score_bp
+    purpose: Composite performance, in basis points.
+    type: derived
+    data_type: integer
+    derived_from: [sla_breach_count, open_issue_count]
+    validation: "0 <= performance_score_bp <= 10000"
+    description: >
+      Meaningful only where it has ever moved. A scorecard on which every vendor sits above 90%
+      is a scorecard nobody reads and nobody argues with, which are the same thing.
+
+  - name: open_issue_count
+    purpose: Live unresolved issues with this party.
+    type: value
+    data_type: integer
+    default: 0
+
+  # ---- Review and ownership ------------------------------------------------------------
+  - name: review_and_ownership
+    purpose: Whether anyone has looked at this relationship since the day it was created.
+    type: composite
+    contains: [owner_internal_ref, last_reviewed_at, review_interval_months, never_reviewed, review_overdue, risk_tier]
+
+  - name: owner_internal_ref
+    purpose: The named internal business owner.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    description: >
+      The person a renewal question is actually asked of. A vendor with no named owner will be
+      renewed by procurement on the strength of the fact that it was renewed last year.
+
+  - name: last_reviewed_at
+    purpose: When a human last examined this relationship rather than paid it.
+    type: value
+    data_type: timestamp
+
+  - name: review_interval_months
+    purpose: How often this relationship earns a look.
+    type: value
+    data_type: integer
+    unit: months
+    description: >
+      Set from criticality, not from spend. Reviewing the largest vendors annually and the
+      critical ones never is the common configuration and the wrong one.
+
+  - name: never_reviewed
+    purpose: Onboarded and never looked at since.
+    type: derived
+    data_type: boolean
+    derived_from: [last_reviewed_at, diligence_completed_at]
+    description: >
+      True for most of any vendor master older than three years, and the single most reliable
+      indicator that vendor management is a procurement gate rather than a lifecycle. Worth its
+      own field because "no review date" and "reviewed a while ago" get rendered identically in
+      every report and are not remotely the same finding.
+
+  - name: review_overdue
+    purpose: The review interval has elapsed without a review.
+    type: derived
+    data_type: boolean
+    derived_from: [last_reviewed_at, review_interval_months]
+
+  - name: risk_tier
+    purpose: Composite risk position, which drives interval, tier and escalation route.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, critical]
+    default: moderate
+
+  # ---- Engagement ----------------------------------------------------------------------
+  - name: engagement
+    purpose: Observed contact. The only group with live sources today.
+    type: composite
+    contains: [last_contact_at, ball_in_court, responsiveness_trend, blocked_on_us, onboarding_stalled]
+
+  - name: last_contact_at
+    purpose: When we last heard from them.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: ball_in_court
+    purpose: Which side the outstanding onboarding item sits with.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+
+  - name: responsiveness_trend
+    purpose: Whether they are getting harder to reach.
+    type: derived
+    data_type: number
+    derived_from: [last_contact_at]
+    source_paths: [derived.engagement]
+    description: >
+      Engine-computed two-way volume against the prior fortnight. A supplier's responsiveness
+      falling away during onboarding is the best free predictor available of their
+      responsiveness during an incident, and it costs nothing to collect.
+
+  - name: blocked_on_us
+    purpose: Onboarding is waiting on our side, not theirs.
+    type: derived
+    data_type: boolean
+    derived_from: [ball_in_court]
+    description: >
+      Worth a separate field because the standing complaint — "suppliers are slow to onboard" —
+      is usually false, and this is the field that settles it with evidence rather than with
+      opinion.
+
+  - name: onboarding_stalled
+    purpose: Movement has stopped with the record incomplete.
+    type: derived
+    data_type: boolean
+    derived_from: [responsiveness_trend, onboarding_state]
+    description: >
+      Stalled onboarding is where unapproved suppliers get paid "just this once". The failure it
+      predicts is not a slow onboarding; it is the emergency payment made outside the process
+      three weeks later.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: identified
+  terminal: [rejected, disposed]
+  values:
+    - name: identified
+      description: A counterparty exists in correspondence. Almost always precedes the vendor record by weeks.
+      entered_when: [{exists: thread.last_inbound}]
+      implies: Someone in the business has already started a relationship procurement has not heard about.
+    - name: submitted
+      description: Onboarding pack requested; diligence incomplete.
+      implies: We are exposed to the delay, not yet to the party.
+    - name: pending_approval
+      description: Diligence done, waiting on a named approver.
+      entered_when: [{has_obs: legal_review}]
+      implies: The queue is ours. The counterparty's start date does not pause for it.
+    - name: approved
+      description: Cleared to be contracted with and paid.
+      implies: The payment instruction is now live and must be treated as such.
+    - name: active
+      description: Live spend, live contract, live dependency.
+      implies: Everything on this object is now true of a party that can take money from us.
+    - name: at_risk
+      description: >
+        Diligence expired, performance failing, or a payment-integrity concern open. All three
+        route here because all three end the same way — an unmanaged dependency.
+      entered_when: [{path: derived.engagement, op: "<=", value: 0.5}]
+      implies: New work should stop. Existing obligations do not, and conflating the two produces a control nobody will operate.
+    - name: on_hold
+      description: Suspended for new work while the position is resolved.
+      implies: Existing obligations continue, which is the part that surprises people.
+    - name: rejected
+      description: Failed diligence.
+      implies: The state that proves the checklist runs. A checklist that has never produced this state is not running, it is being completed.
+    - name: dormant
+      description: No spend, no contact, record still live and still payable.
+      entered_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 180}]
+      implies: The most commonly exploited state in the vendor master, because nobody is watching an account nobody uses.
+    - name: archived
+      description: Offboarded — access removed, mandate deactivated, assets recovered, records retained.
+      implies: Only genuinely archived if all four happened. Usually only the first was checked.
+    - name: disposed
+      description: Retention period elapsed and the record destroyed under the schedule.
+      implies: The relationship is now unprovable, on purpose and on a date somebody chose.
+  transitions:
+    - {from: identified, to: submitted, trigger: onboarding_pack_issued}
+    - {from: submitted, to: pending_approval, when: [{has_obs: legal_review}]}
+    - {from: pending_approval, to: approved, trigger: approver_decision}
+    - {from: pending_approval, to: rejected, trigger: approver_decision, reversible: false}
+    - {from: approved, to: active, trigger: first_contract_or_first_payment}
+    - {from: active, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}], reversible: true}
+    - {from: at_risk, to: active, trigger: position_remediated}
+    - {from: at_risk, to: on_hold, trigger: suspended_for_new_work}
+    - {from: on_hold, to: active, trigger: suspension_lifted_by_second_person}
+    - {from: active, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 180}], reversible: true}
+    - {from: dormant, to: active, trigger: new_engagement, reversible: true}
+    - {from: dormant, to: archived, trigger: offboarding_completed}
+    - {from: on_hold, to: archived, trigger: offboarding_completed}
+    - {from: archived, to: disposed, trigger: retention_period_elapsed, reversible: false}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: governed_by
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 2000
+    confidence_bp: 9000
+    priority: 1
+    evidence: [contract, erp]
+    description: >
+      Everything this vendor may do to us and for us is bounded by paper. Where there is no
+      paper it is bounded by our willingness to pay the invoice, which is not a boundary.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1600
+    confidence_bp: 8500
+    priority: 2
+    description: >
+      Onboarding approval, and — separately, non-negotiably, and by a different person — approval
+      of any change to bank details. Collapsing the two into "vendor maintenance" is how the
+      highest-risk change in the function inherits the lowest-risk control.
+
+  - type: requires
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1300
+    confidence_bp: 8000
+    priority: 3
+    evidence: [document, regulator, attestation]
+    description: >
+      Screening, DPA, insurance evidence, modern-slavery statement, right-to-work for contingent
+      labour. These are obligations we owe ABOUT them, and every one of them decays on a clock.
+
+  - type: produces
+    target: admin.obj.core.invoice
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 9000
+    priority: 4
+    evidence: [erp]
+    description: The claims for payment. The join between this edge and onboarding_state is the query that finds every supplier admitted by exception.
+
+  - type: assigned_to
+    target: admin.obj.core.stakeholder
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 6000
+    priority: 5
+    description: The internal business owner — the person a renewal or performance question is actually asked of, as opposed to the person whose cost centre it lands on.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 7000
+    priority: 6
+    description: >
+      Where performance or a payment-integrity concern leaves the administrative track. A
+      suspected bank-detail fraud escalates immediately and does not wait for a review cycle —
+      the money is recoverable for hours, not days.
+
+  - type: covers
+    target: admin.obj.core.service_level
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 6500
+    priority: 7
+    description: The agreed targets and the credits. Without this edge, performance is an opinion held by whoever complained most recently.
+
+  - type: references
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 8500
+    priority: 8
+    evidence: [document, signed_form]
+    description: The diligence pack — certificates, accounts, policies, signed forms, the bank mandate. Each with an expiry date, or it is decoration.
+
+  - type: requires
+    target: admin.obj.core.access_right
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 5500
+    priority: 9
+    description: >
+      Third-party access to our systems, buildings and data. The edge nobody maintains: vendor
+      offboarding removes the payment relationship and leaves the accounts, and an orphaned
+      third-party account is the least-monitored credential in the estate.
+
+  - type: custodian_of
+    target: admin.obj.core.asset
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 5000
+    priority: 10
+    description: >
+      Our property in their hands — leased equipment, offsite records, contractor devices, stock
+      on consignment. Recovery fails silently at offboarding because nobody is inconvenienced by
+      an unreturned asset except the balance sheet.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 6000
+    priority: 11
+    description: Where their spend lands. Multiple budget lines across departments is the normal shape and the reason concentration is invisible from any single one of them.
+
+  - type: competes_with
+    target: admin.obj.core.vendor
+    direction: bidirectional
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 4500
+    priority: 12
+    description: >
+      Self-referential — the credible alternative. Substitutability is an assertion until this
+      edge exists; with it, a renewal negotiation has a second option in the room and the price
+      conversation changes shape.
+
+  - type: belongs_to
+    target: admin.obj.core.vendor
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6500
+    priority: 13
+    conditions: [{fn: edge_count, op: ">=", value: 1}]
+    description: >
+      Self-referential — the group parent. Concentration and criticality are properties of the
+      group; three tolerable dependencies on three subsidiaries can be one intolerable dependency
+      on a parent nobody has drawn.
+
+# ── 6 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: vn.counterparty_from_contract_request
+      statement: "Paper was requested with an external party — a vendor relationship is forming, whether or not a vendor record exists."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 7500, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        contract_requested also covers customers and partners, and direction is not observable
+        from the observation alone. Roughly right often enough to be worth acting on, which is
+        why it sits at 7500 and not at 9000.
+      note: >
+        The earliest catchable moment in vendor onboarding, and typically weeks before
+        procurement hears about it. Catching it here is the difference between running diligence
+        alongside the negotiation and running it after somebody has promised a start date.
+
+    - id: vn.legal_reviewing_the_counterparty
+      statement: "Legal review has opened on paper with this party — diligence is, or should be, running in parallel."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 8000, attribute: onboarding_state, value: diligence}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Legal review may be open on an NDA at first contact, months before any commercial
+        relationship exists. Sets onboarding_state early, which errs towards over-diligence — the
+        cheap direction to be wrong in.
+      note: >
+        Legal review and vendor diligence are the same window and almost never the same workflow,
+        which is precisely why a contract gets signed with a supplier whose insurance certificate
+        nobody has seen.
+
+    - id: vn.bank_details_changed
+      statement: "The vendor's bank account has changed since the last verified fingerprint."
+      status: needs_signal
+      yields: {confidence_bp: 9900, attribute: payment_hold_active, value: true}
+      requires_signals:
+        - {kind: fact_path, name: vendor.bank_account_fingerprint, owner_layer: L1,
+           note: "No connector reads the vendor master or the payments ledger, so the single highest-risk event in the administrative function produces no signal at all. Today the pipeline can see the payment leave and not the destination change — which is the wrong half."}
+        - {kind: obs_kind, name: bank_details_change_requested, owner_layer: L2,
+           note: "The request almost always arrives by email, on a real thread, from a real-looking address, with a plausible reason and an urgent invoice attached. L2 already reads that mailbox; it is simply not looking for this. Cheapest high-value extractor in the entire Admin backlog."}
+
+    - id: vn.diligence_expired
+      statement: "The diligence pack, insurance certificate or screening result has passed its expiry."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: diligence_current, value: false}
+      requires_signals:
+        - {kind: fact_path, name: vendor.diligence_expires_at, owner_layer: L1,
+           note: "Most vendor masters hold the completion date and never the expiry, which converts a control into a record of a control. Cheapest structural fix on this object."}
+
+    - id: vn.screening_hit
+      statement: "Sanctions, adverse-media or PEP screening returned a hit."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: sanctions_screen_result, value: hit}
+      requires_signals:
+        - {kind: obs_kind, name: screening_result_returned, owner_layer: L1,
+           note: "Screening runs inside a third-party tool whose result never leaves it, so a hit is actioned only if a human happens to open the report. A blocking control that depends on somebody reading an attachment is not a blocking control."}
+
+    - id: vn.duplicate_vendor_record
+      statement: "Two active records share a registration number under different names."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: vendor.registration_number, owner_layer: L1,
+           note: "Duplicates are how the same invoice is paid twice and how a rejected supplier reappears under a variant spelling. Detectable the moment the master is readable, and undetectable until then."}
+
+  heuristic:
+
+    - id: vn.onboarding_blocked_on_us
+      statement: "Paper is in flight and the ball is with us — the delay is internal, whatever the business says about slow suppliers."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 7500, attribute: blocked_on_us, value: true}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Reads as our delay when we are legitimately waiting on an internal approver who is on
+        leave, or on a decision the business has quietly deprioritised. Still ours in both cases,
+        which is the point, but the fix is different.
+      note: >
+        Written separately from the mirror case because the two demand different actions and
+        different owners, and because the engine has no `or`.
+
+    - id: vn.onboarding_stalled
+      statement: "Two-way contact has halved on a live onboarding — the record will sit incomplete until somebody needs to pay them urgently."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {path: derived.engagement, op: "<=", value: 0.5}
+      yields: {confidence_bp: 6500, attribute: onboarding_stalled, value: true, corroborates: [vn.onboarding_blocked_on_us]}
+      evidence_fields: [derived.engagement]
+      false_positive: >
+        Engagement also collapses when onboarding finishes successfully. Without an
+        approval_granted observation the engine cannot tell "completed" from "abandoned", and it
+        will occasionally chase a supplier who was onboarded last week.
+      note: >
+        The failure this predicts is not a slow onboarding. It is the emergency payment made
+        outside the process three weeks later, which is where every unapproved supplier in the
+        master came from.
+
+    - id: vn.dormant_but_still_payable
+      statement: "No contact for six months on a connected vendor record that remains live and payable."
+      status: executable
+      when:
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 180}
+        - {fn: edge_count, op: ">=", value: 1}
+      yields: {confidence_bp: 7000, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        A vendor can be entirely healthy and silent — an annual licence renewed by direct debit
+        generates no correspondence at all. Dormant is a flag for review, never for suspension,
+        and treating it as the latter is how a working relationship gets broken by a control.
+      note: >
+        Dormant-but-payable is the most commonly exploited state in a vendor master, because
+        nobody is watching an account nobody uses and a single fraudulent invoice against it
+        looks exactly like the resumption of a real relationship.
+
+    - id: vn.verified_by_the_wrong_channel
+      statement: "A bank-detail change was 'verified' by replying to the same channel the request arrived on."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: bank_verification_method, value: email_confirmation}
+      requires_signals:
+        - {kind: fact_path, name: vendor.bank_verification_method, owner_layer: L1,
+           note: "The most dangerous configuration in the function is a change marked verified where the verification ran through the compromised mailbox. Without this field, verified and verified-by-email are the same value in every report."}
+        - {kind: obs_kind, name: bank_details_change_requested, owner_layer: L2}
+
+    - id: vn.never_reviewed_since_onboarding
+      statement: "No review has been recorded since the vendor was created."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: never_reviewed, value: true}
+      requires_signals:
+        - {kind: fact_path, name: vendor.last_reviewed_at, owner_layer: L1,
+           note: "Absent this field the answer defaults to 'presumably fine', which is the answer the vendor master has been giving for years. The cheapest way to make third-party risk real is to make the ABSENCE of a review visible rather than the presence of one."}
+
+    - id: vn.concentration_risk
+      statement: "This vendor holds a dominant share of category spend, or several contracts renewing on unrelated dates."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: spend_share_bp, value: null}
+      requires_signals:
+        - {kind: fact_path, name: invoice.amount, owner_layer: L1}
+        - {kind: fact_path, name: contract.counterparty, owner_layer: L1,
+           note: "Concentration is a join across contracts and spend by counterparty, rolled up to the group parent. Neither side is projected, so exposure is only ever seen one contract at a time — which is the same as not seeing it."}
+
+    - id: vn.paid_without_approval
+      statement: "Payments are flowing to a vendor that never reached approved state."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: invoice.state, owner_layer: L1}
+        - {kind: fact_path, name: vendor.onboarding_state, owner_layer: L1,
+           note: "The join that finds every supplier admitted by exception. Almost always a short list, and almost always a surprising one — it is where the urgent 2022 project supplier is still sitting."}
+
+    - id: vn.service_level_failing
+      statement: "Repeated service failures against the agreed level."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: sla_breach_count, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: sla_breach, owner_layer: L2,
+           note: "Planned in the support block but ticket-scoped rather than vendor-scoped. A breach BY our supplier and a breach BY US to a customer are opposite facts and would land in the same bucket unless the direction is carried on the observation."}
+        - {kind: fact_path, name: vendor.service_level_target, owner_layer: L1}
+
+    - id: vn.offboarding_left_something_live
+      statement: "The vendor is offboarded but access, an asset or a payment mandate is still live."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: access.last_used_at, owner_layer: L1,
+           note: "Third-party accounts survive offboarding routinely, because the leaver process is built for employees and a vendor has no leaving date."}
+        - {kind: fact_path, name: asset.custodian, owner_layer: L1,
+           note: "Recovery fails silently because nobody is inconvenienced by an unreturned asset except the balance sheet."}
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "onboarding correspondence, who is waiting on whom", path: thread.last_inbound,
+     fills: [last_contact_at], reliability_bp: 6500}
+  - {source: email, signal: "which side is holding the onboarding pack", path: thread.ball_in_court,
+     fills: [ball_in_court, blocked_on_us], reliability_bp: 6500}
+  - {source: derived, signal: "responsiveness trajectory during onboarding", path: derived.engagement,
+     fills: [responsiveness_trend, onboarding_stalled], reliability_bp: 5500}
+  - {source: erp, signal: "vendor master, bank details, spend, payment history", reliability_bp: 9000,
+     fills: [bank_account_fingerprint, spend_ytd, payment_terms_days, onboarding_state],
+     description: "The authoritative source and the one with no connector. Every high-value pattern on this object is blocked on reading it."}
+  - {source: register, signal: "companies registry — legal name, status, directors, filings", reliability_bp: 9500,
+     fills: [legal_name, registration_number, jurisdiction, parent_entity_ref]}
+  - {source: regulator, signal: "sanctions and PEP lists, licence registers, debarment lists", reliability_bp: 9500,
+     fills: [sanctions_screen_result, sanctions_screened_at]}
+  - {source: document, signal: "insurance certificates, filed accounts, policies, the DPA", reliability_bp: 7000,
+     fills: [insurance_expires_at, dpa_signed, diligence_completed_at]}
+  - {source: signed_form, signal: "executed vendor form and bank mandate on their letterhead", reliability_bp: 8500,
+     fills: [bank_account_fingerprint, legal_name]}
+  - {source: phone, signal: "callback verification to a number held before the request arrived", reliability_bp: 9000,
+     fills: [bank_details_verified_at, bank_details_verified_by, bank_verification_method]}
+  - {source: attestation, signal: "self-declarations — modern slavery, conflicts, security posture", reliability_bp: 6000}
+  - {source: portal, signal: "supplier self-service submissions", reliability_bp: 5000,
+     description: "Useful, and the least trustworthy input in this list — a route by which bank details are changed with no human in the loop at all."}
+  - {source: access_log, signal: "third-party account activity and last use", reliability_bp: 8000,
+     fills: [never_reviewed]}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: payment_integrity_flag, type: boolean, derived_from: [bank_account_fingerprint, bank_details_change_count, bank_verification_method],
+     description: "Bank details changed, unverified, or verified by a method that does not count. Must reach a named human the same day.",
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: verification_channel, type: string, derived_from: [bank_verification_method],
+     description: "How this counterparty must be contacted to verify a payment change — a held number, never a number contained in the request. The one place the channel IS the control.",
+     consumed_by: ["L5.2.channel_planner"]}
+  - {name: vendor_readiness, type: boolean, derived_from: [onboarding_state, diligence_current, dpa_signed],
+     description: "Whether this party may be contracted with and paid today.",
+     consumed_by: [L4.decision_maker]}
+  - {name: diligence_status, type: string, derived_from: [diligence_current, insurance_expires_at, sanctions_screen_result],
+     description: "Current, expiring or expired — naming the specific item, never a composite score. A red item must not be able to hide behind four green ones.",
+     consumed_by: [L4.reasoning_unit]}
+  - {name: dependency_profile, type: string, derived_from: [criticality, substitutability, single_source, exit_plan_held],
+     description: "What breaks if they stop, and for how long. The input a renewal negotiation is actually decided on.",
+     consumed_by: [L4.reasoning_unit, L5.communication_planning]}
+  - {name: concentration_exposure_bp, type: integer, derived_from: [spend_share_bp, contract_count],
+     description: "Share of category spend held by this counterparty, rolled up to the group parent.",
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: review_due_flag, type: boolean, derived_from: [review_overdue, never_reviewed],
+     description: "Interval elapsed, or never reviewed at all. The second is a different and worse finding than the first.",
+     consumed_by: [L5.execution_planning]}
+  - {name: offboarding_residue, type: list, derived_from: [bank_account_fingerprint, onboarding_state],
+     description: "What is still live after offboarding — access, assets, mandates, open purchase orders.",
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+
+# ── 9 · Preconditions — gates on whether we can meaningfully ask ─────────────────────────
+preconditions:
+
+  - id: vn.legal_identity_resolved
+    statement: The party is resolved to a legal entity and a registration number, not to a trading name in an email signature.
+    requires: [legal_name, registration_number]
+    if_unmet: >
+      Block creation of a payable record; degrade everything else. A vendor master keyed on name
+      will acquire the duplicate whether or not anyone intended it, and the duplicate is
+      permanent.
+
+  - id: vn.diligence_tier_set_before_diligence_starts
+    statement: The diligence tier is decided from category and criticality BEFORE the checking begins.
+    requires: [diligence_tier, category]
+    if_unmet: >
+      Default to standard and flag it. Proportionality decided in advance is a control;
+      proportionality decided halfway through, while chasing a certificate somebody has refused
+      to send, is a negotiation.
+
+  - id: vn.payment_instruction_verified_before_first_payment
+    statement: The bank mandate has been verified out of band, by a named person, before any payment is released.
+    requires: [bank_details_verified_by, bank_verification_method]
+    if_unmet: "Block payment. Not degrade. This is the one gate on this object that has no proportionate weaker version."
+
+  - id: vn.named_internal_owner
+    statement: A named internal owner exists before the vendor reaches active.
+    requires: [admin.obj.core.stakeholder, owner_internal_ref]
+    if_unmet: >
+      Degrade — record the vendor, flag the gap, and route the review to the budget holder in the
+      meantime. An unowned vendor is not an unusable one; it is an unreviewed one, and saying so
+      is more useful than blocking.
+
+  - id: vn.dpa_before_processing
+    statement: Where the vendor will process personal data, an executed DPA and an Article 30 entry exist before the first transfer.
+    requires: [admin.obj.core.compliance_obligation, dpa_signed, data_processor]
+    when: [{has_obs: contract_requested}]
+    if_unmet: "Block the data flow specifically, not the whole relationship. Blocking the commercial contract to force a DPA gets the DPA signed unread."
+
+  - id: vn.screening_current_at_admission
+    statement: Sanctions and adverse-media screening has been run within the tier's currency window, not merely at some point in the past.
+    requires: [sanctions_screened_at, sanctions_screen_result]
+    if_unmet: "Block approval. Screening that is a year old is a statement about last year, and the lists change weekly."
+
+  - id: vn.category_spend_visible
+    statement: Total category spend is resolvable, so this vendor's share can be computed.
+    requires: [admin.obj.core.invoice, admin.obj.core.budget_line]
+    if_unmet: "Degrade to absolute spend and say so. Concentration expressed without a denominator is a number, not a risk position."
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - id: vn.no_payment_to_unverified_account
+    statement: No payment may be released to a bank account whose fingerprint has changed since the last verification.
+    hard: true
+    why: The money leaves the same day and is recoverable for hours. Every other control on this object can be caught up later; this one cannot.
+
+  - id: vn.verification_must_be_out_of_band
+    statement: Verification must use a channel and a contact held BEFORE the change request arrived.
+    hard: true
+    why: A number contained in the request verifies the attacker. Confirming by reply verifies the compromised mailbox against itself.
+
+  - id: vn.four_eyes_on_master_data
+    statement: A change to vendor bank details requires a second person, and it may not be the person who received the request.
+    hard: true
+    why: The received-and-actioned-by-one-person path is the path every successful invoice-redirection fraud takes.
+
+  - id: vn.segregation_of_duties
+    statement: The person who creates or amends a vendor record may not approve a payment to it.
+    hard: true
+    why: Standard segregation of duties. Where the team is too small to separate them, the compensating control is a post-payment review by a third party — not an exemption.
+
+  - id: vn.no_payment_before_approved
+    statement: A vendor not in approved or active state cannot be paid.
+    hard: true
+    why: The exception granted under deadline pressure is how unapproved suppliers enter the master permanently, because nobody ever goes back to finish the diligence once the invoice is paid.
+
+  - id: vn.no_processing_without_dpa
+    statement: Personal data may not flow to a data_processor vendor before an executed DPA exists.
+    hard: true
+    why: GDPR Article 28. A condition of lawful processing, not a document to obtain afterwards.
+
+  - id: vn.critical_vendor_needs_exit_plan
+    statement: A vendor with criticality critical and substitutability none must hold a documented exit plan.
+    hard: false
+    why: Soft because it cannot be enforced retrospectively across an inherited estate. Where it is absent the dependency is unmanaged rather than accepted, and the register should say which.
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: vn.bank_change_requires_out_of_band_verification
+    statement: >
+      A change to bank_account_fingerprint must be verified by callback to a number held before
+      the change request arrived, and recorded against a named verifier. Never a number contained
+      in the request; never confirmed by reply.
+    then: block_payment_until_verified
+    severity: blocking
+    why: This single rule prevents more loss than every other control on this object combined.
+
+  - id: vn.bank_change_freezes_payment
+    statement: Payments are held from the moment a change is REQUESTED, not from the moment it is applied, until verification completes.
+    then: hold_payments
+    severity: blocking
+    why: The pressure to release "just this one, they are chasing" is itself part of the attack, and it is applied by the attacker in the attacker's own words.
+
+  - id: vn.no_payment_before_approved
+    statement: A vendor not in approved or active state cannot be paid.
+    then: block_payment
+    severity: blocking
+
+  - id: vn.data_processor_needs_dpa
+    statement: Where data_processor is true and dpa_signed is false, personal data must not flow.
+    then: block_onboarding_completion
+    severity: blocking
+
+  - id: vn.duplicate_registration_number
+    statement: Two active vendor records sharing a registration_number must be merged before either is paid.
+    then: flag_duplicate_master
+    severity: blocking
+    why: Duplicates pay the same invoice twice and let a rejected supplier return under a variant spelling. Both failures are silent.
+
+  - id: vn.expired_diligence_blocks_new_work
+    statement: Expired diligence or lapsed insurance suspends new purchase orders. It does not suspend existing obligations.
+    then: suspend_new_po
+    severity: warning
+    why: Conflating the two produces a control nobody will operate, because operating it would stop the building being cleaned.
+
+  - id: vn.never_reviewed_is_a_finding
+    statement: A critical vendor with never_reviewed true is an audit finding waiting to be written. Report it as one before the auditor does.
+    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 365}]
+    then: raise_review_finding
+    severity: warning
+
+  - id: vn.checklist_that_never_rejects
+    statement: >
+      An onboarding checklist that has produced no rejected state in twelve months is not
+      running. It is being completed.
+    then: report_zero_rejection_rate
+    severity: advisory
+    why: A gate with a 100% pass rate is a form. Naming it as a control failure is the only way anyone will look at the criteria.
+
+  - id: vn.offboarding_is_four_steps_not_one
+    statement: >
+      A vendor cannot reach archived until access is revoked, the bank mandate is deactivated,
+      assets are recovered and open purchase orders are closed.
+    then: block_archived_state
+    severity: warning
+    why: Offboarding is the step the process forgets, which is why dormant payable records outnumber active ones in most masters.
+
+  - id: vn.self_service_change_still_needs_verification
+    statement: A bank-detail change made through the supplier portal is subject to the same out-of-band verification as one requested by email.
+    then: hold_payments
+    severity: blocking
+    why: A portal changes who typed the digits. It does not change who was in control of the credentials, and it removes the human who might have paused.
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4, never a decision ─────────────────
+decision_factors:
+
+  - name: payment_integrity_risk
+    weight_bp: 2500
+    direction: decreases
+    description: >
+      Recent change to bank details, a weak verification method, or a change count out of keeping
+      with a real supplier. Weighted highest because it is the only factor here whose failure mode
+      is instant and unrecoverable — the money leaves the same day.
+    reads: [bank_account_fingerprint, bank_details_change_count, bank_verification_method, bank_details_verified_at, payment_hold_active]
+
+  - name: diligence_currency
+    weight_bp: 1800
+    direction: increases
+    description: Not whether diligence was done, but whether it is still true today. A completed check with no expiry is an assertion about the past.
+    reads: [diligence_current, diligence_expires_at, sanctions_screen_result, insurance_expires_at, dpa_signed]
+
+  - name: criticality_and_substitutability
+    weight_bp: 1800
+    direction: context
+    description: >
+      What stops if they stop, and how long a replacement takes. Context rather than direction —
+      high criticality argues both for keeping them and for urgently reducing the dependency, and
+      Layer 4 needs both readings.
+    reads: [criticality, substitutability, single_source, exit_plan_held]
+
+  - name: performance_against_service_level
+    weight_bp: 1300
+    direction: increases
+    description: Measured against the agreed level rather than against the loudest complaint. Includes whether we bothered to claim the credits we earned.
+    reads: [performance_score_bp, sla_breach_count, open_issue_count, credits_claimed]
+
+  - name: concentration_exposure
+    weight_bp: 1100
+    direction: decreases
+    description: Share of category spend at group level. Invisible while each contract is reviewed alone, which is how every contract is reviewed.
+    reads: [spend_share_bp, spend_ytd, contract_count, parent_entity_ref]
+
+  - name: review_recency
+    weight_bp: 800
+    direction: increases
+    description: A relationship nobody has examined since onboarding is not a low-risk relationship; it is an unmeasured one, and the two are rendered identically in every report.
+    reads: [last_reviewed_at, never_reviewed, review_overdue, review_interval_months]
+
+  - name: identity_integrity
+    weight_bp: 700
+    direction: increases
+    description: Whether we are confident this record is one party, that party, and only that party. Duplicates and name-only matching are the quiet failures underneath every other factor here.
+    reads: [registration_number, legal_name, parent_entity_ref, jurisdiction]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: register, strength_bp: 9500, decays: true, independent_of: [email, portal, erp],
+     description: "Companies registry. Independent, dated and hard to forge — the strongest identity evidence available, and free."}
+  - {source: regulator, strength_bp: 9500, decays: true, independent_of: [email, portal, erp],
+     description: "Sanctions, debarment and licence registers. Authoritative and, for screening, dispositive. Decays fastest of anything here: lists change weekly."}
+  - {source: phone, strength_bp: 9000, decays: false, independent_of: [email, portal],
+     description: "Callback to a previously held number. The strongest possible evidence that a payment instruction is genuine, and the control most often skipped for being slow."}
+  - {source: contract, strength_bp: 9000, decays: false,
+     description: "Executed agreement with the counterparty. Proves what was agreed, not who should be paid."}
+  - {source: signed_form, strength_bp: 8500, decays: false, independent_of: [email],
+     description: "Signed bank mandate or vendor form on their letterhead. Strong, and forgeable — which is why it corroborates a callback rather than replacing one."}
+  - {source: erp, strength_bp: 8000, decays: false,
+     description: "Vendor master and payment history. Authoritative for what we did, never for whether it was right."}
+  - {source: access_log, strength_bp: 8000, decays: false, independent_of: [erp, email],
+     description: "Third-party account activity. The only source that shows a vendor relationship is still live after everyone believes it ended."}
+  - {source: document, strength_bp: 7000, decays: true,
+     description: "Insurance certificates and filed accounts. Check the expiry date, not the presence of the file."}
+  - {source: attestation, strength_bp: 6000, decays: true,
+     description: "Their signed self-declaration — modern slavery, conflicts, security posture. A statement of intent, not a verified fact, and it should never be scored as one."}
+  - {source: portal, strength_bp: 5000, decays: true,
+     description: "Supplier self-service submissions. Convenient, unverified, and the route by which bank details are changed with no human in the loop at all."}
+  - {source: derived, strength_bp: 3000, decays: true,
+     description: "Inferred from engagement shape. Corroborating only."}
+  - {source: email, strength_bp: 2000, decays: true,
+     description: "Correspondence claiming a change of details. Worth almost nothing and treated by most organisations as though it were worth everything. Scored deliberately low so that no pattern can reach a payment decision on it alone."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: bank_change_verification_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of bank-detail changes verified out of band, by callback, before the next payment run. The one metric on this object worth putting in front of a board.",
+     calibrates: [vn.bank_details_changed, vn.verified_by_the_wrong_channel]}
+  - {name: mean_time_to_verify_bank_change, unit: hours, direction: lower_is_better, owner_layer: L6,
+     description: "Request to verified. The window in which the payment hold is doing all the work, and the window in which the business is pushing hardest to release it."}
+  - {name: diligence_currency_rate, unit: percent, direction: higher_is_better, owner_layer: L3,
+     description: "Share of active vendors whose diligence has not expired. Distinct from the share who have ever been diligenced, which is the number usually reported.",
+     calibrates: [vn.diligence_expired]}
+  - {name: never_reviewed_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Active vendors with no review since onboarding. Usually the most uncomfortable number in the pack and the easiest one to produce.",
+     calibrates: [vn.never_reviewed_since_onboarding]}
+  - {name: rejection_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Share of onboarding attempts rejected. A rate of zero is not a clean supply base; it is a gate that does not close. A rate above about a fifth suggests the tiering is wrong rather than the suppliers.",
+     calibrates: [vn.checklist_that_never_rejects]}
+  - {name: onboarding_cycle_time, unit: days, direction: lower_is_better, owner_layer: L2,
+     description: "Request to approved, split by ball_in_court so the internal share is visible rather than assumed. The split is usually the reverse of the story the business tells.",
+     calibrates: [vn.onboarding_blocked_on_us, vn.onboarding_stalled]}
+  - {name: unapproved_spend_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Payments made to vendors that never reached approved state.",
+     calibrates: [vn.paid_without_approval]}
+  - {name: category_concentration, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Largest vendor group's share of category spend. Group, not entity.",
+     calibrates: [vn.concentration_risk]}
+  - {name: offboarding_completeness, unit: percent, direction: higher_is_better, owner_layer: L3,
+     description: "Share of offboarded vendors with access revoked, mandate deactivated, assets recovered and purchase orders closed. Usually far lower than anyone expects.",
+     calibrates: [vn.offboarding_left_something_live]}
+  - {name: duplicate_master_records, unit: count, direction: lower_is_better, owner_layer: L3,
+     description: "Active records sharing a registration number.",
+     calibrates: [vn.duplicate_vendor_record]}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: vn.identified, name: Counterparty Identified, severity: info,
+     emitted_when: [{has_obs: contract_requested}], payload: [legal_name, category]}
+  - {id: vn.diligence_started, name: Diligence Started, severity: info,
+     emitted_when: [{has_obs: legal_review}], payload: [onboarding_state, diligence_tier, category]}
+  - {id: vn.bank_details_change_requested, name: Bank Details Change Requested, severity: critical,
+     payload: [bank_account_fingerprint, bank_details_change_count, payment_hold_active],
+     invalidates: [bank_account_fingerprint, bank_details_verified_at, bank_details_verified_by, bank_verification_method],
+     description: "The highest-severity event in the Admin brain. It freezes payment, pages a named human, and must never be closed by the same person who received the request. The invalidation matters as much as the alert: every prior verification is void the moment the destination moves."}
+  - {id: vn.bank_details_verified, name: Bank Details Verified, severity: notable,
+     payload: [bank_details_verified_by, bank_verification_method, bank_details_verified_at],
+     description: "Only meaningful when bank_verification_method is callback_to_known_number or in_person. Emitted on email_confirmation it is an alert, not a reassurance."}
+  - {id: vn.approved, name: Vendor Approved, severity: notable,
+     payload: [onboarding_state, owner_internal_ref, risk_tier, diligence_tier]}
+  - {id: vn.rejected, name: Vendor Rejected, severity: notable,
+     payload: [sanctions_screen_result, onboarding_state],
+     description: "Worth emitting loudly and counting deliberately. A function that never emits this one is not screening, and the absence is invisible unless somebody is looking for it."}
+  - {id: vn.diligence_expired, name: Diligence Expired, severity: notable,
+     payload: [diligence_expires_at, insurance_expires_at, sanctions_screened_at],
+     invalidates: [diligence_current, sanctions_screen_result]}
+  - {id: vn.performance_breach, name: Service Level Breached, severity: notable,
+     payload: [sla_breach_count, performance_score_bp, credits_claimed]}
+  - {id: vn.went_quiet, name: Counterparty Went Quiet, severity: info,
+     emitted_when: [{path: derived.engagement, op: "<=", value: 0.5}], payload: [last_contact_at, responsiveness_trend]}
+  - {id: vn.entity_changed, name: Vendor Entity Changed By Acquisition Or Re-registration, severity: critical,
+     payload: [legal_name, registration_number, parent_entity_ref, bank_account_fingerprint],
+     invalidates: [sanctions_screen_result, diligence_current, bank_account_fingerprint, spend_share_bp],
+     description: "An acquisition voids the diligence, moves the concentration position, and is the one legitimate reason a long-standing supplier's bank details genuinely change. Attackers know this and use the story."}
+  - {id: vn.offboarded, name: Vendor Offboarded, severity: notable,
+     payload: [onboarding_state],
+     description: "Access removed, bank mandate deactivated, assets recovered, purchase orders closed, records retained. Offboarding is the step the process forgets, which is why dormant payable records outnumber active ones."}
+
+# ── 16 · Actions — naming one here does not authorise it ─────────────────────────────────
+actions:
+  - {id: vn.verify_bank_details, name: Verify bank details by callback, actor: human, cost: low, reversible: true,
+     effect: "To a number held before the request arrived. This single act prevents more loss than every other control on this object combined, and it takes four minutes."}
+  - {id: vn.freeze_payments, name: Freeze payments pending verification, actor: system, cost: trivial, reversible: true,
+     effect: "The default posture on any change to the payment instruction. Reversing it requires a second person who did not receive the request."}
+  - {id: vn.escalate_fraud_suspicion, name: Escalate suspected payment fraud, actor: human, cost: moderate, reversible: false,
+     effect: "Out of the administrative track immediately, to the bank and to the payment provider. Speed beats certainty here — the money is recoverable for hours, not days, and an apology for a false alarm is cheap."}
+  - {id: vn.run_diligence, name: Run the diligence pack, actor: human, cost: moderate, reversible: true,
+     effect: "To the template for their category and tier, not the universal one. A universal checklist over-asks the cleaner and under-asks the processor, and teaches everyone that it is paperwork."}
+  - {id: vn.screen_counterparty, name: Screen against sanctions and adverse media, actor: system, cost: trivial, reversible: true,
+     effect: "On admission and on the tier's interval. Annual screening against weekly lists is a control with a fifty-one-week blind spot."}
+  - {id: vn.chase_onboarding, name: Chase the outstanding onboarding item, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{has_obs: contract_requested}, {path: thread.ball_in_court, op: "=", value: them}]}
+  - {id: vn.unblock_internal_step, name: Unblock the internal onboarding step, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{has_obs: contract_requested}, {path: thread.ball_in_court, op: "=", value: us}],
+     effect: "Named internal owner, not the procurement mailbox. Most onboarding delay is ours and almost none of it is attributed to us."}
+  - {id: vn.request_certificates, name: Request renewed insurance and certificates, actor: agent, cost: trivial, reversible: true,
+     effect: "Ahead of expiry. Requested after expiry it is a gap on the record whatever date the certificate eventually carries."}
+  - {id: vn.schedule_review, name: Schedule the periodic review, actor: system, cost: trivial, reversible: true,
+     effect: "Interval set from criticality, not spend. The most critical vendor in most organisations is a small one."}
+  - {id: vn.conduct_review, name: Conduct the relationship review, actor: human, cost: moderate, reversible: true,
+     effect: "Performance, diligence currency, concentration, price, and whether we would choose them again today. The last question is the one that produces the useful answer."}
+  - {id: vn.rehearse_exit, name: Rehearse the exit for a single-source dependency, actor: human, cost: high, reversible: true,
+     effect: "Price the alternative and time the switch, before the renewal rather than during an outage. Without it, substitutability is a guess written in a field."}
+  - {id: vn.offboard, name: Offboard the vendor, actor: human, cost: moderate, reversible: false,
+     effect: "Revoke access, deactivate the bank mandate, recover assets, close open purchase orders, retain the records. All five, or it is not offboarding. A dormant payable record is a live one."}
+
+# ── 17 · Dependencies — facts about the compile, not about the world ─────────────────────
+dependencies:
+  - {target: admin.obj.core.approval, kind: requires, strength: hard,
+     description: "Admission and every bank-detail change are approval-gated. Without the approval object there is no four-eyes and no segregation of duties to enforce."}
+  - {target: admin.obj.core.contract, kind: requires, strength: hard,
+     description: "Without paper the relationship has no bounds, and criticality and substitutability have nothing to be assessed against."}
+  - {target: admin.obj.core.stakeholder, kind: requires, strength: hard,
+     description: "An unowned vendor is an unreviewed one. The review action has no addressee without this."}
+  - {target: admin.obj.core.compliance_obligation, kind: requires, strength: soft,
+     description: "Screening, DPA, insurance and modern-slavery duties. Soft because the vendor is resolvable without them; the position it reports is simply wrong."}
+  - {target: admin.obj.core.invoice, kind: enriches, strength: soft,
+     description: "Spend, concentration and the unapproved-payment join all read from here."}
+  - {target: admin.obj.core.budget_line, kind: enriches, strength: soft,
+     description: "The denominator for concentration. Without it, share of category spend cannot be computed at all."}
+  - {target: admin.obj.core.service_level, kind: enriches, strength: soft,
+     description: "Performance is an opinion until there is an agreed target to measure against."}
+  - {target: admin.obj.core.access_right, kind: enriches, strength: soft,
+     description: "Third-party access is part of the exposure and all of the offboarding residue."}
+  - {target: admin.obj.core.asset, kind: enriches, strength: soft,
+     description: "Our property in their custody. Recovery is only possible if the custody was recorded."}
+  - {target: admin.obj.core.document, kind: derived_from, strength: soft,
+     description: "The diligence pack. Every dated diligence field originates in a document somebody filed."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "A payment-integrity concern must be able to leave the administrative track immediately."}
+  - {target: admin.obj.core.policy, kind: requires, strength: soft,
+     description: "Third-party risk policy and the payment-verification standard. This object enforces both and owns neither."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: vn.genuine_bank_migration
+    statement: Banks do genuinely merge and re-number accounts, so a legitimate change can arrive with a plausible institutional explanation.
+    overrides: [vn.bank_details_change_requested]
+    why: >
+      The exception is that the elevated change count is EXPLAINED. It is emphatically not that
+      verification is waived — a bank migration is the single best cover story available to an
+      attacker and it is used precisely because it is true often enough to be believable. Verify
+      by callback anyway; record the explanation next to the verification.
+    frequency: rare
+
+  - id: vn.sole_source_cannot_be_rejected
+    statement: Where a vendor is the only possible supplier, a failed diligence item is a risk to be accepted at the right level rather than a gate that stops the relationship.
+    overrides: [vn.expired_diligence_blocks_new_work, vn.no_payment_before_approved]
+    why: >
+      Pretending a sole-source supplier can be rejected produces a fictional control and a real
+      workaround. The honest mechanism is documented acceptance, named, dated, at a level
+      proportionate to the exposure, with a review date — not a quiet exemption in a spreadsheet.
+    frequency: occasional
+
+  - id: vn.emergency_admission_with_hard_expiry
+    statement: A vendor may be admitted on abbreviated diligence for a genuine emergency, provided the admission carries a hard expiry.
+    overrides: [vn.no_payment_before_approved, vn.data_processor_needs_dpa]
+    when: [{has_obs: contract_requested}]
+    why: >
+      Emergencies are real and a process that cannot accommodate one is bypassed permanently
+      rather than temporarily. The expiry is what keeps the exception an exception: without it
+      the 2022 emergency supplier is still in the master in 2026, still payable, diligence never
+      completed, and nobody can now say who admitted them.
+    frequency: occasional
+
+  - id: vn.intra_group_entity
+    statement: A group company does not need third-party diligence, but it does need identity, a verified bank mandate and transfer-pricing terms.
+    overrides: [vn.expired_diligence_blocks_new_work]
+    why: >
+      Applying the full third-party model to a sister company is theatre. Applying nothing is how
+      an intercompany payment goes to an account nobody verified, on the reasoning that it is
+      "internal" — the payment leaves the same building either way.
+    frequency: occasional
+
+  - id: vn.regulated_utility_dictates_terms
+    statement: For utilities and regulated monopolies the terms are dictated and there is no meaningful diligence to run.
+    overrides: [vn.checklist_that_never_rejects, vn.critical_vendor_needs_exit_plan]
+    why: >
+      There is no alternative supplier and no negotiation, so the checklist can only record. The
+      correct posture is a minimal record and no pretence of a control, which also stops these
+      vendors flattering the rejection-rate metric.
+    frequency: common
+
+  - id: vn.framework_supplier_inherits_vetting
+    statement: A supplier engaged through a public-sector or industry framework inherits the framework's vetting for admission purposes.
+    overrides: [vn.expired_diligence_blocks_new_work]
+    why: >
+      Duplicating the framework's diligence wastes the capacity that should go to the
+      unframeworked long tail. What is NOT inherited is currency — the framework vetted them on
+      a date, and that date ages exactly like ours does.
+    frequency: occasional
+
+  - id: vn.micro_supplier_proportionate_diligence
+    statement: Below a de minimis threshold, and with no data access and no site access, simplified diligence is proportionate.
+    overrides: [vn.never_reviewed_is_a_finding]
+    why: >
+      Enhanced diligence on a one-off £400 supplier is how a function loses credibility and gets
+      routed around for everything else. The two conditions matter more than the threshold: spend
+      is a poor proxy for risk, and a small supplier with system access is not a small risk.
+    frequency: common
+
+  - id: vn.dormant_is_not_grounds_for_suspension
+    statement: A vendor may be entirely healthy and silent — an annual licence renewed by direct debit generates no correspondence at all.
+    overrides: [vn.dormant_but_still_payable]
+    why: >
+      Dormant is a flag for review, never for suspension. Suspending a silent supplier breaks a
+      working relationship with a control and teaches the business to route around the master,
+      which costs more than the risk the flag was raised for.
+    frequency: common
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: vn.callback_to_a_previously_held_number
+    statement: Verify every bank-detail change by calling a number held in the record BEFORE the request arrived, and record the named verifier.
+    why: >
+      The whole attack depends on controlling every channel the verification could use. A number
+      you already held is the one thing the attacker cannot have supplied. Four minutes of
+      awkward phone call against a six-figure irrecoverable payment is the best trade in the
+      administrative function.
+    applies_when: Every change, every time, including from long-standing suppliers and including via the portal.
+    evidence: Standard guidance across banking anti-fraud campaigns and every published invoice-redirection post-mortem.
+
+  - id: vn.freeze_by_default_on_any_change
+    statement: Freeze payments automatically from the moment a change is REQUESTED, not from the moment it is applied.
+    why: >
+      It removes the decision from the person under pressure. Between request and application is
+      exactly the window the attacker is working in, and it is also the window in which somebody
+      helpful applies the change to get ahead of the payment run.
+    applies_when: Always, and the release must require a second person.
+
+  - id: vn.capture_the_expiry_not_the_completion
+    statement: Record when each diligence item STOPS being true, not when it was done.
+    why: >
+      A completion date makes the master a history; an expiry date makes it a control. It is a
+      one-column change and it is the difference between a supply base that is checked and one
+      that was checked once, in 2021, by somebody who has left.
+    applies_when: Every dated diligence item — insurance, screening, certification, accounts.
+
+  - id: vn.category_and_tier_before_the_checklist
+    statement: Set category and diligence tier first, then run the template for that tier.
+    why: >
+      One universal checklist over-asks the cleaner and under-asks the processor. The cleaner's
+      supplier stops replying and the processor sails through, which is precisely backwards, and
+      everybody learns that diligence is paperwork rather than judgement.
+    applies_when: At admission, and again whenever category or criticality changes.
+
+  - id: vn.review_interval_from_criticality
+    statement: Set the review interval from criticality and data access, never from spend.
+    why: >
+      The most critical vendor in most organisations is a small one — the single-source
+      integration between payroll and the bank. Sorting the review calendar by spend reviews the
+      coffee supplier annually and that integration never.
+    applies_when: Always. It is a sort order, and sort order is the cheapest control available.
+
+  - id: vn.name_the_internal_owner_at_admission
+    statement: Require a named internal owner as a condition of the vendor reaching active.
+    why: >
+      Named on the day someone is enthusiastic about the supplier, it costs nothing. Named three
+      years later it means whoever holds the budget code, who has no view on whether the
+      relationship is any good.
+    applies_when: Always.
+
+  - id: vn.map_the_subprocessor_tier
+    statement: For any processor, obtain and hold the subprocessor list, and treat additions as a change requiring review.
+    why: >
+      Our exposure runs three tiers down whether or not we asked. Article 28 says we agreed to
+      the list; in most organisations nobody in the building could produce it, which means we
+      agreed to something we cannot describe.
+    applies_when: data_processor true, and especially where the processor is itself a reseller.
+
+  - id: vn.offboard_as_a_five_point_checklist
+    statement: Offboard against a fixed list — access revoked, mandate deactivated, assets recovered, purchase orders closed, records retained.
+    why: >
+      Offboarding has no natural deadline and no complaining stakeholder, so it is done partially
+      or not at all. A payable record with live access and an unreturned laptop is not an ended
+      relationship, it is an unmonitored one.
+    applies_when: Every exit, including the ones that end amicably and quietly.
+
+  - id: vn.rehearse_the_exit_before_the_renewal
+    statement: For critical single-source vendors, price the alternative and time the switch before the renewal window opens.
+    why: >
+      Substitutability written in a field without ever being tested is a guess. Tested, it is
+      leverage — and it is the only leverage available against a supplier who knows perfectly
+      well that we cannot leave.
+    applies_when: criticality critical or systemically_critical, substitutability months or none.
+
+  - id: vn.report_the_rejection_rate
+    statement: Report onboarding rejections as a rate, by category, alongside the reasons.
+    why: >
+      A checklist that has never rejected a vendor is not running, and nobody notices because
+      nothing fails. The rate is the only signal that the gate closes, and publishing it is
+      usually enough to make the criteria get read.
+    applies_when: Any periodic reporting on vendor management.
+
+# ── 20 · Anti-Patterns — the specific mistake, not the general virtue ────────────────────
+anti_patterns:
+
+  - id: vn.email_confirms_email
+    statement: Confirming a bank-detail change by replying to the address that requested it.
+    why_it_happens: >
+      It feels like verification — a second message, a written confirmation, a name at the
+      bottom. It is fast, it is documented, and it produces an audit trail that looks exactly
+      like a control operating correctly.
+    cost: "One compromised mailbox controls both sides of the check. This is the single most expensive administrative failure available, and it is irrecoverable within a day."
+    instead: "Callback to a number held before the request arrived, by a named person, recorded against the record. Nothing else counts as verification."
+    detectable_by: [vn.verified_by_the_wrong_channel, bank_change_verification_rate]
+
+  - id: vn.portal_self_service_as_the_control
+    statement: Letting suppliers change their own bank details in a self-service portal with no human verification.
+    why_it_happens: >
+      It removes an administrative burden, it looks modern, and the supplier authenticated — so
+      it feels stronger than an email, not weaker.
+    cost: "It changes who typed the digits, not who controlled the credentials, and it removes the one human who might have paused. The change now happens with no callback at all."
+    instead: "Treat a portal change exactly like an emailed one: freeze payments, callback, second person to release."
+    detectable_by: [vn.bank_details_changed, vn.self_service_change_still_needs_verification]
+
+  - id: vn.checklist_that_never_rejects
+    statement: An onboarding checklist that has produced no rejection in twelve months.
+    why_it_happens: >
+      Every item gets completed because completion is the measured outcome. Rejecting a supplier
+      creates work, an argument with the business, and a delay somebody will be blamed for.
+    cost: "A gate with a 100% pass rate is a form. It consumes real effort, produces real delay, and filters nothing — which is worse than having no gate, because everyone believes there is one."
+    instead: "Report the rejection rate by category with reasons. Convert never-rejecting items to recorded information and put the effort into the items that could fail."
+    detectable_by: [rejection_rate]
+
+  - id: vn.certificate_filed_expiry_not_captured
+    statement: Filing the insurance certificate and not recording the date it expires.
+    why_it_happens: >
+      The task was "obtain the certificate" and the certificate was obtained. The folder is
+      complete and the tick is green.
+    cost: "The lapse is discovered after the incident it would have covered. The contractor has been on site uninsured for eighteen months and the master showed green throughout."
+    instead: "Make the expiry date the required field and the certificate the attachment, not the other way round."
+    detectable_by: [vn.diligence_expired, diligence_currency_rate]
+
+  - id: vn.vendor_master_keyed_on_name
+    statement: Matching and deduplicating vendor records on name rather than on registration number.
+    why_it_happens: >
+      Names are what people type and what the invoice shows. Registration numbers require a
+      lookup nobody built into the intake form.
+    cost: "'Ltd' and 'Limited' become two records. The same invoice is paid twice, and a rejected supplier returns under a variant spelling with a clean history."
+    instead: "Require the registration number at intake, match on it, and block a second active record that shares one."
+    detectable_by: [vn.duplicate_vendor_record, duplicate_master_records]
+
+  - id: vn.review_the_biggest_not_the_most_critical
+    statement: Sorting the vendor review calendar by spend.
+    why_it_happens: >
+      Spend is the one field that is always populated and always accurate. Criticality requires a
+      judgement somebody has to own.
+    cost: "The coffee supplier is reviewed annually and the single-source payroll integration is never reviewed at all. The review programme runs, reports well, and covers the wrong vendors."
+    instead: "Sort by criticality and data access. Populate criticality once at admission; it changes rarely and it is the field the whole programme should turn on."
+    detectable_by: [never_reviewed_share]
+
+  - id: vn.onboard_and_forget
+    statement: Treating vendor management as an admission gate rather than a lifecycle.
+    why_it_happens: >
+      Onboarding has a requester, a deadline and somebody chasing it. Ongoing review has none of
+      those three, and nothing bad visibly happens when it is skipped.
+    cost: "Most of any master older than three years has never been looked at since creation. The risk position reported is the risk position at admission, which is a statement about a supply base that no longer exists."
+    instead: "Diarised reviews from criticality, and report never_reviewed_share as a headline number rather than a drill-down."
+    detectable_by: [vn.never_reviewed_since_onboarding, never_reviewed_share]
+
+  - id: vn.offboarding_that_leaves_the_mandate_live
+    statement: Ending the commercial relationship without deactivating the bank mandate, revoking access or recovering assets.
+    why_it_happens: >
+      The relationship ends when the work stops, and the work stopping is what everyone notices.
+      Nobody is inconvenienced by a dormant payable record — the supplier is not chasing us and
+      the business has moved on.
+    cost: "A live payment destination and live credentials on a party nobody is watching. Dormant payable records outnumber active ones in most masters and every one of them is an unmonitored route in."
+    instead: "Offboard against the five-point list and report offboarding completeness. Recovery fails silently because nobody is inconvenienced by an unreturned laptop except the balance sheet."
+    detectable_by: [vn.offboarding_left_something_live, offboarding_completeness]
+
+  - id: vn.scorecard_where_everyone_scores_ninety
+    statement: A performance scorecard on which no vendor has ever scored badly.
+    why_it_happens: >
+      The scores are set by the relationship owner, who negotiated the contract, chose the
+      supplier, and will have to sit in the review meeting. A low score is a conversation nobody
+      wants and a criticism of their own decision.
+    cost: "The scorecard consumes real effort and carries no information. Poor performers renew on the same evidence as good ones, and service credits are never claimed because no breach was ever recorded."
+    instead: "Score against dated SLA evidence rather than opinion, and track credits_claimed separately. If nothing has ever been claimed, nothing is being measured."
+    detectable_by: [vn.service_level_failing]
+
+  - id: vn.urgent_payment_exception
+    statement: Releasing a payment outside the process because the supplier is chasing and the business says it is urgent.
+    why_it_happens: >
+      The urgency is real, the supplier is known, and the person refusing looks like an obstacle.
+      The exception is granted once, by somebody senior, with the best of intentions.
+    cost: "It is the standard closing move of an invoice-redirection attack, delivered in the attacker's own words. Even where it is genuine, it establishes that the control is negotiable, and the next request cites the last exception."
+    instead: "Keep the freeze and shorten the verification instead — the callback takes four minutes. Speed the control, never the exception."
+    detectable_by: [vn.paid_without_approval, unapproved_spend_share, mean_time_to_verify_bank_change]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Long-standing supplier emails new bank details from a lookalike domain", kind: typical,
+     note: "Real thread, real signature block, plausible reason, urgent invoice attached, and a phone number in the footer. The only control that stops it is a call to a number nobody looked up in the email."}
+  - {label: "Cleaning contractor, insurance lapsed eighteen months ago", kind: typical,
+     note: "Still on site, still invoicing, still green in the master — because the master holds the certificate and not its expiry."}
+  - {label: "Single-source SaaS holding the payroll-to-bank integration", kind: edge,
+     note: "Low spend, criticality systemically_critical, substitutability none. Reviewed less often than the office coffee supplier, and the only vendor on the list that could stop payroll."}
+  - {label: "Vendor onboarded as an exception for an urgent project in 2022", kind: edge,
+     note: "Diligence never completed, record never closed, still payable in 2026. This is what onboarding_stalled turns into when nobody sets an expiry on the exception."}
+  - {label: "Same supplier under two records, 'Ltd' and 'Limited'", kind: misclassification,
+     note: "Two remittances, one genuine, one duplicate. Found by registration number and by nothing else — least of all by the eye of whoever approved both."}
+  - {label: "Processor with undisclosed subprocessors", kind: edge,
+     note: "Our data sits three tiers down with a party we have never named. Article 28 says we agreed to this; nobody in the building could list them."}
+  - {label: "Supplier acquired by a competitor; bank details change legitimately", kind: edge,
+     note: "Diligence is void, concentration has moved, and the one genuine reason for a bank change has arrived. Verify by callback anyway — this is the story an attacker would have chosen."}
+  - {label: "Marketing agency we stopped using in 2023, record still active and payable", kind: misclassification,
+     note: "Read as harmless dormancy. It is a live payment destination on an unwatched account, and a single plausible invoice against it would clear."}
+  - {label: "Contractor invoicing monthly through a personal service company for four years", kind: misclassification,
+     note: "Held as a vendor. It is an employment-status question with a tax consequence, and admin.obj.core.employee_record is where the answer lives."}
+  - {label: "Records-storage provider holding forty boxes of signed contracts", kind: edge,
+     note: "custodian_of, not merely a supplier. Offboard them without recovering the boxes and the executed counterparts are gone with the relationship."}
+  - {label: "Framework supplier vetted in 2021, engaged in 2026", kind: counterexample,
+     note: "The framework's vetting is inherited; its currency is not. A five-year-old screen against weekly-updated lists is not a screen."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Third-party risk management (TPRM) lifecycle", kind: framework,
+     note: "Identify, screen, diligence, contract, monitor, offboard. This object is deliberately weighted to monitor and offboard, which is where every mature programme finds its gaps."}
+  - {title: "Know Your Supplier — supplier due diligence", kind: framework,
+     note: "The supply-side analogue of KYC, including the tiering principle: proportionate diligence decided before the checking starts, not during it."}
+  - {title: "Segregation of duties and the four-eyes principle on master-data change", kind: framework,
+     note: "The control that separates receiving a change request from applying it. The single point on which invoice-redirection fraud succeeds or fails."}
+  - {title: "Business email compromise and invoice-redirection fraud — payment verification by callback", kind: practitioner,
+     note: "The published post-mortems agree on the mechanism and on the countermeasure: a call to a number held before the request arrived. Basis for the bank_verification_method enum being written so weak methods cannot hide behind the word 'verified'."}
+  - {title: "Kraljic purchasing portfolio matrix", kind: framework, author: "Peter Kraljic",
+     note: "Segmentation by supply risk and profit impact. The formal argument for criticality and substitutability outranking spend when setting review intervals."}
+  - {title: "GDPR Article 28 — processor obligations, and Article 30 — records of processing", kind: standard,
+     note: "Drives data_processor, dpa_signed, subprocessors_disclosed and the DPA precondition. Article 28 also makes the subprocessor list something we have agreed to rather than something we may request."}
+  - {title: "ISO/IEC 27036 — Information security for supplier relationships", kind: standard,
+     note: "Third-party information-security requirements across the relationship lifecycle, including exit. The basis for treating vendor access as part of vendor exposure."}
+  - {title: "ISO 37001 — Anti-bribery management systems", kind: standard,
+     note: "Third-party due diligence proportionate to risk, and the requirement that it be periodic rather than one-off."}
+  - {title: "UK Modern Slavery Act 2015, s.54 — transparency in supply chains", kind: standard,
+     note: "The reason attestation is an evidence source with a deliberately modest strength: a signed statement of intent is not a verified fact."}
+  - {title: "DORA — register of information on ICT third-party providers", kind: standard,
+     note: "Regulatory formalisation of concentration and substitutability as reportable positions rather than internal opinions. Named for financial services; the modelling generalises."}
+  - {title: "Vendor master data governance — duplicate detection by registration number", kind: practitioner,
+     note: "Why registration_number is the match key and legal_name is not."}
+  - {title: "Supplier exit planning and rehearsed transition", kind: practitioner,
+     note: "The discipline behind exit_plan_held. An untested exit plan and no exit plan differ only in the confidence they produce."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Rewritten onto the 23-section schema. Five of fifteen patterns are executable, and all five
+    sit on the onboarding correspondence rather than on the vendor: contract_requested,
+    legal_review, thread.ball_in_court, thread.last_inbound, derived.engagement and edge_count.
+    The pipeline can see us negotiating with a counterparty and can see nothing at all about the
+    counterparty.
+
+    Two backlog lines are worth funding before anything else in the Admin brain. First,
+    bank_details_change_requested (L2) — the fraud arrives by email, on a real thread, in a
+    mailbox Layer 2 already reads and is simply not looking at; it is the cheapest high-value
+    extractor available. Second, vendor.bank_account_fingerprint (L1) — without it the change
+    itself is invisible and only the payment is observable, which is the wrong half. Together
+    they convert the highest-risk moment in the administrative function from an event found at
+    reconciliation into an event caught before the payment run.
+
+    Two structural fixes follow closely. vendor.diligence_expires_at (L1) is a one-column change
+    that turns a record of a control into a control: most masters store when a check was done and
+    never when it stops being true. vendor.last_reviewed_at (L1) makes the ABSENCE of a review
+    visible, which is the finding that matters — a vendor nobody has examined since onboarding is
+    not low-risk, it is unmeasured, and today those two render identically in every report.

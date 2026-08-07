@@ -1,0 +1,30 @@
+# Load-set for customer_support.support_operations.workload_balancing — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_operations.workload_balancing
+
+core:
+  # The minimum pair for an assignment decision: the queue being drawn from and the people
+  # available to draw from it. Balancing without support_agent is just re-sorting a list, and
+  # balancing without queue has no population to balance across.
+  required:
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.support_agent
+  # ticket supplies the difficulty and skill match that make an even count an uneven load;
+  # backlog says whether balance is even the right problem today; capacity_plan says whether
+  # the imbalance is a rota decision already taken elsewhere. All three sharpen the judgement
+  # and none of them block it.
+  optional:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.backlog
+    - customer_support.obj.core.capacity_plan
+
+scoped:
+  required: []
+  optional: []

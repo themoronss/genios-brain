@@ -2,10 +2,18 @@
 
 ## Analyzer / Calculator
 
-Success/failure/neutral labels remain distinct. Success basis points exclude neutral from the labeled denominator; attention cost weights escalations above reminders; averages use integers.
+Facts group by capability, play and ACL. The value records total outcomes, successes, failures,
+unproven neutral results, success bp, average progress, attention cost and average seconds to close.
+
+`success_bp = successes / (successes + failures)`; neutral labels are excluded. Attention cost uses
+reminders + 2×escalations against a bounded four-units-per-outcome denominator. Averages and basis
+points use deterministic integer arithmetic.
 
 ## Evaluator
 
-Completed-unproven contributes to totals/progress but never to success. Empty divisors use explicit safe rules.
+Confidence also uses only positive/negative labels and independent executions. Adding any number of
+neutral outcomes does not raise certainty or change the learning ID when the evidence facts are
+otherwise unchanged. Neutral still contributes to descriptive totals/progress.
 
-All counts, thresholds and rates are deterministic integers with explicit observation time.
+Unit 11 evaluates exact lineage, independent support, days, confidence, conflict/noise, value and
+freshness. Empty labelled denominators resolve to zero rather than division or implicit success.

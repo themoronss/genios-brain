@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/terminology.schema.json",
+  "title": "Expert Brain Terminology",
+  "description": "The domain's vocabulary. Atlas lists Terminology as first-class Expert Brain content, and it earns that place for two concrete reasons rather than as documentation:\n\n1. Layer 5.2 renders cards in the operator's language. A card that says \"the economic buyer is unengaged\" to a team that says \"budget holder\" reads as a system that does not know the business.\n\n2. Two teams authoring the same object under different names is the commonest way a knowledge base forks. `aliases` and `not_to_be_confused_with` are what catch it at review.\n\nGrouped by area rather than one file per term — a term does not need independent versioning the way a playbook does.\n\n  terminology/<area>.yaml",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["area", "domain", "terms", "metadata"],
+
+  "properties": {
+    "area": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Grouping, usually a subdomain id." },
+    "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+
+    "terms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "definition"],
+        "properties": {
+          "term": { "type": "string" },
+          "definition": { "type": "string", "minLength": 20 },
+          "aliases": { "type": "array", "items": { "type": "string" }, "description": "What else the profession calls it." },
+          "not_to_be_confused_with": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["term", "difference"],
+              "properties": {
+                "term": { "type": "string" },
+                "difference": { "type": "string", "description": "The discriminator, stated. 'They are different' is not a difference." }
+              }
+            }
+          },
+          "object_ref": { "type": "string", "description": "The object id that formalises this term, when one exists." },
+          "artifact_ref": { "type": "string" },
+          "used_by": { "type": "array", "items": { "type": "string" }, "description": "Capability ids where the term carries weight." },
+          "register": {
+            "enum": ["internal", "customer_facing", "both"],
+            "description": "Whether Layer 5.2 may put this word in front of a customer. 'Churn risk' is internal; saying it to the customer is a different conversation."
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "last_updated", "review_status"],
+      "properties": {
+        "owner": { "type": "string" },
+        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
+        "reviewed_by": { "type": "string" },
+        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
+        "confidence": { "enum": ["experimental", "provisional", "stable"] },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

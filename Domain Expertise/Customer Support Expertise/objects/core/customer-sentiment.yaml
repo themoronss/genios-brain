@@ -1,0 +1,3077 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CUSTOMER SENTIMENT — how the customer currently feels, inferred rather than asked.
+#
+# All TWENTY-THREE schema sections are populated. This is the domain's most complete object
+# and it is complete here rather than somewhere else for one structural reason: `derived.sentiment`
+# is engine-computed and already in the substrate. Almost every other Customer Support object is
+# waiting on a support_v1 pack. This one is not. THIRTEEN of the twenty-three inference patterns
+# below run against the pipeline as it exists today, out of thread.*, commitment.*, meeting.*,
+# derived.* , four borrowed observation kinds and graph degree. Only `commitment` has a comparable
+# day-one story, and it has fewer independent signals feeding it.
+#
+# THE SIX CLAIMS THIS OBJECT EXISTS TO DEFEND. All are routinely got wrong, and every one of them
+# costs money when it is:
+#
+#   1. Sentiment is a TRAJECTORY, not a level. A customer who moved from furious to merely annoyed
+#      is going well. A scoring system that reports both as "negative" sends the same de-escalation
+#      playbook to a recovering customer and to one who is about to leave, and is therefore worse
+#      than no score at all. Note the uncomfortable consequence: the single most important pattern
+#      in this file — `cs.sent.trajectory_recovering` — is needs_signal, because `derived.sentiment`
+#      is a LEVEL. That gap is the top item this object puts on the Layer 2 backlog.
+#
+#   2. Politeness is not satisfaction. The most dangerous customer in any queue is the calm one who
+#      has already decided to leave. Language-only scoring cannot see them; behaviour can.
+#
+#   3. Sentiment measured on our own reply text measures US, not them. This is the most common
+#      implementation defect in commercial sentiment tooling, it is currently ours, and it produces
+#      a metric that improves whenever agents write more apologetically and degrades when they
+#      write efficiently.
+#
+#   4. Anger is usually about UNCERTAINTY or about being unheard, not about the defect. Which is why
+#      it responds to a specific next update with a time and a name, and does not respond to an
+#      apology. The third apology without new information is what converts frustrated into hostile.
+#
+#   5. A THREAD-SCOPED READ CANNOT TELL YOU WHICH PERSON IS UNHAPPY. `derived.sentiment` is computed
+#      on a graph node, not on a human. Two people at the same account on the same incident routinely
+#      feel opposite things, and the account average hides precisely the one who is about to escalate.
+#      Every executable pattern here therefore writes `scope_level: thread_aggregate` and the object
+#      says so out loud rather than implying a precision it does not have.
+#
+#   6. The instruments we would otherwise trust are biased in known directions. CSAT is answered by
+#      the delighted and the furious, so the middle — where churn actually lives — is invisible.
+#      CES, customer effort, predicts retention more reliably than delight does. Both facts are in
+#      `references`, in `anti_patterns`, and in how this object weights its factors.
+#
+# DISTINCT FROM SATISFACTION SCORE, and the distinction is the discriminator below: if a human was
+# asked a question and typed an answer, it is a Satisfaction Score and it belongs in that object no
+# matter how strongly it reads. This object never contains an answer. It contains a read.
+#
+# REWRITTEN from the mechanical 17-section migration. Prose that was already good was kept verbatim;
+# the six missing sections (preconditions, dependencies, exceptions, best_practices, anti_patterns,
+# references) were authored, every attribute purpose was rewritten to say why the field matters
+# rather than restate its name, every relationship was given weight and confidence, and every
+# inference pattern was given a false_positive.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: customer_support.obj.core.customer_sentiment
+  name: Customer Sentiment
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.voice_of_customer.sentiment_analysis
+  subdomain: voice_of_customer
+  version: 2.0.0
+  status: draft
+  aliases:
+    - Sentiment
+    - Customer Mood
+    - Tone Read
+    - Emotional State
+    - Emotional Temperature
+    - Perceived Experience
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    How the customer currently feels about us, inferred from behaviour and language rather than
+    asked. It is a read, not a fact: it has a confidence, a provenance, a subject and a decay, and
+    it is never the same thing as a survey answer. The load-bearing field is `trajectory`, not
+    `polarity` — where the feeling is going matters more to every downstream decision than where it
+    currently sits, because the actions available differ completely. A frustrated customer on a
+    recovering trajectory needs us to keep doing exactly what we are doing; a satisfied customer on
+    a collapsed one needs a phone call today. Read only from the customer's own words and their own
+    behaviour, never from ours, and attributed to a named person wherever the evidence permits —
+    a read attributed to a thread is a read about a mailbox.
+
+  discriminator: >
+    Customer Sentiment is INFERRED while the work is still happening; a Satisfaction Score is
+    ANSWERED afterwards by the self-selecting minority who reply. If a human was asked a question
+    and typed a response, it is a Satisfaction Score and belongs in that object however strongly it
+    reads — and when the two disagree, the score is the ground truth about a past moment and this
+    object is the only evidence about the present one.
+
+  answers:
+    - "Is this customer getting better or worse, as distinct from how bad they currently sound?"
+    - "Is this anger about the defect, about the wait, about being unheard, or about a policy — and therefore what can actually move it?"
+    - "Is the calm on this thread contentment or withdrawal?"
+    - "Which named person at this account is unhappy, as opposed to which mailbox looks negative?"
+    - "How long do we have before a specific next update stops working?"
+    - "Is it safe to send a satisfaction survey into this thread right now?"
+    - "Should this ticket be handed to a different person rather than a different queue?"
+    - "Is this read trustworthy enough to act on, or was it measured on our own text?"
+
+  not:
+    - "Not the survey answer — that is customer_support.obj.core.satisfaction_score, and this object must never be written from it."
+    - "Not the effort the customer had to spend — that is customer_support.obj.core.effort_score, and it is the better retention predictor of the two."
+    - "Not a churn assessment — that is customer_support.obj.core.churn_risk, which needs commercial and usage evidence this object does not have."
+    - "Not an escalation — that is customer_support.obj.core.escalation, which requires a named receiving owner and a reason; anger without a transfer is a complaint."
+    - "Not a severity input — how upset someone is says nothing about how broken the product is; severity belongs to customer_support.obj.core.ticket."
+    - "Not an agent quality measure — that is customer_support.obj.core.quality_scorecard, and using this object for it inverts the metric."
+    - "Not the incident's blast radius — during a declared incident, feeling is correlated base-wide and belongs to customer_support.obj.core.incident."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+# Eight composites grouping forty-five fields. Nothing here is marked `public`, and that is a
+# position rather than an oversight: every field is derived from private correspondence, and Rule 10
+# forbids an attribute widening the audience of the evidence it came from. An inferred label about a
+# person's emotional state is the last thing in this brain that should travel.
+attributes:
+
+  # ── scope · whose feeling, at what grain ──────────────────────────────────────────────
+  - name: scope
+    purpose: >
+      Who this read is about and at what grain it was taken. Authored first and deliberately, because
+      it is the field the current substrate is weakest on and the one whose absence does the most
+      damage: a read with no subject is an average, and an average of two people who feel opposite
+      things is a number that describes nobody.
+    type: composite
+    contains: [subject_ref, scope_level, account_ref, is_incident_correlated]
+
+  - name: subject_ref
+    purpose: >
+      The named human this read is about. Sentiment belongs to a person, not to a ticket and not to a
+      mailbox — the procurement lead and the engineer who reported the fault routinely feel opposite
+      things about the same incident. Nullable today and honestly so: nothing in the substrate
+      attributes `derived.sentiment` to an author, so most live reads will carry a null here and a
+      `scope_level` of `thread_aggregate`.
+    type: reference
+    ref: customer_support.obj.core.requester
+    data_type: ref
+    sensitivity: confidential
+    constraints: "A read with a null subject_ref may not be published at account level or used to name an individual in a briefing."
+
+  - name: scope_level
+    purpose: >
+      The grain the read was actually taken at, stated rather than assumed. `thread_aggregate` is the
+      honest default for anything derived from the engine today: node-level, both authors mixed, no
+      person attributed. `account` is present in the list only so the constraint forbidding it can name
+      it — rolling several people's reads into one account number is the single most common way this
+      object is misused, and it always hides the one person who matters.
+    type: value
+    data_type: enum
+    allowed_values: [message, conversation, ticket, requester, account, thread_aggregate]
+    default: thread_aggregate
+    required: true
+    sensitivity: internal
+    validation: "must be one of allowed_values"
+    constraints: "An `account` read may only be produced by explicit aggregation that also carries the worst individual read and its subject."
+
+  - name: account_ref
+    purpose: >
+      The commercial relationship this read sits inside. Present for context — renewal proximity turns
+      the same collapsed engagement from a shrug into an emergency — and never as the thing being
+      measured. Null for consumer and free-tier motions, which is a real state rather than missing data.
+    type: reference
+    ref: customer_support.obj.core.customer_account
+    data_type: ref
+    sensitivity: confidential
+
+  - name: is_incident_correlated
+    purpose: >
+      True when this read falls inside a declared major incident window. During one, sentiment across
+      the affected base moves together and carries almost no information about any individual
+      relationship. Without this flag a good account gets flagged at risk for a week because the
+      status page was red, and the flag outlives the incident by longer than the incident lasted.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    constraints: "While true, account-level risk flags derived from this read must be held rather than raised, and re-evaluated after resolution."
+
+  # ── current_read · where the feeling sits ────────────────────────────────────────────
+  - name: current_read
+    purpose: >
+      Where the feeling currently sits. The part everyone builds and the part that decides least —
+      grouped separately from trajectory precisely so that the two can be shown to disagree.
+    type: composite
+    contains: [polarity, sentiment_index_bp, read_confidence_bp, read_at, unreadable_reason]
+
+  - name: polarity
+    purpose: >
+      The level, on a seven-value scale. `unreadable` is not a hedge and it is the most important value
+      in this list: a two-word reply ("ok thanks") carries no sentiment, and systems that score it
+      `neutral` create a population of fake neutrals that swamps every aggregate and makes every
+      dashboard look calmer than the queue is. `dissatisfied` sits below `neutral` and above
+      `frustrated` because unhappy-but-not-yet-annoyed is a real, actionable and cheap-to-fix state
+      that no three-point scale can express.
+    type: value
+    data_type: enum
+    allowed_values: [hostile, frustrated, dissatisfied, neutral, satisfied, delighted, unreadable]
+    default: unreadable
+    required: true
+    sensitivity: confidential
+    validation: "must be one of allowed_values"
+    constraints: "May not be set from a satisfaction_score value. May not be set to neutral when sample_size_messages is below the readable minimum — use unreadable."
+
+  - name: sentiment_index_bp
+    purpose: >
+      The engine's signed observation balance, mapped onto 0–10000 with 5000 as neutral. Signed floats
+      do not hash reproducibly across workers, so the signed engine value is normalised on the way in
+      and the sign lives in `polarity` instead. A reviewer may reasonably object that this loses
+      precision at the extremes; it does, and reproducibility was judged worth more than the last few
+      points of resolution.
+    type: value
+    data_type: integer
+    unit: basis_points
+    default: 5000
+    sensitivity: confidential
+    validation: ">= 0 and <= 10000"
+    constraints: "Comparable only within one language_locale and one model_version. Never comparable across accounts."
+    source_paths: [derived.sentiment]
+
+  - name: read_confidence_bp
+    purpose: >
+      How sure we are of the read itself, as opposed to how negative the read is. The two are
+      constantly confused, and the confusion is expensive in one specific direction: a confidently
+      mild read and an uncertain furious one look identical once they are both rendered as amber.
+      Drops to zero rather than degrading when `measured_on` is `our_text`.
+    type: value
+    data_type: integer
+    unit: basis_points
+    default: 0
+    sensitivity: internal
+    validation: ">= 0 and <= 10000"
+    constraints: "Must be 0 when measured_on = our_text. May not exceed 7500 while scope_level = thread_aggregate."
+
+  - name: read_at
+    purpose: >
+      When the read was taken. Sentiment decays faster than any other property in this domain: a read
+      taken before our last reply is not evidence about the present, and anything older than the
+      customer's last inbound message should be treated as absent rather than stale. Stale sentiment is
+      worse than none because it looks current.
+    type: value
+    data_type: timestamp
+    required: true
+    sensitivity: internal
+    validation: "must be later than or equal to the timestamp of the last message in the measured sample"
+    constraints: "A read older than last_inbound_at is expired and must be reported as absent, not carried forward."
+
+  - name: unreadable_reason
+    purpose: >
+      Why the read could not be taken, when it could not. Exists so that `unreadable` is a diagnosis
+      rather than a shrug — the four causes want four different responses, and only one of them
+      (`too_few_messages`) resolves on its own. `contaminated_sample` in particular must route to a
+      pipeline fix, not to a human asked to read the thread again.
+    type: value
+    data_type: enum
+    allowed_values: [none, no_customer_text, too_few_messages, locale_unsupported, contaminated_sample, stale_read, incident_correlated]
+    default: none
+    sensitivity: internal
+    constraints: "Must be non-`none` whenever polarity = unreadable, and `none` whenever it is not."
+
+  # ── trajectory_read · where the feeling is going ─────────────────────────────────────
+  - name: trajectory_read
+    purpose: >
+      Where the feeling is going. The reason this object exists. Held separately from the level because
+      they routinely point in opposite directions, and collapsing them destroys the distinction every
+      de-escalation decision turns on.
+    type: composite
+    contains: [trajectory, prior_polarity, prior_read_at, trajectory_magnitude_bp, trajectory_window_days,
+               engagement_trend, relationship_momentum]
+
+  - name: trajectory
+    purpose: >
+      The single most load-bearing field on this object. `collapsed` is deliberately separate from
+      `deteriorating`: deteriorating means getting worse, collapsed means they have stopped
+      participating, and the second is usually calmer on the surface and far more dangerous. Defaults
+      to `unknown` and should stay there until evidence moves it — an unearned `stable` is the most
+      expensive value in this file, because it reads as reassurance and is produced by an absence.
+    type: value
+    data_type: enum
+    allowed_values: [recovering, stable, deteriorating, collapsed, unknown]
+    default: unknown
+    required: true
+    sensitivity: confidential
+    validation: "must be one of allowed_values"
+    constraints: "May not be set to `stable` from a single read. `recovering` requires prior_polarity and prior_read_at to be populated."
+
+  - name: prior_polarity
+    purpose: >
+      The previous read. Stored on the object rather than looked up, because a trajectory cannot be
+      computed without it and no time-series store is guaranteed to exist under Layer 3. This one field
+      is what makes "furious last week, annoyed today" expressible, and it is the cheapest possible fix
+      for the level-versus-trajectory problem while `derived.sentiment_trend` does not exist.
+    type: value
+    data_type: enum
+    allowed_values: [hostile, frustrated, dissatisfied, neutral, satisfied, delighted, unreadable]
+    sensitivity: confidential
+    constraints: "An `unreadable` prior may not be treated as neutral when computing direction; the trajectory stays unknown."
+
+  - name: prior_read_at
+    purpose: >
+      When the previous read was taken. Without it the window is a guess, and a guessed window makes a
+      trajectory uninterpretable in the specific direction that flatters us — two reads an hour apart
+      look like recovery when they are regression to the mean after a heated exchange.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    validation: "must be earlier than read_at"
+
+  - name: trajectory_magnitude_bp
+    purpose: >
+      How far it moved, unsigned. Direction lives in `trajectory`. Split this way for the same
+      reproducibility reason as sentiment_index_bp, and because "moved a lot" and "moved downward" are
+      separately actionable — a large upward move deserves a note in the account record just as much as
+      a large downward one, and almost no system records the good news.
+    type: value
+    data_type: integer
+    unit: basis_points
+    sensitivity: internal
+    validation: ">= 0 and <= 10000"
+
+  - name: trajectory_window_days
+    purpose: >
+      The period the trajectory was measured over. Without it the trajectory is uninterpretable:
+      recovering-over-two-hours after a heated call is normal regression to the mean, and
+      recovering-over-three-weeks is a relationship being repaired. Reporting the first as the second
+      is how a de-escalation gets declared successful on the day it stopped working.
+    type: value
+    data_type: integer
+    unit: days
+    sensitivity: internal
+    validation: ">= 0"
+    constraints: "A window shorter than one day may inform tone but may not update trajectory."
+
+  - name: engagement_trend
+    purpose: >
+      Engine-computed two-way volume against the prior fortnight. At or below 0.5 the conversation has
+      halved. This is the quiet customer's only tell in the current substrate, and it is the input that
+      lets this object see the person who has stopped arguing rather than the one who is shouting.
+    type: value
+    data_type: number
+    sensitivity: internal
+    constraints: "Reads below 1.0 are only interpretable where a prior fortnight of correspondence exists; on a new relationship this field is noise."
+    source_paths: [derived.engagement]
+
+  - name: relationship_momentum
+    purpose: >
+      Engine-computed trajectory of the relationship overall. Corroborates but does not replace
+      `trajectory` — momentum is about the pace of the thread and sentiment is about its temperature,
+      and a fast-moving argument has high momentum and terrible sentiment. Built for deal progression
+      and borrowed here, which is why every pattern reading it is scored low.
+    type: value
+    data_type: number
+    sensitivity: internal
+    source_paths: [derived.momentum]
+
+  # ── expression · how the feeling is being expressed ──────────────────────────────────
+  - name: expression
+    purpose: >
+      How the feeling is being expressed — a different question from how strong it is, and the group
+      that catches the customer whose words are impeccable.
+    type: composite
+    contains: [expression_style, formality_shift, escalation_language, channel_switch, audience_widening, public_exposure]
+
+  - name: expression_style
+    purpose: >
+      How they are saying it. `formal_escalating` — the sudden shift into stiff, complete sentences
+      with a paper trail — is the strongest textual predictor of an imminent escalation there is, and
+      most sentiment models score it as more positive than the casual grumbling it replaced. That
+      inversion is the single most useful thing in this enum.
+    type: value
+    data_type: enum
+    allowed_values: [silent, terse, verbose, formal_escalating, sarcastic, profane, warm, unknown]
+    default: unknown
+    sensitivity: confidential
+    constraints: "`profane` alone is not `hostile`; it must be read against baseline_temperament before it changes polarity."
+
+  - name: formality_shift
+    purpose: >
+      The change in register against this person's own recent norm, as opposed to the level. Authored
+      as its own field because the doctrine of this object is that direction beats level, and register
+      is the one place where the direction is legible in a single message. A customer becoming MORE
+      formal is the warning; a customer becoming less formal is usually the recovery.
+    type: value
+    data_type: enum
+    allowed_values: [none, more_formal, less_formal, unknown]
+    default: unknown
+    sensitivity: confidential
+    constraints: "Requires at least two prior messages from the same person; otherwise unknown."
+
+  - name: escalation_language
+    purpose: >
+      "Speak to your manager", "our legal team", "we are evaluating alternatives". Explicit, and
+      therefore the least interesting negative signal in this object — by the time it appears, everyone
+      already knows. Recorded because its ABSENCE alongside collapsed engagement is what identifies the
+      customer who has stopped bothering to threaten.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+
+  - name: channel_switch
+    purpose: >
+      Moved from email to phone, or from the portal to social. Switching channels is escalation
+      behaviour performed before anyone says the word, and it is behavioural rather than linguistic,
+      so it survives a customer who is being polite about it.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    constraints: "A switch we initiated is not this. Only a customer-initiated change of surface counts."
+
+  - name: audience_widening
+    purpose: >
+      Adding their own colleagues or ours to a thread. The customer building a record. Distinguished
+      from our own swarm on purpose — the two produce the identical graph degree and mean opposite
+      things, which is exactly why the pattern that reads it is the weakest executable one in the file.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+
+  - name: public_exposure
+    purpose: >
+      Where this has gone outside the thread. Changes who owns the response and how fast, not how the
+      customer feels — a customer who tweets is often no angrier than one who does not, they simply
+      have a different habit. Treating exposure as intensity is how the loudest channel gets the best
+      service and everyone learns the lesson.
+    type: value
+    data_type: enum
+    allowed_values: [none, social, review_site, press, regulator]
+    default: none
+    sensitivity: internal
+    constraints: "`regulator` transfers ownership out of support entirely and suspends discretionary gestures."
+
+  # ── attribution · what the feeling is about ──────────────────────────────────────────
+  - name: attribution
+    purpose: >
+      What the feeling is actually about. Determines which action can move it at all, and is therefore
+      more operationally useful than the level it is usually reported instead of.
+    type: composite
+    contains: [attributed_to, about_uncertainty, blame_directed_at, repeat_frustration, broken_promise_count, effort_grievance]
+
+  - name: attributed_to
+    purpose: >
+      What the feeling is about. This decides which action can move it: a policy grievance does not
+      improve when the ticket is resolved, and a wait-time grievance improves the moment a credible
+      time is given, before anything is fixed. `own_error` — the customer caused it and knows — is the
+      case where any hint of blame converts embarrassment into hostility, and where the correct move is
+      to make the fix boring and never mention the cause.
+    type: value
+    data_type: enum
+    allowed_values: [product_defect, wait_time, agent_conduct, policy, price, third_party, own_error, unclear]
+    default: unclear
+    sensitivity: confidential
+    constraints: "`agent_conduct` must never be routed into an agent's performance record automatically; it is a de-escalation input, and the quality_scorecard owns the other question."
+
+  - name: about_uncertainty
+    purpose: >
+      True when the anger is about not knowing rather than about the fault. The most useful single
+      boolean in this object. When true, an apology does nothing and a specific next update time does
+      almost everything — and the two are constantly substituted for each other because apology is the
+      socially correct response and costs nothing to type.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+
+  - name: blame_directed_at
+    purpose: >
+      Where the anger is pointed, which is a separate question from what caused it. Hostility aimed at
+      an individual rarely recovers with that individual still on the thread, and this field is what
+      makes "change the person, not the queue" decidable rather than a matter of taste. `themselves` is
+      the delicate one: it converts to hostility at the first hint that we agree.
+    type: value
+    data_type: enum
+    allowed_values: [nobody, the_product, this_agent, the_company, themselves, a_third_party]
+    default: nobody
+    sensitivity: confidential
+    constraints: "`this_agent` is grounds for reassignment and is never grounds for a performance finding on its own."
+
+  - name: repeat_frustration
+    purpose: >
+      Not the first time on this problem. Repeat contact compounds sentiment non-linearly and is
+      invisible to any per-message read — each individual message can be perfectly polite while the
+      sequence is a disaster. This is the mechanism behind the observed one-to-one relationship between
+      first-contact resolution and satisfaction: it is not that resolving fast delights people, it is
+      that making them come back a second time reliably does not.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+
+  - name: broken_promise_count
+    purpose: >
+      Commitments made to this customer whose due time passed without delivery. Counted rather than
+      flagged because the second broken promise damages the relationship far more than the first — the
+      first is a delay, the second is a pattern, and the customer starts narrating it to colleagues at
+      exactly that point.
+    type: value
+    data_type: integer
+    unit: count
+    default: 0
+    sensitivity: internal
+    validation: ">= 0"
+    constraints: "Counted over the trailing ninety days of the relationship, not over its lifetime. A lifetime count makes a long-tenured account permanently angry and stops discriminating."
+
+  - name: effort_grievance
+    purpose: >
+      True when the complaint is about how hard it was rather than about the outcome — repeating
+      themselves, being transferred, chasing, hunting for the answer. Recorded separately from
+      dissatisfaction because low effort predicts retention more reliably than delight does, so an
+      effort grievance on an otherwise satisfied read outranks mild negativity on an effortless one.
+      This is the field that stops the object chasing delight.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+
+  # ── measurement_hygiene · whose words, how many, against what normal ─────────────────
+  - name: measurement_hygiene
+    purpose: >
+      Whose words were measured, how many, and against what normal. Not metadata — these fields are the
+      difference between a read and a number. A read with `measured_on = our_text` is not a weak read,
+      it is a wrong one, and it must be discarded rather than down-weighted.
+    type: composite
+    contains: [measured_on, sample_size_messages, customer_message_share_bp, language_locale,
+               baseline_temperament, model_version]
+
+  - name: measured_on
+    purpose: >
+      Whose words produced this read. Required, and required for one reason: `our_text` and `mixed`
+      reads are measurements of our own tone wearing the customer's name. `mixed` is the realistic
+      default for any thread-level engine score today, including `derived.sentiment`, which is why
+      nothing derived from it is authored above 7500 anywhere in this file.
+    type: value
+    data_type: enum
+    allowed_values: [customer_text, our_text, mixed, behaviour_only, survey, unknown]
+    default: unknown
+    required: true
+    sensitivity: internal
+    constraints: "`our_text` forces discard. `survey` is not permitted here at all — a survey answer belongs to satisfaction_score."
+
+  - name: sample_size_messages
+    purpose: >
+      How many customer messages the read is based on. One message is a mood. The value of stating it
+      is not statistical rigour, it is that it makes the fake-neutral population countable: most
+      `neutral` reads in a real queue are one-line acknowledgements that should have been `unreadable`.
+    type: value
+    data_type: integer
+    unit: count
+    default: 0
+    sensitivity: internal
+    validation: ">= 0"
+    constraints: "Fewer than two customer messages must produce polarity = unreadable with unreadable_reason = too_few_messages."
+
+  - name: customer_message_share_bp
+    purpose: >
+      What fraction of the measured text was actually theirs. The quantitative form of `measured_on`,
+      and the field that makes `mixed` actionable rather than merely honest — a thread that is 80%
+      their words and one that is 80% our apology are both `mixed` and are not remotely the same
+      evidence. Today this is computable in principle from the thread and is computed by nothing.
+    type: value
+    data_type: integer
+    unit: basis_points
+    sensitivity: internal
+    validation: ">= 0 and <= 10000"
+    constraints: "Below 3000, the read must be reported as unreadable with unreadable_reason = contaminated_sample."
+
+  - name: language_locale
+    purpose: >
+      e.g. "ja-JP", "de-DE". Sentiment models systematically misread non-native English and high-context
+      languages, in the same direction every time — politeness is scored as satisfaction. A courteous
+      cancellation notice can read as the happiest message in the queue. Reads must be compared within a
+      locale and never across one, or the aggregate simply ranks the most reserved cultures as the
+      happiest customers and the finding is about grammar.
+    type: value
+    data_type: string
+    sensitivity: internal
+    constraints: "Cross-locale aggregation is forbidden. An unsupported locale produces unreadable, not neutral."
+
+  - name: baseline_temperament
+    purpose: >
+      This customer's normal. Some people are brusque with everyone and always have been; scoring them
+      hostile every week trains the whole team to ignore the field, which is the failure mode that kills
+      sentiment features. Sentiment is only meaningful as a deviation from a person's own baseline —
+      exactly the comparison a per-message classifier cannot make.
+    type: value
+    data_type: enum
+    allowed_values: [warm, businesslike, blunt, abrasive, unknown]
+    default: unknown
+    sensitivity: confidential
+    constraints: "May not be established from fewer than a handful of prior exchanges, and must be re-derived after a champion change."
+
+  - name: model_version
+    purpose: >
+      Which classifier or engine build produced this read. Reads are not comparable across versions, and
+      a silent model upgrade presents as a company-wide mood swing that operators will spend a week
+      investigating as a service problem. Cheap to record, almost never recorded, and the first question
+      to ask when the aggregate moves without the queue moving.
+    type: value
+    data_type: string
+    sensitivity: internal
+    constraints: "Trend reporting must break the series at a version change rather than smoothing across it."
+
+  # ── behaviour · what they do rather than what they say ───────────────────────────────
+  - name: behaviour
+    purpose: >
+      What they do rather than what they say. The only channel the quiet customer uses, and the half of
+      this object that cannot be edited for politeness before it is sent.
+    type: composite
+    contains: [last_inbound_at, ball_in_court, silence_days, reply_latency_ratio, contact_count_window,
+               self_service_abandoned]
+
+  - name: last_inbound_at
+    purpose: >
+      When the customer last wrote. One of the very few fields with a live Layer 2 source today, and the
+      anchor for every silence-based pattern below. Also the expiry clock for the whole object: a read
+      taken before this timestamp is not evidence about the present.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    source_paths: [thread.last_inbound]
+
+  - name: ball_in_court
+    purpose: >
+      Who owes the next message. Read here as: `us` means the customer spoke last and is waiting on us;
+      `them` means we replied and they have not come back. The reading is stated explicitly because the
+      two silences mean opposite things — ours is a failure, theirs is a withdrawal — and a pattern that
+      gets the direction backwards fires forever without ever erroring.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    sensitivity: internal
+    constraints: "Computed from correspondence only. A customer who replied by phone or chat widget appears here as silence."
+    source_paths: [thread.ball_in_court]
+
+  - name: silence_days
+    purpose: >
+      Days since the last customer message. Absolute, and therefore weak on its own — three days is
+      neglect for a daily-contact enterprise admin and prompt for a quarterly user. Kept because it is
+      the only silence measure available before a baseline exists, and because our obligation to reply
+      does not actually scale with how patient this particular customer happens to be.
+    type: value
+    data_type: integer
+    unit: days
+    sensitivity: internal
+    validation: ">= 0"
+
+  - name: reply_latency_ratio
+    purpose: >
+      Current reply latency divided by this customer's learned `reply_cadence` baseline. A customer who
+      normally answers within the hour and has been silent three days is a different event from one who
+      always answers on Fridays, and only the ratio can tell them apart. The one place in this object
+      where the substrate genuinely has what is needed, and therefore the strongest behavioural field
+      available today.
+    type: value
+    data_type: number
+    sensitivity: internal
+    constraints: "A cold-start baseline resolves to the pattern floor; this field is uninterpretable until the account has a history."
+
+  - name: contact_count_window
+    purpose: >
+      How many times this person has contacted us in the trailing window, across tickets and channels.
+      The counted form of `repeat_frustration`, and the version that survives a customer who opens a
+      fresh ticket each time instead of reopening — which is what most customers do, and which is why
+      reopen counts alone under-report repeat contact badly.
+    type: value
+    data_type: integer
+    unit: count
+    default: 0
+    sensitivity: internal
+    validation: ">= 0"
+    constraints: "Only meaningful against contact_rate_per_account. A hundred-seat account opening four tickets a week is normal; a two-seat account doing the same is a signal."
+
+  - name: self_service_abandoned
+    purpose: >
+      They went looking for the answer themselves and gave up. The behavioural tell of the calm leaver:
+      they still have the problem, they have stopped asking us about it, and the last thing they did was
+      try to avoid us. Abandonment is the one behaviour that discriminates the quietly satisfied customer
+      from the quietly departing one, and nothing currently emits it.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+
+  # ── consequence · what the read implies, and how long we have ────────────────────────
+  - name: consequence
+    purpose: >
+      What this read implies for the account and how long we have. The section Layer 5 actually consumes;
+      everything above it is the argument for these five values.
+    type: composite
+    contains: [churn_risk_ref, escalation_likelihood_bp, recovery_window_hours, de_escalation_required, survey_safe]
+
+  - name: churn_risk_ref
+    purpose: >
+      The churn assessment this read feeds. Sentiment is an input to churn risk, never a synonym for it —
+      plenty of furious customers renew, because complaining is a form of investment, and the quietest
+      ones leave. The edge points outward on purpose: this object supplies evidence and does not get to
+      draw the commercial conclusion.
+    type: reference
+    ref: customer_support.obj.core.churn_risk
+    data_type: ref
+    sensitivity: confidential
+
+  - name: escalation_likelihood_bp
+    purpose: >
+      Probability the customer escalates if nothing changes. Distinct from how negative they are — calm
+      customers escalate too, and more effectively, because they escalate with a written timeline rather
+      than with adjectives. Kept as its own number so that "angry" and "about to go over our heads" can
+      be separately true.
+    type: value
+    data_type: integer
+    unit: basis_points
+    sensitivity: confidential
+    validation: ">= 0 and <= 10000"
+
+  - name: recovery_window_hours
+    purpose: >
+      How long a specific, credible next update still works. It shrinks with every broken promise and it
+      closes entirely once the customer stops asking. The most useful number this object can hand to
+      Layer 5, the one that turns a feeling into a schedulable action — and the one we can least defend
+      today, because nothing in the substrate measures how long patience lasts.
+    type: value
+    data_type: integer
+    unit: hours
+    sensitivity: internal
+    validation: ">= 0"
+    constraints: "Zero means the window has closed and the correct move is a call, not a better email."
+
+  - name: de_escalation_required
+    purpose: >
+      Computed, not stored: true only when a negative level meets a non-recovering trajectory AND at
+      least one behavioural corroboration. Authored as a derived field precisely so that the conjunction
+      is enforced in one place — the common failure is routing on polarity alone, which sends the
+      de-escalation playbook to the customer who is already recovering and undoes three days of work.
+    type: derived
+    derived_from: [polarity, trajectory, silence_days, repeat_frustration, channel_switch, audience_widening, engagement_trend]
+    sensitivity: confidential
+
+  - name: survey_safe
+    purpose: >
+      Computed: whether it is safe to send a satisfaction survey into this thread right now. False on an
+      unresolved hostile thread, on a collapsed trajectory, and while the ball is in our court. Exists
+      because survey automation fires on state changes and has no opinion about the relationship, so it
+      reliably spends the single ask we had on this customer at the worst available moment.
+    type: derived
+    derived_from: [polarity, trajectory, ball_in_court, is_incident_correlated, broken_promise_count]
+    sensitivity: internal
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+# No terminal states, deliberately. A feeling does not finish. Every other object in this domain
+# reaches `closed`; this one only ever moves, and modelling a terminal state here would license a
+# system to stop reading a customer it had decided about.
+states:
+  initial: unknown
+  values:
+
+    - name: unknown
+      description: >
+        No read, or a read too old to trust. The correct default, and the one most systems refuse to
+        display because a blank cell looks like a bug.
+      implies: "Nothing may be inferred. Advice that depends on sentiment degrades to entitlement and commitment evidence."
+
+    - name: neutral
+      description: >
+        A real read that is genuinely mid-scale. Distinct from `unknown`, and conflating them makes every
+        dashboard look calmer than the queue is.
+      entered_when: [{path: derived.sentiment, op: '>=', value: 0.0}]
+      implies: "No sentiment-driven action. Watch the trajectory rather than the level."
+
+    - name: frustrated
+      description: >
+        Negative and expressed. The state most support tooling optimises for, and the least dangerous of
+        the negatives precisely because it is visible — a complaining customer is still trying.
+      entered_when: [{path: derived.sentiment, op: '<', value: 0.0}]
+      implies: "Recoverable at low cost. A specific next update usually moves it; another apology does not."
+
+    - name: hostile
+      description: >
+        Negative, expressed, and now aimed at us rather than at the problem. Recoverable, but not by the
+        same person who caused it.
+      entered_when: [{path: derived.sentiment, op: '<=', value: -0.5}]
+      implies: "Change the person, not the queue. Discretionary gestures made before acknowledgement will make it worse."
+
+    - name: recovering
+      description: >
+        Was worse, is better, still negative. Entered only from a worse state — the from-state carries the
+        history the engine cannot, which is precisely why this exists as a state rather than as a computed
+        field.
+      implies: "Change nothing. The correct action is to hold the cadence exactly as it is; introducing a new owner here resets the relationship."
+
+    - name: dormant
+      description: >
+        Calm and disengaged. They have stopped asking. In every other object dormant is benign; here it is
+        the state that precedes silent churn and it should read louder than hostile.
+      entered_when: [{path: derived.engagement, op: '<=', value: 0.4}]
+      implies: "One short, non-transactional human check-in. Never an alert, never an escalation queue — the same trace is produced by a customer whose problem quietly went away."
+
+    - name: escalated
+      description: >
+        The feeling has become somebody else's formal problem. Sentiment does not stop mattering here — it
+        decides whether the escalation lands well.
+      implies: "Ownership has transferred. This object becomes context for the receiving owner rather than a trigger."
+
+  transitions:
+    - {from: unknown, to: neutral, reversible: true}
+    - {from: unknown, to: frustrated, when: [{path: derived.sentiment, op: '<', value: 0.0}], reversible: true}
+    - {from: neutral, to: frustrated, when: [{path: derived.sentiment, op: '<', value: 0.0}], reversible: true}
+    - {from: frustrated, to: hostile, when: [{path: derived.sentiment, op: '<=', value: -0.5}], reversible: true}
+    - {from: hostile, to: recovering, when: [{path: derived.sentiment, op: '>', value: -0.5}], trigger: "A specific next update landed, or the owner changed.", reversible: true}
+    - {from: frustrated, to: recovering, when: [{path: derived.sentiment, op: '>=', value: 0.0}], reversible: true}
+    - {from: recovering, to: neutral, when: [{path: derived.sentiment, op: '>', value: 0.3}], reversible: true}
+    - {from: recovering, to: hostile, when: [{path: derived.sentiment, op: '<=', value: -0.5}], trigger: "A second promise broken inside the recovery window. The most damaging single event in this object.", reversible: true}
+    - {from: neutral, to: dormant, when: [{path: derived.engagement, op: '<=', value: 0.4}], reversible: true}
+    - {from: frustrated, to: dormant, when: [{path: derived.engagement, op: '<=', value: 0.4}], trigger: "They stopped arguing. Read as escalation of risk, not de-escalation of feeling.", reversible: true}
+    - {from: hostile, to: escalated, trigger: "Ownership transferred with a named receiving owner and a reason.", reversible: false}
+    - {from: dormant, to: neutral, reversible: true}
+    - {from: escalated, to: recovering, reversible: true}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+# weight_bp = how much this edge matters relative to the others. confidence_bp = how sure we are the
+# edge exists at all. They are different questions and they diverge most where it matters: the
+# requester edge is the most important edge on the object and the one we are least able to establish,
+# because nothing in the substrate attributes a read to an author.
+relationships:
+
+  - target: customer_support.obj.core.requester
+    type: measures
+    direction: outbound
+    cardinality: one
+    weight_bp: 2200
+    confidence_bp: 4500
+    priority: 1
+    evidence: [email, chat, phone]
+    description: >
+      Sentiment belongs to a person, not to a ticket. Two people at the same account on the same
+      incident routinely feel opposite things, and an account-level average hides exactly the one who is
+      about to escalate. Confidence is deliberately below half: this is the most important edge on the
+      object and the one the pipeline cannot currently establish, because `derived.sentiment` is
+      node-scoped and carries no author.
+
+  - target: customer_support.obj.core.conversation
+    type: references
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 9000
+    priority: 2
+    evidence: [email, chat]
+    description: >
+      The message thread the read was taken from. The provenance behind `measured_on`, and the only
+      thing that makes a contaminated read detectable after the fact rather than merely suspected.
+
+  - target: customer_support.obj.core.commitment
+    type: caused_by
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 3
+    conditions: [{fn: days_since, path: commitment.due_at, op: '>', value: 0}]
+    evidence: [email, ticket]
+    description: >
+      The broken promises behind the feeling. The most directly fixable cause on this list and the only
+      edge on the object that points at our own conduct rather than at the customer's. High confidence
+      because it needs no sentiment model at all — a due date passed and nothing was sent is a fact.
+
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1300
+    confidence_bp: 6000
+    priority: 4
+    evidence: [derived, ticket, telemetry]
+    description: >
+      A strong input, never sufficient alone. Plenty of furious customers renew — complaining is a form
+      of investment — and the quietest ones leave. Traversed for the trajectory and the engagement
+      collapse, not for the polarity.
+
+  - target: customer_support.obj.core.satisfaction_score
+    type: precedes
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 8500
+    priority: 5
+    evidence: [survey]
+    description: >
+      The ordering is the whole distinction. Sentiment is inferred during; the score is asked after, by
+      the minority who answer. When the two disagree the score is the ground truth about that moment and
+      the disagreement is this object's only calibration data — which makes this the most valuable edge
+      to traverse backwards, from a survey to the read that preceded it.
+
+  - target: customer_support.obj.core.effort_score
+    type: precedes
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 7000
+    priority: 6
+    evidence: [survey, ticket]
+    description: >
+      The same temporal relation as the satisfaction edge and a better predictor of what happens next.
+      Customer effort tracks retention more reliably than delight does, so where both exist and disagree,
+      an effortful-but-satisfied read should worry us more than a mildly negative effortless one.
+
+  - target: customer_support.obj.core.ticket
+    type: attaches_to
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 9000
+    priority: 7
+    evidence: [ticket]
+    description: >
+      A read can be scoped to one ticket, but it survives the ticket closing — which is exactly why it is
+      not a ticket field. The customer who was let down in March is still the customer writing in June,
+      and a system that discards the read at closure re-meets an angry person as a stranger every time.
+
+  - target: customer_support.obj.core.escalation
+    type: escalates_to
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 700
+    confidence_bp: 5000
+    priority: 8
+    conditions: [{path: thread.ball_in_court, op: '=', value: us}]
+    evidence: [email, ticket]
+    description: >
+      Sentiment can justify an escalation. It is not itself one — an escalation needs a named receiving
+      owner and a reason, and anger without a transfer is a complaint. Conditioned on the ball being ours
+      because escalating a customer we have already answered generally escalates our own impatience.
+
+  - target: customer_support.obj.core.incident
+    type: caused_by
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 7500
+    priority: 9
+    evidence: [status_page, telemetry]
+    description: >
+      During a major incident, sentiment is correlated across the whole customer base and says nothing
+      about any individual relationship. Attributing incident-driven anger to an account is how a good
+      account gets flagged at risk for a week. This edge exists mainly so the read can be SUPPRESSED, not
+      so it can be explained.
+
+  - target: customer_support.obj.core.customer_account
+    type: belongs_to
+    direction: outbound
+    cardinality: one
+    weight_bp: 700
+    confidence_bp: 8000
+    priority: 10
+    evidence: [crm]
+    description: >
+      The commercial container. Traversed for renewal proximity, which is the single piece of context
+      that turns a collapsed engagement from a shrug into an emergency — and never traversed to produce
+      an account-level sentiment number.
+
+  - target: customer_support.obj.core.knowledge_article
+    type: references
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 4000
+    priority: 11
+    evidence: [help_center, knowledge_base]
+    description: >
+      The content they read before giving up. A weak edge and an honest one: an abandoned self-service
+      session is the clearest behavioural evidence of effort frustration available anywhere, and it is
+      the only route by which this object can see a customer who never wrote to us at all.
+
+# ── 6 · Inference Patterns ───────────────────────────────────────────────────────────────
+# Twenty-three patterns. THIRTEEN executable today, ten needs_signal. Every pattern carries a
+# false_positive, because a confidence authored without naming the case where it fires and is wrong is
+# an assertion rather than a calibration.
+#
+# `yields.corroborates` is used sparingly and only where the two patterns read GENUINELY INDEPENDENT
+# evidence. Rule 11 permits confidence to rise only on independent corroboration, so declaring it
+# between two patterns that both read `derived.sentiment` would manufacture certainty out of one
+# measurement counted twice. Where that temptation exists, the note says so explicitly.
+inference_patterns:
+
+  deterministic:
+
+    - id: cs.sent.engine_balance_negative
+      statement: The engine's observation balance across this thread has gone negative.
+      status: executable
+      when:
+        - {path: derived.sentiment, op: '<', value: 0.0}
+      yields:
+        confidence_bp: 6500
+        attribute: polarity
+        value: frustrated
+      evidence_fields: [derived.sentiment, thread.last_inbound]
+      false_positive: >
+        A customer calmly and thoroughly reporting a serious fault. The vocabulary underneath this signal
+        counts `objection` and `discount_pressure` as negative, and a competent bug report full of "this
+        does not work" scores exactly like an unhappy one. The customer may be perfectly satisfied with us
+        and furious with the software.
+      note: >
+        The only direct sentiment signal in the substrate, and capped at 6500 for two reasons a reviewer
+        should push back on if they disagree. First, it is measured over the whole thread including our own
+        messages, so a long apologetic reply from us drags it down. Second, the observation vocabulary
+        underneath it is sales-shaped — `objection` and `discount_pressure` are what make it negative, and
+        in a support thread those fire on things that are not always unhappiness. It is a starting point,
+        never a verdict.
+
+    - id: cs.sent.engine_balance_strongly_negative
+      statement: Strongly negative balance while we are the ones who owe the reply.
+      status: executable
+      when:
+        - {path: derived.sentiment, op: '<=', value: -0.5}
+        - {path: thread.ball_in_court, op: '=', value: us}
+      yields:
+        confidence_bp: 7500
+        attribute: polarity
+        value: hostile
+      evidence_fields: [derived.sentiment, thread.ball_in_court]
+      false_positive: >
+        A long, heated thread that we have already resolved by phone. `ball_in_court` is computed from
+        correspondence only, so a call that fixed everything leaves the written record looking like an
+        unanswered furious customer — and this pattern will call them hostile on the morning they became
+        happy.
+      note: >
+        The ball_in_court clause is doing real work rather than decorating the threshold: it means the
+        customer spoke last, so the negative balance is weighted toward their words rather than ours. That
+        is the closest the current substrate gets to isolating the customer's voice, and it is the reason
+        this pattern is authored 1000bp above the plain threshold above. Still not higher, because "closest
+        available" is not "clean".
+
+    - id: cs.sent.promise_past_due_while_we_owe
+      statement: A commitment to this customer passed its due time and we still owe the reply.
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: '>', value: 0}
+        - {path: thread.ball_in_court, op: '=', value: us}
+      yields:
+        confidence_bp: 7000
+        attribute: attributed_to
+        value: wait_time
+      evidence_fields: [commitment.due_at, commitment.action, thread.ball_in_court]
+      false_positive: >
+        A commitment the customer themselves postponed — "actually, next week is fine" — which nothing in
+        the substrate records. The due date passes, we look negligent, and the customer is not remotely
+        bothered. This is the most common way this pattern is wrong and it is invisible from the fact alone.
+      note: >
+        Ranked higher than any language pattern here, and the ranking is the point: this is a fact about our
+        own conduct, not an inference about their mood. It needs no sentiment model, no locale correction
+        and no temperament baseline. It should also set about_uncertainty true — a broken update promise is
+        definitionally an uncertainty grievance — but `yields` carries one attribute, which is why the next
+        pattern exists.
+
+    - id: cs.sent.broken_update_promise_is_uncertainty
+      statement: A commitment passed its due time and no outbound follow-up was observed — the customer has been told nothing.
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: '>', value: 0}
+        - {no_obs: followup_sent}
+      yields:
+        confidence_bp: 7500
+        attribute: about_uncertainty
+        value: true
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        `no_obs: followup_sent` proves no outbound was OBSERVED, not that none was sent. A reply made by
+        phone, in a chat widget, or from an unindexed mailbox reads as silence, and the customer who has
+        been kept fully informed is scored as being in the dark.
+      note: >
+        The companion to the pattern above and the reason it exists: `yields` sets one attribute, and the
+        attribution and the uncertainty flag are separately useful — the first tells Layer 5 what the
+        grievance is about, the second tells it that a timestamp fixes this and an apology does not.
+        It deliberately does NOT declare `corroborates` against cs.sent.promise_past_due_while_we_owe
+        despite pointing the same way, because both read `commitment.due_at`: they are one piece of
+        evidence expressed twice, and Rule 11 only permits a rise on genuinely independent evidence.
+        Authored slightly above its sibling because "nothing was sent" is a stronger claim than "we owe
+        the reply".
+
+    - id: cs.sent.trajectory_recovering
+      statement: The read is negative but materially better than the previous read over the same window.
+      status: needs_signal
+      yields:
+        confidence_bp: 8500
+        attribute: trajectory
+        value: recovering
+      false_positive: >
+        Regression to the mean after a single heated exchange. Anyone is calmer two hours after they were
+        furious, and reading that as recovery closes the intervention while the underlying grievance is
+        untouched — which is why the window matters as much as the delta and why a delta without a window
+        is refused below.
+      requires_signals:
+        - kind: derived
+          name: derived.sentiment_trend
+          owner_layer: L2
+          note: >
+            The single highest-value ask this object generates. `derived.sentiment` is a LEVEL. The most
+            important thing a support brain can say about a customer — "furious on Monday, merely annoyed
+            today, keep doing exactly this" — is not expressible against a level. Without it, a recovering
+            customer and a collapsing one produce the identical negative score and receive the identical
+            intervention, and the intervention is wrong for one of them every time. Needs a signed delta
+            plus the window it was measured over; a delta without a window is uninterpretable.
+        - kind: derived
+          name: derived.sentiment_prior
+          owner_layer: L2
+          note: >
+            The previous read and its timestamp, so trajectory survives a restart and does not depend on
+            Layer 3 holding state it has no store for.
+
+    - id: cs.sent.explicit_cancellation_language
+      statement: The customer has said, in their own words, that they are considering leaving.
+      status: needs_signal
+      yields:
+        confidence_bp: 9200
+        attribute: polarity
+        value: hostile
+      false_positive: >
+        The tactical threat. A meaningful share of cancellation language is a bid for attention or a
+        negotiating position at renewal rather than a decision, and it is most common from the customers
+        who have learned it works. Near-certain evidence about feeling, weak evidence about intent.
+      requires_signals:
+        - kind: obs_kind
+          name: cancellation_threat
+          owner_layer: L2
+          note: >
+            The clearest sentiment statement a customer ever makes and the pipeline cannot see it. Note this
+            is not the same as churn: most cancellation threats are bids for attention rather than decisions,
+            which is why 9200 and not 10000 — treating it as evidence about intent is how support teams get
+            held to ransom by the customers least likely to leave.
+
+    - id: cs.sent.first_response_clock_breached
+      statement: The promised first response never arrived inside the entitled window.
+      status: needs_signal
+      yields:
+        confidence_bp: 8000
+        attribute: about_uncertainty
+        value: true
+      false_positive: >
+        A business-hours clock read as a calendar-hours one. A ticket raised on Friday evening breaches
+        nothing over the weekend, and a pipeline that does not carry the calendar the SLA is bound to will
+        report every Monday morning as a wall of uncertainty grievances that do not exist.
+      requires_signals:
+        - kind: fact_path
+          name: sla.target_first_response_at
+          owner_layer: L1
+          note: >
+            The machine-readable form of "nobody has told me anything yet". It is the cleanest possible
+            uncertainty-attribution signal because it is a fact about us with a timestamp, and it needs no
+            language model at all.
+        - kind: obs_kind
+          name: sla_breach
+          owner_layer: L2
+          note: >
+            Needed to distinguish a breach from a paused clock and, critically, to carry which calendar the
+            target was bound to. Without the pause state and the calendar, a weekend reads as a breach and
+            the read fires on every ticket on Monday.
+
+    - id: cs.sent.reopened_or_repeat_contact
+      statement: This is the second or third time the customer has come back on the same problem.
+      status: needs_signal
+      yields:
+        confidence_bp: 8200
+        attribute: repeat_frustration
+        value: true
+      false_positive: >
+        The reopen that is a compliment. A customer who comes back to the same agent rather than opening a
+        fresh ticket elsewhere is often expressing trust, not frustration — and a customer who reopens
+        because they thought of a related question is not frustrated at all.
+      requires_signals:
+        - kind: fact_path
+          name: ticket.reopen_count
+          owner_layer: L1
+          note: >
+            Repeat contact compounds sentiment non-linearly and is completely invisible to any per-message
+            read — each individual message can be perfectly polite while the sequence is a disaster. This
+            is the mechanism behind the observed near one-to-one relationship between first-contact
+            resolution and satisfaction: making somebody come back reliably costs more than resolving fast
+            ever gains.
+        - kind: derived
+          name: derived.contact_frequency
+          owner_layer: L2
+          note: >
+            Needed to catch repeat contact that arrives as new tickets rather than reopens, which is what
+            most customers actually do and what happens by default whenever they use a different channel.
+            Reopen counts alone under-report repeat contact badly.
+
+    - id: cs.sent.effort_grievance_from_ces
+      statement: The customer reported that resolving this was hard, regardless of whether they said they were satisfied.
+      status: needs_signal
+      yields:
+        confidence_bp: 7800
+        attribute: effort_grievance
+        value: true
+      false_positive: >
+        An intrinsically hard problem honestly handled. Some faults take four exchanges because they take
+        four exchanges, and a high effort score there is a statement about the product, not about the
+        service — routing it as a service failure aims the fix at the wrong function.
+      requires_signals:
+        - kind: obs_kind
+          name: ces_submitted
+          owner_layer: L2
+          note: >
+            Customer effort predicts retention more reliably than delight does, which makes this a better
+            forward-looking signal than the CSAT answer support teams actually collect. Authored below the
+            cancellation pattern because it is still a survey — self-selected, late — and above the CSAT
+            corroboration below because what it measures is more durable.
+        - kind: fact_path
+          name: csat.score
+          owner_layer: L1
+          note: >
+            Needed alongside, not instead. The valuable case is the DISAGREEMENT: satisfied-but-effortful is
+            the customer who thanks the agent and does not renew, and only having both numbers makes that
+            customer visible at all.
+
+    - id: cs.sent.survey_answer_corroborates_the_read
+      statement: A submitted satisfaction survey scores in the detractor range.
+      status: needs_signal
+      yields:
+        confidence_bp: 7000
+        attribute: null
+      false_positive: >
+        The survey answered about something else. Post-interaction surveys collect the customer's feeling
+        about the whole relationship, the price, and the last thing that annoyed them, all attached to the
+        ticket that happened to ask. The score is real and its attribution frequently is not.
+      requires_signals:
+        - kind: fact_path
+          name: csat.score
+          owner_layer: L1
+        - kind: obs_kind
+          name: csat_submitted
+          owner_layer: L2
+          note: >
+            Deliberately authored as corroboration at 7000 rather than as ground truth at 9500, which is
+            where most teams would put it. A survey is answered by the delighted and the furious — the
+            middle, where churn actually lives, does not reply — it arrives after the feeling has already
+            changed, and it is heavily influenced by whether the last agent was likeable. It is the best
+            evidence we will get about a past moment and poor evidence about the present one. Its real value
+            is not the read; it is the calibration pair against whatever this object inferred at the time.
+
+    - id: cs.sent.incident_window_suppresses_the_read
+      statement: This read falls inside a declared major incident, so it describes the outage rather than the relationship.
+      status: needs_signal
+      yields:
+        confidence_bp: 8800
+        attribute: is_incident_correlated
+        value: true
+      false_positive: >
+        A customer who is angry about something entirely unrelated during an incident window. Suppressing
+        their read because the status page is red is how a genuine, individual grievance disappears for a
+        week and resurfaces as an executive escalation.
+      requires_signals:
+        - kind: fact_path
+          name: incident.status
+          owner_layer: L1
+          note: >
+            Severity is blast radius, not volume. During a declared incident the whole affected base moves
+            together, so every account looks like it is deteriorating and none of the movement is about the
+            relationship. Without this, incident weeks poison the account-level series and the flags raised
+            in them outlive the incident by longer than the incident lasted.
+        - kind: fact_path
+          name: incident.started_at
+          owner_layer: L1
+          note: >
+            The window boundary. Needed to re-evaluate suppressed reads after resolution rather than
+            silently carrying them forward, which is the failure this whole pattern exists to prevent.
+
+  heuristic:
+
+    - id: cs.sent.dangerous_calm
+      statement: Language is not negative, but two-way volume has collapsed. They have stopped arguing because they have stopped caring.
+      status: executable
+      when:
+        - {path: derived.engagement, op: '<=', value: 0.4}
+        - {path: derived.sentiment, op: '>=', value: 0.0}
+      yields:
+        confidence_bp: 6000
+        attribute: trajectory
+        value: collapsed
+      evidence_fields: [derived.engagement, derived.sentiment, thread.last_inbound]
+      false_positive: >
+        The customer whose problem was quietly solved and who is now happily getting on with their life.
+        This produces an identical trace — calm language, collapsed volume — and nothing in the current
+        substrate can separate the two. Product usage would; nothing projects it.
+      note: >
+        The pattern this object exists for, and deliberately held at 6000. Because the false positive above
+        is genuinely indistinguishable today, this should raise a QUESTION — one short human check-in — and
+        must never raise an alert or route to an escalation queue. A reviewer who wants this at 8000 is
+        asking the system to interrupt satisfied customers; a reviewer who wants it deleted is asking it to
+        miss every silent churn. 6000 is the honest middle and it is uncomfortable on purpose.
+
+    - id: cs.sent.gone_quiet_against_own_cadence
+      statement: We replied, the ball is with them, and they have been silent for far longer than they normally take.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: '=', value: them}
+        - {fn: days_since, path: thread.last_inbound, op: '>=', value: {baseline: reply_cadence, mult: 2.5, floor: 3}}
+      yields:
+        confidence_bp: 6800
+        attribute: trajectory
+        value: deteriorating
+        corroborates: [cs.sent.dangerous_calm]
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        Annual leave. A fortnight of silence from a customer who normally answers hourly is far more often
+        a holiday than a withdrawal, and nothing in the substrate carries an out-of-office. In August this
+        pattern fires across an entire book of business.
+      note: >
+        Baseline-relative rather than absolute, which is the whole reason it is worth more than the pattern
+        below it. A customer who normally answers within the hour and has been silent for three days is a
+        different event from one who has always answered on Fridays, and only `reply_cadence` — the one
+        learned baseline in the substrate — can separate them. The floor of 3 exists because a cold-start
+        baseline resolves to the floor: without it, this fires on every thread on day one and the field is
+        discredited before anyone has looked at it. mult 2.5 is a judgement call and the first number here
+        that should be tuned from outcome data rather than argued about.
+        `corroborates` is declared against dangerous_calm and is genuinely independent: that pattern reads
+        the engine's engagement and sentiment computations, this one reads raw timestamps against a learned
+        baseline. Two different instruments, one conclusion.
+
+    - id: cs.sent.silent_while_we_owe_the_reply
+      statement: The customer spoke last, we never answered, and days have passed.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: '=', value: us}
+        - {fn: days_since, path: thread.last_inbound, op: '>=', value: 5}
+      yields:
+        confidence_bp: 5500
+        attribute: trajectory
+        value: deteriorating
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        A customer who was told to expect a week and is entirely content to wait. This pattern infers their
+        feeling from our conduct, and when the expectation was set properly our conduct is not a grievance
+        at all — it is the plan working.
+      note: >
+        The mirror image of the pattern above and a separate pattern only because the engine has no OR — the
+        two silences mean opposite things and must not be merged. Weaker at 5500 for the reason in the false
+        positive. It earns its place because when it is right it is right about the cheapest problem to fix
+        in the whole domain. Absolute rather than baseline-relative on purpose: our obligation to reply does
+        not scale with how patient this particular customer happens to be.
+
+    - id: cs.sent.competitor_named_while_negative
+      statement: A competitor is mentioned by name in a thread whose sentiment is already negative.
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {path: derived.sentiment, op: '<', value: 0.0}
+      yields:
+        confidence_bp: 7200
+        attribute: null
+      evidence_fields: [derived.sentiment]
+      false_positive: >
+        An integration. The `competitor` extractor fires on any named vendor, and support threads are full
+        of tooling the customer already owns and is trying to connect to us — "it works fine in X" is a
+        configuration report, not a churn precursor.
+      note: >
+        A sales-shaped observation kind doing genuine support work, which is rare enough to call out. In a
+        resolution thread a competitor is almost never mentioned as a purchase consideration — it is
+        mentioned as "X does this properly", and that sentence is a churn precursor wearing the costume of a
+        feature request. Authored above the plain negative balance because the conjunction is specific;
+        below the explicit patterns because of the false positive.
+
+    - id: cs.sent.leaving_language_proxy
+      statement: Language that reads as walking away appears in a support thread whose sentiment is already negative.
+      status: executable
+      when:
+        - {has_obs: closed_lost_mention}
+        - {path: derived.sentiment, op: '<', value: 0.0}
+      yields:
+        confidence_bp: 6000
+        attribute: polarity
+        value: frustrated
+      evidence_fields: [derived.sentiment]
+      false_positive: >
+        The extractor was trained on deals, so it fires on "we've closed that project", "we lost the
+        budget", "that account went elsewhere" — sentences a support contact says about their OWN customers
+        and their own internal work, with no reference to us whatsoever.
+      note: >
+        The nearest thing the current substrate has to a cancellation signal, and included honestly as a
+        proxy rather than as the thing itself. `closed_lost_mention` was built to catch a deal dying; in a
+        support thread the same language sometimes catches a relationship dying. Held at 6000 because the
+        false positive is common and because the real pattern —
+        `cs.sent.explicit_cancellation_language` — is authored above at 9200 and is needs_signal. When
+        `cancellation_threat` ships, this pattern should be DELETED rather than tuned, and the deletion is
+        the measure of whether the pack worked.
+
+    - id: cs.sent.compensation_sought
+      statement: The customer is pressing for money back or a credit while we owe them a reply.
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {path: thread.ball_in_court, op: '=', value: us}
+      yields:
+        confidence_bp: 5200
+        attribute: attributed_to
+        value: policy
+      evidence_fields: [thread.ball_in_court]
+      false_positive: >
+        A renewal or upgrade conversation happening in the same thread as a support question, which is
+        routine on named accounts. The extractor cannot tell "I want compensation for this outage" from
+        "what discount can you do on the extra seats", and the two mean opposite things about how the
+        customer feels.
+      note: >
+        Included because asking for money back is one of the few unambiguous behavioural escalations a
+        customer performs in writing, and because it points the attribution at `policy` — which is the
+        attribution most likely to be mishandled, since a policy grievance does not improve when the ticket
+        is resolved. Held at 5200: borrowed extractor, common alternative reading, and a wrong answer here
+        sends a de-escalation playbook at a commercial conversation. Corroboration only.
+
+    - id: cs.sent.no_recap_after_the_call
+      statement: A call happened, two days have passed, and we still owe the written follow-up.
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: '>=', value: 2}
+        - {path: thread.ball_in_court, op: '=', value: us}
+      yields:
+        confidence_bp: 6000
+        attribute: trajectory
+        value: deteriorating
+      evidence_fields: [meeting.start_at, thread.ball_in_court]
+      false_positive: >
+        A recurring internal standup attached to the same graph node. The calendar entry proves a meeting
+        was scheduled, not that it happened, not that the customer was in it, and not that this thread was
+        what it was about — so a weekly team sync fires this every week forever.
+      note: >
+        The call is the moment a customer decides we are taking it seriously; the silence in the two days
+        afterwards is the moment they revise that. Written against `meeting.start_at` rather than
+        `meeting.status` on purpose — the status enum's values are not documented in the substrate, and a
+        condition comparing against a guessed value evaluates False forever without ever erroring. Guessing
+        an enum is how a brain acquires patterns that look authored and are dead.
+
+    - id: cs.sent.pushback_at_the_answer
+      statement: An objection was extracted from the customer's own last message.
+      status: executable
+      when:
+        - {has_obs: objection}
+        - {path: thread.ball_in_court, op: '=', value: us}
+      yields:
+        confidence_bp: 5000
+        attribute: polarity
+        value: frustrated
+      evidence_fields: [thread.ball_in_court]
+      false_positive: >
+        A technical disagreement between competent people. "That is not what the header does" from a
+        customer's engineer is a healthy conversation and scores identically to "no, again" from a customer
+        on their fourth attempt.
+      note: >
+        Deliberately a coin flip, and included because it is honest about what we actually have rather than
+        because it is good. `objection` is a sales extractor; in a support thread it fires on "that didn't
+        work", "this isn't what I asked for", "no, again" — real pushback at the answer we gave — but
+        equally on the false positive above. At 5000 it can corroborate another signal and can never carry a
+        decision on its own. If a support_v1 pack ever ships a proper dissatisfaction kind, this pattern
+        should be deleted rather than tuned.
+
+    - id: cs.sent.audience_widening_on_our_ball
+      statement: The thread has grown to several participants while we are the ones who owe a reply.
+      status: executable
+      when:
+        - {fn: edge_count, op: '>=', value: 4}
+        - {path: thread.ball_in_court, op: '=', value: us}
+      yields:
+        confidence_bp: 4800
+        attribute: null
+      evidence_fields: [thread.ball_in_court]
+      false_positive: >
+        Our own swarm. `edge_count` is graph degree and counts the three colleagues we added to help,
+        identically to the three the customer added to build a record. A well-handled hard problem produces
+        exactly the same number as an escalation being assembled.
+      note: >
+        The weakest executable pattern in this file and it is included with reservations. Adding people to a
+        thread is escalation behaviour performed before anyone says "escalate", and catching it early is
+        worth a lot — but the threshold of 4 is arbitrary rather than derived, and it is a proxy for a
+        proxy. The real signal is participants added AFTER the first response, and that comparison the
+        substrate cannot make. 4800 says: notice, do not act.
+
+    - id: cs.sent.read_from_customer_words_only
+      statement: Sentiment computed over the customer's messages alone, with ours excluded.
+      status: needs_signal
+      yields:
+        confidence_bp: 8800
+        attribute: measured_on
+        value: customer_text
+      false_positive: >
+        A thread where the customer is quoting us back at themselves, or forwarding our own text with a
+        one-line comment. Author separation is a mechanical fix and it does not solve attribution: the words
+        are theirs by authorship and ours by origin.
+      requires_signals:
+        - kind: derived
+          name: derived.sentiment_by_author
+          owner_layer: L2
+          note: >
+            The correctness fix for every executable pattern above. `derived.sentiment` is thread-level, so
+            it mixes our apologies into their mood — which produces a metric that improves when agents write
+            more contritely and gets worse when they write efficiently. This is the most common defect in
+            commercial sentiment tooling and it is currently ours too. Every confidence in this file is
+            capped several hundred basis points below where it could sit purely because this signal does not
+            exist; shipping it is a re-calibration of the whole object, not an addition to it. It would also
+            populate `customer_message_share_bp` and, where the connector carries a sender identity, finally
+            give `scope_level` something better than `thread_aggregate`.
+
+    - id: cs.sent.hostile_language_first_occurrence
+      statement: Overtly angry or abusive language appears from a customer whose baseline is not abusive.
+      status: needs_signal
+      yields:
+        confidence_bp: 7800
+        attribute: polarity
+        value: hostile
+      false_positive: >
+        A quoted stack trace, an error string containing profanity, or a customer pasting the abusive
+        message their own end-user sent them. Profanity detectors are notoriously literal and support
+        threads are full of pasted text.
+      requires_signals:
+        - kind: obs_kind
+          name: angry_language
+          owner_layer: L2
+          note: >
+            Worth having and worth distrusting in equal measure. The valuable part is not the classification,
+            it is the TIMESTAMP of the FIRST occurrence in a relationship — that moment is the strongest
+            de-escalation trigger in support and nothing currently records it.
+        - kind: baseline
+          name: customer_tone_baseline
+          owner_layer: L2
+          note: >
+            Per-person normal tone. Without it the abrasive customer is flagged hostile every week until the
+            team stops reading the field, which is the failure mode that kills sentiment features. Note the
+            inversion this baseline also unlocks: an abrasive customer who suddenly becomes polite is the
+            most alarming reading in this object, and no absolute scale can express it.
+
+    - id: cs.sent.calm_and_leaving
+      statement: Disengaged, polite, and inside the renewal window. The quiet exit.
+      status: needs_signal
+      yields:
+        confidence_bp: 7500
+        attribute: trajectory
+        value: collapsed
+        corroborates: [cs.sent.dangerous_calm]
+      false_positive: >
+        A seasonal user. Plenty of accounts go quiet for reasons that have nothing to do with us — a
+        finance team in close, a school in summer — and renewal proximity is a calendar fact, not evidence
+        about them. Coinciding with a renewal makes a quiet period expensive to ignore, not more likely to
+        be churn.
+      requires_signals:
+        - kind: fact_path
+          name: account.renewal_at
+          owner_layer: L1
+          note: >
+            The context that turns a benign quiet into an emergency. `dangerous_calm` above is stuck at 6000
+            precisely because it cannot see this: the same collapsed engagement is a shrug eleven months
+            before renewal and a five-alarm fire six weeks before it. One date changes the whole read.
+        - kind: fact_path
+          name: account.health_score
+          owner_layer: L1
+          note: >
+            Corroboration from outside the support thread, so a quiet customer who is using the product
+            heavily is not confused with one who has stopped. This is the one signal that resolves
+            dangerous_calm's false positive, which is why it is worth more than its position here suggests.
+        - kind: obs_kind
+          name: self_service_abandoned
+          owner_layer: L2
+          note: >
+            The behavioural tell of the calm leaver: they still have the problem, they have stopped asking us
+            about it, and they went looking themselves and gave up.
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+
+  - source: derived
+    signal: observation balance across the thread
+    path: derived.sentiment
+    fills: [sentiment_index_bp, polarity]
+    reliability_bp: 4500
+    description: >
+      The only direct sentiment signal available. Node-scoped, author-blind and calibrated on commercial
+      correspondence, so it reads a furious but professionally worded enterprise admin as roughly neutral.
+
+  - source: derived
+    signal: two-way volume against the prior fortnight
+    path: derived.engagement
+    fills: [engagement_trend, trajectory]
+    reliability_bp: 6000
+    description: >
+      The quiet customer's only tell. More reliable than the sentiment balance because volume cannot be
+      polite, and less interpretable because it does not say why.
+
+  - source: derived
+    signal: overall trajectory of the relationship
+    path: derived.momentum
+    fills: [relationship_momentum]
+    reliability_bp: 3500
+    description: >
+      Built for deal progression and borrowed here. Measures correspondence tempo, so a fast-moving argument
+      scores well on it.
+
+  - source: email
+    signal: when the customer last wrote
+    path: thread.last_inbound
+    fills: [last_inbound_at, silence_days, read_at]
+    reliability_bp: 9000
+
+  - source: email
+    signal: who owes the next message
+    path: thread.ball_in_court
+    fills: [ball_in_court]
+    reliability_bp: 8000
+    description: >
+      Computed from correspondence only. A customer answered by phone looks like silence to it, which is the
+      single most common way the executable patterns here are wrong.
+
+  - source: derived
+    signal: reply latency against this customer's learned normal
+    fills: [reply_latency_ratio]
+    reliability_bp: 7000
+    description: >
+      Baseline `reply_cadence` — the only learned baseline in the substrate, and the one that makes silence
+      readable instead of merely long.
+
+  - source: email
+    signal: promises made in writing and their due dates
+    path: commitment.due_at
+    fills: [broken_promise_count, about_uncertainty, attributed_to]
+    reliability_bp: 8500
+    description: >
+      The strongest input on this object, because it is evidence about our own conduct and needs no model at
+      all to interpret.
+
+  - source: calendar
+    signal: a support call happened and was or was not followed up
+    path: meeting.start_at
+    fills: [trajectory]
+    reliability_bp: 5000
+
+  - source: chat
+    signal: live tone, interruption, repetition and abandonment within a session
+    fills: [expression_style, effort_grievance]
+    reliability_bp: 5500
+    description: >
+      No chat connector projects into typed Layer 2 facts yet. Chat is where sentiment is most legible and
+      least captured, and chat abandonment is the closest thing support has to a real-time unhappiness meter.
+
+  - source: phone
+    signal: raised volume, talk-over, call abandonment
+    fills: [expression_style, blame_directed_at]
+    reliability_bp: 6500
+    description: >
+      Voice carries what written text is edited to hide. Requires transcription plus prosody; nothing in the
+      pipeline touches it.
+
+  - source: survey
+    signal: CSAT, CES and NPS verbatims
+    fills: [effort_grievance, attributed_to]
+    reliability_bp: 7000
+    description: >
+      Corroboration after the fact and calibration data, never the read itself. The verbatim is worth more
+      than the number attached to it.
+
+  - source: ticket
+    signal: reopen count, repeat contact, channel switching, reassignments
+    fills: [repeat_frustration, contact_count_window, channel_switch]
+    reliability_bp: 7500
+    description: >
+      The behavioural half of this object. Entirely absent from the substrate — see the needs_signal patterns.
+
+  - source: telemetry
+    signal: product usage collapsing alongside an open thread
+    fills: [trajectory]
+    reliability_bp: 6500
+    description: >
+      The only source that can distinguish a quietly satisfied customer from a quietly departing one, and
+      therefore the single thing that would move `cs.sent.dangerous_calm` off 6000.
+
+  - source: help_center
+    signal: articles read and self-service sessions abandoned before contact
+    fills: [self_service_abandoned, effort_grievance]
+    reliability_bp: 4000
+    description: >
+      The only route by which this object can see a customer who never wrote to us. Circumstantial and
+      cheap to collect.
+
+  - source: status_page
+    signal: whether this frustration coincides with a public incident
+    fills: [is_incident_correlated]
+    reliability_bp: 5000
+    description: >
+      Feeds attribution and suppression, never polarity. During a major incident sentiment is correlated
+      across the whole base and says nothing about any one relationship.
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+
+  - name: polarity_read
+    type: string
+    description: Current level, with its provenance attached. Never emitted without trajectory_read.
+    derived_from: [polarity, read_confidence_bp, measured_on, scope_level]
+    consumed_by: [L4.reasoning_unit]
+
+  - name: trajectory_read
+    type: string
+    description: Direction and window. The half of the read that decides which action is even available.
+    derived_from: [trajectory, prior_polarity, trajectory_window_days, engagement_trend]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+
+  - name: read_confidence_bp
+    type: integer
+    description: >
+      Confidence in the read itself, not the negativity of it. Drops to zero rather than degrading when
+      measured_on is our_text, and is capped while scope_level is thread_aggregate.
+    derived_from: [read_confidence_bp, measured_on, sample_size_messages, scope_level, customer_message_share_bp]
+    consumed_by: [L4.reasoning_unit]
+
+  - name: unhappy_subject
+    type: string
+    description: >
+      WHO is unhappy, when we can say. Emitted as null with scope_level = thread_aggregate far more often
+      than anyone downstream would like, and emitting the null honestly is better than emitting the account.
+    derived_from: [subject_ref, scope_level]
+    consumed_by: [L4.reasoning_unit, L5.communication_planning]
+
+  - name: de_escalation_required
+    type: boolean
+    description: True only when a negative level meets a non-recovering trajectory and behavioural corroboration.
+    derived_from: [de_escalation_required]
+    consumed_by: [L4.decision_maker]
+
+  - name: tone_directive
+    type: string
+    description: >
+      How to write to this person right now — length, formality, whether to apologise again. Read by
+      Layer 5.2, never by Layer 4: it is a rendering instruction, not a decision input.
+    derived_from: [polarity, expression_style, formality_shift, baseline_temperament, language_locale]
+    consumed_by: ["L5.2.channel_planner"]
+
+  - name: update_deadline_hours
+    type: integer
+    description: >
+      When the next substantive update must land to hold the recovery window open. The output Layer 5 can
+      actually schedule, and the one that converts a feeling into a calendar entry.
+    derived_from: [recovery_window_hours, about_uncertainty, broken_promise_count]
+    consumed_by: [L5.execution_planning, L5.communication_planning]
+
+  - name: churn_precursor
+    type: boolean
+    description: Collapsed trajectory regardless of polarity. The quiet ones.
+    derived_from: [trajectory, engagement_trend, self_service_abandoned]
+    consumed_by: [L4.reasoning_unit]
+
+  - name: survey_suppression
+    type: boolean
+    description: Do not send a satisfaction survey into an unresolved hostile thread.
+    derived_from: [survey_safe]
+    consumed_by: [L5.communication_planning]
+
+  - name: reassign_owner_signal
+    type: boolean
+    description: >
+      True when blame is directed at the individual handling the thread. A change of person, not a change
+      of queue — routing without renaming the owner achieves nothing.
+    derived_from: [blame_directed_at, attributed_to, polarity]
+    consumed_by: [L4.decision_maker, L5.execution_planning]
+
+  - name: inferred_vs_stated_delta
+    type: integer
+    description: >
+      Difference between what this object inferred and what the survey later said. The only thing that
+      calibrates every pattern above.
+    derived_from: [polarity, sentiment_index_bp, read_at]
+    consumed_by: [L6.learning_unit]
+
+# ── 9 · Preconditions ────────────────────────────────────────────────────────────────────
+# `block` withholds the read entirely. `degrade` still produces advice at lower confidence. The
+# difference is the whole of Layer 3 strategy S8 and it is a real decision every time: this object
+# blocks on contamination and on absence of the customer's voice, because a wrong read is worse than
+# none — and degrades on missing context, because a read without renewal dates is merely incomplete.
+preconditions:
+
+  - id: cs.sent.customer_text_exists
+    statement: "At least one message authored by the customer exists in the measured sample."
+    requires: [measured_on, sample_size_messages]
+    when: [{exists: thread.last_inbound}]
+    if_unmet: >
+      BLOCK. Report polarity = unreadable with unreadable_reason = no_customer_text. A read taken over our
+      own outbound is not a weak measurement of them, it is an accurate measurement of us, and publishing it
+      creates a metric that rewards apologetic writing. This is the one precondition that must never degrade.
+
+  - id: cs.sent.sample_is_readable
+    statement: "The sample contains enough customer text to distinguish a mood from a sentiment."
+    requires: [sample_size_messages, customer_message_share_bp]
+    if_unmet: >
+      BLOCK. Report unreadable with unreadable_reason = too_few_messages. The alternative — scoring a
+      two-word acknowledgement as neutral — manufactures a population of fake neutrals that swamps every
+      aggregate and makes the whole field look calmer than the queue is.
+
+  - id: cs.sent.read_is_fresher_than_the_last_message
+    statement: "The read was taken at or after the customer's most recent message."
+    requires: [read_at, last_inbound_at]
+    when: [{exists: thread.last_inbound}]
+    if_unmet: >
+      BLOCK and expire. A read taken before their last message is not evidence about the present. Carrying
+      it forward is worse than having nothing, because a stale read looks current and nobody re-checks a
+      populated field.
+
+  - id: cs.sent.subject_is_identified_or_scope_is_declared
+    statement: "Either the read is attributed to a named person, or scope_level honestly says it is not."
+    requires: [subject_ref, scope_level]
+    if_unmet: >
+      DEGRADE to scope_level = thread_aggregate and cap read_confidence_bp at 7500. This is the normal case
+      today, not an exception. It permits thread-level advice — tone, cadence, whether to chase — and
+      forbids anything that names an individual or rolls up to an account.
+
+  - id: cs.sent.baseline_exists_for_this_person
+    statement: "This customer has enough history for a temperament and cadence baseline."
+    requires: [baseline_temperament, reply_latency_ratio]
+    if_unmet: >
+      DEGRADE. Fall back to absolute silence thresholds and suppress hostility classifications derived from
+      language alone. A first-contact customer has no normal to deviate from, and treating an abrupt
+      stranger as hostile is how the field loses its audience in week one.
+
+  - id: cs.sent.locale_is_supported
+    statement: "The read was produced by a model calibrated for this language and locale."
+    requires: [language_locale, model_version]
+    if_unmet: >
+      BLOCK for polarity, DEGRADE to behaviour_only. Politeness norms differ systematically and always in
+      the same direction, so an uncalibrated read on a high-context language reports the most reserved
+      customers as the happiest. Behavioural fields — silence, latency, repeat contact — remain valid and
+      should still be published.
+
+  - id: cs.sent.no_declared_incident_in_window
+    statement: "This read does not fall inside a declared major incident affecting this account."
+    requires: [is_incident_correlated, customer_support.obj.core.incident]
+    if_unmet: >
+      DEGRADE. Publish the read for tone and cadence purposes and suppress every account-level consequence —
+      churn flags, risk escalation, renewal briefings — until after resolution, then re-read. During an
+      incident the whole affected base moves together and none of the movement is about the relationship.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+
+  - id: cs.sent.not_a_survey_answer
+    statement: >
+      Sentiment may never be reported as, or written from, a satisfaction score.
+    hard: true
+    why: >
+      One is inferred during and one is stated after. The disagreement between them is the only calibration
+      this object has, and merging the two destroys the measurement in the act of appearing to improve it.
+
+  - id: cs.sent.our_text_cannot_measure_them
+    statement: >
+      A read whose sample includes our own messages may not be published as customer sentiment.
+    hard: true
+    why: >
+      This is a correctness constraint, not a quality one. A contaminated read does not point at their mood
+      with more noise; it points at ours, and it moves in the wrong direction — it improves when we write
+      more apologetically.
+
+  - id: cs.sent.never_customer_visible
+    statement: >
+      An inferred sentiment label is never a customer-visible field and never appears in outbound copy.
+    hard: true
+    why: >
+      Telling a customer the system has classified them as hostile is the fastest available way to make it
+      true. This also governs screen-sharing, exported reports and anything a customer's own procurement
+      team could request.
+
+  - id: cs.sent.no_agent_performance_scoring
+    statement: >
+      Sentiment must not be attributed to an individual agent as a performance metric.
+    hard: true
+    why: >
+      Well-run queues route the angriest customers to the strongest agents, so the metric inverts and
+      punishes exactly the behaviour it should reward. The second-order effect is worse than the first:
+      agents learn to avoid hard tickets, and the hard tickets are where the value is.
+
+  - id: cs.sent.one_message_is_not_a_read
+    statement: >
+      A single message produces a mood, not a sentiment. Reads below the minimum sample must be reported as
+      unreadable rather than neutral.
+    hard: true
+    why: >
+      Fake neutrals are not a rounding error. In a real queue they are the majority of reads, and they make
+      every aggregate look like a healthy middle when the middle is simply unmeasured.
+
+  - id: cs.sent.no_account_level_average
+    statement: >
+      Several individual reads may not be averaged into one account sentiment value.
+    hard: true
+    why: >
+      The average is dominated by the many contented users and hides the one procurement lead who is about
+      to escalate. Where an account-level figure is genuinely needed, publish the worst individual read
+      together with its subject, never the mean.
+
+  - id: cs.sent.compare_within_locale_only
+    statement: >
+      Reads may be compared within a language and locale and not across one.
+    hard: false
+    why: >
+      Politeness norms differ systematically and always in the same direction, so cross-locale aggregates
+      rank the most reserved cultures as the happiest customers. Soft rather than hard because a
+      single-locale organisation can safely ignore it and a global one cannot.
+
+  - id: cs.sent.incident_correlation_is_not_relationship
+    statement: >
+      During a declared major incident, sentiment across the affected base moves together and carries no
+      information about any individual relationship. Account-level flags raised in that window must be
+      re-evaluated after resolution, not carried forward.
+    hard: false
+    when: [{has_obs: timeline_slip}]
+    why: >
+      Soft because the incident is real and the anger is real; what is unsound is attributing it to the
+      relationship. The `when` clause is the nearest thing the substrate has to an incident marker and is
+      openly a proxy — `incident.status` is the real ask.
+
+  - id: cs.sent.model_version_breaks_the_series
+    statement: >
+      A trend line may not be drawn across a change of model_version.
+    hard: false
+    why: >
+      A silent classifier upgrade presents as a company-wide mood swing, and an operator will spend a week
+      investigating a service problem that is a deployment. Cheap to prevent and almost never prevented.
+
+# ── 11 · Business Rules ──────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: cs.sent.trajectory_must_accompany_polarity
+    statement: >
+      A sentiment read published without a trajectory is incomplete and must not be routed to a
+      de-escalation decision.
+    then: require_trajectory_with_read
+    severity: blocking
+    why: >
+      Negative-and-recovering and negative-and-deteriorating require opposite actions, and a bare polarity
+      cannot distinguish them. This is the rule the whole object exists to enforce.
+
+  - id: cs.sent.our_text_is_not_their_sentiment
+    statement: >
+      A read whose measured_on is our_text must be discarded, not down-weighted.
+    then: discard_read
+    severity: blocking
+    why: >
+      Down-weighting keeps a wrong number in the average. It is a measurement of our own tone and it
+      improves whenever agents write more apologetically, so any weight above zero pollutes the aggregate in
+      a predictable direction.
+
+  - id: cs.sent.never_substitute_a_survey_answer
+    statement: >
+      A Satisfaction Score must never be written into polarity, and polarity must never be reported as a
+      satisfaction result.
+    then: reject_write
+    severity: blocking
+    why: >
+      One is inferred during, the other is stated after. The gap between them is this object's only honest
+      calibration signal and merging them destroys it — permanently, because once written the provenance is
+      unrecoverable.
+
+  - id: cs.sent.silence_is_not_neutral
+    statement: >
+      When we owe the reply and the customer has been silent for days, polarity must not be reported as
+      neutral.
+    when:
+      - {path: thread.ball_in_court, op: '=', value: us}
+      - {fn: days_since, path: thread.last_inbound, op: '>=', value: 5}
+    then: suppress_neutral_read
+    severity: warning
+    why: >
+      Absence of complaint is not presence of contentment. The customer who stops chasing has usually
+      stopped expecting, and neutral is the one label that will stop anybody looking.
+
+  - id: cs.sent.broken_commitment_overrides_language
+    statement: >
+      While a commitment to this customer is past due, the trajectory must be read as deteriorating
+      regardless of how pleasant the last message was.
+    when: [{fn: days_since, path: commitment.due_at, op: '>', value: 0}]
+    then: force_trajectory_deteriorating
+    severity: warning
+    why: >
+      What we did outranks what they wrote. Customers are polite about the first missed date and narrate the
+      second, and the politeness in between is the least reliable signal in the file.
+
+  - id: cs.sent.hostile_needs_behavioural_corroboration
+    statement: >
+      A hostile classification derived from language alone, with no behavioural corroboration — silence,
+      repeat contact, channel switch, audience widening — is advisory only and must not by itself route a
+      customer to an escalation queue.
+    then: downgrade_to_advisory
+    severity: warning
+    why: >
+      Rule 11: only independent evidence raises confidence. Language and behaviour are the two genuinely
+      independent instruments this object has, and requiring both is what stops a profanity detector
+      manufacturing escalations.
+
+  - id: cs.sent.apology_does_not_close_uncertainty
+    statement: >
+      When about_uncertainty is true, a reply containing no specific next update time must not be recorded
+      as having addressed the sentiment.
+    then: do_not_mark_addressed
+    severity: advisory
+    why: >
+      It addressed the etiquette. Marking it as handled is how a thread accumulates three apologies and no
+      information, which is the sequence that converts frustrated into hostile.
+
+  - id: cs.sent.read_expires_at_next_inbound
+    statement: >
+      A read taken before the customer's most recent message is stale and must be treated as absent rather
+      than carried forward.
+    when: [{exists: thread.last_inbound}]
+    then: expire_read
+    severity: warning
+    why: >
+      Stale sentiment is worse than none because it looks current, and a populated field is never
+      re-examined by the person reading the dashboard.
+
+  - id: cs.sent.negative_read_carries_to_the_account_briefing
+    statement: >
+      A negative read within the trailing window is surfaced in the next account or renewal briefing,
+      together with its subject and its trajectory.
+    then: attach_to_account_briefing
+    severity: advisory
+    why: >
+      Support is the earliest sensor of relationship trouble and is routinely the last function consulted
+      before a renewal. The trajectory must travel with the read, or the briefing turns a customer who
+      recovered into a customer who is a risk — see the recovery-paradox exception, which suspends this rule
+      exactly there.
+
+  - id: cs.sent.no_survey_into_a_hostile_thread
+    statement: >
+      Satisfaction survey dispatch is suppressed while polarity is hostile and the ticket is unresolved.
+    when: [{path: thread.ball_in_court, op: '=', value: us}]
+    then: suppress_survey
+    severity: warning
+    why: >
+      It collects a score we already knew and spends the single ask we had on this relationship, at the
+      moment most likely to confirm to the customer that nobody is reading.
+
+# ── 12 · Decision Factors ────────────────────────────────────────────────────────────────
+# Sums to exactly 10000. The ordering is the argument: trajectory over level, behaviour over language,
+# provenance over both, and account value last so that small customers stay visible.
+decision_factors:
+
+  - name: trajectory_direction
+    weight_bp: 2500
+    direction: context
+    description: >
+      The heaviest factor and deliberately `context` rather than `increases` — it can point either way and
+      its whole value is that it points. A negative level with an upward trajectory should REDUCE urgency,
+      which no level-only scoring system can ever do.
+    reads: [trajectory, prior_polarity, prior_read_at, trajectory_magnitude_bp, trajectory_window_days]
+
+  - name: behavioural_corroboration
+    weight_bp: 1800
+    direction: increases
+    description: >
+      Silence, repeat contact, channel switch, audience widening, abandoned self-service. Weighted above the
+      language read on purpose: behaviour cannot be polite. This is the factor that catches the customer
+      whose words are fine.
+    reads: [silence_days, reply_latency_ratio, repeat_frustration, contact_count_window, channel_switch,
+            audience_widening, engagement_trend, self_service_abandoned]
+
+  - name: measurement_provenance
+    weight_bp: 1500
+    direction: context
+    description: >
+      Whose text, how much of it, which locale, which model, against what temperament. It belongs in the
+      weighting rather than in a footnote because a contaminated read at high polarity should lose to a clean
+      read at moderate polarity every time.
+    reads: [measured_on, customer_message_share_bp, sample_size_messages, language_locale,
+            baseline_temperament, model_version, read_confidence_bp, scope_level]
+
+  - name: expressed_intensity
+    weight_bp: 1500
+    direction: increases
+    description: >
+      The language read itself, plus explicit escalation vocabulary and the shift in register. Real, ranked
+      below behaviour, and the only factor a customer can deliberately manipulate.
+    reads: [polarity, sentiment_index_bp, expression_style, formality_shift, escalation_language]
+
+  - name: our_own_conduct
+    weight_bp: 1200
+    direction: increases
+    description: >
+      Broken promises and unanswered messages where the ball was ours. Separated from attribution because it
+      is the only part of this object we fully control, and because a sentiment problem we caused has a
+      different remedy from one we merely inherited.
+    reads: [broken_promise_count, ball_in_court, last_inbound_at]
+
+  - name: attribution_and_effort
+    weight_bp: 900
+    direction: context
+    description: >
+      Not severity but treatability. Uncertainty-driven anger is the cheapest to move and the most often
+      mistreated with sympathy instead of a timestamp; an effort grievance is the most predictive of what
+      happens at renewal and the least likely to be mentioned at all.
+    reads: [attributed_to, about_uncertainty, blame_directed_at, effort_grievance, recovery_window_hours]
+
+  - name: account_consequence
+    weight_bp: 600
+    direction: increases
+    description: >
+      What it costs if this read is right. Deliberately the smallest weight — letting account value dominate
+      a sentiment read is how small customers become invisible and how the metric stops being about feeling
+      at all.
+    reads: [churn_risk_ref, escalation_likelihood_bp, public_exposure, account_ref]
+
+# ── 13 · Evidence ────────────────────────────────────────────────────────────────────────
+# `independent_of` is the graph Rule 11 traverses. It is authored conservatively: anything that
+# ultimately reads the same correspondence is NOT independent of anything else that does, however
+# different the processing looks.
+evidence:
+
+  - source: survey
+    strength_bp: 8500
+    decays: true
+    independent_of: [email, chat, derived, telemetry, ticket]
+    description: >
+      A written verbatim is the customer's own account of how they felt. The strongest thing we can get — and
+      it is late, self-selected and about a moment that has already passed. The delighted and the furious
+      answer; the middle does not, which is exactly where churn lives.
+
+  - source: call_recording
+    strength_bp: 8000
+    decays: true
+    independent_of: [email, ticket, derived, survey]
+    description: >
+      Voice carries what edited text conceals. Expensive to obtain, almost never available at the moment the
+      read is needed, and the only source that shows hesitation.
+
+  - source: ticket
+    strength_bp: 7000
+    decays: true
+    independent_of: [email, chat, survey, telemetry]
+    description: >
+      Reopens, repeat contact, channel switches, reassignments. Behaviour rather than language, and behaviour
+      cannot be polite. Independent of the thread because it records what the customer DID rather than what
+      they wrote.
+
+  - source: email
+    strength_bp: 6000
+    decays: true
+    independent_of: [survey, telemetry, call_recording, ticket]
+    description: >
+      Written tone. Real evidence, and the single most easily faked in both directions — by them out of
+      courtesy, by us out of anxiety. Explicitly NOT independent of `derived`, which is computed from it.
+
+  - source: chat
+    strength_bp: 5500
+    decays: true
+    independent_of: [survey, telemetry, ticket]
+    description: >
+      Closer to speech than email and therefore less edited. Short turns make any per-message classifier
+      unreliable, and an abandoned session mid-answer is one of the strongest effort signals available.
+
+  - source: derived
+    strength_bp: 4500
+    decays: true
+    independent_of: [survey, telemetry, ticket, call_recording]
+    description: >
+      Engine-computed observation balance. Corroborating only, and capped here specifically because it cannot
+      yet separate our words from theirs. Not independent of email or chat — it is a function of them.
+
+  - source: telemetry
+    strength_bp: 4000
+    decays: true
+    independent_of: [email, chat, derived, survey, ticket]
+    description: >
+      Usage collapse alongside an open thread. Circumstantial, lagging, and the only witness the silent
+      customer leaves. The most genuinely independent instrument on this list, which is why it would move
+      `dangerous_calm` further than any language improvement could.
+
+  - source: help_center
+    strength_bp: 3500
+    decays: true
+    independent_of: [email, chat, derived, survey]
+    description: >
+      Article views and abandoned self-service sessions before contact. The only evidence about a customer who
+      never wrote to us at all.
+
+  - source: status_page
+    strength_bp: 2500
+    decays: false
+    independent_of: [email, chat, survey, derived, ticket]
+    description: >
+      Explains attribution and licenses suppression; says nothing about polarity. Useful for deciding what the
+      feeling is about and useless for deciding how strong it is. Does not decay — an incident that happened
+      stays happened.
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+
+  - name: read_accuracy
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: >
+      Share of inferred reads later agreed with by the survey answer that arrived. The only honest score this
+      object has, and structurally biased — it can only be computed on the minority who answer.
+    calibrates: [cs.sent.engine_balance_negative, cs.sent.engine_balance_strongly_negative,
+                 cs.sent.pushback_at_the_answer, cs.sent.leaving_language_proxy]
+
+  - name: recovery_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: >
+      Share of negative reads that became non-negative inside the recovery window. The number that actually
+      measures de-escalation, and almost nobody has it because almost nobody stores a trajectory.
+    calibrates: [cs.sent.trajectory_recovering, cs.sent.promise_past_due_while_we_owe]
+
+  - name: silent_negative_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: >
+      Share of negative reads that never produced a complaint. The entire reason this object exists rather
+      than a complaints queue.
+    calibrates: [cs.sent.dangerous_calm, cs.sent.calm_and_leaving, cs.sent.gone_quiet_against_own_cadence]
+
+  - name: false_hostile_rate
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: >
+      Hostile classifications a human reviewer overturned. Watched harder than accuracy: a false hostile
+      routes a calm customer into an escalation path and manufactures the sentiment it claimed to find.
+    calibrates: [cs.sent.engine_balance_strongly_negative, cs.sent.hostile_language_first_occurrence]
+
+  - name: read_coverage
+    unit: percent
+    direction: target_band
+    owner_layer: L3
+    description: >
+      Share of live conversations carrying any read at all. A target band and not a maximum: it rises for the
+      wrong reason if unreadable messages are scored neutral, so it is only meaningful next to
+      unreadable_share.
+
+  - name: unreadable_share
+    unit: percent
+    direction: target_band
+    owner_layer: L3
+    description: >
+      Share of conversations honestly reported as unreadable. Should be uncomfortably high in a real queue.
+      A number near zero means the fake-neutral failure is present, not that the model is good.
+
+  - name: contaminated_read_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L3
+    description: >
+      Reads with measured_on of our_text or mixed. Today this is effectively all of them, and stating it as a
+      metric keeps that fact visible instead of embarrassing.
+    calibrates: [cs.sent.read_from_customer_words_only]
+
+  - name: time_to_first_negative_read
+    unit: hours
+    direction: lower_is_better
+    owner_layer: L2
+    description: >
+      How long after the first customer message the read turns. Shorter is better and it measures the
+      pipeline, not the customer.
+
+  - name: attributed_read_share
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L3
+    description: >
+      Share of reads attached to a named person rather than to a thread. Today near zero. It is the single
+      number that would tell us whether the author-separation work landed.
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+
+  - id: cs.sent.turned_negative
+    name: Sentiment Turned Negative
+    emitted_when: [{path: derived.sentiment, op: '<', value: 0.0}]
+    payload: [polarity, trajectory, read_confidence_bp, measured_on, scope_level]
+    severity: notable
+    description: >
+      The obvious event and the least informative one. Carried with scope_level so the consumer can see it is
+      about a thread rather than a person.
+
+  - id: cs.sent.went_quiet
+    name: Customer Went Quiet
+    emitted_when: [{path: derived.engagement, op: '<=', value: 0.4}]
+    payload: [silence_days, ball_in_court, engagement_trend, trajectory]
+    severity: notable
+    invalidates: [trajectory, read_confidence_bp]
+    description: >
+      Fires on absence, which is the only reason the calm leaver is visible at all. Most support tooling has
+      no event for nothing happening. Invalidates the standing trajectory because a read taken while the
+      customer was still engaged says nothing about one who has stopped.
+
+  - id: cs.sent.recovering
+    name: Sentiment Recovering
+    payload: [prior_polarity, polarity, trajectory_window_days, trajectory_magnitude_bp]
+    severity: notable
+    description: >
+      The event almost nobody instruments, and the only evidence that a de-escalation actually worked. It
+      cannot be emitted today because derived.sentiment is a level — see cs.sent.trajectory_recovering.
+
+  - id: cs.sent.promise_broken
+    name: Promise To Customer Broken
+    emitted_when: [{fn: days_since, path: commitment.due_at, op: '>', value: 0}]
+    payload: [broken_promise_count, attributed_to, about_uncertainty, recovery_window_hours]
+    severity: critical
+    invalidates: [recovery_window_hours]
+    description: >
+      The most preventable sentiment event in the domain, and the one that fires on our own conduct rather
+      than on their mood. Invalidates the recovery window because the window shrinks at exactly this moment
+      and any previously computed value is now optimistic.
+
+  - id: cs.sent.competitor_mentioned
+    name: Competitor Named In A Support Thread
+    emitted_when: [{has_obs: competitor}]
+    payload: [attributed_to, polarity, trajectory]
+    severity: notable
+
+  - id: cs.sent.hostile_detected
+    name: Hostility Detected
+    payload: [expression_style, escalation_language, baseline_temperament, blame_directed_at]
+    severity: critical
+    description: >
+      Deliberately carries baseline_temperament and blame_directed_at in the payload, so the consumer can see
+      whether this is a CHANGE or simply this person, and whether the correct response is a different owner
+      rather than a faster reply.
+
+  - id: cs.sent.register_shifted_formal
+    name: Customer Became Noticeably More Formal
+    payload: [formality_shift, expression_style, baseline_temperament]
+    severity: notable
+    description: >
+      Politeness went up and risk went up with it. The clearest textual escalation warning there is, and the
+      one most models score as an improvement. Not emittable today — it needs a per-person register baseline.
+
+  - id: cs.sent.read_expired
+    name: Sentiment Read Expired
+    payload: [read_at, last_inbound_at, unreadable_reason]
+    severity: info
+    invalidates: [polarity, sentiment_index_bp, trajectory, read_confidence_bp]
+    description: >
+      Emitted rather than silently overwritten, because a dashboard showing a week-old read is more harmful
+      than one showing nothing. Invalidates the whole read rather than just the level — a stale trajectory is
+      as misleading as a stale polarity and is trusted more.
+
+  - id: cs.sent.incident_window_opened
+    name: Read Suppressed For Incident Correlation
+    payload: [is_incident_correlated, scope_level, polarity]
+    severity: info
+    invalidates: [churn_risk_ref, escalation_likelihood_bp]
+    description: >
+      The suppression is itself an event so that it is auditable. Invalidates the downstream consequences
+      rather than the read, because the feeling is real and only its attribution is unsound.
+
+# ── 16 · Actions ─────────────────────────────────────────────────────────────────────────
+# Naming an action here does not authorise it. Layer 5 still plans and Layer 5.2 still gates.
+actions:
+
+  - id: cs.sent.give_a_specific_next_update
+    name: Give a specific next update
+    actor: human
+    preconditions: [{path: thread.ball_in_court, op: '=', value: us}]
+    effect: >
+      Name a time and a person. Uncertainty-driven anger responds to a timestamp and does not respond to
+      sympathy; this is the highest-yield and lowest-cost move in the whole domain.
+    cost: trivial
+    reversible: false
+    description: >
+      The action to reach for first whenever about_uncertainty is true. It costs one sentence and it is
+      declined mainly because agents fear committing to a date they might miss — which is the correct fear
+      and the reason the date must be one they can keep rather than one the customer wants.
+
+  - id: cs.sent.stop_apologising
+    name: Stop apologising and change the substance
+    actor: human
+    effect: >
+      The third apology without new information reads as stalling and is what converts frustrated into
+      hostile. An apology is a one-time instrument.
+    cost: trivial
+    reversible: true
+
+  - id: cs.sent.call_instead_of_writing
+    name: Call instead of writing
+    actor: human
+    effect: >
+      Voice collapses hostility faster than any written sequence, and it also removes the paper trail the
+      customer was building — which is a reason it is sometimes refused, and that refusal is itself a signal
+      worth recording.
+    cost: low
+    reversible: false
+
+  - id: cs.sent.probe_the_quiet_one
+    name: Check in on a disengaged customer
+    actor: human
+    preconditions: [{path: derived.engagement, op: '<=', value: 0.4}]
+    effect: >
+      One short, non-transactional message. The only available response to dangerous_calm, and the reason
+      that pattern is allowed to be uncertain — the action is cheap enough to be wrong about.
+    cost: trivial
+    reversible: true
+
+  - id: cs.sent.hand_to_a_named_owner
+    name: Hand to a named owner
+    actor: human
+    effect: >
+      A change of person, not a change of queue. Hostility aimed at an individual rarely recovers with that
+      individual still on the thread, and routing without renaming the owner achieves nothing.
+    cost: moderate
+    reversible: false
+    description: >
+      Gated on blame_directed_at = this_agent rather than on polarity. Reassigning a customer who is angry at
+      the product simply costs them a re-explanation, which is itself an effort grievance.
+
+  - id: cs.sent.suppress_survey
+    name: Suppress the satisfaction survey
+    actor: system
+    effect: >
+      Do not survey an unresolved hostile thread. It collects a score we already knew and spends the single
+      ask we had on this relationship.
+    cost: trivial
+    reversible: true
+
+  - id: cs.sent.recheck_after_next_inbound
+    name: Re-read after the next customer message
+    actor: system
+    effect: >
+      Never re-read after our own reply. Reading sentiment immediately after we write measures our tone and
+      reliably shows improvement we did not cause.
+    cost: trivial
+    reversible: true
+
+  - id: cs.sent.hold_the_cadence
+    name: Keep the update cadence unchanged
+    actor: human
+    effect: >
+      The correct action on a recovering trajectory, and the hardest one to take because it looks like doing
+      nothing. Introducing a new owner or a new gesture here resets the relationship and undoes the recovery
+      that was already working.
+    cost: trivial
+    reversible: true
+
+  - id: cs.sent.suppress_account_flag_during_incident
+    name: Hold account-level risk flags during an incident window
+    actor: system
+    preconditions: [{has_obs: timeline_slip}]
+    effect: >
+      Hold, then re-read after resolution. Raising them during the window flags every affected account at once
+      and the flags outlive the incident by longer than the incident lasted.
+    cost: trivial
+    reversible: true
+
+  - id: cs.sent.log_the_calibration_pair
+    name: Record inferred read against the later survey answer
+    actor: system
+    effect: >
+      The only mechanism by which any confidence in this file becomes evidence-based rather than argued.
+      Cheap, boring, and almost never built.
+    cost: trivial
+    reversible: true
+
+# ── 17 · Dependencies ────────────────────────────────────────────────────────────────────
+# A relationship is a fact about the world; a dependency is a fact about the compile. These are the
+# artifacts and objects without which the reasoning above does not stand up.
+dependencies:
+
+  - target: customer_support.obj.core.conversation
+    kind: requires
+    strength: hard
+    description: >
+      There is nothing to read without the thread. Every executable pattern here resolves against
+      correspondence, and a compile with no conversation produces `unreadable` rather than a weak read.
+
+  - target: customer_support.obj.core.requester
+    kind: requires
+    strength: soft
+    description: >
+      Soft only because the substrate forces it. A read that cannot name its subject degrades to
+      `thread_aggregate` and is still useful for tone and cadence; it is useless for anything that names a
+      person, which is most of what a de-escalation decision needs.
+
+  - target: customer_support.obj.core.commitment
+    kind: enriches
+    strength: hard
+    description: >
+      Broken promises are the strongest evidence on this object because they are facts about our own conduct
+      that need no model. Without the commitment object, the highest-confidence executable patterns here
+      cannot fire and the read collapses back onto a sales-shaped sentiment score.
+
+  - target: customer_support.obj.core.incident
+    kind: invalidated_by
+    strength: hard
+    description: >
+      A declared major incident invalidates the account-level consequences of every read taken inside its
+      window. This is the only hard invalidation on the object and it is hard because the failure is silent —
+      the flags look like findings.
+
+  - target: customer_support.obj.core.satisfaction_score
+    kind: enriches
+    strength: soft
+    description: >
+      The calibration partner. Not required to produce a read, and required to know whether any read was ever
+      right. Without it, every confidence in this file stays an argument.
+
+  - target: customer_support.obj.core.effort_score
+    kind: enriches
+    strength: soft
+    description: >
+      Supplies the retention-relevant half of the picture. Where both exist, effort disagreeing with
+      satisfaction is more informative than either agreeing.
+
+  - target: customer_support.obj.core.ticket
+    kind: enriches
+    strength: soft
+    description: >
+      Reopens, reassignments and channel switches. The behavioural evidence that survives a polite customer,
+      and entirely absent from the substrate today.
+
+  - target: customer_support.obj.core.churn_risk
+    kind: blocks
+    strength: soft
+    description: >
+      Churn risk's trajectory input is this object. Without a read it must fall back to commercial and usage
+      signals alone, which see the slow leaver late and the sudden one not at all.
+
+  - target: customer_support.heu.de_escalation.anger_is_uncertainty
+    kind: derived_from
+    strength: hard
+    description: >
+      The source of `about_uncertainty` and of why the highest-value action on this object is a timestamp
+      rather than an apology. If this heuristic is wrong, half the attribution machinery here is misdirected.
+
+  - target: customer_support.heu.churn_signal_detection.silence_beats_anger
+    kind: derived_from
+    strength: hard
+    description: >
+      The source of the doctrine that `dormant` reads louder than `hostile`, and therefore of the entire
+      dangerous_calm pattern family.
+
+  - target: customer_support.heu.churn_signal_detection.survey_middle_is_invisible
+    kind: derived_from
+    strength: soft
+    description: >
+      Why the CSAT corroboration pattern is authored at 7000 rather than as ground truth, and why
+      `unreadable_share` is a metric rather than an embarrassment.
+
+  - target: customer_support.heu.churn_signal_detection.effort_over_satisfaction
+    kind: derived_from
+    strength: soft
+    description: >
+      The source of `effort_grievance` and of the effort_score edge outranking the satisfaction_score edge in
+      predictive terms while sitting below it in weight.
+
+  - target: customer_support.heu.churn_signal_detection.baseline_is_per_account
+    kind: derived_from
+    strength: hard
+    description: >
+      Why `baseline_temperament` and `reply_latency_ratio` exist at all, and why an absolute sentiment scale
+      is treated here as a category error rather than a simplification.
+
+  - target: customer_support.heu.churn_signal_detection.incidents_flatten_the_signal
+    kind: derived_from
+    strength: hard
+    description: >
+      The argument behind `is_incident_correlated`, the incident precondition and the suppression event.
+
+  - target: customer_support.heu.de_escalation.heat_is_borrowed
+    kind: derived_from
+    strength: soft
+    description: >
+      The source of the relayed-anger exception. Without it, the object treats the messenger's register as
+      the account's feeling.
+
+  - target: customer_support.mm.de_escalation.two_clocks
+    kind: derived_from
+    strength: soft
+    description: >
+      The distinction between the ticket's clock and the customer's patience. `recovery_window_hours` is this
+      mental model expressed as a number.
+
+  - target: customer_support.df.churn_signal_detection.behavioural_before_emotional
+    kind: derived_from
+    strength: hard
+    description: >
+      The ordering that puts `behavioural_corroboration` above `expressed_intensity` in the decision factors,
+      and that makes hostility-from-language-alone advisory.
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+# The highest-value section in this file. Every one of these is a case a competent operator handles
+# instinctively and no playbook records, which is precisely why a naive system feels stupid to them.
+exceptions:
+
+  - id: cs.sent.heat_is_borrowed
+    statement: >
+      In B2B, the person writing to us is frequently relaying somebody else's anger. Their own sentiment is
+      fine; the account's is not, and the read is about the wrong human.
+    overrides: [cs.sent.engine_balance_strongly_negative, cs.sent.hostile_needs_behavioural_corroboration,
+                cs.sent.hand_to_a_named_owner]
+    why: >
+      A support contact forwarding "my CFO is furious about this" is doing their job calmly and well. De-escalating
+      THEM achieves nothing — they were never escalated — while the actual angry party never hears from us and
+      escalates through their own management instead. The tell is a sudden negative read with no change in the
+      writer's own register, often with new names added to the thread.
+    frequency: common
+
+  - id: cs.sent.abrasive_baseline_inverts
+    statement: >
+      For a customer whose baseline is abrasive, hostility is suppressed — but a sudden shift into politeness
+      is the strongest single warning this object can produce.
+    overrides: [cs.sent.hostile_language_first_occurrence, cs.sent.engine_balance_negative]
+    why: >
+      The blunt customer who has sworn at us cheerfully for two years and this week writes a courteous,
+      complete, well-structured email has usually stopped arguing because they have stopped investing.
+      Every absolute scale reads that message as the best news of the quarter. This is the clearest case in
+      the domain where the level is not merely uninformative but exactly inverted.
+    frequency: occasional
+
+  - id: cs.sent.professional_register_scores_neutral
+    statement: >
+      For customers in procurement, security, legal and regulated-industry administration, the language read
+      must be discarded rather than down-weighted, and the object must run on behaviour alone.
+    overrides: [cs.sent.engine_balance_negative, cs.sent.engine_balance_strongly_negative,
+                cs.sent.pushback_at_the_answer]
+    why: >
+      These roles write in a register that scores neutral no matter what they feel, because writing
+      temperately is the professional skill being exercised. They are also the roles most likely to escalate
+      formally, with a written timeline, and without any warning a language model could see. Running on
+      silence, latency, repeat contact and audience widening catches them; running on tone never does.
+    frequency: common
+
+  - id: cs.sent.post_resolution_spike_is_not_recovery
+    statement: >
+      A read taken in the hours immediately after a resolution must not update trajectory.
+    overrides: [cs.sent.trajectory_recovering, cs.sent.dangerous_calm]
+    why: >
+      Relief is not satisfaction and it does not last. "Thanks, that works now" is the single most positive
+      message in most threads and it is written by customers who will still describe the whole episode as a
+      disaster three weeks later. Treating it as recovery closes the window while the grievance about the
+      wait is completely untouched — and the grievance about the wait is the one that shows up at renewal.
+    frequency: common
+
+  - id: cs.sent.legal_on_the_thread
+    statement: >
+      Once the customer's legal or regulatory function is on the thread, sentiment stops being the operative
+      variable and the correct behaviour becomes procedural.
+    overrides: [cs.sent.give_a_specific_next_update, cs.sent.call_instead_of_writing,
+                cs.sent.apology_does_not_close_uncertainty]
+    when: [{has_obs: legal_review}]
+    why: >
+      A de-escalation aimed at feelings is at best noise here and at worst discoverable. The apology that
+      repairs a relationship is an admission in a dispute, and the phone call that collapses hostility also
+      removes the written record the other side now requires. This is one of the few places in support where
+      the humane move and the correct move genuinely diverge, and where the correct move is to slow down.
+    frequency: rare
+
+  - id: cs.sent.b2c_has_no_trajectory
+    statement: >
+      In a high-volume consumer motion built on one-shot contacts, there is no relationship, no baseline and
+      no trajectory. The per-contact read is all there is and demanding a trajectory blocks every read.
+    overrides: [cs.sent.trajectory_must_accompany_polarity, cs.sent.baseline_exists_for_this_person,
+                cs.sent.no_account_level_average]
+    why: >
+      The whole doctrine above is written for a continuing relationship. A customer who contacts a retailer
+      twice a year has no cadence to deviate from and no temperament to compare against, and enforcing the
+      trajectory rule in that motion produces a brain that refuses to say anything. Here the aggregate IS the
+      unit of analysis — which is the one motion in which an account-level roll-up is legitimate, because
+      there is no individual being hidden by it.
+    frequency: common
+
+  - id: cs.sent.renewal_anger_is_sometimes_a_tactic
+    statement: >
+      Escalation and cancellation language arriving inside a renewal window may be a commercial position
+      rather than a service failure, and must not automatically trigger service remedies.
+    overrides: [cs.sent.explicit_cancellation_language, cs.sent.leaving_language_proxy,
+                cs.sent.negative_read_carries_to_the_account_briefing]
+    when: [{has_obs: discount_pressure}]
+    why: >
+      Some customers have learned, correctly, that a well-timed escalation produces credits. Treating it as a
+      service failure spends real money, teaches the behaviour, and misroutes a commercial conversation into
+      a de-escalation playbook where nobody present can decide anything. The distinguishing evidence is
+      behavioural: a genuine service grievance has a repeat-contact history behind it, and a tactical one
+      arrives clean.
+    frequency: occasional
+
+  - id: cs.sent.recovery_paradox
+    statement: >
+      A customer who was failed badly and then recovered well should be recorded as a relationship
+      strengthened, not a relationship damaged, and the account flag cleared rather than decayed.
+    overrides: [cs.sent.negative_read_carries_to_the_account_briefing, cs.sent.broken_commitment_overrides_language]
+    why: >
+      A well-handled failure routinely leaves an account more attached than one that never had a problem —
+      it is the only opportunity most support organisations get to demonstrate anything. Carrying the negative
+      read into the renewal briefing turns the best evidence we have into a risk item, and the account team
+      then arrives apologetic at a conversation they should be arriving confident in. The condition is
+      genuine recovery with a window long enough to be real, not the post-resolution spike above.
+    frequency: occasional
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: cs.sent.read_the_direction_first
+    statement: "Read trajectory before polarity, and refuse to act on a level with no direction attached."
+    why: >
+      Negative-and-recovering and negative-and-deteriorating want opposite interventions. Acting on the level
+      alone gets one of the two wrong every time, and the one it gets wrong is the customer who was already
+      being handled correctly.
+    applies_when: "Every read, in every motion except one-shot consumer contact."
+    evidence: "recovery_rate is only computable where a trajectory was stored; queues without it cannot tell whether any de-escalation ever worked."
+
+  - id: cs.sent.measure_only_their_words
+    statement: "Take the read from the customer's messages alone. If you cannot separate the authors, report unreadable."
+    why: >
+      A thread-level score mixes our apologies into their mood, which produces a metric that improves when
+      agents write more contritely. Reporting unreadable is honest and produces no false direction; reporting
+      the mixed number produces a number that moves for reasons nobody will diagnose.
+    applies_when: "Always, and most urgently wherever the read is being trended over time."
+
+  - id: cs.sent.compare_against_their_own_normal
+    statement: "Compare every read against this person's own baseline and locale, never against a global mean."
+    why: >
+      Some people are brusque with everyone. Some languages encode courtesy that scores as delight. An
+      absolute scale flags the same customers every week until the team stops reading the field, which is the
+      failure mode that kills sentiment features far more often than inaccuracy does.
+    applies_when: "Any relationship with more than a handful of prior exchanges."
+
+  - id: cs.sent.answer_uncertainty_with_a_timestamp
+    statement: "When the grievance is about not knowing, reply with a specific time and a named person, not with sympathy."
+    why: >
+      Anger about uncertainty is the cheapest form to move and the most reliably mishandled. A date and a name
+      changes the customer's problem from unbounded to bounded; a third apology tells them nobody is doing
+      anything and is what converts frustrated into hostile.
+    applies_when: "Whenever about_uncertainty is true, which is more often than the words suggest."
+
+  - id: cs.sent.rank_by_collapse_not_by_volume
+    statement: "Sort the review queue by engagement collapse and trajectory, not by who is loudest."
+    why: >
+      Anger is legible and silence is not, so every queue that sorts itself sorts by noise. The customers who
+      leave are disproportionately the ones who stopped writing, and no amount of improving the language model
+      will surface them.
+    applies_when: "Any periodic account or queue review."
+
+  - id: cs.sent.hold_the_cadence_on_recovery
+    statement: "On a recovering trajectory, change nothing — same owner, same cadence, same channel."
+    why: >
+      Recovery is produced by predictability. Introducing a senior name, a new owner or a gesture at this
+      point reads as the situation having got worse, resets the relationship, and undoes work that was
+      already succeeding. Doing nothing is the hardest action to take because it is indistinguishable from
+      neglect on a dashboard.
+    applies_when: "Trajectory = recovering with a window of days rather than hours."
+
+  - id: cs.sent.log_the_calibration_pair
+    statement: "Store every inferred read next to the survey answer that later arrived, including the disagreements."
+    why: >
+      It is the only mechanism by which the confidences in this file stop being arguments. It costs one row
+      per survey, it is almost never built, and without it a sentiment feature is unfalsifiable — which is
+      why so many of them survive for years without ever being right.
+    applies_when: "Always. Retrospective reconstruction is not possible, so the cost of not doing it is permanent."
+    evidence: "read_accuracy and inferred_vs_stated_delta are both uncomputable without it."
+
+  - id: cs.sent.suppress_during_incidents_then_re_read
+    statement: "Hold account-level sentiment consequences during a declared incident, then re-read after resolution."
+    why: >
+      During an outage the whole affected base moves together, so the reads are correlated with the status
+      page rather than with any relationship. Flags raised in that window are indistinguishable from findings
+      and routinely outlive the incident by weeks.
+    applies_when: "Any declared SEV1 or SEV2 affecting a shared surface."
+
+  - id: cs.sent.ask_about_effort_not_delight
+    statement: "Where you get to ask the customer one question, ask how hard it was rather than how satisfied they are."
+    why: >
+      Customer effort predicts retention more reliably than delight does, and effort is actionable in a way
+      satisfaction is not — "I had to explain it three times" names a fix, "4 out of 5" does not. It also
+      dodges the CSAT selection problem slightly, because the effortful middle answers an effort question
+      more often than it answers a satisfaction one.
+    applies_when: "Survey design, post-resolution prompts, and any single-question in-product ask."
+
+# ── 20 · Anti-Patterns ───────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: cs.sent.average_to_an_account_score
+    statement: "Rolling several people's reads into one account sentiment number."
+    why_it_happens: >
+      Dashboards need one value per account, per-person reads do not aggregate cleanly, and an average is the
+      obvious thing to do with a set of numbers. It also makes the field look complete, because every account
+      gets a colour.
+    cost: >
+      The average is dominated by the many contented users and hides the one procurement lead about to
+      escalate. The account reads amber for months and then produces an executive escalation that the
+      dashboard shows no warning for.
+    instead: >
+      Publish the worst individual read together with its subject and its trajectory. Where the subject is
+      unknown, publish that too rather than substituting the mean.
+    detectable_by: [attributed_read_share, cs.sent.no_account_level_average]
+
+  - id: cs.sent.score_the_whole_thread
+    statement: "Computing sentiment over the entire conversation, our replies included."
+    why_it_happens: >
+      The engine emits one number per node, separating authors requires work Layer 2 has not done, and the
+      combined number is available today while the clean one is a backlog item. It is the pragmatic choice
+      and it is currently ours.
+    cost: >
+      The metric improves whenever agents write more apologetically and degrades when they write efficiently.
+      Teams then optimise the writing rather than the service, and the number rises while nothing changes.
+    instead: >
+      Gate on measured_on, discard `our_text` rather than down-weighting it, and publish
+      contaminated_read_share so the size of the problem stays visible.
+    detectable_by: [contaminated_read_share, cs.sent.read_from_customer_words_only]
+
+  - id: cs.sent.chase_delight
+    statement: "Optimising for delight — gestures, upgrades, hand-written notes — instead of removing effort."
+    why_it_happens: >
+      CSAT is the number on the wall, delight is what gets praised in a review, and "go above and beyond" is
+      easy to coach and pleasant to talk about. Effort reduction, by contrast, usually requires changing
+      something outside support.
+    cost: >
+      Expensive gestures that do not move retention, delivered to customers whose actual complaint was that
+      they had to explain the problem three times. The effort grievance survives the gift.
+    instead: >
+      Measure effort, fix the second contact, and spend the same money on removing the repeat rather than on
+      apologising for it.
+    detectable_by: [effort_grievance, cs.sent.effort_grievance_from_ces]
+
+  - id: cs.sent.read_csat_as_the_population
+    statement: "Treating the satisfaction survey as a measurement of how customers feel."
+    why_it_happens: >
+      It is the only sentiment number that arrives with a denominator and a chart, and it is the one the
+      business already believes. Reporting it feels like reporting a fact rather than a sample.
+    cost: >
+      The delighted and the furious answer; the middle does not. A queue can post rising CSAT while the
+      silent majority quietly stops contacting it — which is exactly the population this object exists to see.
+    instead: >
+      Report response rate beside every score, pair the survey with the inferred read, and treat the
+      disagreement between them as the finding rather than as noise.
+    detectable_by: [read_accuracy, silent_negative_share]
+
+  - id: cs.sent.survey_the_hostile_thread
+    statement: "Firing the satisfaction survey when a hostile ticket is marked resolved."
+    why_it_happens: >
+      Survey automation triggers on state changes, and `resolved` is a state change. Nobody chose to do this;
+      the workflow did, and it does it consistently.
+    cost: >
+      It spends the one ask we had on a score we already knew, and it tells a customer who is still unhappy
+      that a machine has decided their problem is over. A meaningful share of the worst verbatims in any
+      queue are collected this way.
+    instead: >
+      Gate dispatch on survey_safe. Ask after the customer has confirmed, not after we have asserted.
+    detectable_by: [cs.sent.no_survey_into_a_hostile_thread]
+
+  - id: cs.sent.escalate_the_loudest
+    statement: "Reviewing and escalating by how negative the language is."
+    why_it_happens: >
+      Anger is legible, silence is not, and a queue sorted by severity of tone looks like a queue sorted by
+      urgency. It is also more satisfying to work: the loud customer gives feedback when you fix it.
+    cost: >
+      The calm leaver is never contacted. Support ends up excellent at handling the customers who were always
+      going to stay and blind to the ones who quietly went.
+    instead: >
+      Rank by trajectory and engagement collapse. A customer who stopped writing outranks one who is
+      complaining.
+    detectable_by: [silent_negative_share, cs.sent.dangerous_calm]
+
+  - id: cs.sent.score_the_agent
+    statement: "Using average customer sentiment as an agent performance measure."
+    why_it_happens: >
+      It is per-conversation, numeric, already collected, and it looks like a coachable behaviour. It is the
+      most available number that appears to be about how well someone does their job.
+    cost: >
+      Well-run queues route the angriest customers to the strongest agents, so the metric inverts and punishes
+      the best people. The second-order effect is worse: agents learn to avoid hard tickets, and hard tickets
+      are where the value is.
+    instead: >
+      Score the interaction against a behaviourally anchored rubric on the quality_scorecard, and keep this
+      object for the customer.
+    detectable_by: [false_hostile_rate, cs.sent.no_agent_performance_scoring]
+
+  - id: cs.sent.re_read_after_our_own_reply
+    statement: "Recomputing sentiment immediately after we send a message."
+    why_it_happens: >
+      Recomputation is naturally hooked to activity on the thread, and our own reply is the most frequent
+      activity there is. It also produces a pleasant, immediate improvement.
+    cost: >
+      The improvement is ours. The read reliably rises after a long apologetic message and falls after a
+      terse accurate one, and the resulting series measures agent prose style with a customer's name on it.
+    instead: >
+      Re-read only on the next inbound message, and expire the standing read rather than refreshing it.
+    detectable_by: [contaminated_read_share, cs.sent.read_expired]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+
+  - label: "Furious on Monday, terse and cooperative on Thursday"
+    kind: typical
+    note: >
+      polarity frustrated, trajectory recovering. The correct action is to change nothing and keep the update
+      cadence exactly as it is. Most systems escalate here, introduce a new person, and undo three days of work.
+
+  - label: "Unfailingly polite, replies within minutes, renewal in six weeks, has stopped asking when it will be fixed"
+    kind: misclassification
+    note: >
+      The most dangerous record in the queue and the one no language model flags. polarity satisfied,
+      trajectory collapsed, expression_style terse. Nothing in the words is wrong.
+
+  - label: "Profane in every message for two years"
+    kind: counterexample
+    note: >
+      baseline_temperament abrasive. This is a baseline, not a signal. Flagging it hostile every week is how a
+      team learns to ignore the field entirely.
+
+  - label: "The same profane customer writes one courteous, well-structured email"
+    kind: edge
+    note: >
+      The inversion. formality_shift more_formal against an abrasive baseline is the loudest warning this
+      object can produce, and every absolute scale records it as the best news of the quarter.
+
+  - label: "\"No problem, take your time\" — for the third time this month"
+    kind: misclassification
+    note: >
+      repeat_frustration true, attributed_to wait_time, about_uncertainty true. The words say patient; the
+      frequency says exhausted. Per-message scoring reads this as the happiest thread in the queue.
+
+  - label: "Angry about a twenty-minute outage that is already fixed"
+    kind: edge
+    note: >
+      Real anger with no remaining cause. attributed_to product_defect, recovery_window_hours short. Closing
+      the ticket closes the sentiment; treating it as a churn signal spends an escalation on nothing.
+
+  - label: "Read computed over our own three-paragraph apology"
+    kind: counterexample
+    note: >
+      measured_on our_text. Discard, do not down-weight. It is a measurement of us, and it will show sentiment
+      improving every time an agent writes at length.
+
+  - label: "Formal, complete sentences and a numbered list, from someone who wrote in lowercase fragments last week"
+    kind: typical
+    note: >
+      expression_style formal_escalating. Politeness went UP and risk went up with it. The clearest textual
+      escalation warning there is, and most models score the change as an improvement.
+
+  - label: "\"My CFO is extremely unhappy about this\" — written calmly by a support contact who is not"
+    kind: misclassification
+    note: >
+      Borrowed heat. The read is about the wrong person. De-escalating the writer achieves nothing, because
+      they were never escalated, and the CFO never hears from us at all.
+
+  - label: "Two contacts at the same account on the same incident, one relieved and one furious"
+    kind: edge
+    note: >
+      The case that defeats every account-level average. scope_level must be requester; today it will be
+      thread_aggregate and the object will report one number for two opposite feelings, which is the honest
+      limitation this file is built to state rather than hide.
+
+  - label: "Security review contact, three-line replies, no adjectives, opens a formal complaint on day nine"
+    kind: misclassification
+    note: >
+      polarity read neutral throughout. The register was professional the whole time and the behaviour —
+      repeat contact, audience widening, no acknowledgement of our updates — said everything. Language-only
+      scoring never had a chance.
+
+  - label: "\"Thanks, that works now\" thirty minutes after a four-day outage"
+    kind: counterexample
+    note: >
+      Relief, not recovery. Reading this as trajectory recovering closes the window while the grievance about
+      the four days is entirely untouched, and that grievance is the one that arrives at renewal.
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+# Only frameworks actually leaned on. A references list that names everything is as useless as one
+# that names nothing.
+references:
+
+  - title: "The Effortless Experience — customer effort as a loyalty predictor"
+    kind: book
+    author: "Matthew Dixon, Nick Toman, Rick DeLisi (CEB / Gartner)"
+    artifact_ref: customer_support.df.churn_signal_detection.effort_as_loyalty_proxy
+    note: >
+      The source of `effort_grievance`, of the effort_score relationship, and of the anti-pattern against
+      chasing delight. The published finding this object leans on is specific: low customer effort predicts
+      retention more reliably than delight does, which is why an effortful-but-satisfied read is treated here
+      as more alarming than a mildly negative effortless one.
+
+  - title: "Support measurement definitions and benchmarks — FCR, CSAT, CES, deflection, abandonment"
+    kind: research
+    note: >
+      Used for three claims and no others. First, first-contact resolution of 70–79% is the published good
+      band, top centres at or above 74%, and SQM's finding of a roughly one-to-one relationship — every 1%
+      FCR gain corresponding to about 1% CSAT gain — is the grounding for weighting `repeat_frustration` as
+      heavily as this object does. Second, CSAT is answered by the delighted and the furious, so the middle
+      is invisible; that is the whole argument for `unreadable_share` being a metric and for the CSAT
+      corroboration pattern sitting at 7000 rather than 9500. Third, deflection is not FCR — it only asks
+      whether a contact reached an agent, so an abandonment counts as a success — which is why
+      `self_service_abandoned` is authored as a NEGATIVE sentiment signal here rather than as containment.
+      Contact abandonment of 2–5% is the healthy band and above 8% indicates a real staffing or routing
+      failure; that band is the reason chat abandonment is treated as an effort signal rather than as noise.
+
+  - title: "ITIL 4 — incident, service request and problem"
+    kind: standard
+    note: >
+      Supplies the taxonomy this object's `attributed_to` sits inside: a complaint about how we handled
+      something has no technical fault behind it, and diagnosing it as an incident is how a recoverable
+      relationship is lost. ITIL's separation of symptom from cause — incident management treats a symptom,
+      problem management diagnoses the underlying disease — is also why a resolved ticket does not close a
+      sentiment read: the customer's problem stopping and the fault being removed are different events, and
+      the feeling tracks the second.
+
+  - title: "SLA clock mechanics — calendar hours versus business hours, and pause conditions"
+    kind: practitioner
+    note: >
+      Leaned on for exactly one thing: the false positive on `cs.sent.first_response_clock_breached`. Every
+      SLA is bound to a calendar, business-hours clocks pause overnight and at weekends, and platforms pause
+      the clock while a ticket sits in waiting-for-customer. A pipeline that carries the target without the
+      calendar and the pause state will report every Monday morning as a wall of uncertainty grievances that
+      do not exist — which is why the pattern demands `sla_breach` alongside the target rather than deriving
+      a breach from elapsed time.
+
+  - title: "KCS v6 Practices Guide — capture in the requester's context"
+    kind: methodology
+    author: "Consortium for Service Innovation"
+    url: https://www.serviceinnovation.org/included/docs/KCS_v6_Practices_Guide_2023_06_08.pdf
+    note: >
+      Cited for one practice only: capture in the customer's own words, because rewriting into internal
+      vocabulary destroys the thing being measured. Applied here to `measured_on` and `language_locale` —
+      a sentiment read taken over our normalised paraphrase of what they said is measuring our summary, which
+      is the same defect as measuring our reply and is harder to notice.
+
+  - title: "Atlas Rules 04, 10 and 11 — receipts, audience and independent corroboration"
+    kind: internal
+    note: >
+      Rule 04 is why every confidence in this file names its evidence. Rule 10 is why no attribute here is
+      marked `public` — an inferred emotional label must never widen the audience of the private
+      correspondence it came from. Rule 11 is the reason `evidence[].independent_of` and
+      `yields.corroborates` are authored conservatively: language and behaviour are the two genuinely
+      independent instruments this object has, and two patterns that both read `derived.sentiment` are one
+      measurement counted twice.
+
+  - title: "Customer Support domain.yaml — glossary and the pending-signal doctrine"
+    kind: internal
+    artifact_ref: customer_support.mm.churn_signal_detection.complaint_is_engagement
+    note: >
+      The domain glossary supplies the definitions this object must not contradict — escalation is a transfer
+      of ownership and not a synonym for anger, deflection is a contact that never became a ticket. The
+      header doctrine (author the truth, mark what cannot fire) is why ten of the twenty-three patterns here
+      are `needs_signal` rather than bound to the nearest available proxy.
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    All twenty-three sections populated. Fifty-three attributes across eight composites. Twenty-three
+    inference patterns: THIRTEEN executable today, ten needs_signal. Eleven relationships, all carrying
+    weight and confidence. Eight exceptions, eight anti-patterns, nine best practices, seventeen
+    dependencies, seven preconditions.
+
+    This is the strongest day-one object in the Customer Support brain by a wide margin, and the reason is
+    structural rather than authorial: `derived.sentiment`, `derived.engagement`, `derived.momentum`,
+    `thread.ball_in_court`, `thread.last_inbound`, `commitment.due_at`, `meeting.start_at`, four borrowed
+    observation kinds and the `reply_cadence` baseline are all real, and between them they carry a genuine
+    read. Only `commitment` is comparable and it has fewer independent instruments feeding it.
+
+    The ten needs_signal entries are ranked in the order they should be built. First
+    `derived.sentiment_by_author`, because it is a correctness fix rather than a feature: every executable
+    confidence in this file is capped several hundred basis points below where it could sit purely because
+    the engine cannot separate the customer's words from ours, and shipping it re-calibrates the whole object
+    rather than adding to it. It would also populate `customer_message_share_bp` and, where the connector
+    carries a sender identity, finally give `scope_level` something better than `thread_aggregate`. Second
+    `derived.sentiment_trend`, because a level cannot express a trajectory and trajectory is what this object
+    is for. Third `cancellation_threat`, because it is the moment support becomes a revenue question and it
+    is stated in plain language in threads we already ingest. Everything after those three is additive.
+
+    Three uncomfortable admissions this file makes deliberately rather than hides. One: a thread-scoped read
+    cannot say WHICH person is unhappy, so almost every live read will carry `scope_level:
+    thread_aggregate` and a null subject, and the preconditions degrade rather than pretend. Two: three
+    executable patterns (`pushback_at_the_answer`, `audience_widening_on_our_ball`, `compensation_sought`)
+    sit at or near 5000 and are authored as corroboration only — they are here because they are honestly what
+    the substrate offers, not because they are good. Three: `leaving_language_proxy` binds a sales extractor
+    (`closed_lost_mention`) to a support meaning, which is exactly the kind of nearest-available substitution
+    the domain header warns against; it is admitted at 6000 with an explicit instruction to DELETE rather
+    than tune it the day `cancellation_threat` ships, and that deletion is the test of whether the pack
+    worked.

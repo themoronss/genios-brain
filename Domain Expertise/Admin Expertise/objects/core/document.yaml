@@ -1,0 +1,1550 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin core object — DOCUMENT.
+#
+# A document is not a file. A file is a byte sequence anyone may copy; a document is a
+# CONTROLLED artefact with exactly one authoritative location, a named owner, an approval
+# state, a classification, a version and a review date. Strip any one of those and what is
+# left is a file that people are treating as a document, which is the specific failure this
+# object exists to name. The symptom an operator sees first is never "our document control is
+# weak" — it is two teams in a meeting working from different numbers, each of them reading
+# something real.
+#
+# FIVE of fifteen patterns are executable against the shipped pipeline. The ten that are not
+# are the Layer 1/2 backlog: document.approved_at, document.version, document.review_due_at,
+# document.classification and document.retention_until between them decide whether an artefact
+# may be cited to a regulator, and none of them reach Layer 2 today.
+#
+# Authored on the 23-section object schema. The prior version of this file was on the old
+# 18-section shape (description / components / properties); its prose is carried across where
+# it was right and re-cut where the new sections — preconditions, dependencies, exceptions,
+# best_practices, anti_patterns, references — asked a harder question of it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.document
+  scope: core
+  name: Document
+  domain: admin
+  subdomain: records_and_documentation
+  owner_capability: admin.records_and_documentation.document_control
+  version: 2.0.0
+  status: draft
+  aliases: ["Controlled Document", "Record", "Controlled Copy", "Documented Information"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A controlled artefact the organisation is willing to stand behind. One authoritative
+    location, a named owner, a recorded approval, a classification, a version and a next
+    review date. A signed PDF in someone's downloads folder is a file; the same PDF in the
+    register — approved, versioned, classified and scheduled for review — is a document. In a
+    governed context the distinction is the whole game: work performed correctly and
+    undocumented did not happen, and work documented in an uncontrolled copy happened in a way
+    nobody can prove.
+  discriminator: >
+    Control, not content, format or importance. If two people can hold copies that have
+    diverged and neither can be shown to be wrong, it is a file. The test is answerable in one
+    question — "where is the one authoritative copy, and who approved this version of it?" —
+    and an artefact that cannot survive that question is out of control regardless of how
+    carefully it was written.
+  answers:
+    - "May this artefact be offered to an auditor, a regulator or a counterparty today, or is it a draft that everybody is already following?"
+    - "Which version is the one in force, and who is still working from the other one?"
+    - "Who is the named individual accountable for this content — not which department?"
+    - "Has the organisation itself declared this content stale, by passing its own review date?"
+    - "May this be sent to this recipient, given its classification and where it has already been?"
+    - "Must this be kept, may it be destroyed, and is anything suspending that answer?"
+    - "If this were challenged, what would this artefact actually be worth as evidence?"
+  not:
+    - "Not the rule it states — admin.obj.core.policy owns that. A policy is a rule we can change on Tuesday; a document is the controlled artefact evidencing it. 'We updated the policy' usually means somebody edited a file, and this object is where the conflation gets caught."
+    - "Not the procedure it describes — admin.obj.core.sop owns the steps."
+    - "Not the duty it discharges — admin.obj.core.compliance_obligation owns that. A document is evidence of an obligation; it is never the obligation."
+    - "Not the agreement it may be part of — admin.obj.core.contract owns the terms; this object owns the executed counterpart and its schedules as controlled artefacts."
+    - "Not the retention rule itself — admin.obj.core.record_series owns the schedule entry; this object carries the instance's position within it."
+    - "Not a knowledge asset. Findability, usefulness and readership are real problems and belong to knowledge-base maintenance; this object is indifferent to whether anybody reads it and concerned only with whether it can be relied on."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ---- composites: folders over the fields below ----
+  - name: identity_and_location
+    purpose: What the artefact is and the single place it authoritatively lives.
+    type: composite
+    contains: [document_type, title, authoritative_location, uncontrolled_copies_known, record_series_ref]
+
+  - name: control_and_ownership
+    purpose: The named human accountable for it, and who may approve a change to it.
+    type: composite
+    contains: [owner_ref, approver_ref, acknowledgement_required]
+
+  - name: approval_and_version
+    purpose: Whether this artefact may be spoken for, and which iteration is current.
+    type: composite
+    contains: [approved_at, version, supersedes_ref, in_legal_review, awaiting_issue]
+
+  - name: review_currency
+    purpose: Whether the content is still believed, as distinct from still stored.
+    type: composite
+    contains: [review_cycle_months, last_reviewed_at, review_due_at, review_stalled, review_debt_days]
+
+  - name: classification_and_distribution
+    purpose: Who may see it and where it has already gone. The second half is the one nobody tracks.
+    type: composite
+    contains: [classification, distribution_scope, externally_issued, contains_personal_data, special_category_basis]
+
+  - name: retention_and_disposal
+    purpose: How long it must be kept, when it must go, what starts the clock and what stops it.
+    type: composite
+    contains: [retention_class, retention_trigger, retention_until, legal_hold, disposal_method, evidential_weight]
+
+  - name: circulation
+    purpose: Observed traffic around the artefact, as opposed to declared attributes.
+    type: composite
+    contains: [last_touched_at, circulation_trend, control_completeness_bp]
+
+  # ---- values, references, derived ----
+  - name: document_type
+    purpose: The control regime this artefact falls under. Type, not folder, decides how it must be handled.
+    type: value
+    data_type: enum
+    allowed_values: [policy, sop, contract, minutes, register, report, form, certificate,
+                     correspondence, statutory_record, evidence_pack, template]
+    required: true
+    default: correspondence
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      Type sets the control regime, not the folder. A `minutes` document is evidence of a
+      decision and becomes uncorrectable once approved; a `template` is deliberately copied and
+      must never be classified as a record. Collapsing the two is how draft minutes end up
+      circulating as the approved account of a board meeting. `statutory_record` is carried
+      separately from `report` because its retention floor is set outside the organisation.
+
+  - name: title
+    purpose: What a person would ask for it by. The retrieval key, not decoration.
+    type: value
+    data_type: string
+    required: true
+    sensitivity: internal
+    description: >
+      Titles carrying a version, a date or an author name ("Policy v3 FINAL rohit edit") are a
+      reliable tell that the register is doing no work and the filename is being asked to carry
+      the metadata instead.
+
+  - name: authoritative_location
+    purpose: The one place. Everything else claiming to be this document is a copy.
+    type: value
+    data_type: string
+    required: true
+    sensitivity: internal
+    description: >
+      Not "SharePoint" — the specific path or register entry. A document with two authoritative
+      locations has none, because the moment they diverge nobody can say which one was wrong,
+      and both will be produced in discovery.
+
+  - name: uncontrolled_copies_known
+    purpose: How many divergent copies we already know about. Deliberately a count, not a flag.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    sensitivity: internal
+    description: >
+      Known copies outside the authoritative location — the attachment sent to a vendor, the
+      version pasted into a wiki, the printout in the induction pack. Almost always understated,
+      and kept as a count rather than a boolean so that "we know of eleven" reads differently
+      from "there may be some".
+
+  - name: record_series_ref
+    purpose: The retention schedule entry this instance belongs to.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.record_series
+    description: >
+      Documents outside every series are the ones kept forever by accident. An unassigned series
+      is not a filing inconvenience — it is the reason the disposal job cannot see the artefact
+      at all.
+
+  - name: owner_ref
+    purpose: The named individual accountable for the content being right.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    sensitivity: internal
+    description: >
+      A named individual, never a department. A document owned by "Operations" is unreviewed by
+      construction: departments do not read review reminders, and there is nobody to escalate to
+      when one is ignored.
+
+  - name: approver_ref
+    purpose: Who may approve this version and the next. Separate from the owner on purpose.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+    sensitivity: internal
+    description: >
+      An owner approving their own document defeats four-eyes and produces an artefact whose
+      approval proves only that its author still likes it.
+
+  - name: acknowledgement_required
+    purpose: Whether a defined population must positively confirm receipt.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      True for most policies, false for most reports. Where it is true, publication is not
+      distribution and distribution is not acknowledgement — three separate events that
+      organisations routinely record as one.
+
+  - name: approved_at
+    purpose: The moment this stopped being a draft. The single field that separates a file from a document.
+    type: value
+    data_type: timestamp
+    source_paths: [document.approved_at]
+    sensitivity: internal
+    description: >
+      Null means draft, regardless of how finished the prose looks and regardless of how many
+      people are already following it. The commonest document-control finding in any audit is an
+      unapproved artefact in live operational use, and it is almost never discovered by the
+      people using it.
+
+  - name: version
+    purpose: Which iteration this is, in a scheme that can express both an edit and a re-approval.
+    type: value
+    data_type: string
+    source_paths: [document.version]
+    description: >
+      A scheme with no minor increments hides edits; a scheme with only minor increments hides
+      re-approvals. Both are ways of not recording a change. The version belongs in the register
+      and inside the artefact — if only one carries it, the copy without it is the one that
+      circulates.
+
+  - name: supersedes_ref
+    purpose: The version this one replaces. Turns a pile of files into a lineage.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: >
+      Self-referential. Publishing a successor without recording supersession leaves two live
+      truths in the estate, and every subsequent argument about which was followed is unwinnable.
+
+  - name: in_legal_review
+    purpose: Under legal or compliance interpretation right now.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      A document in review is not an approved document, however long the review has run and
+      however senior the reviewer. Review status is frequently used as a soft approval by people
+      who need to act; that substitution is exactly what this field makes visible.
+
+  - name: awaiting_issue
+    purpose: Approved internally, not yet in the hands of the party expecting it.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      The gap where counterparties conclude nothing is happening. Internally the work is finished
+      and the file is closed; externally the artefact does not exist. Both views are sincere and
+      there is no shared field between them.
+
+  - name: review_cycle_months
+    purpose: How often the organisation has promised to re-examine the content.
+    type: value
+    data_type: integer
+    unit: months
+    validation: "> 0"
+    description: >
+      Its only value is as the denominator for review_due_at. An undeclared cycle means the
+      document can never be formally wrong, which is why undeclared cycles are popular.
+
+  - name: last_reviewed_at
+    purpose: When somebody last genuinely re-read this against reality.
+    type: value
+    data_type: timestamp
+    description: >
+      Distinct from last edited. A review that changed nothing is a valid review and must be
+      recorded as one; otherwise the only way to prove a review happened is to change something,
+      and people oblige.
+
+  - name: review_due_at
+    purpose: The date the organisation itself said this content would stop being trustworthy.
+    type: value
+    data_type: timestamp
+    source_paths: [document.review_due_at]
+    description: >
+      Missing this date is worse than never setting one, because the miss is documented in your
+      own hand. It is also the field that most cleanly separates this object from
+      compliance_obligation: this date is self-imposed and moveable, an obligation's date is not.
+
+  - name: review_stalled
+    purpose: Review was started and never concluded.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Distinct from never reviewed, and worse — somebody competent looked, formed a doubt serious
+      enough to stop, and filed nothing. The document is still in use and the doubt is now
+      undiscoverable.
+
+  - name: classification
+    purpose: The handling regime the content demands.
+    type: value
+    data_type: enum
+    allowed_values: [public, internal, confidential, restricted, special_category]
+    default: internal
+    source_paths: [document.classification]
+    sensitivity: internal
+    description: >
+      `special_category` is carried separately from `restricted` because special-category
+      personal data under GDPR Art. 9 changes the lawful basis, the retention rule and the
+      breach-notification clock, not merely the access list. Treating it as "restricted plus
+      care" is how a health record ends up on an all-staff distribution.
+
+  - name: distribution_scope
+    purpose: How far this has been sent, as a fact rather than an intention.
+    type: value
+    data_type: enum
+    allowed_values: [named_recipients, team, all_staff, external_counterparty, regulator, public]
+    sensitivity: internal
+    description: >
+      Records where it went, not where it was meant to go. The ceiling is set by classification;
+      the actual value is set by whoever last forwarded it.
+
+  - name: externally_issued
+    purpose: Whether the artefact has left the organisation.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Once true it can never return to false. Recall is a request, not a state change — and after
+      this point classification errors are unrecallable and the retention clock may be set by the
+      recipient's regime rather than ours.
+
+  - name: contains_personal_data
+    purpose: Whether the artefact brings data-protection duties with it.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      Drives the Art. 30 record of processing, the storage-limitation duty and the subject-access
+      response. The failure is boring and universal: minutes, spreadsheets and inboxes contain
+      personal data and are never flagged as such, so the retention rule that applies to the HR
+      file does not follow the copy in the shared drive.
+
+  - name: special_category_basis
+    purpose: The Art. 9 condition relied on where special-category data is present.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      Naming the condition is the work. An organisation holding health, biometric or trade-union
+      data without being able to state which Art. 9 condition permits it does not have a
+      documentation gap — it has an unlawful processing operation with good filing.
+
+  - name: retention_class
+    purpose: The retention schedule entry that governs how long this is kept.
+    type: value
+    data_type: string
+    description: >
+      A class, not a duration — "HR-07, six years from termination". Durations get copied wrongly
+      onto individual artefacts and then drift; classes get updated once and every instance
+      follows.
+
+  - name: retention_trigger
+    purpose: The event that starts the retention clock.
+    type: value
+    data_type: enum
+    allowed_values: [creation, approval, closure, contract_end, employment_end, last_action,
+                     financial_year_end, not_recorded]
+    default: not_recorded
+    description: >
+      Almost every retention schedule is written as "N years from X", and almost no system
+      records X. Without the trigger the clock never starts, so the schedule looks complete and
+      disposes of nothing. `not_recorded` is the default because it is the truth in most estates.
+
+  - name: retention_until
+    purpose: The date after which this must not be kept, absent a hold.
+    type: value
+    data_type: timestamp
+    source_paths: [document.retention_until]
+    description: >
+      Computed from retention_class and retention_trigger, never typed by hand. Over-retention is
+      a storage-limitation breach in its own right, and it is the only breach that worsens purely
+      through the passage of time with nobody touching anything.
+
+  - name: legal_hold
+    purpose: Whether disposal is suspended by litigation, investigation or regulatory request.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Suspends disposal including scheduled, automated disposal. The automation is the risk: a
+      retention job that cannot read a hold flag will destroy evidence punctually and on policy,
+      and "the system did it on schedule" is not a defence to spoliation.
+
+  - name: disposal_method
+    purpose: How this artefact leaves the estate when it does.
+    type: value
+    data_type: enum
+    allowed_values: [not_due, secure_destruction, anonymisation, transfer_to_archive,
+                     return_to_owner, pending_hold]
+    default: not_due
+    description: >
+      `anonymisation` is a disposal method rather than a retention method because properly
+      anonymised data is no longer personal data — which also means half-done anonymisation is
+      retention wearing a disposal label, and it is the most common way an organisation believes
+      it has deleted something it has not.
+
+  - name: evidential_weight
+    purpose: What this artefact would actually be worth in front of the person who asks for it.
+    type: value
+    data_type: enum
+    allowed_values: [none, corroborating, primary, dispositive]
+    default: none
+    description: >
+      A signed and dated original is dispositive; the same content in an email summary is
+      corroborating at best. Most organisations discover the difference at the moment they need
+      the stronger one and have kept the weaker one.
+
+  - name: last_touched_at
+    purpose: When traffic about this artefact was last seen.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: >
+      One of the very few attributes with a live Layer 2 source today. Traffic ABOUT a document,
+      not access TO it — the register cannot see reads, which is why circulation and readership
+      must never be reported as the same number.
+
+  - name: circulation_trend
+    purpose: Whether attention on this artefact is rising or dying.
+    type: derived
+    data_type: number
+    source_paths: [derived.engagement]
+    derived_from: [last_touched_at]
+    description: >
+      Engine-computed. Falling circulation on a document under review usually means the review
+      died rather than concluded, and the two are indistinguishable from the register.
+
+  - name: review_debt_days
+    purpose: Days past the organisation's own review date.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [review_due_at, last_reviewed_at]
+    description: >
+      A self-inflicted number, which is exactly why it is persuasive internally. Nobody argues
+      with a deadline they set themselves.
+
+  - name: control_completeness_bp
+    purpose: How much of the control regime this artefact actually has, in basis points.
+    type: derived
+    data_type: integer
+    derived_from: [owner_ref, approved_at, version, classification, review_due_at,
+                   authoritative_location, record_series_ref]
+    validation: "0..10000"
+    description: >
+      One authoritative location, one named owner, an approval, a version, a classification, a
+      review date, a series. Seven cheap facts. Scoring them produces the most uncomfortable
+      number in the records function, and it is the only one that predicts whether a document
+      request can be answered in minutes rather than days.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [disposed]
+  values:
+    - name: draft
+      description: Content exists, authority does not. The state most operationally-used documents are actually in.
+      implies: "May not be cited, distributed as approved, or relied on in evidence. May absolutely still be in daily use, which is the problem."
+    - name: submitted
+      description: Sent for review or approval; the clock is running on somebody else.
+      entered_when: [{has_obs: legal_review}]
+      implies: "The ball is out of the author's court. Past cycle time the correct move is escalation, not a reminder."
+    - name: approved
+      description: An approver has recorded a decision against this version.
+      implies: "Speakable-for. Not yet necessarily reachable by the people bound by it."
+    - name: published
+      description: In the authoritative location and reachable by its intended audience.
+      implies: "The only state in which 'we have a policy on that' is a true statement."
+    - name: issued
+      description: Has left the organisation. Irreversible.
+      entered_when: [{has_obs: proposal_sent}]
+      implies: "Classification errors are now unrecallable and the recipient's retention regime may apply alongside ours."
+    - name: superseded
+      description: A successor is published. The old version stays discoverable and readable — superseded is not deleted.
+      implies: "Still evidence of what was in force at the time, which is usually the question being asked."
+    - name: on_hold
+      description: Legal hold. Disposal suspended; review may continue.
+      implies: "The disposal automation must be able to read this, not just the register."
+    - name: retained
+      description: Past active life, inside the retention period. Kept for evidence, not for use.
+      implies: "Access should narrow here and rarely does."
+    - name: disposed
+      description: Destroyed or anonymised under the schedule, with a disposal record.
+      implies: "Disposal without a disposal record is indistinguishable from loss, and reads worse."
+  transitions:
+    - {from: draft, to: submitted, when: [{has_obs: legal_review}], reversible: true}
+    - {from: submitted, to: approved, trigger: "approver records a decision", reversible: false}
+    - {from: submitted, to: draft, trigger: "returned with comments", reversible: true}
+    - {from: approved, to: published, trigger: "placed in the authoritative location"}
+    - {from: published, to: issued, when: [{has_obs: proposal_sent}], reversible: false}
+    - {from: published, to: superseded, trigger: "successor published"}
+    - {from: published, to: on_hold, trigger: "legal hold applied", reversible: true}
+    - {from: on_hold, to: published, trigger: "hold released"}
+    - {from: superseded, to: retained}
+    - {from: retained, to: on_hold, trigger: "hold applied during retention", reversible: true}
+    - {from: retained, to: disposed, trigger: "retention elapsed, no hold, disposal record written", reversible: false}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: evidences
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 2000
+    confidence_bp: 8000
+    priority: 1
+    evidence: [register, portal, regulator]
+    description: >
+      The reason most controlled documents exist at all. An obligation discharged and not
+      evidenced is, to the authority that imposed it, an obligation not discharged — and this
+      edge is what makes the retention floor and the review cycle non-negotiable rather than
+      house style.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 8500
+    priority: 2
+    evidence: [document, register]
+    description: >
+      The document-control, classification and retention policies that set this artefact's
+      regime. A document control policy that governs nothing is the first thing an auditor tests
+      and the first thing that fails.
+
+  - type: supersedes
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1500
+    confidence_bp: 9000
+    priority: 3
+    evidence: [register, document]
+    description: >
+      Self-referential. The edge that turns a pile of versions into a lineage, and the one whose
+      absence produces two live truths in the estate.
+
+  - type: belongs_to
+    target: admin.obj.core.record_series
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 7000
+    priority: 4
+    evidence: [register]
+    description: >
+      The retention schedule entry. Documents outside every series are the ones kept forever by
+      accident — invisible to the disposal job and therefore permanently compliant-looking.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 8000
+    priority: 5
+    conditions: [{absent: document.approved_at}]
+    evidence: [email, register, signed_form]
+    description: >
+      Approval is an object here rather than a field because it has its own latency, its own
+      holder and its own audit trail. Documents do not sit in draft because nobody wrote them;
+      they sit in draft because an approval is stuck behind somebody's leave.
+
+  - type: attaches_to
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 7500
+    priority: 6
+    evidence: [contract, signed_form]
+    description: >
+      Schedules, variations, side letters and signed counterparts. A contract whose schedules are
+      uncontrolled is a contract nobody can state the current terms of, and the argument is
+      always about a schedule.
+
+  - type: documents
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 700
+    confidence_bp: 8500
+    priority: 7
+    evidence: [document, email]
+    description: >
+      Minutes. Once approved, the document becomes the meeting — nobody later argues with the
+      room, they argue with the minute.
+
+  - type: issued_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 8
+    conditions: [{exists: thread.last_inbound}]
+    evidence: [attestation, email]
+    description: >
+      The acknowledgement population, where acknowledgement_required is true. Distribution is not
+      acknowledgement; this edge has to be closed person by person or the number reported is a
+      send count.
+
+  - type: references
+    target: admin.obj.core.sop
+    direction: bidirectional
+    cardinality: zero_or_many
+    weight_bp: 300
+    confidence_bp: 6000
+    priority: 9
+    description: >
+      Bidirectional on purpose. A policy that cites no procedure is unimplemented; a procedure
+      that cites no policy is unauthorised. Both are common and each looks fine from its own side.
+
+  - source: admin.obj.core.approver
+    type: approves
+    target: admin.obj.core.document
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 9000
+    priority: 10
+    evidence: [signed_form, register, email]
+    description: >
+      Authored on behalf of the approver so the version-to-approver binding is discoverable from
+      this side too. An approval recorded against a role rather than a person cannot be audited.
+
+# ── 6 · Inference Patterns ⭐ — how this object is discovered when nobody says it ─────────
+#
+# Conditions in a `when` are ANDed. Express an alternative as a second pattern — that is exactly
+# how the engine works, so authoring it any other way produces something that cannot run.
+inference_patterns:
+
+  deterministic:
+
+    - id: doc.in_legal_review_is_not_approved
+      statement: "An artefact whose thread carries a legal-review observation is under interpretation and is therefore not an approved document."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 8000, attribute: in_legal_review, value: true}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        The pipeline's legal_review observation was built for contract redlines, so it fires on
+        artefacts that are not documents in this object's sense, and on documents whose review
+        concerns an indemnity clause rather than the content anybody relies on.
+      note: >
+        8000 rather than higher for exactly that reason. It is still the only signal in the
+        substrate that distinguishes "being argued about" from "settled", and the distinction is
+        the difference between citing an artefact and quoting one.
+
+    - id: doc.issued_outside_the_organisation
+      statement: "A proposal-sent observation records a controlled artefact crossing the organisational boundary."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+      yields: {confidence_bp: 8500, attribute: externally_issued, value: true}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        proposal_sent also fires on a link to a deck that was never a controlled artefact,
+        marking externally_issued on something with no register entry to mark.
+      note: >
+        The only observation in the shipped substrate that records an artefact leaving the
+        building. Administratively it matters more than it does commercially: once
+        externally_issued is true, classification errors are unrecallable and the retention clock
+        may be set by the recipient's regime rather than ours.
+
+    - id: doc.approval_recorded_in_the_register
+      statement: "The document register carries an approval date and an approver against this version."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: approved_at}
+      requires_signals:
+        - {kind: fact_path, name: document.approved_at, owner_layer: L1,
+           note: "Every document management system holds this on every controlled artefact. No connector projects it, so the single field that separates a draft from a document is invisible to reasoning — the highest-value missing path in this file and arguably in the Admin brain."}
+        - {kind: obs_kind, name: document_published, owner_layer: L2,
+           note: "Publication is a distinct event from approval and is currently unobservable. The gap between the two is where approved policies live unread for a quarter."}
+
+    - id: doc.signed_original_exists
+      statement: "A signature has been captured against this artefact, making it the primary evidential copy."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: evidential_weight, value: dispositive}
+      requires_signals:
+        - {kind: obs_kind, name: document_signed, owner_layer: L2,
+           note: "E-signature platforms emit a completion webhook on every executed document. Nothing consumes it, so the exact moment an artefact becomes dispositive evidence is the moment the system stops watching it."}
+
+    - id: doc.retention_period_elapsed
+      statement: "The retention date has passed and no legal hold is recorded — disposal is due."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: disposal_method, value: secure_destruction}
+      requires_signals:
+        - {kind: fact_path, name: document.retention_until, owner_layer: L1,
+           note: "Retention schedules exist on paper in most organisations and in no queryable field. Over-retention is a storage-limitation breach in its own right and the only one that gets worse purely by the passage of time with nobody touching anything."}
+        - {kind: obs_kind, name: retention_review_due, owner_layer: L2,
+           note: "The scheduled prompt. Without it, disposal happens when somebody runs out of storage, which selects for size rather than for schedule."}
+
+    - id: doc.retention_clock_never_started
+      statement: "The artefact has a retention class but no recorded trigger event, so its retention date can never be computed."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: retention_trigger, value: not_recorded}
+      requires_signals:
+        - {kind: fact_path, name: document.retention_until, owner_layer: L1,
+           note: "Its ABSENCE against a populated retention class is the finding. Schedules are written as 'six years from termination' and the termination date lives in HRIS, unjoined."}
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1,
+           note: "The commonest trigger in practice for personnel records, and the join nobody makes. A schedule whose clock never starts looks complete and disposes of nothing — the quiet way an estate becomes permanent."}
+
+  heuristic:
+
+    - id: doc.review_started_and_abandoned
+      statement: "A document entered review and its thread has been silent for a quarter. That is not review, it is abandonment with a recorded doubt attached."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 90}
+      yields: {confidence_bp: 7000, attribute: review_stalled, value: true,
+               corroborates: [doc.in_legal_review_is_not_approved]}
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        The review may have concluded in a system that leaves no email trace — a DMS approval, a
+        meeting decision, a signature in a portal. Silence in the thread is evidence about the
+        thread, not about the review.
+      note: >
+        Stalled review is more dangerous than no review. Somebody competent looked, formed a
+        concern serious enough to stop, and left no finding — so the document is still in use and
+        the doubt is now undiscoverable. Declared as corroborating rather than independent: it
+        reads the same legal_review observation, so under Rule 11 it must not raise confidence on
+        its own.
+
+    - id: doc.promised_artefact_is_past_its_date
+      statement: "An artefact the organisation owes is past the date it was promised, and the next move is ours."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 5500, attribute: awaiting_issue, value: true}
+      evidence_fields: [commitment.due_at, commitment.action, thread.ball_in_court]
+      false_positive: >
+        The commitment may not be about a document at all — commitment.action carries free text
+        the engine cannot classify. This fires on any overdue promise attached to an artefact
+        node, which is why it sits at 5500 and yields a flag rather than a state change.
+      note: >
+        Worth having despite the weakness because it catches the cheapest administrative failure
+        there is: the document is not late in review, it does not exist, and everyone assumes
+        somebody started it. commitment.due_at and thread.ball_in_court are natively
+        administrative paths and this is the one place in the file where both already run.
+
+    - id: doc.orphaned_artefact
+      statement: "An artefact with a degree of one has no owner, no approver and no series — nobody is attached to it but the thread it arrived on."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {exists: thread.last_inbound}
+      yields: {confidence_bp: 6000, attribute: control_completeness_bp, value: 1000}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        A low degree is often sparse graph coverage rather than genuine orphaning — a real
+        document whose owner and series exist in a DMS the graph cannot see.
+      note: >
+        Deliberately weak at 6000. It earns its place because orphaned artefacts are invisible to
+        every other check in this file: an unowned document is never reviewed, never classified
+        and never disposed of, and no exception report lists it — because exception reports are
+        built from the register it was never entered into.
+
+    - id: doc.review_due_date_passed
+      statement: "The next-review date the organisation set for itself has passed."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: review_debt_days}
+      requires_signals:
+        - {kind: fact_path, name: document.review_due_at, owner_layer: L1,
+           note: "A trivially computable date that no connector emits. Note this is a SELF-imposed date; the object it must not be confused with is compliance_obligation, whose dates cannot be moved by anyone here at all."}
+        - {kind: obs_kind, name: document_review_overdue, owner_layer: L2,
+           note: "The prompt that makes the date operational. A due date nothing watches is a preference."}
+
+    - id: doc.version_conflict_in_circulation
+      statement: "Two different versions of the same document are live in circulation at once."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: uncontrolled_copies_known}
+      requires_signals:
+        - {kind: fact_path, name: document.version, owner_layer: L1,
+           note: "Requires a version string per artefact plus identity resolution across copies. Without it the commonest document-control incident in any organisation is structurally undetectable — and it is the one whose symptom is two teams in a meeting with different numbers."}
+        - {kind: derived, name: derived.document_identity_cluster, owner_layer: L2,
+           note: "Content or title-plus-hash clustering across attachments and links. The expensive half of the ask, and the half that turns a version field into a conflict detector."}
+        - {kind: obs_kind, name: document_superseded, owner_layer: L2,
+           note: "The discriminator between a conflict and an orderly lineage. Supersession has a timestamp in every DMS and no representation here, so without it two live versions and a published successor look identical."}
+
+    - id: doc.classification_exceeded_by_distribution
+      statement: "A restricted or special-category document has been sent to an external recipient."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: distribution_scope, value: external_counterparty}
+      requires_signals:
+        - {kind: fact_path, name: document.classification, owner_layer: L1,
+           note: "Labels exist in most DMS and DLP tooling and reach no typed fact. Until they do, the pipeline can see that an artefact was sent externally and not whether it was allowed to be."}
+        - {kind: derived, name: derived.recipient_is_external, owner_layer: L2,
+           note: "Domain comparison against the tenant's own domains. Cheap, and currently absent, which is why the single most preventable data-protection incident is also the least detectable one."}
+
+    - id: doc.acknowledgement_population_incomplete
+      statement: "A published document requiring acknowledgement has a bound population that has not fully returned it."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: acknowledgement_required, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: policy_acknowledged, owner_layer: L2,
+           note: "The positive return. Counting them is trivial once emitted; today acknowledgement is proved by a spreadsheet somebody maintains by hand and abandons in month three."}
+        - {kind: fact_path, name: employee.start_at, owner_layer: L1,
+           note: "The denominator moves. Nothing binds a new starter to a document published before they arrived — the single largest hole in every acknowledgement number ever reported to a board."}
+
+    - id: doc.personal_data_without_retention_rule
+      statement: "An artefact holding personal data sits outside every retention series, so nothing will ever dispose of it."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: contains_personal_data, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.contains_personal_data, owner_layer: L2,
+           note: "Content classification for personal data. Available in every DLP product and in no signal here. Its absence means storage limitation under GDPR Art. 5(1)(e) cannot be reasoned about at all."}
+        - {kind: fact_path, name: document.retention_until, owner_layer: L1,
+           note: "Its absence against a positive personal-data finding is the whole pattern. Personal data, no series, no disposal date — the shape of an over-retention breach that grows every day nobody acts."}
+
+    - id: doc.owner_left_the_organisation
+      statement: "The named owner of a controlled document is a leaver, so the document is now unowned and nothing says so."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: owner_ref}
+      requires_signals:
+        - {kind: obs_kind, name: leaver_confirmed, owner_layer: L2,
+           note: "Joiner-mover-leaver reaches access rights in most organisations and document ownership in almost none. The leaver's documents keep their review dates, keep sending reminders into a disabled mailbox, and are discovered unowned at the next audit."}
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1,
+           note: "The date. Needed to distinguish an owner who has left from one who is on leave — the two produce identical silence and demand opposite responses."}
+
+# ── 7 · Inputs — where this object gets filled from ──────────────────────────────────────
+inputs:
+  - {source: email, signal: "circulation, approval requests and issue traffic", path: thread.last_inbound,
+     fills: [last_touched_at, in_legal_review, externally_issued], reliability_bp: 5500}
+  - {source: email, signal: "who owes the next move on a review", path: thread.ball_in_court,
+     fills: [review_stalled, awaiting_issue], reliability_bp: 6000}
+  - {source: derived, signal: "circulation trajectory", path: derived.engagement,
+     fills: [circulation_trend], reliability_bp: 3000}
+  - {source: document, signal: "version, approval block, classification label",
+     fills: [version, approved_at, classification], reliability_bp: 8000,
+     description: "Present in every DMS, projected into no typed L2 fact — see the needs_signal patterns."}
+  - {source: register, signal: "owner of record, retention class, review cycle, series",
+     fills: [owner_ref, retention_class, review_cycle_months, record_series_ref], reliability_bp: 9000}
+  - {source: signed_form, signal: "executed originals and acknowledgement returns",
+     fills: [evidential_weight, acknowledgement_required], reliability_bp: 10000}
+  - {source: portal, signal: "artefacts lodged with or issued by an external body",
+     fills: [externally_issued, distribution_scope], reliability_bp: 8500}
+  - {source: access_log, signal: "who actually opened it, as opposed to who was sent it",
+     fills: [distribution_scope], reliability_bp: 6000}
+  - {source: contract, signal: "schedules and counterparts attaching to a contract",
+     fills: [document_type, evidential_weight], reliability_bp: 8500}
+  - {source: hris, signal: "the trigger event that starts a retention clock on a personnel record",
+     fills: [retention_trigger, retention_until], reliability_bp: 8000}
+  - {source: attestation, signal: "a named person confirming they have read and understood",
+     fills: [acknowledgement_required], reliability_bp: 7000}
+
+# ── 8 · Outputs — what this object can tell the rest of the stack ────────────────────────
+outputs:
+  - {name: control_confidence_bp, type: integer,
+     description: "How sure we are this artefact is genuinely controlled rather than merely stored.",
+     derived_from: [control_completeness_bp, approved_at, owner_ref, authoritative_location],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: citable, type: boolean,
+     description: "Whether this may be offered to an auditor, a regulator or a counterparty today.",
+     derived_from: [approved_at, in_legal_review, review_due_at, version],
+     consumed_by: [L4.decision_maker]}
+  - {name: evidential_standing, type: string,
+     description: "What it would be worth in front of the person who asks for it.",
+     derived_from: [evidential_weight, document_type, approved_at],
+     consumed_by: [L4.reasoning_unit]}
+  - {name: review_debt_days, type: integer,
+     description: "Days past the organisation's own review date. Self-inflicted and therefore unarguable.",
+     derived_from: [review_due_at, last_reviewed_at],
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: disposal_due, type: boolean,
+     description: "Retention elapsed and no hold. Over-retention is a breach that worsens with nobody acting.",
+     derived_from: [retention_until, legal_hold, retention_trigger],
+     consumed_by: [L5.execution_planning]}
+  - {name: distribution_constraint, type: string,
+     description: "Classification ceiling on how this may be sent and to whom. A hard filter, not a preference.",
+     derived_from: [classification, contains_personal_data, special_category_basis, externally_issued],
+     consumed_by: ["L5.2.channel_planner", L5.communication_planning]}
+  - {name: version_in_force, type: string,
+     description: "The version anybody quoting this document must be quoting.",
+     derived_from: [version, supersedes_ref, approved_at],
+     consumed_by: [L4.reasoning_unit, L5.communication_planning]}
+
+# ── 9 · Preconditions — gates on whether this object can be reasoned about at all ────────
+preconditions:
+
+  - id: doc.owner_is_a_named_person
+    statement: "The owner resolves to a named individual, not to a team, a department or a shared mailbox."
+    requires: [admin.obj.core.employee_record, owner_ref]
+    when: [{exists: thread.last_inbound}]
+    if_unmet: >
+      Degrade, do not block. Treat the artefact as uncontrolled: it may be read, must not be
+      cited, and the finding routes to the records manager rather than to the requester. An
+      unowned document is a records-programme defect, and asking whoever happened to open it to
+      fix that is how the finding gets closed by adding their name.
+
+  - id: doc.location_is_singular
+    statement: "Exactly one authoritative_location is declared before the artefact may be published or cited."
+    requires: [authoritative_location]
+    if_unmet: >
+      Block publication. Two authoritative locations is the same condition as zero, discovered
+      later and more expensively — usually in the meeting where both versions are read aloud.
+
+  - id: doc.classification_before_distribution
+    statement: "A classification is set before any distribution decision is made, not at the point of sending."
+    requires: [classification]
+    if_unmet: >
+      Block external issue and default the artefact to `confidential`. Default-deny is the only
+      safe direction: an over-classified document produces an annoyed request, an
+      under-classified one produces a notifiable incident.
+
+  - id: doc.approval_route_resolved
+    statement: "The approval route resolves to named people with current authority, not to roles."
+    requires: [admin.obj.core.approver, approver_ref]
+    when: [{absent: document.approved_at}]
+    if_unmet: >
+      Route to the owner of the delegation-of-authority matrix, never to the document's author.
+      Authors asked to find their own approver reliably find the most available one.
+
+  - id: doc.series_assigned_before_disposal
+    statement: "A record series is assigned before any disposal judgement is made."
+    requires: [admin.obj.core.record_series, record_series_ref, retention_trigger]
+    if_unmet: >
+      Block disposal, never block use. An artefact outside every series must be retained and
+      flagged; deleting what you cannot classify is how the one document that mattered goes
+      first, and it always goes on a Friday during a storage clean-up.
+
+  - id: doc.personal_data_assessed
+    statement: "Whether the artefact holds personal data is assessed before a retention or distribution decision."
+    requires: [contains_personal_data]
+    if_unmet: >
+      Degrade to the stricter regime — assume personal data is present, apply the shorter
+      retention and the narrower distribution — and raise it for assessment. The asymmetry is
+      deliberate: assuming presence costs storage discipline, assuming absence costs a breach.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - id: doc.no_disposal_under_hold
+    statement: "Disposal is impossible while legal_hold is true, including scheduled automated disposal."
+    hard: true
+    why: >
+      Destroying evidence on schedule during a hold is spoliation, and the schedule is not a
+      defence — it is an aggravating fact, because it proves the destruction was systematic.
+
+  - id: doc.no_external_issue_above_class
+    statement: "An artefact may not be issued externally above what its classification permits."
+    hard: true
+    when: [{has_obs: proposal_sent}]
+    why: "externally_issued is one-way. Every remedy after this point is a request to somebody who owes us nothing."
+
+  - id: doc.owner_cannot_self_approve
+    statement: "owner_ref and approver_ref may not be the same person where the document carries a control."
+    hard: true
+    why: "Four-eyes is not a preference. An approval by the author proves only that the author still likes it."
+
+  - id: doc.external_issue_is_irreversible
+    statement: "externally_issued cannot return to false. Recall changes intent, never state."
+    hard: true
+
+  - id: doc.minutes_immutable_after_approval
+    statement: "Approved minutes may be corrected only by a subsequent approved minute, never by edit."
+    hard: true
+    why: >
+      The minute is the decision. An edited minute is a rewritten decision, and the edit is
+      always discovered by the person it disadvantages.
+
+  - id: doc.retention_floor_from_obligation
+    statement: "retention_until may never be earlier than the retention any linked compliance_obligation requires."
+    hard: true
+    why: >
+      The internal schedule may be longer than the external duty; it may never be shorter.
+      Shorter is not an aggressive retention policy, it is a breach with a project plan.
+
+  - id: doc.storage_limitation_ceiling
+    statement: "Where the artefact holds personal data, retention_until must also have a defensible upper bound. 'Keep indefinitely' is not a retention rule."
+    hard: false
+    why: >
+      GDPR Art. 5(1)(e) binds in both directions. Most organisations defend the floor and ignore
+      the ceiling, because nobody has ever been shouted at for keeping something.
+
+  - id: doc.draft_may_not_be_cited
+    statement: "An artefact with a null approved_at may not be offered as evidence, however accurate its content."
+    hard: true
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: doc.one_authoritative_location
+    statement: "A document must declare exactly one authoritative_location before it may be published."
+    then: block_publish
+    severity: blocking
+    why: "Two authoritative locations is the same condition as zero, discovered later and more expensively."
+
+  - id: doc.unapproved_cannot_be_cited
+    statement: "A document with a null approved_at must never be offered as evidence to an auditor, a regulator or a counterparty."
+    then: block_evidence_use
+    severity: blocking
+
+  - id: doc.legal_hold_overrides_retention
+    statement: "legal_hold = true suspends all disposal, including automated schedule-driven disposal."
+    then: block_disposal
+    severity: blocking
+    why: >
+      A hold recorded only in the register and unreadable by the disposal job has no effect at
+      all, and the job will destroy evidence punctually and on policy.
+
+  - id: doc.supersession_requires_withdrawal
+    statement: "Publishing a new version without marking the previous one superseded leaves two live truths."
+    then: require_supersession_edge
+    severity: blocking
+
+  - id: doc.classification_binds_distribution
+    statement: "distribution_scope may never exceed what classification permits — a `restricted` document cannot have distribution_scope = all_staff."
+    then: block_distribution
+    severity: blocking
+
+  - id: doc.review_overdue_downgrades_evidence
+    statement: "Past review_due_at, evidential_weight drops one level. The organisation has itself declared the content no longer verified."
+    severity: warning
+
+  - id: doc.stalled_review_must_be_escalated
+    statement: "A review started and not concluded within its own cycle escalates to the owner's manager, not back to the reviewer."
+    when: [{has_obs: legal_review}, {fn: days_since, path: thread.last_inbound, op: ">=", value: 90}]
+    then: escalate_to_owner_manager
+    severity: warning
+    why: >
+      The reviewer has already ignored one reminder. A second is not a new intervention, it is
+      the same one repeated more politely.
+
+  - id: doc.acknowledgement_is_not_distribution
+    statement: "acknowledgement_required = true is satisfied only by a positive return per named person. Sending counts as nothing."
+    severity: warning
+    why: "Every acknowledgement number ever reported to a board as 100% was measuring sends."
+
+  - id: doc.uncontrolled_copy_is_not_a_backup
+    statement: "Known copies outside the authoritative location must be recorded and recalled, not tolerated."
+    severity: advisory
+    why: "A copy is a future contradiction with a timestamp on it."
+
+  - id: doc.personal_data_requires_a_series
+    statement: "An artefact holding personal data must be assigned a record series before it may be published."
+    then: block_publish
+    severity: blocking
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4, never a decision. Sum = 10000. ───
+decision_factors:
+
+  - name: approval_currency
+    weight_bp: 2400
+    direction: increases
+    description: >
+      Approved, versioned and not superseded. The single question that decides whether this
+      artefact may be spoken for at all, and the one most often answered from the artefact's
+      appearance rather than from its record.
+    reads: [approved_at, version, in_legal_review, supersedes_ref]
+
+  - name: location_singularity
+    weight_bp: 1600
+    direction: increases
+    description: One authoritative location and no known uncontrolled copies. Cheap to check, almost never checked.
+    reads: [authoritative_location, uncontrolled_copies_known, control_completeness_bp]
+
+  - name: review_freshness
+    weight_bp: 1600
+    direction: context
+    description: >
+      Context rather than increases, because freshness cuts both ways — a document rewritten last
+      week during a live incident is less trustworthy than one reviewed calmly a year ago.
+    reads: [review_due_at, last_reviewed_at, review_stalled, review_debt_days]
+
+  - name: classification_and_reach
+    weight_bp: 1500
+    direction: context
+    description: Where it has already gone constrains every option downstream. externally_issued is one-way.
+    reads: [classification, distribution_scope, externally_issued]
+
+  - name: retention_and_hold_status
+    weight_bp: 1400
+    direction: context
+    description: >
+      Whether this must be kept, may go, or is frozen. A hold changes the answer to every other
+      question in this list, and it is the field most likely to be recorded somewhere the
+      automation cannot read.
+    reads: [retention_until, legal_hold, disposal_method, retention_class, retention_trigger]
+
+  - name: evidential_standing
+    weight_bp: 900
+    direction: increases
+    description: What it would actually be worth in front of the person who asks for it.
+    reads: [evidential_weight, document_type]
+
+  - name: personal_data_exposure
+    weight_bp: 600
+    direction: decreases
+    description: >
+      Decreases, because personal data narrows every downstream option — who may be sent it, how
+      long it may be held, and how fast a mistake must be reported. Weighted lowest and read
+      first when it is true.
+    reads: [contains_personal_data, special_category_basis, classification]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: signed_form, strength_bp: 10000, decays: false,
+     independent_of: [register, email, derived],
+     description: "A wet or verified electronic signature on the original. Nothing outranks it, including a register that disagrees with it."}
+  - {source: register, strength_bp: 9000, decays: true,
+     independent_of: [document, email, access_log],
+     description: "The document register entry: owner, version, approval, retention class, series. Strong precisely because maintaining it is deliberate work — and stale the moment that work stops."}
+  - {source: portal, strength_bp: 8500, decays: false,
+     independent_of: [register, email],
+     description: "Lodgement receipt from an external body. Proves issue and date better than anything internal can, because it was not written by us."}
+  - {source: contract, strength_bp: 8500, decays: false,
+     independent_of: [register, email],
+     description: "Executed counterpart with schedules attached."}
+  - {source: document, strength_bp: 8000, decays: true,
+     independent_of: [register, access_log],
+     description: "The artefact's own approval block and version history. Strong, and self-asserted — it is the defendant's account of itself."}
+  - {source: hris, strength_bp: 7500, decays: false,
+     independent_of: [register, document, email],
+     description: "The trigger dates behind personnel retention — start, end, termination. Authoritative for the clock, silent about the artefact."}
+  - {source: attestation, strength_bp: 7000, decays: true,
+     independent_of: [register, document],
+     description: "A recorded acknowledgement from a named person in the bound population. Proves receipt was claimed, not that it was read."}
+  - {source: access_log, strength_bp: 6000, decays: true,
+     independent_of: [register, email, document],
+     description: "Who opened it. The only source that distinguishes distributed from read, and the only one that can contradict a confident acknowledgement number."}
+  - {source: email, strength_bp: 5500, decays: true,
+     independent_of: [register, access_log],
+     description: "Circulation and approval-by-reply. Common, and the reason so many approvals are unfindable a year later — an approval in a thread is an approval nobody can produce on request."}
+  - {source: manual_entry, strength_bp: 3500, decays: true,
+     description: "Somebody typed it into the register once. Decays fast and silently, and reads exactly like a maintained field."}
+  - {source: derived, strength_bp: 3000, decays: true,
+     description: "Inferred from circulation shape. Corroborating only, never sole grounds."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: controlled_share, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [doc.orphaned_artefact],
+     description: "Share of operationally-used artefacts that are actually controlled — owned, approved, versioned, classified, scheduled. Usually the most uncomfortable number in the function, and the one that predicts the rest."}
+  - {name: review_overdue_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     calibrates: [doc.review_due_date_passed, doc.review_started_and_abandoned],
+     description: "Share of documents past their own review_due_at."}
+  - {name: approval_cycle_time, unit: days, direction: lower_is_better, owner_layer: L6,
+     calibrates: [doc.approval_recorded_in_the_register],
+     description: "Draft to approved. Decides whether people route changes or make them locally, and local changes are where uncontrolled copies come from."}
+  - {name: version_conflict_incidents, unit: count, direction: lower_is_better, owner_layer: L6,
+     calibrates: [doc.version_conflict_in_circulation],
+     description: "Occasions two versions were live at once. Counted from incidents, which makes it an undercount by construction — you only count the ones somebody noticed."}
+  - {name: over_retention_volume, unit: count, direction: lower_is_better, owner_layer: L6,
+     calibrates: [doc.retention_period_elapsed, doc.personal_data_without_retention_rule],
+     description: "Documents held past retention_until with no hold. A breach that grows while nobody acts."}
+  - {name: acknowledgement_coverage, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [doc.acknowledgement_population_incomplete],
+     description: "Share of the bound population that has positively acknowledged. Computed per named person against a live population, or it is a send count wearing a percentage sign."}
+  - {name: retrieval_time, unit: minutes, direction: lower_is_better, owner_layer: L6,
+     description: "Time to produce a named document on request. The only metric an auditor measures directly, and the only one that cannot be improved by writing a better policy."}
+  - {name: disposal_execution_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Share of artefacts past retention actually disposed of on schedule. A band, not a maximum — a rate near 100% usually means holds are not being honoured."}
+  - {name: circulation_decay, unit: percent, direction: lower_is_better, owner_layer: L2,
+     description: "Fall in thread traffic on artefacts under review. Feeds the stalled-review inference and is the only live signal this object has today."}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: doc.approved, name: Document Approved, severity: notable,
+     payload: [version, approver_ref, approved_at],
+     description: "Starts the review clock and ends the draft excuse."}
+  - {id: doc.published, name: Document Published, severity: notable,
+     payload: [version, authoritative_location, distribution_scope]}
+  - {id: doc.issued_externally, name: Document Issued Externally, severity: critical,
+     emitted_when: [{has_obs: proposal_sent}],
+     payload: [classification, distribution_scope, version],
+     invalidates: [distribution_scope, uncontrolled_copies_known],
+     description: "One-way. Recall, classification correction and retention all become requests to somebody else from this moment."}
+  - {id: doc.superseded, name: Document Superseded, severity: notable,
+     payload: [supersedes_ref, version],
+     invalidates: [version, evidential_weight],
+     description: "Must fire in the same transaction as publication of the successor. A gap of days between the two is precisely where the wrong version gets sent."}
+  - {id: doc.review_stalled, name: Review Stalled, severity: notable,
+     emitted_when: [{has_obs: legal_review}, {fn: days_since, path: thread.last_inbound, op: ">=", value: 90}],
+     payload: [review_due_at, owner_ref, review_debt_days]}
+  - {id: doc.hold_applied, name: Legal Hold Applied, severity: critical,
+     payload: [legal_hold, retention_until, record_series_ref],
+     invalidates: [disposal_method, retention_until],
+     description: "Must reach the retention automation, not just the register. A hold the disposal job cannot read has no effect at all."}
+  - {id: doc.hold_released, name: Legal Hold Released, severity: notable,
+     payload: [legal_hold, retention_until],
+     description: "The forgotten half. Holds are applied under pressure and released by nobody, and an estate under permanent hold has no retention policy."}
+  - {id: doc.owner_vacated, name: Document Owner Vacated, severity: critical,
+     payload: [owner_ref, record_series_ref],
+     invalidates: [owner_ref, review_due_at],
+     description: "The owner left. Every review reminder this document sends from here lands in a disabled mailbox and is counted as sent."}
+  - {id: doc.disposed, name: Document Disposed, severity: notable,
+     payload: [disposal_method, retention_class, record_series_ref],
+     description: "The disposal record is itself a document, and is frequently the only proof the organisation disposed lawfully rather than lost the file."}
+
+# ── 16 · Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ─
+actions:
+  - {id: doc.route_for_approval, name: Route for approval, actor: agent, cost: low, reversible: true,
+     preconditions: [{absent: document.approved_at}],
+     effect: "Send to approver_ref with the version and a change summary. Approval without a change summary is a signature on an unread diff."}
+  - {id: doc.chase_stalled_review, name: Chase a stalled review, actor: agent, cost: low, reversible: true,
+     preconditions: [{has_obs: legal_review}, {fn: days_since, path: thread.last_inbound, op: ">=", value: 90}],
+     effect: "Escalate to the owner's manager with the elapsed time — not another reminder to the reviewer who already ignored one."}
+  - {id: doc.publish, name: Publish to the authoritative location, actor: human, cost: low, reversible: false,
+     effect: "Makes the artefact reachable by the people bound by it. Approval without publication binds nobody."}
+  - {id: doc.withdraw_superseded, name: Withdraw the superseded version, actor: agent, cost: trivial, reversible: false,
+     effect: "Runs in the same transaction as publication or it does not run at all."}
+  - {id: doc.recall_uncontrolled_copy, name: Recall a known uncontrolled copy, actor: human, cost: moderate, reversible: false,
+     effect: "A request, not a control. Record the outcome — an unanswered recall is still an open copy and must stay counted."}
+  - {id: doc.apply_legal_hold, name: Apply a legal hold, actor: system, cost: trivial, reversible: true,
+     effect: "Suspend the disposal job for this artefact and its series — at the job, not in the register."}
+  - {id: doc.reassign_owner, name: Reassign the owner, actor: human, cost: low, reversible: true,
+     effect: "Runs on the leaver checklist alongside access revocation. Document ownership is the half of joiner-mover-leaver nobody built."}
+  - {id: doc.schedule_review, name: Schedule the next review, actor: system, cost: trivial, reversible: true,
+     effect: "Set at approval, from review_cycle_months. A review date set later is a review date set never."}
+  - {id: doc.classify, name: Classify the artefact, actor: human, cost: low, reversible: true,
+     effect: "At creation, not at distribution. Classification at the point of sending is a decision made by whoever is in a hurry."}
+  - {id: doc.dispose, name: Dispose under the schedule, actor: system, cost: moderate, reversible: false,
+     effect: "Produces a disposal record. Disposal without a record is indistinguishable from loss, and reads worse."}
+  - {id: doc.retrieval_drill, name: Run a retrieval drill, actor: human, cost: moderate, reversible: true,
+     effect: "Name a document at random and time producing the approved current version. The cheapest honest audit of a records programme there is."}
+
+# ── 17 · Dependencies — what this object cannot be reasoned about without ────────────────
+dependencies:
+  - {target: admin.obj.core.approver, kind: requires, strength: hard,
+     description: "Without a named approver holding current authority the artefact cannot leave draft, and everything this object asserts about citability is unanswerable."}
+  - {target: admin.obj.core.employee_record, kind: requires, strength: hard,
+     description: "Ownership resolves through the personnel record. It is also the only route by which a leaver event can invalidate an owner — the failure this object most often carries silently."}
+  - {target: admin.obj.core.record_series, kind: requires, strength: soft,
+     description: "Retention and disposal cannot be computed without the schedule entry. Soft because the artefact is still meaningful as a controlled document while unassigned — just permanently retained."}
+  - {target: admin.obj.core.policy, kind: derived_from, strength: soft,
+     description: "The document-control, classification and retention policies set this artefact's regime. Where they are silent, this object's defaults become the de facto policy, which is how defaults end up governing."}
+  - {target: admin.obj.core.compliance_obligation, kind: invalidated_by, strength: hard,
+     description: "A change in the obligation resets the retention floor, the review cycle and sometimes the classification. The document does not know the law moved, and nothing tells it."}
+  - {target: admin.obj.core.contract, kind: enriches, strength: soft,
+     description: "Schedules and counterparts take their retention trigger and evidential weight from the contract they attach to."}
+  - {target: admin.obj.core.meeting, kind: enriches, strength: soft,
+     description: "Minutes inherit their date, attendees and decisions from the meeting. Where the meeting object is absent the minute becomes the only record and stops being checkable."}
+  - {target: admin.obj.core.approval, kind: blocks, strength: hard,
+     description: "An open approval blocks the draft-to-approved transition. This edge is why approval latency, not authoring effort, is the dominant term in document cycle time."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: doc.emergency_issue_before_approval
+    statement: "Under incident or safety conditions an artefact may be issued before approval and ratified within five working days."
+    overrides: [doc.unapproved_cannot_be_cited, doc.draft_may_not_be_cited]
+    when: [{has_obs: proposal_sent}]
+    why: >
+      A control that cannot be broken under fire gets bypassed permanently instead of
+      temporarily. The ratification window is the whole of the exception — without it the
+      emergency route becomes the normal route within a quarter and nobody can say when it did.
+    frequency: rare
+
+  - id: doc.counterparty_holds_the_master
+    statement: "Where an executed original lives in a counterparty's or an authority's system, our copy is a controlled copy and never the master."
+    overrides: [doc.one_authoritative_location]
+    why: >
+      Insisting on a single internal authoritative location for an artefact somebody else
+      executes produces a confident internal copy that quietly diverges from the signed one.
+      Record the external location as authoritative and ours as controlled — the honest structure,
+      and the one that survives a dispute.
+    frequency: common
+
+  - id: doc.working_papers_are_not_controlled
+    statement: "Drafts, calculation sheets and working papers are deliberately uncontrolled and destroyed at closure."
+    overrides: [doc.one_authoritative_location, doc.personal_data_requires_a_series]
+    why: >
+      Controlling everything is how a records programme collapses under its own weight and is
+      abandoned within a year. The discipline is in deciding what is a record, not in registering
+      every artefact. It is dangerous in one direction only: a working paper that gets relied on
+      becomes a record retrospectively, and its destruction date was set on the assumption it
+      never would.
+    frequency: common
+
+  - id: doc.superseded_version_retained_not_withdrawn
+    statement: "A superseded version is kept and remains readable where it evidences what was in force at the time."
+    overrides: [doc.supersession_requires_withdrawal]
+    why: >
+      Withdrawal means removing it from circulation, not from the estate. Almost every question
+      an auditor or a tribunal asks is about the version in force on a date, and an organisation
+      that deleted its superseded versions can answer only about today.
+    frequency: common
+
+  - id: doc.disclosure_overrides_classification
+    statement: "A restricted or confidential artefact must still be disclosed under a subject access request, a court order or a lawful regulatory demand."
+    overrides: [doc.classification_binds_distribution, doc.no_external_issue_above_class]
+    why: >
+      Classification is an internal handling instruction, not a legal shield. Treating it as one
+      converts a disclosure obligation into an obstruction finding, and the redaction judgement
+      belongs to counsel rather than to the label.
+    frequency: rare
+
+  - id: doc.hold_overrides_storage_limitation
+    statement: "A legal hold requires personal data to be retained past its retention date, and that over-retention is lawful for the duration of the hold."
+    overrides: [doc.storage_limitation_ceiling]
+    when: [{exists: document.retention_until}]
+    why: >
+      Storage limitation and the duty to preserve evidence genuinely conflict, and the conflict
+      resolves in favour of preservation while the hold runs. It must be documented as an
+      exception with a review date, because the failure mode is not the retention — it is the
+      hold nobody released.
+    frequency: occasional
+
+  - id: doc.regulator_format_overrides_house_control
+    statement: "Where an authority prescribes a format, template or lodgement channel, its regime displaces internal document control for that artefact."
+    why: >
+      Arguing house style with a regulator is a rejected filing. What survives internally is the
+      register entry and the retention rule; the artefact itself follows their shape.
+    frequency: occasional
+
+# ── 19 · Best Practices — each one needs a WHY ───────────────────────────────────────────
+best_practices:
+
+  - id: doc.link_never_attach
+    statement: "Circulate a link to the authoritative location; never circulate the file."
+    why: >
+      Every attachment is a fork with a date on it. The link costs one click and removes the
+      entire class of failure this object exists to name — and where the recipient cannot open a
+      link, that is an access problem worth solving once rather than a reason to fork forever.
+    applies_when: "Any internal distribution. External issue is a deliberate fork and must be recorded as one."
+
+  - id: doc.review_date_set_at_approval
+    statement: "Set review_due_at in the same action that records approval, computed from review_cycle_months."
+    why: >
+      A review date set later is a review date set never. Approval is the only moment at which
+      somebody is looking at the document, understands its cycle and has the authority to commit
+      to one.
+    applies_when: "Every approval, including a re-approval that changed nothing."
+
+  - id: doc.record_the_retention_trigger
+    statement: "Record the trigger event, not just the retention class — 'six years from employment_end', with the end date joined."
+    why: >
+      Almost every schedule is written as N years from X and almost no system stores X, so the
+      clock never starts and the schedule disposes of nothing while appearing complete. The
+      cheapest fix in a records programme, and almost never made, because the schedule looks
+      finished without it.
+    applies_when: "Any artefact assigned to a record series with an event-based trigger."
+
+  - id: doc.change_summary_with_every_approval
+    statement: "Route every approval with a diff or a change summary attached."
+    why: >
+      An approver reading a forty-page policy for the third time is not reading it. The change
+      summary is what makes the approval a decision rather than a signature, and it is what an
+      auditor asks for when testing whether approvals are real.
+    applies_when: "Any version after the first."
+
+  - id: doc.withdraw_in_the_same_transaction_as_publish
+    statement: "Publish the successor and withdraw the predecessor in one action, never as two tasks."
+    why: >
+      The gap between them is measured in days and is exactly where the wrong version gets sent —
+      usually by somebody diligent enough to have searched for it.
+    applies_when: "Every supersession."
+
+  - id: doc.classify_at_creation_default_deny
+    statement: "Classify at creation, and treat unclassified as confidential until assessed."
+    why: >
+      Classification at the point of sending is a decision made by whoever is in a hurry.
+      Default-deny is asymmetric in the right direction: over-classification costs an annoyed
+      request, under-classification costs a notifiable incident.
+    applies_when: "Every artefact holding anything but public content."
+
+  - id: doc.owner_transfer_on_the_leaver_checklist
+    statement: "Reassign document ownership as part of joiner-mover-leaver, alongside access revocation."
+    why: >
+      Access revocation is automated in most organisations and document ownership in almost none,
+      so a leaver's documents keep their review dates and send reminders into a disabled mailbox
+      for years. Nobody is inconvenienced by an unowned document until an auditor asks who owns it.
+    applies_when: "Every leaver and every internal move."
+
+  - id: doc.drill_retrieval_annually
+    statement: "Once a year, name five documents at random and time producing the approved current version of each."
+    why: >
+      Retrieval time is the only records metric an auditor measures directly, and the only one
+      that cannot be improved by writing a better policy. A programme that has never been timed
+      has never been tested.
+    applies_when: "Any organisation claiming a records management system."
+    evidence: "ISO 15489 treats usability and retrievability as defining properties of a record, not as a service level laid on top of one."
+
+  - id: doc.release_holds_deliberately
+    statement: "Review every open legal hold on a fixed cycle and release the ones whose matter has closed."
+    why: >
+      Holds are applied under pressure by people who will not be there when the matter closes. An
+      estate under permanent hold has no retention policy at all, and it fails a data-protection
+      audit for precisely the opposite reason it was protected from failing a litigation one.
+    applies_when: "Any organisation with more than a handful of holds."
+
+# ── 20 · Anti-Patterns — the highest-signal section ──────────────────────────────────────
+anti_patterns:
+
+  - id: doc.attachment_as_distribution
+    statement: "Distributing the policy by emailing the PDF."
+    why_it_happens: >
+      It works, it is instant, and it leaves a visible artefact in the sender's sent items that
+      feels like proof of distribution. Linking feels like extra work and looks less helpful.
+    cost: "Every recipient now holds a copy that will never be updated. Two years later there are eleven versions in circulation and the register's version is the one nobody has."
+    instead: "Circulate a link to the authoritative location and, where a copy genuinely must be sent, record it in uncontrolled_copies_known so the recall list is real."
+    detectable_by: [doc.version_conflict_in_circulation, version_conflict_incidents]
+
+  - id: doc.review_by_footer_date
+    statement: "The annual review that changes only the date in the footer and increments the version."
+    why_it_happens: >
+      The review arrives as a compliance task with a deadline rather than as a question, and the
+      only visible evidence of having done one is a change. So a change is made.
+    cost: "The document ages while its metadata stays fresh, and the register reports a healthy review rate for content nobody has re-read since it was written."
+    instead: "Record a review that changed nothing as a valid review with an explicit no-change finding, so that making a change is not the only way to prove one happened."
+    detectable_by: [doc.review_due_date_passed, review_overdue_rate]
+
+  - id: doc.perpetual_draft
+    statement: "The SOP in daily operational use with approved_at still null."
+    why_it_happens: >
+      Approval is expensive and the document already works. Everybody following it feels like
+      evidence enough that it is right, and nobody wants to reopen the wording to get a signature.
+    cost: "The organisation is running a control it cannot cite. In an audit or an incident the artefact everybody relied on is formally a draft, and the reliance becomes the finding."
+    instead: "Approve the version in use as-is, dated today, and raise the improvements as the next version. Approval is not an endorsement of perfection."
+    detectable_by: [doc.approval_recorded_in_the_register, controlled_share]
+
+  - id: doc.department_as_owner
+    statement: "Recording 'Operations' or a shared mailbox as the document owner."
+    why_it_happens: >
+      It survives staff turnover, avoids an argument about who is accountable, and looks like
+      resilience. Naming an individual feels like allocating blame.
+    cost: "Departments do not read review reminders and cannot be escalated to. The document is unreviewed by construction and the first person to notice is an auditor."
+    instead: "Name an individual and put ownership transfer on the leaver checklist. Resilience comes from the transfer process, not from the vagueness."
+    detectable_by: [doc.owner_left_the_organisation, doc.orphaned_artefact]
+
+  - id: doc.folder_as_register
+    statement: "Treating a SharePoint or shared-drive folder as the document register."
+    why_it_happens: >
+      The folder already exists, everyone can see it, and a register looks like duplicated
+      bureaucracy laid over storage that already works.
+    cost: "A folder holds no owner, version, classification, review date, retention class or series. Every question this object answers becomes a manual inspection of files, and retrieval time goes from minutes to days."
+    instead: "Keep the files where they are and maintain a register over them. The register is the control; the folder is only the location."
+    detectable_by: [controlled_share, retrieval_time]
+
+  - id: doc.hold_recorded_only_in_the_register
+    statement: "A legal hold noted in the register that the automated disposal job cannot read."
+    why_it_happens: >
+      The hold arrives from legal as an instruction to the records team, who record it where they
+      record everything. The disposal job belongs to IT and nobody joins the two.
+    cost: "The job destroys the held material punctually and on policy. 'The system did it on schedule' is not a defence to spoliation — it is proof the destruction was systematic."
+    instead: "Apply the hold at the disposal job and reconcile it back to the register. Then test it by attempting a disposal."
+    detectable_by: [doc.retention_period_elapsed, over_retention_volume]
+
+  - id: doc.keep_everything_forever
+    statement: "Retaining everything indefinitely on the grounds that storage is cheap."
+    why_it_happens: >
+      Nobody has ever been disciplined for keeping something, deletion feels irreversible and
+      risky, and the storage cost genuinely is trivial.
+    cost: "Storage is the smallest cost. Over-retention of personal data breaches storage limitation in its own right, and the larger bill arrives in discovery, where every retained artefact is reviewable and every one of them disclosable."
+    instead: "Run the schedule, honour the holds, and record disposals. A defensible disposal record is worth more than the artefacts it removed."
+    detectable_by: [over_retention_volume, doc.personal_data_without_retention_rule]
+
+  - id: doc.classification_theatre
+    statement: "Every artefact classified `confidential` by default and nothing ever classified higher or lower."
+    why_it_happens: >
+      A blanket default is defensible in a policy document, costs nothing to implement, and
+      removes the need for judgement at creation.
+    cost: "A scheme with one populated level carries no information. People learn the label means nothing, and the genuinely restricted artefact gets handled like the lunch menu."
+    instead: "Measure the distribution across levels. If one level holds more than about three-quarters of the estate, the scheme is not running."
+    detectable_by: [doc.classification_exceeded_by_distribution]
+
+  - id: doc.acknowledgement_by_send_count
+    statement: "Reporting policy acknowledgement as the number of people the policy was sent to."
+    why_it_happens: >
+      The send count is available instantly; the return count requires chasing named individuals,
+      which is slow, unpopular and never finishes.
+    cost: "The board is told 100% and the true figure is routinely under half. At the moment it matters — a tribunal, a disciplinary, an incident — the individual concerned is one of the ones who never returned it."
+    instead: "Count positive returns per named person against a live population that includes joiners since publication."
+    detectable_by: [acknowledgement_coverage, doc.acknowledgement_population_incomplete]
+
+# ── 21 · Examples — including the classic misclassifications ─────────────────────────────
+examples:
+  - {label: "Board minutes, approved at the following meeting", kind: typical,
+     note: "Evidential weight dispositive; immutable after approval; corrections only by subsequent minute. Also the document most often held in draft for months while the decisions in it are acted on."}
+  - {label: "Information security policy v4.2, annual review, acknowledgement required", kind: typical,
+     note: "The version in the wiki is v3.1 and is the one people actually read. A textbook uncontrolled copy — and the wiki version is better formatted, which is why it wins."}
+  - {label: "Executed master services agreement with three schedules", kind: edge,
+     note: "The agreement is controlled; the schedules are attachments nobody registered, so nobody can state the current SLA without opening an inbox. The argument is always about a schedule."}
+  - {label: "Draft SOP in daily operational use", kind: edge,
+     note: "approved_at null. Everyone follows it, it governs a control, and it cannot be cited. The commonest document-control finding there is."}
+  - {label: "DPIA for a new HR system", kind: typical,
+     note: "classification special_category. Its existence is itself evidence for a data-protection obligation; its absence is the finding, and the finding is worse than a bad DPIA."}
+  - {label: "Leaver's signed handover checklist", kind: edge,
+     note: "Retention class HR-07, trigger employment_end. Of no interest until an employment tribunal, at which point it is the only artefact that matters and it is either signed or it is nothing."}
+  - {label: "A spreadsheet of salary bands emailed to five managers", kind: misclassification,
+     note: "Treated as correspondence because it arrived in an inbox. It is a personal-data record with five uncontrolled copies and no series, and it will still be sitting in those five mailboxes in nine years."}
+  - {label: "The company's stated retention policy", kind: misclassification,
+     note: "This is admin.obj.core.policy — a rule the organisation can change on Tuesday. The controlled artefact stating it is this object, and the schedule entries it creates are record_series. Three different things, routinely all called 'the retention policy'."}
+  - {label: "A statutory annual return filed with the registrar", kind: counterexample,
+     note: "The filing is an event and the duty behind it is a compliance_obligation whose date nobody here can move. This object owns only the lodged artefact and its receipt — and the receipt outranks our own copy as evidence, because we did not write it."}
+  - {label: "A meeting agenda circulated the night before", kind: counterexample,
+     note: "A working paper, not a record. Registering it would be the anti-pattern in the other direction — the records programme that controls everything and is abandoned within a year."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "ISO 15489-1 — Information and documentation: Records management, concepts and principles", kind: standard,
+     note: "Source of the four properties a record must have: authenticity, reliability, integrity, usability. Every field in this object exists to protect one of them, and retrievability is treated as definitional rather than as a service level."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "The management-system frame: policy, accountability, records processes, monitoring. What turns a document register into something an organisation can be certified against."}
+  - {title: "ISO 9001 clause 7.5 — Documented information", kind: standard,
+     note: "Requires control of creation, approval, version, distribution, access, retention and disposal. The plainest checklist of what 'controlled' means, and the one most audits test against."}
+  - {title: "GDPR Article 5(1)(e) — Storage limitation", kind: standard,
+     note: "Personal data kept no longer than necessary. Binds in both directions; organisations defend the retention floor and ignore the ceiling, because nobody has ever been shouted at for keeping something."}
+  - {title: "GDPR Article 30 — Records of processing activities", kind: standard,
+     note: "The register that must exist whether or not anybody asks for it. Its rows are processing activities rather than documents — but the retention and classification of the artefacts underneath is where each entry is proved or disproved."}
+  - {title: "GDPR Article 9 — Special categories of personal data", kind: standard,
+     note: "Why special_category is a classification level and not a flavour of restricted: it changes the lawful basis, the retention rule and the breach clock."}
+  - {title: "Retention schedule", kind: framework,
+     note: "The standard instrument: record series, retention period, trigger event, disposal method. The trigger is the part universally omitted, and without it the schedule disposes of nothing."}
+  - {title: "Legal hold and the doctrine of spoliation", kind: framework,
+     note: "Preservation obligations attach on reasonable anticipation of litigation, not on service of proceedings. Systematic on-schedule destruction after that point is the worst available version of the facts."}
+  - {title: "MoReq2010 — Modular Requirements for Records Systems", kind: framework,
+     note: "The most complete functional specification of what a records system must do. Useful chiefly as a source of the questions an implementation quietly skips."}
+  - {title: "Four-eyes principle and segregation of duties", kind: framework,
+     note: "Why owner_ref and approver_ref are separate fields, and why an approval by the author evidences nothing but the author's continued opinion."}
+  - {title: "Joiner-mover-leaver", kind: framework,
+     note: "Applied to access rights almost everywhere and to document ownership almost nowhere. That gap is why doc.owner_vacated is a critical event in this file."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Rewritten from the 18-section shape onto the 23-section schema. Five of fifteen patterns are
+    executable today and all five ride observations built for a revenue motion — legal_review and
+    proposal_sent — plus edge_count, elapsed thread time, and the natively administrative
+    commitment.due_at / thread.ball_in_court pair. Ranked, the asks are: (1) document.approved_at,
+    the single highest-value missing fact path in the Admin brain, because without it the library
+    cannot distinguish a draft from a document and every other judgement in this file depends on
+    that distinction; (2) document.retention_until together with a trigger event joined from
+    employee.end_at, because a schedule whose clock never starts looks complete and disposes of
+    nothing; (3) document.version plus identity clustering, which turns a version string into a
+    conflict detector for the commonest incident in the domain; (4) document.classification with
+    derived.recipient_is_external, one cheap domain comparison away from turning an unrecallable
+    data-protection incident into a preventable one; (5) leaver_confirmed reaching document
+    ownership, the half of joiner-mover-leaver nobody built. Deliberately kept distinct from
+    admin.obj.core.policy and from admin.obj.core.compliance_obligation: a policy is a rule we can
+    change, an obligation is a duty we cannot, and a document is the controlled artefact that
+    evidences either. "We updated the policy" almost always means somebody edited a file, and this
+    object is where that conflation gets caught.

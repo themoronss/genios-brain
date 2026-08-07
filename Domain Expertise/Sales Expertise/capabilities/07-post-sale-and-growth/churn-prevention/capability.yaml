@@ -1,0 +1,27 @@
+identity:
+  id: sales.post_sale_and_growth.churn_prevention
+  name: Churn Prevention
+  domain: sales
+  subdomain: post_sale_and_growth
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Detecting and reversing decay before the renewal conversation starts. By the time an
+  account says it is leaving, the decision is usually months old.
+
+question: "Which accounts are leaving, and is there still time to act?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

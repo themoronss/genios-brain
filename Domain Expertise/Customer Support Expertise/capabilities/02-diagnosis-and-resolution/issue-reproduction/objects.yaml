@@ -1,0 +1,25 @@
+# Load-set for customer_support.diagnosis_and_resolution.issue_reproduction
+# REFERENCES ONLY — never an inline object.
+
+capability: customer_support.diagnosis_and_resolution.issue_reproduction
+
+core:
+  # product_area is required rather than optional because reproduction is environment-bound:
+  # without knowing which surface, version and platform the report came from, "we could not
+  # reproduce it" is a statement about our setup and not about the fault. ticket carries the
+  # narrated steps, issue carries the accumulating attempts across reports.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.product_area
+  # requester matters more here than anywhere else in the subdomain — their technical level
+  # decides how much of the reported sequence to trust and how to ask for the rest.
+  # knowledge_article is the cheap first check: a documented behaviour reproduces instantly and
+  # ends the investigation before it starts.
+  optional:
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.knowledge_article
+
+scoped:
+  required: []
+  optional: []

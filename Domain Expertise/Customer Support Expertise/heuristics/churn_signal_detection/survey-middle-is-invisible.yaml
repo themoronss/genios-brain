@@ -1,0 +1,38 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.churn_signal_detection.survey_middle_is_invisible
+  name: Survey middle is invisible
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Survey scores are answered by the delighted and the furious, so the middle never appears
+    in them.
+heuristic:
+  statement: Survey scores are answered by the delighted and the furious, so the middle never appears
+    in them.
+  why: Response is driven by emotional arousal rather than by representativeness. The silent middle
+    holds most of the revenue and most of the eventual churn, and no amount of improving the score reaches
+    it — the score cannot see it.
+  reads:
+  - customer_support.obj.core.satisfaction_score
+  - customer_support.obj.core.customer_sentiment
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

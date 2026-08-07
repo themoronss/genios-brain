@@ -1,0 +1,562 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# REFERENCE OBJECT — copy this file's SHAPE when authoring any other object.
+#
+# All eighteen sections are present and populated. Six are required by the schema
+# (identity, description, properties, relationships, inference_patterns, metadata);
+# the other twelve are here because this is the reference, not because a first pass
+# must fill them.
+#
+# The one thing to copy above all others: every inference pattern carries BOTH a human
+# `statement` and a machine `when`. Four of the ten below are executable against the
+# pipeline as it exists today. Six are not, and say so — those six are the Layer 1/2
+# backlog, not decoration.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.decision_maker
+  scope: core
+  name: Decision Maker
+  domain: sales
+  subdomain: qualification
+  owner_capability: sales.qualification.decision_maker_identification
+  version: 1.0.0
+  status: draft
+  aliases: ["Economic Buyer", "Approver", "Final Approver"]
+purpose:
+  statement: >
+    A person with the authority to approve, reject, or block a purchase. Authority is the
+    discriminator — not seniority, not who talks most in the meeting, and not who owns the
+    problem. A VP who cannot sign is a Stakeholder; a finance manager with a signing limit
+    above the deal value is a Decision Maker. In most B2B motions the Decision Maker is
+    discovered, never announced, which is why the inference patterns below carry most of
+    this object's weight.
+attributes:
+  - name: authority
+    purpose: What this person can actually approve, and up to what value.
+    type: composite
+    contains:
+      - authority_level
+      - approval_limit
+      - is_economic_buyer
+      - requires_escalation_above
+  - name: budget_control
+    purpose: Whether they hold the budget or merely spend against someone else's.
+    type: composite
+    contains:
+      - holds_budget
+      - budget_owner_ref
+      - fiscal_period
+  - name: influence
+    purpose: Standing inside the buying organisation, independent of formal authority.
+    type: composite
+    contains:
+      - influence_level
+      - department
+      - reports_to
+      - tenure_months
+  - name: communication_style
+    purpose: How to reach them and what to expect back. Read by Layer 5.2, never by Layer 4.
+    type: composite
+    contains:
+      - preferred_channel
+      - response_speed
+      - tone_preference
+      - meeting_preference
+  - name: risk_appetite
+    purpose: How this person behaves when the decision carries downside.
+    type: composite
+    contains:
+      - risk_appetite
+      - evidence_demanded
+      - prior_vendor_switches
+  - name: engagement
+    purpose: Observed interaction, as opposed to declared attributes.
+    type: composite
+    contains:
+      - last_engaged_at
+      - engagement_trend
+      - ball_in_court
+  - name: authority_level
+    purpose: The single most load-bearing field on this object. `veto_only` exists because Security
+      and Legal can stop a deal without being able to start one, and collapsing them into `approver`
+      is how a deal gets forecast as won while a blocker sits unaddressed.
+    type: value
+    data_type: enum
+    allowed_values: [none, recommender, approver, final_approver, veto_only]
+    required: true
+    description: >
+      The single most load-bearing field on this object. `veto_only` exists because Security
+      and Legal can stop a deal without being able to start one, and collapsing them into
+      `approver` is how a deal gets forecast as won while a blocker sits unaddressed.
+  - name: approval_limit
+    purpose: Maximum contract value this person can approve unaided. Null means unknown, not
+      unlimited.
+    type: value
+    data_type: money
+    description: Maximum contract value this person can approve unaided. Null means unknown, not
+      unlimited.
+  - name: is_economic_buyer
+    purpose: Whether the budget consumed is theirs. Distinct from holding signing authority.
+    type: value
+    data_type: boolean
+    description: Whether the budget consumed is theirs. Distinct from holding signing authority.
+  - name: requires_escalation_above
+    purpose: Threshold past which this person must escalate. Usually equals approval_limit; kept
+      separate because some organisations split the two.
+    type: value
+    data_type: money
+    description: Threshold past which this person must escalate. Usually equals approval_limit; kept
+      separate because some organisations split the two.
+  - name: holds_budget
+    purpose: The holds_budget of this object.
+    type: value
+    data_type: boolean
+  - name: budget_owner_ref
+    purpose: The budget this person spends against, when it is not their own.
+    type: reference
+    ref: sales.obj.core.budget
+    data_type: ref
+    description: The budget this person spends against, when it is not their own.
+  - name: fiscal_period
+    purpose: e.g. "FY26 Q3". Timing authority is as real as monetary authority — an approver out of
+      budget until April is a timeline constraint, not a lost deal.
+    type: value
+    data_type: string
+    description: e.g. "FY26 Q3". Timing authority is as real as monetary authority — an approver out
+      of budget until April is a timeline constraint, not a lost deal.
+  - name: influence_level
+    purpose: The influence_level of this object.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, dominant]
+  - name: department
+    purpose: The department of this object.
+    type: value
+    data_type: string
+  - name: reports_to
+    purpose: Self-referential. Enables the escalation path without a separate org-chart object.
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+    description: Self-referential. Enables the escalation path without a separate org-chart object.
+  - name: tenure_months
+    purpose: New arrivals behave differently — under about six months they are more open to change and
+      less able to push it through. Both effects are real and they point opposite ways, which is why
+      this is a property and not a heuristic.
+    type: value
+    data_type: integer
+    unit: months
+    description: >
+      New arrivals behave differently — under about six months they are more open to change
+      and less able to push it through. Both effects are real and they point opposite ways,
+      which is why this is a property and not a heuristic.
+  - name: preferred_channel
+    purpose: The preferred_channel of this object.
+    type: value
+    data_type: enum
+    allowed_values: [email, phone, slack, teams, linkedin, in_person, unknown]
+  - name: response_speed
+    purpose: The response_speed of this object.
+    type: value
+    data_type: enum
+    allowed_values: [fast, normal, slow, unresponsive]
+  - name: tone_preference
+    purpose: The tone_preference of this object.
+    type: value
+    data_type: enum
+    allowed_values: [terse, formal, conversational, data_led]
+  - name: meeting_preference
+    purpose: The meeting_preference of this object.
+    type: value
+    data_type: string
+  - name: risk_appetite
+    purpose: The risk_appetite of this object.
+    type: value
+    data_type: enum
+    allowed_values: [averse, balanced, tolerant]
+  - name: evidence_demanded
+    purpose: What this person needs to see before approving — reference customers, security review,
+      ROI model, pilot.
+    type: value
+    data_type: list
+    description: What this person needs to see before approving — reference customers, security
+      review, ROI model, pilot.
+  - name: prior_vendor_switches
+    purpose: The prior_vendor_switches of this object.
+    type: value
+    data_type: integer
+  - name: last_engaged_at
+    purpose: One of the very few properties with a live Layer 2 source today.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: One of the very few properties with a live Layer 2 source today.
+  - name: engagement_trend
+    purpose: Engine-computed. <= 0.5 means two-way volume has halved against the prior fortnight.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+    description: Engine-computed. <= 0.5 means two-way volume has halved against the prior fortnight.
+  - name: ball_in_court
+    purpose: The ball_in_court of this object.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: No candidate identified. The default, and the one most deals sit in longer than the
+        rep believes.
+    - name: identified
+      description: A candidate exists at some confidence, from inference or from being told.
+      entered_when: [exists: thread.last_inbound]
+    - name: contacted
+      description: Direct two-way contact has occurred with this person, not via the champion.
+    - name: engaged
+      description: They are participating — asking questions, attending, responding.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+    - name: qualified
+      description: Authority confirmed, not assumed. Requires an independent source.
+    - name: at_risk
+      description: Previously engaged, now decaying.
+      entered_when: [{path: derived.engagement, op: "<=", value: 0.5}]
+    - name: inactive
+      description: Left the role, or the deal moved past them.
+      entered_when: [has_obs: champion_change]
+  transitions:
+    - {from: unknown, to: identified}
+    - {from: identified, to: contacted}
+    - {from: contacted, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: them}]}
+    - {from: engaged, to: qualified}
+    - {from: engaged, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}]}
+    - {from: at_risk, to: engaged}
+    - {from: qualified, to: inactive, when: [has_obs: champion_change]}
+
+# ── 7 · Business Rules — deterministic. No model evaluates these. ────────────────────────
+relationships:
+
+  - type: owns
+    target: sales.obj.core.budget
+    cardinality: zero_or_one
+    description: Only when holds_budget is true. Otherwise budget_owner_ref points elsewhere.
+
+  - type: member_of
+    target: sales.obj.core.buying_committee
+    cardinality: zero_or_one
+    description: In an enterprise motion this is always populated; in SMB there is often no committee
+      at all.
+
+  - type: works_with
+    target: sales.obj.core.champion
+    cardinality: zero_or_many
+    description: The champion's route to this person is the single most predictive structure in an
+      enterprise deal.
+
+  - type: gates
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+    description: Their availability and fiscal period, not ours, set the achievable close date.
+
+  - type: approves
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+
+  - type: reports_to
+    target: sales.obj.core.decision_maker
+    cardinality: zero_or_one
+    description: Self-referential — the escalation path.
+
+  - type: belongs_to
+    target: sales.obj.core.account
+    cardinality: one
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: dm.budget_approved_by_this_person
+      statement: "This person's own thread carries a budget-approval observation."
+      status: executable
+      when:
+        - {has_obs: budget_approved}
+      yields: {confidence_bp: 9000, attribute: holds_budget, value: true}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Approving budget is the closest thing to a proof of economic authority the pipeline
+        can currently see. Not 10000 — the observation may record them relaying somebody
+        else's approval.
+
+    - id: dm.requested_the_contract
+      statement: "Asked for the contract and gave a verbal yes."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {has_obs: verbal_yes}
+      yields: {confidence_bp: 8800, attribute: authority_level, value: final_approver}
+      evidence_fields: [thread.ball_in_court]
+      note: People without signing authority ask for pricing. They do not ask for paper.
+
+    - id: dm.crm_role_field
+      statement: "The CRM contact record says role = decision maker."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: authority_level, value: final_approver}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.role, owner_layer: L1, note: "CRM connector exists; the contact\
+            role field is not projected into a typed L2 fact yet."}
+
+    - id: dm.declared_approval_limit
+      statement: "A signing limit is recorded against this person."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: approval_limit, value: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.approval_limit, owner_layer: L1}
+
+    - id: dm.signed_a_prior_contract
+      statement: "This person signed a previous contract with us."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: authority_level, value: final_approver}
+      requires_signals:
+        - {kind: obs_kind, name: contract_signed, owner_layer: L2, note: "L2 emits contract_requested but\
+            never contract_signed — the strongest available authority proof is dropped on the floor at exactly
+            the moment it is proven."}
+
+  heuristic:
+
+    - id: dm.approves_budget_and_discusses_price
+      statement: "Approved budget AND was in the pricing conversation — the two halves of a commercial decision."
+      status: executable
+      when:
+        - {has_obs: budget_approved}
+        - {has_obs: pricing_discussed}
+      yields: {confidence_bp: 8200, attribute: null}
+      evidence_fields: [thread.last_inbound]
+
+    - id: dm.sole_contact_on_a_live_deal
+      statement: "The only contact attached to an open deal is, by default, the person deciding it."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 6500, attribute: null}
+      note: >
+        Deliberately weak at 6500. Single-threading means we are guessing, and this pattern
+        should raise the single-threaded risk flag as loudly as it raises the identification.
+
+    - id: dm.owns_the_commercial_objection
+      statement: "Raised a price objection while the ball was in their court — people without authority
+        defer, they do not negotiate."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 7000, attribute: null}
+      evidence_fields: [thread.ball_in_court]
+
+    - id: dm.attends_every_commercial_meeting
+      statement: "Present at every pricing or commercial meeting across the deal."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: null}
+      requires_signals:
+        - {kind: obs_kind, name: pricing_meeting, owner_layer: L2, note: "pricing_discussed exists but is\
+            thread-scoped, not meeting-scoped, so attendance cannot be computed."}
+        - {kind: derived, name: derived.meeting_attendance_rate, owner_layer: L2}
+
+    - id: dm.highest_seniority_across_the_thread
+      statement: "The most senior attendee across all deal meetings."
+      status: needs_signal
+      yields: {confidence_bp: 6000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: person.seniority, owner_layer: L1, note: "Requires title normalisation.\
+            Weak on its own — VP of Engineering outranks a Finance Manager on paper and cannot approve the
+            spend."}
+
+# ── 10 · Inputs — where this object gets filled from ─────────────────────────────────────
+inputs:
+  - {source: email, signal: thread participation and reply behaviour, path: thread.last_inbound}
+  - {source: email, signal: who is waiting on whom, path: thread.ball_in_court}
+  - {source: derived, signal: two-way interaction trajectory, path: derived.engagement}
+  - {source: crm, signal: "contact role, seniority, signing limit", description: "Not yet projected into\
+      typed L2 facts — see needs_signal patterns."}
+  - {source: calendar, signal: attendance at commercial meetings}
+  - {source: meeting_transcript, signal: "who states approval, who defers to whom"}
+  - {source: contract, signal: signatory block}
+
+# ── 11 · Outputs — what this object can tell the rest of the stack ───────────────────────
+outputs:
+  - {name: authority_confidence_bp, type: integer, description: "How sure we are this person can actually\
+      approve.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: approval_probability_bp, type: integer, description: "Likelihood of approval given current\
+      evidence and risk posture.", consumed_by: [L4.reasoning_unit]}
+  - {name: escalation_path, type: list, description: "Ordered approver chain when deal value exceeds approval_limit.",
+      consumed_by: [L5.execution_planning]}
+  - {name: reachability, type: string, description: "Channel and timing preference.", consumed_by: ["L5.2.channel_planner"]}
+  - {name: single_threaded_risk, type: boolean, description: "True when this is the only contact on a\
+      live deal.", consumed_by: [L4.reasoning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: dm.cannot_approve_above_limit, statement: "Cannot approve contract value above approval_limit.",
+      hard: true}
+  - {id: dm.fiscal_period_binds, statement: "Cannot commit spend outside the current fiscal_period without\
+      a separate budget approval.", hard: true}
+  - {id: dm.no_direct_contact_when_blocked, statement: "Where the account has a procurement-led process,\
+      direct approach to the approver may breach their policy and lose the deal.", hard: true}
+  - {id: dm.veto_only_no_close, statement: "authority_level = veto_only cannot be the closing approver.",
+      hard: true}
+
+# ── 15 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+business_rules:
+
+  - id: dm.no_proposal_without_identification
+    statement: A proposal must not be sent before a Decision Maker is identified at 60% confidence or
+      better.
+    then: block_proposal_send
+    severity: blocking
+
+  - id: dm.value_above_limit_needs_escalation
+    statement: If deal value exceeds approval_limit, an escalation path to the next approver is
+      required before the deal can be forecast as committed.
+    when: [{path: deal.value, op: ">", value: 0}]
+    then: require_escalation_path
+    severity: blocking
+
+  - id: dm.veto_only_cannot_close
+    statement: A person with authority_level = veto_only can never be recorded as the closing
+      approver.
+    then: reject_as_closer
+    severity: blocking
+
+  - id: dm.single_threaded_is_a_risk
+    statement: A live deal whose only contact is the Decision Maker is single-threaded and must carry
+      a risk flag.
+    when: [{fn: edge_count, op: "<=", value: 1}, {neighbor_fact: deal.status, op: "=", value: open}]
+    then: flag_single_threaded
+    severity: warning
+
+  - id: dm.unknown_limit_is_not_unlimited
+    statement: A null approval_limit must be treated as unknown, never as sufficient. Forecasting a
+      deal on an unverified limit is the most common source of slipped quarters.
+    severity: warning
+
+# ── 8 · Decision Factors — what Layer 4 should weigh. Advisory inputs, never a decision. ─
+decision_factors:
+
+  - name: authority_confirmed
+    weight_bp: 3000
+    direction: increases
+    description: Confirmed by an independent source, not inferred from title. Rule 11 — only
+      independent evidence may raise confidence.
+    reads: [authority_level, is_economic_buyer]
+
+  - name: budget_availability
+    weight_bp: 2000
+    direction: increases
+    reads: [holds_budget, approval_limit, fiscal_period]
+
+  - name: engagement_direction
+    weight_bp: 1500
+    direction: context
+    description: Trend matters more than level. A dominant buyer going quiet outranks a moderate one
+      staying steady.
+    reads: [engagement_trend, last_engaged_at]
+
+  - name: relationship_strength
+    weight_bp: 1500
+    direction: increases
+    reads: [influence_level, tenure_months]
+
+  - name: risk_posture
+    weight_bp: 1000
+    direction: context
+    reads: [risk_appetite, evidence_demanded, prior_vendor_switches]
+
+  - name: competitive_presence
+    weight_bp: 1000
+    direction: decreases
+    reads: [prior_vendor_switches]
+
+# ── 9 · Inference Patterns ⭐ — how this object is discovered when nobody says it ────────
+#
+# ANDed within a pattern. Express OR as two patterns — that is exactly how the engine
+# works, so authoring it any other way produces something that cannot run.
+evidence:
+  - {source: contract, strength_bp: 10000, description: "A signature is proof. Nothing outranks it."}
+  - {source: crm, strength_bp: 8000, description: "Explicit role field. Strong but frequently stale —\
+      someone typed it once."}
+  - {source: meeting_transcript, strength_bp: 7500, description: "Verbal approval or explicit deferral\
+      to this person."}
+  - {source: email, strength_bp: 7000, description: "Written approval in a thread."}
+  - {source: calendar, strength_bp: 5000, description: "Attendance pattern. Circumstantial on its own."}
+  - {source: website, strength_bp: 3000, description: "Public title. Weakest — title is not authority."}
+  - {source: derived, strength_bp: 4000, description: "Inferred from engagement shape. Corroborating only,\
+      never sole grounds."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: identification_rate, unit: percent, description: "Share of open deals with a Decision Maker\
+      identified above 60%.", owner_layer: L6}
+  - {name: identification_lead_time, unit: days, description: "Days from deal creation to identification.\
+      The number that most predicts cycle length.", owner_layer: L6}
+  - {name: authority_accuracy, unit: percent, description: "Share of inferred decision makers later confirmed\
+      correct. Calibrates every pattern above.", owner_layer: L6}
+  - {name: approval_rate, unit: percent, owner_layer: L6}
+  - {name: average_reply_time, unit: hours, owner_layer: L2}
+  - {name: single_threaded_deal_share, unit: percent, description: "Deals where this object is the only\
+      contact.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: dm.identified, name: Decision Maker Identified, emitted_when: [has_obs: budget_approved],
+      payload: [authority_level, confidence_bp]}
+  - {id: dm.authority_confirmed, name: Authority Confirmed, payload: [authority_level, approval_limit,
+      source]}
+  - {id: dm.changed, name: Decision Maker Changed, emitted_when: [has_obs: champion_change], payload: [
+      previous_ref, new_ref], description: "The most damaging uncaught event in an enterprise deal. Everything
+      learned about the previous person's risk posture and evidence demands is now void."}
+  - {id: dm.went_quiet, name: Decision Maker Went Quiet, emitted_when: [{path: derived.engagement, op: "<=",
+        value: 0.5}], payload: [last_engaged_at, engagement_trend]}
+  - {id: dm.escalation_required, name: Escalation Required, payload: [deal_value, approval_limit]}
+
+# ── 13 · Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ─
+actions:
+  - {id: dm.identify, name: Identify the decision maker, actor: human, effect: "Ask the champion directly.\
+      The cheapest and least-used move in enterprise sales."}
+  - {id: dm.verify_authority, name: Verify signing authority, actor: human, effect: "Confirm approval_limit\
+      against the deal value from an independent source."}
+  - {id: dm.multithread, name: Open a second thread, actor: human, preconditions: [{fn: edge_count, op: "<=",
+        value: 1}], effect: "Reduce single-threaded risk."}
+  - {id: dm.request_meeting, name: Request a direct meeting, actor: human}
+  - {id: dm.escalate, name: Escalate to the next approver, actor: human, effect: "Only when value exceeds\
+      approval_limit — escalating early costs the champion credibility."}
+  - {id: dm.brief_champion, name: Brief the champion to sell internally, actor: human, effect: "The correct\
+      move when the decision maker is unreachable. Most deals are decided in a room we are not in."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "CFO at a 200-person SaaS company", note: "Economic buyer, unlimited limit, risk-averse, demands\
+      an ROI model."}
+  - {label: "VP Engineering", note: "Often the recommender, rarely the approver. Mislabelling this one\
+      is the classic enterprise error."}
+  - {label: "Head of Procurement", note: "authority_level = veto_only. Can stop the deal, cannot start\
+      it."}
+  - {label: "Founder at a 15-person startup", note: "Every authority in one person. approval_limit effectively\
+      unlimited; cycle collapses to days."}
+  - {label: "Departmental budget holder", note: "holds_budget true, approval_limit real and low. The deal\
+      is sized to their limit, not to their need."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Reference object for the Sales brain. Four of ten patterns are executable against the
+    pipeline today; the six needs_signal entries are the highest-value Layer 1/2 asks this
+    object generates. contract_signed is the standout — the strongest possible proof of
+    authority happens on every won deal and is currently discarded.

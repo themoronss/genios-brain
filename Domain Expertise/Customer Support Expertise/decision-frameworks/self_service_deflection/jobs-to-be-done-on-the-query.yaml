@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.self_service_deflection.jobs_to_be_done_on_the_query
+  name: Jobs to be done on the query
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Treat every search string as a statement of the job the customer is trying to finish,
+    and title the answer after the job rather than after the feature.
+
+
+    Customers search for what they are trying to do, not for what we called the thing that does it.
+    This is the single cheapest intervention on findability and it costs no new content.'
+criteria:
+- name: Jobs to be done on the query
+  description: Treat every search string as a statement of the job the customer is trying to finish,
+    and title the answer after the job rather than after the feature.
+how_to_apply:
+- Treat every search string as a statement of the job the customer is trying to finish, and title the
+  answer after the job rather than after the feature.
+- Customers search for what they are trying to do, not for what we called the thing that does it. This
+  is the single cheapest intervention on findability and it costs no new content.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

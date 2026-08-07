@@ -1,0 +1,129 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE OF THE FIVE THAT ROUTE ON DAY ONE.
+#
+# WHY THIS IS WORSE IN SUPPORT THAN IN SALES, which is the whole reason the file is not just
+# a copy of the sales situation that shares its Layer 2 type:
+#
+# A sales call with no recap loses alignment and a next step. Both are recoverable — the deal
+# is a slow object, the same people meet again, and the second conversation can rebuild what
+# the first one established.
+#
+# A support call is convened precisely because writing had failed. Screenshare, log
+# walkthrough, "show me exactly what you clicked". What comes out of it is the DIAGNOSIS, and
+# the diagnosis is the single most expensive artifact the ticket will ever produce: it took a
+# scheduled hour of a customer's day and an engineer's. With no recap it exists nowhere except
+# in two people's memory, and the two memories are not equal — the customer's is the one that
+# gets quoted back to us, in three weeks, differently.
+#
+# Three specific losses follow, none of which the sales version has:
+#   1. Verbal commitments. "I'll have the patched build to you Thursday" said out loud is
+#      extracted by nothing. commitment_overdue can only see promises that were written.
+#   2. Handover. Follow-the-sun and shift rotation mean the next person to touch this ticket
+#      is not the person who was on the call. They restart the diagnosis, and the customer
+#      says the most corrosive sentence in support: "I already told you this."
+#   3. Scope. Calls are where the second and third problems surface ("while I have you..."),
+#      and those never become tickets unless someone writes them down.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.support_call_no_recap
+  name: Support Call Without Recap
+  domain: customer_support
+  owner_capability: customer_support.customer_communication.proactive_status_updates
+  version: 1.0.0
+  status: draft
+
+description: >
+  A call with the customer happened and nothing was written afterwards. The gap is not
+  courtesy, it is custody: everything established on that call — what was reproduced, what was
+  ruled out, what we said we would do next and by when — currently exists only as two people's
+  recollection, and one of those people is going to be replaced by a colleague on the next
+  shift. The recap is what converts a synchronous hour into a durable record, and it is also
+  the customer's only chance to correct our understanding before we act on it. The expert
+  discipline is that it goes out the same working day, in the customer's language rather than
+  the engineer's, and that it separates what was OBSERVED from what was CONCLUDED — because
+  the conclusion is the part most likely to be wrong and the part they can most usefully
+  challenge.
+
+matches:
+  # meeting_no_followup is real and domain-neutral: the pipeline can see that a meeting
+  # completed and that nothing outbound followed it. What it cannot see is that this meeting
+  # was a support call rather than any other kind — see metadata.notes.
+  l2_situation_types:
+    - meeting_no_followup
+
+  scope: meeting
+
+  when:
+    # A cancelled or no-show meeting produces no diagnosis and needs no recap; without this
+    # narrowing the situation fires on every abandoned calendar entry and the recap prompt
+    # becomes noise attached to meetings that never happened.
+    - {path: meeting.status, op: "=", value: completed}
+
+# The verbal promises made on the call belong to commitment_tracking and nothing else will
+# ever catch them. diagnostics needs the observed-versus-concluded split while it is still
+# recoverable — a week later the distinction is gone even from the participants' memory.
+also_serves:
+  - customer_support.entitlement_and_sla.commitment_tracking
+  - customer_support.diagnosis_and_resolution.diagnostics
+
+objects:
+  # What the call was about, what was promised on it, and what has been said in writing so
+  # far. The recap is assembled from exactly these three and nothing else.
+  load:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.conversation
+  optional:
+    # issue when the call produced a technical finding that outlives this ticket; requester to
+    # get the recap addressed to everyone who was on the call rather than only the person who
+    # filed; incident when the call was a bridge and the recap owes a status-page-shaped
+    # summary rather than a personal one.
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.incident
+  never_load:
+    # A recap is a record, not an answer. Loading article content here produces the
+    # characteristic bad recap — a wall of links to documentation the customer has already
+    # read, with the one paragraph about what we actually found buried underneath. If the call
+    # ended in a documented answer, resolution_delivery owns sending it, separately.
+    - customer_support.obj.core.knowledge_article
+
+# Below the two situations about a customer actively waiting, and deliberately so: nobody is
+# blocked right now. It decays faster than either of them, though — see typical_duration_days.
+priority_bp: 7000
+typical_duration_days: 1
+
+signals_of_progress:
+  - followup_sent
+  - minutes_circulated
+  - callback_promised
+  - reproduction_confirmed
+
+signals_of_decay:
+  - agent_reassigned
+  - escalation_requested
+  - angry_language
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Of the signal lists, only followup_sent is in the substrate today. minutes_circulated is
+    an admin-pack planned kind reused here because a support recap is the same act;
+    callback_promised, reproduction_confirmed, agent_reassigned, escalation_requested and
+    angry_language are support-native planned kinds. These lists are unvalidated, so the
+    mixture is legal — recorded here rather than left for a reader to discover.
+
+    THE KNOWN IMPRECISION. meeting_no_followup cannot tell a support call from a QBR, an
+    internal standup or a sales demo, because Layer 2 has no notion of what a meeting was FOR.
+    Today the narrowing above is the best available and it is weak. The clean fix is not a new
+    situation type but a meeting classification on the L1 side — until then this situation
+    over-fires on calendars belonging to people who both sell and support, which is most of a
+    small company. agent_reassigned appears under decay rather than progress on purpose: a
+    reassignment before the recap is written is the exact moment the diagnosis is lost, and
+    treating it as neutral workflow is how it stays invisible.

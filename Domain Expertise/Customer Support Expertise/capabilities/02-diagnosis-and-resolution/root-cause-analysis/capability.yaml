@@ -1,0 +1,183 @@
+# FULL capability — the one complete file in 02-diagnosis-and-resolution. The other five in
+# this subdomain are stubs carrying identity, description, question and metadata only.
+#
+# NOTHING IN THIS FILE IS A NUMBER. No thresholds, no confidence scores, no time-boxes
+# expressed as durations. Root cause analysis is the capability most likely to smuggle
+# arithmetic into Layer 3 — "escalate after N hours", "top severity band gets an RCA" — and each
+# those is Layer 4's pack manifest. What lives here is the judgement that decides which
+# arithmetic is worth running.
+#
+# The spine of the file is one distinction: the TICKET and the ISSUE are different objects with
+# different clocks, and almost every characteristic failure below is a case of one being
+# mistaken for the other.
+#
+# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
+# file and into knowledge.yaml + the artifact folders. They are files now because a
+# Layer 6 suggestion needs an id and a version to point at, and because a framework
+# used by four capabilities cannot live inline in all four.
+
+identity:
+  id: customer_support.diagnosis_and_resolution.root_cause_analysis
+  name: Root Cause Analysis
+  domain: customer_support
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+  stub: false
+description: 'Working backwards from what a customer could see to the condition that made the system
+  behave wrongly, and stating that condition so precisely that someone else could reproduce it, argue
+  with it, or prove it wrong. The discipline is subtractive rather than accumulative: it is the business
+  of eliminating explanations, and it ends not when a plausible story exists but when the remaining
+  story survives the cases that do NOT show the symptom. Its output is a claim about a system — a missing
+  guardrail, an unvalidated input, an untested path, a decision taken without the information that would
+  have changed it — and never a claim about a person. Root cause analysis is also the capability that
+  holds the difference between closing a ticket and closing an issue, because it is the only place in
+  the support motion where anybody is looking at the fault rather than at the queue.
+
+  '
+question: What condition makes this system do the wrong thing, and does that explanation survive the
+  cases where it does not happen?
+outcomes:
+- 'A named mechanism: the condition under which the system does the wrong thing, written so a stranger
+  to the ticket could make it happen on purpose.'
+- A causal chain that terminates in something the organisation owns and can change — a control, a default,
+  a validation, a process — and never in a person's name.
+- 'Blast radius established: every ticket carrying this symptom attached to one issue, so the size of
+  the problem is a fact rather than an impression formed from whichever tickets were loudest.'
+- 'The two closures separated and both recorded: what stopped the customer''s pain, and what stopped
+  the fault. Where only the first happened, the issue is left explicitly open with an owner.'
+- A cannot-reproduce finding where the fault will not surface — carrying the classes of cause it eliminated
+  and the conditions that were ruled out, which is a result and not a closure.
+- An accepted-unknown verdict where the investigation is stopped deliberately, naming the evidence that
+  would justify reopening it.
+- A statement of what would have caught this earlier, handed to whoever owns that surface — tests, monitoring,
+  validation, onboarding, documentation.
+failure_modes:
+- Fixing the symptom. The error is suppressed, the ticket closes green, and the same fault surfaces
+  next quarter wearing different words and gets investigated from scratch.
+- Stopping at the first true thing. 'The disk filled' is true, is not why the disk filled, and is satisfying
+  enough to end most investigations.
+- Naming a person. 'The agent applied the wrong configuration' identifies who was standing nearest the
+  failure, not why the system accepted a wrong configuration. It cannot be fixed, only punished, and
+  the next person does the same thing.
+- Treating cannot-reproduce as a close reason rather than a finding. It collapses environmental, intermittent,
+  state-dependent and misdescribed faults into one bin and discards the only information the failed
+  reproduction gave you.
+- Root-causing the ticket instead of the issue. The fastest way to spend a week on a defect that affected
+  one account while the one affecting forty stays unlabelled.
+- Declaring the cause because the fix worked. A restart makes almost anything stop and proves nothing
+  whatsoever about why it started.
+- Letting the workaround end the analysis. The ticket goes green, the issue record goes quiet, and the
+  only remaining evidence that the product is broken is a memory in one agent's head that leaves with
+  them.
+- Analysis written after the decision. An RCA produced to justify a fix already shipped is documentation,
+  and everyone in the review knows it.
+- Confusing a trigger with a cause. The customer's bulk import did not cause the failure; it was simply
+  the first thing large enough to reach it, and blaming the import means the next large thing finds
+  it again.
+- Convicting the deploy because the deploy is the only change anyone timestamps. Correlation with a
+  release is the strongest signal available and still routinely convicts the innocent.
+- Investigating alone. The person who wrote the subsystem can eliminate half the hypothesis space in
+  one sentence, and support's reluctance to spend that sentence is expensive.
+- Perfect analysis, no communication. The customer's experience of a rigorous silent investigation is
+  indistinguishable from being ignored.
+- One cause declared where several are contributing. Once the first is found the search stops, and the
+  remaining ones resurface as 'the fix did not work'.
+kpis:
+- name: root_cause_identified_rate
+  unit: percent
+  description: Share of issues reaching a named mechanism rather than closing on user error, cannot
+    reproduce, or no fault found.
+  direction: higher_is_better
+- name: time_to_root_cause
+  unit: days
+  description: From issue opened to mechanism named. Measured on the issue, never on the ticket, or
+    a workaround shipped fast will read as an investigation done fast.
+  direction: lower_is_better
+- name: recurrence_after_fix_rate
+  unit: percent
+  description: Issues that resurface after being closed as fixed. The only honest test of whether the
+    cause was the cause.
+  direction: lower_is_better
+- name: cannot_reproduce_conversion_rate
+  unit: percent
+  description: Share of cannot-reproduce findings later resolved into a named cause. Tells you whether
+    the finding is being used as a branch or as a bin.
+  direction: higher_is_better
+- name: human_error_attribution_rate
+  unit: percent
+  description: Share of causes terminating on a person or a role. Any sustained reading is a statement
+    about the analysis rather than about the staff.
+  direction: lower_is_better
+- name: ticket_to_issue_linkage_rate
+  unit: percent
+  description: Share of tickets attached to an issue record. Blast radius is unmeasurable below this,
+    and so is every prioritisation decision built on it.
+  direction: higher_is_better
+- name: workaround_only_issue_age
+  unit: days
+  description: How long issues sit closed at the ticket and open at the fault. The debt this capability
+    is uniquely positioned to see and the queue is structurally unable to.
+  direction: lower_is_better
+- name: issues_per_root_cause
+  unit: ratio
+  description: How many separately reported issues collapse into one underlying cause. Rising is usually
+    good — it means analysis is reaching deep enough to unify.
+  direction: target_band
+handoffs:
+  upstream:
+  - customer_support.diagnosis_and_resolution.issue_reproduction
+  - customer_support.diagnosis_and_resolution.diagnostics
+  - customer_support.intake_and_triage.duplicate_and_merge
+  - customer_support.intake_and_triage.priority_and_severity
+  downstream:
+  - customer_support.diagnosis_and_resolution.workaround_management
+  - customer_support.diagnosis_and_resolution.resolution_delivery
+  - customer_support.diagnosis_and_resolution.verification_and_closure
+  - customer_support.escalation_and_incident.engineering_handoff
+  - customer_support.escalation_and_incident.postmortem
+  - customer_support.knowledge_and_deflection.knowledge_authoring
+  - customer_support.voice_of_customer.product_feedback_routing
+  parallel:
+  - customer_support.escalation_and_incident.incident_management
+  - customer_support.escalation_and_incident.major_incident_communication
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.knowledge_and_deflection.content_gap_analysis
+applies_to:
+  models:
+  - b2b
+  - b2b2c
+  - plg_self_serve
+  - enterprise_support
+  - mid_market_support
+  - smb_support
+  - tiered_support
+  - swarming_support
+  - follow_the_sun
+  - named_tam
+  - ai_first_support
+  - embedded_in_product
+  - field_service
+  - premium_paid_support
+  offerings:
+  - product
+  - service
+  - hybrid
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: 'Contains no numbers by design — no severity bands, no time-boxes, no confidence scores. Those
+    belong to the pack manifest at Layer 4, and this file is the judgement that decides which of them
+    are worth computing. Two things to watch in review. First, the load-set here requires issue and
+    root_cause and treats ticket as optional, which is deliberate and will look wrong: this capability
+    analyses the fault, and a ticket is one report of it. Second, every signal this capability would
+    most like to read — reproduction_failed, root_cause_identified, ticket_reopened — is planned substrate
+    rather than shipped substrate, so nothing here routes automatically yet. That is the Layer 1/2 backlog,
+    and it is stated rather than papered over.
+
+    '

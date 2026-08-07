@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.queue_management.utilisation_buys_throughput_sells_resilience
+  name: Utilisation buys throughput sells resilience
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Slack is not waste; it is the mechanism by which a queue recovers from a bad day.
+
+
+    A queue run with no idle capacity has traded its ability to absorb variance for a marginally better
+    average. It will look efficient right up until the first spike, after which it never catches up,
+    because there is no spare service rate with which to catch up.'
+dimensions:
+- name: Utilisation buys throughput sells resilience
+  asks: Slack is not waste; it is the mechanism by which a queue recovers from a bad day.
+how_to_apply:
+- Slack is not waste; it is the mechanism by which a queue recovers from a bad day.
+- A queue run with no idle capacity has traded its ability to absorb variance for a marginally better
+  average. It will look efficient right up until the first spike, after which it never catches up, because
+  there is no spare service rate with which to catch up.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

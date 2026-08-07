@@ -1,6 +1,9 @@
 # Lifecycle, edge cases and gaps
 
-REST is real. Atlas examples such as GraphQL, streaming, MCP and packaged SDKs are not implemented, so the unit is partial.
+REST is active for inbox, typed results, lifecycle receipts, attempt inspection, analytics,
+capabilities and owner replay. Surface delivery means durable availability; it does not prove a
+client fetched or acted, so those facts require separate receipts.
 
-Where the target is partial or missing, the status is intentionally not promoted merely because a
-generic pull or webhook primitive could be adapted later.
+GraphQL, streaming, MCP and packaged SDKs are not implemented. An agent API delivery must resolve
+to a scoped active agent and cannot be read from a human recipient inbox. Provider-facing push is
+owned by Webhook/Agent rather than being mislabeled as REST pull.

@@ -1,0 +1,37 @@
+identity:
+  id: sales.pb.icp_definition.retrofit_the_open_pipeline
+  name: Score the pipeline you already have against the draft profile before a…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Score the pipeline you already have against the draft profile before adopting it.\n It\
+    \ is the fastest available test of whether the profile discriminates, it costs nothing, and it converts\
+    \ an abstract argument about definitions into a concrete list of deals people already have opinions\
+    \ about. If the in-profile and out-of-profile deals look equally healthy, the profile is not one.\n"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Score the pipeline you already have against the draft profile before a…
+  description: 'It is the fastest available test of whether the profile discriminates, it costs nothing,
+    and it converts an abstract argument about definitions into a concrete list of deals people already
+    have opinions about. If the in-profile and out-of-profile deals look equally healthy, the profile
+    is not one.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

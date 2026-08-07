@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.sla_management.promise_hierarchy
+  name: Promise hierarchy
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Promise hierarchy — the contractual SLA, the published target, and what an agent said
+    on this ticket. The last binds in the customer''s mind; the first binds in a renewal negotiation.
+
+
+    Expertise is knowing you owe all three and that they routinely disagree. Most escalations that begin
+    as SLA complaints are actually a conflict between the third and the first.'
+criteria:
+- name: Promise hierarchy
+  description: Promise hierarchy — the contractual SLA, the published target, and what an agent said
+    on this ticket. The last binds in the customer's mind; the first binds in a renewal negotiation.
+how_to_apply:
+- Promise hierarchy — the contractual SLA, the published target, and what an agent said on this ticket.
+  The last binds in the customer's mind; the first binds in a renewal negotiation.
+- Expertise is knowing you owe all three and that they routinely disagree. Most escalations that begin
+  as SLA complaints are actually a conflict between the third and the first.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

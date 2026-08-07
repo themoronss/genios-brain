@@ -1,407 +1,554 @@
-# Atlas Layer 6 — Learning & Evolution Engine
+# Layer 6 — Learning & Evolution Engine
 
-**Last updated:** 7 August 2026
+**Last updated:** 8 August 2026
 
 **Branch:** `antler-inception`
 
-**Tests:** **17 focused Atlas learning tests**; full repository suite **1796 passed**.
+**Product identity:** Layer 6; implementation package `genios_engine/feedback/`; import rank 7
 
-**Status:** all 11 learning units, governance, publication, API and scheduler are implemented;
-generic learned-state consumption by lower runtime layers is still an explicit integration gap.
-**For the CTO:** Part 8 is the deployment and proof runbook.
+**Verification:** 50/50 canonical three-file Layer 6 tests, 144/144 expanded cross-seam tests and
+1,896 full-repository tests passed locally with one unrelated Starlette/httpx deprecation warning
 
-**System Design navigation:** [Layer map](../System%20Design/Layer-6-Learning-and-Evolution/README.md) ·
+**Migrations:** `0045_atlas_l6_learning.sql` + additive hardening migration
+`0047_l6_learning_hardening.sql`
+
+## Current verdict for the CTO
+
+The **internal Layer 6 engine is implemented and locally verified** against the Atlas and Theory II:
+durable inputs, exact lineage, the Learning Orchestrator, all 11 named units, immutable
+`LearningObject` v2, deterministic validation, versioned tenant policy, consent and visibility
+preflight, audited lifecycle, five publisher seams, expiry, review, rollback, APIs, scheduler and
+erasure behavior are present.
+
+The latest closed semantics are also explicit: personal preferences can only become private learned
+state for one ACL-resolved subject; Runtime leases can never wait in review; terminal dashboard
+judgments atomically version the canonical feedback ledger; `wrong:bad_timing` remains canonical but
+neutral for quality; snooze/requeue stay outside the verdict ledger; delivery freshness follows the
+latest lifecycle event even when no receipt exists; and only a failure before first delivery is
+transport-negative. Identical held objects are now safely re-evaluated under a later claimed run's
+current pinned policy/time: only Observed/Candidate are eligible, Candidate never regresses, later
+lifecycle states never reopen, and every actual decision enters an append-only per-run ledger.
+That ledger stores the final transition/publisher outcome—not merely the last planned policy edge—
+so publish success, no-material-change and metric identity conflicts remain distinguishable.
+
+The final concurrency contract is also closed in code. Every Layer 6 mutation begins with tenant
+`orgs FOR SHARE`; account reset/delete owns `orgs FOR UPDATE`. Policy locks precede object, memory
+and subject advisory locks. Review discovers then locks policy/object and rechecks; rollback locks
+all discovered policy keys sorted before subject/object topology. Dashboard and intelligence
+feedback writers use tenant → graph → card before writing audit/verdict state.
+
+This does **not** mean production adaptation is already closed. The engine can safely produce and
+publish learned state, but four typed lower-layer consumers, real upstream receipt/event producers,
+production PostgreSQL migration/concurrency proof and a human-owned knowledge PR workflow still
+need deployment or product integration. Those are listed precisely in Part 12; they are not hidden
+inside a generic “future work” statement.
+
+**One-line architecture:** Layer 6 learns from outcomes rather than clicks, records proposals before
+changing state, lets governance override confidence, expires temporary memory, and can never edit
+the Expert Brain.
+
+System Design: [Layer overview](../System%20Design/Layer-6-Learning-and-Evolution/README.md) ·
 [component status](../System%20Design/Layer-6-Learning-and-Evolution/STATUS.md) ·
-[Learning Orchestrator](../System%20Design/Layer-6-Learning-and-Evolution/01-Learning-Orchestrator/README.md) ·
-[11 Learning Units](../System%20Design/Layer-6-Learning-and-Evolution/02-Learning-Units/README.md) ·
-[Evolution Publisher](../System%20Design/Layer-6-Learning-and-Evolution/03-Evolution-Publisher/README.md) ·
-[promotion lifecycle](../System%20Design/Layer-6-Learning-and-Evolution/04-Promotion-Lifecycle/README.md)
-
-The System Design now separates publisher implementation from runtime consumption. Generic brain
-rows and Runtime memories are durable, but remain partial until lower-layer consumers exist.
-
-**The one-line summary for a CTO:** GeniOS now turns explicit feedback, actual execution outcomes,
-normalized enterprise events and delivery performance into immutable learning proposals, validates
-and governs them, then publishes only permitted dynamic state—without giving an LLM or the runtime
-permission to edit the Expert Brain.
-
-Layer 5 answers **“did the commitment actually work?”**
-
-Layer 5.2 answers **“did delivery work, and what attention did it cost?”**
-
-Atlas Layer 6 answers **“what may the system safely learn from that evidence?”**
+[orchestrator](../System%20Design/Layer-6-Learning-and-Evolution/01-Learning-Orchestrator/README.md) ·
+[11 units](../System%20Design/Layer-6-Learning-and-Evolution/02-Learning-Units/README.md) ·
+[publishers](../System%20Design/Layer-6-Learning-and-Evolution/03-Evolution-Publisher/README.md) ·
+[lifecycle](../System%20Design/Layer-6-Learning-and-Evolution/04-Promotion-Lifecycle/README.md) ·
+[contracts and operations](../System%20Design/Layer-6-Learning-and-Evolution/05-Contracts-and-Operations/README.md)
 
 ---
 
-## Part 0 — Product identity and import order
+## Part 0 — Layer identity and boundary
 
-The Atlas and the product architecture call this capability **Layer 6**. The implementation lives
-in `feedback/`; its integer rank in the import-direction DAG is 7, but that rank is not a product
-layer number:
+There is no product Layer 7. Layer 5.2 is Delivery and Layer 6 is Learning & Evolution. The value
+`7` attached to `feedback/` in the dependency topology is only an import rank.
 
-| Identity | Implementation |
+| Concern | Current authority |
 |---|---|
 | Product layer | Layer 6 · Learning & Evolution |
 | Package | `genios_engine/feedback/` |
-| Internal import rank | 7 |
 | Boundary contract | `genios_engine/contracts/learning.py` |
-| API | `genios_engine/api/learning_routes.py` under `/v1/learning` |
-| Migration | `migrations/0045_atlas_l6_learning.sql` |
+| HTTP surface | `genios_engine/api/learning_routes.py` under `/v1/learning` |
+| Baseline schema | `migrations/0045_atlas_l6_learning.sql` |
+| Hardening schema | `migrations/0047_l6_learning_hardening.sql` |
+| Maintenance wiring | `genios_engine/api/routes.py` |
 | System Design | `System Design/Layer-6-Learning-and-Evolution/` |
 
-There is **no product Layer 7**. `deliver/` is product Layer 5.2 with import rank 6; `feedback/` is
-product Layer 6 with import rank 7. The integer ranks only preserve dependency direction.
+Layer 6 may observe durable lower-layer data and publish controlled state as data. Lower layers must
+not import `feedback/`; a future consumer must read a typed snapshot through a topology-safe seam.
+The existing narrow calibration path already follows this rule by writing `rule_mutes` and bounded
+`tenant_packs.lvl3_config.rule_offsets`, which Layer 4 reads as data.
 
 ---
 
-## Part 1 — What existed before, and what the Atlas required
+## Part 1 — Planned requirement and the implemented shape
 
-The previous `feedback/` implementation was not empty. It already had a strong narrow calibration
-loop:
-
-| Existing capability | Why it remains valuable |
-|---|---|
-| One current canonical human verdict per card | Revisions are explicit; impressions are not labels |
-| Exact pack/capability/rule lineage | A judgment cannot train a different rule version |
-| Wilson lower bounds | Small cohorts cannot claim false precision |
-| `rule_mutes` | Persistently poor rules can be silenced with auditability |
-| Bounded `lvl3_config.rule_offsets` | Weekly ±5 and total ±15 adjustment, honoring pins |
-| Weekly database claim | Process retries and replicas cannot calibrate twice |
-
-That subsystem answers **“is this exact rule still precise?”** The Atlas asks a broader question:
-what recurring behavior, preferences, outcomes, delivery performance and knowledge drift may be
-learned across the product?
-
-The missing pieces were:
-
-- a generic immutable LearningObject;
-- explicit Learning Selector, Planner, Brain Resolver and Confidence/Promotion policy;
-- all 11 named learning units;
-- separate validation and enterprise governance;
-- the full promotion lifecycle and transition audit;
-- Organization, Behavior and Adaptive publishers;
-- expiring Runtime memory;
-- delivery/outcome metrics;
-- human-review-only Knowledge Evolution;
-- owner APIs, preview, rollback and scheduler wiring.
-
-Those structural pieces now exist. The remaining distinction is important: the new generic brain
-rows are published and API-visible, but lower runtime layers do not consume them yet. The older
-`rule_mutes`/`rule_offsets` calibration path is still the only learned state that currently changes
-Reasoning behavior.
-
----
-
-## Part 2 — The architecture now implemented
+The Atlas names seven orchestrator components, eleven Learning Units and five publisher seams. The
+implementation preserves those distinctions:
 
 ```text
-28-day durable input window
-    → Learning Selector
-    → fixed 10-analysis-unit plan
-    → immutable LearningObjects
-    → Unit 11 Learning Validation
-    → tenant Governance
-    → audited promotion lifecycle
-    → versioned brain / TTL memory / metric / review suggestion
+DeliveryResult + explicit Feedback + execution Outcomes + normalized Enterprise Events
+                              ↓
+                     Learning Selector
+                              ↓
+                      Learning Planner
+                              ↓
+              ten deterministic analysis units
+                              ↓
+                  immutable LearningObject v2
+                              ↓
+        Unit 11 Validation → Governance → Promotion Policy
+                              ↓
+       dynamic brain / TTL memory / metric / human suggestion
 ```
 
-| Atlas component | Current implementation | Authority |
+The orchestrator coordinates; it does not invent a learning. The units calculate; they do not
+write mutable brain state. The publisher writes only after validation and governance. An LLM has no
+authority in scoring, validation, target selection, promotion, publication or rollback.
+
+| Atlas orchestrator component | Implemented authority |
+|---|---|
+| Learning Selector | `feedback/store.py::load_batch` |
+| Learning Planner | `ALL_ANALYSIS_UNITS` in canonical order |
+| Brain Resolver | Closed target selected inside each unit |
+| Confidence Policy | Integer evidence plus `validate_learning` |
+| Promotion Policy | `lifecycle_path` and guarded transitions |
+| Learning Scheduler | `run_learning`, weekly database claim and platform heartbeat |
+| Learning Governance | Versioned `LearningPolicy`, preflight and `govern_learning` |
+
+---
+
+## Part 2 — Input truth, lineage and rejection behavior
+
+Layer 6 reads a bounded 28-day cohort. Every accepted fact is tenant-scoped, time-bounded and tied
+to independently verifiable source identity. Missing lineage is not silently converted into
+organization-visible evidence.
+
+| Input seam | Exact current behavior |
+|---|---|
+| Explicit card feedback | Reads the current canonical verdict and frozen revision; terminal dashboard `run_play` / `do_it_myself` / `wrong` atomically version it; `wrong:bad_timing` is timing/neutral for learning; dashboard requeue and dashboard/extension snooze remain non-verdict lifecycle/timing audit; actor and subject principal stay separate; organization preferences require server-recorded owner authorization |
+| Layer 5 outcomes | Reconstructs the durable outcome/commitment history and preserves succeeded, negative and neutral/unproven labels |
+| Layer 5.2 delivery | Includes outbox rows created in-window or having an in-window lifecycle event; reconstructs lifecycle/attempts as of evaluation time, verifies exact persisted `ExecutionObject` identity/hash, and uses receipt plus latest lifecycle clocks—including failed/deferred/suppressed/cancelled—for freshness |
+| Enterprise events | Requires `graph_source_refs → source_events` lineage and inherits the narrowest source visibility |
+| Explicit memory/events | Uses the idempotent `learning_event_inbox` with source reference, trace, visibility, independence key and lease |
+
+If a row is malformed, cross-tenant, hash-inconsistent, lacks exact source lineage or carries an
+invalid visibility envelope, that row is isolated. A sanitized `learning_input_rejections` entry
+records source identity/hash and a reason code without retaining the forbidden raw value. One bad
+optional input therefore cannot poison the rest of a tenant run.
+
+Important semantic rules:
+
+- `completed_unproven` is neutral, never fabricated into success.
+- Suppressed, deferred, cancelled and queued delivery work is not a provider failure.
+- Only `status=failed` with no prior `delivered_at` is transport-negative; ACCEPTED → FAILED after
+  delivery remains transport-delivered and its execution/business failure belongs to outcomes.
+- A view, ignore, accept or execute signal exists only when its durable clock exists.
+- Dashboard requeue and dashboard/extension snooze remain audit/lifecycle facts; only terminal
+  judgments enter the canonical feedback verdict/revision cohort. `wrong:bad_timing` is one such
+  versioned judgment, but Feedback Learning treats it as timing/neutral rather than negative quality.
+- Multiple database rows originating from one execution/source do not become multiple independent
+  observations.
+- Missing or partial ACL lineage becomes private and incomplete, then fails preflight where the
+  target requires stronger authority.
+- Every user-scoped preference is capped to `private + [resolved subject]`; unresolved subjects or
+  source ACLs that exclude them are rejected, and Behavior/Adaptive preserve the cap.
+
+---
+
+## Part 3 — The orchestrator transaction model
+
+One normal learning pass performs this sequence:
+
+1. Take tenant `orgs FOR SHARE`, then expire due Runtime memories in a separately committed
+   tenant-scoped transaction. A later analysis failure cannot resurrect an expired lease.
+2. Reacquire tenant root, load/lock the current policy and freeze its exact revision for the run.
+3. If tenant learning consent is disabled, stop after expiry. Do not claim a run and do not retain
+   new proposals.
+4. Claim the tenant/week in PostgreSQL. A completed week is idempotent; a failed week is reclaimable
+   with a bounded attempt counter and sanitized error class.
+5. Load and verify the bounded input cohort.
+6. Run the ten analysis units in fixed canonical order.
+7. Execute privacy/consent/lineage/ACL/target/TTL preflight **before proposal persistence**.
+8. Persist each new accepted immutable object; if the identical object already exists, lock it and
+   continue only when its current state is Observed/Candidate.
+9. Recalculate current freshness and run Unit 11 under this run's frozen policy/evaluation time.
+   Candidate is a monotonic floor and never regresses to Observed.
+10. Apply the legal lifecycle path and publish, queue review, hold or reject deterministically.
+    Review, published, temporary and every other later/terminal duplicate is a no-op and cannot
+    reopen; the run counts it as `objects_unchanged`.
+11. Append one evaluation row with run, policy key/revision, evaluation time, final prior/result
+    state, `object_inserted` and the exact sink-level reason from `apply_path_result` in the same
+    transaction.
+12. Complete the run atomically with counts. A claimed-run failure is recorded only in a fresh
+    transaction after the failed transaction has rolled back.
+
+The database claim, not process memory, is the multi-replica authority. The scheduler enumerates
+tenants from learning policies, active memories, structured inbox rows and active packs, so a tenant
+does not disappear from retention merely because it currently has no active connector.
+
+The transaction-wide order is tenant → policy → LearningObject/memory/subject advisory. The failed
+run audit reacquires tenant then policy and does not recreate child authority if erasure already
+deleted the organization. Account reset/delete uses the incompatible tenant `FOR UPDATE` root.
+
+---
+
+## Part 4 — `LearningObject` v2 contract
+
+Every unit emits a content-addressed, round-trip-verified proposal. Lifecycle columns are separate,
+so state transitions never rewrite its evidence or semantic identity.
+
+| Contract group | v2 contents |
+|---|---|
+| Identity | schema version, tenant, unit, target, subject, semantic hash and stable learning ID |
+| Proposed value | Canonical deep-frozen finite JSON |
+| Evidence | observations, independent refs, distinct days, positive/negative counts, confidence, noise, conflict, freshness, business value, source refs and source trace IDs |
+| Time | first seen, last seen/observed and Runtime-only expiry |
+| Access | explicit `visibility {scope, principals, derived_from}`, lineage-complete flag and optional subject principal |
+| Policy | policy key on the object; exact policy revision pinned alongside persistence |
+| Audit | end-to-end learning trace plus immutable transition history |
+
+`learning.v1` remains readable and hash-compatible for stored history. New proposals use
+`learning.v2`. Migration 0047 projects the security- and decision-relevant v2 fields into columns
+and adds database checks that those projections match the immutable payload.
+
+The type distinction is deliberate:
+
+```text
+BrainTarget    = organization | behavior | adaptive | runtime
+LearningTarget = BrainTarget + metrics + knowledge_suggestion
+```
+
+Metrics and knowledge suggestions are artifacts, not brains. There is no `expert` target in either
+enum, publisher dispatch or API filter.
+
+---
+
+## Part 5 — All 11 Learning Units
+
+| # | Unit | Evidence and result |
 |---|---|---|
-| Learning Selector | `feedback/store.py::load_batch` | Selects only durable tenant-scoped facts in the bounded window |
-| Learning Planner | `ALL_ANALYSIS_UNITS` | Fixed canonical order; inapplicable units return no object |
-| Brain Resolver | Each unit assigns a closed `BrainTarget` | No caller/model chooses the destination |
-| Confidence Policy | Integer evidence + `validate_learning` | Counts, days, confidence, noise, conflict, freshness and value |
-| Promotion Policy | `lifecycle_path` | Builds only legal state transitions |
-| Governance Unit | `govern_learning` | Applies enablement, blocked subjects and human-review rules after validation |
-| Learning Scheduler | `run_learning` + `learning_runs` claim | At most one atomic run per tenant per UTC week |
-| Evolution Publisher | `feedback/store.py::publish` | Writes only the closed set of dynamic targets |
+| 1 | Feedback Learning | Positive, negative, timing and neutral metrics from versioned terminal judgments; `wrong:bad_timing` is canonical timing/neutral, while snooze/requeue and silence are not verdict labels |
+| 2 | Outcome Analysis | Business outcomes, progress, close time, reminders and escalations; ACL-cohorted metrics |
+| 3 | Pattern Learning | Repeated normalized subject/kind patterns over independent sources and distinct days; Organization candidate |
+| 4 | Preference Learning | Explicit structured key/value/category/scope only; deterministic conflict; user output is private to one ACL-resolved subject, organization output requires owner authority |
+| 5 | Temporary Memory | Explicit directive only, Runtime target only, mandatory future expiry and no human-review branch |
+| 6 | Behavior Evolution | Stable communication, decision, meeting, execution or relationship candidate preserving the parent subject ACL cap |
+| 7 | Adaptive Evolution | Current priority, notification, execution or runtime personalization candidate preserving the parent subject ACL cap |
+| 8 | Recommendation Learning | Capability/play success and attention-cost efficacy; Adaptive candidate |
+| 9 | Performance Optimization | Attempts, deferrals, latency, receipts and latest lifecycle freshness; pre-delivery failure only is transport-negative, while post-delivery execution failure remains delivered; metrics only |
+| 10 | Knowledge Evolution | Sustained poor labelled outcomes create a human-review suggestion; never an Expert write |
+| 11 | Learning Validation | Repetition, independent evidence, days, confidence, noise, conflict, current freshness, value and TTL checks |
 
-The orchestrator does not learn. It coordinates pure units and persists their decisions. One
-tenant run is one database transaction: claim, inputs, objects, transitions, publication and
-completion commit together or roll back together.
+Pattern and preference units are functionally present for the currently available typed inputs.
+Richer sequence, calendar and multi-entity features are an **upstream producer enhancement**, not a
+missing unit or permission to infer from raw prose.
 
----
-
-## Part 3 — The immutable output contract
-
-Every unit emits a `LearningObject`, not a direct brain mutation.
-
-| Field group | Purpose |
-|---|---|
-| Identity | tenant, unit, target, subject and schema version |
-| Proposed value | deep-frozen semantic payload |
-| Evidence | observations, distinct days, positive/negative counts, confidence, noise, conflict, freshness, business value and source refs |
-| Time | explicit observed time; expiry only for Runtime memory |
-| Policy/metadata | policy key and grounded context |
-
-The object is content-addressed, round-trip verified and immutable. Its lifecycle is stored
-separately so review, promotion, supersession and rollback never rewrite the proposal or its
-evidence.
-
-`BrainTarget` is a closed enum:
-
-```text
-organization · behavior · adaptive · runtime · metrics · knowledge_suggestion
-```
-
-There is deliberately no `expert` value. Knowledge Evolution cannot accidentally reach an Expert
-publisher because the contract has no vocabulary for that operation.
+All scores are integer basis points. Neutral observations do not inflate confidence. Semantic
+object identity uses the source-observation time; retry/evaluation wall clocks cannot manufacture a
+new proposal ID.
 
 ---
 
-## Part 4 — The 11 learning units
+## Part 6 — Validation, governance and enterprise safety
 
-| # | Unit | Reads/calculates | Output |
-|---|---|---|---|
-| 1 | Feedback Learning | Latest explicit canonical card verdicts; positive, negative and neutral remain distinct | Metrics |
-| 2 | Outcome Analysis | Layer 5 outcomes, progress, close time, reminders and escalations | Effectiveness + attention-cost metrics |
-| 3 | Pattern Learning | Repeated normalized graph `subject + kind` across distinct days | Organization candidate |
-| 4 | Preference Learning | Explicit structured preference key/value/scope only | Behavior or Organization candidate |
-| 5 | Temporary Memory | Explicit memory directive with mandatory future expiry | Runtime TTL object |
-| 6 | Behavior Evolution | Stable communication, decision, meeting, execution or relationship behavior | Behavior candidate |
-| 7 | Adaptive Evolution | Current priority, notification, execution or runtime personalization | Adaptive candidate |
-| 8 | Recommendation Learning | Per capability/play result and attention cost | Adaptive efficacy candidate |
-| 9 | Performance Optimization | Delivery success/failure, attempts, deferrals and latency | Metrics |
-| 10 | Knowledge Evolution | At least 8 labelled outcomes and sustained success below 40% | Human-review play suggestion |
-| 11 | Learning Validation | Repetition, days, confidence, noise, conflict, freshness, value and TTL | Hold, reject or validate |
+Validation asks **“does the evidence support this proposal?”** Governance asks **“may this tenant
+retain or publish it?”** Governance can always narrow or refuse a high-confidence proposal.
 
-All calculations after fact construction use deterministic integer arithmetic. A future Atlas-
-allowed LLM may structure free text **before** a `FeedbackFact` exists; it may not score evidence,
-choose a target, validate, promote or publish.
+Default policy controls include:
 
-### Outcome truth from Layer 5
-
-| Layer 5 label | Learning interpretation |
+| Control | Default posture |
 |---|---|
-| `succeeded` | Positive |
-| `expired_untouched`, `expired_in_progress`, `cancelled_by_human` | Negative |
-| `completed_unproven`, `cancelled_by_world`, `cancelled_by_system` | Neutral/unproven |
+| Minimum support | 3 independent observations across 2 distinct days |
+| Confidence/noise/conflict/value | Integer thresholds; all must pass |
+| Temporary memory | Explicit only, bounded by tenant maximum TTL |
+| Runtime review | Forbidden by owner API and database policy; valid leases publish temporary immediately |
+| Organization target | Human review by default |
+| Knowledge suggestion | Human review is mandatory and cannot be removed from policy |
+| Constrained visibility | Human review by default |
+| Target/subject blocks | Tenant can block targets and subject prefixes before persistence |
 
-`completed_unproven` is never relabeled as success just because all action boxes were ticked. It
-remains visible so a play that produces activity but not evidence can be identified as busywork.
+Migration 0047 turns the current policy into a revisioned authority. Every insert/update records an
+immutable JSON snapshot, every run/object points to the exact revision, revisions cannot be updated
+or directly deleted while the tenant exists, and normal workspace reset preserves consent/policy.
+Only full tenant erasure cascades policy history.
 
-### Delivery truth from Layer 5.2
-
-Performance Optimization reads durable outbox status, attempts, deferrals, channel and clocks.
-Queued, deferred, suppressed and cancelled work is not fabricated into a transport failure. Only
-actual `failed_terminal` adapter exhaustion counts against transport reliability.
+Preflight rejects before proposal storage when consent is disabled, the target/subject is blocked,
+lineage is incomplete, a user preference cannot resolve one source-authorized subject, an
+Organization proposal is not backed by organization-visible facts, an organization preference lacks
+owner authority, or a Runtime lease is missing/invalid/outside the policy ceiling. Runtime in a
+human-review target policy is rejected before it can create a review-held lease.
 
 ---
 
-## Part 5 — Validation, governance and the promotion lifecycle
-
-Validation answers **“does the evidence support this?”** Governance answers **“may this tenant
-retain or publish it?”** High confidence never overrides enterprise policy.
-
-Default policy:
-
-| Control | Default |
-|---|---|
-| Minimum observations | 3 |
-| Minimum distinct days | 2 |
-| Minimum confidence | 6500 bp |
-| Maximum noise | 2500 bp |
-| Maximum conflict | 2500 bp |
-| Minimum business value | 1000 bp |
-| Maximum temporary TTL | 720 hours |
-| Human review | Knowledge Suggestion and Organization Brain |
-
-State machine:
+## Part 7 — Lifecycle, publishers and rollback
 
 ```text
 Observed → Candidate → Validated → Governed
                                   ├→ Temporary → Expired
-                                  ├→ HumanReview → Promoted
+                                  ├→ HumanReview → Promoted → Published
                                   ├→ Promoted → Published
                                   └→ Rejected
 Published → Superseded | RolledBack
+Superseded → Published       only when an exact predecessor is safely restored by rollback
 ```
 
-Every arrow is defined in the contract, rechecked by guarded SQL and appended to
-`learning_transitions` with actor, reason, detail and time.
+Every transition is append-only with actor, reason, detail and time; the current-state update is
+guarded against races.
 
-Runtime memory is the narrow one-observation exception: it must be explicit, target only Runtime,
-carry a future expiry and stay below the tenant ceiling. It cannot become permanent. Expiry is
-PostgreSQL-authoritative and runs before the weekly learning claim.
+Policy/evaluation time are lifecycle inputs, not LearningObject identity. When identical evidence
+returns in a later week, only an Observed/Candidate row is re-evaluated. Candidate cannot fall back
+to Observed; every later state is skipped. `learning_object_evaluations` records each actual
+new/held-object decision separately, so reproducibility does not require mutating the proposal. Its
+reason is the final publisher/lifecycle result, including `published_to_dynamic_target`,
+`no_material_change` or `metric_identity_conflict`, rather than a generic last policy label.
 
----
-
-## Part 6 — Publishers, versioning and the real integration boundary
-
-| Target | Durable result | Current runtime effect |
+| Publisher seam | Durable result | Safety behavior |
 |---|---|---|
-| Organization | versioned `learned_brain_entries` | Published/API-visible; lower-layer consumer not built |
-| Behavior | versioned `learned_brain_entries` | Published/API-visible; lower-layer consumer not built |
-| Adaptive | versioned `learned_brain_entries` | Published/API-visible; lower-layer consumer not built |
-| Runtime | expiring `temporary_memories` | Stored/API-visible; Context/Reasoning consumer not built |
-| Metrics | bounded `learning_metrics` | Durable measurement; no decision authority |
-| Knowledge Suggestion | `knowledge_suggestions` at HumanReview | Human handoff only; approval does not edit Expert Brain |
+| Organization Brain | Versioned `learned_brain_entries` | Human review default; one active version per tenant/brain/subject |
+| Behavior Brain | Versioned `learned_brain_entries` | Advisory-locked monotonic versioning and exact ACL preservation |
+| Adaptive Brain | Versioned `learned_brain_entries` | Same no-op, supersession and lineage rules |
+| Runtime Memory | `temporary_memories` | Immediate temporary publication, no review branch, PostgreSQL-authoritative lease and tenant-scoped expiry |
+| Learning Metrics | `learning_metrics` | Measurement only; identity collision is rejected, never falsely reported as published |
+| Knowledge Suggestion | `knowledge_suggestions` | Stops at review; approval records the handoff and still reports `expert_brain_changed: false` |
 
-Only one active version may exist per `(tenant, brain, subject)`. Publishing a newer value locks
-and supersedes the old version. Rollback deactivates the selected version and records a transition;
-it does not silently reactivate older behavior.
+Publisher locking is acquired in one consistent order. A materially new dynamic value gets
+`max(history)+1`, while its restoration link points to the actual active value it supersedes. This
+distinction preserves monotonic history and correct rollback after an earlier rollback. A
+byte-identical value is rejected as `no_material_change` rather than creating version noise.
+Inside the same subject lock, a proposal older than the active value is rejected, closing the race
+between human review and a concurrent newer publication.
 
-This is the key CTO integration call:
+Review uses tenant root → discovery-only object read → policy `FOR SHARE` → object `FOR UPDATE` and
+full recheck before publisher locking. Rollback uses tenant root → discovery-only publication/
+predecessor reads → all policy rows in lexical order → subject advisory → current/predecessor object
+and entry locks, then rechecks topology. Discovery data never authorizes a mutation.
 
-- **Closed today:** exact-rule calibration writes `rule_mutes` and bounded
-  `tenant_packs.lvl3_config.rule_offsets`; Reasoning reads both as data.
-- **Not closed yet:** generic Organization/Behavior/Adaptive/Runtime output needs typed,
-  allowlisted lower-layer materializers. A generic JSON read would bypass target scope, lineage,
-  policy and TTL, so it should not be added casually.
+Rollback is now restorative and safe: it locks the subject, deactivates the selected active value,
+then restores the exact predecessor only when that predecessor is verified, visible to the actor,
+compatible with current consent/policy and not superseded by a newer value. Otherwise it rolls back
+to an empty active slot. History remains intact in both cases.
 
 ---
 
-## Part 7 — Storage, APIs and scheduler
+## Part 8 — API and human authority
 
-Migration `0045_atlas_l6_learning.sql` creates eight tenant-cascading tables:
+| Endpoint | Scope / purpose |
+|---|---|
+| `GET /v1/learning/overview` | `learning.read`; ACL-filtered counts |
+| `GET /v1/learning/objects` | `learning.read`; SQL visibility filter before `LIMIT` |
+| `GET /v1/learning/brains` | `learning.read`; active/history view, no Expert vocabulary |
+| `GET /v1/learning/suggestions` | `learning.read`; visible review queue |
+| `GET /v1/learning/memories` | `learning.read`; active/history leased memory |
+| `GET /v1/learning/preview` | `learning.read`; deterministic read-only path under current policy |
+| `POST /v1/learning/memories` | authenticated explicit memory; bounded canonical JSON and idempotency key |
+| `POST /v1/learning/objects/{id}/review` | `learning.review`; current policy/ACL/state rechecked under lock |
+| `POST /v1/learning/objects/{id}/rollback` | `learning.rollback`; current version/ACL/policy rechecked under lock |
+| `GET/PUT /v1/learning/policy` | owner policy read/update; locked monotonic revision |
+
+Owners have full tenant learning authority. Scoped principals need the explicit learning scope and
+must pass object visibility; Organization review/rollback remains owner-only. API list/overview
+queries apply the ACL predicate in SQL before pagination, preventing hidden rows from distorting
+counts or starving a page.
+
+Direct memory values are bounded to 16 KiB, finite canonical JSON, bounded nesting and bounded
+container count. `(tenant, actor, source_ref)` is idempotent; reuse with different semantics returns
+`409`. Observation time is the stored inbox time, so retries keep the same learning identity.
+
+---
+
+## Part 9 — Storage and migration map
+
+`0045_atlas_l6_learning.sql` introduced the baseline Layer 6 ledgers:
 
 ```text
 learning_policies · learning_runs · learning_objects · learning_transitions
 learned_brain_entries · temporary_memories · knowledge_suggestions · learning_metrics
 ```
 
-API surface:
+`0047_l6_learning_hardening.sql` is additive and supplies:
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /v1/learning/overview` | State, active-brain, review and memory counts |
-| `GET /v1/learning/objects` | Filterable learning/evidence history |
-| `GET /v1/learning/brains` | Active values or version history; never Expert |
-| `GET /v1/learning/suggestions` | Knowledge review queue |
-| `GET /v1/learning/memories` | Active TTL context or history |
-| `GET /v1/learning/preview` | Read-only exact proposed path under current policy |
-| `POST /v1/learning/memories` | Owner creates explicit leased memory |
-| `POST /v1/learning/objects/{id}/review` | Owner approves/rejects HumanReview |
-| `POST /v1/learning/objects/{id}/rollback` | Owner deactivates a published dynamic value |
-| `GET/PUT /v1/learning/policy` | Read/replace tenant controls |
+- immutable policy revisions and pinned run/object policy authority;
+- unique run policy/time identity plus append-only `learning_object_evaluations`, whose composite
+  foreign key proves the exact run/policy revision/evaluation time used and whose history index
+  supports object replay inspection; a direct tenant FK cascades it during full erasure;
+- legacy Runtime-review normalization before the first frozen snapshot, plus API/DB prevention;
+- v2 time, independence, trace, visibility, lineage, subject and lifecycle projections;
+- exact payload/projection, visibility-shape, tenant-lineage and supersession constraints;
+- `learning_event_inbox` for trusted structured events/memory;
+- sanitized `learning_input_rejections`;
+- owner authorization on feedback revisions;
+- ACL/trace propagation to every publisher sink;
+- reclaimable failed runs, active-value history and rollback lineage;
+- tenant-cascading foreign keys while preserving policy during workspace reset.
 
-The existing maintenance heartbeat runs distribution, exact-lineage calibration, then broad Atlas
-learning. It selects active Executive/connection tenants. Each tenant failure is isolated. The
-database claim—not process memory—prevents double publication during the same UTC week.
+The migration currently parses as 138 independent PostgreSQL statements. It must be applied after
+the Layer 5.2 migration `0046_l52_delivery_control_plane.sql`, because Layer 6 validates and reads
+the hardened delivery/execution lineage that 0046 completes.
 
 ---
 
-## Part 8 — CTO deployment and proof runbook
+## Part 10 — Existing calibration loop
 
-### Step 1 — Apply migrations through 0045
+The pre-Atlas deterministic calibration subsystem remains valuable and is not confused with the
+generic publishers:
+
+- one current canonical human verdict per card plus append-only revisions; terminal dashboard
+  judgments write it atomically, `wrong:bad_timing` remains timing/neutral for calibration, and
+  dashboard requeue plus dashboard/extension snooze remain lifecycle/timing audit;
+- exact pack/capability/rule lineage;
+- Wilson lower bounds for small cohorts;
+- `rule_mutes` for persistently weak rules;
+- bounded weekly `lvl3_config.rule_offsets` honoring pins;
+- database-claimed weekly calibration;
+- the same `learning_enabled` tenant consent gate as broad learning.
+
+This is the only learned state already consumed by Layer 4 today. It provides a narrow closed loop
+while typed consumers for the four generic brains are integrated.
+
+---
+
+## Part 11 — Verification completed locally
+
+| Verification | Result |
+|---|---|
+| Canonical Atlas + authority + hardening collection | 50/50 passed: 14 Atlas + 3 authority + 33 hardening |
+| Expanded Layer 6 cross-seam collection | 144/144 passed |
+| Full repository suite | 1,896 passed |
+| Python compilation | passed |
+| Migration splitter / parser | 138/138 statements parsed |
+| Source/schema ratchets | passed |
+| Markdown link verification | passed after System Design completion |
+| Whitespace validation | `git diff --check` passed |
+
+Focused coverage includes fail-closed visibility, missing lineage, independent evidence, neutral
+confidence, stable IDs, deterministic preference conflict, owner authorization recovery, TTL
+preflight/expiry, disabled-consent retention, tenant isolation, stored-hash verification, stale
+review rejection, metric conflict, advisory versioning, supersession, predecessor restoration,
+policy revision wiring, held-object re-evaluation, Candidate non-regression, terminal duplicate
+no-op/unchanged accounting, exact sink evaluation reasons, evaluation-ledger identity and
+reset/erasure behavior.
+
+Local tests do not substitute for the production proof in Part 13.
+
+---
+
+## Part 12 — Only integrations and decisions left for Harsh
+
+These are the remaining items. None should be implemented as a generic untyped JSON read or an
+automatic Expert-Brain mutation.
+
+| Priority | Remaining integration / decision | Required closure |
+|---|---|---|
+| P0 | Four typed learned-state consumers | Define allowlisted Organization, Behavior, Adaptive and Runtime snapshot contracts for Context/Reasoning/Executive/Delivery; enforce tenant, visibility, version, rollback, TTL and deterministic fallback |
+| P0 | Production database proof | Rehearse 0046 then 0047 on a populated PostgreSQL copy with legacy workers quiesced; contend reset/delete against claims, policy/memory, review/rollback, expiry and both feedback writers; prove canonical lock order, no deadlock/partial wipe/child resurrection |
+| P0 | Real producer wiring | Connect authenticated provider/client engagement receipts and any approved enterprise structured-event producer to durable lower-layer ledgers or `learning_event_inbox` |
+| P0 | Policy/privacy sign-off | Choose per-tenant thresholds, retention, blocked subjects/targets, reviewer scopes and constrained-visibility posture with product/security/legal owners |
+| P1 | Human-owned knowledge workflow | Let a human-approved suggestion create a reviewed Git/PR draft through an external workflow; Layer 6 itself must never edit packs or Expert Brain |
+| P1 | Optional LLM extraction | If desired, use an LLM only to structure free text into a provenance-bearing typed fact before deterministic learning; never let it score or promote |
+| P1 | Production observability/SLO | Alerts for failed/reclaimed runs, rejection reasons, review age, overdue expiry, version conflicts, rollback and input-source starvation |
+| P1 | Broader performance/outcome coverage | Add typed business-outcome and receipt producers beyond the current Layer 5 outcome + Layer 5.2 delivery coverage where product surfaces need them |
+| P2 | Redis acceleration | Optional disposable cache for active snapshots/memory only; PostgreSQL remains source of truth and TTL authority |
+
+The key product choice is the consumer contract. Until it is reviewed, published generic state
+should remain durable and visible but should not silently influence a decision.
+
+---
+
+## Part 13 — Deployment and proof runbook
+
+### 1. Apply migrations in order
 
 ```bash
 .venv/bin/python -m genios_engine.platform.migrate
 ```
 
-Verify:
+Verify the ledger contains at least:
 
 ```sql
 select filename from schema_migrations
- where filename in (
-   '0041_l5_execution.sql',
-   '0042_l6_delivery_gate.sql',
-   '0044_l52_atlas_delivery.sql',
-   '0045_atlas_l6_learning.sql'
- ) order by filename;  -- 4 rows
-
-\d learning_objects
-\d learning_transitions
-\d learned_brain_entries
-\d temporary_memories
+where filename in (
+  '0045_atlas_l6_learning.sql',
+  '0046_l52_delivery_control_plane.sql',
+  '0047_l6_learning_hardening.sql'
+) order by filename;
 ```
 
-No new environment variable or worker is required. The existing database and scheduler settings
-drive the pass.
+Run this first on a populated rehearsal copy with mixed old/new workers stopped. Validate
+constraints/FKs, backfilled private visibility and organization-preference authorization behavior.
 
-### Step 2 — Preview before allowing publication
+### 2. Prove input truth
 
-```bash
-curl -s -H "Authorization: Bearer $OWNER_TOKEN" \
-  https://<host>/v1/learning/preview | jq
-```
+For one non-production tenant, inspect the bounded cohorts for canonical feedback, execution
+outcomes, delivery attempts/events, graph-source lineage and structured inbox events. An empty seam
+must cause its unit to emit nothing; a malformed seam must create a sanitized rejection, not a
+fabricated fact or whole-run failure.
 
-Inspect each object's unit, target, confidence and proposed state path. Weak repetition should end
-at Observed/Candidate. Organization and Knowledge targets should end at HumanReview under the
-default policy.
+### 3. Preview and claim
 
-### Step 3 — Prove the input seams
+Call `/v1/learning/preview`, inspect every unit/target/evidence/path, then run the heartbeat from two
+workers. Exactly one worker may claim a fresh tenant/week. Re-run after a controlled failure and
+prove the failed claim is reclaimed once with incremented attempt count and no duplicate artifact.
 
-For one non-production tenant, confirm the 28-day window contains:
+### 4. Prove safety transitions
 
-```sql
-select label, count(*) from execution_outcomes where org_id='<org>' group by 1;
-select channel, status, count(*) from delivery_outbox where org_id='<org>' group by 1,2;
-select count(*) from card_feedback_verdicts where org_id='<org>';
-select kind, count(*) from graph_observations where org_id='<org>' and status='active' group by 1;
-```
+1. Confirm weak, noisy, conflicting, stale and non-independent evidence is held/rejected.
+2. Confirm Organization, constrained durable visibility and Knowledge proposals enter HumanReview;
+   prove Runtime policy is rejected and a valid Runtime lease reaches Temporary without review.
+3. Submit identical owner organization feedback migrated as unauthorized and prove a new authorized
+   revision is created.
+4. Publish two safe versions, roll back the latest and prove only the exact safe predecessor is
+   restored; then make restoration unsafe and prove rollback-to-empty.
+5. Create a short Runtime lease, let expiry commit, force the later weekly run to fail and prove the
+   memory stays expired.
+6. Review a Knowledge suggestion and prove `expert_brain_changed` remains false and no pack/Git row
+   changes.
 
-If a source is empty, its unit should emit nothing—not invent evidence.
+### 5. Prove access and erasure
 
-### Step 4 — Observe the claimed run
+Exercise owner and scoped principals against private, participant, organization and public objects.
+Verify SQL filtering occurs before limit/count. Run workspace reset and confirm learning artifacts,
+inbox and rejection rows are erased while consent policy/revisions remain. Then run full account
+erasure and confirm tenant-cascading policy history is removed.
 
-After the maintenance heartbeat:
+On populated PostgreSQL, race reset/full delete against weekly learning, expiry, policy/direct
+memory, review, rollback, dashboard action and intelligence feedback. Prove the tenant-root lock
+blocks one side cleanly, review/rollback preserve policy-first ordering, feedback preserves
+tenant → graph → card, and no deadlock, partial wipe or post-delete child row is possible.
 
-```sql
-select period_start,status,objects_observed,objects_published,objects_held,objects_rejected
-from learning_runs where org_id='<org>' order by period_start desc limit 2;
+### 6. Monitor before enabling consumers
 
-select unit_name,target_brain,current_state,count(*)
-from learning_objects where org_id='<org>' group by 1,2,3 order by 1,2,3;
-```
-
-A second heartbeat in the same week should return the stored run result and publish nothing twice.
-
-### Step 5 — Prove safety boundaries
-
-1. Confirm `/v1/learning/brains` only accepts Organization, Behavior and Adaptive.
-2. Review a Knowledge suggestion and verify the response contains
-   `expert_brain_changed: false`.
-3. Create a short Runtime memory, wait for expiry/heartbeat and verify `expired_at` plus the
-   `temporary → expired` transition.
-4. Roll back one test dynamic brain value and verify history remains while the active row ends.
-5. Search the deployment diff: there must be no Expert publisher and no automatic pack/Git edit.
-
-### Step 6 — Production monitoring
-
-Watch:
-
-- `learning_runs.status != 'completed'`;
-- rejected objects by reason code;
-- HumanReview queue age;
-- temporary memories past `expires_at` with no `expired_at`;
-- multiple active versions for the same brain/subject (the unique index should prevent this);
-- unexpected growth in neutral `completed_unproven` outcomes;
-- delivery performance split by actual adapter failure vs policy/attention holds.
+Watch failed/reclaimed runs, rejection-code rates, HumanReview age, expired leases still active,
+multiple active versions, unexpected neutral-outcome growth, delivery source starvation and
+publisher conflicts. Enable each typed lower-layer consumer independently behind a tenant rollout
+control with rollback to the prior snapshot.
 
 ---
 
-## Part 9 — What is still left
+## 60-second handoff
 
-| Priority | Gap | Required integration |
-|---|---|---|
-| P0 before claiming full closed-loop adaptation | Generic brain + Runtime consumption | Define typed, policy-scoped materializers for Context/Reasoning/Executive/Delivery; preserve lineage and expiry |
-| P0 deployment proof | Live PostgreSQL and real input smoke | Apply 0045, run one tenant, inspect claims/transitions/publications |
-| P1 runtime optimization | Redis acceleration | Disposable cache only; PostgreSQL remains TTL authority |
-| P1 input quality | Free-text preference structuring | Allowed extractor before deterministic facts, with provenance and review |
-| P1 knowledge workflow | Git/PR authoring | Human-owned workflow consumes approved suggestions; engine never edits Expert Brain |
-| P2 richer patterns | Typed upstream features | Calendar/time/sequence features instead of semantic guessing from raw prose |
-| P2 operations | Tenant cadence and deliberate version restore | Add only with durable period identity and explicit actor intent |
+Layer 6 is no longer the old calibration loop presented as a complete learner. It now has the Atlas
+shape and the safety mechanics needed to learn: exact inputs, all eleven units, immutable v2
+proposals, independent evidence, current freshness, versioned governance, pre-persistence privacy,
+audited promotion, four real brain targets, TTL memory, honest metrics, human-only knowledge
+suggestions, restoration-aware rollback, safe weekly held-object re-evaluation and a
+database-claimed scheduler.
 
----
+Personal preference state is private to one source-authorized subject and stays capped through
+Behavior/Adaptive derivation. Terminal dashboard judgments use the canonical versioned feedback
+ledger; `wrong:bad_timing` is canonical but timing/neutral, while snooze/requeue remain
+lifecycle-only. Performance freshness uses the actual latest lifecycle event, and only a failure
+before first delivery is transport-negative; old deliveries with in-window lifecycle activity are
+not lost from the cohort. Runtime is an immediate expiring lease—not a reviewable durable proposal.
+Observed/Candidate duplicates can be re-evaluated under a later run's frozen policy/time without
+rewriting evidence; Candidate never regresses, later states never reopen, and every actual verdict
+is appended to the evaluation ledger with its final sink-level reason.
 
-## Appendix — the 60-second CTO version
+All Layer 6 mutation paths share the erasure-safe root order: tenant `FOR SHARE`, then policy, then
+object/memory/advisory locks; reset/delete uses tenant `FOR UPDATE`. Review and rollback use
+discovery only to determine canonical locks and recheck afterward. Dashboard/intelligence feedback
+uses tenant → graph → card. Populated-PostgreSQL contention/erasure rehearsal remains deployment
+proof for Harsh, not unfinished deterministic Layer 6 logic.
 
-**What changed:** the old calibration-only learner is now surrounded by the Atlas architecture:
-four durable input seams, 11 deterministic units, immutable LearningObjects, validation,
-governance, a complete audited lifecycle, versioned dynamic publishers, TTL memory, metrics,
-human-only knowledge suggestions, APIs, rollback and a weekly atomic scheduler run.
-
-**What is safest about it:** silence is not evidence, one occurrence is not permanent learning,
-strong confidence cannot bypass enterprise policy, and the contract has no Expert Brain target.
-
-**What is actually closed:** Layer 5 outcomes and Layer 5.2 delivery facts now enter learning; the
-existing rule calibration path writes state that Reasoning already consumes.
-
-**What is not closed yet:** the new generic Organization/Behavior/Adaptive values and Runtime
-memory are durable and governed but do not yet influence lower runtime layers. That consumer layer
-is the next real integration—not Redis and not more dashboards.
-
-**First production proof:** migrate through 0045, preview one tenant, let the weekly claim run,
-inspect every state transition, approve one safe review object, expire one memory and verify that
-no Expert Brain bytes changed.
+The remaining work is explicit integration: deploy 0046/0047 on real PostgreSQL, connect real
+producers, ratify tenant policy, build four typed consumers and attach a human-owned knowledge PR
+workflow. Redis and LLM extraction are optional. Expert Brain auto-editing is forbidden.

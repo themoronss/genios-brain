@@ -61,7 +61,7 @@ flowchart TB
         c1["source_event · gated_event<br/>prepared_content · trace · parked<br/>connection · events"]:::c
         c2["reasoning.py — 22 types"]:::c
         c3["execution.py — the Execution Object"]:::c
-        c4["delivery.py — SEND/DEFER/SUPPRESS"]:::c
+        c4["delivery.py — DeliveryObject · DeliveryResult<br/>SEND / DEFER / SUPPRESS"]:::c
         c5["validators.py — the shared field guards"]:::c
     end
 
@@ -83,7 +83,7 @@ flowchart TB
 
     C --> P
     P --> A
-    L["every layer 1–7"] --> C
+    L["product layers 1, 2, 3, 4, 5, 5.2, 6"] --> C
     L --> P
 
     classDef c fill:#eef,stroke:#88a
@@ -126,8 +126,15 @@ Ship the next number. Never edit in place.
 
 Never from a body, never from a path.
 
-### S8 · The heartbeat belongs to no layer
+### S8 · The heartbeats belong to no layer
 
-Which is exactly why it lives in `api/`.
+The heavy maintenance and minute delivery compositions live in `api/`; their clocks live in
+`platform/scheduler.py`.
+
+### S9 · Tenant root precedes every child mutation
+
+Normal writers take `orgs FOR SHARE`; reset/delete takes `orgs FOR UPDATE`. Policy/config authority
+comes before object, memory, card or advisory locks, and discovery reads must be rechecked under the
+canonical hierarchy. This is the shared erasure/deadlock boundary across layers.
 
 ---

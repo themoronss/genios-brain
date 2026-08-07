@@ -1,10 +1,10 @@
 # Runtime Memory Publisher
 
-**Status:** Partial operational loop
+**Status:** Durable TTL publisher built; runtime consumer/cache pending
 
 | Target | Durable store | Authority |
 |---|---|---|
-| `BrainTarget.RUNTIME` | `temporary_memories` | `feedback/store.py::publish` |
+| `BrainTarget.RUNTIME` / `LearningTarget.RUNTIME` | `temporary_memories` | `feedback/store.py::publish` |
 
 ## Component modules
 

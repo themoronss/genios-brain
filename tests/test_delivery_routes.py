@@ -94,6 +94,20 @@ class _Conn:
             return _Result([row for (org, _s, _c), row in self.preferences.items()
                             if org == p["o"]])
 
+        if "select channel,config,config_encrypted from org_channels" in sql:
+            return _Result(self.db.channels)
+
+        if sql.startswith("insert into delivery_presence"):
+            return _Result(rowcount=1)
+
+        if "from delivery_presence" in sql:
+            return _Result([row for row in self.db.presence
+                            if row.get("org_id", p["o"]) == p["o"]
+                            and ("s" not in p or row.get("seat_id") == p["s"])])
+
+        if "from agent_registry" in sql:
+            return _Result(self.db.agents)
+
         if "from org_channels" in sql:
             return _Result([{"one": 1}] if self.db.channel_active else [])
 
@@ -106,18 +120,24 @@ class _Conn:
         if "from delivery_outbox" in sql:
             return _Result([row for row in self.db.outbox if row["org_id"] == p["o"]])
 
+        if "from orgs" in sql:
+            return _Result([{"id": p["o"]}])
+
         raise AssertionError(f"unexpected statement: {sql}")
 
 
 class FakeDB:
     def __init__(self, preferences=None, outbox=(), channel_active=True, seat_active=True,
-                 burst=0, burst_started=None):
+                 burst=0, burst_started=None, channels=(), presence=(), agents=()):
         self.preferences = dict(preferences or {})
         self.outbox = [dict(row) for row in outbox]
         self.channel_active = channel_active
         self.seat_active = seat_active
         self.burst = burst
         self.burst_started = burst_started
+        self.channels = [dict(row) for row in channels]
+        self.presence = [dict(row) for row in presence]
+        self.agents = [dict(row) for row in agents]
 
     # the two shapes the router asks the engine for
     def connect(self):
@@ -132,7 +152,8 @@ class _Graph:
         self.engine = engine
 
 
-def client(monkeypatch, db: FakeDB, *, scopes=None, org=ORG) -> TestClient:
+def client(monkeypatch, db: FakeDB, *, scopes=None, org=ORG,
+           actor_id="seat_admin", agent_id=None) -> TestClient:
     """Real routes, real credential boundary, doubled database.
 
     ``check_org_kill`` is stubbed because it reaches for a live engine; ``get_current_org`` and
@@ -143,8 +164,8 @@ def client(monkeypatch, db: FakeDB, *, scopes=None, org=ORG) -> TestClient:
 
     app = FastAPI()
     app.include_router(routes.router)
-    app.dependency_overrides[get_auth_ctx] = lambda: AuthCtx(org_id=org, actor_id="seat_admin",
-                                                             scopes=scopes)
+    app.dependency_overrides[get_auth_ctx] = lambda: AuthCtx(
+        org_id=org, actor_id=actor_id, agent_id=agent_id, scopes=scopes)
     return TestClient(app)
 
 
@@ -366,6 +387,126 @@ def test_held_reads_the_row_rather_than_a_log(monkeypatch):
     assert "delivery_outbox" in source
 
 
+def test_capabilities_do_not_confuse_static_adapters_with_tenant_operation(monkeypatch):
+    units = {item["key"]: item for item in client(
+        monkeypatch, FakeDB()).get(f"/api/org/{ORG}/delivery/capabilities").json()["units"]}
+    assert units["api"]["operational"] is True
+    assert units["api"]["configured_channels"] == ["api"]
+    for key in ("human", "agent", "notification", "webhook", "mobile", "email",
+                "slack_teams"):
+        assert units[key]["operational"] is False
+    assert "slack" in units["slack_teams"]["available_channels"]
+
+
+def test_capabilities_report_only_current_org_config_and_leased_surfaces(monkeypatch):
+    db = FakeDB(
+        channels=[{"channel": "slack", "config": {
+                       "webhook_url": "https://hooks.slack.com/services/t/b/c"},
+                   "config_encrypted": None}],
+        presence=[{"surface": "mobile"}],
+        agents=[{"agent_id": "agent_sales", "webhook_url": None,
+                 "webhook_config_encrypted": None, "api_enabled": True}],
+    )
+    units = {item["key"]: item for item in client(
+        monkeypatch, db).get(f"/api/org/{ORG}/delivery/capabilities").json()["units"]}
+    assert units["human"]["configured_channels"] == ["mobile", "slack"]
+    assert units["slack_teams"]["configured_channels"] == ["slack"]
+    assert units["mobile"]["configured_channels"] == ["mobile"]
+    assert units["agent"]["configured_channels"] == ["api"]
+    assert all(units[key]["operational"] for key in
+               ("human", "slack_teams", "mobile", "agent"))
+    assert units["notification"]["operational"] is False
+    assert units["email"]["operational"] is False
+
+
+def test_registry_only_agent_without_scoped_api_key_is_not_reported_as_pollable(monkeypatch):
+    db = FakeDB(agents=[{
+        "agent_id": "agent_legacy", "webhook_url": None,
+        "webhook_config_encrypted": None, "api_enabled": False,
+    }])
+    units = {item["key"]: item for item in client(
+        monkeypatch, db).get(f"/api/org/{ORG}/delivery/capabilities").json()["units"]}
+    assert units["agent"]["configured_channels"] == []
+    assert units["agent"]["operational"] is False
+
+
+def test_capabilities_decrypt_and_validate_provider_credentials_fail_closed(monkeypatch):
+    from types import SimpleNamespace
+
+    from genios_engine.deliver import units as delivery_units_module
+    from genios_engine.platform.crypto import encrypt, generate_key
+
+    key = generate_key()
+    monkeypatch.setattr(delivery_units_module, "get_settings",
+                        lambda: SimpleNamespace(crypto_key=key))
+    teams_url = "https://tenant.webhook.office.com/workflows/valid"
+    agent_secret = "agent-signing-secret-strong"
+    db = FakeDB(
+        channels=[
+            {"channel": "slack", "config": {}, "config_encrypted": b"not-fernet"},
+            {"channel": "teams", "config": {}, "config_encrypted": encrypt(
+                '{"webhook_url":"' + teams_url + '"}', key)},
+            {"channel": "webhook", "config": {}, "config_encrypted": encrypt(
+                '{"webhook_secret":"short","webhook_url":"https://events.example/hook"}',
+                key)},
+        ],
+        agents=[{
+                "agent_id": "agent_sales", "webhook_url": None, "webhook_secret": None,
+                "api_enabled": True,
+                "webhook_config_encrypted": encrypt(
+                '{"webhook_secret":"' + agent_secret
+                + '","webhook_url":"https://agent.example/hook"}', key),
+        }],
+    )
+
+    response = client(monkeypatch, db).get(f"/api/org/{ORG}/delivery/capabilities")
+    assert response.status_code == 200
+    raw = response.text
+    units = {item["key"]: item for item in response.json()["units"]}
+    assert units["slack_teams"]["configured_channels"] == ["teams"]
+    assert units["webhook"]["operational"] is False
+    assert units["agent"]["configured_channels"] == ["agent", "api"]
+    assert teams_url not in raw and agent_secret not in raw and "not-fernet" not in raw
+
+
+def test_scoped_presence_is_scope_checked_and_self_bound_to_agent_identity(monkeypatch):
+    db = FakeDB(presence=[{
+        "org_id": ORG, "seat_id": "agent_sales", "activity": "coding",
+        "surface": "api", "focus_mode": False, "busy_until": None,
+        "observed_at": NIGHT, "expires_at": MORNING,
+    }])
+    writer = client(monkeypatch, db, scopes=["delivery.context.write"],
+                    agent_id="agent_sales", actor_id="agent_sales")
+    payload = {"seat_id": "agent_sales", "activity": "coding", "surface": "api"}
+    assert writer.put(f"/api/org/{ORG}/delivery/context", json=payload).status_code == 200
+    assert writer.put(f"/api/org/{ORG}/delivery/context",
+                      json={**payload, "seat_id": "another_agent"}).status_code == 403
+    assert writer.get(f"/api/org/{ORG}/delivery/context/agent_sales").status_code == 403
+
+    reader = client(monkeypatch, db, scopes=["delivery.read"],
+                    agent_id="agent_sales", actor_id="agent_sales")
+    assert reader.get(f"/api/org/{ORG}/delivery/context/agent_sales").status_code == 200
+    assert reader.get(f"/api/org/{ORG}/delivery/context/another_agent").status_code == 403
+    assert reader.put(f"/api/org/{ORG}/delivery/context", json=payload).status_code == 403
+
+    unbound = client(monkeypatch, db, scopes=["delivery.context.write"],
+                     agent_id=None, actor_id="agent_sales")
+    assert unbound.put(f"/api/org/{ORG}/delivery/context", json=payload).status_code == 403
+
+
+def test_owner_presence_access_remains_org_wide(monkeypatch):
+    db = FakeDB(presence=[{
+        "org_id": ORG, "seat_id": "seat_rep", "activity": "unknown",
+        "surface": "dashboard", "focus_mode": False, "busy_until": None,
+        "observed_at": NIGHT, "expires_at": MORNING,
+    }])
+    owner = client(monkeypatch, db)
+    assert owner.get(f"/api/org/{ORG}/delivery/context/seat_rep").status_code == 200
+    assert owner.put(f"/api/org/{ORG}/delivery/context", json={
+        "seat_id": "seat_other", "activity": "unknown", "surface": "dashboard",
+    }).status_code == 200
+
+
 @pytest.mark.parametrize("path", ["preferences", "effective", "held"])
 def test_every_read_needs_a_configured_database_rather_than_pretending(monkeypatch, path):
     monkeypatch.setattr(routes, "_graph", None)
@@ -391,6 +532,13 @@ def test_every_column_this_router_writes_actually_exists():
         "create table if not exists delivery_preferences (")[1].split("\n);")[0]
     columns = set(re.findall(r"^\s{4}([a-z_]+)\s", body, re.MULTILINE))
     assert set(routes._SETTABLE) <= columns, sorted(set(routes._SETTABLE) - columns)
+
+
+def test_preference_validation_does_not_rollback_the_write_it_is_checking():
+    import inspect
+
+    source = inspect.getsource(routes.set_preferences)
+    assert "PgDeliveryContext(conn, release_between=False)" in source
 
 
 def test_every_column_the_held_view_reads_actually_exists():

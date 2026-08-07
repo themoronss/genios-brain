@@ -13,9 +13,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.contracts.validators import freeze_mapping, require_identifier
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_scope
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.canonical import stable_id
+from genios_engine.platform.db import lock_tenant_for_mutation
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_graph_store, make_llm_client,
@@ -342,6 +344,7 @@ def list_insights(limit: int = 50, state: str = "open",
                 params).fetchall()
         else:
             params["authority_time"] = datetime.now(timezone.utc)
+            lock_tenant_for_mutation(c, org_id)
             c.execute(text(
                 "select graph_version from graph_versions where org_id=:o for share"),
                 {"o": org_id})
@@ -513,22 +516,26 @@ class FeedbackBody(BaseModel):
     edit_diff: dict | None = None
 
 
-# Map the extension's feedback verbs to the CANONICAL card-action shape L6 precision reads
-# (kind='human.card_action' + cause + detail.reason). Was the gap: it logged kind='wrong'/'helpful'
-# with no cause, and precision_28d counts on ce.cause → every extension thumb was invisible to the
-# calibration loop, so "it learns from you" couldn't demonstrably learn.
+# Map judgment-bearing extension verbs to the canonical cause vocabulary L6 reads.  Snooze is the
+# deliberate exception: it remains an idempotent timing audit signal and never enters the versioned
+# verdict cohort.  Previously thumbs logged kind='wrong'/'helpful' with no cause, making every
+# extension judgment invisible to the calibration loop.
 _FB_CAUSE = {"thumbs_up": "do_it_myself", "edit": "do_it_myself",
              "thumbs_down": "wrong", "never_show": "wrong", "snooze": "snooze"}
-_FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant"}
+_FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant",
+              "snooze": "bad_timing"}
 
 
 @router.post("/v1/intelligence/feedback")
 def intelligence_feedback(
         body: FeedbackBody,
         ctx: AuthCtx = Depends(require_scope("feedback.write"))) -> dict:
-    """Human feedback on a recommendation. For an insight (a card) it logs a card_event in the
-    canonical shape the L6 calibration loop reads (cause + reason) — repeated 'wrong' auto-mutes the
-    rule. Returns the correction id."""
+    """Human feedback on a recommendation.
+
+    Judgment-bearing actions version the card's canonical L6 verdict (cause + closed reason);
+    timing-only snooze writes an idempotent audit event and cannot lower recommendation quality.
+    Returns the correction id.
+    """
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     if body.action not in _FB_CAUSE:
@@ -548,10 +555,38 @@ def intelligence_feedback(
     routed = False
     changed = False
     verdict_version = None
-    if body.insight_id:      # an insight IS a card → feed L6 through the card_events ledger
+    if body.insight_id:      # an insight IS a card → bind feedback to its frozen authority
         detail = dict(body.edit_diff or {})
+        raw_preference = detail.get("preference")
+        organization_authorized = False
+        if raw_preference is not None:
+            if body.action != "edit":
+                raise HTTPException(422, "structured preference requires the edit action")
+            if not isinstance(raw_preference, dict):
+                raise HTTPException(422, "preference must be an object")
+            allowed = {"key", "value", "scope", "category"}
+            if set(raw_preference) - allowed:
+                raise HTTPException(422, "preference contains unsupported fields")
+            if set(raw_preference) != allowed:
+                raise HTTPException(422, "preference requires key, value, scope and category")
+            try:
+                key = require_identifier(raw_preference["key"], "preference key")
+                category = require_identifier(raw_preference["category"], "preference category")
+                freeze_mapping({"value": raw_preference["value"]})  # canonical/float validation
+                value = raw_preference["value"]
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(422, str(exc)) from exc
+            scope = raw_preference["scope"]
+            if scope not in {"user", "organization"}:
+                raise HTTPException(422, "preference scope must be user or organization")
+            if scope == "organization" and ctx.scopes is not None:
+                raise HTTPException(403, "organization preference requires owner authority")
+            organization_authorized = scope == "organization" and ctx.scopes is None
+            detail["preference"] = {"key": key, "value": value, "scope": scope,
+                                    "category": category}
         if body.action in _FB_REASON:
-            detail["reason"] = _FB_REASON[body.action]     # → precision denominator (rel_wrong)
+            # Relevance/fact reasons enter the precision denominator; timing remains neutral.
+            detail["reason"] = _FB_REASON[body.action]
         try:
             encoded_detail = json.dumps(
                 detail, sort_keys=True, separators=(",", ":"), default=str, allow_nan=False)
@@ -563,6 +598,7 @@ def intelligence_feedback(
         with _graph.engine.begin() as c:
             # Feedback changes future scoring. Bind it to a currently actionable audited card and
             # hold the graph/config proof stable until the idempotent ledger write commits.
+            lock_tenant_for_mutation(c, org_id)
             c.execute(text(
                 "select graph_version from graph_versions where org_id=:o for share"),
                 {"o": org_id})
@@ -599,11 +635,13 @@ def intelligence_feedback(
                 })
                 inserted = c.execute(text(
                     "insert into card_events "
-                    "(id,card_id,org_id,kind,cause,actor_id,detail) "
-                    "values (:id,:card,:o,'human.feedback_signal',:cause,:actor,cast(:d as jsonb)) "
+                    "(id,card_id,org_id,kind,cause,actor_id,detail,occurred_at) "
+                    "values (:id,:card,:o,'human.feedback_signal',:cause,:actor,"
+                    "cast(:d as jsonb),:at) "
                     "on conflict (id) do nothing returning id"),
                     {"id": event_id, "card": body.insight_id, "o": org_id,
-                     "cause": cause, "actor": actor_id, "d": encoded_detail}).first()
+                     "cause": cause, "actor": actor_id, "d": encoded_detail,
+                     "at": as_of}).first()
                 fid = event_id
                 changed = inserted is not None
             else:
@@ -612,16 +650,17 @@ def intelligence_feedback(
                     "insert into card_feedback_verdicts "
                     "(feedback_id,org_id,card_id,pack_id,pack_version,authority_pack_revision,"
                     "capability_id,"
-                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version) "
+                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version,"
+                    "occurred_at) "
                     "values (:id,:o,:card,:p,:pv,:pr,:cap,:capv,:r,:cause,:reason,"
-                    "cast(:d as jsonb),:actor,1) "
+                    "cast(:d as jsonb),:actor,1,:at) "
                     "on conflict (org_id,card_id) do nothing returning verdict_version"),
                     {"id": fid, "o": org_id, "card": body.insight_id,
                      "p": card.pack_id, "pv": card.pack_version,
                      "pr": int(card.authority_pack_revision),
                      "cap": card.capability_id, "capv": card.capability_version,
                      "r": card.rule_id, "cause": cause, "reason": reason,
-                     "d": encoded_detail, "actor": actor_id}).first()
+                     "d": encoded_detail, "actor": actor_id, "at": as_of}).first()
                 if inserted is not None:
                     verdict_version = int(inserted.verdict_version)
                     changed = True
@@ -629,13 +668,20 @@ def intelligence_feedback(
                     updated = c.execute(text(
                         "update card_feedback_verdicts set cause=:cause,reason=:reason,"
                         "detail=cast(:d as jsonb),actor_id=:actor,"
-                        "verdict_version=verdict_version+1,occurred_at=clock_timestamp() "
+                        "verdict_version=verdict_version+1,occurred_at=:at "
                         "where org_id=:o and card_id=:card and "
-                        "(cause,reason,detail) is distinct from "
-                        "(:cause,:reason,cast(:d as jsonb)) returning verdict_version"),
+                        "((cause,reason,detail) is distinct from "
+                        "(:cause,:reason,cast(:d as jsonb)) or ("
+                        ":owner and cast(:d as jsonb)->'preference'->>'scope'='organization' "
+                        "and not coalesce((select r.organization_authorized "
+                        "from card_feedback_revisions r where r.org_id=:o "
+                        "and r.card_id=:card order by r.verdict_version desc limit 1),false))) "
+                        "returning feedback_id,verdict_version"),
                         {"o": org_id, "card": body.insight_id, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id}).first()
+                         "reason": reason, "d": encoded_detail, "actor": actor_id,
+                         "owner": organization_authorized, "at": as_of}).first()
                     if updated is not None:
+                        fid = updated.feedback_id
                         verdict_version = int(updated.verdict_version)
                         changed = True
                     else:
@@ -653,11 +699,13 @@ def intelligence_feedback(
                     c.execute(text(
                         "insert into card_feedback_revisions "
                         "(revision_id,feedback_id,org_id,card_id,verdict_version,cause,reason,"
-                        "detail,actor_id) values (:rid,:fid,:o,:card,:v,:cause,:reason,"
-                        "cast(:d as jsonb),:actor)"),
+                        "detail,actor_id,occurred_at,organization_authorized) values "
+                        "(:rid,:fid,:o,:card,:v,:cause,:reason,cast(:d as jsonb),:actor,"
+                        ":at,:owner)"),
                         {"rid": revision_id, "fid": fid, "o": org_id,
                          "card": body.insight_id, "v": verdict_version, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id})
+                         "reason": reason, "d": encoded_detail, "actor": actor_id,
+                         "owner": organization_authorized, "at": as_of})
         routed = True
     return {"feedback_id": fid,
             "correction_id": fid if body.action in ("thumbs_down", "never_show", "edit") else None,
@@ -673,6 +721,7 @@ def _card_event(org_id: str, card_id: str, kind: str, detail: dict) -> bool:
         raise HTTPException(400, "graph store not configured")
     try:
         with _graph.engine.begin() as c:
+            lock_tenant_for_mutation(c, org_id)
             owns = c.execute(text("select 1 from cards where card_id=:c and org_id=:o"),
                              {"c": card_id, "o": org_id}).first()
             if owns is None:
@@ -697,6 +746,7 @@ def dismiss_insight(insight_id: str,
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     as_of = authority_time()
     with _graph.engine.begin() as c:
+        lock_tenant_for_mutation(c, org_id)
         c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
                   {"o": org_id})
         card = c.execute(text(
@@ -740,6 +790,7 @@ def insight_outcome(insight_id: str, body: OutcomeBody,
     if not outcome or len(outcome) > 128:
         raise HTTPException(422, "outcome must be between 1 and 128 characters")
     with _graph.engine.begin() as c:
+        lock_tenant_for_mutation(c, org_id)
         card = c.execute(text(
             "select assignee from cards where card_id=:card and org_id=:o for share"),
             {"card": insight_id, "o": org_id}).first()

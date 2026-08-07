@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.de_escalation.handled_around_hurts_more
+  name: Handled around hurts more
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Anger apparently aimed at a person is often anger about being handed around.
+heuristic:
+  statement: Anger apparently aimed at a person is often anger about being handed around.
+  why: Transfers cost us almost nothing and cost the customer the whole story again. The current agent
+    inherits the accumulated heat of every previous handover and reads it as hostility toward them personally,
+    which is the fastest route to matching the emotion.
+  reads:
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.requester
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

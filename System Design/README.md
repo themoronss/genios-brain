@@ -30,9 +30,9 @@ the ranks exist only so `tests/test_layer_topology.py` can enforce dependency di
 | 2 | `context/` | Context Intelligence | The live digital twin: entities, facts, situations, attention. | [Layer 2](Layer-2-Context-Intelligence/README.md) *(34 docs)* |
 | 3 | `packs/` | Domain Expertise | The four brains + capability content, shipped as data. | [Layer 3](Layer-3-Domain-Expertise/README.md) *(8 docs)* |
 | 4 | `reason/` | Reasoning Engine | Deterministic cognition: orchestrator, 17 units, decision maker. | [Layer 4](Layer-4-Reasoning-Engine/00-Overview.md) *(93 docs)* |
-| 5 | `executive/` | Executive Engine | Decision briefs + the Execution Object. Owns *who* and *where*. | [Layer 5](Layer-5-Executive-Engine/README.md) *(92 docs; nested by part → unit → component)* |
-| 5.2 | `deliver/` | Delivery Engine | Cards, context, routing, channels, typed results, analytics, outbox and admission gate. | [Layer 5.2](Layer-5.2-Delivery-Engine/README.md) *(114 docs)* |
-| 6 | `feedback/` | Learning & Evolution | 11 governed units, outcome learning, dynamic brains, TTL memory, metrics, suggestions and calibration. | [Layer 6](Layer-6-Learning-and-Evolution/README.md) *(138 docs)* |
+| 5 | `executive/` | Executive Engine | Decision briefs + `ExecutionObject`; owns the commitment, work owner, actions, deadline and business priority. | [Layer 5](Layer-5-Executive-Engine/README.md) *(92 docs; nested by part → unit → component)* |
+| 5.2 | `deliver/` | Delivery Engine | Resolves current audience/recipient, destination, channel, format, timing, policy and priority; owns delivery lifecycle, retry/recovery, analytics and `DeliveryResult`. | [Layer 5.2](Layer-5.2-Delivery-Engine/README.md) *(117 docs)* |
+| 6 | `feedback/` | Learning & Evolution | Exact outcome/feedback/event lineage, 11 governed units, immutable v2 proposals, dynamic brains, TTL memory, metrics, human-only suggestions and calibration. | [Layer 6](Layer-6-Learning-and-Evolution/README.md) *(141 docs; nested by part → unit → component)* |
 | — | `contracts/`, `platform/`, `api/` | Cross-cutting | Boundary types · composition root · transport. | [Cross-cutting](Cross-Cutting-Contracts-Platform-API/README.md) *(7 docs)* |
 
 ---
@@ -50,7 +50,7 @@ flowchart TB
     L6["6 · feedback<br/>Learning & Evolution"]
 
     L1 --> L2 --> L3 --> L4 --> L5 --> L52 --> L6
-    L6 -. "learned state written DOWN as data<br/>rule_mutes · lvl3_config" .-> L4
+    L6 -. "currently consumed learned data<br/>rule_mutes · lvl3_config" .-> L4
 
     subgraph X ["cross-cutting — outside the ordering"]
         C["contracts/ — boundary types"]
@@ -89,14 +89,14 @@ flowchart LR
     L4["**Layer 4 — reason**<br/>rule eval · scoring<br/>baselines · foresight"]
     L4 -- "decisions" --> L5
 
-    L5["**Layer 5 — executive**<br/>brief · Execution Object<br/>owner · channel · timing"]
-    L5 -- "communication plan" --> L52
+    L5["**Layer 5 — executive**<br/>brief · ExecutionObject<br/>work owner · actions · deadline"]
+    L5 -- "ExecutionObject only" --> L52
 
-    L52["**Layer 5.2 — Delivery**<br/>context · routing · channels<br/>outbox · results · retries"]
+    L52["**Layer 5.2 — Delivery**<br/>current audience · context · routing<br/>policy · outbox · lifecycle · results"]
     L52 --> out["the person<br/>who has to act"]
 
-    out -- "results + feedback + outcomes" --> L6["**Layer 6 — Learning & Evolution**<br/>11 learning units · governance<br/>dynamic brains · TTL memory"]
-    L6 -. "data, written down" .-> L4
+    out -- "results + feedback + outcomes" --> L6["**Layer 6 — Learning & Evolution**<br/>exact lineage · 11 units · governance<br/>dynamic brains · TTL memory"]
+    L6 -. "currently consumed: bounded calibration<br/>generic typed consumers pending" .-> L4
 ```
 
 ---

@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.sla_management.two_ledgers
+  name: Two ledgers
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Two ledgers run at once: the contractual clock and the customer''s felt clock. They start
+    at the same instant and only one of them pauses.
+
+
+    The customer experiences unbroken wall time from the moment they hit send. Every legitimate pause
+    widens the gap between the two ledgers, and every SLA dispute lives inside that gap. Knowing the
+    gap exists is what stops a team from quoting attainment at an angry customer.'
+dimensions:
+- name: Two ledgers
+  asks: 'Two ledgers run at once: the contractual clock and the customer''s felt clock. They start at
+    the same instant and only one of them pauses.'
+how_to_apply:
+- 'Two ledgers run at once: the contractual clock and the customer''s felt clock. They start at the
+  same instant and only one of them pauses.'
+- The customer experiences unbroken wall time from the moment they hit send. Every legitimate pause
+  widens the gap between the two ledgers, and every SLA dispute lives inside that gap. Knowing the gap
+  exists is what stops a team from quoting attainment at an angry customer.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

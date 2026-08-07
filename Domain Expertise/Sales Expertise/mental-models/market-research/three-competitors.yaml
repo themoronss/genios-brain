@@ -1,0 +1,37 @@
+identity:
+  id: sales.mm.market_research.three_competitors
+  name: 'Every market has three competitors: the named vendor, the internal bui…'
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Every market has three competitors: the named vendor, the internal build, and doing nothing.\
+    \ Only one of them has a website.\n The two without websites win most evaluations in immature categories\
+    \ and appear in no competitor field, so they are systematically absent from research built on what\
+    \ is easy to find. Naming all three changes the plan, because each is displaced by a different argument.\n"
+dimensions:
+- name: 'Every market has three competitors: the named vendor, the internal bui…'
+  asks: 'The two without websites win most evaluations in immature categories and appear in no competitor
+    field, so they are systematically absent from research built on what is easy to find. Naming all
+    three changes the plan, because each is displaced by a different argument.
+
+    '
+how_to_apply:
+- 'The two without websites win most evaluations in immature categories and appear in no competitor
+  field, so they are systematically absent from research built on what is easy to find. Naming all three
+  changes the plan, because each is displaced by a different argument.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

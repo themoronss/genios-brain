@@ -1,0 +1,1356 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SLA TARGET — one clock, on one ticket, for one kind of promise.
+#
+# Entitlement says "this customer is owed a four-hour first response". SLA Target is the
+# timestamp four hours from now, on THIS ticket, and — the part everything turns on — whether
+# the clock is currently running. Two different objects, and every support product that
+# collapsed them into one lost the ability to answer "why did this breach?".
+#
+# The thing to read this file for is the PAUSE. Almost no SLA dispute is about the deadline;
+# the deadline is arithmetic and nobody argues with arithmetic. The dispute is always about
+# which minutes counted. `waiting_on_customer` stopping the clock is both entirely correct and
+# the most gamed mechanism in support: one clarifying question, asked eleven minutes before the
+# target, buys a whole business day and turns a breach into a green tile. The pause ledger is
+# therefore modelled as carefully as the deadline, and `pause_is_disputable` is a first-class
+# property rather than an audit note.
+#
+# Two more things this object says out loud because most SLA models do not:
+#   · A met clock over an unhappy customer is a MEASUREMENT FAILURE, not a success. That is
+#     what `outcome_quality: met_but_unsatisfied` is for, and it should be read as a defect in
+#     what we chose to measure, not as a win with a caveat.
+#   · A breach nobody noticed is worse than one that fired an alarm. The alarm is most of the
+#     value; the customer had already priced in the lateness, but not the silence.
+#
+# SUBSTRATE REALITY. There is no ticket, SLA, CSAT, escalation or incident signal in the
+# pipeline today. Everything genuinely SLA-shaped — sla.target_first_response_at,
+# sla.clock_state, ticket.first_response_at — is needs_signal and is meant to be.
+# What IS real is elapsed time: hours_since / days_since against thread.last_inbound and
+# commitment.due_at, plus thread.ball_in_court. That is a surprisingly serviceable clock —
+# "nothing has gone back to them in 48 hours" and "we are past the time we promised" are the
+# two sentences this object most needs to say, and both of them run today. Hence this object
+# carries more executable patterns than most in this domain. That is not authoring optimism;
+# it is that elapsed-time predicates are the one clock-shaped primitive the substrate has, and
+# a clock is exactly what this object is.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# MIGRATED to the 23-section object schema: description -> purpose.statement,
+# components + properties -> attributes, relationships[].verb -> .type,
+# yields.property -> yields.attribute. Prose carried across unchanged.
+
+identity:
+  id: customer_support.obj.core.sla_target
+  scope: core
+  name: SLA Target
+  domain: customer_support
+  subdomain: entitlement_and_sla
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  version: 1.0.0
+  status: draft
+  aliases:
+  - SLA Clock
+  - Response Target
+  - Resolution Target
+  - Service Level Objective
+  - SLO
+purpose:
+  statement: 'A single running clock attached to a single ticket: a start, a set of conditions under which
+    it pauses, a deadline, and a state. It is not the contract — Entitlement is the contract, and it says
+    only that such a clock exists and how long it is. It is not the ticket either; one ticket carries
+    several SLA Targets at once, and they behave differently enough that sharing a state between them
+    is the defining modelling error of this object. A first-response clock is short, unforgiving, and
+    stops the instant a human replies with anything at all. A resolution clock is long, pauses constantly,
+    and cannot be satisfied by a reply. Fusing them produces a queue that reports health it does not have:
+    every first response met, every resolution late, and one green number covering both.'
+attributes:
+- name: clock_identity
+  purpose: Which promise this clock measures, and under whose calendar. Set once, at creation, and never
+    edited — an edited clock identity is an unfalsifiable metric.
+  type: composite
+  contains:
+  - target_type
+  - is_contractual
+  - measured_from
+  - calendar_type
+  - timezone
+- name: deadline
+  purpose: The arithmetic. The least interesting part of the object and the only part most dashboards
+    show.
+  type: composite
+  contains:
+  - target_minutes
+  - started_at
+  - target_at
+  - stopped_at
+  - warning_threshold_pct
+- name: elapsed
+  purpose: How much of the promise has been spent, and by how far it was overspent.
+  type: composite
+  contains:
+  - elapsed_minutes
+  - remaining_minutes
+  - breach_depth_minutes
+- name: pause_ledger
+  purpose: 'Where every SLA argument actually happens. Not one boolean — a ledger, because "the clock
+    was paused for nine hours" and "the clock was paused four times for nine hours in total, each pause
+    beginning within minutes of a customer message" are the same total and completely different facts.
+
+    '
+  type: composite
+  contains:
+  - pause_reason
+  - pause_started_at
+  - paused_total_minutes
+  - pause_count
+  - pause_is_disputable
+  - exclusions
+- name: live_proxies
+  purpose: 'The fields the pipeline can actually populate today. None of them is an SLA clock; all of
+    them are the shadow one casts on an email thread. Read them as evidence, never as record.
+
+    '
+  type: composite
+  contains:
+  - ball_in_court
+  - last_inbound_at
+  - commitment_due_at
+  - sentiment_signal
+- name: outcome
+  purpose: What happened, and whether "what happened" was any good — two separate questions that support
+    metrics routinely merge.
+  type: composite
+  contains:
+  - clock_state
+  - outcome_quality
+  - breach_acknowledged
+  - breach_notified_at
+  - credit_exposure
+- name: bindings
+  purpose: What this clock hangs off. A clock with no entitlement behind it is an internal target someone
+    invented and forgot to justify.
+  type: composite
+  contains:
+  - ticket_ref
+  - entitlement_ref
+  - coverage_window_ref
+- name: target_type
+  purpose: 'The most load-bearing field here, for the same reason authority_level is on Decision Maker:
+    it determines which rules apply and it is the field most often wrong. `next_response` and `update_cadence`
+    are separate on purpose — the first is "reply when they write", the second is "reply whether or not
+    they write", and the second is the one that saves an escalation. `restoration` exists because for
+    an incident-linked ticket the customer''s clock is service back up, which can precede resolution by
+    days.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - first_response
+  - next_response
+  - update_cadence
+  - resolution
+  - workaround
+  - restoration
+  required: true
+- name: is_contractual
+  purpose: 'True when a signed agreement backs this clock; false when it is an internal SLO. Breaching
+    an internal target costs nothing legally and roughly the same reputationally, which is why both are
+    modelled here — but only one of them can trigger a credit, and treating an SLO breach as a contractual
+    one is how support teams spend a quarter on the wrong queue.
+
+    '
+  type: value
+  data_type: boolean
+  required: true
+- name: measured_from
+  purpose: 'The single most disputed definition in any SLA renegotiation. A four-hour clock from ticket_created
+    and a four-hour clock from triage_complete are not the same promise, and the difference is exactly
+    the triage backlog — the part the customer cannot see and did not agree to absorb.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - ticket_created
+  - first_touch
+  - triage_complete
+  - escalation_accepted
+  - business_hours_start
+- name: calendar_type
+  purpose: '24/7 versus 9-to-5 is a multiple-of-three difference in real elapsed time on the same stated
+    number. A ticket raised at 16:55 on a Friday against a four-hour business-hours clock is not due until
+    Monday morning, and the customer will not experience that as four hours no matter what the contract
+    says.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - calendar_hours
+  - business_hours
+  - coverage_window
+  required: true
+- name: timezone
+  purpose: Whose working day. The customer's, not ours — and getting this backwards is a silent, systematic,
+    always-in-our-favour error.
+  type: value
+  data_type: string
+- name: target_minutes
+  purpose: The promise duration inherited from Entitlement. Held here as well so a target survives an
+    entitlement being edited mid-ticket.
+  type: value
+  data_type: integer
+  unit: minutes
+- name: started_at
+  purpose: The started at.
+  type: value
+  data_type: timestamp
+- name: target_at
+  purpose: The deadline itself. Both source paths are planned, not live — nothing in the pipeline emits
+    a target timestamp today.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - sla.target_first_response_at
+  - sla.target_resolution_at
+- name: stopped_at
+  purpose: When the clock stopped, met or breached. Distinct from resolved_at on the ticket; a first-response
+    clock stops long before anything is resolved.
+  type: value
+  data_type: timestamp
+- name: warning_threshold_pct
+  purpose: 'Share of target_minutes consumed before this clock is treated as at risk. Kept per-clock rather
+    than global because 75% of a four-hour clock is an hour of warning and 75% of a five-day clock is
+    a day and a bit — the same percentage buys wildly different amounts of rescue.
+
+    '
+  type: value
+  data_type: integer
+  unit: percent
+- name: elapsed_minutes
+  purpose: Counted minutes only. Paused minutes are excluded, which is the whole reason paused_total_minutes
+    exists as a peer field and not as a footnote.
+  type: value
+  data_type: integer
+  unit: minutes
+- name: remaining_minutes
+  purpose: May be negative. A negative value is a breach and should be kept negative rather than clamped
+    to zero — the depth is the difference between an apology and a credit.
+  type: value
+  data_type: integer
+  unit: minutes
+- name: breach_depth_minutes
+  purpose: How far past target. Ninety seconds late and nine days late are the same red tile on every
+    dashboard on the market and should not be.
+  type: value
+  data_type: integer
+  unit: minutes
+- name: pause_reason
+  purpose: '`waiting_on_customer` is the legitimate and the gamed one simultaneously — there is no version
+    of this object that removes the ambiguity, only versions that record enough to argue about it later.
+    `waiting_on_third_party` deserves its own value because the customer did not choose our upstream vendor
+    and stopping their clock for it is a position, not a fact.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - none
+  - waiting_on_customer
+  - waiting_on_third_party
+  - outside_coverage_hours
+  - planned_maintenance
+  - customer_requested_hold
+- name: pause_started_at
+  purpose: The pause started at.
+  type: value
+  data_type: timestamp
+- name: paused_total_minutes
+  purpose: The number every SLA dispute is actually about. Present it beside elapsed_minutes always; presenting
+    elapsed alone is how a green metric hides a two-week wait.
+  type: value
+  data_type: integer
+  unit: minutes
+- name: pause_count
+  purpose: 'Four short pauses are a different story from one long one. A high count on a first_response
+    clock is close to proof of question-laddering — asking one question at a time so each answer restarts
+    the pause.
+
+    '
+  type: value
+  data_type: integer
+- name: pause_is_disputable
+  purpose: 'Set when the pause began suspiciously close to a customer message or to the deadline. Not
+    an accusation and must never be surfaced to the customer; it exists so QA and the account review can
+    see the shape without anyone having to read four hundred tickets.
+
+    '
+  type: value
+  data_type: boolean
+- name: exclusions
+  purpose: Contractual periods that never count — declared maintenance, agreed holds, force majeure. Whatever
+    is not written here counted, and arguing otherwise after the fact is how trust goes.
+  type: value
+  data_type: list
+- name: ball_in_court
+  purpose: 'The one live field that tracks the pause today. `nobody` is not a third flavour of paused
+    — it means the thread ended without an owner, which on a running clock is the worst state of the three
+    and the one no ticketing system models.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - us
+  - them
+  - nobody
+  source_paths:
+  - thread.ball_in_court
+- name: last_inbound_at
+  purpose: When the customer last wrote. The de facto start of a first-response clock in the absence of
+    a real one.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - thread.last_inbound
+- name: commitment_due_at
+  purpose: 'The agent''s own promise — "I''ll come back to you Thursday" — running alongside the contractual
+    clock. It is not the SLA and it is frequently tighter than the SLA, and customers remember it better
+    because a person said it to them.
+
+    '
+  type: value
+  data_type: timestamp
+  source_paths:
+  - commitment.due_at
+- name: sentiment_signal
+  purpose: Engine-computed observation balance. Used here only to qualify outcome_quality — a clock cannot
+    be judged met by the clock alone.
+  type: value
+  data_type: number
+  source_paths:
+  - derived.sentiment
+- name: clock_state
+  purpose: 'The ticketing system''s own field, mirrored. It can and does disagree with this object''s
+    `states` lifecycle, and the disagreement is a finding rather than a bug to reconcile quietly: the
+    two diverge exactly when a pause was recorded that the thread does not support.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - not_started
+  - running
+  - paused
+  - stopped
+  - met
+  - breached
+  required: true
+  source_paths:
+  - sla.clock_state
+- name: outcome_quality
+  purpose: 'The honesty field. `met_but_unsatisfied` is a measurement failure — we hit the number we chose
+    and the customer still felt badly served, which means the number was the wrong one for this ticket.
+    `breached_but_satisfied` is its mirror and is just as instructive: it is usually a case where somebody
+    communicated well and the lateness stopped mattering. A support org that only counts met/breached
+    cannot see either.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - unknown
+  - met_and_satisfied
+  - met_but_unsatisfied
+  - breached_but_satisfied
+  - breached_and_unsatisfied
+- name: breach_acknowledged
+  purpose: Whether anybody internally registered the breach. A breach nobody noticed is worse than one
+    that fired an alarm, and this boolean is the difference.
+  type: value
+  data_type: boolean
+- name: breach_notified_at
+  purpose: When the customer was told — by us, before they told us. The gap between stopped_at and this
+    is the part they actually judge.
+  type: value
+  data_type: timestamp
+- name: credit_exposure
+  purpose: Service credits owed if this breach stands. Null means unknown, never zero — the same trap
+    as an unknown approval limit.
+  type: value
+  data_type: money
+- name: ticket_ref
+  purpose: The ticket this clock runs on. Many targets, one ticket.
+  type: reference
+  ref: customer_support.obj.core.ticket
+  data_type: ref
+- name: entitlement_ref
+  purpose: The contract that says this clock exists at all. A target with a null entitlement_ref is an
+    internal target and is_contractual must be false.
+  type: reference
+  ref: customer_support.obj.core.entitlement
+  data_type: ref
+- name: coverage_window_ref
+  purpose: Required when calendar_type is coverage_window or business_hours. Without it the deadline is
+    arithmetic on a calendar nobody agreed to.
+  type: reference
+  ref: customer_support.obj.core.coverage_window
+  data_type: ref
+states:
+  initial: new
+  values:
+  - name: new
+    description: Defined but not started. Short-lived and worth having — a clock that sits here is a triage
+      backlog nobody is counting as elapsed time.
+  - name: active
+    description: Running. Minutes are being spent against the promise.
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - name: on_hold
+    description: 'Paused. The state this object exists to argue about. Entering it is cheap, leaving it
+      is nobody''s job, and a clock parked here indefinitely is how a ticket ages for three weeks while
+      every metric stays green.
+
+      '
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+  - name: at_risk
+    description: Running, past the warning threshold, still rescuable. The only state in which intervention
+      is cheaper than apology.
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: thread.last_inbound
+      op: '>'
+      value: 4
+  - name: breached
+    description: Past target. Terminal — a breach is a fact and does not become a non-breach when the
+      work later completes.
+    entered_when:
+    - fn: hours_since
+      path: commitment.due_at
+      op: '>'
+      value: 0
+  - name: closed
+    description: Stopped inside target. Met. Note that met is not the same as good — see outcome_quality.
+  transitions:
+  - from: new
+    to: active
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - from: active
+    to: on_hold
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+  - from: on_hold
+    to: active
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - from: active
+    to: at_risk
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: thread.last_inbound
+      op: '>'
+      value: 4
+  - from: at_risk
+    to: active
+  - from: at_risk
+    to: breached
+    when:
+    - fn: hours_since
+      path: commitment.due_at
+      op: '>'
+      value: 0
+  - from: active
+    to: breached
+    when:
+    - fn: hours_since
+      path: commitment.due_at
+      op: '>'
+      value: 0
+  - from: on_hold
+    to: breached
+  - from: active
+    to: closed
+  - from: at_risk
+    to: closed
+  - from: on_hold
+    to: closed
+  - from: breached
+    to: closed
+relationships:
+- target: customer_support.obj.core.ticket
+  cardinality: one
+  description: 'One clock, one ticket — but a ticket carries several clocks. The direction matters: the
+    target measures the ticket, the ticket does not own the target, because merging two tickets must merge
+    their work and NOT their clocks.
+
+    '
+  type: measures
+- target: customer_support.obj.core.entitlement
+  cardinality: one
+  description: The clock's authority. Entitlement says a four-hour first response exists; this object
+    is the four hours, on this ticket, starting now.
+  type: requires
+- target: customer_support.obj.core.coverage_window
+  cardinality: zero_or_one
+  description: Which hours count. Zero only when calendar_type is calendar_hours — a 24/7 clock genuinely
+    has no window, and every other clock that has none is misconfigured.
+  type: governed_by
+- target: customer_support.obj.core.escalation
+  cardinality: zero_or_many
+  description: 'Approaching breach is the most legitimate escalation trigger there is, because it is the
+    one an engineer cannot argue with. It is also the one most often fired too late to help.
+
+    '
+  type: escalates_to
+- target: customer_support.obj.core.commitment
+  cardinality: zero_or_many
+  description: 'Agent promises made inside the clock''s life. When a commitment is tighter than the SLA
+    — it usually is — the commitment is the real deadline regardless of what the contract says.
+
+    '
+  type: references
+- target: customer_support.obj.core.churn_risk
+  cardinality: zero_or_one
+  description: A single breach influences little. A pattern of them on one account is among the clearest
+    support-side churn predictors there is, which is why this edge exists on the target and not on the
+    ticket.
+  type: influences
+- target: customer_support.obj.core.queue
+  cardinality: zero_or_one
+  description: The queue is where breach risk becomes a staffing problem instead of a ticket problem,
+    and where it is fixable a day earlier.
+  type: attaches_to
+inference_patterns:
+  deterministic:
+  - id: sla.clock_runs_when_the_ball_is_ours
+    statement: The customer is waiting on us, so counted time is being spent.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 8000
+      value: running
+      attribute: clock_state
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_inbound
+    note: '8000 and not higher because ball_in_court is thread-scoped and a clock is ticket-scoped. A
+      ticket spanning two threads, or a customer who replied on a different channel, breaks the mapping
+      in the direction that flatters us — we look like we are waiting when we are not. That asymmetry
+      is why this pattern is deliberately not 9500.
+
+      '
+  - id: sla.clock_pauses_when_the_ball_is_theirs
+    statement: We answered and the customer has not come back, so the clock is legitimately paused.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    yields:
+      confidence_bp: 7000
+      value: paused
+      attribute: clock_state
+    evidence_fields:
+    - thread.ball_in_court
+    note: 'Deliberately 1000bp below its own mirror above, and that gap is the argument of this whole
+      file: a running clock is an observation, a paused clock is a CLAIM. The same predicate, read in
+      the direction that suits us, deserves less confidence than when read in the direction that does
+      not. Anyone who wants these two equal should have to say why in writing.
+
+      '
+  - id: sla.the_promised_time_has_passed
+    statement: We are past the time we told this customer we would come back to them.
+    status: executable
+    when:
+    - fn: hours_since
+      path: commitment.due_at
+      op: '>'
+      value: 0
+    yields:
+      confidence_bp: 9000
+      value: breached
+      attribute: clock_state
+    evidence_fields:
+    - commitment.due_at
+    - commitment.action
+    note: 'hours_since a future timestamp is negative, so `> 0` reads exactly as "the due time is behind
+      us". This is not the contractual SLA — it is the agent''s own promise, and it is the only deadline
+      the pipeline actually holds. It is frequently tighter than the SLA and customers remember it better,
+      because a person said it to them rather than a contract. 9000 rather than 10000: the commitment
+      may have been satisfied on a channel the thread does not see.
+
+      '
+  - id: sla.target_timestamp_from_the_ticketing_system
+    statement: The ticketing system holds the real first-response and resolution deadlines for this ticket.
+    status: needs_signal
+    yields:
+      confidence_bp: 10000
+      attribute: target_at
+    requires_signals:
+    - kind: fact_path
+      name: sla.target_first_response_at
+      owner_layer: L1
+      note: The actual deadline. Every executable pattern above is a proxy for this one field, and each
+        proxy is weaker in a different direction — this is the highest-value single ask this object generates.
+    - kind: fact_path
+      name: sla.target_resolution_at
+      owner_layer: L1
+      note: Separate from first response and must stay separate. A pack that projects one 'sla_due' field
+        has already made the error this object is built to prevent.
+  - id: sla.clock_state_from_the_ticketing_system
+    statement: The ticketing system says whether the clock is running, paused or stopped.
+    status: needs_signal
+    yields:
+      confidence_bp: 10000
+      attribute: clock_state
+    requires_signals:
+    - kind: fact_path
+      name: sla.clock_state
+      owner_layer: L1
+      note: Authoritative where the thread proxies are inferential. Worth noting that having this does
+        NOT retire the proxies — the interesting cases are precisely where the vendor field and the thread
+        disagree, and you need both to see that.
+  - id: sla.first_response_actually_recorded
+    statement: A first response was sent, so the first-response clock stopped at that timestamp.
+    status: needs_signal
+    yields:
+      confidence_bp: 9800
+      value: met
+      attribute: clock_state
+    requires_signals:
+    - kind: fact_path
+      name: ticket.first_response_at
+      owner_layer: L1
+    - kind: obs_kind
+      name: first_response_sent
+      owner_layer: L2
+      note: Needed alongside the fact path because the timestamp alone cannot distinguish a substantive
+        reply from an auto-acknowledgement — and auto-acknowledgements stopping first-response clocks
+        is the oldest trick in the category.
+  - id: sla.breach_emitted_by_the_platform
+    statement: The platform emitted a breach event for this target.
+    status: needs_signal
+    yields:
+      confidence_bp: 10000
+      value: breached
+      attribute: clock_state
+    requires_signals:
+    - kind: obs_kind
+      name: sla_breach
+      owner_layer: L2
+      note: Cheap for L2 to emit and immediately useful. Pair it with sla_clock_paused, or a breach arrives
+        with no explanation of which minutes counted, which is a notification rather than a finding.
+  heuristic:
+  - id: sla.two_days_of_our_silence
+    statement: The customer wrote, the ball is with us, two days have gone by and nothing went back.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: thread.last_inbound
+      op: '>'
+      value: 48
+    - no_obs: followup_sent
+    yields:
+      confidence_bp: 7500
+      value: breached
+      attribute: clock_state
+    evidence_fields:
+    - thread.last_inbound
+    - thread.ball_in_court
+    note: '48 hours is not a real SLA — no contract anywhere is that generous on first response. It is
+      set that wide precisely so this fires only on cases that breach under any plausible entitlement,
+      which is what lets it claim 7500 with no entitlement data at all. Tightening it to four hours without
+      knowing the plan would generate mostly noise on standard-tier accounts and would be the stretch
+      this domain is meant to avoid.
+
+      '
+  - id: sla.a_pause_bought_by_a_fast_question
+    statement: The ball flipped to the customer within two hours of their message — the shape of a clarifying
+      question that buys a business day.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    - fn: hours_since
+      path: thread.last_inbound
+      op: <
+      value: 2
+    yields:
+      confidence_bp: 4200
+      value: true
+      attribute: pause_is_disputable
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_inbound
+    note: '4200 is low and is meant to be. This predicate cannot tell a stalling question from an excellent,
+      fast, genuinely-needed one, and fast replies are the behaviour we want — a pattern that punished
+      them would be worse than no pattern. It is authored anyway because it is the only executable view
+      of the mechanism the whole object is about, and because the signal is not in any single ticket:
+      it is in the same agent, or the same queue, producing this shape repeatedly at 4200 each. Route
+      it to QA and account review. Never surface it to a customer, and never let it touch an individual
+      agent''s scorecard on its own.
+
+      '
+  - id: sla.a_breach_nobody_noticed
+    statement: Two days past the promised time and no follow-up has gone out — a silent breach.
+    status: executable
+    when:
+    - fn: days_since
+      path: commitment.due_at
+      op: '>='
+      value: 2
+    - no_obs: followup_sent
+    yields:
+      confidence_bp: 8000
+      value: false
+      attribute: breach_acknowledged
+    evidence_fields:
+    - commitment.due_at
+    - commitment.action
+    note: 'The worst state in the object, and it scores higher than the plain breach pattern on purpose.
+      Customers price in lateness; they do not price in silence. By day two of a missed promise with no
+      contact, the ticket has stopped being a support issue and become a trust issue, and the recovery
+      cost has changed category. This is the pattern that should page a human today, with no support pack
+      shipped and nothing else in place.
+
+      '
+  - id: sla.a_paused_clock_over_an_unhappy_customer
+    statement: The clock is paused waiting on a customer whose sentiment is already negative.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    - path: derived.sentiment
+      op: <=
+      value: -0.2
+    yields:
+      confidence_bp: 5500
+      value: met_but_unsatisfied
+      attribute: outcome_quality
+    evidence_fields:
+    - derived.sentiment
+    - thread.ball_in_court
+    note: 'The measurement-failure pattern in the only executable form available. A pause is supposed
+      to represent the customer''s consent to wait; negative sentiment says consent is not what is happening
+      here, whatever the clock records. 5500 for two honest reasons: the -0.2 threshold is a guess against
+      an engine-computed balance nobody has calibrated for support conversations, and negative sentiment
+      on a support thread often reflects the underlying problem rather than our handling of it. Recalibrate
+      this one first once CSAT exists.
+
+      '
+  - id: sla.breach_imminent_against_the_real_target
+    statement: Past the warning threshold on the actual contractual target, with the queue too deep to
+      recover it.
+    status: needs_signal
+    yields:
+      confidence_bp: 8500
+      value: running
+      attribute: clock_state
+    requires_signals:
+    - kind: fact_path
+      name: sla.target_first_response_at
+      owner_layer: L1
+    - kind: derived
+      name: derived.backlog_age
+      owner_layer: L2
+      note: The second half is what makes this actionable rather than merely alarming. Time-remaining
+        alone tells you a breach is coming; time-remaining against queue depth tells you whether anyone
+        can still stop it, which is the only version worth waking someone for.
+  - id: sla.systematic_pause_gaming
+    statement: This agent or queue pauses clocks close to the deadline far more often than peers do.
+    status: needs_signal
+    yields:
+      confidence_bp: 7000
+      value: true
+      attribute: pause_is_disputable
+    requires_signals:
+    - kind: obs_kind
+      name: sla_clock_paused
+      owner_layer: L2
+      note: A pause event with a timestamp. Without it the pause ledger is reconstructed from thread shape,
+        which is what the 4200-confidence pattern above is doing and why it scores 4200.
+    - kind: baseline
+      name: first_response_time
+      owner_layer: L2
+      note: The peer comparison. Absolute pause counts are meaningless — some queues genuinely need more
+        information from customers. Only the deviation carries a signal, and only at team level; run this
+        per-agent and you will build a metric that teaches people to stop asking necessary questions.
+  - id: sla.met_the_number_and_failed_the_customer
+    statement: Every clock on this ticket was met and the customer still scored it badly.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      value: met_but_unsatisfied
+      attribute: outcome_quality
+    requires_signals:
+    - kind: fact_path
+      name: csat.score
+      owner_layer: L1
+      note: The only thing that can falsify an SLA programme. Without it, 'we hit our targets' is unfalsifiable
+        — which is exactly why targets get set where they can be hit.
+    - kind: fact_path
+      name: ticket.resolved_at
+      owner_layer: L1
+  - id: sla.the_clock_was_never_survivable
+    statement: The target lands outside the coverage window, so no one was ever going to be there to meet
+      it.
+    status: needs_signal
+    yields:
+      confidence_bp: 8000
+      attribute: warning_threshold_pct
+    requires_signals:
+    - kind: fact_path
+      name: entitlement.coverage_hours
+      owner_layer: L1
+      note: Turns a breach postmortem into a coverage decision. These breaches are not agent failures
+        and treating them as such is how coaching time gets spent on a rota problem — the fix is a shift
+        pattern or a renegotiated clock, and neither is visible from the ticket.
+    - kind: fact_path
+      name: sla.target_resolution_at
+      owner_layer: L1
+inputs:
+- source: email
+  signal: who is waiting on whom — the live pause proxy
+  path: thread.ball_in_court
+- source: email
+  signal: when the customer last wrote — the de facto clock start
+  path: thread.last_inbound
+- source: derived
+  signal: the agent's own promised return time
+  path: commitment.due_at
+- source: derived
+  signal: what was promised, used to judge whether it was met
+  path: commitment.action
+- source: derived
+  signal: observation balance, qualifies a met clock
+  path: derived.sentiment
+- source: ticket
+  signal: clock state, targets, first response and resolution timestamps
+  description: The authoritative source and none of it is projected into typed L2 facts yet. Everything
+    above is a proxy for this row.
+- source: contract
+  signal: the promised durations, the pause conditions, the exclusions and the credit schedule
+  description: Read once at target creation. Where the contract and the configured clock disagree, the
+    contract wins and the configuration is the bug.
+- source: survey
+  signal: whether meeting the number meant anything
+- source: status_page
+  signal: declared maintenance and incident windows that legitimately exclude time
+- source: manual_entry
+  signal: agent-recorded pause reasons and holds
+  description: The least reliable input on the object and the one that decides most disputes. Treat as
+    a claim to be corroborated against thread shape, not as record.
+outputs:
+- name: breach_risk_bp
+  type: integer
+  description: Likelihood this target breaches given remaining time, pause posture and coverage.
+  consumed_by:
+  - L4.reasoning_unit
+  - L4.decision_maker
+- name: minutes_to_breach
+  type: integer
+  description: Counted minutes remaining. Negative after breach — the sign carries the depth.
+  consumed_by:
+  - L4.reasoning_unit
+  - L5.execution_planning
+- name: clock_state
+  type: string
+  description: Running, paused, stopped, met or breached. The single field most other capabilities ask
+    this object for.
+  consumed_by:
+  - L4.reasoning_unit
+  - L4.decision_maker
+  - L6.learning_unit
+- name: pause_dispute_flag
+  type: boolean
+  description: The pause does not survive inspection against the thread. Internal only — QA and account
+    review, never customer-facing and never a per-agent metric on its own.
+  consumed_by:
+  - L4.reasoning_unit
+  - L6.learning_unit
+- name: breach_notification_due
+  type: boolean
+  description: We owe this customer a proactive heads-up before they notice. Drives the message, not the
+    fix.
+  consumed_by:
+  - L5.communication_planning
+  - L5.2.channel_planner
+- name: measurement_failure
+  type: boolean
+  description: Target met, customer unhappy. Feeds target recalibration rather than agent coaching, and
+    routing it to the latter is the classic misuse.
+  consumed_by:
+  - L6.learning_unit
+- name: credit_exposure
+  type: money
+  description: Commercial consequence if the breach stands.
+  consumed_by:
+  - L4.decision_maker
+constraints:
+- id: sla.cannot_exceed_entitlement
+  statement: A contractual target cannot be looser than the entitlement it derives from. Tighter is allowed
+    and is an internal choice; looser is a breach of contract dressed as configuration.
+  hard: true
+- id: sla.pause_only_inside_declared_reasons
+  statement: A clock may only pause for a reason the contract names. Pausing for an undeclared reason
+    is unenforceable and will not survive a customer's own timeline of the ticket.
+  hard: true
+- id: sla.merge_does_not_merge_clocks
+  statement: Merging two tickets merges the work and never the clocks. Each original target keeps running
+    against its own start, or the second customer's promise silently disappears into the first customer's
+    ticket.
+  hard: true
+- id: sla.reopen_starts_a_new_target
+  statement: A reopened ticket starts a new target and does not resume the old one. Resuming lets a resolved-then-reopened
+    ticket show a clock that never breached across three weeks of customer pain.
+  hard: true
+- id: sla.no_clock_outside_coverage
+  statement: Counted time cannot accrue outside the coverage window on a business_hours or coverage_window
+    clock — and equally, it cannot be excluded outside a 24/7 one.
+  hard: true
+- id: sla.breach_is_terminal
+  statement: A breached target cannot return to met. Later completion changes the recovery and never the
+    record.
+  hard: true
+business_rules:
+- id: sla.clocks_never_share_a_state
+  statement: 'A first_response target and a resolution target on the same ticket must hold independent
+    clock_state values. Deriving one from the other is prohibited — replying stops the first clock and
+    does nothing at all to the second.
+
+    '
+  then: reject_shared_clock_state
+  severity: blocking
+- id: sla.pause_requires_a_reason
+  statement: A clock may not enter on_hold with pause_reason = none. An unexplained pause is indistinguishable
+    from a stopped clock and cannot be audited afterwards.
+  then: block_pause
+  severity: blocking
+- id: sla.pause_cannot_be_backdated
+  statement: 'pause_started_at may not be set earlier than the moment the pause was recorded. Retroactive
+    pausing is the audit-grade version of the gaming this object is built to see, and it converts a breach
+    into a met target with no trace.
+
+    '
+  then: reject_retroactive_pause
+  severity: blocking
+- id: sla.fast_pause_is_reviewable
+  statement: 'A pause beginning within an hour of the customer''s last message, on a clock that was already
+    running, is flagged for review. Legitimate, common, and the exact shape of question-laddering — which
+    is why this is a warning and not a block.
+
+    '
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  - fn: hours_since
+    path: thread.last_inbound
+    op: <
+    value: 1
+  then: flag_pause_for_review
+  severity: warning
+- id: sla.breach_must_be_acknowledged
+  statement: 'A breached target must set breach_acknowledged before the ticket can close. The acknowledgement,
+    not the recovery, is what the customer scores — and an unacknowledged breach teaches the organisation
+    nothing.
+
+    '
+  then: block_close_until_acknowledged
+  severity: blocking
+- id: sla.met_with_negative_sentiment_is_not_a_success
+  statement: 'A target that stops inside its deadline while sentiment is negative must be recorded as
+    met_but_unsatisfied, never as a plain success. This is a measurement failure and belongs in the SLA
+    review, not in the CSAT review.
+
+    '
+  when:
+  - path: derived.sentiment
+    op: <=
+    value: -0.2
+  then: record_measurement_failure
+  severity: warning
+- id: sla.target_must_derive_from_entitlement
+  statement: A target with is_contractual = true and a null entitlement_ref is invalid. We cannot owe
+    a contractual response under a contract we cannot name.
+  then: reject_orphan_target
+  severity: blocking
+- id: sla.credit_exposure_null_is_not_zero
+  statement: A null credit_exposure means the commercial consequence is unknown and must never be reported
+    as no exposure. Same trap as an unverified approval limit, same cost.
+  severity: warning
+decision_factors:
+- name: time_remaining
+  weight_bp: 2500
+  direction: context
+  description: 'The raw countdown, and `context` rather than `decreases` on purpose. A clock with ten
+    minutes left and the reply already drafted is not at risk; one with six hours left, no assignee and
+    nobody on shift is. Treating the countdown as the urgency is the single most common way an SLA dashboard
+    misallocates attention.
+
+    '
+  reads:
+  - remaining_minutes
+  - warning_threshold_pct
+  - target_at
+- name: pause_legitimacy
+  weight_bp: 2000
+  direction: context
+  description: 'The most argued input in the domain and the reason this object exists. Weighted second
+    only to the countdown because a clock whose pauses do not survive inspection is not really running
+    the promise it claims to.
+
+    '
+  reads:
+  - pause_reason
+  - pause_is_disputable
+  - paused_total_minutes
+  - pause_count
+  - ball_in_court
+- name: clock_type
+  weight_bp: 1500
+  direction: context
+  description: A first_response breach at ninety seconds and a resolution breach at nine days need opposite
+    responses. Without this factor, Layer 4 cannot tell which one it is looking at.
+  reads:
+  - target_type
+  - measured_from
+  - is_contractual
+- name: entitlement_strength
+  weight_bp: 1500
+  direction: increases
+  description: 'Contractual clocks with real credit exposure outrank internal SLOs when attention is scarce.
+    Stated plainly here because pretending they rank equally is a lie every support leader tells in public
+    and nobody acts on.
+
+    '
+  reads:
+  - is_contractual
+  - credit_exposure
+  - entitlement_ref
+- name: customer_state
+  weight_bp: 1500
+  direction: context
+  description: 'Whether the human is already unhappy. A breach on a calm account costs an apology; the
+    same breach on an account mid-escalation is the one that gets quoted back in a renewal conversation
+    six months later.
+
+    '
+  reads:
+  - sentiment_signal
+  - outcome_quality
+- name: coverage_reality
+  weight_bp: 1000
+  direction: context
+  description: 'Whether anybody is actually on shift to save it. A target that becomes at-risk twenty
+    minutes before coverage ends has effectively already breached, and no amount of alerting changes that
+    — this factor is what lets Layer 4 stop pretending otherwise.
+
+    '
+  reads:
+  - calendar_type
+  - coverage_window_ref
+  - timezone
+evidence:
+- source: contract
+  strength_bp: 10000
+  description: What was actually promised, including which minutes count. Nothing outranks it, and it
+    is consulted far less often than it is cited.
+- source: ticket
+  strength_bp: 9000
+  description: The platform's own clock record. Authoritative on what the system did — silent on whether
+    the pauses in it were earned.
+- source: telemetry
+  strength_bp: 8500
+  description: Timestamps from the systems themselves. Immune to the recording behaviour this object is
+    suspicious of, which is exactly what makes it valuable here.
+- source: email
+  strength_bp: 7500
+  description: Thread shape — who wrote when, who was waiting. The whole executable basis of this object
+    today, and inferential by nature.
+- source: survey
+  strength_bp: 7000
+  description: Whether meeting the number meant anything. Weak on the mechanics, decisive on whether the
+    mechanics were worth measuring.
+- source: status_page
+  strength_bp: 6000
+  description: Declared maintenance and incident windows. Corroborates an exclusion; cannot establish
+    one that the contract does not allow.
+- source: derived
+  strength_bp: 4500
+  description: Inferred clock state from thread and sentiment. Corroborating only. Everything executable
+    in this file sits here, and the confidences say so.
+- source: manual_entry
+  strength_bp: 3000
+  description: An agent-typed pause reason. Weakest, most consequential, and the only evidence source
+    on this object with an incentive attached — which is precisely why it is scored below inference.
+metrics:
+- name: attainment_rate
+  unit: percent
+  description: Share of targets met. The headline number, and on its own the most misleading metric in
+    support.
+  owner_layer: L6
+- name: paused_share_of_elapsed
+  unit: percent
+  description: Paused minutes as a share of wall-clock time. The honest companion to attainment — the
+    two move in opposite directions when a queue starts gaming.
+  owner_layer: L6
+- name: disputable_pause_rate
+  unit: percent
+  description: Share of pauses beginning within an hour of a customer message. Team level only; per-agent
+    it teaches people to stop asking necessary questions.
+  owner_layer: L6
+- name: unnoticed_breach_rate
+  unit: percent
+  description: Breaches with no follow-up within two days. The number to fix first — it is small, cheap
+    and it is the one customers leave over.
+  owner_layer: L6
+- name: proactive_notification_lead
+  unit: hours
+  description: Hours between us knowing we will be late and telling them. Negative means they found out
+    first.
+  owner_layer: L6
+- name: met_but_unsatisfied_share
+  unit: percent
+  description: Targets met over unhappy customers. A measurement-quality metric, not a performance one
+    — it grades the targets, not the team.
+  owner_layer: L6
+- name: time_to_first_reply
+  unit: hours
+  description: Wall-clock hours from customer message to our reply, pauses ignored. The customer's own
+    version of the number.
+  owner_layer: L2
+- name: breach_depth_median
+  unit: minutes
+  description: Median minutes past target. Distinguishes a queue that is slightly late from one that is
+    losing tickets.
+  owner_layer: L6
+events:
+- id: sla.clock_started
+  name: SLA Clock Started
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  payload:
+  - target_type
+  - target_at
+  - target_minutes
+- id: sla.clock_paused
+  name: SLA Clock Paused
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  payload:
+  - pause_reason
+  - pause_started_at
+  - pause_count
+  description: The most consequential event on this object and the one most systems log at debug level.
+    Every minute of the eventual dispute is decided here.
+- id: sla.clock_resumed
+  name: SLA Clock Resumed
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  payload:
+  - paused_total_minutes
+  - remaining_minutes
+- id: sla.breach_imminent
+  name: Breach Imminent
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  - fn: hours_since
+    path: thread.last_inbound
+    op: '>'
+    value: 4
+  payload:
+  - remaining_minutes
+  - target_type
+  - ticket_ref
+  description: Fires on the thread proxy today, not on a real target. Deliberately early and therefore
+    noisy — a late-and-accurate breach warning has no operational value at all.
+- id: sla.breached
+  name: SLA Breached
+  emitted_when:
+  - fn: hours_since
+    path: commitment.due_at
+    op: '>'
+    value: 0
+  payload:
+  - breach_depth_minutes
+  - target_type
+  - is_contractual
+  - credit_exposure
+- id: sla.breach_unnoticed
+  name: Breach Unnoticed
+  emitted_when:
+  - fn: days_since
+    path: commitment.due_at
+    op: '>='
+    value: 2
+  - no_obs: followup_sent
+  payload:
+  - breach_depth_minutes
+  - ticket_ref
+  description: The one event on this object that should page a human. A breach with an alarm is a recoverable
+    service failure; a breach with silence is a trust failure, and by day two it has already changed category.
+- id: sla.pause_disputed
+  name: Pause Flagged For Review
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  - fn: hours_since
+    path: thread.last_inbound
+    op: <
+    value: 2
+  payload:
+  - pause_reason
+  - pause_count
+  - paused_total_minutes
+  description: Routes to QA, never to the customer and never to an agent scorecard in isolation. It is
+    a queue-level shape, not an accusation.
+- id: sla.met_but_unsatisfied
+  name: Target Met And Customer Unsatisfied
+  payload:
+  - target_type
+  - outcome_quality
+  - elapsed_minutes
+  description: No emitted_when — this needs CSAT, which does not exist. It is the event that would tell
+    us our targets are set in the wrong place, so its absence is not a small gap.
+actions:
+- id: sla.respond_now
+  name: Send a substantive reply
+  actor: human
+  preconditions:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  - fn: hours_since
+    path: thread.last_inbound
+    op: '>'
+    value: 4
+  effect: Stops a first-response clock. Note it stops it whether or not the reply helps, which is the
+    flaw in first-response as a metric and the reason update_cadence exists as a separate target_type.
+- id: sla.resume_clock
+  name: Resume a paused clock
+  actor: system
+  preconditions:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  effect: Restarts counted time when the customer comes back. Should be automatic — a manual resume is
+    a resume that does not happen on a Friday evening.
+- id: sla.dispute_pause
+  name: Challenge a recorded pause
+  actor: human
+  effect: Reinstate the disputed minutes. Belongs to QA or an account review, never to the agent who recorded
+    the pause.
+- id: sla.escalate_before_breach
+  name: Escalate while it is still rescuable
+  actor: human
+  effect: The only escalation trigger nobody argues with. Almost always fired too late to be an escalation
+    and just early enough to be a warning.
+- id: sla.notify_customer_of_breach
+  name: Tell the customer before they notice
+  actor: human
+  effect: The highest-return action on this object. Being told we are late is a service failure; discovering
+    it is a trust failure, and the two recover at completely different speeds.
+- id: sla.reset_expectation
+  name: Replace the promise with one we can keep
+  actor: human
+  effect: Sets a new commitment. Legitimate once, corrosive twice — a second reset teaches the customer
+    that our dates are decorative.
+- id: sla.request_pause_agreement
+  name: Ask the customer to agree to a hold
+  actor: human
+  effect: Converts a unilateral pause into a mutual one. Slower, and it is the difference between a pause
+    that survives a QBR and one that does not.
+- id: sla.recalibrate_target
+  name: Move the target
+  actor: human
+  effect: The correct response to a persistent met_but_unsatisfied pattern. Also the most abused action
+    here — moving a target to stop breaching is only honest when the number was measuring the wrong thing,
+    not when the number was inconvenient.
+examples:
+- label: Enterprise sev-1, one-hour first response, 24/7
+  note: calendar_hours, is_contractual true, real credit exposure. The clock everybody watches and the
+    one least likely to breach, because it is the only one anybody staffs for.
+- label: Standard-tier, four business hours, ticket raised 16:55 Friday
+  note: Not due until Monday morning under the contract, and the customer will experience four hours of
+    promise as sixty-three hours of silence. Contractually met, reputationally a breach — the strongest
+    argument in the file for outcome_quality existing.
+- label: The clarifying question at 15:49 on a four-hour clock started at 12:00
+  note: pause_is_disputable true. Buys a full business day at zero cost, may be entirely legitimate, and
+    is indistinguishable from the alternative in any single ticket. Only the pattern across a queue means
+    anything.
+- label: Resolution clock on a ticket parked in waiting_on_customer for three weeks
+  note: Ticket state and clock state agree; both are wrong. Nobody chased, the pause was never reviewed,
+    and the ticket auto-closed green. The commonest way a support queue reports health it does not have.
+- label: 'Missed callback: ''I''ll come back to you Thursday'', no contact by Saturday'
+  note: No SLA breached at all — the contractual clock may still be running. The commitment breached,
+    and the customer cannot tell the difference and would not care if they could.
+- label: Incident-linked ticket where service was restored before the fix shipped
+  note: restoration met, resolution still running. Reporting one number for both makes the team look either
+    much better or much worse than it was, depending on which one you picked.
+- label: Every clock met, CSAT 2/5
+  note: met_but_unsatisfied. The targets are measuring the wrong thing for this ticket type. The right
+    response is recalibrate_target; the common response is coaching the agent, and it fixes nothing.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: 'Seven of fifteen patterns are executable, which is high for this domain and needs the justification
+    given in the header: elapsed-time predicates (hours_since / days_since) plus thread.ball_in_court
+    are the one clock-shaped primitive the substrate has, and this object is a clock. Every executable
+    pattern here is a proxy and each note names the direction in which its proxy is weak — mostly in the
+    direction that flatters us, which is the bias worth stating.
+
+    The two highest-value asks this object generates are sla.target_first_response_at (the real deadline,
+    which every executable pattern above is impersonating) and csat.score (the only thing that can falsify
+    an SLA programme at all — without it "we hit our targets" is unfalsifiable, which is exactly why targets
+    get set where they can be hit).
+
+    State names are drawn from vocabulary open.object_states to avoid warnings: `on_hold` is the paused
+    clock and `closed` means met. That mapping loses a little precision against running/paused/met and
+    is documented at the top of the states section rather than fixed by editing the shared vocabulary
+    from inside a single object file.
+
+    Two thresholds are guesses and should be recalibrated before anyone trusts them: the -0.2 on derived.sentiment
+    (an engine-computed balance never tuned for support conversations) and the 48 hours in sla.two_days_of_our_silence
+    (set wide on purpose so it fires only on cases that breach under any plausible entitlement).
+
+    '
+  completeness: partial

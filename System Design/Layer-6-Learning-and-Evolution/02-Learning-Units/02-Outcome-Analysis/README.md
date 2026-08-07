@@ -2,14 +2,18 @@
 
 **Status:** Built
 
-Measures capability/play effectiveness, progress, time-to-close and attention cost from Layer 5 ground truth.
+Measures capability/play effectiveness, progress, time-to-close and attention cost from grounded
+Layer 5 execution outcomes. Neutral terminal labels remain visible but never count as success,
+failure or confidence support.
 
 | Boundary | Value |
 |---|---|
-| Input | `OutcomeFact` values grouped by capability and play |
-| Output | Metrics LearningObject per capability/play cohort |
+| Input | `OutcomeFact` values grouped by capability, play and identical source ACL |
+| Grounding | outcome joins exact execution ID, decision hash, capability and play |
+| Labels | success, failure and neutral sets are closed and separate |
+| Output | Metrics LearningObject per capability/play/ACL cohort |
 | Primary code | `feedback/units.py::outcome_analysis` |
-| Honest gap | Coverage depends on Layer 5 and upstream connectors recording real outcome evidence. |
+| Integration requirement | Layer 5/connectors must close real outcomes instead of treating clicks or deliveries as efficacy |
 
 ## Component modules
 
