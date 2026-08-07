@@ -37,7 +37,7 @@ IMPLEMENTED_SOURCE_TYPES: frozenset[str] = BUILDABLE_SOURCES
 DIRECT_SOURCE_TYPES: frozenset[str] = frozenset({"postgres", "database", "mysql"})
 COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
     "gmail", "gcal", "calendar", "google_calendar", "notion",
-    "gdrive", "drive", "google_drive",
+    "gdrive", "drive", "google_drive", "hubspot",
 })
 
 
@@ -62,10 +62,7 @@ def make_connector_for(connection) -> SourceConnector:
     key, uid = s.composio_api_key, connection.composio_user_id
     if st == "gmail":
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
-        ocr = None                              # scanned-PDF attachments need OCR (native-only if off)
-        if s.enable_ocr:
-            from genios_engine.capture.documents.tesseract import TesseractOcr
-            ocr = TesseractOcr()
+        ocr = make_ocr()                        # scanned-PDF attachments need OCR (native-only if off)
         return ComposioGmailConnector(api_key=key, user_id=uid,
                                       connected_account_id=s.composio_gmail_account or None, ocr=ocr)
     if st in ("gcal", "calendar", "google_calendar"):
@@ -76,16 +73,27 @@ def make_connector_for(connection) -> SourceConnector:
         return ComposioNotionConnector(api_key=key, user_id=uid)
     if st in ("gdrive", "drive", "google_drive"):
         from genios_engine.capture.connectors.drive import ComposioDriveConnector
-        ocr = None
-        if s.enable_ocr:
-            from genios_engine.capture.documents.tesseract import TesseractOcr
-            ocr = TesseractOcr()
+        ocr = make_ocr()
         return ComposioDriveConnector(api_key=key, user_id=uid, ocr=ocr)
+    if st == "hubspot":
+        from genios_engine.capture.connectors.hubspot import ComposioHubspotConnector
+        return ComposioHubspotConnector(api_key=key, user_id=uid)
     raise ValueError(f"no connector wired for source_type={st!r}")
 
 
 # backward-compatible alias
 make_gmail_connector_for = make_connector_for
+
+
+def make_ocr():
+    """The OCR engine (Tesseract) when enabled in settings, else None (native-text-only). Shared by
+    the Gmail/Drive attachment path AND dashboard uploads, so a scanned file reads the same way no
+    matter which door it arrives through."""
+    s = get_settings()
+    if getattr(s, "enable_ocr", False):
+        from genios_engine.capture.documents.tesseract import TesseractOcr
+        return TesseractOcr()
+    return None
 
 
 def make_agent_registry_store():

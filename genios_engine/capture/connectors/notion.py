@@ -68,6 +68,9 @@ class ComposioNotionConnector:
             occurred_at=_parse_ts(page.get("last_edited_time")),
             actor_email=((page.get("last_edited_by") or {}).get("email")),
             actor_type="internal_user",
+            # last_edited_time bumps on every edit → new content_version → an edited page re-lands
+            # and its body updates, instead of being deduped to the first version seen.
+            content_version=str(page.get("last_edited_time")) if page.get("last_edited_time") else None,
             raw={"subject": _title(page), "body": body, "url": page.get("url")},
         )
 

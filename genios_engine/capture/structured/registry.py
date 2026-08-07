@@ -106,3 +106,45 @@ register(StructuredMapping(
             FieldMap("seats_used", "product_account.seats_used", "number",
                      authority="direct_observation")],
     intent="pipeline_update", emit_on_change=["plan", "status"]))
+
+
+# ── Config-driven mappings (DATA, not code) ──────────────────────────────────────
+# A client can map their OWN DB tables / CRM objects by dropping a JSON file instead of
+# editing Python — the mapping is data. Set GENIOS_STRUCTURED_MAPPINGS=/path/to/file.json.
+# Without it, only the built-ins above are active (behaviour unchanged). This is how an
+# unmapped client table stops PARKing (see LAYER1_CAPTURE_FIXES #1) — you map it in config.
+def mapping_from_dict(d: dict) -> StructuredMapping:
+    """Build a StructuredMapping from a plain dict (parsed JSON). Field/relation dicts map
+    1:1 to FieldMap/RelationMap kwargs, so the config shape is the dataclass shape."""
+    return StructuredMapping(
+        mapping_id=d["mapping_id"], source=d["source"], object_type=d["object_type"],
+        identity_field=d["identity_field"], node_type=d["node_type"],
+        fields=[FieldMap(**f) for f in d.get("fields", [])],
+        intent=d.get("intent", ""),
+        name_field=d.get("name_field"),
+        relations=[RelationMap(**r) for r in d.get("relations", [])],
+        tags=list(d.get("tags", [])),
+        emit_on_change=list(d.get("emit_on_change", [])))
+
+
+def load_mappings_from_config(path: str) -> int:
+    """Register every mapping in a JSON file (a list of mapping dicts). Returns how many were
+    loaded; 0 if the file is absent (never raises on a missing path — config is optional)."""
+    import json
+    import os
+    if not path or not os.path.exists(path):
+        return 0
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    count = 0
+    for d in data or []:
+        register(mapping_from_dict(d))
+        count += 1
+    return count
+
+
+import os as _os
+
+_CONFIG_PATH = _os.environ.get("GENIOS_STRUCTURED_MAPPINGS")
+if _CONFIG_PATH:                                    # opt-in: absent → only built-ins, unchanged
+    load_mappings_from_config(_CONFIG_PATH)

@@ -97,7 +97,7 @@ SOURCES: tuple[SourceDescriptor, ...] = (
                      object_types=("document_chunk",)),
 
     # ── enterprise systems ───────────────────────────────────────────────────────
-    SourceDescriptor("hubspot", "enterprise_system", capability="crm",
+    SourceDescriptor("hubspot", "enterprise_system", capability="crm", buildable=True,
                      object_types=("deal",)),
     SourceDescriptor("salesforce", "enterprise_system", capability="crm"),
     SourceDescriptor("pipedrive", "enterprise_system"),

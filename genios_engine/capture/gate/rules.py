@@ -10,7 +10,8 @@ from .context import GateContext
 # customers/prospects/vendors/important-attachments are never blanket-dropped.
 
 _NOREPLY = re.compile(
-    r"(no[-_.]?reply|donotreply|notifications?@|updates?@|marketing@|mailer-daemon)", re.I
+    r"(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?@|updates?@|newsletters?@|"
+    r"digest@|marketing@|bounces?@|mailer-daemon)", re.I
 )
 _OOO = re.compile(r"\b(out of office|ooo|on leave|automatic reply|chutti)\b", re.I)
 
@@ -25,7 +26,7 @@ REASON_LABELS = {
     "out_of_scope": "out_of_scope", "mapping_missing": "structured_unmapped",
     "structured_mapped": "structured_ok", "low_relevance": "low_relevance",
     "poison_quarantine": "poison_quarantine",
-    "DOC-02": "doc_unsupported", "DOC-04": "doc_ocr_review",
+    "DOC-02": "doc_unsupported", "DOC-04": "doc_ocr_review", "DOC-05": "doc_fetch_failed",
 }
 
 
@@ -62,6 +63,8 @@ def hard_rule(ctx: GateContext) -> tuple[str, str] | None:
         return ("DOC-02", "park")
     if doc.get("status") == "ocr_review_required":
         return ("DOC-04", "park")
+    if doc.get("status") == "fetch_failed":
+        return ("DOC-05", "park")                # attachment download failed → retryable, never silent
 
     # Provider-classified spam/trash + tenant blocklist — highest-confidence noise.
     if "SPAM" in labels or "TRASH" in labels:
@@ -80,13 +83,19 @@ def hard_rule(ctx: GateContext) -> tuple[str, str] | None:
         return ("N-01", "drop")                  # machine acknowledgement
     if _OOO.search(subject) or _OOO.search(body[:160]):
         return ("N-05", "drop")                  # out-of-office (real impl: availability hint first)
-    if _NOREPLY.search(email):
+    # N-02/03/04 are bulk / no-reply SIGNALS, not certainties: a vendor invoice or receipt routinely
+    # comes from noreply@ or carries a List-Unsubscribe header. If the message carries a real
+    # attachment (an invoice/contract PDF), do NOT hard-drop it on these signals — let relevance/L2
+    # decide. High-confidence noise (SPAM/TRASH, Gmail PROMOTIONS/SOCIAL) above still drops regardless.
+    att = bool(ctx.raw.get("has_attachment"))
+    if not att and _NOREPLY.search(email):
         return ("N-03", "drop")                  # no-reply / notification sender
-    if str(hdrs.get("Precedence", "")).lower() in ("bulk", "list", "junk"):
+    if not att and str(hdrs.get("Precedence", "")).lower() in ("bulk", "list", "junk"):
         return ("N-04", "drop")                  # bulk campaign (Precedence header)
-    if hdrs.get("List-Unsubscribe"):
-        return ("N-02", "drop")                  # bulk campaign (unsubscribe header)
-    if not body.strip() and not ctx.raw.get("has_attachment"):
+    if not att and (hdrs.get("List-Unsubscribe") or hdrs.get("List-Id")
+                    or hdrs.get("List-Post") or hdrs.get("Feedback-ID")):
+        return ("N-02", "drop")                  # bulk campaign (unsubscribe / mailing-list / ESP headers)
+    if not body.strip() and not att:
         return ("N-10", "drop")                  # empty, no attachment
     # N-11 (notification linked to tracked entity → park) needs entity linkage → S3/L2.
     # N-12/N-20 (bulk-from-known → park · grey-zone relevance) need relevance/linkage → L2.

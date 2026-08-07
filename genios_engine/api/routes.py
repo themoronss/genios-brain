@@ -370,6 +370,34 @@ def sync_one(connection_id: str, background_tasks: BackgroundTasks,
             "note": "L1 sync + L2 running in the background; this returned immediately"}
 
 
+@router.post("/connections/{connection_id}/backfill")
+def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
+                        limit: int = 100, org_id: str = Depends(get_current_org)) -> dict:
+    """Drain a connection's FULL history in the background — the older tail an incremental sync skips
+    on a huge first connect (newest-first watermark + max_pages). OWNER-triggered, not automatic:
+    it can pull thousands of items and each drives L2 extraction, so it is a deliberate cost choice."""
+    conn = _connections.get(connection_id)
+    if conn is None or conn.org_id != org_id:
+        raise HTTPException(404, "connection not found")
+
+    def _run() -> None:
+        from genios_engine.capture.acquire.sync_runner import backfill_drain
+        try:
+            summary = backfill_drain(
+                make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
+                repo=_repo, source=conn.source_type, limit=limit, trace_repo=_trace_repo,
+                payload_store=_payload_store, prepared_store=_prepared_store,
+                document_job_store=_documents)
+            _log.info("backfill drain done org=%s conn=%s scanned=%s",
+                      conn.org_id, connection_id, summary.scanned)
+        except Exception:                                # a drain failure must not crash the worker
+            _log.exception("backfill drain failed org=%s conn=%s", conn.org_id, connection_id)
+
+    background_tasks.add_task(_run)
+    return {"started": True, "connection_id": connection_id,
+            "note": "full-history backfill draining in the background (older tail incremental skips)"}
+
+
 @router.post("/dev/ingest-sample")
 def ingest_sample() -> dict:
     """No-config demo: fake Gmail event through the FULL L1 pipeline, returns trace."""
@@ -414,9 +442,23 @@ def recover_parked(event_id: str, org_id: str = Depends(get_current_org)) -> dic
     return {"event_id": event_id, "status": "recovered", "reinjected": reinjected}
 
 
+def _company_knowledge_count(org_id: str) -> int:
+    """Distinct company-knowledge assertions this org has WRITTEN (non-app evidence: policies,
+    pricing, SOPs — source='internal'). Surfaced in coverage so written canon is visible evidence,
+    not an ignored 'not connected'. Returns 0 (never an error) when there is no graph/DB."""
+    if _graph is None:
+        return 0
+    from sqlalchemy import text
+    with _graph.engine.connect() as c:
+        return int(c.execute(text(
+            "select count(distinct source_object_id) from source_events "
+            "where org_id=:o and source='internal'"), {"o": org_id}).scalar() or 0)
+
+
 @router.get("/coverage")
 def coverage(domain: str = "sales", org_id: str = Depends(get_current_org)) -> dict:
-    return compute_coverage(domain, _connected_capabilities(org_id))
+    return compute_coverage(domain, _connected_capabilities(org_id),
+                            company_knowledge_count=_company_knowledge_count(org_id))
 
 
 # ── connection lifecycle ─────────────────────────────────────────────────────────
@@ -778,12 +820,15 @@ async def composio_webhook(request: Request,
     conn = next((c for c in _connections.list_active() if c.composio_user_id == user_id), None)
     if conn is None:
         raise HTTPException(404, "no active connection for this user_id")
-    from genios_engine.capture.connectors.composio import ComposioGmailConnector
-    msg = data.get("message") or data.get("email") or data
-    raw_obj = (ComposioGmailConnector(api_key="", user_id="")._to_raw(msg)
-               if isinstance(msg, dict) else None)
+    from genios_engine.capture.connectors.dispatch import webhook_to_raw
+    try:
+        raw_obj = webhook_to_raw(conn.source_type, data,
+                                 connector_factory=lambda: make_connector_for(conn))
+    except Exception:                                    # a foreign/bad payload must never 500 the webhook
+        _log.exception("webhook parse failed org=%s source=%s", conn.org_id, conn.source_type)
+        raw_obj = None
     if raw_obj is None:
-        return {"ingested": False, "reason": "unmapped payload"}
+        return {"ingested": False, "reason": "unmapped payload", "source": conn.source_type}
     res = capture_event(raw_obj, org_id=conn.org_id, connection_id=conn.connection_id,
                         repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
                         document_job_store=_documents)

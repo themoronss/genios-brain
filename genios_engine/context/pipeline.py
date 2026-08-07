@@ -12,7 +12,8 @@ from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.guard import _norm, keep_grounded
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
-from genios_engine.context.identity import observe_person_name, resolve_company_mention
+from genios_engine.context.identity import (observe_person_name, resolve_company_mention,
+                                            resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
 
 _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
@@ -411,6 +412,16 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # a name nothing is anchored under still falls through to an observation.
                 name_to_node[_norm(str(name))] = known
                 touched[known] = "company"
+                nodes += 1
+            elif etype == "person" and name and (person_hit := resolve_person_name(
+                    conn, org_id=org_id, name=str(name))):
+                # A person named in prose without an email — "Rohit said yes" — reaching the person we
+                # already know by that name. Completes observe_person_name's intent: the write side
+                # recorded the name-alias, this is the read side that was MISSING (so a name-only mention
+                # linked to nobody and piled onto the sender). Same-name people share one key → resolves
+                # to the first-anchored holder; never creates a node, never merges.
+                name_to_node[_norm(str(name))] = person_hit
+                touched.setdefault(person_hit, "person")
                 nodes += 1
             elif name and (canon_hit := resolve_canon_mention(conn, org_id=org_id,
                                                               name=str(name))):

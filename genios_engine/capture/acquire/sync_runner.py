@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 
 from genios_engine.capture.acquire.cursor_store import CursorStore
-from genios_engine.capture.connectors.base import RawObject, SourceConnector
+from genios_engine.capture.connectors.base import RawObject, SourceBatch, SourceConnector
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.parked.store import ParkedStore, parked_from_trace
 from genios_engine.capture.payload_store import RawPayloadStore
@@ -60,6 +61,24 @@ def _capture_bounded(raw: RawObject, *, retries: int, **kw):
     return None, err
 
 
+def _fetch_page(connector: SourceConnector, *, mode: str, cursor: str | None, limit: int,
+                since, retries: int, backoff: float, sleep) -> SourceBatch:
+    """Fetch ONE page with bounded exponential backoff. A transient connector failure (rate limit,
+    network blip) is retried instead of aborting the whole sync — before this, one failed fetch threw
+    out of run_sync, the watermark never advanced, and every following sync died on the same page,
+    blocking the connection indefinitely."""
+    last: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            return (connector.initial_snapshot(cursor, limit) if mode == "backfill"
+                    else connector.incremental_changes(cursor, limit, since=since))
+        except Exception as e:      # noqa: BLE001 — transient provider error → backoff + retry
+            last = e
+            if attempt < retries:
+                sleep(backoff * (2 ** attempt))
+    raise last                      # retries exhausted → propagate (caller logs; watermark unmoved)
+
+
 def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
              repo: SourceEventRepository, mode: str = "incremental",
              cursor: str | None = None, limit: int = 100,
@@ -72,7 +91,8 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
              document_job_store=None,
              source: str = "gmail", max_pages: int = 1,
              reconcile_days: int = 7,
-             run_ledger=None) -> SyncSummary:
+             run_ledger=None,
+             fetch_retries: int = 2, fetch_backoff: float = 0.5, _sleep=time.sleep) -> SyncSummary:
     # No-miss: resume from the stored watermark (incremental only). The dedup ledger
     # drops the boundary overlap, so nothing is missed and nothing double-processed.
     # mode="recovery" = a safety re-scan of a fixed lookback window (ignores watermark,
@@ -91,8 +111,8 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     watermark = since
     page_cursor = cursor
     for _page in range(max_pages):                    # drain up to max_pages (real API
-        batch = (connector.initial_snapshot(page_cursor, limit) if mode == "backfill"
-                 else connector.incremental_changes(page_cursor, limit, since=since))
+        batch = _fetch_page(connector, mode=mode, cursor=page_cursor, limit=limit, since=since,
+                            retries=fetch_retries, backoff=fetch_backoff, sleep=_sleep)
         summary.next_cursor = batch.next_cursor
         summary.scanned += len(batch.objects)
 
@@ -149,3 +169,30 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
         except Exception:       # noqa: BLE001 — a ledger hiccup must not fail the sync
             pass
     return summary
+
+
+def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: str,
+                   repo: SourceEventRepository, source: str, limit: int = 100,
+                   max_rounds: int = 500, **kw) -> SyncSummary:
+    """Drain a source's FULL history: page in BACKFILL mode until the cursor is exhausted, so a large
+    mailbox's older tail is never left behind. The incremental sync only pulls NEW mail (via the
+    watermark), so on a huge first connect every page beyond `max_pages` was skipped PERMANENTLY —
+    newest-first + an advancing watermark meant the older tail was never re-requested. Run this as a
+    background task after connect; dedup makes overlap/restart safe. It passes cursor_store=None so it
+    NEVER advances the incremental watermark — the two paths stay independent. `max_rounds` is a
+    runaway guard."""
+    total = SyncSummary()
+    cursor: str | None = None
+    for _ in range(max_rounds):
+        summary = run_sync(connector, org_id=org_id, connection_id=connection_id, repo=repo,
+                           mode="backfill", cursor=cursor, limit=limit, source=source,
+                           cursor_store=None, max_pages=1, **kw)
+        for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined"):
+            setattr(total, f, getattr(total, f) + getattr(summary, f))
+        total.gated.extend(summary.gated)
+        total.results.extend(summary.results)
+        cursor = summary.next_cursor
+        if not cursor:
+            break
+    total.next_cursor = cursor
+    return total

@@ -32,9 +32,16 @@ _READINESS = {
 }
 
 
-def compute_coverage(domain: str, connected: dict[str, str]) -> dict[str, Any]:
+def compute_coverage(domain: str, connected: dict[str, str],
+                     company_knowledge_count: int = 0) -> dict[str, Any]:
     """connected = {capability: status}, status ∈ fresh|stale|not_connected.
-    Returns capability status, missing lists, coverage_ready, readiness predicates."""
+    Returns capability status, missing lists, coverage_ready, readiness predicates.
+
+    `company_knowledge_count` is NON-APP evidence — the policies/pricing/SOPs the company WROTE
+    (source='internal'), not a connected app. It never satisfies a live-signal capability (writing a
+    policy yields no email data), so it does NOT change coverage_ready; but it is real context, so it
+    is surfaced as its own dimension instead of being invisible — the dashboard used to show
+    'not connected' no matter how much knowledge was written (see LAYER1_CAPTURE_FIXES #10)."""
     reqs = PACK_REQUIREMENTS.get(domain, {"required": [], "recommended": []})
 
     def status_of(cap: str) -> str:
@@ -48,6 +55,7 @@ def compute_coverage(domain: str, connected: dict[str, str]) -> dict[str, Any]:
         fresh = status_of(cap) == "fresh"
         for p in preds:
             readiness[p] = fresh
+    readiness["has_company_canon"] = company_knowledge_count > 0
 
     return {
         "domain": domain,
@@ -56,6 +64,8 @@ def compute_coverage(domain: str, connected: dict[str, str]) -> dict[str, Any]:
         "missing_recommended": missing_recommended,
         "coverage_ready": len(missing_required) == 0,
         "readiness": readiness,
+        "company_knowledge": {"present": company_knowledge_count > 0,
+                              "count": company_knowledge_count},
     }
 
 

@@ -69,6 +69,9 @@ class ComposioDriveConnector:
             occurred_at=_parse_ts(f.get("modifiedTime")),
             actor_email=((f.get("lastModifyingUser") or {}).get("emailAddress")),
             actor_type="internal_user",
+            # modifiedTime bumps on every edit → new content_version → an edited file re-lands
+            # and its extracted text updates, instead of being deduped to the first version seen.
+            content_version=str(f.get("modifiedTime")) if f.get("modifiedTime") else None,
             raw={"subject": name, "body": r.text, "mime": mime, "has_attachment": bool(r.text),
                  "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
                               "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,

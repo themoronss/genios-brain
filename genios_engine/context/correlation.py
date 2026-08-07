@@ -75,7 +75,12 @@ DEFAULT_DOMAIN = "general"
 # is one edit in one file — importing L1 from L2 is the legal direction.
 def _anchor_priority() -> tuple[str, ...]:
     from genios_engine.capture.internal_knowledge import ANCHORING_KINDS
-    return ("deal", *sorted(ANCHORING_KINDS), "company", "person")
+    # subscription / product_account are system-of-record business objects (like a deal): a billing
+    # or account situation is ABOUT them. Without them here, choose_anchors returns [] for every
+    # Stripe/client-DB structured event → it reaches NO situation, and admin/account situations report
+    # their fields (renewal date, plan) missing forever — the "built, green, does nothing" dead-end.
+    return ("deal", *sorted(ANCHORING_KINDS), "subscription", "product_account",
+            "company", "person")
 
 
 ANCHOR_PRIORITY: tuple[str, ...] = _anchor_priority()

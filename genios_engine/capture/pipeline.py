@@ -14,6 +14,7 @@ from genios_engine.capture.landing.normalize import to_source_event
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.payload_store import RawPayloadStore
 from genios_engine.capture.preprocess.preprocess import preprocess
+from genios_engine.capture.source_registry import family_of
 from genios_engine.capture.structured.apply import apply_mapping
 from genios_engine.capture.structured.registry import get_mapping, has_mapping
 from genios_engine.capture.trace_store import TraceRepository
@@ -66,6 +67,12 @@ class CaptureResult:
 
 _FREE_MAIL = ("gmail.com", "googlemail.com", "outlook.com", "hotmail.com",
               "yahoo.com", "yahoo.co.in", "icloud.com", "proton.me")
+
+# Raw-payload retention (days). L2 drains EMITTED events quickly; a PARKED event waits in the
+# human-review queue for potentially weeks and must keep its body long enough to be /recover-ed —
+# else recovery after the default 30 days re-emits an EMPTY event (the black hole this guards against).
+_EMITTED_PAYLOAD_TTL_DAYS = 30
+_PARKED_PAYLOAD_TTL_DAYS = 365
 
 
 def _linkage_hints(event: SourceEvent) -> list[dict]:
@@ -142,7 +149,13 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
 
     # auto-detect structured sources (CRM/calendar/DB): a registry mapping means the
     # object is typed → structured route (gate short-circuit), no LLM extraction.
-    if not is_structured and has_mapping(event.source, event.object_type):
+    # An enterprise-system source (CRM / billing / the client's OWN database) is structured
+    # even with NO mapping yet: its rows carry no prose `body`, so the unstructured lane
+    # would read "" and the noise gate would N-10 DROP the whole table as empty. Marking it
+    # structured routes it to the gate's mapping_missing PARK (recoverable, human-review)
+    # instead of silently losing it — store-don't-delete. (gcal etc. always have a mapping.)
+    if not is_structured and (has_mapping(event.source, event.object_type)
+                              or family_of(event.source) == "enterprise_system"):
         is_structured = True
 
     # preprocess (unstructured text only; structured events carry typed fields).
@@ -199,9 +212,12 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
              domain_hints=hints or None, linkage_hints=links or None)
     if kept and payload_store is not None:
         # full raw object → L2 reads body (unstructured) or maps fields (structured); a recovered
-        # parked event flips to 'emitted' and L2 reads this same payload.
+        # parked event flips to 'emitted' and L2 reads this same payload. Parked items sit for weeks,
+        # so their body gets a long TTL — a 30-day expiry made /recover a no-op after a month.
         payload_store.put(payload_id=event.payload_ref, org_id=org_id,
-                          event_id=event.event_id, content=json.dumps(raw.raw, default=str))
+                          event_id=event.event_id, content=json.dumps(raw.raw, default=str),
+                          ttl_days=(_PARKED_PAYLOAD_TTL_DAYS if outcome == "parked"
+                                    else _EMITTED_PAYLOAD_TTL_DAYS))
     if kept and prepared is not None and prepared_store is not None:
         # the PII-masked, replayable form + offset map — retained longer than the raw payload
         prepared_store.put(org_id=org_id, prepared=prepared)

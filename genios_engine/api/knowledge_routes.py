@@ -84,3 +84,60 @@ def write_knowledge(org_id: str, body: KnowledgeIn, org: str = Depends(_org)) ->
     # meaninglessly just to make the button work.
     return {"kind": kind, "outcome": result.outcome, "event_id": result.event.event_id,
             "unchanged": result.outcome == "duplicate"}
+
+
+@router.get("/api/org/{org_id}/knowledge")
+def list_knowledge(org_id: str, org: str = Depends(_org)) -> dict:
+    """Every piece of company canon this org has written — latest version per entry (an edit
+    SUPERSEDES, it doesn't stack, so we show one row per assertion). The compose UI needs this to
+    see + manage what's stored; before, knowledge could be written but never viewed or removed
+    while uploads had both. `key` ({kind}:{slug}) is stable across edits — pass it to DELETE."""
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select distinct on (source_object_id) source_object_id, object_type, occurred_at "
+            "from source_events where org_id=:o and source='internal' "
+            "order by source_object_id, occurred_at desc"), {"o": org}).fetchall()
+    items = []
+    for r in rows:
+        slug = r.source_object_id.split(":", 1)[1] if ":" in r.source_object_id else r.source_object_id
+        items.append({
+            "key": r.source_object_id,
+            "kind": r.object_type,
+            "title": slug.replace("-", " ").strip().title() or slug,
+            "updated_at": r.occurred_at.isoformat() if r.occurred_at else None,
+        })
+    items.sort(key=lambda x: x["updated_at"] or "", reverse=True)
+    return {"knowledge": items}
+
+
+@router.delete("/api/org/{org_id}/knowledge/{key}")
+def delete_knowledge(org_id: str, key: str, org: str = Depends(_org)) -> dict:
+    """Remove a written assertion + everything learned from it (facts, observations, capture
+    artifacts), bumping the tenant graph version in the SAME txn (L4 holds a shared lock while
+    publishing, so an erasure never commits mid-reasoning). `key` is the value list returns
+    ({kind}:{slug}). Mirrors upload deletion; shared graph_nodes are left in place."""
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    with _graph.engine.begin() as c:
+        evids = [row.event_id for row in c.execute(text(
+            "select event_id from source_events where org_id=:o and source='internal' "
+            "and source_object_id=:k"), {"o": org, "k": key})]
+        if not evids:
+            raise HTTPException(404, {"error": "not_found", "message": "knowledge entry not found"})
+        _graph.bump_version(c, org)
+        c.execute(text("delete from graph_facts where org_id=:o and created_by_event_id = any(:e)"),
+                  {"o": org, "e": evids})
+        c.execute(text("delete from graph_observations where org_id=:o and created_by_event_id = any(:e)"),
+                  {"o": org, "e": evids})
+        c.execute(text("delete from raw_payloads where org_id=:o and event_id = any(:e)"),
+                  {"o": org, "e": evids})
+        c.execute(text("delete from prepared_content where org_id=:o and event_id = any(:e)"),
+                  {"o": org, "e": evids})
+        c.execute(text("delete from source_events where org_id=:o and event_id = any(:e)"),
+                  {"o": org, "e": evids})
+    from genios_engine.platform.audit import record
+    record(org, "data_subject_erasure", actor_type="user", target_type="knowledge", target_id=key,
+           metadata={"events_removed": len(evids)})
+    return {"deleted": True, "events_removed": len(evids)}

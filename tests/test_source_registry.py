@@ -23,13 +23,13 @@ from genios_engine.platform.wiring import (
     IMPLEMENTED_SOURCE_TYPES,
 )
 
-# Capabilities a pack REQUIRES that no buildable source can satisfy today. Every entry
-# is a domain that can never become coverage_ready — `sales` needs a CRM, and with
-# Composio as the broker that means a HubSpot/Salesforce payload mapper.
+# Capabilities a pack REQUIRES that no buildable source can satisfy today. `crm` is now
+# satisfied by the HubSpot connector (so `sales` can reach coverage_ready); support_desk
+# (Zendesk/Intercom) and finance (Stripe/Razorpay) remain unbuilt.
 #
 # This is a ratchet, not a waiver: adding a new unsatisfiable requirement fails, and so
 # does closing one of these without deleting its line.
-KNOWN_UNSATISFIABLE_CAPABILITIES = frozenset({"crm", "support_desk", "finance"})
+KNOWN_UNSATISFIABLE_CAPABILITIES = frozenset({"support_desk", "finance"})
 
 # The exact source→family mapping that existed before the registry. Nothing may be lost
 # in the move; new entries are fine, silent removals are not.

@@ -131,6 +131,20 @@ def resolve_company_mention(conn, *, org_id: str, name: str | None) -> str | Non
                          alias_key=company_slug(name) or "")
 
 
+def resolve_person_name(conn, *, org_id: str, name: str | None) -> str | None:
+    """A person named in prose (no email) → an existing person node, or None.
+
+    Reads the observed name-alias that `observe_person_name` writes — the read side that was
+    missing, leaving those aliases write-only. So a bare-name mention ("Rohit said yes") no longer
+    piles onto the message's sender. Exact key match only. Same-name people share one key (the first
+    claimant holds it), so this links the mention to that anchored person; a name nothing is anchored
+    under returns None and stays an observation (the anchor rule holding). Never creates a node and
+    never merges — two people sharing a name is ordinary, not a duplicate.
+    """
+    return resolve_alias(conn, org_id=org_id, alias_type=ALIAS_PERSON_NAME,
+                         alias_key=person_name_key(name) or "")
+
+
 def propose_merge(conn, *, org_id: str, left_node_id: str, right_node_id: str,
                   node_type: str | None, reason: str, evidence: dict) -> str | None:
     """Two nodes look like one thing. Record it; change nothing.
