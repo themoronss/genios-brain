@@ -26,6 +26,8 @@ from .authority import (AUTHORITATIVE_SIGNAL_JOINS, AUTHORITATIVE_SIGNAL_PREDICA
 from .composer import COMPOSITE_RULE_ID as _COMPOSITE_RULE_ID
 from .composer import compose_deal_health
 from .engine import NodeContext
+from .publication import (build_native_publication, native_rule_id, native_rule_ids,
+                          publish_native_signal)
 from .rules import rule_from_dict, rules_for_scope
 from .signals_derived import (NEIGHBOR_DERIVED_PATHS, deal_activity_facts, deal_facts,
                               sentiment_facts)
@@ -473,6 +475,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     fired: set[tuple[str, str]] = set()
     indeterminate: set[tuple[str, str]] = set()             # evaluation failed: never auto-resolve
     candidates: list = []                                  # gated signals, ranked before spending
+    native_candidates: list = []                           # authorized native decisions, unspent
     graph_drifted = False
     with store.engine.connect() as c:
         nodes = c.execute(text("select node_id, node_type from graph_nodes "
@@ -515,6 +518,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 indeterminate.add((rule.id, nd.node_id))
             break
         for capability in node_capabilities:
+            native_rule = native_rule_id(capability.capability_id)
             try:
                 native_execution = reason_native_capability(
                     org_id=org_id,
@@ -523,6 +527,9 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     evaluation_time=eval_time,
                     graph_version=graph_version,
                     config_snapshot_id=snapshot_id,
+                    # LOCK 3 (deployment runbook, Part 5): the native sweep is pinned to SHADOW
+                    # regardless of pack state. Activation = restore this to `execution_mode`
+                    # (the legacy path's line 607 value). Do not open without Steps 1-4 evidence.
                     mode=ExecutionMode.SHADOW,
                 )
                 if _graph_version(store, org_id) != graph_version:
@@ -536,16 +543,51 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             except Exception as exc:
                 logger.exception("Native Layer 4 capability failed for %s:%s:%s",
                                  org_id, capability.capability_id, nd.node_id)
-                _suppress(store, org_id, capability.capability_id, nd.node_id,
+                _suppress(store, org_id, native_rule, nd.node_id,
                           "native_reasoning_failed", eval_time,
-                          {"error_type": type(exc).__name__})
+                          {"error_type": type(exc).__name__,
+                           "capability_id": capability.capability_id})
+                # A capability that could not reason has said nothing about this subject, so its
+                # previous claim must not be retired as though it had cleared.
+                indeterminate.add((native_rule, nd.node_id))
                 out["native_failed"] += 1
                 continue
             out[f"native_{native_execution.decision.outcome.value}"] += 1
-            _suppress(store, org_id, capability.capability_id, nd.node_id,
-                      "native_shadow", eval_time,
-                      {"reasoning_run_id": persisted_native["run"]["run_id"],
-                       "outcome": native_execution.decision.outcome.value})
+            native_run_id = persisted_native["run"]["run_id"]
+            if native_execution.decision.outcome in {
+                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
+                _suppress(store, org_id, native_rule, nd.node_id,
+                          "native_reasoning_failed", eval_time,
+                          {"reasoning_run_id": native_run_id,
+                           "outcome": native_execution.decision.outcome.value,
+                           "uncertainty": list(native_execution.decision.uncertainty)})
+                indeterminate.add((native_rule, nd.node_id))
+                continue
+            publication = build_native_publication(
+                execution=native_execution, audit_bundle=persisted_native)
+            if publication is None:
+                # Every non-publishing outcome is recorded with the reason it did not publish.
+                # "Reasoned and stayed silent" and "never reasoned" are different facts, and an
+                # operator reading the log during rollout needs to tell them apart.
+                _suppress(store, org_id, native_rule, nd.node_id,
+                          "native_not_authorized", eval_time,
+                          {"reasoning_run_id": native_run_id,
+                           "outcome": native_execution.decision.outcome.value,
+                           "execution_mode": native_execution.request.mode.value,
+                           "live_delivery_enabled": capability.live_delivery_enabled})
+                out["native_suppressed"] += 1
+                continue
+            # An authorized decision keeps its subject alive for lifecycle even if budget or
+            # cooldown stops it publishing this sweep — the claim is still true.
+            fired.add((native_rule, nd.node_id))
+            if _recent_signal(store, org_id, native_rule, nd.node_id,
+                              publication.cooldown_hours, eval_time, snapshot_id,
+                              effective["pack_id"], effective["version"]):
+                _suppress(store, org_id, native_rule, nd.node_id, "cooldown", eval_time,
+                          {"reasoning_run_id": native_run_id, "native": True})
+                out["native_cooldown"] += 1
+                continue
+            native_candidates.append((publication, native_run_id))
         if graph_drifted:
             break
         for rule in rules:
@@ -714,6 +756,42 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     pack_authority_revision, effective["pack_id"], effective["version"])
                 out["emitted" if sid else "duplicate_race"] += 1
 
+            # Native capabilities publish after the legacy rules and out of the same daily
+            # reservation, which `_budget_used` re-reads from the signals table so the spend above
+            # is already counted. Legacy therefore wins a contested budget. That ordering is a
+            # rollout decision, not a ranking claim: the shipped baseline keeps its seat while a
+            # candidate roster proves itself, and reversing it is a one-line move once it has.
+            native_candidates.sort(key=lambda item: (-item[0].score, item[0].rule_id,
+                                                     item[0].subject_node_id))
+            native_remaining = max(0, budget_per_day * _active_seats(store, org_id)
+                                   - _budget_used(store, org_id, eval_time))
+            for position, (publication, native_run_id) in enumerate(native_candidates):
+                if position >= native_remaining:
+                    _suppress(store, org_id, publication.rule_id, publication.subject_node_id,
+                              "budget", eval_time,
+                              {"S": publication.score, "rank": position,
+                               "reasoning_run_id": native_run_id, "native": True})
+                    out["native_budget"] += 1
+                    continue
+                # Same publication-time cooldown recheck the legacy path performs: a concurrent
+                # sweep may have published this subject between the read-only check and this lock.
+                if _recent_signal(store, org_id, publication.rule_id,
+                                  publication.subject_node_id, publication.cooldown_hours,
+                                  eval_time, snapshot_id,
+                                  effective["pack_id"], effective["version"]):
+                    _suppress(store, org_id, publication.rule_id, publication.subject_node_id,
+                              "cooldown", eval_time,
+                              {"reasoning_run_id": native_run_id, "native": True,
+                               "phase": "publication_recheck"})
+                    out["native_cooldown"] += 1
+                    continue
+                native_sid = publish_native_signal(
+                    store, org_id=org_id, publication=publication, eval_time=eval_time,
+                    config_snapshot_id=snapshot_id,
+                    pack_id=effective["pack_id"], pack_version=effective["version"],
+                    authority_pack_revision=pack_authority_revision)
+                out["native_emitted" if native_sid else "native_duplicate_race"] += 1
+
             # Recheck at the emission/composition boundary. The shared lock makes this invariant
             # stable in PostgreSQL; the explicit check also fails closed for test doubles and any
             # future backend that cannot provide equivalent row-lock semantics.
@@ -744,7 +822,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
 
             if not graph_drifted:
                 # lifecycle (C7) — only this pack retires its own signals whose rule cleared.
-                pack_owns = {r.id for r in all_rules}
+                # Native capabilities own their projected rule ids too. Without them the first
+                # native signal a subject received would stay open forever: the legacy sweep only
+                # claims pack rule ids, so nothing would ever be entitled to retire it.
+                pack_owns = {r.id for r in all_rules} | native_rule_ids(native_capabilities)
                 with store.engine.connect() as c:
                     open_sigs = c.execute(text(
                         "select signal_id, rule_id, subject_node_id from signals "

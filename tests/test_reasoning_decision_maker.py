@@ -34,6 +34,8 @@ from genios_engine.contracts.reasoning import (
     ResultStatus,
 )
 from genios_engine.reason.decision_maker import (
+    BELOW_FLOOR_REASON,
+    CONFIDENCE_FLOOR_KEY,
     CONFIDENCE_AUTHORITY,
     CONFIDENCE_AUTHORITY_KEY,
     PRIORITY_AUTHORITY,
@@ -41,7 +43,11 @@ from genios_engine.reason.decision_maker import (
     DecisionMaker,
     aggregate_evidence,
     build_candidates,
+    build_candidate_objects,
     calculate_confidence,
+    evaluate_candidates,
+    rank_candidates,
+    synthesize_candidates,
     priority_metrics,
 )
 from genios_engine.reason.protocols import OrchestrationError
@@ -310,6 +316,154 @@ def test_a_decision_records_what_happens_if_it_is_ignored():
     assert synthesis.decision.expires_at > NOW
 
 
+# ---------------------------------------------------------------------------------------------
+# The confidence floor — where GeniOS stops recommending and starts asking
+# ---------------------------------------------------------------------------------------------
+
+def _decide(confidence_bp: int, floor_bp: int | None):
+    metadata = {} if floor_bp is None else {CONFIDENCE_FLOOR_KEY: floor_bp}
+    return DecisionMaker().decide(
+        _request(metadata=metadata),
+        [_completed(CONFIDENCE_AUTHORITY, confidence_bp=confidence_bp)],
+        terminal=None, uncertainty=(), degraded=False)
+
+
+def test_a_weakly_evidenced_winner_becomes_a_question_not_a_recommendation():
+    synthesis = _decide(confidence_bp=4_000, floor_bp=6_500)
+
+    assert synthesis.decision.outcome == DecisionOutcome.DEFER
+    assert synthesis.decision.selected_candidate_id is None
+    assert any(item.startswith(BELOW_FLOOR_REASON)
+               for item in synthesis.decision.uncertainty)
+
+
+def test_an_ask_still_shows_what_was_considered():
+    """A human asked to decide needs the candidate field; withholding it just hides the reasoning."""
+    synthesis = _decide(confidence_bp=4_000, floor_bp=6_500)
+
+    assert len(synthesis.candidates) == 1
+    assert synthesis.candidates[0].disposition == CandidateDisposition.ELIGIBLE
+    assert synthesis.candidates[0].rank_position == 1
+
+
+def test_confidence_at_the_floor_still_decides():
+    """The floor is a minimum, not a margin — exactly meeting it is meeting it."""
+    assert _decide(confidence_bp=6_500, floor_bp=6_500).decision.outcome \
+        == DecisionOutcome.DECISION
+
+
+def test_a_capability_without_a_floor_is_unchanged():
+    """Absent declaration disables the gate entirely, so existing capabilities keep their behavior."""
+    assert _decide(confidence_bp=1, floor_bp=None).decision.outcome == DecisionOutcome.DECISION
+
+
+def test_the_floor_cannot_manufacture_a_decision_from_a_terminal_run():
+    synthesis = DecisionMaker().decide(
+        _request(metadata={CONFIDENCE_FLOOR_KEY: 9_000}), [],
+        terminal=DecisionOutcome.NO_ACTION, uncertainty=(), degraded=False)
+
+    assert synthesis.decision.outcome == DecisionOutcome.NO_ACTION
+
+
+def test_an_asked_decision_can_never_authorize_delivery():
+    """DEFER is not DECISION, so the delivery authority boundary refuses it by construction."""
+    synthesis = _decide(confidence_bp=4_000, floor_bp=6_500)
+
+    assert synthesis.decision.outcome != DecisionOutcome.DECISION
+    assert synthesis.decision.selected_candidate_id is None
+
+
+def test_a_malformed_floor_is_a_manifest_fault():
+    with pytest.raises(OrchestrationError, match="integer basis points"):
+        _decide(confidence_bp=5_000, floor_bp=20_000)
+
+
 def test_decision_maker_requires_a_version():
     with pytest.raises(ValueError, match="version is required"):
         DecisionMaker(version="   ")
+
+
+# ---------------------------------------------------------------------------------------------
+# The six components, exercised individually — the point of separating them
+# ---------------------------------------------------------------------------------------------
+
+def test_the_synthesizer_scores_every_exposed_operation():
+    """Law 02: domain expertise exposes operations, the Decision Maker judges them."""
+    request = _request(plays=(_play("alpha"), _play("zeta")))
+
+    proposals = synthesize_candidates(request, [], urgency_bp=5_000, priority_override=None)
+
+    assert [item.play.play_id for item in proposals] == ["alpha", "zeta"]
+    assert all(item.utility_bp > 0 for item in proposals)
+
+
+def test_a_unit_moves_a_candidate_only_through_a_typed_adjustment():
+    request = _request()
+    adjustment = CandidateAdjustment(play_id="restore_momentum", component="impact",
+                                     delta_bp=3_000, reason_code="high_value_account")
+
+    plain = synthesize_candidates(request, [], 5_000, None)[0]
+    moved = synthesize_candidates(request, [adjustment], 5_000, None)[0]
+
+    assert moved.components["impact"] == plain.components["impact"] + 3_000
+    assert moved.utility_bp > plain.utility_bp
+
+
+def test_an_override_replaces_the_formula_entirely():
+    request = _request()
+
+    assert synthesize_candidates(request, [], 5_000, 7_777)[0].utility_bp == 7_777
+
+
+def test_the_evaluator_eliminates_without_reordering():
+    request = _request(plays=(_play("alpha"), _play("zeta")))
+    check = CandidateCheck(play_id="alpha", stage="policy", outcome=CheckOutcome.ELIMINATE,
+                           reason_code="blocked", evaluator_id="core.policy",
+                           evaluator_version="1")
+
+    judged = evaluate_candidates(synthesize_candidates(request, [], 5_000, None), [check])
+    by_play = {item.play.play_id: item for item in judged}
+
+    assert by_play["alpha"].disposition == CandidateDisposition.ELIMINATED
+    assert by_play["zeta"].disposition == CandidateDisposition.ELIGIBLE
+    assert [item.play.play_id for item in judged] == ["alpha", "zeta"]   # order untouched
+
+
+def test_the_ranker_puts_survivors_first_and_the_eliminated_last():
+    request = _request(plays=(_play("weak", impact=1_000), _play("strong", impact=9_000),
+                              _play("blocked", impact=10_000)))
+    check = CandidateCheck(play_id="blocked", stage="policy", outcome=CheckOutcome.ELIMINATE,
+                           reason_code="blocked", evaluator_id="core.policy",
+                           evaluator_version="1")
+    judged = evaluate_candidates(synthesize_candidates(request, [], 5_000, None), [check])
+
+    ranked = rank_candidates(judged)
+
+    assert [item.play.play_id for item in ranked] == ["strong", "weak", "blocked"]
+    assert [item.rank_position for item in ranked] == [1, 2, None]
+
+
+def test_the_object_builder_carries_the_delivery_authority_bit():
+    request = _request()
+    ranked = rank_candidates(evaluate_candidates(
+        synthesize_candidates(request, [], 5_000, None), []))
+
+    candidates = build_candidate_objects(ranked, confidence_bp=8_000, evidence=("ev_1",))
+
+    assert candidates[0].parameters["read_only"] is True
+    assert candidates[0].confidence_bp == 8_000
+    assert candidates[0].evidence_ids == ("ev_1",)
+
+
+def test_the_pipeline_and_its_parts_agree():
+    """store.py re-runs this exact pipeline to verify audit rows; the parts must compose to it."""
+    request = _request(plays=(_play("alpha"), _play("zeta")))
+    results = [_completed(CONFIDENCE_AUTHORITY, confidence_bp=8_000)]
+
+    whole, confidence = build_candidates(request, results, False)
+    piecewise = build_candidate_objects(
+        rank_candidates(evaluate_candidates(
+            synthesize_candidates(request, [], 5_000, None), [])),
+        confidence, ())
+
+    assert [item.semantic_hash for item in whole] == [item.semantic_hash for item in piecewise]

@@ -55,13 +55,44 @@ AUTHORITATIVE_REASON_CODE_SQL = (
 AUTHORITATIVE_SCORE_SQL = "((selected_rc.final_utility_bp + 50) / 100)"
 
 
+def _published_metric(name: str) -> str:
+    """The value of `name` as published by whichever completed reasoner in this run owns it.
+
+    Safe because publication is exclusive: `tests/test_unit_roster.py` proves no two units declare
+    the same metric, so at most one row can match and the `limit 1` is a formality rather than a
+    tie-break. `is not null` is used in place of the jsonb `?` operator on purpose — `?` collides
+    with parameter markers in some drivers, and a query that only breaks on the production driver
+    is the worst kind.
+    """
+    return ("(select (published_metric.output->'metrics'->>'" + name + "')::int "
+            "from reasoning_reasoner_results published_metric "
+            "where published_metric.org_id=rr.org_id and published_metric.run_id=rr.run_id "
+            "and published_metric.status='completed' "
+            "and (published_metric.output->'metrics'->>'" + name + "') is not null "
+            "order by published_metric.ordinal limit 1)")
+
+
+# Legacy runs answer from `authority_source` — the `legacy.rule` / `core.signal_composition` row
+# that carries U, I and R together — and that term stays first in every chain below, so a legacy
+# card's breakdown is byte-identical to what it was before natives existed.
+#
+# A native run has no such row: urgency belongs to `core.priority`, impact to `core.impact`,
+# freshness to `core.context`, and no unit aggregates them. Without the middle terms every native
+# card would render U = I = the final score and R = 50 — not wrong enough to fail the authority
+# predicate, which never reads this, but wrong enough to make a human distrust a correct decision.
+# `freshness_bp` backs `recency_bp` because it is the same question asked in native vocabulary:
+# how stale is the evidence under this claim.
 AUTHORITATIVE_SCORE_INPUTS_SQL = (
     "jsonb_build_object("
     "'U', (coalesce((authority_source.output->'metrics'->>'urgency_bp')::int, "
+    + _published_metric("urgency_bp") + ", "
     "selected_rc.final_utility_bp) + 50) / 100, "
     "'I', (coalesce((authority_source.output->'metrics'->>'impact_bp')::int, "
+    + _published_metric("impact_bp") + ", "
     "selected_rc.final_utility_bp) + 50) / 100, "
-    "'R', (coalesce((authority_source.output->'metrics'->>'recency_bp')::int, 5000) + 50) / 100, "
+    "'R', (coalesce((authority_source.output->'metrics'->>'recency_bp')::int, "
+    + _published_metric("recency_bp") + ", " + _published_metric("freshness_bp") + ", "
+    "5000) + 50) / 100, "
     "'C', (selected_rc.confidence_bp + 50) / 100)"
 )
 

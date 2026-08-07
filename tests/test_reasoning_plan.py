@@ -32,6 +32,8 @@ from genios_engine.contracts.reasoning import (
 )
 from genios_engine.reason.orchestrator import ReasoningOrchestrator
 from genios_engine.reason.plan import (
+    CONTEXT_AWARE_SELECTION_KEY,
+    FALLBACK_FOR_KEY,
     LATENCY_CEILING_KEY,
     ExecutionPlan,
     ReasoningPlanner,
@@ -314,3 +316,148 @@ def test_planning_does_not_execute():
 
     assert isinstance(plan, ExecutionPlan)
     assert calls == []
+
+
+# ---------------------------------------------------------------------------------------------
+# Runtime unit selection — "run Risk and Priority, not Pricing", made deterministic
+# ---------------------------------------------------------------------------------------------
+
+def _ctx_request(capability: CapabilityManifest, facts: dict) -> ReasoningRequest:
+    context = ContextSnapshot(
+        org_id="org_1", graph_version=17, root_entity_id="deal_1", root_entity_type="deal",
+        evaluation_time=NOW, selector_version="selector.v1", facts=facts)
+    return ReasoningRequest(
+        org_id="org_1", capability=capability, context=context, evaluation_time=NOW,
+        trigger_kind="email.received", config_snapshot_id="cfg_1")
+
+
+SELECTIVE = (
+    ReasonerSpec("core.always", "1"),
+    ReasonerSpec("core.pricing", "1", required_fields=("deal.list_price",),
+                 failure_policy=FailurePolicy.OPTIONAL),
+)
+
+
+def test_an_optional_unit_this_situation_cannot_feed_is_not_scheduled():
+    capability = _capability(SELECTIVE, metadata={CONTEXT_AWARE_SELECTION_KEY: True})
+    request = _ctx_request(capability, {"deal.status": "open"})       # no list_price
+
+    plan = ReasoningPlanner().plan(capability, request)
+
+    assert plan.reasoner_plan == ("core.always",)
+    assert [s.reasoner_id for s in plan.skipped] == ["core.pricing"]
+    assert plan.skipped[0].reason_code == "no_declared_input_available"
+    assert plan.skipped[0].missing_fields == ("deal.list_price",)
+    assert "not scheduled: core.pricing" in plan.describe()
+
+
+def test_the_same_unit_is_scheduled_when_the_situation_can_feed_it():
+    capability = _capability(SELECTIVE, metadata={CONTEXT_AWARE_SELECTION_KEY: True})
+    request = _ctx_request(capability, {"deal.status": "open", "deal.list_price": 100})
+
+    plan = ReasoningPlanner().plan(capability, request)
+
+    assert plan.reasoner_plan == ("core.always", "core.pricing")
+    assert plan.skipped == ()
+
+
+def test_a_required_unit_is_never_dropped_however_starved_the_context():
+    """A missing required input must fail the run loudly, not vanish from the schedule."""
+    specs = (ReasonerSpec("core.always", "1"),
+             ReasonerSpec("core.critical", "1", required_fields=("deal.owner",)))
+    capability = _capability(specs, metadata={CONTEXT_AWARE_SELECTION_KEY: True})
+
+    plan = ReasoningPlanner().plan(capability, _ctx_request(capability, {"deal.status": "open"}))
+
+    assert "core.critical" in plan.reasoner_plan
+    assert plan.skipped == ()
+
+
+def test_selection_is_off_unless_the_capability_opts_in():
+    capability = _capability(SELECTIVE)                               # no metadata flag
+    request = _ctx_request(capability, {"deal.status": "open"})
+
+    assert ReasoningPlanner().plan(capability, request).reasoner_plan == (
+        "core.always", "core.pricing")
+
+
+def test_a_dependent_of_a_dropped_unit_is_dropped_with_it():
+    specs = (
+        ReasonerSpec("core.always", "1"),
+        ReasonerSpec("core.pricing", "1", required_fields=("deal.list_price",),
+                     failure_policy=FailurePolicy.OPTIONAL),
+        ReasonerSpec("core.discount", "1", dependencies=("core.pricing",),
+                     failure_policy=FailurePolicy.OPTIONAL),
+    )
+    capability = _capability(specs, metadata={CONTEXT_AWARE_SELECTION_KEY: True})
+
+    plan = ReasoningPlanner().plan(capability, _ctx_request(capability, {"deal.status": "open"}))
+
+    assert plan.reasoner_plan == ("core.always",)
+    assert {s.reason_code for s in plan.skipped} == {
+        "no_declared_input_available", "dependency_not_scheduled"}
+
+
+def test_a_partially_fed_unit_still_runs():
+    """One available input is still something to reason from; only total starvation drops a unit."""
+    specs = (ReasonerSpec("core.pricing", "1",
+                          required_fields=("deal.list_price", "deal.floor_price"),
+                          failure_policy=FailurePolicy.OPTIONAL),)
+    capability = _capability(specs, metadata={CONTEXT_AWARE_SELECTION_KEY: True})
+
+    plan = ReasoningPlanner().plan(capability, _ctx_request(capability, {"deal.list_price": 100}))
+
+    assert plan.reasoner_plan == ("core.pricing",)
+
+
+# ---------------------------------------------------------------------------------------------
+# Fallback — a reserve unit, not a retry
+# ---------------------------------------------------------------------------------------------
+
+RESERVE = (
+    ReasonerSpec("core.rich", "1", failure_policy=FailurePolicy.OPTIONAL),
+    ReasonerSpec("core.simple", "1", dependencies=("core.rich",),
+                 failure_policy=FailurePolicy.OPTIONAL,
+                 config={FALLBACK_FOR_KEY: "core.rich"}),
+)
+
+
+def test_a_reserve_unit_is_marked_in_the_plan():
+    plan = plan_capability(_capability(RESERVE))
+
+    assert plan.specs_by_id["core.simple"].is_reserve is True
+    assert plan.specs_by_id["core.simple"].fallback_for == "core.rich"
+    assert plan.specs_by_id["core.rich"].is_reserve is False
+
+
+def test_a_reserve_must_depend_on_the_unit_it_covers():
+    specs = (ReasonerSpec("core.rich", "1"),
+             ReasonerSpec("core.simple", "1", config={FALLBACK_FOR_KEY: "core.rich"}))
+
+    with pytest.raises(OrchestrationError, match="must depend on"):
+        plan_capability(_capability(specs))
+
+
+def test_a_reserve_may_not_gate_the_run():
+    specs = (ReasonerSpec("core.rich", "1"),
+             ReasonerSpec("core.simple", "1", dependencies=("core.rich",), gating=True,
+                          config={FALLBACK_FOR_KEY: "core.rich"}))
+
+    with pytest.raises(OrchestrationError, match="may not gate"):
+        plan_capability(_capability(specs))
+
+
+def test_a_reserve_for_an_unscheduled_unit_is_refused():
+    specs = (ReasonerSpec("core.rich", "1"),
+             ReasonerSpec("core.simple", "1", dependencies=("core.rich",),
+                          config={FALLBACK_FOR_KEY: "core.absent"}))
+
+    with pytest.raises(OrchestrationError, match="not scheduled"):
+        plan_capability(_capability(specs))
+
+
+def test_a_unit_cannot_be_its_own_fallback():
+    specs = (ReasonerSpec("core.rich", "1", config={FALLBACK_FOR_KEY: "core.rich"}),)
+
+    with pytest.raises(OrchestrationError, match="its own fallback"):
+        plan_capability(_capability(specs))

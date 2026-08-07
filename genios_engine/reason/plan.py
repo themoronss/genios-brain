@@ -12,9 +12,10 @@ is a deployment fault, and a deployment fault should surface at plan time as a r
 runtime as a slow, half-finished decision.  It also gives operators one artifact to read when they
 ask "why did it run these seven units and not those three?".
 
-Planning is pure.  It reads the capability manifest and nothing else: no clock, no database, no
-context.  The same manifest always yields the same plan and the same `plan_hash`, which is what
-lets the plan be cached per capability version and compared across deployments.
+Planning is pure.  It reads the capability manifest, and — when the capability opts into
+context-aware selection — the frozen context snapshot: no clock, no database, no network.  The
+same inputs always yield the same plan and the same `plan_hash`, which is what lets a plan be
+compared across deployments and what keeps selection itself replayable.
 
 **Parallelism is described here, not performed here.**  `stage` marks units that share no
 dependency path and could therefore execute concurrently.  Execution remains strictly sequential
@@ -35,10 +36,26 @@ from genios_engine.contracts.reasoning import CapabilityManifest, FailurePolicy,
 from genios_engine.platform.canonical import semantic_hash
 
 from .decision_maker import CONFIDENCE_AUTHORITY_KEY, PRIORITY_AUTHORITY_KEY
+from .guards import required_missing
 from .protocols import OrchestrationError
 from .registry import ReasonerRegistry
 
-PLANNER_VERSION = "1.0.0"
+PLANNER_VERSION = "1.1.0"
+
+#: Capability metadata opting into context-aware selection.  Off by default: with it absent the
+#: plan is exactly the capability's declared unit list, which is what every existing capability
+#: expects.  Turned on, an *optional* unit whose declared inputs are entirely absent from this
+#: situation is dropped from the schedule instead of being run to produce a foregone
+#: `insufficient_context` result.  Required units are never dropped — a required input that is
+#: missing must fail the run loudly, not vanish from it.
+CONTEXT_AWARE_SELECTION_KEY = "context_aware_selection"
+
+#: Reasoner config key naming the unit this one stands in for.  A reserve unit runs only when its
+#: primary failed to complete, and is recorded as skipped when the primary succeeded.  This is what
+#: "fallback strategy" means in a deterministic kernel: retrying a pure function would reproduce the
+#: same failure, so the only useful fallback is a *different, simpler* analysis of the same
+#: situation — typically one needing fewer inputs.
+FALLBACK_FOR_KEY = "fallback_for"
 
 #: Optional capability ceiling, in milliseconds, for the whole sequential run.  Declared in
 #: `CapabilityManifest.metadata` so the budget travels with the versioned manifest and is covered
@@ -59,6 +76,12 @@ class PlannedStep:
     gating: bool
     required_fields: tuple[str, ...]
     latency_budget_ms: int
+    fallback_for: str | None = None
+
+    @property
+    def is_reserve(self) -> bool:
+        """True when this unit exists only to stand in for another that failed."""
+        return self.fallback_for is not None
 
     @property
     def optional(self) -> bool:
@@ -80,7 +103,26 @@ class PlannedStep:
                 "reasoner_version": self.reasoner_version, "dependencies": self.dependencies,
                 "failure_policy": self.failure_policy, "gating": self.gating,
                 "required_fields": self.required_fields,
-                "latency_budget_ms": self.latency_budget_ms}
+                "latency_budget_ms": self.latency_budget_ms,
+                "fallback_for": self.fallback_for}
+
+
+@dataclass(frozen=True, slots=True)
+class SkippedStep:
+    """A unit the planner deliberately left out, and the reason it did.
+
+    Recorded rather than silently omitted: "this unit did not run" and "this unit was never
+    considered" are different facts, and an operator reading a trace needs to tell them apart.
+    """
+
+    reasoner_id: str
+    reasoner_version: str
+    reason_code: str
+    missing_fields: tuple[str, ...] = ()
+
+    def to_semantic_dict(self) -> dict[str, Any]:
+        return {"reasoner_id": self.reasoner_id, "reasoner_version": self.reasoner_version,
+                "reason_code": self.reason_code, "missing_fields": self.missing_fields}
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,6 +133,7 @@ class ExecutionPlan:
     capability_version: str
     planner_version: str
     steps: tuple[PlannedStep, ...]
+    skipped: tuple[SkippedStep, ...] = ()
 
     @property
     def reasoner_plan(self) -> tuple[str, ...]:
@@ -146,7 +189,8 @@ class ExecutionPlan:
         return {"capability_id": self.capability_id,
                 "capability_version": self.capability_version,
                 "planner_version": self.planner_version,
-                "steps": tuple(step.to_semantic_dict() for step in self.steps)}
+                "steps": tuple(step.to_semantic_dict() for step in self.steps),
+                "skipped": tuple(step.to_semantic_dict() for step in self.skipped)}
 
     @property
     def plan_hash(self) -> str:
@@ -166,7 +210,79 @@ class ExecutionPlan:
                 for step in stage)
             concurrency = " (independent)" if len(stage) > 1 else ""
             lines.append(f"  stage {stage_index}{concurrency}: {names}")
+        for step in self.skipped:
+            lines.append(f"  not scheduled: {step.reasoner_id}@{step.reasoner_version} "
+                         f"({step.reason_code})")
         return "\n".join(lines)
+
+
+def _select(ordered: Sequence[ReasonerSpec], capability: CapabilityManifest,
+            request: Any) -> tuple[tuple[ReasonerSpec, ...], tuple[SkippedStep, ...]]:
+    """Choose which declared units this run will actually schedule.
+
+    Three rules keep this honest. Only *optional* units are ever dropped, because a required unit's
+    missing input is a fact the decision must confront, not one the schedule may hide. A unit is
+    dropped only when **every** field it declared is unavailable — a partially-fed unit still has
+    something to say. And anything depending on a dropped unit is dropped with it, since running a
+    dependent whose input never arrived just relocates the failure.
+    """
+    if request is None or not capability.metadata.get(CONTEXT_AWARE_SELECTION_KEY):
+        return tuple(ordered), ()
+
+    kept: list[ReasonerSpec] = []
+    skipped: list[SkippedStep] = []
+    dropped: set[str] = set()
+    for spec in ordered:
+        orphaned = tuple(sorted(set(spec.dependencies) & dropped))
+        if orphaned and spec.failure_policy == FailurePolicy.OPTIONAL:
+            dropped.add(spec.reasoner_id)
+            skipped.append(SkippedStep(spec.reasoner_id, spec.version,
+                                       "dependency_not_scheduled", orphaned))
+            continue
+        missing = required_missing(request, spec.required_fields)
+        if (spec.required_fields and len(missing) == len(spec.required_fields)
+                and spec.failure_policy == FailurePolicy.OPTIONAL):
+            dropped.add(spec.reasoner_id)
+            skipped.append(SkippedStep(spec.reasoner_id, spec.version,
+                                       "no_declared_input_available", missing))
+            continue
+        kept.append(spec)
+    return tuple(kept), tuple(skipped)
+
+
+def _fallback_for(spec: ReasonerSpec) -> str | None:
+    value = spec.config.get(FALLBACK_FOR_KEY)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise OrchestrationError(
+            f"{spec.reasoner_id} declares a non-empty string {FALLBACK_FOR_KEY} or none at all")
+    return value.strip()
+
+
+def _validate_fallbacks(plan: ExecutionPlan) -> None:
+    """A reserve unit must be scheduled after the unit it covers, and must not end the run.
+
+    Depending on its primary is what guarantees ordering: without that edge the reserve could be
+    scheduled first and would have nothing to stand in for.  And a reserve may not gate, because a
+    substitute deciding the whole situation does not apply would let a failure masquerade as a
+    considered "no action".
+    """
+    by_id = plan.specs_by_id
+    for step in plan.steps:
+        primary = step.fallback_for
+        if primary is None:
+            continue
+        if primary == step.reasoner_id:
+            raise OrchestrationError(f"{step.reasoner_id} cannot be its own fallback")
+        if primary not in by_id:
+            raise OrchestrationError(
+                f"{step.reasoner_id} falls back for {primary}, which is not scheduled")
+        if primary not in step.dependencies:
+            raise OrchestrationError(
+                f"{step.reasoner_id} must depend on {primary} to stand in for it")
+        if step.gating:
+            raise OrchestrationError(f"{step.reasoner_id} is a reserve and may not gate the run")
 
 
 def _stage_index(specs_by_id: dict[str, ReasonerSpec], ordered: Sequence[ReasonerSpec]
@@ -191,8 +307,17 @@ class ReasoningPlanner:
         if not self.version:
             raise ValueError("planner version is required")
 
-    def plan(self, capability: CapabilityManifest) -> ExecutionPlan:
+    def plan(self, capability: CapabilityManifest, request: Any = None) -> ExecutionPlan:
+        """Select and schedule the units for one run.
+
+        `request` is optional. Without it the plan is the capability's full declared roster — the
+        compile-time answer, and the one every existing capability relies on. With it, and only
+        when the capability opts in, the planner additionally drops optional units this particular
+        situation cannot feed. That is the blueprint's "run Risk and Priority, not Pricing" made
+        deterministic: selection follows from declared inputs, never from a guess about intent.
+        """
         ordered = ReasonerRegistry.topological_order(capability.reasoners)
+        ordered, skipped = _select(ordered, capability, request)
         specs_by_id = {spec.reasoner_id: spec for spec in ordered}
         stages = _stage_index(specs_by_id, ordered)
         steps = tuple(
@@ -206,6 +331,7 @@ class ReasoningPlanner:
                 gating=spec.gating,
                 required_fields=spec.required_fields,
                 latency_budget_ms=spec.latency_budget_ms,
+                fallback_for=_fallback_for(spec),
             )
             for ordinal, spec in enumerate(ordered, start=1)
         )
@@ -214,9 +340,11 @@ class ReasoningPlanner:
             capability_version=capability.version,
             planner_version=self.version,
             steps=steps,
+            skipped=skipped,
         )
         _validate_budget(plan, capability)
         _validate_metric_authorities(plan, capability)
+        _validate_fallbacks(plan)
         return plan
 
     def resolve(self, plan: ExecutionPlan, registry: ReasonerRegistry,
@@ -285,5 +413,7 @@ def describe_plans(capabilities: Iterable[CapabilityManifest]) -> str:
     return "\n".join(planner.plan(capability).describe() for capability in capabilities)
 
 
-__all__ = ["LATENCY_CEILING_KEY", "PLANNER_VERSION", "ExecutionPlan", "PlannedStep",
-           "ReasoningPlanner", "describe_plans", "plan_capability"]
+__all__ = ["CONTEXT_AWARE_SELECTION_KEY", "FALLBACK_FOR_KEY", "LATENCY_CEILING_KEY",
+           "PLANNER_VERSION",
+           "ExecutionPlan", "PlannedStep", "ReasoningPlanner", "SkippedStep",
+           "describe_plans", "plan_capability"]
