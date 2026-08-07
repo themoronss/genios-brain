@@ -314,16 +314,41 @@ def apply_transition(conn, *, org_id: str, execution_id: str, move: Transition,
 
 def record_reminder(conn, *, org_id: str, execution_id: str, at: datetime, reason_code: str,
                     next_check_at: datetime | None, urgency: str,
-                    escalation_day: int | None = None) -> None:
-    """Count the reminder, schedule the next look, and say why it fired."""
+                    escalation_day: int | None = None,
+                    facts: Mapping[str, Any] | None = None) -> str:
+    """Count the reminder, schedule the next look, say why it fired — and carry the vocabulary.
+
+    ``facts`` is the grounded corpus from ``reminder.reminder_facts``: every value a reminder is
+    permitted to be worded from, all of it derived from the commitment itself.  Storing it on the
+    event is what makes the Layer 6 bridge possible without inverting the layer order — Layer 5
+    says *what may be said*, Layer 6 decides *how it looks on Slack*, and Layer 6 never has to
+    reach back into Layer 5's logic to find out what is true.
+
+    Returns the event id so the caller can address this exact reminder downstream.
+    """
     conn.execute(text(
         "update executions set reminder_count=reminder_count+1, last_reminded_at=:at, "
         "next_check_at=:nca, updated_at=now() where org_id=:o and execution_id=:x"),
         {"at": at, "nca": next_check_at, "o": org_id, "x": execution_id})
-    log_event(conn, org_id=org_id, execution_id=execution_id, kind="execution.reminded",
-              reason_code=reason_code, detail={"urgency": urgency,
-                                               "escalation_day": escalation_day},
-              occurred_at=at)
+    return log_event(conn, org_id=org_id, execution_id=execution_id,
+                     kind="execution.reminded", reason_code=reason_code,
+                     detail={"urgency": urgency, "escalation_day": escalation_day,
+                             "facts": dict(facts or {})},
+                     occurred_at=at)
+
+
+def link_card(conn, *, org_id: str, execution_id: str, card_id: str) -> bool:
+    """Point a commitment at the Layer 6 card that surfaces it.
+
+    Guarded on ``card_id is null`` so the link is written once and a later re-render cannot
+    silently repoint a commitment at a different card — the audit trail would then describe a
+    surface that no longer shows this work.
+    """
+    result = conn.execute(text(
+        "update executions set card_id=:c, updated_at=now() "
+        "where org_id=:o and execution_id=:x and card_id is null"),
+        {"c": card_id, "o": org_id, "x": execution_id})
+    return result.rowcount == 1
 
 
 def fire_escalation(conn, *, org_id: str, execution_id: str, day_offset: int, at: datetime,
@@ -449,6 +474,6 @@ def active_channels(conn, org_id: str) -> frozenset[str]:
 
 
 __all__ = ["STORE_VERSION", "action_completions", "active_channels", "apply_transition",
-           "authority_valid", "complete_action", "due_executions", "fire_escalation", "load",
-           "log_event", "persist", "reassign", "record_outcome", "record_reminder",
-           "reminder_state", "supersede", "validation_input"]
+           "authority_valid", "complete_action", "due_executions", "fire_escalation",
+           "link_card", "load", "log_event", "persist", "reassign", "record_outcome",
+           "record_reminder", "reminder_state", "supersede", "validation_input"]

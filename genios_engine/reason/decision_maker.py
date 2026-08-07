@@ -26,11 +26,12 @@ and lets the executive layer ask a human; it never invents the missing fact.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from typing import Any
 
 from genios_engine.contracts.reasoning import (
+    CandidateAdjustment,
     CandidateCheck,
     CandidateDisposition,
     CheckOutcome,
@@ -56,6 +57,14 @@ CONFIDENCE_AUTHORITY = "core.confidence"
 PRIORITY_AUTHORITY = "core.priority"
 CONFIDENCE_AUTHORITY_KEY = "confidence_authority"
 PRIORITY_AUTHORITY_KEY = "priority_authority"
+
+#: Capability metadata naming the confidence below which a ranked winner stops being a
+#: recommendation and becomes a question for a human.  Default 0 disables the floor, so a
+#: capability that never declares one behaves exactly as it did before the floor existed.
+CONFIDENCE_FLOOR_KEY = "confidence_floor_bp"
+
+#: Recorded in `ReasoningDecision.uncertainty` when the floor converts a decision into an ask.
+BELOW_FLOOR_REASON = "below_confidence_floor"
 
 
 def _authority(request: Any, key: str, default: str) -> str:
@@ -169,26 +178,36 @@ def ordered_checks(checks: Sequence[CandidateCheck]) -> tuple[CandidateCheck, ..
 
 
 # ---------------------------------------------------------------------------------------------
-# Decision Synthesizer + Ranker + Object Builder
+# Decision Synthesizer
 # ---------------------------------------------------------------------------------------------
 
-def build_candidates(request: Any, results: Sequence[ReasonerResult],
-                     degraded: bool) -> tuple[tuple[DecisionCandidate, ...], int]:
-    """Turn declared plays plus unit effects into a ranked, fully-explained candidate field.
+@dataclass(frozen=True, slots=True)
+class ProposedCandidate:
+    """A candidate mid-synthesis, before it has been judged, ranked, or made immutable."""
 
-    Order of operations is load-bearing. Elimination happens *before* ranking, so a play blocked by
-    policy can never win on score and be quietly demoted afterwards — it leaves the contest, and
-    the check that removed it is preserved on the candidate as the reason.
+    play: Any
+    components: Mapping[str, int]
+    utility_bp: int
+    checks: tuple[CandidateCheck, ...] = ()
+    disposition: CandidateDisposition = CandidateDisposition.ELIGIBLE
+    rank_position: int | None = None
 
-    Also returns the decision-level confidence so callers cannot recompute it inconsistently.
+
+def synthesize_candidates(request: Any, adjustments: Sequence[CandidateAdjustment],
+                          urgency_bp: int, priority_override: int | None
+                          ) -> tuple[ProposedCandidate, ...]:
+    """Turn each operation the domain exposed into a scored candidate.
+
+    The action space is authored, not invented here, and that is deliberate: Law 02 says domain
+    expertise never decides, it only exposes operations.  So Layer 3 declares *what could be done*
+    and this function decides *how good each option looks given this situation* — which is the
+    synthesis the architecture actually asks for.  Inventing an action no expert authored would be
+    the Decision Maker quietly becoming a domain author.
+
+    Units move a candidate by publishing typed adjustments against a named component; they cannot
+    write a score directly, which is what keeps analysis and synthesis separable.
     """
-    confidence_bp = calculate_confidence(results, request, degraded)
-    urgency_bp, priority_override = priority_metrics(results, request)
-    adjustments = [item for result in results for item in result.adjustments]
-    checks = [item for result in results for item in result.checks]
-    evidence = aggregate_evidence(results)
-
-    provisional: list[dict[str, Any]] = []
+    proposals: list[ProposedCandidate] = []
     for play in sorted(request.capability.plays, key=lambda item: item.play_id):
         components = {
             "impact": play.impact_bp,
@@ -201,63 +220,132 @@ def build_candidates(request: Any, results: Sequence[ReasonerResult],
             if adjustment.play_id == play.play_id:
                 components[adjustment.component] = clamp_bp(
                     components[adjustment.component] + adjustment.delta_bp)
-        play_checks = ordered_checks([item for item in checks if item.play_id == play.play_id])
-        eliminated = any(item.outcome == CheckOutcome.ELIMINATE for item in play_checks)
-        if priority_override is None:
-            weights = request.capability.ranking_weights
-            # Effort and risk are costs: the candidate is rewarded for their absence.
-            weighted = (
-                components["impact"] * weights["impact"]
-                + components["success"] * weights["success"]
-                + components["urgency"] * weights["urgency"]
-                + (10_000 - components["effort"]) * weights["effort"]
-                + (10_000 - components["risk"]) * weights["risk"]
-            )
-            utility_bp = clamp_bp(divide_half_up(weighted, 100))
-        else:
-            utility_bp = priority_override
-        provisional.append({
-            "play": play,
-            "components": components,
-            "checks": play_checks,
-            "disposition": (CandidateDisposition.ELIMINATED if eliminated
-                            else CandidateDisposition.ELIGIBLE),
-            "utility_bp": utility_bp,
-        })
-
-    eligible = sorted((item for item in provisional
-                       if item["disposition"] == CandidateDisposition.ELIGIBLE),
-                      key=lambda item: (-item["utility_bp"], item["play"].play_id))
-    eliminated = sorted((item for item in provisional
-                         if item["disposition"] == CandidateDisposition.ELIMINATED),
-                        key=lambda item: item["play"].play_id)
-    rank_by_play = {item["play"].play_id: rank
-                    for rank, item in enumerate(eligible, start=1)}
-    candidates = []
-    for item in eligible + eliminated:
-        play = item["play"]
-        candidates.append(DecisionCandidate(
-            play_id=play.play_id,
-            play_version=play.version,
-            disposition=item["disposition"],
-            utility_bp=item["utility_bp"],
-            confidence_bp=confidence_bp,
-            score_components=item["components"],
-            rank_position=rank_by_play.get(play.play_id),
-            checks=item["checks"],
-            evidence_ids=evidence,
-            parameters={
-                "label": play.label,
-                "steps": play.steps,
-                # `read_only` is the delivery authority bit: adapters refuse anything else.
-                "read_only": play.read_only,
-                "tags": play.tags,
-                "metadata": play.metadata,
-                "success_events": play.success_events,
-                "window_days": play.window_days,
-            },
+        proposals.append(ProposedCandidate(
+            play=play,
+            components=components,
+            utility_bp=score_candidate(request, components, priority_override),
         ))
-    return tuple(candidates), confidence_bp
+    return tuple(proposals)
+
+
+def score_candidate(request: Any, components: Mapping[str, int],
+                    priority_override: int | None) -> int:
+    """Weighted utility in integer basis points.
+
+    Effort and risk are costs, so the candidate is rewarded for their *absence* — a cheap, safe
+    play with modest impact can rightly beat an expensive, dangerous one with high impact.  An
+    explicit override from the priority authority replaces the formula outright, for the cases
+    where an organisation's own rule outranks the general scoring model.
+    """
+    if priority_override is not None:
+        return priority_override
+    weights = request.capability.ranking_weights
+    weighted = (
+        components["impact"] * weights["impact"]
+        + components["success"] * weights["success"]
+        + components["urgency"] * weights["urgency"]
+        + (10_000 - components["effort"]) * weights["effort"]
+        + (10_000 - components["risk"]) * weights["risk"]
+    )
+    return clamp_bp(divide_half_up(weighted, 100))
+
+
+# ---------------------------------------------------------------------------------------------
+# Decision Evaluator
+# ---------------------------------------------------------------------------------------------
+
+def evaluate_candidates(proposals: Sequence[ProposedCandidate],
+                        checks: Sequence[CandidateCheck]) -> tuple[ProposedCandidate, ...]:
+    """Apply hard checks and remove anything a unit ruled out.
+
+    This runs *before* ranking, and that order is the whole safety property: a play eliminated by
+    policy never competes on score, so it can never win and then be quietly demoted.  The check
+    that removed it travels with the candidate, so the record shows what was rejected and by which
+    rule — a rejection without its reason is indistinguishable from an oversight.
+    """
+    judged: list[ProposedCandidate] = []
+    for proposal in proposals:
+        play_checks = ordered_checks([item for item in checks
+                                      if item.play_id == proposal.play.play_id])
+        eliminated = any(item.outcome == CheckOutcome.ELIMINATE for item in play_checks)
+        judged.append(replace(
+            proposal,
+            checks=play_checks,
+            disposition=(CandidateDisposition.ELIMINATED if eliminated
+                         else CandidateDisposition.ELIGIBLE),
+        ))
+    return tuple(judged)
+
+
+# ---------------------------------------------------------------------------------------------
+# Decision Ranker
+# ---------------------------------------------------------------------------------------------
+
+def rank_candidates(proposals: Sequence[ProposedCandidate]) -> tuple[ProposedCandidate, ...]:
+    """Impose a total order: survivors by utility, ties broken by play id, eliminated last.
+
+    The tie-break is not cosmetic.  Two equally-scored plays must resolve the same way on every
+    machine and every replay, so the order can never come from whatever sequence the plays happened
+    to arrive in.
+    """
+    eligible = sorted((item for item in proposals
+                       if item.disposition == CandidateDisposition.ELIGIBLE),
+                      key=lambda item: (-item.utility_bp, item.play.play_id))
+    eliminated = sorted((item for item in proposals
+                         if item.disposition == CandidateDisposition.ELIMINATED),
+                        key=lambda item: item.play.play_id)
+    ranked = tuple(replace(item, rank_position=rank)
+                   for rank, item in enumerate(eligible, start=1))
+    return ranked + tuple(eliminated)
+
+
+# ---------------------------------------------------------------------------------------------
+# Decision Object Builder
+# ---------------------------------------------------------------------------------------------
+
+def build_candidate_objects(proposals: Sequence[ProposedCandidate], confidence_bp: int,
+                            evidence: tuple[str, ...]) -> tuple[DecisionCandidate, ...]:
+    """Freeze the ranked field into immutable, content-addressed candidates."""
+    return tuple(DecisionCandidate(
+        play_id=item.play.play_id,
+        play_version=item.play.version,
+        disposition=item.disposition,
+        utility_bp=item.utility_bp,
+        confidence_bp=confidence_bp,
+        score_components=item.components,
+        rank_position=item.rank_position,
+        checks=item.checks,
+        evidence_ids=evidence,
+        parameters={
+            "label": item.play.label,
+            "steps": item.play.steps,
+            # `read_only` is the delivery authority bit: adapters refuse anything else.
+            "read_only": item.play.read_only,
+            "tags": item.play.tags,
+            "metadata": item.play.metadata,
+            "success_events": item.play.success_events,
+            "window_days": item.play.window_days,
+        },
+    ) for item in proposals)
+
+
+def build_candidates(request: Any, results: Sequence[ReasonerResult],
+                     degraded: bool) -> tuple[tuple[DecisionCandidate, ...], int]:
+    """Synthesize → evaluate → rank → build, in that fixed order.
+
+    Kept as one entry point because `reason.store` re-runs exactly this pipeline to verify a
+    persisted audit row; two callers proving the same law is what makes a forged row detectable.
+    """
+    confidence_bp = calculate_confidence(results, request, degraded)
+    urgency_bp, priority_override = priority_metrics(results, request)
+    adjustments = [item for result in results for item in result.adjustments]
+    checks = [item for result in results for item in result.checks]
+
+    proposals = synthesize_candidates(request, adjustments, urgency_bp, priority_override)
+    proposals = evaluate_candidates(proposals, checks)
+    proposals = rank_candidates(proposals)
+    return build_candidate_objects(
+        proposals, confidence_bp, aggregate_evidence(results)), confidence_bp
 
 
 class DecisionMaker:
@@ -278,12 +366,27 @@ class DecisionMaker:
         are facts about execution, not judgements, which is why Part 1 determines them and Part 3
         merely records them.  A terminal run yields no candidates at all: publishing a ranked field
         no unit ever validated would be the exact fabrication this architecture exists to prevent.
+
+        A run that *did* reach a winner still has one more gate: the confidence floor.  Silence and
+        a question are both valid outputs of this system, and shipping a weakly-evidenced
+        recommendation as though it were a strong one is how an intelligence layer loses the trust
+        it cannot re-earn.
         """
+        uncertainty = list(uncertainty)
         if terminal is None:
             candidates, confidence_bp = build_candidates(request, results, degraded)
             outcome = (DecisionOutcome.DECISION if any(
                 item.disposition == CandidateDisposition.ELIGIBLE for item in candidates)
                        else DecisionOutcome.BLOCKED)
+            floor_bp = _metadata_bp(request, CONFIDENCE_FLOOR_KEY, 0)
+            if outcome == DecisionOutcome.DECISION and confidence_bp < floor_bp:
+                # Below the floor GeniOS stops recommending and starts asking.  The ranked field
+                # is kept — the human deserves to see what was considered — but nothing is
+                # selected, so no downstream adapter can read this as an instruction.  This is
+                # Law 03 in code: when the system is not confident, it widens uncertainty and
+                # requests input rather than inventing the missing fact.
+                outcome = DecisionOutcome.DEFER
+                uncertainty.append(f"{BELOW_FLOOR_REASON}:{confidence_bp}<{floor_bp}")
         else:
             candidates = ()
             confidence_bp = calculate_confidence(results, request, degraded)
@@ -312,7 +415,9 @@ class DecisionMaker:
         return DecisionSynthesis(candidates=candidates, decision=decision)
 
 
-__all__ = ["CONFIDENCE_AUTHORITY", "CONFIDENCE_AUTHORITY_KEY", "DECISION_MAKER_VERSION",
+__all__ = ["BELOW_FLOOR_REASON", "CONFIDENCE_AUTHORITY", "CONFIDENCE_AUTHORITY_KEY",
+           "CONFIDENCE_FLOOR_KEY", "DECISION_MAKER_VERSION",
            "PRIORITY_AUTHORITY", "PRIORITY_AUTHORITY_KEY", "DecisionMaker", "DecisionSynthesis",
-           "aggregate_evidence", "build_candidates", "calculate_confidence", "ordered_checks",
-           "priority_metrics"]
+           "ProposedCandidate", "aggregate_evidence", "build_candidate_objects",
+           "build_candidates", "calculate_confidence", "evaluate_candidates", "ordered_checks",
+           "priority_metrics", "rank_candidates", "score_candidate", "synthesize_candidates"]

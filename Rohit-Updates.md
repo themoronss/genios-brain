@@ -2,6 +2,13 @@
 
 ## Layer 4 — Reasoning Engine implementation
 
+> **Superseded on 2026-08-07.** This section describes the 7-unit kernel as it stood on 2026-08-06.
+> Layer 4 has since been completed to the full architecture — 17 units on a common framework, the
+> Decision Maker extracted, the confidence floor built — and one replay-determinism defect was found
+> and fixed. **Read `Rohit_Updates/Layer 4.md` instead**; it carries the current state, the three
+> locks that still hold the engine in shadow, and the deployment runbook. The description below
+> remains accurate for the parts it covers and is kept as history.
+
 Status: implemented in the current codebase and verified locally.
 
 Last updated: 2026-08-06

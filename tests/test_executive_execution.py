@@ -94,10 +94,15 @@ def make_decision(*, read_only: bool = True, steps: tuple[str, ...] = STEPS,
 
 
 def build(*, facts: dict | None = None, channels: set | None = None, eval_time=NOW,
-          decision: ReasoningDecision | None = None, cfg: dict | None = None):
+          decision: ReasoningDecision | None = None, cfg: dict | None = None,
+          decision_hash: str = DECISION_HASH):
+    # `decision_hash` defaults to a fixture rather than to the decision's own hash so a test can
+    # vary the *plan* while holding the *decision* fixed — which is the only way to isolate the
+    # claim that identity covers both. Callers that need two genuinely distinct commitments
+    # (the sweep tests) pass their own.
     return build_from_decision(
         decision or make_decision(), org_id="org_1", reasoning_run_id="run_1",
-        config_snapshot_id="cfg_1", decision_hash=DECISION_HASH, eval_time=eval_time,
+        config_snapshot_id="cfg_1", decision_hash=decision_hash, eval_time=eval_time,
         directory=DIRECTORY,
         facts=facts if facts is not None else {"deal.owner": {"value": "rep@acme.io"}},
         available_channels=channels if channels is not None else {"slack", "in_app"},

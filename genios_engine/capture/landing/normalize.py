@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from genios_engine.capture.connectors.base import RawObject
 from genios_engine.capture.internal_knowledge import normalize_kind
 from genios_engine.capture.source_families import family_of
+from genios_engine.capture.visibility import visibility_for
 from genios_engine.contracts.source_event import (Actor, SourceEvent, SyncMode,
                                                   compute_dedup_key)
 from genios_engine.platform.ids import new_id
@@ -44,4 +45,8 @@ def to_source_event(
         captured_at=datetime.now(timezone.utc),
         sync_mode=sync_mode,
         payload_ref=payload_ref,
+        # The source ACL, resolved HERE because this is the last moment the recipient
+        # list still exists — one step later the object is an envelope and `to`/`cc`
+        # live only inside an encrypted payload nothing downstream opens.
+        visibility=visibility_for(raw),
     )

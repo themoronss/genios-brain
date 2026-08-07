@@ -132,12 +132,12 @@ class ReasoningOrchestrator:
 
     def plan(self, request: ReasoningRequest) -> ExecutionPlan:
         """Commit to a schedule without executing it — for operators, tooling, and dry runs."""
-        return self._planner.plan(request.capability)
+        return self._planner.plan(request.capability, request)
 
     def execute(self, request: ReasoningRequest) -> ReasoningExecution:
         # Decide the whole schedule first: an unschedulable capability must be refused before any
         # unit observes the situation, not diagnosed halfway through a partially-formed decision.
-        plan = self._planner.plan(request.capability)
+        plan = self._planner.plan(request.capability, request)
         specs_by_id = {spec.reasoner_id: spec for spec in request.capability.reasoners}
         reasoners = self._planner.resolve(plan, self._registry, request.capability)
         play_ids = {play.play_id for play in request.capability.plays}
@@ -164,6 +164,16 @@ class ReasoningOrchestrator:
 
             if terminal is not None:
                 result = _skipped_result(spec, terminal)
+            elif _reserve_not_needed(planned, prior):
+                # Its primary succeeded, so there is nothing to stand in for.  Recorded as a
+                # skipped step rather than dropped, so the trace shows the reserve was considered
+                # and why it stayed on the bench.
+                result = ReasonerResult(
+                    reasoner_id=spec.reasoner_id,
+                    reasoner_version=spec.version,
+                    status=ResultStatus.SKIPPED,
+                    reason_codes=(f"primary_completed:{planned.fallback_for}",),
+                )
             else:
                 missing = required_missing(request, spec.required_fields)
                 if missing:
@@ -285,6 +295,14 @@ class ReasoningOrchestrator:
                 reason_codes=("reasoner_failure",),
                 diagnostics={"exception_type": type(exc).__name__, "message": str(exc)},
             )
+
+
+def _reserve_not_needed(planned, prior: Mapping[str, ReasonerResult]) -> bool:
+    """A reserve unit stands down when the unit it covers completed."""
+    if planned.fallback_for is None:
+        return False
+    primary = prior.get(planned.fallback_for)
+    return primary is not None and primary.status == ResultStatus.COMPLETED
 
 
 def _failed_result(spec: ReasonerSpec, reason_code: str) -> ReasonerResult:

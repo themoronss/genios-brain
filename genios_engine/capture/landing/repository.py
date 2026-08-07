@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol
 
+from genios_engine.capture.lifecycle import ACTIVE, EXPIRED, NEW, is_expired
 from genios_engine.contracts.source_event import SourceEvent
 
 
@@ -37,6 +39,16 @@ class InMemorySourceEventRepository:
         self._outcome[k] = outcome
         self._decision[k] = {"route": route, "triage_lane": triage_lane,
                              "domain_hints": domain_hints, "linkage_hints": linkage_hints}
+
+    def expire_due(self, now: datetime | None = None) -> int:
+        """In-memory twin of the Postgres lifecycle sweep, so the rule is testable
+        without a database. Same guard: a settled state is never re-opened."""
+        moved = 0
+        for event in self._by_key.values():
+            if event.signal_state in (NEW, ACTIVE) and is_expired(event.expires_at, now):
+                event.signal_state = EXPIRED
+                moved += 1
+        return moved
 
     def count(self) -> int:
         return len(self._by_key)

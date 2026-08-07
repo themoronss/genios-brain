@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 from sqlalchemy import text
 
@@ -13,18 +14,29 @@ _INSERT = text(
       (event_id, org_id, connection_id, source, source_family, object_type,
        source_object_id, parent_object_id, dedup_key, actor, occurred_at, captured_at,
        sync_mode, payload_ref, capture_confidence, schema_version, outcome,
-       route, triage_lane, domain_hints, linkage_hints, internal_kind)
+       route, triage_lane, domain_hints, linkage_hints, internal_kind,
+       visibility, expires_at, signal_state)
     values
       (:event_id, :org_id, :connection_id, :source, :source_family, :object_type,
        :source_object_id, :parent_object_id, :dedup_key, cast(:actor as jsonb),
        :occurred_at, :captured_at, :sync_mode, :payload_ref, :capture_confidence,
        :schema_version, :outcome,
        :route, :triage_lane, cast(:domain_hints as jsonb), cast(:linkage_hints as jsonb),
-       :internal_kind)
+       :internal_kind, cast(:visibility as jsonb), :expires_at, :signal_state)
     on conflict (org_id, dedup_key) do nothing
     """
 )
 _EXISTS = text("select 1 from source_events where org_id=:o and dedup_key=:d limit 1")
+
+# The lifecycle sweep. Only `new`/`active` rows can expire — a signal something above
+# already marked `satisfied` or `superseded` has a settled ending and must keep it.
+_EXPIRE = text(
+    """
+    update source_events set signal_state = 'expired'
+     where expires_at is not null and expires_at <= :now
+       and signal_state in ('new', 'active')
+    """
+)
 
 
 class PostgresSourceEventRepository:
@@ -61,4 +73,15 @@ class PostgresSourceEventRepository:
                 "domain_hints": json.dumps(domain_hints, default=str) if domain_hints is not None else None,
                 "linkage_hints": json.dumps(linkage_hints, default=str) if linkage_hints is not None else None,
                 "internal_kind": event.internal_kind,
+                "visibility": event.visibility.model_dump_json(),
+                "expires_at": event.expires_at,
+                "signal_state": event.signal_state,
             })
+
+    def expire_due(self, now: datetime | None = None) -> int:
+        """Flip every signal whose shelf life has run out to `expired`. Cross-org and
+        idempotent: it is clock arithmetic over a column L1 itself wrote, so a second run
+        in the same minute changes nothing. Returns the number of rows moved."""
+        with self._engine.begin() as conn:
+            return conn.execute(
+                _EXPIRE, {"now": now or datetime.now(timezone.utc)}).rowcount or 0

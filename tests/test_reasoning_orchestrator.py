@@ -406,3 +406,53 @@ def test_ranking_artifacts_use_only_integer_basis_points():
         assert type(candidate.confidence_bp) is int
         assert all(type(value) is int for value in candidate.score_components.values())
         canonical_dumps(candidate.to_semantic_dict())  # would reject a hidden float
+
+
+# ---------------------------------------------------------------------------------------------
+# Fallback: a reserve unit runs only when the unit it covers could not
+# ---------------------------------------------------------------------------------------------
+
+_RICH = ReasonerSpec("core.rich", "1", failure_policy=FailurePolicy.OPTIONAL)
+_RESERVE = ReasonerSpec("core.simple", "1", dependencies=("core.rich",),
+                        failure_policy=FailurePolicy.OPTIONAL,
+                        config={"fallback_for": "core.rich"})
+
+
+def _reserve_execution(rich_result):
+    calls: list[str] = []
+    reasoners = (
+        _StubReasoner(_RICH, rich_result, calls),
+        _StubReasoner(_RESERVE, _result(_RESERVE, metrics={"confidence_bp": 4_000}), calls),
+    )
+    execution = ReasoningOrchestrator(ReasonerRegistry(reasoners)).execute(
+        _request((_RESERVE, _RICH)))
+    return execution, calls
+
+
+def test_a_reserve_unit_stays_on_the_bench_when_its_primary_completes():
+    execution, calls = _reserve_execution(
+        _result(_RICH, metrics={"confidence_bp": 9_000}))
+    by_id = execution.result_by_id
+
+    assert calls == ["core.rich"]                       # the reserve was never evaluated
+    assert by_id["core.simple"].status == ResultStatus.SKIPPED
+    assert by_id["core.simple"].reason_codes == ("primary_completed:core.rich",)
+    assert execution.decision.confidence_bp == 9_000
+    # Standing down is not a degradation: nothing was lost.
+    assert not any("optional" in item for item in execution.decision.uncertainty)
+
+
+def test_a_reserve_unit_takes_over_when_its_primary_fails():
+    execution, calls = _reserve_execution(
+        _result(_RICH, status=ResultStatus.FAILED, matched=None,
+                reason_codes=("model_unavailable",)))
+    by_id = execution.result_by_id
+
+    assert calls == ["core.rich", "core.simple"]
+    assert by_id["core.simple"].status == ResultStatus.COMPLETED
+    assert execution.decision.outcome == DecisionOutcome.DECISION
+    # The reserve's weaker reading is what the decision now rests on...
+    assert execution.decision.confidence_bp == 4_000
+    # ...and the run still admits it needed one.
+    assert any("optional" in item and "core.rich" in item
+               for item in execution.decision.uncertainty)

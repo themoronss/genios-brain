@@ -242,6 +242,39 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for reasoning_context_payloads")
             retention["reasoning_context_payloads"] = "error"
+    # L5 EXECUTIVE: turn authoritative decisions into tracked commitments, then advance every
+    # commitment that has come due — validate, transition, remind, escalate, close.
+    #
+    # Runs BEFORE distribution on purpose: a reminder decided in this tick should leave in the
+    # same tick rather than waiting a whole interval for the next one. Both passes are
+    # idempotent and every write is guarded, so a double-run or a multi-instance deploy is safe.
+    executive = None
+    if _graph is not None:
+        try:
+            from genios_engine.executive.sweep import run_executive
+            # Enumeration is inside the guard too: it is a database round trip like any other,
+            # and a heartbeat that dies because one query failed stops card expiry, retention
+            # and delivery along with it.
+            orgs = _executive_orgs()
+            planned = advanced = 0
+            for org in orgs:
+                try:
+                    effective, _ = (_registry.effective(org) if _registry else (None, None))
+                    result = run_executive(_graph.engine, org, eval_time=now,
+                                           effective=effective)
+                    planned += result["planned"].created
+                    advanced += result["lifecycle"].examined
+                except Exception:                            # noqa: BLE001 — one org ≠ the rest
+                    _log.exception("executive sweep failed org=%s", org)
+            executive = {"orgs": len(orgs), "commitments_created": planned,
+                         "commitments_examined": advanced}
+            if planned:
+                _log.info("executive sweep: %d new commitment(s) across %d org(s)",
+                          planned, len(orgs))
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("executive sweep pass failed")
+            executive = {"error": True}
+
     # L6 distribution: enqueue new high/critical cards + the daily digest per org with an
     # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
     # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
@@ -305,8 +338,23 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             _log.warning("graph health below threshold for %d org(s): %s",
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
-            "distribution": distribution, "calibration": calibration,
-            "graph_maintenance": graph_maintenance}
+            "executive": executive, "distribution": distribution,
+            "calibration": calibration, "graph_maintenance": graph_maintenance}
+
+
+def _executive_orgs() -> list[str]:
+    """Tenants whose decisions can become commitments: those with an active pack.
+
+    Deliberately not "orgs with an active connection" — the set the other passes use. A tenant
+    can have a live connector and no applied pack, in which case Layer 4 produces nothing for
+    Layer 5 to commit to, and sweeping them every tick is pure cost. An active pack is the
+    narrowest set that can possibly yield a decision.
+    """
+    if _graph is None:
+        return []
+    with _graph.engine.connect() as c:
+        return [row[0] for row in c.execute(text(
+            "select distinct org_id from tenant_packs where state='active'"))]
 
 
 @router.post("/ingest/all")

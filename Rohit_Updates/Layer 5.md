@@ -2,8 +2,10 @@
 
 **Last updated:** 6 August 2026
 **Branch:** `harsh/mvp`
-**Tests:** 799 passing (Layer 5 added 88 of them)
-**Status:** feature-complete and green in tests — **NOT yet running against a real database**
+**Tests:** **156 for Layer 5**, in six files — all green. (Repo-wide is 1326 and climbing; a
+second session is adding Layer 4 units in parallel, see Part 4.)
+**Status:** feature-complete, wired to Layer 6, **scheduled** — ready to push
+**For the CTO:** Part 5 is a runbook. Two commands: migrate, deploy. It self-starts from there.
 
 **The one-line summary for a CTO:** GeniOS could produce an excellent recommendation and had
 no idea whether anyone ever did it. Layer 5 turns a recommendation into a **commitment** —
@@ -16,7 +18,7 @@ Layer 5 answers **"how do we make it happen?"**
 Those are different jobs. A conclusion is an opinion. A commitment is an opinion with a name
 and a date attached.
 
-**Start at Part 5 if you want the action list.**
+**Start at Part 5 — it is the deployment runbook.**
 
 ---
 
@@ -86,26 +88,33 @@ changing it in the same step is how a refactor becomes an outage.
 
 Eleven units, one output. The layer emits exactly one artifact: the **Execution Object**.
 
-| Unit | Where | What it does |
+Numbered to match your spec exactly, so this table can be read side by side with it. Every unit
+in the spec is built; the unnumbered rows are the machinery the spec implies but does not name.
+
+| Spec unit | Where | What it does |
 |---|---|---|
-| **Contract** | `contracts/execution.py` | The Execution Object: frozen, content-addressed, integer-only, with the state machine as data |
 | **1 · Decision Interpreter** | `executive/interpret.py` | Reads a Layer 4 decision as an *instruction*, or names precisely why it is not one |
-| **2 · Execution Planning** | `executive/planning.py` | Steps → actions with kinds, dependency waves, owners, resources, per-step deadlines |
+| **2 · Execution Planning** ⭐⭐⭐ | `executive/planning.py` | Steps → actions with kinds, dependency waves, owners, resources, per-step deadlines |
 | **3 · Communication Planning** | `executive/communication.py` | Audience, channel, interrupt, tone — and a reason code for each |
-| **· Owner Resolution** | `executive/assignment.py` | *Who.* Moved down from `deliver/`. Pure core, injected directory |
-| **4 · Execution Object Builder** | `executive/execution.py` | Composes the units into one commitment, or refuses with a named code |
-| **· Execution Validation** ⭐ | `executive/execution_guard.py` | **Your improvement.** Re-validates against live state before *every* outbound moment |
-| **5 · Reminder** | `executive/reminder.py` | Business relevance, not a calendar |
-| **· Escalation** | `executive/escalation.py` | The ladder, scaled by urgency, capped by the decision's expiry |
+| **4 · Execution Object Builder** ⭐⭐⭐ | `executive/execution.py` | Composes the units into one commitment, or refuses with a named code |
+| **5 · Delivery** | `deliver/executive_bridge.py` | The wire. Layer 5's reminder becomes a real message, exactly once, re-validated at send |
+| **6 · Reminder** ⭐⭐⭐⭐⭐ | `executive/reminder.py` | Business relevance, not a calendar |
 | **7 · Monitoring** | `executive/monitor.py` | Progress, stalls, and the gap between "ticked" and "proven" |
+| **8 · Escalation** | `executive/escalation.py` | The ladder, scaled by urgency, capped by the decision's expiry |
 | **9 · Execution Tracking** | `executive/lifecycle.py` | The state machine and its audit vocabulary |
 | **10 · Feedback Collection** | `executive/collect.py` | The outcome record Layer 7 will learn from |
-| **· Persistence** | `executive/execution_store.py` | The only module that touches SQL |
-| **· The loop** | `executive/sweep.py` | Two passes: plan commitments, then run the lifecycle |
-| **· Schema** | `migrations/0041_l5_execution.sql` | 5 tables + the reporting line on `org_seats` |
-| **· Surface** | `api/executive_routes.py` | `/v1/executive/commitments*`, `/sweep` |
+| **+ Execution Validation** ⭐ | `executive/execution_guard.py` | **Your improvement.** Re-validates against live state before *every* outbound moment |
+| — Contract | `contracts/execution.py` | The Execution Object: frozen, content-addressed, integer-only, state machine as data |
+| — Owner resolution | `executive/assignment.py` | *Who.* Moved down from `deliver/`. Pure core, injected directory |
+| — Persistence | `executive/execution_store.py` | The only Layer 5 module that touches SQL |
+| — The loop | `executive/sweep.py` | Two passes: plan commitments, then run the lifecycle. **Wired into the scheduler heartbeat** (`api/routes.py`) — no new cron |
+| — Schema | `migrations/0041_l5_execution.sql` | 5 tables + the reporting line on `org_seats` |
+| — Surface | `api/executive_routes.py` | `/v1/executive/commitments*`, `/sweep` |
 
-### The four decisions that matter most
+Unit 5 is the one row that lives in `deliver/`. That is deliberate and explained in Part 7:
+Layer 5 *authors* the message and decides it should be sent; Layer 6 owns the transport.
+
+### The five decisions that matter most
 
 **1. Identity is the decision plus the plan — never the routing.**
 `execution_id` hashes `(org, decision_hash, plan_hash)` and deliberately *excludes* who it was
@@ -122,8 +131,9 @@ This is the improvement you asked for, and it is the single most important thing
 > every future nudge is presumed wrong until proven otherwise.
 
 So every outbound moment — first delivery, each reminder, each escalation rung — re-checks live
-state immediately before it happens. The guard has six verdicts, not a boolean, because "do not
-send" covers four genuinely different situations:
+state immediately before it happens. The guard returns one of six verdicts rather than a boolean,
+because five of them are refusals and they mean genuinely different things — collapsing them
+would make the difference invisible in exactly the reports where it matters:
 
 | Verdict | Means |
 |---|---|
@@ -154,6 +164,28 @@ window* (75% burned), not at a fixed "48 hours before" — a two-day commitment 
 fortnight-long one are not both urgent two days out. Fatigue is a hard stop, not a taper: after
 four reminders the unit stops asking and hands over to escalation, because a fifth identical
 nudge does not produce action, it produces a filter rule.
+
+**5. The wire respects Layer 5's judgement, and adds nothing to it.**
+Layer 5 cannot import Layer 6, so it cannot send anything itself. What it can do is write its
+decision down — and it does: the reminder event carries the routing plan on the parent commitment
+and the *grounded fact corpus* in its own `detail`. `deliver/executive_bridge.py` reads that and
+turns it into a message.
+
+The division comes out exactly right:
+
+> Layer 5 decides **whether to speak, to whom, through which channel, and what may be said.**
+> Layer 6 decides **how it looks and gets it there, with retries.**
+
+Three properties make it safe to send. A commitment Layer 5 planned for the digest is **not**
+pushed — respecting that is the whole reason Layer 5 was given the channel decision. The bridge
+has no access to the graph and cannot look anything up, so "invents nothing" is *structural*
+rather than a matter of discipline. And the message is re-validated at send: a reminder can sit
+through a retry backoff while the customer replies, so a commitment that closed in that window is
+cancelled rather than delivered.
+
+Exactly-once falls out of the synthetic key `exec:<execution_id>:<event_id>` against the existing
+`(org, card, channel)` unique index — the same trick the daily digest already uses. No new
+bookkeeping table, and a crashed sweep that re-enqueues cannot double-send.
 
 ### Escalation, in practice
 
@@ -203,49 +235,241 @@ Loop engineering, not afterthoughts. Each was caught by writing the test before 
 | 4 | New tables had no `orgs` cascade — a commitment could outlive its tenant's deletion | `test_account_erasure.py` | Five FK cascades added to migration 0041 |
 | 5 | Unrouted commitments got a different `execution_id` than routed ones for the same decision | Identity test | Uniqueness moved to `(org_id, decision_hash)` partial index; supersede path added |
 | 6 | Stored plans had no rehydration path — payload was write-only | Round-trip test | `decanonicalize()` + `from_semantic_dict()` + `verify_round_trip()` at build time |
+| 7 | `POST /sweep` crashed: `vars()` on a slotted dataclass | New route test | `dataclasses.asdict` |
+| 8 | The dismiss route wrote SQL `now()` while everything else passes time explicitly | New route test | Time is bound, so a replay observes the instant the event recorded |
 
-**Two new ratchets** were added so these classes of bug cannot come back:
+### The six files, and what each is for
 
-- `tests/test_executive_store_schema.py` parses every migration for real columns and walks the
-  **AST** of the store, sweep and routes to extract every SQL statement — then proves every
-  inserted, updated and selected column exists, that the insert binds one value per column, and
-  that **every `:bind` parameter is supplied.** Both were verified by deliberately breaking the
-  code and watching them fail.
-- The layer topology test still passes with the ownership move.
+| File | Tests | Proves |
+|---|---|---|
+| `tests/test_executive_execution.py` | 26 | The contract: identity, the read-only boundary, autonomy, the clock |
+| `tests/test_executive_lifecycle.py` | 45 | Guard, reminder, monitor, escalation, tracking, outcome labels |
+| `tests/test_executive_sweep.py` | 33 | **The orchestrator, executed** — all five endings, both nudge paths, rerouting, and that the scheduler actually drives it |
+| `tests/test_executive_store_schema.py` | 21 | Every SQL column exists and every `:bind` is supplied |
+| `tests/test_executive_bridge.py` | 16 | **A reminder reaches a human** — exactly once, never stale |
+| `tests/test_executive_routes.py` | 15 | The API: org scoping, the credential boundary, dismiss → sweep → cancel |
+
+Two of them are **ratchets** — they fail if the code drifts, not just if it breaks:
+
+- `test_executive_store_schema.py` parses every migration for real columns and walks the **AST**
+  of the store, sweep, routes and bridge to extract every SQL statement. Both of its central
+  claims were verified by deliberately breaking the code and watching them fail.
+- `tests/executive_fakes.py` is an in-memory database double that **raises** on any statement it
+  does not model. A silent empty result would let a test pass while skipping the very write it
+  was written to check.
+
+`sweep.py` and `execution_store.py` were, until this work, proven only by static analysis — 874
+lines of orchestration and persistence with no line ever run. Static analysis cannot tell you
+that a `COMPLETE` verdict closes the row *and* writes the outcome *and* logs the event. It can
+now.
+
+**A note on the numbers, and on a wrong diagnosis.** Earlier drafts of this file reported 799 and
+then 850 passing, and one full-suite run failed 70 tests. I first blamed a stale bytecode cache.
+**That was wrong.** The real cause: a second session was writing to this repository at the same
+time — twelve Layer 4 reasoner units and their tests landed in `genios_engine/reason/reasoners/`
+and `tests/` between 23:03 and 23:23, interleaved with this work. A half-written module imported
+mid-write is what failed those 70 tests, and the growing file count is what moved the totals.
+
+Both workstreams are green together and no file was touched by both. But flagging it plainly:
+**concurrent sessions on one working tree is a real hazard**, and the repo-wide test total is a
+moving target while it continues. Layer 5's own 156 are stable and independently runnable:
+
+```
+pytest tests/test_executive_*.py
+```
 
 ---
 
-## Part 5 — The action list
+## Part 5 — Deployment runbook
 
-**1. Run migration 0041 against a real Postgres. Nothing here has ever executed.**
-Same caveat as Layer 2, same reason: CI has no database. Every unit is pure and tested; the
-SQL is statically proven to reference real columns and bind real parameters, but static proof is
-not execution.
+**Layer 5 self-starts.** It is wired into the scheduler heartbeat that already runs card expiry,
+retention and delivery (`api/routes.py :: run_maintenance_sweep`). There is no new cron, no new
+worker, no new service. Deploy the branch, run the migration, and it begins.
 
-**2. Put the sweep on a schedule.**
-`executive.sweep.run_executive(engine, org_id)` runs both passes. Both are idempotent and both
-use guarded writes, so two workers are safe. Suggested cadence: every 15 minutes. There is a
-`POST /v1/executive/sweep` for a manual run.
+What follows is what to do, in order, and how to know each step worked.
 
-**3. Populate `org_seats.manager_seat_id`.**
-Nullable and optional — without it, "escalate to the manager" falls back to the org's admins,
-which works but is blunt. With it, day 7 reaches the right person.
+---
 
-**4. Wire the card ↔ commitment link.**
-`executions.card_id` exists and is unused. Layer 6's `deliver/pipeline.py` should stamp it when
-it builds a card for a commitment, so the UI can show "this card is day 4 of a 14-day
-commitment, escalates to your manager in 3 days."
+### Step 1 — Apply the migration
 
-**5. Decide the reminder transport.**
-Today a reminder is recorded (`execution_events`, `reminder_count`, `last_reminded_at`) and the
-escalation rung fires — but the *message* still needs Layer 6's outbox to carry it. The
-communication plan tells it exactly where to send and whether to interrupt; the enqueue call is
-one function away.
+```bash
+.venv/bin/python -m genios_engine.platform.migrate
+```
 
-**6. Have Layer 7 read `execution_outcomes`.**
-The table is written and indexed for the cohort read (`org, capability, play, closed_at`).
-`feedback/calibrate.py` currently learns from clicks alone. This is the richer signal, and it is
-sitting there.
+Applies `0041_l5_execution.sql`: five tables (`executions`, `execution_actions`,
+`execution_escalations`, `execution_events`, `execution_outcomes`), their indexes, the tenant
+delete-cascades, and one nullable column on `org_seats`.
+
+**Verify:**
+
+```sql
+select count(*) from schema_migrations where filename = '0041_l5_execution.sql';   -- 1
+\d executions
+```
+
+**If it fails:** migrations are immutable and checksummed. If `0041` was already applied and then
+edited, the runner refuses by design — ship `0042`, never edit in place.
+
+---
+
+### Step 2 — Deploy the branch
+
+No new environment variables. Layer 5 uses what is already set:
+
+| Setting | Why Layer 5 needs it | Already set? |
+|---|---|---|
+| `GENIOS_DATABASE_URL` | everything | yes |
+| `GENIOS_SCHEDULER_ENABLED` (default `true`) | drives the sweep | yes |
+| `GENIOS_SYNC_INTERVAL_HOURS` (default `6`) | how often commitments advance | yes — **see the note below** |
+
+> **Consider lowering the interval.** At the default 6 hours, a commitment is examined four times
+> a day. That is fine for planning but coarse for reminders: a "day 1" rung can fire up to six
+> hours late. `GENIOS_SYNC_INTERVAL_HOURS=1` costs one extra cheap pass per hour and makes the
+> ladder land when it says it will. The sweep is idempotent, so a shorter interval is safe.
+
+**Multi-instance:** if you run more than one instance, the existing guidance still applies — set
+`GENIOS_SCHEDULER_ENABLED=false` on all but one, or drive the sweep externally. Layer 5 is safe
+either way (every write is guarded and the unique index absorbs duplicates); it is a cost
+question, not a correctness one.
+
+---
+
+### Step 3 — Confirm it is running
+
+The heartbeat now reports Layer 5. On the first tick after deploy, the log line is:
+
+```
+scheduled maintenance sweep: {... 'executive': {'orgs': N, 'commitments_created': X,
+                                                'commitments_examined': Y} ...}
+```
+
+To force a pass for one tenant instead of waiting:
+
+```bash
+curl -XPOST -H "Authorization: Bearer $OWNER_TOKEN" https://<host>/v1/executive/sweep
+```
+
+**Expect:** `planned.created > 0` on the first run, `0` on the second. That zero *is* the
+idempotence guarantee — it means re-running cannot duplicate a commitment.
+
+Then look at what it committed to:
+
+```bash
+curl -H "Authorization: Bearer $OWNER_TOKEN" https://<host>/v1/executive/commitments
+```
+
+Each row should carry an owner, a deadline and a band.
+
+---
+
+### Step 4 — Read the refusal counters before assuming anything is wrong
+
+`planned.reasons` is a histogram, not a log. Nothing created is usually correct, and the counter
+says which:
+
+| Reason | Means | Do |
+|---|---|---|
+| `outcome_no_action` | Layer 4 looked and concluded nothing should happen | nothing — this is health |
+| `built` | a commitment was created | nothing |
+| `no_steps` | a play declares no step text | fix the pack; GeniOS will not invent steps |
+| `window_closed` | `window_days` leaves no time to act | widen the play's window |
+| `decision_expired` | the decision lapsed before the sweep saw it | shorten the sweep interval |
+| `unreadable_expiry` | a stored decision has no parseable expiry | escalate — this is a data defect |
+
+---
+
+### Step 5 — Two tenant-side settings that change behaviour
+
+Both optional. Layer 5 works without them; it works *better* with them.
+
+**5a. `org_seats.manager_seat_id`** — the reporting line.
+
+```sql
+update org_seats set manager_seat_id = '<manager_seat_id>'
+ where org_id = '<org>' and seat_id = '<report_seat_id>';
+```
+
+Without it, "escalate to the manager" on day 7 falls back to the org's admins. That works, but it
+is blunt: everyone's escalation lands on the same person.
+
+**5b. A Slack channel** — so reminders actually leave the building.
+
+Already supported by the existing endpoint; nothing new:
+
+```bash
+curl -XPUT -H "Authorization: Bearer $OWNER_TOKEN" \
+  -d '{"webhook_url":"https://hooks.slack.com/services/..."}' \
+  https://<host>/api/org/<org>/channels/slack
+
+curl -XPOST -H "Authorization: Bearer $OWNER_TOKEN" \
+  https://<host>/api/org/<org>/channels/slack/test      # sends a real message now
+```
+
+**Without a channel, nothing is lost.** Commitments are still planned, tracked, escalated and
+reported; they simply wait on the card surface instead of being pushed. The communication plan
+records `no_channel_registered` so the reason is visible, not mysterious.
+
+---
+
+### Step 6 — What to watch in week one
+
+```sql
+-- Is it committing to anything?
+select state, count(*) from executions where closed_at is null group by state;
+
+-- Are reminders leaving?
+select status, count(*) from delivery_outbox
+ where card_id like 'exec:%' group by status;
+
+-- THE number: does acting on these plays actually work?
+select label, count(*) from execution_outcomes
+ where closed_at > now() - interval '7 days' group by label order by 2 desc;
+```
+
+The last query is the one that matters. `succeeded` means the world produced the evidence the play
+declared. `completed_unproven` means people did the steps and nothing happened — **a play that
+lands consistently in that bucket is busywork that feels productive**, and no click metric will
+ever tell you.
+
+Two counters worth an alert:
+
+- `delivery_outbox` rows with `card_id like 'exec:%'` and `status='cancelled'` — each one is a
+  reminder correctly suppressed because the world resolved it first. A **zero** here over a busy
+  week is suspicious: it suggests the guard is not finding observations, not that the world never
+  moves.
+- `executions` where `routing_rule = 'rule3_unrouted'` — commitments nobody owns. They are tracked
+  and visible by design, but a growing count means CRM ownership is missing for real accounts.
+
+---
+
+### Step 7 — Rollback
+
+Layer 5 adds tables and reads existing ones; it changes no existing behaviour except that
+`deliver/router.py` now delegates ownership to `executive/assignment.py` (same rules, same reason
+codes, byte-identical results).
+
+To stop Layer 5 without redeploying, disable the pack for the tenant — the sweep only visits orgs
+with an active `tenant_packs` row. To stop it globally, `GENIOS_SCHEDULER_ENABLED=false`, which
+also stops the existing passes. The tables can be left in place; they are inert if nothing writes
+to them.
+
+---
+
+### The one thing that is genuinely unproven
+
+**No SQL in this layer has ever run against Postgres.** CI has no database. Every unit and the
+whole orchestrator execute against an in-memory double, and every statement is statically proven
+to name real columns and bind real parameters — but neither proves the two meet. Step 1 and
+Step 3 are what close that, and they are the reason this runbook starts there.
+
+---
+
+### Still open, deliberately
+
+**Layer 7 does not yet read `execution_outcomes`.** The table is written and indexed for the
+cohort read (`org, capability, play, closed_at`); `feedback/calibrate.py` still learns from card
+clicks alone. Not built here on purpose — Layer 7 is its own brick, and this is the first item of
+it.
 
 ---
 
@@ -288,7 +512,7 @@ accounts nobody owns — which are exactly the accounts most likely to be lost.
 |---|---|---|
 | Layer 5 owns Owner Planner + Channel Selector; Layer 5.2 splits Delivery out | Layer 5 **authors** the communication plan; Layer 6 **executes** it | The spec contradicts itself. Interruption is part of the commitment; adapters, retries and copy are transport |
 | "Layer 5 returns exactly one thing: an Execution Object" | Kept exactly — but the object is **immutable**, and state lives in a row that points at it | An object that mutates cannot answer "why did this escalate on day 7?" after the pack is retuned |
-| A Delivery Unit inside Layer 5 | Layer 5 marks the commitment delivered; Layer 6's outbox carries the message | Two layers owning the send means two places to look when a message doesn't arrive |
+| A Delivery Unit inside Layer 5 | Built as `deliver/executive_bridge.py` — Layer 5 authors the message and decides it should be sent; Layer 6 carries it, with retries | Layer 5 cannot import Layer 6 without breaking the topology ratchet. So Layer 5 writes its decision down and Layer 6 reads it: the dependency points downward and the send has one owner, not two |
 | Reminder Unit decides based on "business relevance" | Implemented as *proportion of window burned* + the promised ladder + untouched detection | "Business relevance" needs a definition a machine can compute deterministically, or it becomes a model call |
 
 ---
@@ -297,24 +521,30 @@ accounts nobody owns — which are exactly the accounts most likely to be lost.
 
 | Capability | Status |
 |---|---|
-| Execution Object — frozen, content-addressed, replayable | ✅ Built, round-trip proven |
-| Decision Interpreter — refuses non-instructions by name | ✅ Built |
-| Execution planning — kinds, waves, owners, deadlines | ✅ Built, deterministic, no model |
+| Execution Object — frozen, content-addressed, replayable | ✅ Round-trip proven |
+| Decision Interpreter — refuses non-instructions by name | ✅ |
+| Execution planning — kinds, waves, owners, deadlines | ✅ Deterministic, no model |
 | Owner resolution owned by Layer 5 | ✅ Moved down, behaviour identical, ratchet green |
-| Channel + interrupt owned by Layer 5 | ✅ Built, reason-coded |
-| **Execution Validation (stale suppression)** | ✅ Built — runs before *every* outbound moment |
-| Reminders on business relevance | ✅ Built, fatigue-capped |
-| Escalation ladder, urgency-scaled, expiry-capped | ✅ Built, frozen at plan time |
-| Monitoring — progress, stalls, done-but-unproven | ✅ Built |
-| State machine + full audit trail | ✅ Built, one transition table shared by code and tests |
-| Outcome records for Layer 7 | ✅ Written and indexed — ⚠️ not yet read |
+| Channel + interrupt owned by Layer 5 | ✅ Reason-coded |
+| **Execution Validation (stale suppression)** | ✅ Runs before *every* outbound moment |
+| Reminders on business relevance | ✅ Fatigue-capped |
+| Escalation ladder, urgency-scaled, expiry-capped | ✅ Frozen at plan time |
+| Monitoring — progress, stalls, done-but-unproven | ✅ |
+| State machine + full audit trail | ✅ One transition table shared by code and tests |
+| Outcome records for Layer 7 | ✅ Written and indexed — ⚠️ not yet read (Layer 7's brick) |
 | Tenant-tunable via pack data (LVL2/LVL3 merge, pins, guardrails) | ✅ `sales` pack v1.8.0 |
-| **Ever executed against Postgres** | ❌ **Not once. Do this first.** |
-| Reminder message actually delivered | ⚠️ Recorded and escalated; the send needs one outbox call |
-| Card ↔ commitment link | ⚠️ Column exists, unused |
+| Orchestrator (`sweep.py`) executed end to end | ✅ 33 scenarios against an in-memory double |
+| Persistence (`execution_store.py`) executed | ✅ Idempotence, guarded races, supersede |
+| **A reminder actually reaches a human** | ✅ `deliver/executive_bridge.py` — 16 scenarios |
+| Card ↔ commitment link | ✅ Self-healing sweep, write-once |
+| Commitment API (`/v1/executive/commitments*`) | ✅ 15 scenarios incl. org scoping + credentials |
+| Runs automatically — no new cron, worker or service | ✅ In the scheduler heartbeat, before distribution |
+| **Ever executed against Postgres** | ❌ **Not once. Step 1 + Step 3 of the runbook close this.** |
 
-**Layer 5 is feature-complete.** Nothing is half-built. What remains is proving it against a
-real database and connecting two wires to Layer 6.
+**Layer 5 is feature-complete, connected and scheduled.** Every unit, the orchestrator, the
+persistence, the Layer 6 wire and the API surface are executed by tests. Nothing is half-built and
+nothing is planned-but-missing. Deploy the branch and run the migration; it starts itself. What
+remains is proving the SQL against a real database — Part 5, Steps 1 and 3.
 
 ---
 
@@ -340,7 +570,14 @@ once at creation, and why an observed event only counts if it happened *after* t
 was made. Trust is lost far faster than it is earned, and one wrong nudge poisons every correct
 one that follows.
 
-**Where to spend a junior engineer's first week:**
-Part 5, items 1 and 2 — migration against a real database, then the sweep on a scheduler. That
-converts the entire layer from "written and proven" to "running", and everything else on the
-list is a wire, not a build.
+**The first hour after go-live:**
+Run the migration, hit `POST /v1/executive/sweep` once for a real tenant, then
+`GET /v1/executive/commitments`. If commitments appear with owners and deadlines, the layer is
+alive. Run the sweep a second time: `planned.created` should be `0`. That is idempotence, and it
+is the property that makes it safe to put on a timer.
+
+**What is genuinely left:**
+One job — Part 5, item 1. Every unit, the orchestrator, the persistence, the Layer 6 wire and the
+API surface are executed by tests; 156 of them belong to this layer. What no test can do is
+prove that the SQL Postgres actually runs means what the tests assume it means. That is an
+afternoon with a database, and it is the last thing standing between "proven" and "running".

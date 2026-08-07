@@ -96,6 +96,21 @@ def band_of(priority_bp: int, cfg: Mapping[str, Any] | None = None) -> str:
 _BAND_RANK: Mapping[str, int] = {"standard": 0, "high": 1, "critical": 2}
 
 
+def may_interrupt(band: str, confidence_bp: int, cfg: Mapping[str, Any] | None = None) -> bool:
+    """Is this loud enough *and* certain enough to be allowed to buzz a phone?
+
+    Extracted so the card path can ask the same question.  Layer 6 pushes high/critical cards to
+    chat without ever building a ``CommunicationPlan``, and it still has to mark each one with
+    whether it may break through quiet hours.  Deriving that over there would put a second copy
+    of ``interrupt_band`` and ``interrupt_min_confidence_bp`` below the real ones — and the
+    failure mode of two copies is not that they both exist, it is that a tenant turns the noise
+    down in one place and the phone keeps ringing from the other.
+    """
+    settings = _config(cfg)
+    return (_BAND_RANK.get(str(band), 0) >= _BAND_RANK[str(settings["interrupt_band"])]
+            and int(confidence_bp) >= int(settings["interrupt_min_confidence_bp"]))
+
+
 def plan_communication(context: ExecutionContext, assignment: Assignment, *,
                        available_channels: frozenset[str] | set[str] | None = None,
                        autonomous: bool = False,
@@ -134,8 +149,7 @@ def plan_communication(context: ExecutionContext, assignment: Assignment, *,
 
     # 3. Loud enough to interrupt — but only if the reasoner is actually sure. A high score with
     #    low confidence is a hypothesis, and hypotheses do not get to buzz someone's phone.
-    if (chat and band_rank >= _BAND_RANK[str(settings["interrupt_band"])]
-            and context.confidence_bp >= int(settings["interrupt_min_confidence_bp"])):
+    if chat and may_interrupt(band, context.confidence_bp, settings):
         return CommunicationPlan(
             audience=assignment.audience, channel_class=ChannelClass.CHAT, channel_id=chat,
             interrupt=True, tone=tone, format_kind="card",
@@ -187,5 +201,5 @@ def reassign(plan: CommunicationPlan, assignment: Assignment, *,
 
 
 __all__ = ["AGENT_CHANNEL", "CHAT_CHANNELS", "COMMUNICATION_VERSION", "DEFAULTS",
-           "DIGEST_CHANNEL", "IN_APP_CHANNEL", "band_of", "plan_communication",
-           "projected_score", "reassign"]
+           "DIGEST_CHANNEL", "IN_APP_CHANNEL", "band_of", "may_interrupt",
+           "plan_communication", "projected_score", "reassign"]

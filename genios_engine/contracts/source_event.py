@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from genios_engine.contracts.visibility import Visibility
+
 
 class SyncMode(str, Enum):
     backfill = "backfill"
@@ -54,4 +56,12 @@ class SourceEvent(BaseModel):
     # to L2 — provenance is L1's to know, so L2 honours this instead of guessing from the
     # source name. See capture.internal_knowledge for why canon sits above rank 3.
     internal_kind: str | None = None
-    schema_version: int = 3                 # v3: + internal_kind (additive only)
+    # Who could see the ORIGINAL. Carried from the source ACL so no layer above can
+    # deliver a derived insight to someone the evidence itself excluded. Defaults to
+    # org-wide, which is the tenant boundary this row already sits inside.
+    visibility: Visibility = Field(default_factory=Visibility)
+    # When this signal stops being current (None = never, e.g. company canon), and where
+    # it sits in its life. L1 only ever writes `new` and `expired` — see capture.lifecycle.
+    expires_at: datetime | None = None
+    signal_state: str = "new"
+    schema_version: int = 4                 # v4: + visibility, expires_at, signal_state

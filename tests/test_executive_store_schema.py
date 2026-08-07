@@ -21,6 +21,7 @@ import pytest
 
 from genios_engine.api import executive_routes
 from genios_engine.contracts.execution import ExecutionState
+from genios_engine.deliver import executive_bridge
 from genios_engine.executive import execution_store, sweep
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,7 @@ MIGRATIONS = ROOT / "migrations"
 STORE = ROOT / "genios_engine" / "executive" / "execution_store.py"
 ROUTES = ROOT / "genios_engine" / "api" / "executive_routes.py"
 SWEEP = ROOT / "genios_engine" / "executive" / "sweep.py"
+BRIDGE = ROOT / "genios_engine" / "deliver" / "executive_bridge.py"
 
 _CONSTRAINT_PREFIXES = ("primary", "unique", "foreign", "check", "constraint", "exclude")
 
@@ -101,7 +103,8 @@ def _statements(path: Path, module) -> list[str]:
 
 
 SCHEMA = _schema()
-SOURCES = [(STORE, execution_store), (ROUTES, executive_routes), (SWEEP, sweep)]
+SOURCES = [(STORE, execution_store), (ROUTES, executive_routes), (SWEEP, sweep),
+           (BRIDGE, executive_bridge)]
 L5_TABLES = ("executions", "execution_actions", "execution_escalations", "execution_events",
              "execution_outcomes")
 

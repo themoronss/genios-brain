@@ -11,6 +11,7 @@ from genios_engine.capture.gate.gate import run_gate
 from genios_engine.capture.gate.relevance import RelevanceClassifier
 from genios_engine.capture.documents.store import DocumentJobStore
 from genios_engine.capture.landing.normalize import to_source_event
+from genios_engine.capture.lifecycle import NEW, expires_at_for
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.payload_store import RawPayloadStore
 from genios_engine.capture.preprocess.preprocess import preprocess
@@ -99,6 +100,11 @@ def _build_gated_event(event: SourceEvent, prepared: PreparedContent | None,
         linkage_hints=links,
         triage_lane=lane,
         internal_kind=event.internal_kind,
+        # The audience and the shelf life travel WITH the signal. L2 stores them on the
+        # facts it extracts; L5/L6 read them before choosing a recipient or a channel.
+        visibility=event.visibility,
+        expires_at=event.expires_at,
+        signal_state=event.signal_state,
         versions={
             "preprocessor": prepared.preprocessor_version if prepared else None,
             "gate_rules": "gate-1",
@@ -185,6 +191,12 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
         text = prepared.clean_text if prepared else None
         hints = domain_hints(event.source, text)
         links = _linkage_hints(event)
+        # Shelf life, computed from the object's own dates where it has them (a meeting
+        # expires when it ends) and a family default otherwise. Company canon gets None.
+        # Read from raw.raw, not the mapped fields: the structured mapping runs after the
+        # gate, and the connector already put `start`/`end` on the raw dict.
+        event.expires_at = expires_at_for(event, structured_fields, raw.raw)
+        event.signal_state = NEW
     if gate.action not in ("drop", "park"):
         lane = triage_lane(ctx, prepared)
         trace.record("triage", "pass", lane=lane)

@@ -18,6 +18,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.capture.chunking import chunk_text
 from genios_engine.capture.internal_knowledge import (authority_rank_for, is_canon,
                                                       normalize_kind)
 from genios_engine.platform.auth import get_current_org
@@ -74,10 +75,7 @@ def _extract_text(name: str, data: bytes) -> str:
 
 
 def _chunk(text_content: str) -> list[str]:
-    t = (text_content or "").strip()
-    if not t:
-        return []
-    return [t[i:i + CHUNK_CHARS] for i in range(0, len(t), CHUNK_CHARS)][:MAX_CHUNKS]
+    return [chunk.text for chunk in chunk_text(text_content, max_chars=CHUNK_CHARS)][:MAX_CHUNKS]
 
 
 def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,

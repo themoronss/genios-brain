@@ -53,7 +53,7 @@ from genios_engine.executive.lifecycle import (
     transition,
 )
 from genios_engine.executive.monitor import observe
-from genios_engine.executive.reminder import decide_reminder
+from genios_engine.executive.reminder import decide_reminder, reminder_facts
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SIGNAL_JOINS,
@@ -396,10 +396,15 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
                                  target_seat=target_seat.seat_id, reason_code=rung.reason_code):
             fired = 1
 
+    # The grounded corpus travels with the event. Layer 6's bridge words the message from
+    # exactly these values and nothing else, which is what keeps the invention guarantee intact
+    # across the layer boundary — the transport cannot introduce a number the commitment does
+    # not already contain.
     store.record_reminder(conn, org_id=org_id, execution_id=execution.execution_id, at=now,
                           reason_code=decision.reason_code,
                           next_check_at=decision.next_check_at, urgency=decision.urgency,
-                          escalation_day=decision.escalation_day)
+                          escalation_day=decision.escalation_day,
+                          facts=reminder_facts(execution, decision, now))
     return _Step(f"reminded_{decision.reason_code}", reminded=1, escalated=fired,
                  transitioned=transitions)
 

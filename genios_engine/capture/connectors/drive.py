@@ -46,7 +46,13 @@ class ComposioDriveConnector:
         self._ocr = ocr                  # OcrEngine | None — native-only if None
 
     def _list(self, *, limit: int, page_token: str | None) -> dict:
+        # `fields` asks Drive for the sharing state alongside the metadata. Without it the
+        # list rows carry no ACL at all and every file would land as org-wide — including
+        # the ones only two people can open. One request, no extra round-trip.
         args: dict[str, Any] = {"pageSize": limit,
+                                "fields": "nextPageToken, files(id, name, mimeType, modifiedTime, "
+                                          "lastModifyingUser(emailAddress), shared, "
+                                          "permissions(type, emailAddress, role), owners(emailAddress))",
                                 "q": "trashed = false and mimeType != 'application/vnd.google-apps.folder'"}
         if page_token:
             args["pageToken"] = page_token
@@ -70,6 +76,9 @@ class ComposioDriveConnector:
             actor_email=((f.get("lastModifyingUser") or {}).get("emailAddress")),
             actor_type="internal_user",
             raw={"subject": name, "body": r.text, "mime": mime, "has_attachment": bool(r.text),
+                 # read by capture.visibility: anyone → public, domain → org,
+                 # a named list → participants, shared=false → private to the owner
+                 "permissions": f.get("permissions"), "shared": f.get("shared"),
                  "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
                               "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,
                               "avg_confidence": r.avg_confidence, "status": r.status}},

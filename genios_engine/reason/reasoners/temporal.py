@@ -49,10 +49,15 @@ class TemporalReasoner:
         fields = (engagement_field,) + (() if timestamp_missing else (timestamp_field,))
         ev = evidence_ids(request, *fields)
         adjustments = []
-        for play_id, config in dict(spec.config.get("play_adjustments") or {}).items():
+        # Sorted, not insertion-ordered.  Adjustment order is inside this result's semantic hash,
+        # and the manifest makes a round trip through JSON on its way to the audit store — which
+        # re-sorts object keys.  Iterating in whatever order the mapping arrived in would make a
+        # replayed run hash differently from the original while the request hash stayed identical,
+        # reporting every persisted run as non-reproducible.
+        for play_id, config in sorted(dict(spec.config.get("play_adjustments") or {}).items()):
             if not isinstance(config, Mapping):
                 continue
-            for component, delta in config.items():
+            for component, delta in sorted(config.items()):
                 adjustments.append(CandidateAdjustment(
                     play_id=str(play_id), component=str(component),
                     delta_bp=integer(delta, f"play_adjustments.{play_id}.{component}"),
