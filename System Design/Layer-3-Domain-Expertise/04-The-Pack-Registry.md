@@ -42,7 +42,7 @@ every apply, so downstream can tell that the tenant's authority moved.
 
 #### `write_lvl3_offset(...)` — the ONE calibration write path
 
-This is the **only** door Layer 7 has into Layer 3, and it is a single atomic statement with
+This is the **only** door Layer 6 Learning has into Layer 3, and it is a single atomic statement with
 the pin guard in the `WHERE`:
 
 ```sql
@@ -61,7 +61,7 @@ update tenant_packs
 > tenant config*, not just double-stepping one nudge.
 
 Returns `False` when the row does not exist **or** the path is pinned. Bounding the offset
-value is the caller's responsibility (Layer 7 bounds it).
+value is the caller's responsibility (Layer 6 Learning bounds it).
 
 #### `effective(org, pack)` — the assembly line
 

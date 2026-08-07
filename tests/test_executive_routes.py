@@ -8,7 +8,7 @@ Three things are asserted beyond the happy path, because they are the ones that 
 
   * **Org scoping.** A caller can only ever see and change their own commitments.
   * **Dismissal is written as an event, not as a direct state change.** Every termination flows
-    through the guard on the next sweep, so the dismissal is still captured for Layer 7 even if
+    through the guard on the next sweep, so the dismissal is still captured for Layer 6 Learning even if
     it races with a completion.
   * **Reassignment refuses an unknown seat** rather than pointing a live commitment at nobody.
 """

@@ -1,5 +1,5 @@
 """Decision Brief — deterministic composition, Law 08 honesty, and THE BOUNDARY:
-a brief never carries who/when/channel (that's Layer 6)."""
+a brief never carries who/when/channel (that's Layer 5.2)."""
 from __future__ import annotations
 
 import ast
@@ -78,7 +78,7 @@ def test_pack_template_words_win():
 def test_boundary_no_owner_channel_or_schedule_fields():
     b = _brief()
     forbidden = {"assignee", "owner", "channel", "notify_at", "push", "delegate_to", "tool"}
-    assert not (forbidden & set(b)), "who/when/where belongs to Layer 6, never the brief"
+    assert not (forbidden & set(b)), "who/when/where belongs to Layer 5.2, never the brief"
 
 
 def test_executive_never_imports_deliver():

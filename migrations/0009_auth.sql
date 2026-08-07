@@ -34,7 +34,7 @@ create table if not exists api_keys (
 );
 create index if not exists api_keys_by_org on api_keys (org_id);
 
--- L7 kill-switch + feature flags (Redis-cached, checked per request, fail-open).
+-- Cross-cutting governance kill-switch + feature flags (Redis-cached, checked per request, fail-open).
 create table if not exists feature_flags (
     key        text primary key,
     enabled    boolean not null default true,

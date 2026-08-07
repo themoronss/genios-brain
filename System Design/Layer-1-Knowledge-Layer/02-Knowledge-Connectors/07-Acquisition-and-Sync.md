@@ -268,7 +268,7 @@ same review surface as every gate decision. And parking rather than dropping is 
 stated on the contract itself:
 
 > Parked ≠ deleted. An uncertain/unsupported event, reviewable with its reason,
-> stage, and trace. Recover re-injects it; retention is L7 policy, not hidden delete.
+> stage, and trace. Recover re-injects it; retention is governance policy, not hidden delete.
 > — [contracts/parked.py](../../../genios_engine/contracts/parked.py)
 
 Note the `continue`: a quarantined object does **not** advance the watermark. It cannot — the

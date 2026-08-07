@@ -1,4 +1,4 @@
-"""The import-direction ratchet. A package may import same-or-lower layers only.
+"""The import-direction ratchet. A package may import same-or-lower import ranks only.
 
 This is what converts "please don't hardcode sales in L2" and "context must not read
 expertise" from code-review opinions into build failures. It is installed while the
@@ -11,7 +11,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from genios_engine.LAYERS import CROSS_CUTTING, LAYERS
+from genios_engine.LAYERS import CROSS_CUTTING, LAYERS, PRODUCT_LAYERS
 
 _ROOT = Path(__file__).resolve().parents[1] / "genios_engine"
 
@@ -37,15 +37,15 @@ def _imports_of(py: Path) -> set[str]:
 
 def test_import_direction():
     violations: list[str] = []
-    for pkg, layer in LAYERS.items():
+    for pkg, rank in LAYERS.items():
         for py in (_ROOT / pkg).rglob("*.py"):
             for imported in _imports_of(py):
                 if imported in CROSS_CUTTING or imported not in LAYERS:
                     continue                           # platform/contracts/api: exempt
-                if LAYERS[imported] > layer:
+                if LAYERS[imported] > rank:
                     violations.append(
-                        f"{py.relative_to(_ROOT.parent)} (layer {layer}) imports "
-                        f"genios_engine.{imported} (layer {LAYERS[imported]}) — upward")
+                        f"{py.relative_to(_ROOT.parent)} (import rank {rank}) imports "
+                        f"genios_engine.{imported} (import rank {LAYERS[imported]}) — upward")
     assert not violations, "\n".join(violations)
 
 
@@ -59,6 +59,20 @@ def test_contracts_import_nothing_above_platform():
     assert not bad, "\n".join(bad)
 
 
-def test_every_layer_package_exists():
+def test_every_ranked_package_exists():
     for pkg in LAYERS:
-        assert (_ROOT / pkg / "__init__.py").exists(), f"declared layer package missing: {pkg}"
+        assert (_ROOT / pkg / "__init__.py").exists(), f"ranked package missing: {pkg}"
+
+
+def test_product_layer_identity_has_delivery_5_2_and_learning_6():
+    """Product architecture ends at Learning Layer 6; rank 7 is import order only."""
+    assert PRODUCT_LAYERS == {
+        "capture": "1",
+        "context": "2",
+        "packs": "3",
+        "reason": "4",
+        "executive": "5",
+        "deliver": "5.2",
+        "feedback": "6",
+    }
+    assert "7" not in PRODUCT_LAYERS.values()

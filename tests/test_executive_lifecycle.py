@@ -417,7 +417,7 @@ def test_a_terminal_verdict_moves_the_commitment_even_from_blocked():
     assert next_state(ExecutionState.BLOCKED, verdict) is ExecutionState.COMPLETED
 
 
-# --- what layer 7 gets ----------------------------------------------------------------------
+# --- what Layer 6 Learning gets ----------------------------------------------------------------------
 
 @pytest.mark.parametrize("state,reason,events,completions,label", [
     (ExecutionState.COMPLETED, "outcome_observed", {"prospect_reply": 1}, 3, LABEL_SUCCEEDED),

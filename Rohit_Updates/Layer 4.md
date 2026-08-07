@@ -381,8 +381,8 @@ Said plainly, because the test count is misleading on its own.
   default and no capability sets it, so nothing shipped is affected — but it is not usable until
   the store learns about pruning. Documented in
   `System Design/Layer-4-Reasoning-Engine/01-Orchestrator.md`.
-- **The thresholds are guesses.** They cannot be tuned until decisions ship and L6 sees outcomes —
-  and L6 cannot see outcomes until decisions ship. Step 1 breaks that circle by producing shadow
+- **The thresholds are guesses.** They cannot be tuned until decisions ship and Layer 6 Learning sees outcomes —
+  and Layer 6 Learning cannot see outcomes until decisions ship. Step 1 breaks that circle by producing shadow
   decisions with real inputs.
 - **The native delivery adapter does not exist.** This is the largest remaining build item and it is
   the one that touches the authority SQL.

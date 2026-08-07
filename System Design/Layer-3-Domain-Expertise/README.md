@@ -45,7 +45,7 @@ flowchart TD
 |---|---|
 | **Package** | `genios_engine/packs/` |
 | **Layer number** | 3 — `genios_engine/LAYERS.py` |
-| **Reads from** | admin overrides (LVL2) · learned nudges from Layer 7 (LVL3) |
+| **Reads from** | admin overrides (LVL2) · learned nudges from Layer 6 Learning (LVL3) |
 | **Hands to** | an **effective config** + its snapshot id → Layer 4 |
 | **May import** | `contracts/` · `platform/` |
 | **LLM calls** | Zero |

@@ -2,7 +2,7 @@
 
 **Last updated:** 7 August 2026
 **Branch:** `antler-inception`
-**Tests:** **195 focused Layer 5 tests**; full repository suite **1795 passed**.
+**Tests:** **195 focused Layer 5 tests**; full repository suite **1796 passed**.
 **Status:** Atlas core implemented, wired to Layer 5.2 and Atlas Layer 6 learning, scheduled.
 **For the CTO:** Part 5 is a runbook. Two commands: migrate, deploy. It self-starts from there.
 
@@ -32,7 +32,7 @@ and a date attached.
 > the foundation, but the Atlas reconciliation added runtime Execution Coordination, owner-only
 > live-state transitions, dependency-gated action completion, blocked escalation, resolved
 > escalation recipients, and a clean queued-vs-delivered audit split. The earlier statement that
-> Layer 7 did not read `execution_outcomes` is now obsolete: Atlas Layer 6 learning consumes them.
+> Layer 6 Learning did not read `execution_outcomes` is now obsolete: Atlas Layer 6 learning consumes them.
 > The System Design folder is the component-level current authority.
 
 ---
@@ -63,12 +63,12 @@ The entire *operational* half. Not partially built — **absent**:
 | Missing | Consequence |
 |---|---|
 | An **Execution Object** — the plan itself | A card said "follow up with Acme". Nothing recorded what the steps were, who owned them, or by when |
-| **Owner resolution as Layer 5's job** | Ownership lived in `deliver/router.py`, so Layer 6 was the authority on whose problem something was |
+| **Owner resolution as Layer 5's job** | Ownership lived in `deliver/router.py`, so Layer 5.2 was the authority on whose problem something was |
 | **Reminders** | Zero. A card sat until it expired. Nothing ever said "this is still open and it's day 9" |
 | **Escalation** | Zero. Nothing ever reached a manager |
 | **Monitoring** | Nothing checked whether the recommended thing actually happened |
 | **Execution state** | A card had states. A *commitment* had none — no running / waiting / blocked / completed |
-| **Outcome truth for learning** | Layer 7 learned only from button clicks: whether a card *looked* right, never whether acting on it *worked* |
+| **Outcome truth for learning** | Layer 6 Learning learned only from button clicks: whether a card *looked* right, never whether acting on it *worked* |
 
 Grep confirmed it: `reminder`, `escalation`, `execution object`, `execution state` appeared
 nowhere in the codebase before this work.
@@ -90,8 +90,8 @@ is the better reading:
 
 **How it was done without breaking the topology ratchet:** the authority moved *down* into
 `executive/assignment.py` and `executive/communication.py`. `deliver/router.py` is now a thin
-delegation upward-in-time, downward-in-layers. Layer 6 may import Layer 5; Layer 5 may never
-import Layer 6. `tests/test_layer_topology.py` still passes, and `executive/validate.py`
+delegation upward-in-time, downward in import rank. Layer 5.2 may import Layer 5; Layer 5 may never
+import Layer 5.2. `tests/test_layer_topology.py` still passes, and `executive/validate.py`
 already documented exactly this pattern.
 
 **Behaviour is byte-identical.** Same three ordered rules, same reason codes. Moving code and
@@ -129,7 +129,7 @@ in the spec is built; the unnumbered rows are the machinery the spec implies but
 | — Surface | `api/executive_routes.py` | `/v1/executive/commitments*`, `/sweep` |
 
 Unit 5 is the one row that lives in `deliver/`. That is deliberate and explained in Part 7:
-Layer 5 *authors* the message and decides it should be sent; Layer 6 owns the transport.
+Layer 5 *authors* the message and decides it should be sent; Layer 5.2 owns the transport.
 
 ### The five decisions that matter most
 
@@ -183,7 +183,7 @@ four reminders the unit stops asking and hands over to escalation, because a fif
 nudge does not produce action, it produces a filter rule.
 
 **5. The wire respects Layer 5's judgement, and adds nothing to it.**
-Layer 5 cannot import Layer 6, so it cannot send anything itself. What it can do is write its
+Layer 5 cannot import Layer 5.2, so it cannot send anything itself. What it can do is write its
 decision down — and it does: the reminder event carries the routing plan on the parent commitment
 and the *grounded fact corpus* in its own `detail`. `deliver/executive_bridge.py` reads that and
 turns it into a message.
@@ -191,7 +191,7 @@ turns it into a message.
 The division comes out exactly right:
 
 > Layer 5 decides **whether to speak, to whom, through which channel, and what may be said.**
-> Layer 6 decides **how it looks and gets it there, with retries.**
+> Layer 5.2 decides **how it looks and gets it there, with retries.**
 
 Three properties make it safe to send. A commitment Layer 5 planned for the digest is **not**
 pushed — respecting that is the whole reason Layer 5 was given the channel decision. The bridge
@@ -299,7 +299,7 @@ mid-write is what failed those 70 tests, and the growing file count is what move
 
 Both workstreams are green together and no file was touched by both. But flagging it plainly:
 **concurrent sessions on one working tree is a real hazard**. The final reconciled snapshot is
-1795 repository tests, and Layer 5's focused collection is 195 independently runnable tests:
+1796 repository tests, and Layer 5's focused collection is 195 independently runnable tests:
 
 ```
 .venv/bin/pytest --collect-only -q tests/test_executive*.py
@@ -523,7 +523,7 @@ trusting the queue.
 
 **4. No reopening a terminal commitment.**
 Terminal states go only to `archived`. If the world changes again, that is a *new* decision
-producing a *new* commitment. Reopening would silently rewrite the outcome Layer 7 already
+producing a *new* commitment. Reopening would silently rewrite the outcome Layer 6 Learning already
 learned from. `expired → running` was removed during Atlas reconciliation for exactly this reason;
 renewed work must come from fresh authority and a new commitment.
 
@@ -538,9 +538,9 @@ accounts nobody owns — which are exactly the accounts most likely to be lost.
 
 | Spec says | We did | Why |
 |---|---|---|
-| Layer 5 owns Owner Planner + Channel Selector; Layer 5.2 splits Delivery out | Layer 5 **authors** the communication plan; Layer 6 **executes** it | The spec contradicts itself. Interruption is part of the commitment; adapters, retries and copy are transport |
+| Layer 5 owns Owner Planner + Channel Selector; Layer 5.2 splits Delivery out | Layer 5 **authors** the communication plan; Layer 5.2 **executes** it | The spec contradicts itself. Interruption is part of the commitment; adapters, retries and copy are transport |
 | "Layer 5 returns exactly one thing: an Execution Object" | Kept exactly — but the object is **immutable**, and state lives in a row that points at it | An object that mutates cannot answer "why did this escalate on day 7?" after the pack is retuned |
-| A Delivery Unit inside Layer 5 | Built as `deliver/executive_bridge.py` — Layer 5 authors the message and decides it should be sent; Layer 6 carries it, with retries | Layer 5 cannot import Layer 6 without breaking the topology ratchet. So Layer 5 writes its decision down and Layer 6 reads it: the dependency points downward and the send has one owner, not two |
+| A Delivery Unit inside Layer 5 | Built as `deliver/executive_bridge.py` — Layer 5 authors the message and decides it should be sent; Layer 5.2 carries it, with retries | Layer 5 cannot import Layer 5.2 without breaking the topology ratchet. So Layer 5 writes its decision down and Layer 5.2 reads it: the dependency points downward and the send has one owner, not two |
 | Reminder Unit decides based on "business relevance" | Implemented as *proportion of window burned* + the promised ladder + untouched detection | "Business relevance" needs a definition a machine can compute deterministically, or it becomes a model call |
 
 ---

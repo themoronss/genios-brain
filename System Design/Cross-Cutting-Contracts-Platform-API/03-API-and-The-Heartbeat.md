@@ -19,7 +19,7 @@
 | `expertise_routes.py` · `usermodel_routes.py` · `policy_routes.py` | Layer 3's four brains |
 | `intelligence_routes.py` | Layer 4's query + explain surface |
 | `executive_routes.py` | Layer 5's commitments |
-| `channel_routes.py` · `delivery_routes.py` · `approval_routes.py` | Layer 6 |
+| `channel_routes.py` · `delivery_routes.py` · `approval_routes.py` | Layer 5.2 |
 | `agent_mgmt_routes.py` · `audit_routes.py` | agents and the audit read side |
 
 ### 5.2 · `run_maintenance_sweep` — the one place the whole system runs
@@ -33,8 +33,8 @@ flowchart LR
     S1 --> S2["card lifecycle<br/>expire · snooze-wake · claim release"]
     S2 --> S3["retention purge<br/>raw 30d · prepared 180d · L4 payloads"]
     S3 --> S4["**L5 executive sweep**<br/>plan + lifecycle"]
-    S4 --> S5["**L6 distribution**<br/>enqueue + gate + drain"]
-    S5 --> S6["L7 calibration<br/>*weekly*"]
+    S4 --> S5["**Layer 5.2 delivery**<br/>enqueue + gate + drain"]
+    S5 --> S6["Layer 6 calibration<br/>*weekly*"]
     S6 --> S7["L2 graph maintenance<br/>lifecycle + health"]
 ```
 

@@ -99,7 +99,7 @@ class FakeDB:
         self.nodes: dict[str, dict] = {}            # node_id -> attrs
         self.plannable: list[dict] = []             # rows the authority query would return
         self.authority_ok: bool = True
-        # Layer 6's tables, so the executive→delivery bridge can be exercised end to end.
+        # Layer 5.2's tables, so the executive→delivery bridge can be exercised end to end.
         self.delivery_outbox: list[dict] = []
         self.cards: list[dict] = []                 # {card_id, signal_id}
         # Everything that ran, for order-of-writes assertions.
@@ -141,7 +141,7 @@ class FakeDB:
         # Ordered most-specific first: "select 1 from org_seats" must not be caught by the
         # broader org_seats route, and the manager join must not be caught by either.
         return (
-            # The Layer 6 bridge. Matched first because these join across both layers' tables
+            # The Layer 5.2 bridge. Matched first because these join across both layers' tables
             # and would otherwise be caught by the single-table routes below.
             ("from execution_events e join executions x", self._notifiable_events),
             ("from executions x join cards k", self._linkable_commitments),

@@ -285,7 +285,7 @@ flowchart LR
     CAP --> ORC["the SAME orchestrator"]
     ORC --> DM["the SAME decision maker"]
     DM --> AU["the SAME audit store<br/>+ authority predicate"]
-    AU --> SIG["**legacy**: signals rows → L5/L6"]
+    AU --> SIG["**legacy**: signals rows → Layer 5/5.2"]
     AU --> SH["**native**: suppression row only<br/>(no delivery adapter yet)"]
 ```
 
@@ -353,7 +353,7 @@ Said plainly, because the test count is misleading on its own.
   has never reasoned about an actual customer's deal.
 - **Twelve of the seventeen units have zero production callers** outside the reasoners package.
 - **The thresholds are guesses.** They were authored from domain reasoning, not fitted to data.
-  They cannot be tuned until decisions ship and Layer 7 sees outcomes — **and Layer 7 cannot see
+  They cannot be tuned until decisions ship and Layer 6 Learning sees outcomes — **and Layer 6 Learning cannot see
   outcomes until decisions ship.** Shadow mode on real inputs breaks that circle.
 - **The native delivery adapter does not exist.** The largest remaining build item, and the one
   that touches the authority SQL.

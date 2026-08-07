@@ -9,6 +9,7 @@
 | LearningObject | `05-Contracts-and-Operations/01-LearningObject-Contract/` | `contracts/learning.py` |
 | Storage/API/tests | `05-Contracts-and-Operations/` | migration 0045, learning routes/tests |
 
-The Atlas calls this Layer 6; the codebase calls the package Layer 7. No Expert publisher exists.
+The Atlas and product architecture call this Layer 6. The package's internal import rank is 7;
+that rank is not a product layer. No Expert publisher exists.
 The Atlas's three dynamic brains are publication targets, not permission for silent runtime
 mutation; consumer seams remain explicitly partial.

@@ -325,8 +325,8 @@ def record_reminder(conn, *, org_id: str, execution_id: str, at: datetime, reaso
 
     ``facts`` is the grounded corpus from ``reminder.reminder_facts``: every value a reminder is
     permitted to be worded from, all of it derived from the commitment itself.  Storing it on the
-    event is what makes the Layer 6 bridge possible without inverting the layer order — Layer 5
-    says *what may be said*, Layer 6 decides *how it looks on Slack*, and Layer 6 never has to
+    event is what makes the Layer 5.2 bridge possible without inverting the import order — Layer 5
+    says *what may be said*, Layer 5.2 decides *how it looks on Slack*, and Layer 5.2 never has to
     reach back into Layer 5's logic to find out what is true.
 
     Returns the event id so the caller can address this exact reminder downstream.
@@ -344,7 +344,7 @@ def record_reminder(conn, *, org_id: str, execution_id: str, at: datetime, reaso
 
 
 def link_card(conn, *, org_id: str, execution_id: str, card_id: str) -> bool:
-    """Point a commitment at the Layer 6 card that surfaces it.
+    """Point a commitment at the Layer 5.2 card that surfaces it.
 
     Guarded on ``card_id is null`` so the link is written once and a later re-render cannot
     silently repoint a commitment at a different card — the audit trail would then describe a
@@ -478,7 +478,7 @@ def supersede(conn, *, org_id: str, execution_id: str, by_execution_id: str,
 
 
 def record_outcome(conn, outcome: ExecutionOutcome) -> bool:
-    """Write the L7 feed row.  Once per commitment — a second would double-count it in every
+    """Write the Layer 6 Learning feed row. Once per commitment—a second would double-count it in every
     precision calculation the calibrator runs."""
     result = conn.execute(text(
         "insert into execution_outcomes (outcome_id, org_id, execution_id, decision_hash, "

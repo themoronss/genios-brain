@@ -1,4 +1,4 @@
-# Atlas Layer 6 overview
+# Layer 6 overview
 
 Learning accepts explicit feedback, execution outcomes, delivery performance and normalized
 enterprise events. Pure units propose immutable `LearningObject` values. Validation and tenant

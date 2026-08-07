@@ -20,7 +20,7 @@ Terminal states are terminal.  ``COMPLETED``, ``CANCELLED`` and ``EXPIRED`` go o
 ``ARCHIVED``; there is
 no reopening.  If the world changes again, that is a *new* decision producing a *new*
 commitment, which is both honest and necessary — reopening would silently rewrite the outcome
-Layer 7 already learned from.
+Layer 6 Learning already learned from.
 """
 
 from __future__ import annotations

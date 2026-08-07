@@ -1,4 +1,4 @@
-# Atlas Layer 5.2 overview
+# Layer 5.2 overview
 
 Layer 5.2 spends human and machine attention. It resolves current context, applies policy and
 timing, selects a registered destination, transports through a typed adapter, and records the

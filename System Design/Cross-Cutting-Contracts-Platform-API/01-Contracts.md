@@ -27,8 +27,8 @@ So it lives in neither. **A contract is the only thing both sides may depend on.
 | `connection.py` | per-org source identity | [Layer 1](../Layer-1-Knowledge-Layer/00-Overview.md) |
 | `events.py` | human + agent events | [Layer 1](../Layer-1-Knowledge-Layer/00-Overview.md) |
 | `reasoning.py` | L3 → L4 → L5 (22 types) | [Layer 4 · 01](../Layer-4-Reasoning-Engine/_reference/Contracts-and-Dataflow.md) |
-| `execution.py` | L5 → L6 (the Execution Object) | [Layer 5](../Layer-5-Executive-Engine/00-Overview.md) |
-| `delivery.py` | the admission contract | [Layer 6](../Layer-6-Intelligence-Distribution/00-Overview.md) |
+| `execution.py` | L5 → L5.2 (the Execution Object) | [Layer 5](../Layer-5-Executive-Engine/00-Overview.md) |
+| `delivery.py` | the admission contract | [Layer 5.2](../Layer-5.2-Delivery-Engine/00-Overview.md) |
 | `validators.py` | shared field guards | below |
 
 ### 3.3 · `validators.py` — one definition of "valid"

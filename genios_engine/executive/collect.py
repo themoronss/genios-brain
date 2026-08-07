@@ -1,6 +1,6 @@
 """Layer 5 · Unit 9 — the Feedback Collection Unit.
 
-Layer 7 currently learns from one source: what a human clicked on a card.  That is a good
+Layer 6 Learning currently learns from one source: what a human clicked on a card.  That is a good
 signal and a narrow one — it measures whether a recommendation *looked* right at the moment it
 arrived, which is not the same as whether acting on it worked.  A card everybody clicks and
 nobody ever completes is, by the click metric, a triumph.
@@ -11,7 +11,7 @@ along the way, and whether the world produced the evidence the play declared as 
 record is the honest unit of learning, and it is something only this layer can produce, because
 only this layer watched the commitment for its whole life.
 
-Direction of travel matters.  Layer 5 **emits**; Layer 7 **reads**.  Nothing here imports
+Direction of travel matters.  Layer 5 **emits**; Layer 6 Learning **reads**.  Nothing here imports
 ``feedback`` — a lower layer importing a higher one is exactly what the topology ratchet exists
 to prevent, and it would also invert the dependency in the one place where the consumer should
 be free to change its mind about what it wants to learn.
@@ -63,7 +63,7 @@ _CANCEL_BY_WORLD = frozenset({"subject_closed", "subject_missing", "superseded"}
 
 @dataclass(frozen=True, slots=True)
 class ExecutionOutcome:
-    """The record Layer 7 learns from.  One per closed commitment, immutable, hashable.
+    """The record Layer 6 Learning learns from.  One per closed commitment, immutable, hashable.
 
     Deliberately flat and self-contained.  A learner that has to join back to five tables to
     interpret a row will eventually interpret it wrong; everything needed to attribute this

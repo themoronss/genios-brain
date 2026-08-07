@@ -58,7 +58,7 @@ DEFAULTS: Mapping[str, Any] = {
 }
 
 
-#: Framing for Layer 6's copy step, escalating with how much of the window has burned. Plain
+#: Framing for Layer 5.2's copy step, escalating with how much of the window has burned. Plain
 #: strings rather than an enum because this is a rendering hint packs may extend; these three
 #: are the engine's own vocabulary and the renderer falls back safely on anything else.
 GENTLE, FIRM, URGENT = "gentle", "firm", "urgent"
@@ -202,7 +202,7 @@ def reminder_facts(execution: ExecutionObject, decision: ReminderDecision,
     """The grounded fact corpus a reminder may be worded from.
 
     Every value here is derived from the commitment itself — no lookups, no inference, no
-    freshly computed business claims.  Layer 6's invention validator will refuse any rendered
+    freshly computed business claims.  Layer 5.2's invention validator will refuse any rendered
     sentence containing a number, name or date that is not in this dict, so this function is
     quite literally the vocabulary of what a reminder is allowed to say.
     """

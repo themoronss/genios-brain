@@ -101,7 +101,7 @@ def _build_gated_event(event: SourceEvent, prepared: PreparedContent | None,
         triage_lane=lane,
         internal_kind=event.internal_kind,
         # The audience and the shelf life travel WITH the signal. L2 stores them on the
-        # facts it extracts; L5/L6 read them before choosing a recipient or a channel.
+        # facts it extracts; Layer 5/Layer 5.2 read them before choosing a recipient or a channel.
         visibility=event.visibility,
         expires_at=event.expires_at,
         signal_state=event.signal_state,

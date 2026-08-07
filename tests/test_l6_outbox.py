@@ -1,5 +1,5 @@
-"""L6 outbox — retry policy is pure and bounded; delivery is state, not hope.
-And the L6-01 lock: every state the engine writes is visible in the feed."""
+"""Layer 5.2 Delivery outbox — retry policy is pure and bounded; delivery is state, not hope.
+And the delivery-state lock: every state the engine writes is visible in the feed."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -40,7 +40,7 @@ def test_digest_payload_is_regenerated_from_current_authority_at_send_time(monke
 
 
 def test_feed_shows_every_engine_written_open_state():
-    """L6-01 regression lock: the engine writes 'surfaced' on every push and 'claimed'
+    """Delivery-state regression lock: the engine writes 'surfaced' on every push and 'claimed'
     on every agent claim. The feed filter omitting them made the HIGHEST-priority cards
     invisible. If someone adds a new open state to the store, this must go red."""
     from genios_engine.api.intelligence_routes import _OPEN_STATES, _RESOLVED_STATES
@@ -50,7 +50,7 @@ def test_feed_shows_every_engine_written_open_state():
 
 
 def test_deliver_may_import_executive_but_never_the_reverse():
-    """Layer direction at the L5/L6 seam: outbox (6) reads the executive summary (5)
+    """Import direction at the Layer 5/5.2 seam: delivery (rank 6) reads executive (rank 5)
     — downward, allowed. executive/ importing deliver/ is the forbidden direction
     (covered again here beside the outbox that exercises the seam)."""
     import ast

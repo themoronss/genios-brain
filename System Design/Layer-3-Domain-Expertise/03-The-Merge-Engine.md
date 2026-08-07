@@ -14,7 +14,7 @@
 flowchart TB
     L1["**LVL1 · pack manifest**<br/>the expert baseline<br/>immutable, content-addressed"]
     L2["**LVL2 · admin overrides**<br/>tenant_packs.lvl2_config<br/>the org's own judgement"]
-    L3["**LVL3 · learned nudges**<br/>tenant_packs.lvl3_config<br/>written DOWN by Layer 7"]
+    L3["**LVL3 · learned nudges**<br/>tenant_packs.lvl3_config<br/>written DOWN by Layer 6 Learning"]
 
     L1 --> D["deep_merge(LVL1, LVL2, LVL3)"]
     L2 --> D
@@ -33,7 +33,7 @@ for path in pins:
         _set(eff, path, val)
 ```
 
-A pinned path **freezes** at the admin's (or the pack's) value. Layer 7 may still compute a
+A pinned path **freezes** at the admin's (or the pack's) value. Layer 6 Learning may still compute a
 nudge for it — the nudge is simply rejected. *The calibrator gets no private door.*
 
 #### Guardrail dominance — clamped, and **recorded**

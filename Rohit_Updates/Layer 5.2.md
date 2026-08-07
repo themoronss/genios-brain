@@ -3,17 +3,17 @@
 **Last updated:** 7 August 2026
 **Branch:** `antler-inception`
 **Tests:** **142 focused delivery/outbox/Executive-bridge tests**; full repository suite
-**1795 passed**.
+**1796 passed**.
 **Status:** Atlas Layer 5.2 core implemented, wired into the existing drain and Atlas Layer 6
 learning, **no new worker**.
 **For the CTO:** Part 5 is a runbook. Apply migrations through `0044`, deploy, then exercise one
 real destination and one controlled terminal failover.
 
-**System Design navigation:** [Layer map](../System%20Design/Layer-6-Intelligence-Distribution/README.md) ·
-[component status](../System%20Design/Layer-6-Intelligence-Distribution/STATUS.md) ·
-[Delivery Orchestrator](../System%20Design/Layer-6-Intelligence-Distribution/01-Delivery-Orchestrator/README.md) ·
-[11 Delivery Units](../System%20Design/Layer-6-Intelligence-Distribution/02-Delivery-Units/README.md) ·
-[Delivery Management](../System%20Design/Layer-6-Intelligence-Distribution/03-Delivery-Management/README.md)
+**System Design navigation:** [Layer map](../System%20Design/Layer-5.2-Delivery-Engine/README.md) ·
+[component status](../System%20Design/Layer-5.2-Delivery-Engine/STATUS.md) ·
+[Delivery Orchestrator](../System%20Design/Layer-5.2-Delivery-Engine/01-Delivery-Orchestrator/README.md) ·
+[11 Delivery Units](../System%20Design/Layer-5.2-Delivery-Engine/02-Delivery-Units/README.md) ·
+[Delivery Management](../System%20Design/Layer-5.2-Delivery-Engine/03-Delivery-Management/README.md)
 
 The System Design now follows the Atlas's three physical parts. It explicitly marks email missing
 and API-only application/mobile/extension/dashboard seams partial rather than calling all eleven
@@ -33,6 +33,10 @@ a tenant mutes the channel in week three, and once it is muted every other layer
 worth exactly zero.
 
 **Start at Part 5 — it is the deployment runbook.**
+
+> **Naming note:** legacy filenames such as `0042_l6_delivery_gate.sql` and
+> `test_l6_outbox.py` predate the corrected Atlas documentation. They remain stable technical
+> identifiers, but both belong to product **Layer 5.2 Delivery**.
 
 > **Current-state correction, 7 August 2026.** The original build note below describes the
 > admission gate introduced by migration `0042`. Atlas reconciliation now also exposes immutable
@@ -587,7 +591,7 @@ second, weaker copy of a predicate that already exists.
 
 | Spec says | We did | Why |
 |---|---|---|
-| Layer 5.2 is a distinct layer | It **is** `deliver` (layer 6), which already sat between executive and feedback | Renumbering touches the topology file, its ratchet test and every import, and changes no behaviour. The layer had a home; it was missing units |
+| Layer 5.2 is a distinct layer | It **is** `deliver` (product Layer 5.2, import rank 6), which already sat between executive and feedback | Product identity and dependency ordering are recorded separately. The layer had a home; it was missing units |
 | A "Delivery Object" | Materialised as **columns on the outbox row**, not a new table | The outbox already *is* the delivery ledger. A second table would be a second write per send and a second thing to keep true |
 | A notification-history table for rate limiting | Answered from `delivery_outbox` itself, with a partial index | Once the row carries `recipient` and `channel_class`, "how many intrusive messages this hour?" is a range scan over rows the system already writes |
 | Interrupt decided at delivery | Interrupt is **decided by Layer 5** and only *honoured* here | Layer 5 gates it on a confidence floor. Re-deriving it below would put a second, weaker copy of a confidence rule under the real one |

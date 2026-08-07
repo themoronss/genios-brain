@@ -26,7 +26,7 @@ against the exact configuration that produced it.
 | **Package** | `genios_engine/packs/` |
 | **Layer number** | 3 |
 | **Size** | 11 files · ~1,650 lines — **almost all of it data** |
-| **Input** | Admin overrides (LVL2), learned nudges from Layer 7 (LVL3) |
+| **Input** | Admin overrides (LVL2), learned nudges from Layer 6 Learning (LVL3) |
 | **Output** | An **effective config** + its snapshot id — what Layer 4 executes |
 | **May import** | `contracts/`, `platform/` |
 | **LLM calls** | Zero |
@@ -73,7 +73,7 @@ flowchart TB
         b1["**Universal**<br/>pack manifests<br/>sales_v1 · general_v1"]:::u
         b2["**Organization**<br/>tenant_packs.lvl2_config<br/>+ pins + L1 canon"]:::o
         b3["**Behavioral**<br/>user_models<br/>voice · policy · red lines"]:::h
-        b4["**Adaptive**<br/>lvl3_config.rule_offsets<br/>+ rule_mutes (from L7)"]:::a
+        b4["**Adaptive**<br/>lvl3_config.rule_offsets<br/>+ rule_mutes (from Layer 6 Learning)"]:::a
     end
 
     subgraph M ["The machinery"]
@@ -95,7 +95,7 @@ flowchart TB
     m1 --> m2 --> OUT["effective config<br/>+ snapshot_id"]
     m3 --> m1
     C -.-> OUT
-    b3 -.-> L5["read by L5/L6<br/>for voice + policy"]
+    b3 -.-> L5["read by Layer 5/5.2<br/>for voice + policy"]
 
     classDef u fill:#eef,stroke:#88a
     classDef o fill:#efe,stroke:#8a8
@@ -120,7 +120,7 @@ sequenceDiagram
     participant R as pack_registry
     participant A as admin
     participant T as tenant_packs
-    participant L7 as Layer 7
+    participant LEARN6 as Layer 6 Learning
     participant L4 as Layer 4
 
     E->>W: add manifest to BUILTIN_PACKS
@@ -131,7 +131,7 @@ sequenceDiagram
     Note over T: version changed → lvl3_config RESET<br/>authority_revision += 1
 
     A->>T: lvl2_config overrides + pins
-    L7->>T: write_lvl3_offset(rule, offset)
+    LEARN6->>T: write_lvl3_offset(rule, offset)
     Note over T: rejected if the path is pinned
 
     L4->>R: effective(org, pack)
@@ -176,10 +176,10 @@ flowchart LR
     L4 --> SIG["signal<br/>+ config_snapshot_id"]
     SIG --> L5["Layer 5<br/>execution block:<br/>escalation · reminders"]
     B["Behavioral<br/>user_models"] --> L5
-    B --> L6["Layer 6<br/>voice · channel · red lines"]
-    L5 --> L6
-    L6 --> OUT["the person"]
-    OUT -.-> L7["Layer 7"] -.-> AD
+    B --> D52["Layer 5.2<br/>voice · channel · red lines"]
+    L5 --> D52
+    D52 --> OUT["the person"]
+    OUT -.-> LEARN6["Layer 6 Learning"] -.-> AD
 ```
 
 ---

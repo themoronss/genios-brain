@@ -13,15 +13,15 @@ package.
 
 ```mermaid
 flowchart TB
-    L1["1 capture"] --> L2["2 context"] --> L3["3 packs"] --> L4["4 reason"] --> L5["5 executive"] --> L6["6 deliver"] --> L7["7 feedback"]
-    L7 -. "**data only** — rule_mutes · lvl3_config" .-> L3
+    L1["1 capture"] --> L2["2 context"] --> L3["3 packs"] --> L4["4 reason"] --> L5["5 executive"] --> D52["5.2 deliver"] --> LEARN6["6 feedback"]
+    LEARN6 -. "**data only** — rule_mutes · lvl3_config" .-> L3
     X1["contracts/"] -.->|"may import"| X2["platform/"]
-    X3["api/"] -.->|"may import anything"| L7
+    X3["api/"] -.->|"may import anything"| LEARN6
 ```
 
 **Rules:**
 
-1. A package may import **same-or-lower** layers only.
+1. A package may import **same-or-lower import ranks** only.
 2. `contracts/` may import **only `platform`** and stdlib.
 3. `platform/` and `api/` may import anything.
 4. Anything else is **a build failure, not a review nit.**
@@ -33,8 +33,8 @@ Three places in this codebase exist *because* of that rule, and each is better f
 
 | Situation | Resolution |
 |---|---|
-| Layer 5 must send a message, but may not import Layer 6 | Layer 5 **writes its decision down**; `deliver/executive_bridge.py` reads it. **The send has one owner, not two** |
-| Layer 7 must retune Layer 3/4 | it writes **rows**; the merge reads them. *The consumer stays free to change its mind about what it wants to learn* |
-| Layer 6 must know who owns a commitment | it **delegates downward** to `executive/assignment.py` |
+| Layer 5 must send a message, but may not import Layer 5.2 | Layer 5 **writes its decision down**; `deliver/executive_bridge.py` reads it. **The send has one owner, not two** |
+| Layer 6 Learning must retune Layer 3/4 | it writes **rows**; the merge reads them. *The consumer stays free to change its mind about what it wants to learn* |
+| Layer 5.2 Delivery must know who owns a commitment | it **delegates downward** to `executive/assignment.py` |
 
 ---

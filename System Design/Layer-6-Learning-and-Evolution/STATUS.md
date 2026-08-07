@@ -1,4 +1,4 @@
-# Atlas Layer 6 implementation status
+# Layer 6 implementation status
 
 ## Part A · Learning Orchestrator
 

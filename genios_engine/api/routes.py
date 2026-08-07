@@ -275,7 +275,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             _log.exception("executive sweep pass failed")
             executive = {"error": True}
 
-    # L6 distribution: enqueue new high/critical cards + the daily digest per org with an
+    # Layer 5.2 Delivery: enqueue new high/critical cards + the daily digest per org with an
     # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
     # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
     distribution = {}

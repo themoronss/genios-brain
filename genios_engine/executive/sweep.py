@@ -9,7 +9,7 @@ minutes is safe and running it twice concurrently is safe.
 **Pass 2, ``run_lifecycle``** is the part the layer exists for.  For every commitment whose next
 check has come due it re-validates against live state, moves the state machine, decides whether
 to speak, fires the escalation rung the plan promised, and — when the commitment ends — writes
-the outcome record Layer 7 will learn from.
+the outcome record Layer 6 Learning will learn from.
 
 The order inside pass 2 is the whole design and is worth stating plainly:
 
@@ -225,7 +225,7 @@ def _close(conn, execution: ExecutionObject, row: Mapping[str, Any], *, target: 
     """Terminate a commitment and record what it taught us, in one transaction.
 
     The outcome record is written *with* the closing transition rather than after it. A
-    commitment that closed without producing an outcome row is invisible to Layer 7 forever,
+    commitment that closed without producing an outcome row is invisible to Layer 6 Learning forever,
     and there is no reconciliation job that can invent the progress it had at the moment it
     ended.
     """
@@ -408,7 +408,7 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
             return _Step("escalation_lost_race", transitioned=transitions)
         fired = 1
 
-    # The grounded corpus travels with the event. Layer 6's bridge words the message from
+    # The grounded corpus travels with the event. Layer 5.2's bridge words the message from
     # exactly these values and nothing else, which is what keeps the invention guarantee intact
     # across the layer boundary — the transport cannot introduce a number the commitment does
     # not already contain.

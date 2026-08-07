@@ -20,8 +20,8 @@ YAML file — the registry stores it as `jsonb`.
 | `scoring_defaults` | all of Layer 4's arithmetic constants | Layer 4 |
 | `rules` | the detection corpus | Layer 4 |
 | `plays` | what to *do* — artifact, success signal, window | Layers 4 → 5 → 6 |
-| `templates` | how a card reads | Layer 6 |
-| `schema` | `fields` + `signal_vocab` — the declared vocabulary | Layer 2 hints, Layer 6 |
+| `templates` | how a card reads | Layer 5.2 |
+| `schema` | `fields` + `signal_vocab` — the declared vocabulary | Layer 2 hints, Layer 5.2 |
 | `capture` | classifier hints | Layer 1 |
 
 #### `scoring_defaults` — the engine's constants, moved out of the engine

@@ -1,4 +1,4 @@
-"""L6 channels — formatting is pure and invents nothing; send failures are results."""
+"""Layer 5.2 Delivery channels — formatting is pure and invents nothing; send failures are results."""
 from __future__ import annotations
 
 from genios_engine.deliver.channels.base import ChannelResult, get_channel

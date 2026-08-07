@@ -235,7 +235,7 @@ already been decided. What is left is genuinely grey, and the layer's rule for g
 the parked contract:
 
 > Parked ≠ deleted. An uncertain/unsupported event, reviewable with its reason,
-> stage, and trace. Recover re-injects it; retention is L7 policy, not hidden delete.
+> stage, and trace. Recover re-injects it; retention is governance policy, not hidden delete.
 
 ---
 

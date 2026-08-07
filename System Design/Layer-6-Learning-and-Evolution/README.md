@@ -1,7 +1,8 @@
-# Atlas Layer 6 · Learning & Evolution
+# Layer 6 · Learning & Evolution
 
-This folder documents `genios_engine/feedback/`, which is repository **code Layer 7** because
-Delivery occupies code Layer 6. Product/Atlas identity is **Layer 6**. Its tree mirrors the Atlas:
+This folder documents product **Layer 6** and `genios_engine/feedback/`. The package has internal
+import rank 7 only because it follows Layer 5.2 Delivery in the dependency DAG; **there is no
+product Layer 7**. Its tree mirrors the Atlas:
 **Learning Orchestrator → 11 Learning Units → Evolution Publisher → Promotion Lifecycle**.
 
 > **Question:** What should the system safely change about itself from durable evidence?
@@ -9,7 +10,7 @@ Delivery occupies code Layer 6. Product/Atlas identity is **Layer 6**. Its tree 
 ## Canonical tree
 
 ```text
-Layer-7-Learning-Engine/
+Layer-6-Learning-and-Evolution/
 ├── 00-Overview.md
 ├── STATUS.md
 ├── 01-Learning-Orchestrator/
@@ -44,8 +45,8 @@ There is deliberately **no Expert Brain publisher**. The closed contract has no 
 
 | Identity | Value |
 |---|---|
-| Product number | Atlas Layer 6 |
-| Repository number | Layer 7 |
+| Product layer | Layer 6 |
+| Internal import rank | 7 in `genios_engine/LAYERS.py` |
 | Package | `genios_engine/feedback/` |
 | Contract | `genios_engine/contracts/learning.py` |
 | API | `genios_engine/api/learning_routes.py` |

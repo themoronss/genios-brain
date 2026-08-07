@@ -1,18 +1,18 @@
-"""Layer 6 · the bridge that carries Layer 5's commitments to a human.
+"""Layer 5.2 · the bridge that carries Layer 5's commitments to a human.
 
 Until this module existed, Layer 5 could decide that somebody needed nudging, record the
 decision, fire the escalation rung — and then nothing left the building.  The reminder was a
 row.  This is the wire.
 
-**Why the wire runs this way round.**  Layer 5 may never import Layer 6, so it cannot enqueue
+**Why the wire runs this way round.**  Layer 5 may never import Layer 5.2, so it cannot enqueue
 anything itself.  What it *can* do is write down its decision, and it does: an
 ``execution_events`` row of kind ``execution.reminded`` carries the routing plan on the parent
-commitment and the grounded fact corpus in its own ``detail``.  Layer 6 reads that and turns it
+commitment and the grounded fact corpus in its own ``detail``.  Layer 5.2 reads that and turns it
 into a message.  The dependency points downward, which is the rule, and the division of labour
 comes out exactly right:
 
   * Layer 5 decides **whether to speak, to whom, through which channel, and what may be said.**
-  * Layer 6 decides **how it looks and gets it there, with retries.**
+  * Layer 5.2 decides **how it looks and gets it there, with retries.**
 
 **Nothing new is ever said.**  The message is assembled only from values Layer 5 put in the
 event's fact corpus — days open, days remaining, the consequence sentence, the next action's
@@ -227,7 +227,7 @@ def mark_executive_delivered(conn, org_id: str, card_id: str, *, at: datetime,
     """Confirm transport only after the adapter succeeded.
 
     ``CREATED → PENDING`` means validated and queued, not delivered. Keeping this write on the
-    Layer 6 success path prevents Layer 5 tracking from claiming that a message reached a human
+    Layer 5.2 success path prevents Layer 5 tracking from claiming that a message reached a human
     while it is still deferred, retrying, suppressed or cancelled in the outbox.
     """
     parsed = parse_executive_card_id(card_id)

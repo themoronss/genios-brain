@@ -4,18 +4,18 @@
 
 **Branch:** `antler-inception`
 
-**Tests:** **17 focused Atlas learning tests**; full repository suite **1795 passed**.
+**Tests:** **17 focused Atlas learning tests**; full repository suite **1796 passed**.
 
 **Status:** all 11 learning units, governance, publication, API and scheduler are implemented;
 generic learned-state consumption by lower runtime layers is still an explicit integration gap.
 **For the CTO:** Part 8 is the deployment and proof runbook.
 
-**System Design navigation:** [Layer map](../System%20Design/Layer-7-Learning-Engine/README.md) ·
-[component status](../System%20Design/Layer-7-Learning-Engine/STATUS.md) ·
-[Learning Orchestrator](../System%20Design/Layer-7-Learning-Engine/01-Learning-Orchestrator/README.md) ·
-[11 Learning Units](../System%20Design/Layer-7-Learning-Engine/02-Learning-Units/README.md) ·
-[Evolution Publisher](../System%20Design/Layer-7-Learning-Engine/03-Evolution-Publisher/README.md) ·
-[promotion lifecycle](../System%20Design/Layer-7-Learning-Engine/04-Promotion-Lifecycle/README.md)
+**System Design navigation:** [Layer map](../System%20Design/Layer-6-Learning-and-Evolution/README.md) ·
+[component status](../System%20Design/Layer-6-Learning-and-Evolution/STATUS.md) ·
+[Learning Orchestrator](../System%20Design/Layer-6-Learning-and-Evolution/01-Learning-Orchestrator/README.md) ·
+[11 Learning Units](../System%20Design/Layer-6-Learning-and-Evolution/02-Learning-Units/README.md) ·
+[Evolution Publisher](../System%20Design/Layer-6-Learning-and-Evolution/03-Evolution-Publisher/README.md) ·
+[promotion lifecycle](../System%20Design/Layer-6-Learning-and-Evolution/04-Promotion-Lifecycle/README.md)
 
 The System Design now separates publisher implementation from runtime consumption. Generic brain
 rows and Runtime memories are durable, but remain partial until lower-layer consumers exist.
@@ -33,22 +33,24 @@ Atlas Layer 6 answers **“what may the system safely learn from that evidence?�
 
 ---
 
-## Part 0 — Number translation
+## Part 0 — Product identity and import order
 
-The Atlas calls this product capability **Layer 6**. The repository already uses code Layer 6 for
-`deliver/`, so the implementation lives in:
+The Atlas and the product architecture call this capability **Layer 6**. The implementation lives
+in `feedback/`; its integer rank in the import-direction DAG is 7, but that rank is not a product
+layer number:
 
-| Product identity | Code identity |
+| Identity | Implementation |
 |---|---|
-| Atlas Layer 6 · Learning & Evolution | `genios_engine/feedback/` |
-| Repository layer number | 7 |
+| Product layer | Layer 6 · Learning & Evolution |
+| Package | `genios_engine/feedback/` |
+| Internal import rank | 7 |
 | Boundary contract | `genios_engine/contracts/learning.py` |
 | API | `genios_engine/api/learning_routes.py` under `/v1/learning` |
 | Migration | `migrations/0045_atlas_l6_learning.sql` |
-| System Design | `System Design/Layer-7-Learning-Engine/` |
+| System Design | `System Design/Layer-6-Learning-and-Evolution/` |
 
-The package name is the stable identity. We did not renumber `deliver/`, break the import ratchet or
-create an ambiguous second package called Layer 6.
+There is **no product Layer 7**. `deliver/` is product Layer 5.2 with import rank 6; `feedback/` is
+product Layer 6 with import rank 7. The integer ranks only preserve dependency direction.
 
 ---
 

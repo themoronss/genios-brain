@@ -80,7 +80,7 @@ flowchart LR
     DM --> CAND["DecisionCandidate.confidence_bp"]
     DM --> DEC["ReasoningDecision.confidence_bp<br/><small>confidence_floor_bp → DEFER</small>"]
     DEC --> L5["Layer 5 · executive"]
-    L5 --> L6["Layer 6 · deliver<br/><small>interrupt_min_confidence_bp</small>"]
+    L5 --> D52["Layer 5.2 · deliver<br/><small>interrupt_min_confidence_bp</small>"]
 ```
 
 The thick arrow is the one that matters. `decision_maker.py:calculate_confidence` scans every

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 class ParkedEvent(BaseModel):
     """Parked ≠ deleted. An uncertain/unsupported event, reviewable with its reason,
-    stage, and trace. Recover re-injects it; retention is L7 policy, not hidden delete."""
+    stage, and trace. Recover re-injects it; retention is governance policy, not hidden delete."""
 
     event_id: str
     org_id: str

@@ -551,7 +551,7 @@ and the run-wide evidence tuple, and copying seven play attributes into `paramet
 | `label`, `steps` | What the human is being asked to do. |
 | `read_only` | **The delivery authority bit.** Adapters refuse anything else. |
 | `tags`, `metadata` | Domain-authored routing and policy inputs. |
-| `success_events` | What Layer 7 will watch for to score this decision later. |
+| `success_events` | What Layer 6 Learning will watch for to score this decision later. |
 | `window_days` | How long that outcome window stays open. |
 
 `read_only` is the one that matters operationally, and the code comments say so. The candidate — not
@@ -632,7 +632,7 @@ override a terminal outcome (`test_the_floor_cannot_manufacture_a_decision_from_
 expiry_hours)` — computed from the *passed-in* evaluation time, never `now()`, which is what lets a
 replay six months later reason about the same moment. Default `expiry_hours` is 168, one week.
 `outcome_window_days` is copied from the *selected* play's `window_days` and is `None` for every
-non-`DECISION` outcome: it is the window Layer 7 will use to judge whether the decision worked, and
+non-`DECISION` outcome: it is the window Layer 6 Learning will use to judge whether the decision worked, and
 a decision that was never made has no window to judge.
 
 ### 4.10 · The six outcomes, and what each means downstream

@@ -508,7 +508,7 @@ candidates and their checks so the elimination is auditable — from *"we never 
 must be empty because any candidate list would be fiction.
 
 `expires_at` is `evaluation_time + capability.expiry_hours`; `outcome_window_days` comes from the
-selected play's `window_days`, which is what Layer 7 later measures outcomes against.
+selected play's `window_days`, which is what Layer 6 Learning later measures outcomes against.
 
 ### 2.9 · `StepTrace` and `ReasoningTrace`
 
@@ -811,7 +811,7 @@ was taken.
 Authority is a separate question from durability, and `ReasoningExecution.delivery_allowed` answers
 it in one place: `mode == LIVE` **and** `capability.live_delivery_enabled` **and**
 `outcome == DECISION` **and** a selected candidate exists **and** its
-`parameters["read_only"] is True`. All five, or nothing crosses into Layer 6.
+`parameters["read_only"] is True`. All five, or nothing crosses into Layer 5.2 Delivery.
 
 ### 4.4 · The native adapter — bounded context from a manifest
 
@@ -905,14 +905,14 @@ run as `NO_ACTION` before anything is scored. `core.constraint` is present becau
 declares `policies=("read_only", "human_approval_required")`, and the manifest's own invariant
 demands an enforcer for them.
 
-**The gate thresholds are where Layer 7 writes down:**
+**The gate thresholds are where Layer 6 Learning writes down:**
 
 ```python
 base_score_min = integer(gate_config.get("s_min", 55), "gate.s_min")
 score_min = max(40, min(90, base_score_min + integer(offsets.get(rule.id, 0), …)))
 ```
 
-The pack's `gate.s_min` defaults to 55, `gate.c_min` to 60. Layer 7 writes `lvl3_config.rule_offsets`
+The pack's `gate.s_min` defaults to 55, `gate.c_min` to 60. Layer 6 Learning writes `lvl3_config.rule_offsets`
 as data, and the offset shifts one rule's threshold. The `max(40, min(90, …))` clamp is the
 load-bearing part: the learning layer can make a rule harder or easier within a band, but it cannot
 push a threshold to 0 and force a noisy rule to fire on everything, and it cannot push it to 100 and

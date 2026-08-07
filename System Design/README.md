@@ -19,9 +19,10 @@ statement—what is built, partial, owned elsewhere or deliberately not done.
 
 ## The layer index
 
-Three specs numbered these layers three different ways. The **package name** is the only
-stable identity; the number lives in exactly one place in code, `genios_engine/LAYERS.py`,
-and import direction is enforced by a test.
+This index follows the canonical product architecture: **Layers 1, 2, 3, 4, 5, 5.2 and 6**.
+Layer 5.2 is Delivery. Layer 6 is Learning & Evolution. There is no product Layer 7.
+`genios_engine/LAYERS.py` records these product identifiers separately from integer import ranks;
+the ranks exist only so `tests/test_layer_topology.py` can enforce dependency direction.
 
 | # | Package | Name | Owns | Doc |
 |---|---|---|---|---|
@@ -30,8 +31,8 @@ and import direction is enforced by a test.
 | 3 | `packs/` | Domain Expertise | The four brains + capability content, shipped as data. | [Layer 3](Layer-3-Domain-Expertise/README.md) *(8 docs)* |
 | 4 | `reason/` | Reasoning Engine | Deterministic cognition: orchestrator, 17 units, decision maker. | [Layer 4](Layer-4-Reasoning-Engine/00-Overview.md) *(93 docs)* |
 | 5 | `executive/` | Executive Engine | Decision briefs + the Execution Object. Owns *who* and *where*. | [Layer 5](Layer-5-Executive-Engine/README.md) *(92 docs; nested by part → unit → component)* |
-| 6 | `deliver/` | Intelligence Distribution *(Atlas: 5.2 Delivery)* | Cards, context, routing, channels, typed results, analytics, outbox and admission gate. | [Layer 6](Layer-6-Intelligence-Distribution/README.md) *(114 docs; Atlas Layer 5.2 hierarchy)* |
-| 7 | `feedback/` | Learning Engine *(Atlas: 6 Learning & Evolution)* | 11 governed units, outcome learning, dynamic brains, TTL memory, metrics, suggestions, calibration. | [Layer 7](Layer-7-Learning-Engine/README.md) *(138 docs; Atlas Layer 6 hierarchy)* |
+| 5.2 | `deliver/` | Delivery Engine | Cards, context, routing, channels, typed results, analytics, outbox and admission gate. | [Layer 5.2](Layer-5.2-Delivery-Engine/README.md) *(114 docs)* |
+| 6 | `feedback/` | Learning & Evolution | 11 governed units, outcome learning, dynamic brains, TTL memory, metrics, suggestions and calibration. | [Layer 6](Layer-6-Learning-and-Evolution/README.md) *(138 docs)* |
 | — | `contracts/`, `platform/`, `api/` | Cross-cutting | Boundary types · composition root · transport. | [Cross-cutting](Cross-Cutting-Contracts-Platform-API/README.md) *(7 docs)* |
 
 ---
@@ -45,11 +46,11 @@ flowchart TB
     L3["3 · packs<br/>Domain Expertise"]
     L4["4 · reason<br/>Reasoning Engine"]
     L5["5 · executive<br/>Executive Engine"]
-    L6["6 · deliver<br/>Intelligence Distribution"]
-    L7["7 · feedback<br/>Learning Engine"]
+    L52["5.2 · deliver<br/>Delivery Engine"]
+    L6["6 · feedback<br/>Learning & Evolution"]
 
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
-    L7 -. "learned state written DOWN as data<br/>rule_mutes · lvl3_config" .-> L4
+    L1 --> L2 --> L3 --> L4 --> L5 --> L52 --> L6
+    L6 -. "learned state written DOWN as data<br/>rule_mutes · lvl3_config" .-> L4
 
     subgraph X ["cross-cutting — outside the ordering"]
         C["contracts/ — boundary types"]
@@ -58,7 +59,7 @@ flowchart TB
     end
 ```
 
-**A lower layer never imports a higher one.** Cross-layer needs are met two ways only:
+**A lower import rank never imports a higher one.** Cross-layer needs are met two ways only:
 
 - **Injection** — `platform/wiring.py` resolves a dependency and passes it *down*.
 - **Data** — a table written above and read below (`rule_mutes`, `lvl3_config.rule_offsets`).
@@ -89,13 +90,13 @@ flowchart LR
     L4 -- "decisions" --> L5
 
     L5["**Layer 5 — executive**<br/>brief · Execution Object<br/>owner · channel · timing"]
-    L5 -- "communication plan" --> L6
+    L5 -- "communication plan" --> L52
 
-    L6["**Layer 6 — deliver**<br/>context · routing · channels<br/>outbox · results · retries"]
-    L6 --> out["the person<br/>who has to act"]
+    L52["**Layer 5.2 — Delivery**<br/>context · routing · channels<br/>outbox · results · retries"]
+    L52 --> out["the person<br/>who has to act"]
 
-    out -- "results + feedback + outcomes" --> L7["**Layer 7 — feedback**<br/>11 learning units · governance<br/>dynamic brains · TTL memory"]
-    L7 -. "data, written down" .-> L4
+    out -- "results + feedback + outcomes" --> L6["**Layer 6 — Learning & Evolution**<br/>11 learning units · governance<br/>dynamic brains · TTL memory"]
+    L6 -. "data, written down" .-> L4
 ```
 
 ---
@@ -151,6 +152,6 @@ Layer-1-Knowledge-Layer/
 Nest by the architecture, not by an arbitrary depth limit. A simple layer can stay flat; a staged
 layer uses `part/component`; and an Atlas-sized engine uses
 `part/subpart/component-module`. Every level must answer a real ownership question and carry a
-README index. Layers 5, Atlas 5.2 and Atlas 6 use the deeper form because their canonical design
+README index. Layers 5, 5.2 and 6 use the deeper form because their canonical design
 explicitly separates orchestrators, named units, lifecycle/management and internal component
 pipelines. The rule is **no decorative folders and no flattened architectural parts**.

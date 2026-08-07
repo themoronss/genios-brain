@@ -255,7 +255,7 @@ explicitly.
 | **L2** | person + company nodes · `thread.ball_in_court='us'` at R2 · correlation joined by thread · situation *Acme / sales*, confidence 76 | say what to do about it |
 | L4 | reads `graph_facts` **directly** → `unanswered_email` signal → decision | — |
 | L5 | execution plan, reminders | change the decision |
-| L6 | delivered card | create new intelligence |
+| Layer 5.2 | delivered card | create new intelligence |
 
 Note the third row: L4 read the **facts**, not the situation. That is the gap in §6, visible in
 a single trace.

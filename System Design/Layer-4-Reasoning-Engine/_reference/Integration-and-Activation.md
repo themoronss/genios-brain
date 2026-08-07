@@ -22,9 +22,9 @@ flowchart LR
     L2["Layer 2 · Context Intelligence"] -->|"BusinessSituation"| L4
     L3["Layer 3 · Domain Expertise"] -.->|"capability content, as data"| L4
     L4["Layer 4 · Reasoning Engine"] -->|"ReasoningDecision"| L5["Layer 5 · Executive Intelligence"]
-    L5 --> L6["Layer 6 · Intelligence Distribution"]
-    L6 --> L7["Layer 7 · Learning Engine"]
-    L7 -.->|"learned state, written DOWN as data"| L4
+    L5 --> D52["Layer 5.2 · Delivery Engine"]
+    D52 --> LEARN6["Layer 6 · Learning & Evolution"]
+    LEARN6 -.->|"learned state, written DOWN as data"| L4
 ```
 
 Three things in that picture are load-bearing, and the specs say so explicitly.
@@ -64,8 +64,8 @@ Two inputs, and one back-channel from above that arrives as data rather than as 
 | L2 · context | derived metrics + baselines | `reason/baselines.py:build_baselines`, `reason/baselines.py:load_node_metrics` | folded into `NodeContext.facts` |
 | L3 · packs | tenant-effective config resolution | `packs/registry.py:PackRegistry.effective` | `{rules, scoring, plays, gate, budget, state}` + `config_snapshot_id` |
 | L3 · packs | native capability manifests | `packs/capabilities/__init__.py:BUILTIN_CAPABILITIES` | immutable `CapabilityManifest` |
-| L7 · feedback | `rule_mutes` table | `reason/runner.py:_muted_rules` | set of silenced rule ids |
-| L7 · feedback | `lvl3_config.rule_offsets` inside the effective config | `reason/adapters/legacy_pack.py:legacy_capability_manifest` | per-rule score-gate offset |
+| Layer 6 · feedback | `rule_mutes` table | `reason/runner.py:_muted_rules` | set of silenced rule ids |
+| Layer 6 · feedback | `lvl3_config.rule_offsets` inside the effective config | `reason/adapters/legacy_pack.py:legacy_capability_manifest` | per-rule score-gate offset |
 
 The mutable `NodeContext` never reaches the kernel. Two adapters stand between it and
 `ReasoningRequest`, and they differ in exactly one respect — *who decides which fields are relevant*.
@@ -185,19 +185,19 @@ pins that difference by asserting the expiry clause is **absent** from the learn
 
 ### 2.4 · The import-direction rule, and how it is enforced
 
-`genios_engine/LAYERS.py` is the only place in the codebase where a layer number appears. Its
-docstring gives the reason: *"the numbers have already changed twice across specs while the code did
-not, so no digit ever appears in a package name."*
+`genios_engine/LAYERS.py` records product identifiers and the separate integer import ranks used
+by the topology comparison. Product numbering ends at Layer 6; rank 7 means only that
+`feedback/` is last in this dependency ordering.
 
 ```mermaid
 flowchart TB
     subgraph ORD["the ordering — imports flow downward only"]
         direction TB
         L1["capture · 1"] --> L2["context · 2"] --> L3["packs · 3"]
-        L3 --> L4["reason · 4"] --> L5["executive · 5"]
-        L5 --> L6["deliver · 6"] --> L7["feedback · 7"]
+        L3 --> L4["reason · Layer 4"] --> L5["executive · Layer 5"]
+        L5 --> D52["deliver · Layer 5.2<br/>import rank 6"] --> LEARN6["feedback · Layer 6<br/>import rank 7"]
     end
-    L7 -. "rule_mutes · lvl3_config.rule_offsets<br/>DATA, not an import" .-> L4
+    LEARN6 -. "rule_mutes · lvl3_config.rule_offsets<br/>DATA, not an import" .-> L4
     subgraph XC["cross-cutting — exempt from the ordering"]
         C["contracts"]
         P["platform"]
@@ -207,7 +207,7 @@ flowchart TB
 
 `tests/test_layer_topology.py:test_import_direction` walks every `.py` file under each declared
 layer package with `ast`, collects the top-level `genios_engine.*` subpackages it imports, and fails
-the build if any imported package's layer number exceeds the importing package's. Nothing is
+the build if any imported package's import rank exceeds the importing package's. Nothing is
 executed, so the check costs nothing and cannot be defeated by a lazy import inside a function —
 `api/routes.py` imports `reason.runner` inside the handler body and the AST still sees it.
 
@@ -216,9 +216,10 @@ Three consequences that matter when reading the code:
 - **`reason/` importing `context/` is legal and intentional.** `runner.py` imports
   `context.graph_store:GraphStore`, and `signals_derived.py` imports `context.vocabulary`. Layer 2 is
   *below* Layer 4; the rule forbids upward imports, not downward ones.
-- **`deliver/` and `executive/` importing `reason.authority` is legal.** Layers 5 and 6 are above 4.
+- **`deliver/` and `executive/` importing `reason.authority` is legal.** Product Layers 5 and
+  5.2 have higher import ranks than Layer 4.
   This is how the predicate reaches its consumers without L4 knowing they exist.
-- **Layer 7 can never import Layer 4.** So everything L7 learns must land in a table. It does:
+- **Layer 6 Learning can never import Layer 4.** So everything Layer 6 learns must land in a table. It does:
   `rule_mutes`, read by `runner.py:_muted_rules`, and `lvl3_config.rule_offsets`, read by
   `legacy_pack.py:legacy_capability_manifest` where it shifts the score gate. `_muted_rules` carries
   the reasoning in its docstring — *"never as an upward code import; the layer-topology test enforces
@@ -578,7 +579,7 @@ The counters `run` returns are the operator's whole view of a sweep:
 | `shadow` | authorized nothing because mode or `live_delivery_enabled` said no |
 | `below_gate` | outcome was `BLOCKED` |
 | `cooldown` / `budget` | suppressed by rate limiting, before and after ranking |
-| `muted` | silenced by L7's `rule_mutes` |
+| `muted` | silenced by Layer 6 Learning's `rule_mutes` |
 | `authority_invalid` | defensive: delivery was authorized but `selected_candidate` was `None`. `delivery_allowed` already requires a selected candidate, so this branch is unreachable today — it exists so that a future change to the property fails closed and loudly rather than emitting a signal with no candidate id |
 | `native_<outcome>` / `native_failed` | the shadow native path's outcome distribution |
 | `resolved` | an open signal whose rule no longer fires, retired |

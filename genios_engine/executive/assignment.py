@@ -1,7 +1,7 @@
 """Layer 5 · Unit — Owner resolution.  *Who* holds this commitment.
 
 This is the canonical home for the question "who?".  It used to live in ``deliver/router.py``,
-which made Layer 6 the authority on ownership — and Layer 6 is supposed to answer *how it
+which made Layer 5.2 the authority on ownership — and Layer 5.2 is supposed to answer *how it
 travels*, not *whose problem it is*.  Ownership is part of the commitment: an execution object
 with no owner is not a plan, it is a wish.  So the authority moved down here and
 ``deliver/router.py`` now delegates upward-in-time, downward-in-layers, which is the direction

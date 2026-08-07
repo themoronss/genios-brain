@@ -131,7 +131,7 @@ def _persist_decision_envelope(*, org_id: str, module_id: str, question: str,
         raise HTTPException(503, "decision could not be recorded safely; please retry") from exc
 
 
-# L7 spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
+# Query spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
 # cap, checked BEFORE the LLM call (cached queries never reach it → always free). Both fail-open on
 # infra errors so a Redis/DB blip never blocks a legitimate query. (Was the gap: spend was recorded
 # after the fact, incr_window was defined-but-never-called → unbounded LLM spend / retry loops.)
@@ -195,7 +195,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         env["cached"] = True
         return env
 
-    _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
+    _enforce_query_budget(org_id)          # RPM + monthly credit guard before any LLM spend
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
                          registry=_registry, graph_version=gv, eval_time=evaluation_time)

@@ -396,7 +396,7 @@ The honest answer has two halves, and the second one is uncomfortable.
 ### 5.1 · The metrics: nothing reads them
 
 Verified by grep across `genios_engine/` for all twelve names and all eleven reason codes: **no
-unit, no orchestrator path, no Layer 5 or Layer 6 module reads any metric or any reason code this
+unit, no orchestrator path, no Layer 5 or Layer 5.2 module reads any metric or any reason code this
 unit publishes.** The only hits outside `context_unit.py` are `core.confidence`'s independently
 computed `completeness_bp` and `declared_field_count`, which are its own numbers on its own
 denominator (§5.3).

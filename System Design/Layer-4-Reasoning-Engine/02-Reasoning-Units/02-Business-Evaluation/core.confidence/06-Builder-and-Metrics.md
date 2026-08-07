@@ -292,7 +292,7 @@ flowchart TD
     CAND --> DEC["ReasoningDecision.confidence_bp"]
     DEC --> EX["Layer 5 · executive<br/><small>may_interrupt: band AND confidence ≥ 6,000</small>"]
     DEC --> BR["executive/brief.py:59<br/><small>confidence_pct for the human</small>"]
-    EX --> L6["Layer 6 · deliver<br/><small>outbox.card_confidence_bp</small>"]
+    EX --> D52["Layer 5.2 · deliver<br/><small>outbox.card_confidence_bp</small>"]
 ```
 
 ### 6.1 · `confidence_bp` — four consumers
@@ -314,7 +314,7 @@ particular play.
 Downstream of the decision, it becomes `confidence_pct` in the executive brief
 (`executive/brief.py:59`), gates phone interruptions in `executive/communication.py:99`
 (`may_interrupt` requires both a loud band **and** `confidence_bp ≥ interrupt_min_confidence_bp`,
-default `6,000` in `communication.py:56` and `packs/sales_v1.py:57`), and reaches Layer 6 through
+default `6,000` in `communication.py:56` and `packs/sales_v1.py:57`), and reaches Layer 5.2 through
 `deliver/outbox.py:card_confidence_bp`.
 
 ### 6.2 · The other five metrics — no programmatic consumer

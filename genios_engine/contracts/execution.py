@@ -1,4 +1,4 @@
-"""The Execution Object — Layer 5's single output, and the only thing Layer 6 is allowed to carry.
+"""The Execution Object — Layer 5's single output, and the only thing Layer 5.2 is allowed to carry.
 
 Layer 4 answers *what should happen*.  This contract answers *how it happens*: the ordered
 actions, who owns each one, by when, through which channel, what proves it was done, and
@@ -245,7 +245,7 @@ class PlannedAction:
 class CommunicationPlan:
     """Who hears about this, where, how loudly, and why that was the right call.
 
-    Layer 5 owns this decision end to end — audience, seat, channel and interrupt — and Layer 6
+    Layer 5 owns this decision end to end — audience, seat, channel and interrupt — and Layer 5.2
     executes it.  ``reason_code`` is mandatory because a routing choice a human cannot
     interrogate is indistinguishable from a bug: when the wrong person gets paged at 2am, the
     first question is always "why them?", and the answer must already be in the row.
@@ -331,7 +331,7 @@ class ExecutionObject:
 
     Provenance is not optional.  Every field from ``capability_id`` through
     ``config_snapshot_id`` binds this commitment to the exact immutable reasoning run and
-    effective config that produced it, so the authority check that Layer 6 runs before every
+    effective config that produced it, so the authority check that Layer 5.2 runs before every
     send has something real to check *against*.  A commitment whose decision was revoked must
     be stoppable in flight, and that is only possible if the link is carried, not inferred.
     """

@@ -1,4 +1,4 @@
-# Atlas Layer 5.2 implementation status
+# Layer 5.2 implementation status
 
 Status vocabulary is evidence-based: **Built**, **Partial**, **Upstream-owned**, **Missing** or
 **Intentional boundary**.

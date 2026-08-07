@@ -8,7 +8,7 @@
 -- These tables give a recommendation a life. `executions` is the commitment: one live row per
 -- Layer 4 decision, carrying the frozen plan, its owner, its channel, its deadline and its
 -- state. Everything else hangs off it — the steps, the escalation ladder, the audit trail, and
--- the outcome record Layer 7 will learn from.
+-- the outcome record Layer 6 Learning will learn from.
 --
 -- Three design points are worth reading before changing anything here.
 --
@@ -66,7 +66,7 @@ create table if not exists executions (
     subject_ref         text,
     subject_type        text,
 
-    -- Communication plan. Layer 5 owns who and where (see docs/LAYER_MAP.md); Layer 6 executes it.
+    -- Communication plan. Layer 5 owns who and where (see docs/LAYER_MAP.md); Layer 5.2 executes it.
     assignee            text,
     audience            text not null default 'owner',
     channel_id          text not null default 'in_app',
@@ -122,7 +122,7 @@ create index if not exists executions_by_assignee
 create index if not exists executions_by_subject
     on executions (org_id, subject_ref) where closed_at is null;
 
--- Outcome reporting and the L7 feed both read closed rows by pack cohort and time.
+-- Outcome reporting and the Layer 6 Learning feed both read closed rows by pack cohort and time.
 create index if not exists executions_closed_at
     on executions (org_id, closed_at) where closed_at is not null;
 
@@ -202,9 +202,9 @@ create index if not exists execution_events_by_kind
 
 
 -- ---------------------------------------------------------------------------------------
--- The outcome record — the L5→L7 seam.
+-- The outcome record — the Layer 5→Layer 6 Learning seam.
 --
--- Layer 7 learns today from card judgments: what a human clicked when a recommendation arrived.
+-- Layer 6 Learning learns today from card judgments: what a human clicked when a recommendation arrived.
 -- That measures whether it LOOKED right, not whether acting on it WORKED. These rows measure the
 -- second thing, including the attention it cost to get there (reminders_sent, escalations_fired)
 -- — a play that succeeds once per four reminders is not obviously better than one that fails
@@ -244,7 +244,7 @@ create table if not exists execution_outcomes (
 );
 
 -- One outcome per commitment. A commitment ends once; a second row would double-count it in
--- every precision calculation Layer 7 runs.
+-- every precision calculation Layer 6 Learning runs.
 create unique index if not exists execution_outcomes_once
     on execution_outcomes (org_id, execution_id);
 
@@ -252,7 +252,7 @@ create index if not exists execution_outcomes_cohort
     on execution_outcomes (org_id, capability_id, play_id, closed_at);
 
 comment on index execution_outcomes_cohort is
-  'The L7 learning read: outcomes per play per window. Ordered by closed_at so calibration windows are a range scan.';
+  'The Layer 6 learning read: outcomes per play per window. Ordered by closed_at so calibration windows are a range scan.';
 
 
 -- ---------------------------------------------------------------------------------------

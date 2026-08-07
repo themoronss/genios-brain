@@ -12,13 +12,14 @@ live folders now follow `layer → part → subpart/unit → component module`: 
 documents, Atlas Layer 5.2 has 114, and Atlas Layer 6 has 138. Every named Atlas component now has
 a physical location, code/status evidence, edge cases and an explicit gap boundary.
 
-The repository keeps a seven-layer code topology, so two Atlas names translate as follows:
+The product map is canonical below. The integers 1–7 in `genios_engine/LAYERS.py` are dependency
+**import ranks**, not a second set of product-layer numbers:
 
 | Product/Atlas layer | Code package | System Design folder | Detailed CTO note |
 |---|---|---|---|
 | Layer 5 · Executive Engine | `genios_engine/executive/` (code L5) | `System Design/Layer-5-Executive-Engine/` | [`Rohit_Updates/Layer 5.md`](Rohit_Updates/Layer%205.md) |
-| Layer 5.2 · Delivery Engine | `genios_engine/deliver/` (code L6) | `System Design/Layer-6-Intelligence-Distribution/` | [`Rohit_Updates/Layer 5.2.md`](Rohit_Updates/Layer%205.2.md) |
-| Layer 6 · Learning & Evolution | `genios_engine/feedback/` (code L7) | `System Design/Layer-7-Learning-Engine/` | [`Rohit_Updates/Layer 6.md`](Rohit_Updates/Layer%206.md) |
+| Layer 5.2 · Delivery Engine | `genios_engine/deliver/` (import rank 6) | `System Design/Layer-5.2-Delivery-Engine/` | [`Rohit_Updates/Layer 5.2.md`](Rohit_Updates/Layer%205.2.md) |
+| Layer 6 · Learning & Evolution | `genios_engine/feedback/` (import rank 7) | `System Design/Layer-6-Learning-and-Evolution/` | [`Rohit_Updates/Layer 6.md`](Rohit_Updates/Layer%206.md) |
 
 ### Planned → current → integration
 
@@ -46,7 +47,7 @@ it is not fabricated into either success or failure.
 
 ### Verification snapshot
 
-- Full local repository suite: **1795 passed**.
+- Full local repository suite: **1796 passed**.
 - Layer 5 focused collection: **195 tests**.
 - Delivery-focused collection (`test_delivery*`, outbox and Executive bridge): **142 tests**.
 - Learning-focused collection: **17 tests**.
@@ -366,7 +367,7 @@ The next milestone is not more rules or more architectural components. It is one
 
 ---
 
-## 2. Canonical seven-layer architecture
+## 2. Canonical product architecture
 
 The attached architecture is directionally strong, but a few boundaries need tightening so that layers do not overlap.
 
@@ -377,10 +378,10 @@ The attached architecture is directionally strong, but a few boundaries need tig
 | L3 Capability Expertise | Compile universal, organization, behavioral, and adaptive expertise per capability | Mostly `packs/` | Evolve packs into versioned capability manifests and overlays |
 | L4 Deterministic Reasoning | Select relevant context and compute candidates, risk, priority, confidence, and alternatives | `reason/` | Introduce reasoner interfaces, orchestration, traces, and counterfactuals |
 | L5 Executive Intelligence | Turn a decision into an evidence-backed, action-ready intelligence object | Partly `deliver/card_builder.py` | Create a stable decision/card contract with 2-3 real plays |
-| L6 Distribution | Route intelligence to humans, agents, APIs, digests, and the product surface | `deliver/`, API routes | Separate packaging from routing and ship one real user surface |
-| L7 Learning | Observe outcomes, update bounded statistics, detect drift, and propose governed changes | `feedback/`, feedback migrations | Learn from outcomes instead of clicks and implement the value ledger |
+| Layer 5.2 Delivery | Route intelligence to humans, agents, APIs, digests, and the product surface | `deliver/`, API routes | Separate packaging from routing and ship one real user surface |
+| Layer 6 Learning | Observe outcomes, update bounded statistics, detect drift, and propose governed changes | `feedback/`, feedback migrations | Learn from outcomes instead of clicks and implement the value ledger |
 
-Governance is a cross-cutting control plane over all seven layers: identity, authorization, tenant isolation, audit, policy, retention, kill switches, budgets, approvals, and rollback.
+Governance is a cross-cutting control plane over product Layers 1, 2, 3, 4, 5, 5.2 and 6: identity, authorization, tenant isolation, audit, policy, retention, kill switches, budgets, approvals, and rollback.
 
 ### Boundary corrections
 
@@ -564,7 +565,7 @@ Tasks:
 1. Reconcile the six commits currently present on `origin/harsh/mvp` but absent from the checked-out branch. Review them; do not blindly merge around local work.
 2. Replace invalid `requirements.txt` pins and the machine-specific editable path in `requirements-lock.txt`.
 3. Choose one dependency source of truth: preferably `pyproject.toml` plus a reproducible generated lock.
-4. Update the README to describe the current L1-L7 implementation and real setup process.
+4. Update the README to describe the current Layers 1–6 plus Layer 5.2 implementation and real setup process.
 5. Add CI for Python 3.11 and 3.12 with install, migration, unit tests, integration tests, static checks, and import/startup smoke tests.
 6. Add an ephemeral Postgres test environment and apply every migration from a blank database.
 7. Validate production configuration at startup. Missing crypto, JWT, webhook, database, and internal secrets must fail closed.
@@ -619,7 +620,7 @@ Tasks:
 2. Build the minimum live HubSpot/CRM connector required by the three initial capabilities.
 3. Validate Calendar ingestion for future meetings, cancellations, participants, and event changes.
 4. Route connector-specific webhooks through the correct parser and connection identity.
-5. Make a successful webhook drive L1 -> L2 -> L4 -> L5/L6 immediately through a durable job/outbox.
+5. Make a successful webhook drive L1 -> L2 -> L4 -> L5 -> L5.2 immediately through a durable job/outbox.
 6. Keep scheduled sweeps as recovery and reconciliation, not as the primary six-hour intelligence path.
 7. Add retries, poison-event quarantine, idempotency, and observable per-stage latency.
 8. Build an end-to-end test using representative Gmail, CRM, and Calendar fixtures plus real Postgres.
@@ -795,7 +796,7 @@ This is the exact starting order once implementation is approved:
 6. Make entity resolution atomic with tenant-scoped uniqueness and merge history.
 7. Redesign fact persistence around stable fact identity, versions, assertions, and multi-source corroboration.
 8. Build deterministic raw-event-to-graph replay and graph snapshot hashing.
-9. Connect webhooks to the complete durable L1 -> L2 -> L4 -> L5/L6 path.
+9. Connect webhooks to the complete durable L1 -> L2 -> L4 -> L5 -> L5.2 path.
 10. Implement the minimum HubSpot/CRM connector.
 11. Convert `deal_cooling` into the first capability manifest and shadow-run it.
 12. Define three real plays and a CRM-observable outcome window for that capability.

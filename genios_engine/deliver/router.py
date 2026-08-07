@@ -6,8 +6,8 @@ from genios_engine.executive.assignment import PgSeatDirectory, resolve_owner
 
 # E3 · Delivery Router (§5.13) — now a THIN DELEGATION.
 #
-# The ownership rules used to live here, which made Layer 6 the authority on who owns a
-# recommendation. That was the wrong home: Layer 6 answers *how intelligence travels*, and who
+# The ownership rules used to live here, which made Layer 5.2 the authority on who owns a
+# recommendation. That was the wrong home: Layer 5.2 answers *how intelligence travels*, and who
 # holds a commitment is part of the commitment itself, not part of its transport. The rules moved
 # down to executive/assignment.py (Layer 5) and this module now calls them.
 #
@@ -28,7 +28,7 @@ def resolve_assignee(store, org_id: str, node_facts: dict,
                      node_attrs: dict) -> tuple[str | None, str]:
     """Return (seat_id | None, resolved_rule). None → admin queue / unrouted.
 
-    Kept as a function rather than replaced at every call site so the Layer 6 pipeline reads the
+    Kept as a function rather than replaced at every call site so the Layer 5.2 pipeline reads the
     same as it did before. The tuple shape is what card_builder and the tests already expect.
     """
     with store.engine.connect() as c:

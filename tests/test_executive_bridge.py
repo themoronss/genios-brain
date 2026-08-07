@@ -1,4 +1,4 @@
-"""Layer 5 → Layer 6 · the wire, executed.
+"""Layer 5 → Layer 5.2 · the wire, executed.
 
 Before the bridge existed, Layer 5 could decide somebody needed nudging, record the decision,
 fire the escalation rung — and nothing left the building. The reminder was a row. This file
@@ -10,7 +10,7 @@ proves the row becomes a message, and proves the three guarantees that make it s
     closed while the message sat in the retry backoff is cancelled rather than delivered.
 
 The layer direction is the point of the design and is asserted here too: Layer 5 writes the
-decision, Layer 6 reads it. Nothing in ``executive/`` knows this module exists.
+decision, Layer 5.2 reads it. Nothing in ``executive/`` knows this module exists.
 """
 
 from __future__ import annotations
@@ -260,7 +260,7 @@ def test_a_corrupt_event_detail_degrades_instead_of_raising():
 # --- the layer boundary --------------------------------------------------------------------
 
 def test_layer_five_never_imports_the_bridge():
-    """The whole design rests on this direction: Layer 5 writes the decision, Layer 6 reads it.
+    """The whole design rests on this direction: Layer 5 writes the decision, Layer 5.2 reads it.
 
     Checked against the import graph rather than the file text — "delivery" is a word this layer
     uses constantly in prose, and a grep would either miss real violations or fire on every
@@ -277,4 +277,4 @@ def test_layer_five_never_imports_the_bridge():
             elif isinstance(node, ast.Import):
                 targets.update(alias.name for alias in node.names)
         offending = {name for name in targets if name.startswith("genios_engine.deliver")}
-        assert not offending, f"{path.name} imports Layer 6: {offending}"
+        assert not offending, f"{path.name} imports Layer 5.2: {offending}"

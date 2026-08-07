@@ -9,7 +9,7 @@ executive.validate. Law 08 holds: a play below five observations says "new play,
 data yet" — never an invented percentage.
 
 Boundary (the L5 spec's explicit call): a brief carries NO owner, NO channel, NO
-schedule. who/when/where is Layer 6's job."""
+schedule. who/when/where is Layer 5.2's job."""
 from __future__ import annotations
 
 import json

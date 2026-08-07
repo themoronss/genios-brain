@@ -11,7 +11,7 @@ number without saying which is which:
 * **Action completions** — a person or agent marked a step done.  Self-reported, immediate,
   and the only signal available for internal work with no external trace.
 * **Observed events** — the world produced the evidence the play declared as success.  Slower,
-  but not self-reported, which makes it the one that counts for Layer 7's learning.
+  but not self-reported, which makes it the one that counts for Layer 6 outcome learning.
 
 When the world confirms the outcome, the commitment is complete regardless of how many steps
 anyone ticked off.  When the steps are all ticked and the world is silent, the commitment is

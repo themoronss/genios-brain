@@ -535,7 +535,7 @@ def test_a_broken_executive_pass_cannot_kill_the_heartbeat():
     from genios_engine.api import routes
 
     source = inspect.getsource(routes.run_maintenance_sweep)
-    block = source[source.index("executive = None"):source.index("# L6 distribution")]
+    block = source[source.index("executive = None"):source.index("# Layer 5.2 Delivery")]
     assert block.count("except Exception") >= 2, (
         "the executive pass needs both a per-org guard and an outer guard — org enumeration is "
         "a database round trip like any other")

@@ -9,7 +9,7 @@ like any scoring default) with the defaults below as LVL1 baseline.
     consider  worth attention, not compelled — mid-band or lower confidence
     delay     real but not yet — preventive-mode findings before the threshold trips
     escalate  beyond this seat's authority — critical band or authority mismatch
-    delegate  actionable by someone/something else — L6 decides WHO (never this layer)
+    delegate  actionable by someone/something else — Layer 5.2 resolves WHO (never this layer)
     approve   a pending item cleared its checks (needs an approvals source — future)
     reject    evidence says stop — negative prediction with high confidence
     dont      explicit counter-recommendation — a red-line/policy hit

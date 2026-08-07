@@ -211,7 +211,7 @@ invariant.
 check rows. The metrics are inert, the findings are inert, and the WARN rows are the whole delivery
 mechanism. That is consistent with the unit's stated purpose — *"the shortfall travels with the
 candidate and is visible at the point of decision"* — but *visible* currently means *present in the
-persisted candidate record*, not *shown on the card*. Closing that is a Layer 6 change, not a Layer 4
+persisted candidate record*, not *shown on the card*. Closing that is a Layer 5.2 change, not a Layer 4
 one.
 
 ---

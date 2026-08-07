@@ -1,4 +1,4 @@
-"""Atlas Layer 6 Learning & Evolution Engine (code layer 7)."""
+"""Product Layer 6 Learning & Evolution Engine (internal import rank 7)."""
 
 from genios_engine.feedback.orchestrator import preview_learning, run_learning
 

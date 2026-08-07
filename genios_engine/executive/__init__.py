@@ -13,13 +13,13 @@ nothing is done.  Deterministic composition over already-stored truth.
 
 **The executive engine** — interpret the decision, plan the actions, resolve the owner, choose
 the channel, build the frozen Execution Object, validate it against live state, deliver, track,
-remind, escalate, monitor, and hand the outcome to Layer 7.
+remind, escalate, monitor, and hand the outcome to Layer 6 Learning.
 
 **Layer 5 owns who and where.**  This is a deliberate change from the earlier boundary, which
-put owner and channel selection in Layer 6.  Deciding whether to interrupt someone is part of
+put owner and channel selection in Layer 5.2.  Deciding whether to interrupt someone is part of
 the commitment, not part of the transport: "Slack this person now" and "let them find it in
 tomorrow's digest" are two different promises about how much of their attention this is worth,
-and that judgement belongs with the layer that decided the work was worth doing.  Layer 6 keeps
+and that judgement belongs with the layer that decided the work was worth doing.  Layer 5.2 keeps
 the adapters, the retries, the outbox and the rendering — it *executes* the communication plan,
 it does not author it.  ``deliver/router.py`` now delegates to ``executive/assignment.py``;
 6 may import 5, 5 may never import 6, and ``tests/test_layer_topology.py`` enforces it.

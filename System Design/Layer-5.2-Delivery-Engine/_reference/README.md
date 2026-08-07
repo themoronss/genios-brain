@@ -1,4 +1,4 @@
-# Atlas Layer 5.2 reference material
+# Layer 5.2 reference material
 
 - [Atlas alignment](Atlas-Alignment.md)
 - [End-to-end user journey](User-Journey.md)

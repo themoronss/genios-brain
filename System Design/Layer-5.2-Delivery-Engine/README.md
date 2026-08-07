@@ -1,8 +1,9 @@
-# Atlas Layer 5.2 · Delivery Engine
+# Layer 5.2 · Delivery Engine
 
-This folder is the live implementation map for `genios_engine/deliver/`, which is repository
-**code Layer 6**. The Atlas product identity remains **Layer 5.2**. The physical hierarchy mirrors
-the Atlas: **Delivery Orchestrator → 11 Delivery Units → Delivery Management**.
+This folder is the live implementation map for product **Layer 5.2** and
+`genios_engine/deliver/`. The package has internal import rank 6 only because it follows
+`executive/`; that rank is not a product-layer number. The physical hierarchy mirrors the Atlas:
+**Delivery Orchestrator → 11 Delivery Units → Delivery Management**.
 
 > **Question:** How should an approved execution reach the world, safely and through the right
 > destination?
@@ -10,7 +11,7 @@ the Atlas: **Delivery Orchestrator → 11 Delivery Units → Delivery Management
 ## Canonical tree
 
 ```text
-Layer-6-Intelligence-Distribution/
+Layer-5.2-Delivery-Engine/
 ├── 00-Overview.md
 ├── STATUS.md
 ├── 01-Delivery-Orchestrator/
@@ -46,11 +47,15 @@ Layer-6-Intelligence-Distribution/
 | Item | Authority |
 |---|---|
 | Code package | `genios_engine/deliver/` |
-| Product number | Atlas Layer 5.2 |
-| Repository number | Layer 6 in `genios_engine/LAYERS.py` |
+| Product layer | Layer 5.2 |
+| Internal import rank | 6 in `genios_engine/LAYERS.py` |
 | Input | Layer 5 `ExecutionObject` / grounded delivery candidate |
 | Output | typed `DeliveryResult` plus durable outbox/audit facts |
 | Migrations | `0042_l6_delivery_gate.sql`, `0044_l52_atlas_delivery.sql` |
 | API | `api/delivery_routes.py`, `api/channel_routes.py` |
+
+Some pre-Atlas filenames still contain `l6`—for example `0042_l6_delivery_gate.sql` and
+`test_l6_outbox.py`. They are retained for migration and test-history stability. They identify
+product Layer 5.2 Delivery, not a second product Layer 6.
 
 [← System Design index](../README.md)

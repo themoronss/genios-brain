@@ -1,4 +1,4 @@
-# Atlas Layer 5.2 gaps and production runbook
+# Layer 5.2 gaps and production runbook
 
 ## Remaining gaps
 

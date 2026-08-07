@@ -63,7 +63,7 @@ Verbatim from `SOURCES` in [source_registry.py](../../../genios_engine/capture/s
 | 2 | `outlook` | `communication` | False | — | — | Name only |
 | 3 | `imap` | *none* | False | — | — | Credentials can be stored + liveness-checked; no ingestion |
 | 4 | `inkbox` | *none* | False | — | — | Hosted-inbox credentials can be stored; no ingestion |
-| 5 | `slack` | `communication` | False | — | — | Name only in L1 — Slack is an **output** channel at L6 |
+| 5 | `slack` | `communication` | False | — | — | Name only in L1 — Slack is an **output** channel at Layer 5.2 |
 | 6 | `teams` | *none* | False | — | — | Name only |
 | 7 | `whatsapp` | *none* | False | — | — | Name only |
 | 8 | `sms` | *none* | False | — | — | Name only |

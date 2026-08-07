@@ -10,5 +10,5 @@
 | Storage/API/tests | `04-Contracts-and-Operations/` | migrations 0042/0044 and focused tests |
 
 The Atlas sample tree says `delivery/`; the repository's established package is `deliver/`.
-Documentation follows Atlas semantics while pointing to the real package. Product Layer 5.2 is
-code Layer 6; no renumbering was performed.
+Documentation follows the Layer 5.2 product identity while pointing to the real package. The
+package's integer value 6 is only its internal import rank; it is not renamed as a product layer.

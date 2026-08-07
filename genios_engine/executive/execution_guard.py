@@ -142,7 +142,7 @@ def validate(execution: ExecutionObject, state: ValidationInput) -> GuardVerdict
 
     # 3. The world already did it. Checked before the subject and the owner because a completed
     #    outcome is good news, and reporting it as "cancelled — deal closed" would lose the one
-    #    data point Layer 7 needs to learn whether the play works.
+    #    data point Layer 6 Learning needs to learn whether the play works.
     satisfied = _satisfied_by(execution, state)
     if satisfied is not None:
         kind, observed_at = satisfied
@@ -175,7 +175,7 @@ def validate(execution: ExecutionObject, state: ValidationInput) -> GuardVerdict
                             f"assignee {execution.communication.assignee} is no longer active")
 
     # 8. The deadline passed with nothing observed. Expired, not cancelled — the distinction is
-    #    what lets Layer 7 tell "we chose not to" apart from "we ran out of time", and only the
+    #    what lets Layer 6 Learning tell "we chose not to" apart from "we ran out of time", and only the
     #    second one is evidence the window was too short.
     if state.now >= execution.deadline_at:
         return GuardVerdict(GuardAction.EXPIRE, "deadline_passed",

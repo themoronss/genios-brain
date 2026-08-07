@@ -1,4 +1,4 @@
-# Atlas Layer 6 gaps and production runbook
+# Layer 6 gaps and production runbook
 
 ## Remaining gaps
 

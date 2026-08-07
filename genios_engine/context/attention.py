@@ -17,7 +17,7 @@ Deterministic integer arithmetic over graph-local features (no LLM, no floats st
 Score clamps to 0..100. Bands: >=75 critical, >=50 high, >=25 medium, else low.
 
 L2 is the SOLE WRITER of context_attention (refresh runs at the end of the L2 drain).
-L4/L6 may read it; a reason/ or deliver/ module writing it is a layer violation."""
+Layer 4/Layer 5.2 may read it; a reason/ or deliver/ module writing it is a layer violation."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

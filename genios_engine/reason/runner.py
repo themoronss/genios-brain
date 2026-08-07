@@ -386,7 +386,7 @@ def _tenant_deal_p90(store, org_id: str, min_deals: int = 5) -> float | None:
 
 
 def _muted_rules(store, org_id: str, pack_id: str, pack_version: str) -> set[str]:
-    """Active auto-mutes, read from the rule_mutes table the learning layer (L7) writes.
+    """Active auto-mutes, read from the rule_mutes table Layer 6 Learning writes.
     Learned state flows to reasoning as DATA (this table, and rule_offsets via lvl3_config)
     — never as an upward code import; the layer-topology test enforces that. Mutes deliberately
     persist across threshold-only authority epochs within one immutable pack version; their exact

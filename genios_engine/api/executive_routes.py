@@ -8,7 +8,7 @@ WHAT EVIDENCE / WHAT IF NOTHING.
 
 COMMITMENTS (the executive engine): what happens after a recommendation is made — who owns it,
 by when, through which channel, what has been done, what escalates on which day, and how it
-ended. Layer 5 owns who and where; Layer 6 executes the transport. See docs/LAYER_MAP.md.
+ended. Layer 5 owns who and where; Layer 5.2 executes the transport. See docs/LAYER_MAP.md.
 
 Every mutation here is a *human* act being recorded (a step ticked, a recommendation dismissed,
 an owner changed). None of them decide anything — the sweep does that, and it re-validates
@@ -247,7 +247,7 @@ def dismiss(execution_id: str, reason: str = Body("not_relevant", embed=True),
 
     Written as an event, not as a direct state change. The guard reads it on the next pass and
     cancels with ``human_dismissed``, which keeps every termination flowing through one place —
-    and means the dismissal is captured for Layer 7 even if the cancel races with a completion.
+    and means the dismissal is captured for Layer 6 Learning even if the cancel races with a completion.
     """
     _require_db()
     from genios_engine.executive import execution_store as store

@@ -198,7 +198,7 @@ between a bug and a policy.
 The nineteen-line contract carries the layer's second-most-quoted comment:
 
 > Parked ≠ deleted. An uncertain/unsupported event, reviewable with its reason,
-> stage, and trace. Recover re-injects it; retention is L7 policy, not hidden delete.
+> stage, and trace. Recover re-injects it; retention is governance policy, not hidden delete.
 
 ```python
 class ParkedEvent(BaseModel):
@@ -218,7 +218,7 @@ Three clauses, three separate commitments:
 |---|---|
 | *reviewable with its reason, stage, and trace* | `reason_code` + `stage` + `trace` on the row; `GET /parked` returns them |
 | *Recover re-injects it* | `POST /parked/{event_id}/recover` flips `source_events.outcome` back to `emitted` — and the payload was kept for exactly this (see §3.7 of [The Capture Pipeline](05-The-Capture-Pipeline.md)) |
-| *retention is L7 policy, not hidden delete* | nothing in Layer 1 deletes a parked row; the raw payload's 30-day TTL is a separate, declared clock in `purge_expired` |
+| *retention is governance policy, not hidden delete* | nothing in Layer 1 deletes a parked row; the raw payload's 30-day TTL is a separate, declared clock in `purge_expired` |
 
 **The second clause used to be a lie.** The pipeline comment records it:
 

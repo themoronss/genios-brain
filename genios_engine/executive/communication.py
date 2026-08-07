@@ -4,7 +4,7 @@ Owning the channel choice up here, alongside the owner choice, is a deliberate a
 call: interrupting someone is part of the commitment, not part of the transport.  "Slack this
 person right now" and "let them find it in tomorrow's digest" are two different promises about
 how much of their attention this is worth, and that judgement belongs with the layer that
-decided the work was worth doing at all.  Layer 6 keeps the adapters, the retries and the
+decided the work was worth doing at all.  Layer 5.2 keeps the adapters, the retries and the
 outbox — it executes the plan, it does not author it.
 
 The rules encode one principle: **interruption is a budget, not a feature.**  Every channel
@@ -12,7 +12,7 @@ here is ordered by how much of a person's attention it spends, and a commitment 
 way up that order with score, not with enthusiasm.  A system that pages on everything is
 indistinguishable from a system nobody reads.
 
-Behaviourally this reproduces exactly what Layer 6 does today — high and critical go to the
+Behaviourally this reproduces exactly what Layer 5.2 does today — high and critical go to the
 org's chat channel, everything else waits for the digest, unrouted work sits on the card
 surface — with the difference that the choice is now recorded, explained by a reason code, and
 frozen into the execution object rather than recomputed inside a queue drain.
@@ -56,7 +56,7 @@ DEFAULTS: Mapping[str, Any] = {
     "interrupt_min_confidence_bp": 6_000,
 }
 
-#: Tone is a rendering instruction for Layer 6's copy step, not prose written here. Layer 5 says
+#: Tone is a rendering instruction for Layer 5.2's copy step, not prose written here. Layer 5 says
 #: *how this should land*; the renderer's validators still refuse any word not grounded in facts.
 _TONE_BY_TYPE: Mapping[ExecutionType, str] = {
     ExecutionType.DECISION_REQUIRED: "direct",
@@ -99,7 +99,7 @@ _BAND_RANK: Mapping[str, int] = {"standard": 0, "high": 1, "critical": 2}
 def may_interrupt(band: str, confidence_bp: int, cfg: Mapping[str, Any] | None = None) -> bool:
     """Is this loud enough *and* certain enough to be allowed to buzz a phone?
 
-    Extracted so the card path can ask the same question.  Layer 6 pushes high/critical cards to
+    Extracted so the card path can ask the same question.  Layer 5.2 pushes high/critical cards to
     chat without ever building a ``CommunicationPlan``, and it still has to mark each one with
     whether it may break through quiet hours.  Deriving that over there would put a second copy
     of ``interrupt_band`` and ``interrupt_min_confidence_bp`` below the real ones — and the
