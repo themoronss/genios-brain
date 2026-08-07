@@ -1,60 +1,54 @@
-# Layer 5 · The Executive Engine — the folder map
+# Layer 5 · Executive Engine
 
-**This folder is the live truth of `genios_engine/executive/`.** It is the source consulted before any action,
-update or improvement to this layer. If a document and the code disagree, the document is wrong —
-fix it in the same change that moved the code.
+This is the live implementation map for `genios_engine/executive/`. It follows the Atlas hierarchy
+physically: **layer → architectural part → unit → component module**. The folder tree is therefore
+also the navigation model and the code-audit checklist.
 
-Start at **[00-Overview.md](00-Overview.md)** for the layer in one sitting. Use this page when you
-already know what you are looking for.
+> **Question:** How does a Layer 4 decision become an owned, timed, monitored commitment?
 
----
+## Canonical tree
 
-## The one question this layer answers
-
-> **How does that decision become reality?**
-
-```mermaid
-flowchart TD
-    R["Layer-5-Executive-Engine/"] --> A["01-The-Execution-Object.md<br/><i>the contract everything else builds</i>"]
-    R --> B["02 · 03 · 04<br/><i>interpret → plan → own → route → escalate → build</i>"]
-    R --> C["05-Execution-Validation.md<br/><b>the guard before every outbound moment</b>"]
-    R --> D["06 · 07<br/><i>remind · monitor · track · collect outcomes</i>"]
-    R --> E["08-The-Sweep-and-The-Wire.md<br/><i>what makes it a running system</i>"]
-    R --> F["09-Bugs-Runbook-and-Gaps.md"]
-    R --> G["10-Atlas-Layer-5-Alignment.md<br/><i>unit-by-unit current verdict</i>"]
-    R --> H["11-Execution-Coordination.md<br/><i>dependency waves, completion gates, current allocation boundary</i>"]
+```text
+Layer-5-Executive-Engine/
+├── 00-Overview.md
+├── STATUS.md
+├── 01-Executive-Units/
+│   ├── 01-Decision-Interpreter/
+│   ├── 02-Execution-Planning/
+│   ├── 03-Execution-Coordination/
+│   ├── 04-Communication-Planning/
+│   ├── 05-Execution-Validation/
+│   ├── 06-Reminder/
+│   ├── 07-Monitoring/
+│   ├── 08-Escalation/
+│   ├── 09-Execution-Tracking/
+│   ├── 10-Feedback-Collection/
+│   └── 11-Execution-Object-Builder/
+├── 02-Execution-Lifecycle/
+├── 03-Contracts-and-Operations/
+└── _reference/
 ```
 
----
+## Read order
 
-## The documents
+1. [Overview](00-Overview.md) — boundary, owners and end-to-end flow.
+2. [Status ledger](STATUS.md) — every Atlas unit and the evidence-backed verdict.
+3. [Executive Units](01-Executive-Units/README.md) — the eleven runtime units.
+4. [Execution Lifecycle](02-Execution-Lifecycle/README.md) — state machine, sweep and delivery handoff.
+5. [Contracts and Operations](03-Contracts-and-Operations/README.md) — contract, storage, API, scheduler and tests.
+6. [Atlas alignment](_reference/Atlas-Alignment.md) and [gaps/runbook](_reference/Bugs-Runbook-and-Gaps.md).
 
-| # | Document | Answers |
-|---|---|---|
-| 00 | [Overview](00-Overview.md) | The two halves, the fork over who owns channel, workflows, strategies |
-| 01 | [The Execution Object](01-The-Execution-Object.md) | Immutable, content-addressed, and why identity excludes routing |
-| 02 | [Interpretation and Planning](02-Interpretation-and-Planning.md) | Reading a decision as an instruction; steps → actions without a model |
-| 03 | [Owner and Communication](03-Owner-and-Communication.md) | The three ordered ownership rules; interruption as a budget |
-| 04 | [Escalation and the Builder](04-Escalation-and-The-Builder.md) | The ladder frozen at plan time; the last place that can refuse cheaply |
-| 05 | [Execution Validation](05-Execution-Validation.md) | **The most important unit in the layer** — six verdicts, not a boolean |
-| 06 | [Reminders and Monitoring](06-Reminders-and-Monitoring.md) | Business relevance not the calendar; done-but-unproven |
-| 07 | [Lifecycle and Outcomes](07-Lifecycle-and-Outcomes.md) | The state machine, and the labels Layer 7 will learn from |
-| 08 | [The Sweep and the Wire](08-The-Sweep-and-The-Wire.md) | validate → transition → observe → decide → speak |
-| 09 | [Bugs, Runbook and Gaps](09-Bugs-Runbook-and-Gaps.md) | Seventeen defects fixed, deployment steps, and current gaps |
-| 10 | [Atlas Layer 5 Alignment](10-Atlas-Layer-5-Alignment.md) | Current unit-by-unit evidence, lifecycle reconciliation and remaining 8% |
-| 11 | [Execution Coordination](11-Execution-Coordination.md) | Runtime dependency projection, action completion authority and the remaining multi-owner seam |
+## Identity and boundary
 
----
-
-## Where this layer sits
-
-| | |
+| Item | Authority |
 |---|---|
-| **Package** | `genios_engine/executive/` |
-| **Layer number** | 5 — `genios_engine/LAYERS.py` |
-| **Reads from** | authoritative Layer 4 decisions |
-| **Hands to** | **exactly one artifact** — the Execution Object (`execution.v1`) |
-| **May import** | everything below. **Never `deliver/`** — enforced by `tests/test_layer_topology.py` |
-| **LLM calls** | Zero. A model may improve a reminder's *wording*; it may never decide anything |
+| Code package | `genios_engine/executive/` |
+| Repository number | Layer 5 in `genios_engine/LAYERS.py` |
+| Input | authoritative Layer 4 decision |
+| Output | immutable `ExecutionObject` plus an audited commitment lifecycle |
+| Downstream handoff | `genios_engine/deliver/executive_bridge.py` |
+| Database schema | `migrations/0041_l5_execution.sql` |
+| API | `genios_engine/api/executive_routes.py` |
+| Import law | Layer 5 never imports `deliver/`; topology tests enforce it |
 
 [← System Design index](../README.md)

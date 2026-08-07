@@ -9,6 +9,16 @@ learning, **no new worker**.
 **For the CTO:** Part 5 is a runbook. Apply migrations through `0044`, deploy, then exercise one
 real destination and one controlled terminal failover.
 
+**System Design navigation:** [Layer map](../System%20Design/Layer-6-Intelligence-Distribution/README.md) ·
+[component status](../System%20Design/Layer-6-Intelligence-Distribution/STATUS.md) ·
+[Delivery Orchestrator](../System%20Design/Layer-6-Intelligence-Distribution/01-Delivery-Orchestrator/README.md) ·
+[11 Delivery Units](../System%20Design/Layer-6-Intelligence-Distribution/02-Delivery-Units/README.md) ·
+[Delivery Management](../System%20Design/Layer-6-Intelligence-Distribution/03-Delivery-Management/README.md)
+
+The System Design now follows the Atlas's three physical parts. It explicitly marks email missing
+and API-only application/mobile/extension/dashboard seams partial rather than calling all eleven
+targets complete.
+
 **The one-line summary for a CTO:** GeniOS could produce a correct, well-owned, well-worded
 alert and then deliver it at 03:14. Layer 5.2 is the gate between "Layer 5 decided to speak"
 and "the webhook fires" — it decides whether this message may travel, **to this person, right

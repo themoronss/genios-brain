@@ -11,9 +11,9 @@ questions, in this order:
 4. **The internals** — inside each unit: the decisions, the constants, the edge cases,
    and *why* they are what they are.
 
-Every layer document carries diagrams (Mermaid flowcharts, sequence and state diagrams),
-a file-and-test map, and an honest **gaps** section — what is known-broken or deliberately
-not done.
+Each layer overview carries the end-to-end diagrams and boundary map. Nested unit/component pages
+carry the narrower input/output, runtime authority, invariants, scenarios and an honest **gap**
+statement—what is built, partial, owned elsewhere or deliberately not done.
 
 ---
 
@@ -29,9 +29,9 @@ and import direction is enforced by a test.
 | 2 | `context/` | Context Intelligence | The live digital twin: entities, facts, situations, attention. | [Layer 2](Layer-2-Context-Intelligence/README.md) *(34 docs)* |
 | 3 | `packs/` | Domain Expertise | The four brains + capability content, shipped as data. | [Layer 3](Layer-3-Domain-Expertise/README.md) *(8 docs)* |
 | 4 | `reason/` | Reasoning Engine | Deterministic cognition: orchestrator, 17 units, decision maker. | [Layer 4](Layer-4-Reasoning-Engine/00-Overview.md) *(93 docs)* |
-| 5 | `executive/` | Executive Engine | Decision briefs + the Execution Object. Owns *who* and *where*. | [Layer 5](Layer-5-Executive-Engine/README.md) *(13 docs)* |
-| 6 | `deliver/` | Intelligence Distribution *(Atlas: 5.2 Delivery)* | Cards, context, routing, channels, typed results, analytics, outbox and admission gate. | [Layer 6](Layer-6-Intelligence-Distribution/README.md) *(15 docs)* |
-| 7 | `feedback/` | Learning Engine *(Atlas: 6 Learning & Evolution)* | 11 governed units, outcome learning, dynamic brains, TTL memory, metrics, suggestions, calibration. | [Layer 7](Layer-7-Learning-Engine/README.md) *(14 docs)* |
+| 5 | `executive/` | Executive Engine | Decision briefs + the Execution Object. Owns *who* and *where*. | [Layer 5](Layer-5-Executive-Engine/README.md) *(92 docs; nested by part → unit → component)* |
+| 6 | `deliver/` | Intelligence Distribution *(Atlas: 5.2 Delivery)* | Cards, context, routing, channels, typed results, analytics, outbox and admission gate. | [Layer 6](Layer-6-Intelligence-Distribution/README.md) *(114 docs; Atlas Layer 5.2 hierarchy)* |
+| 7 | `feedback/` | Learning Engine *(Atlas: 6 Learning & Evolution)* | 11 governed units, outcome learning, dynamic brains, TTL memory, metrics, suggestions, calibration. | [Layer 7](Layer-7-Learning-Engine/README.md) *(138 docs; Atlas Layer 6 hierarchy)* |
 | — | `contracts/`, `platform/`, `api/` | Cross-cutting | Boundary types · composition root · transport. | [Cross-cutting](Cross-Cutting-Contracts-Platform-API/README.md) *(7 docs)* |
 
 ---
@@ -102,7 +102,7 @@ flowchart LR
 
 ## How to read a layer document
 
-Each one follows the same skeleton:
+Each **layer overview** follows the same skeleton:
 
 ```
 §0  At a glance          — the layer in one table
@@ -117,6 +117,10 @@ Each one follows the same skeleton:
 
 Diagrams are inline Mermaid. GitHub, VS Code (with a Mermaid preview extension) and most
 Markdown viewers render them natively — no external service required.
+
+Part and unit READMEs then index their children. A component-module leaf is intentionally narrower:
+it documents its input, validation/retrieval, mechanism/calculation, output, edge cases and code
+authority instead of repeating the whole layer-level §0–§7 skeleton.
 
 ### When a layer needs a folder instead of a file
 
@@ -144,5 +148,9 @@ Layer-1-Knowledge-Layer/
 └── 04-ESQE/                          the qualification funnel and everything it refuses
 ```
 
-Nest a second level only when a layer's stages are genuinely separable work. Two levels is the
-limit: below that, a reader stops being able to guess where something lives.
+Nest by the architecture, not by an arbitrary depth limit. A simple layer can stay flat; a staged
+layer uses `part/component`; and an Atlas-sized engine uses
+`part/subpart/component-module`. Every level must answer a real ownership question and carry a
+README index. Layers 5, Atlas 5.2 and Atlas 6 use the deeper form because their canonical design
+explicitly separates orchestrators, named units, lifecycle/management and internal component
+pipelines. The rule is **no decorative folders and no flattened architectural parts**.

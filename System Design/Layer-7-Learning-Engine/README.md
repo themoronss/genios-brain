@@ -1,55 +1,54 @@
-# Atlas Layer 6 · Learning & Evolution — live implementation map
+# Atlas Layer 6 · Learning & Evolution
 
-This folder documents code package `genios_engine/feedback/`, which is **code Layer 7** because
-the repository counts Delivery as Layer 6. In the Atlas this same product capability is
-**Layer 6 · Learning & Evolution**. Package name is the stable identity; both numbers are shown
-so implementation and product design cannot drift silently.
+This folder documents `genios_engine/feedback/`, which is repository **code Layer 7** because
+Delivery occupies code Layer 6. Product/Atlas identity is **Layer 6**. Its tree mirrors the Atlas:
+**Learning Orchestrator → 11 Learning Units → Evolution Publisher → Promotion Lifecycle**.
 
-> **Question:** What should the system change about itself?
+> **Question:** What should the system safely change about itself from durable evidence?
 
-| Atlas contract | Live implementation |
+## Canonical tree
+
+```text
+Layer-7-Learning-Engine/
+├── 00-Overview.md
+├── STATUS.md
+├── 01-Learning-Orchestrator/
+│   ├── 01-Learning-Selector/ ... 07-Learning-Governance/
+├── 02-Learning-Units/
+│   ├── 01-Feedback-Learning/ ... 11-Learning-Validation/
+├── 03-Evolution-Publisher/
+│   ├── 01-Behavior-Brain-Publisher/
+│   ├── 02-Adaptive-Brain-Publisher/
+│   ├── 03-Organization-Brain-Publisher/
+│   ├── 04-Runtime-Memory-Publisher/
+│   └── 05-Learning-Metrics-Publisher/
+├── 04-Promotion-Lifecycle/
+├── 05-Contracts-and-Operations/
+└── _reference/
+```
+
+There is deliberately **no Expert Brain publisher**. The closed contract has no `expert` target.
+
+## Read order
+
+1. [Overview](00-Overview.md)
+2. [Status ledger](STATUS.md)
+3. [Part A · Learning Orchestrator](01-Learning-Orchestrator/README.md)
+4. [Part B · 11 Learning Units](02-Learning-Units/README.md)
+5. [Part C · Evolution Publisher](03-Evolution-Publisher/README.md)
+6. [Promotion Lifecycle](04-Promotion-Lifecycle/README.md)
+7. [Contracts and Operations](05-Contracts-and-Operations/README.md)
+8. [Atlas alignment](_reference/Atlas-Alignment.md),
+   [closed loop](_reference/Integration-with-Layers-5-and-5.2.md),
+   [scenarios](_reference/Learning-Scenarios.md) and [gaps/runbook](_reference/Bugs-Runbook-and-Gaps.md)
+
+| Identity | Value |
 |---|---|
-| Input | canonical feedback + `execution_outcomes` + graph observations + delivery results |
-| Core | 10 analysis units + Learning Validation + Governance |
-| Output | immutable `LearningObject` → Organization / Behavior / Adaptive brains, Runtime TTL, Metrics, or human-review suggestion |
-| Expert Brain | **Never edited. There is no Expert publisher.** |
-| Runtime | weekly atomic scheduler run; explicit memories can enter immediately with a bounded TTL |
-
-The Atlas publishers are live, governed and versioned. Generic Organization/Behavior/Adaptive
-entries and Runtime memories do not yet have a lower-layer consumer; the existing narrow
-`rule_mutes`/bounded `rule_offsets` calibration path is the learned state currently consumed by
-Reasoning.
-
-## Read in this order
-
-| # | Document | Purpose |
-|---|---|---|
-| 00 | [Overview](00-Overview.md) | Whole layer, one sitting |
-| 01 | [Judgment taxonomy](01-The-Judgment-Taxonomy.md) | Explicit label vs timing vs silence |
-| 02 | [Precision and Wilson bounds](02-Precision-and-Wilson-Bounds.md) | Conservative rule calibration |
-| 03 | [Lineage and weekly claim](03-Lineage-and-The-Weekly-Claim.md) | Replay identity and atomicity |
-| 04 | [Mutes, nudges and ledger](04-Mutes-Nudges-and-The-Ledger.md) | Existing bounded calibration subsystem |
-| 05 | [Gaps](05-Gaps.md) | Honest remaining limitations |
-| 06 | [Architecture and orchestrator](06-Architecture-and-Orchestrator.md) | Selector → planner → policy → publisher |
-| 07 | [The 11 learning units](07-The-11-Learning-Units.md) | Inputs, calculations and outputs per unit |
-| 08 | [Validation and governance](08-Validation-and-Governance.md) | Promotion state machine and enterprise controls |
-| 09 | [Brains and publishers](09-Brains-and-Publishers.md) | Versioning, TTL, suggestions and rollback |
-| 10 | [Storage, API and scheduler](10-Storage-API-and-Scheduler.md) | Tables, endpoints and runtime wiring |
-| 11 | [Atlas alignment](11-Atlas-Alignment.md) | Requirement-by-requirement evidence |
-| 12 | [Integration with Layers 5 and 5.2](12-Integration-with-Layers-5-and-5.2.md) | Exact outcome, delivery and learned-state seams across the closed loop |
-
-## Code map
-
-| Concern | Authority |
-|---|---|
-| Cross-layer contract | `genios_engine/contracts/learning.py` |
-| 10 analysis units | `genios_engine/feedback/units.py` |
-| Unit 11 + tenant governance | `genios_engine/feedback/governance.py` |
-| Persistence + evolution publisher | `genios_engine/feedback/store.py` |
-| Selector/planner/scheduler orchestration | `genios_engine/feedback/orchestrator.py` |
-| Existing rule calibration | `genios_engine/feedback/calibrate.py` |
-| Tenant surface | `genios_engine/api/learning_routes.py` |
-| Schema | `migrations/0045_atlas_l6_learning.sql` |
-| Verification | `tests/test_learning_atlas.py`, `tests/test_learning_authority.py` |
+| Product number | Atlas Layer 6 |
+| Repository number | Layer 7 |
+| Package | `genios_engine/feedback/` |
+| Contract | `genios_engine/contracts/learning.py` |
+| API | `genios_engine/api/learning_routes.py` |
+| Migration | `migrations/0045_atlas_l6_learning.sql` |
 
 [← System Design index](../README.md)

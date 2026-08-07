@@ -6,6 +6,15 @@
 **Status:** Atlas core implemented, wired to Layer 5.2 and Atlas Layer 6 learning, scheduled.
 **For the CTO:** Part 5 is a runbook. Two commands: migrate, deploy. It self-starts from there.
 
+**System Design navigation:** [Layer map](../System%20Design/Layer-5-Executive-Engine/README.md) ·
+[component status](../System%20Design/Layer-5-Executive-Engine/STATUS.md) ·
+[11 Executive Units](../System%20Design/Layer-5-Executive-Engine/01-Executive-Units/README.md) ·
+[lifecycle](../System%20Design/Layer-5-Executive-Engine/02-Execution-Lifecycle/README.md) ·
+[contracts/operations](../System%20Design/Layer-5-Executive-Engine/03-Contracts-and-Operations/README.md)
+
+The System Design is now structured as part → unit → component module rather than the earlier
+flat page list. The previous prose claims remain subject to the status ledger's code evidence.
+
 **The one-line summary for a CTO:** GeniOS could produce an excellent recommendation and had
 no idea whether anyone ever did it. Layer 5 turns a recommendation into a **commitment** —
 with an owner, a deadline, a channel, an escalation ladder and a clock — and then watches it

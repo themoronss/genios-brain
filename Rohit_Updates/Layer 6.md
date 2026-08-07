@@ -10,6 +10,16 @@
 generic learned-state consumption by lower runtime layers is still an explicit integration gap.
 **For the CTO:** Part 8 is the deployment and proof runbook.
 
+**System Design navigation:** [Layer map](../System%20Design/Layer-7-Learning-Engine/README.md) ·
+[component status](../System%20Design/Layer-7-Learning-Engine/STATUS.md) ·
+[Learning Orchestrator](../System%20Design/Layer-7-Learning-Engine/01-Learning-Orchestrator/README.md) ·
+[11 Learning Units](../System%20Design/Layer-7-Learning-Engine/02-Learning-Units/README.md) ·
+[Evolution Publisher](../System%20Design/Layer-7-Learning-Engine/03-Evolution-Publisher/README.md) ·
+[promotion lifecycle](../System%20Design/Layer-7-Learning-Engine/04-Promotion-Lifecycle/README.md)
+
+The System Design now separates publisher implementation from runtime consumption. Generic brain
+rows and Runtime memories are durable, but remain partial until lower-layer consumers exist.
+
 **The one-line summary for a CTO:** GeniOS now turns explicit feedback, actual execution outcomes,
 normalized enterprise events and delivery performance into immutable learning proposals, validates
 and governs them, then publishes only permitted dynamic state—without giving an LLM or the runtime

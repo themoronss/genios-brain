@@ -6,6 +6,12 @@ Status: **implemented, reconciled with the Atlas, documented from live code and 
 
 Last updated: 2026-08-07
 
+**Documentation correction (7 August 2026):** the first documentation pass flattened these three
+large Atlas layers into a short list of pages. That was not an adequate system-design map. The
+live folders now follow `layer → part → subpart/unit → component module`: Layer 5 has 92 Markdown
+documents, Atlas Layer 5.2 has 114, and Atlas Layer 6 has 138. Every named Atlas component now has
+a physical location, code/status evidence, edge cases and an explicit gap boundary.
+
 The repository keeps a seven-layer code topology, so two Atlas names translate as follows:
 
 | Product/Atlas layer | Code package | System Design folder | Detailed CTO note |
@@ -52,7 +58,8 @@ it is not fabricated into either success or failure.
 
 ### CTO deployment order
 
-1. Review the three detailed notes above and the matching System Design alignment pages.
+1. Review the three detailed notes above, each layer's `STATUS.md`, and its nested System Design
+   part/unit/component tree.
 2. Apply migrations through `0045_atlas_l6_learning.sql` using the normal migration runner.
 3. Run one tenant's Executive sweep twice; first run may create commitments, second must create zero
    duplicates.
