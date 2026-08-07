@@ -2,10 +2,12 @@
 
 **Last updated:** 7 August 2026
 **Branch:** `antler-inception`
-**Tests:** **114 for Layer 5.2**, in four files — all green. (Repo-wide is 1678; a parallel
-session is adding Layer 4 units, so that number moves.)
-**Status:** feature-complete, wired into the existing drain, **no new worker** — ready to push
-**For the CTO:** Part 5 is a runbook. One migration, one deploy. It self-starts from there.
+**Tests:** **142 focused delivery/outbox/Executive-bridge tests**; full repository suite
+**1795 passed**.
+**Status:** Atlas Layer 5.2 core implemented, wired into the existing drain and Atlas Layer 6
+learning, **no new worker**.
+**For the CTO:** Part 5 is a runbook. Apply migrations through `0044`, deploy, then exercise one
+real destination and one controlled terminal failover.
 
 **The one-line summary for a CTO:** GeniOS could produce a correct, well-owned, well-worded
 alert and then deliver it at 03:14. Layer 5.2 is the gate between "Layer 5 decided to speak"
@@ -21,6 +23,13 @@ a tenant mutes the channel in week three, and once it is muted every other layer
 worth exactly zero.
 
 **Start at Part 5 — it is the deployment runbook.**
+
+> **Current-state correction, 7 August 2026.** The original build note below describes the
+> admission gate introduced by migration `0042`. Atlas reconciliation now also exposes immutable
+> `DeliveryObject`/`DeliveryResult` projections, leased live presence, deterministic destination
+> ordering, Slack + Teams + signed webhook adapters, authenticated pull surfaces, terminal-
+> failure-only failover, delivery analytics and the durable learning handoff. Migration `0044`
+> adds the presence state. The System Design folder is the component-level current authority.
 
 ---
 
@@ -92,17 +101,26 @@ Enqueue's job is to **materialise** the delivery object onto the row. The gate's
 
 ## Part 3 — What we built
 
-Two pure units, one composer, one contract, one schema, one surface.
+The admission core remains two pure units and one composer. Around it, the Atlas reconciliation
+adds the context, routing, adapter, result, analytics and recovery components required to make
+Layer 5.2 a complete delivery orchestrator.
 
 | Spec unit | Where | What it does |
 |---|---|---|
 | **Delivery Policy Unit** | `deliver/policy.py` | *May this travel at all?* Kill switch, hold, channel floor, opt-out. Almost always terminal |
 | **Timing & Interruptibility** ⭐⭐⭐⭐⭐ | `deliver/timing.py` | *Is this the moment?* Quiet hours, burst, busy. **Never suppresses anything** |
 | **Delivery Gate** | `deliver/gate.py` | Composes the units, resolves their inputs from live tenant state |
-| — Contract | `contracts/delivery.py` | `SEND` / `DEFER` / `SUPPRESS`, the candidate, and the composition law |
+| **Delivery Context Resolver** | `deliver/presence.py`, `deliver/gate.py` | Combines preferences, recipient/channel state, burst history and an active leased presence at send time |
+| **Destination Routing** | `deliver/destination.py` | Stable primary/fallback ordering from registered destinations; never trusts row order |
+| **Channel Adapter Unit** | `deliver/channels/` | Slack, Teams, signed HTTPS webhook and durable pull surfaces behind one adapter contract |
+| **Delivery Tracking & Result** | `deliver/results.py` | Projects the one outbox ledger into immutable public DeliveryObject and DeliveryResult contracts |
+| **Retry & Failure Recovery** | `deliver/outbox.py` | Bounded transport retry and authority-reproved failover only after terminal adapter failure |
+| **Delivery Analytics** | `deliver/analytics.py` | Counted status/channel metrics, attempts, deferrals, burst holds and measured p50/p95 latency |
+| — Contract | `contracts/delivery.py` | `SEND` / `DEFER` / `SUPPRESS`, DeliveryObject/Result and the composition law |
 | — Wiring | `deliver/outbox.py` | Enqueue stamps the delivery object; drain asks the gate before the send |
 | — Schema | `migrations/0042_l6_delivery_gate.sql` | `delivery_preferences` + the delivery object on the outbox row |
-| — Surface | `api/delivery_routes.py` | `/delivery/preferences`, `/effective`, `/held` |
+| — Presence schema | `migrations/0044_l52_atlas_delivery.sql` | Tenant-scoped, expiring `delivery_presence` leases |
+| — Surface | `api/delivery_routes.py` | Preferences, effective gate, held rows, context, typed results, pull inbox and analytics |
 
 ### The seven decisions that matter most
 
@@ -273,14 +291,27 @@ The gate connection sat `idle in transaction` while Slack answered, holding a sn
 blocking vacuum. Fixed with a rollback between rows — these are read-only queries, so it costs
 nothing and additionally means each resolve sees deliveries this pass just committed.
 
-### The four files, and what each is for
+### Atlas reconciliation defects closed after the admission core
 
-| File | Lines | What it proves |
+| # | Gap or failure mode | Current correction |
 |---|---|---|
-| `tests/test_delivery_gate.py` | 952 | 70 tests: the contract's invariants, both units end to end (incl. DST), the resolver, and the drain wiring against a recording fake engine |
-| `tests/test_delivery_routes.py` | 412 | 23 tests: `/effective` answers with the real gate, a refused write leaves nothing behind, the owner boundary holds |
-| `tests/test_l6_outbox.py` | — | pre-existing; still green, retry ladder untouched |
-| `tests/test_executive_bridge.py` | — | pre-existing; extended to carry the delivery object |
+| 7 | The Atlas promised DeliveryObject and DeliveryResult, but callers saw private outbox rows | Immutable typed projections now expose a stable public lifecycle without creating a second ledger |
+| 8 | A crashed client could leave somebody permanently busy | Presence is a mandatory-expiry lease; effective busy time is capped by its expiry |
+| 9 | Destination selection depended on whichever channel row arrived first | Explicit integer priority with stable channel-name tie-break |
+| 10 | Failover could have bypassed quiet hours, opt-out or revoked authority | Only `failed_terminal` opens failover, and authority is re-proved before enqueueing the next destination |
+| 11 | Calling a mobile/dashboard row “delivered” could be mistaken for device push | These adapters are explicitly pull surfaces; success means durable availability in the authenticated inbox |
+| 12 | A broad delivery failure rate could mislabel queued/suppressed work as transport failure | Analytics excludes open work and counts transport reliability only over delivered + failed-terminal rows |
+
+### The current focused test families
+
+| File | What it proves |
+|---|---|
+| `tests/test_delivery_gate.py` | Contract invariants, policy/timing composition, DST, resolver and drain wiring |
+| `tests/test_delivery_routes.py` | Effective gate, transactional preference refusal, held surface and tenant boundary |
+| `tests/test_delivery_atlas.py` | Typed objects/results, leased presence/resolver, deterministic routes, adapter validation, analytics, migration and failover law |
+| `tests/test_delivery.py` | Card/digest routing and format behaviour |
+| `tests/test_l6_outbox.py` | Claim safety, authority revalidation, bounded retry and one-ledger lifecycle |
+| `tests/test_executive_bridge.py` | Frozen Layer 5 communication handoff, resolved recipients and stale suppression |
 
 Three schema-conformance locks are worth calling out because they catch the *silent* failure:
 every preference column the gate reads, every column the router writes, and every column the
@@ -305,18 +336,29 @@ migration, deploy the branch, and it begins gating.
 .venv/bin/python -m genios_engine.platform.migrate
 ```
 
-Applies `0042_l6_delivery_gate.sql`:
+Applies both Layer 5.2 migrations in sequence:
+
+`0042_l6_delivery_gate.sql`:
 
 - `delivery_preferences` — the rules table, with the `'*'` sentinel and its org cascade FK
 - seven columns on `delivery_outbox` — `recipient`, `band`, `channel_class`, `interrupt`,
   `defer_count`, `gate_unit`, `gate_reason`
 - two partial indexes — the burst-window read and the operator's "what is held?" view
 
+`0044_l52_atlas_delivery.sql`:
+
+- `delivery_presence` — one bounded lease per `(org_id, seat_id)`
+- a database check that `expires_at > observed_at`
+- tenant deletion cascade and an active-lease lookup index
+
 **Verify:**
 
 ```sql
-select count(*) from schema_migrations where filename = '0042_l6_delivery_gate.sql';   -- 1
+select filename from schema_migrations
+ where filename in ('0042_l6_delivery_gate.sql', '0044_l52_atlas_delivery.sql')
+ order by filename;  -- 2 rows
 \d delivery_preferences
+\d delivery_presence
 \d delivery_outbox
 ```
 
@@ -324,7 +366,8 @@ select count(*) from schema_migrations where filename = '0042_l6_delivery_gate.s
 table rewrite. The cascade constraint is `not valid`, matching the 0033/0041 convention — it
 binds every future write without taking a full-table lock on deploy.
 
-**If it fails:** migrations are immutable and checksummed. Ship `0043`, never edit in place.
+**If it fails:** migrations are immutable and checksummed. Ship a new migration; never edit an
+already-applied file in place.
 
 ---
 
@@ -443,8 +486,9 @@ the field.
 
 ### Step 7 — Rollback
 
-Layer 5.2 adds columns and one table; it changes no existing behaviour except that the drain
-now asks a question before sending.
+Layer 5.2 adds delivery columns plus the preference and presence tables; it changes no existing
+business decision, but the drain now proves admission before sending and may recover an exhausted
+transport through the next registered destination.
 
 To neutralise it without redeploying, set the tenant default to no quiet hours:
 
@@ -460,17 +504,13 @@ if nothing writes to them.
 
 ### The one thing that is genuinely unproven
 
-**No SQL in this layer has ever run against Postgres.** This machine has no database, no docker
-and no `psql`; CI has no service containers. Every unit, the composer and the drain wiring
-execute against in-memory doubles.
+**The new SQL has not been exercised against a live PostgreSQL deployment in this handoff.** Every
+unit, the composer and the drain wiring execute against in-memory doubles, while schema ratchets
+check the statements against migration-declared tables and columns.
 
 What *has* been done to close the gap as far as it can be closed without a database:
 
-- **All 47 statements this layer issues parse as real Postgres** — the migration's 19, every
-  literal query in the four modules, and both statements built by string interpolation at
-  runtime, in every shape they can take (the burst query's two recipient forms, the upsert at
-  1, 2 and 11 columns). Zero failures.
-- **Three schema-conformance tests** assert that every column read or written exists in a
+- **Schema-conformance tests** assert that every column read or written exists in a
   migration, derived from source rather than restated.
 - **`'suppressed'` was proven to break no consumer** — `outbox.py` is the only reader of
   `delivery_outbox.status` in the whole repo.
@@ -482,16 +522,15 @@ That proves syntax and naming. It does not prove "this column exists on your dep
 
 ### Still open, deliberately
 
-**`AttentionState.busy_until` has no producer.** GeniOS ingests calendars, but nothing yet
-projects "in a meeting until" per seat, and a fabricated busy signal would be worse than none.
-The branch, the field and its tests all exist so that projection plugs in without reopening a
-single decision below it. Today it is always `None`, which resolves to "not busy".
+**Presence has a trusted manual publisher, not an automatic one.** Owner-authenticated product
+surfaces can publish and clear a 30–3600 second lease through `/delivery/context`; expired state is
+ignored. Automatic calendar/browser/mobile projection still needs a trusted seat identity and a
+publisher lifecycle. Calendar plans alone are deliberately not fabricated into live presence.
 
-**One channel adapter.** `channel_class_for` reads Layer 5's `CHAT_CHANNELS`, so registering a
-second chat adapter makes it interruptive in both layers at once. Email would arrive as
-`ChannelClass.EMAIL`, which is deliberately **not** in `INTRUSIVE_CHANNEL_CLASSES` — an inbox at
-03:00 is a queue, not an interruption. The day an email adapter ships with different semantics,
-that frozenset is the one line that changes.
+**External adapters are Slack, Teams and signed webhook.** App, dashboard, API, application,
+extension and mobile are durable pull surfaces; mobile does **not** mean APNs/FCM. Native email and
+device push remain open until provider, identity, unsubscribe/token, receipt and outage semantics
+are chosen. Production also needs network-level egress controls for customer webhooks.
 
 **No admin role check.** Writes take `require_owner`, which is the strongest boundary this
 codebase has. `org_seats.role` exists; a shared admin dependency belongs in `platform/auth.py`
@@ -560,6 +599,12 @@ second, weaker copy of a predicate that already exists.
 | `suppressed` distinct from `cancelled` and `failed_terminal` | ✅ Three outcomes, three fixes |
 | Every blocked delivery explains itself in the row | ✅ 13 reason codes + `/delivery/held` |
 | Bad config degrades in the engine, is refused at the door | ✅ Same predicate, opposite responses |
-| Tenant control surface | ✅ 4 endpoints, incl. `/effective` as a dry run of the real gate |
+| Tenant control surface | ✅ Preferences, `/effective`, held rows, leased context, results, pull inbox and analytics |
 | Schema conformance locked by test | ✅ Reads, writes and the held view |
+| Typed DeliveryObject and DeliveryResult | ✅ Immutable projection over the one outbox ledger |
+| Leased live context | ✅ Owner-published, TTL-bounded and ignored after expiry |
+| Destination routing and terminal-failure failover | ✅ Stable priority; never routes around policy, timing or authority |
+| Slack, Teams and signed webhook | ✅ Validated adapters behind bounded retry |
+| Pull surfaces and inbox | ✅ Durable availability, explicitly not device push |
+| Delivery analytics and Atlas Layer 6 handoff | ✅ Counted from the same durable ledger |
 | **Run against a real Postgres** | ❌ **Step 1 + Step 3 of the runbook** |

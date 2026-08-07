@@ -18,17 +18,27 @@
 | 6 | Stored plans had **no rehydration path** — the payload was write-only | round-trip test | `decanonicalize()` + `from_semantic_dict()` + `verify_round_trip()` at build time |
 | 7 | `POST /sweep` crashed: `vars()` on a slotted dataclass | new route test | `dataclasses.asdict` |
 | 8 | The dismiss route wrote SQL `now()` while everything else passes time explicitly | new route test | time is bound, **so a replay observes the instant the event recorded** |
+| 9 | No runtime Coordination Unit; dependencies were informational after build | Atlas reconciliation | `coordination.py` plus dependency-gated completion |
+| 10 | `BLOCKED` existed but could neither be entered nor resumed | lifecycle/API reconciliation | owner-only live-state transition endpoint |
+| 11 | Blocked work returned before escalation and therefore never escalated | blocked escalation scenario | guard proceeds; reminder unit suppresses ordinary nudges only |
+| 12 | Cooldown/fatigue ran before due ladder rungs | reminder policy scenario | promised escalations outrank ordinary-reminder limits |
+| 13 | A resolved manager/executive target was stored but the outbox still addressed the owner | bridge scenario | resolved seat/audience/interrupt carried on the reminder event |
+| 14 | `EXPIRED → RUNNING` reopened an outcome already emitted for learning | transition-table test | expired is terminal and only archives |
+| 15 | `PENDING` was recorded as delivered before an adapter ran | sweep + bridge scenarios | separate queued and transport-confirmed events |
+| 16 | Two concurrent sweeps could both emit a message after only one won the escalation-rung write | lost-race scenario | the losing worker reschedules without recording a reminder |
+| 17 | An action could be ticked while its commitment was still unvalidated in `CREATED` | route scenario | coordinated completion accepts only live `OPEN_STATES` |
 
-### The six test files
+### Operational test coverage
 
-| File | Tests | Proves |
-|---|---|---|
-| `test_executive_execution.py` | 26 | the contract: identity, the read-only boundary, autonomy, the clock |
-| `test_executive_lifecycle.py` | 45 | guard, reminder, monitor, escalation, tracking, outcome labels |
-| `test_executive_sweep.py` | 33 | **the orchestrator, executed** — all five endings, both nudge paths, rerouting, and that the scheduler actually drives it |
-| `test_executive_store_schema.py` | 21 | every SQL column exists and every `:bind` is supplied |
-| `test_executive_bridge.py` | 16 | **a reminder reaches a human** — exactly once, never stale |
-| `test_executive_routes.py` | 15 | the API: org scoping, the credential boundary, dismiss → sweep → cancel |
+| File | Proves |
+|---|---|
+| `test_executive_execution.py` | the contract: identity, the read-only boundary, autonomy, the clock |
+| `test_executive_coordination.py` | parallel waves, joins and impossible completion detection |
+| `test_executive_lifecycle.py` | guard, reminder, monitor, escalation, tracking, outcome labels |
+| `test_executive_sweep.py` | **the orchestrator, executed** — endings, nudge paths, rerouting and scheduling |
+| `test_executive_store_schema.py` | every SQL column exists and every `:bind` is supplied |
+| `test_executive_bridge.py` | **a reminder reaches the resolved human** — exactly once, never stale |
+| `test_executive_routes.py` | org scoping, credential boundary, coordination and live-state mutations |
 
 **Two are ratchets** — they fail if the code *drifts*, not just if it breaks:
 
@@ -164,9 +174,20 @@ sweep only visits orgs with an active `tenant_packs` row. To stop it globally,
 
 ### Still open, deliberately
 
-**Layer 7 does not yet read `execution_outcomes`.** The table is written and indexed for the
-cohort read (`org, capability, play, closed_at`); `feedback/calibrate.py` still learns from card
-clicks alone. *Not built here on purpose — Layer 7 is its own brick, and this is the first item
-of it.*
+**Outcome learning is now connected.** `feedback/store.py::load_batch` reads
+`execution_outcomes` by the indexed `(org, capability, play, closed_at)` cohort, and Outcome,
+Recommendation and Knowledge Evolution units consume it. `completed_unproven` remains a neutral,
+visible class instead of being fabricated into success or failure.
+
+**Concrete per-action multi-owner allocation is partial.** Actions carry dependency waves and
+audience classes, and owner actions resolve to the commitment owner. Atlas-style Sales/Legal/
+Finance/Founder seat assignments per action are not yet a frozen contract.
+
+**Digest-planned commitment reminders are not yet batched into the daily digest.** They are
+recorded and remain visible, but the Layer 5.2 bridge correctly refuses to turn a digest plan
+into an interrupting chat message.
+
+**Redis acceleration is not implemented.** PostgreSQL is the durable due queue and runtime
+truth. This is correct at current scale but differs from the Atlas PostgreSQL + Redis target.
 
 ---

@@ -271,10 +271,11 @@ def test_terminal_states_only_lead_to_archived():
     assert ALLOWED_TRANSITIONS[ExecutionState.ARCHIVED] == ()
 
 
-def test_expired_work_can_be_picked_back_up():
-    """A human who resumes lapsed work has demonstrably not finished with it; refusing them
-    would just make them create a duplicate by hand."""
-    assert can_transition(ExecutionState.EXPIRED, ExecutionState.RUNNING)
+def test_expired_work_is_terminal_and_can_only_be_archived():
+    """An expired row has already produced a learning outcome. Resuming it would rewrite that
+    outcome; renewed work must come from a new Layer 4 decision and a new commitment."""
+    assert not can_transition(ExecutionState.EXPIRED, ExecutionState.RUNNING)
+    assert ALLOWED_TRANSITIONS[ExecutionState.EXPIRED] == (ExecutionState.ARCHIVED,)
 
 
 def test_open_and_terminal_states_partition_the_machine():

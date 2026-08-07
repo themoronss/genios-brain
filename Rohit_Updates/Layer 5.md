@@ -1,10 +1,9 @@
 # Layer 5 — The Executive Engine
 
-**Last updated:** 6 August 2026
-**Branch:** `harsh/mvp`
-**Tests:** **156 for Layer 5**, in six files — all green. (Repo-wide is 1326 and climbing; a
-second session is adding Layer 4 units in parallel, see Part 4.)
-**Status:** feature-complete, wired to Layer 6, **scheduled** — ready to push
+**Last updated:** 7 August 2026
+**Branch:** `antler-inception`
+**Tests:** **195 focused Layer 5 tests**; full repository suite **1795 passed**.
+**Status:** Atlas core implemented, wired to Layer 5.2 and Atlas Layer 6 learning, scheduled.
 **For the CTO:** Part 5 is a runbook. Two commands: migrate, deploy. It self-starts from there.
 
 **The one-line summary for a CTO:** GeniOS could produce an excellent recommendation and had
@@ -19,6 +18,13 @@ Those are different jobs. A conclusion is an opinion. A commitment is an opinion
 and a date attached.
 
 **Start at Part 5 — it is the deployment runbook.**
+
+> **Current-state correction, 7 August 2026.** The original build note below correctly describes
+> the foundation, but the Atlas reconciliation added runtime Execution Coordination, owner-only
+> live-state transitions, dependency-gated action completion, blocked escalation, resolved
+> escalation recipients, and a clean queued-vs-delivered audit split. The earlier statement that
+> Layer 7 did not read `execution_outcomes` is now obsolete: Atlas Layer 6 learning consumes them.
+> The System Design folder is the component-level current authority.
 
 ---
 
@@ -86,27 +92,29 @@ changing it in the same step is how a refactor becomes an outage.
 
 ## Part 3 — What we built
 
-Eleven units, one output. The layer emits exactly one artifact: the **Execution Object**.
+Ten Atlas units plus Coordination, one output. The layer emits exactly one artifact: the
+**Execution Object**.
 
 Numbered to match your spec exactly, so this table can be read side by side with it. Every unit
 in the spec is built; the unnumbered rows are the machinery the spec implies but does not name.
 
 | Spec unit | Where | What it does |
 |---|---|---|
-| **1 · Decision Interpreter** | `executive/interpret.py` | Reads a Layer 4 decision as an *instruction*, or names precisely why it is not one |
-| **2 · Execution Planning** ⭐⭐⭐ | `executive/planning.py` | Steps → actions with kinds, dependency waves, owners, resources, per-step deadlines |
-| **3 · Communication Planning** | `executive/communication.py` | Audience, channel, interrupt, tone — and a reason code for each |
-| **4 · Execution Object Builder** ⭐⭐⭐ | `executive/execution.py` | Composes the units into one commitment, or refuses with a named code |
-| **5 · Delivery** | `deliver/executive_bridge.py` | The wire. Layer 5's reminder becomes a real message, exactly once, re-validated at send |
-| **6 · Reminder** ⭐⭐⭐⭐⭐ | `executive/reminder.py` | Business relevance, not a calendar |
-| **7 · Monitoring** | `executive/monitor.py` | Progress, stalls, and the gap between "ticked" and "proven" |
-| **8 · Escalation** | `executive/escalation.py` | The ladder, scaled by urgency, capped by the decision's expiry |
-| **9 · Execution Tracking** | `executive/lifecycle.py` | The state machine and its audit vocabulary |
-| **10 · Feedback Collection** | `executive/collect.py` | The outcome record Layer 7 will learn from |
-| **+ Execution Validation** ⭐ | `executive/execution_guard.py` | **Your improvement.** Re-validates against live state before *every* outbound moment |
+| **1 · Decision Interpreter** | `executive/interpret.py` | Reads a Layer 4 decision as an instruction, or refuses by name |
+| **2 · Execution Planning** ⭐⭐⭐ | `executive/planning.py` | Steps → typed actions, dependencies, waves, audiences, resources and deadlines |
+| **2.5 · Execution Coordination** | `executive/coordination.py` | Recomputes ready/waiting/completed work and blocks out-of-order completion |
+| **3 · Communication Planning** | `executive/communication.py` | Audience, channel, interrupt, tone and reason code |
+| **4 · Execution Validation** ⭐⭐⭐⭐⭐ | `executive/execution_guard.py` | Re-validates authority, outcome, subject, owner and clock before every outbound moment |
+| **5 · Reminder** | `executive/reminder.py` | Business relevance, due rungs, fatigue and cooldown |
+| **6 · Monitoring** | `executive/monitor.py` | Progress, stalls and done-but-unproven |
+| **7 · Escalation** | `executive/escalation.py` | Frozen urgency-scaled ladder with live target resolution |
+| **8 · Execution Tracking** | `executive/lifecycle.py` | State machine and audit vocabulary |
+| **9 · Feedback Collection** | `executive/collect.py` | Writes immutable outcome truth consumed by learning |
+| **10 · Execution Object Builder** | `executive/execution.py` | Composes one immutable commitment or refuses cheaply |
 | — Contract | `contracts/execution.py` | The Execution Object: frozen, content-addressed, integer-only, state machine as data |
 | — Owner resolution | `executive/assignment.py` | *Who.* Moved down from `deliver/`. Pure core, injected directory |
 | — Persistence | `executive/execution_store.py` | The only Layer 5 module that touches SQL |
+| — Layer 5.2 handoff | `deliver/executive_bridge.py` | Carries grounded reminder/escalation events to the resolved recipient, exactly once |
 | — The loop | `executive/sweep.py` | Two passes: plan commitments, then run the lifecycle. **Wired into the scheduler heartbeat** (`api/routes.py`) — no new cron |
 | — Schema | `migrations/0041_l5_execution.sql` | 5 tables + the reporting line on `org_seats` |
 | — Surface | `api/executive_routes.py` | `/v1/executive/commitments*`, `/sweep` |
@@ -202,11 +210,11 @@ And it stops at the decision's expiry. A rung that would fire after Layer 4 stop
 behind the conclusion is dropped at build time, so the execution object is *provably* incapable
 of escalating on lapsed authority.
 
-### What Layer 7 gets that it never had
+### What Atlas Layer 6 learning gets that it never had
 
-Layer 7 currently learns from card clicks — whether a recommendation *looked* right on arrival.
-`execution_outcomes` measures whether acting on it *worked*, and labels the ending by who or
-what ended it:
+The original learner used card clicks — whether a recommendation *looked* right on arrival.
+`execution_outcomes` measures whether acting on it *worked*, and Atlas Layer 6 now consumes this
+cohort for Outcome Analysis, Recommendation Learning and Knowledge Evolution:
 
 | Label | Means |
 |---|---|
@@ -237,17 +245,27 @@ Loop engineering, not afterthoughts. Each was caught by writing the test before 
 | 6 | Stored plans had no rehydration path — payload was write-only | Round-trip test | `decanonicalize()` + `from_semantic_dict()` + `verify_round_trip()` at build time |
 | 7 | `POST /sweep` crashed: `vars()` on a slotted dataclass | New route test | `dataclasses.asdict` |
 | 8 | The dismiss route wrote SQL `now()` while everything else passes time explicitly | New route test | Time is bound, so a replay observes the instant the event recorded |
+| 9 | The Execution Object described dependencies but runtime could complete blocked actions | Atlas coordination tests | Added a deterministic Coordination Snapshot and dependency-gated completion |
+| 10 | A blocked commitment had no legal live-state mutation | Route/state-machine tests | Added authenticated `running ↔ waiting/blocked` transitions with audit events |
+| 11 | Blocked work could wait forever without reaching an escalation rung | Lifecycle scenarios | Blocked state now remains monitorable and escalatable instead of silently stalling |
+| 12 | Cooldown/fatigue could hide a reminder rung that was already due | Boundary-clock tests | Due-ladder/business-relevance checks run before fatigue/cooldown suppression |
+| 13 | Escalation used a stale recipient after the reporting line changed | Bridge tests | Resolve the current manager/leadership target immediately before handoff |
+| 14 | An expired commitment could be reopened as ordinary running work | State-transition ratchet | Expired work remains terminal; renewed work requires a new decision/commitment |
+| 15 | A queued reminder could be reported as delivered before transport success | Outbox/bridge tests | Execution event records queued handoff; transport truth remains in DeliveryResult |
+| 16 | Concurrent escalation sweeps could enqueue the same rung twice | Race/idempotence scenarios | Guarded rung claim plus stable delivery key makes the handoff exactly once |
+| 17 | Ticking an action on a newly created commitment skipped the running transition | Route tests | The first valid completion moves the commitment through the legal running state |
 
-### The six files, and what each is for
+### The current focused test families
 
-| File | Tests | Proves |
-|---|---|---|
-| `tests/test_executive_execution.py` | 26 | The contract: identity, the read-only boundary, autonomy, the clock |
-| `tests/test_executive_lifecycle.py` | 45 | Guard, reminder, monitor, escalation, tracking, outcome labels |
-| `tests/test_executive_sweep.py` | 33 | **The orchestrator, executed** — all five endings, both nudge paths, rerouting, and that the scheduler actually drives it |
-| `tests/test_executive_store_schema.py` | 21 | Every SQL column exists and every `:bind` is supplied |
-| `tests/test_executive_bridge.py` | 16 | **A reminder reaches a human** — exactly once, never stale |
-| `tests/test_executive_routes.py` | 15 | The API: org scoping, the credential boundary, dismiss → sweep → cancel |
+| File | Proves |
+|---|---|
+| `tests/test_executive_execution.py` | contract identity, read-only boundary, autonomy and clocks |
+| `tests/test_executive_coordination.py` | parallel dependency waves, joins and corrupt-order detection |
+| `tests/test_executive_lifecycle.py` | guard, reminder, monitor, escalation, tracking and outcome labels |
+| `tests/test_executive_sweep.py` | the orchestrator executed through all endings and nudge paths |
+| `tests/test_executive_store_schema.py` | every SQL column exists and every bind is supplied |
+| `tests/test_executive_bridge.py` | resolved recipients, exactly-once handoff and stale suppression |
+| `tests/test_executive_routes.py` | org scoping, credentials, coordination and live-state mutations |
 
 Two of them are **ratchets** — they fail if the code drifts, not just if it breaks:
 
@@ -271,11 +289,11 @@ and `tests/` between 23:03 and 23:23, interleaved with this work. A half-written
 mid-write is what failed those 70 tests, and the growing file count is what moved the totals.
 
 Both workstreams are green together and no file was touched by both. But flagging it plainly:
-**concurrent sessions on one working tree is a real hazard**, and the repo-wide test total is a
-moving target while it continues. Layer 5's own 156 are stable and independently runnable:
+**concurrent sessions on one working tree is a real hazard**. The final reconciled snapshot is
+1795 repository tests, and Layer 5's focused collection is 195 independently runnable tests:
 
 ```
-pytest tests/test_executive_*.py
+.venv/bin/pytest --collect-only -q tests/test_executive*.py
 ```
 
 ---
@@ -466,10 +484,12 @@ Step 3 are what close that, and they are the reason this runbook starts there.
 
 ### Still open, deliberately
 
-**Layer 7 does not yet read `execution_outcomes`.** The table is written and indexed for the
-cohort read (`org, capability, play, closed_at`); `feedback/calibrate.py` still learns from card
-clicks alone. Not built here on purpose — Layer 7 is its own brick, and this is the first item of
-it.
+**Outcome learning is connected.** `feedback/store.py::load_batch` reads the indexed
+`(org, capability, play, closed_at)` cohort. `completed_unproven` remains a visible neutral class,
+while succeeded and failed cohorts feed deterministic effectiveness calculations.
+
+**Still open:** concrete per-action multi-owner seat/agent allocation, digest batching for
+digest-planned commitment reminders, Redis acceleration and live-PostgreSQL proof.
 
 ---
 
@@ -492,12 +512,11 @@ No round-robin, no "assign to whoever is least busy". Those would make the same 
 on different people on different days, and an owner who cannot predict what reaches them stops
 trusting the queue.
 
-**4. No reopening a completed commitment.**
+**4. No reopening a terminal commitment.**
 Terminal states go only to `archived`. If the world changes again, that is a *new* decision
 producing a *new* commitment. Reopening would silently rewrite the outcome Layer 7 already
-learned from. The one exception is `expired → running`: a human who picks lapsed work back up
-has demonstrably not finished with it, and refusing them would just make them create a duplicate
-by hand.
+learned from. `expired → running` was removed during Atlas reconciliation for exactly this reason;
+renewed work must come from fresh authority and a new commitment.
 
 **5. No silent drops.**
 An unroutable commitment is still created, still tracked, still reported on. It lands in the
@@ -531,7 +550,7 @@ accounts nobody owns — which are exactly the accounts most likely to be lost.
 | Escalation ladder, urgency-scaled, expiry-capped | ✅ Frozen at plan time |
 | Monitoring — progress, stalls, done-but-unproven | ✅ |
 | State machine + full audit trail | ✅ One transition table shared by code and tests |
-| Outcome records for Layer 7 | ✅ Written and indexed — ⚠️ not yet read (Layer 7's brick) |
+| Outcome records for Atlas Layer 6 | ✅ Written, indexed and consumed |
 | Tenant-tunable via pack data (LVL2/LVL3 merge, pins, guardrails) | ✅ `sales` pack v1.8.0 |
 | Orchestrator (`sweep.py`) executed end to end | ✅ 33 scenarios against an in-memory double |
 | Persistence (`execution_store.py`) executed | ✅ Idempotence, guarded races, supersede |
@@ -541,10 +560,10 @@ accounts nobody owns — which are exactly the accounts most likely to be lost.
 | Runs automatically — no new cron, worker or service | ✅ In the scheduler heartbeat, before distribution |
 | **Ever executed against Postgres** | ❌ **Not once. Step 1 + Step 3 of the runbook close this.** |
 
-**Layer 5 is feature-complete, connected and scheduled.** Every unit, the orchestrator, the
-persistence, the Layer 6 wire and the API surface are executed by tests. Nothing is half-built and
-nothing is planned-but-missing. Deploy the branch and run the migration; it starts itself. What
-remains is proving the SQL against a real database — Part 5, Steps 1 and 3.
+**Layer 5's Atlas core is connected and scheduled.** Every unit, Coordination, the orchestrator,
+persistence, Layer 5.2 handoff, learning outcome seam and API surface are covered locally. The
+remaining work is explicit rather than hidden: concrete per-action multi-owner allocation, digest
+batching, Redis acceleration and real-database deployment proof.
 
 ---
 
@@ -577,7 +596,7 @@ alive. Run the sweep a second time: `planned.created` should be `0`. That is ide
 is the property that makes it safe to put on a timer.
 
 **What is genuinely left:**
-One job — Part 5, item 1. Every unit, the orchestrator, the persistence, the Layer 6 wire and the
-API surface are executed by tests; 156 of them belong to this layer. What no test can do is
-prove that the SQL Postgres actually runs means what the tests assume it means. That is an
-afternoon with a database, and it is the last thing standing between "proven" and "running".
+Run migration `0041` and the cross-layer migrations through `0045` against live PostgreSQL, then
+exercise a real tenant. Product refinements remain for concrete per-action multi-owner assignment,
+digest batching and Redis acceleration; none of them changes the current deterministic authority
+or safety boundary.

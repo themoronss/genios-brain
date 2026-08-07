@@ -34,6 +34,8 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.deliver.gate import channel_class_for
+from genios_engine.executive.execution_store import log_event
+from genios_engine.executive.lifecycle import EVENT_DELIVERY_CONFIRMED
 from genios_engine.platform.ids import new_id
 
 BRIDGE_VERSION = "exec_bridge.v1"
@@ -112,7 +114,9 @@ def _render(channel: str, message: dict, *, base_url: str = "") -> dict:
     if channel == "slack":
         from genios_engine.deliver.channels.slack import format_reminder_message
         return format_reminder_message(message, base_url=base_url)
-    return message
+    return {**message,
+            "url": (f"{base_url.rstrip('/')}/cards/{message.get('card_id')}"
+                    if base_url and message.get("card_id") else None)}
 
 
 def _detail(value: Any) -> dict:
@@ -153,6 +157,10 @@ def enqueue_executive_messages(engine, org_id: str, channel: str = "slack",
 
         for row in rows:
             detail = _detail(row["detail"])
+            recipient = detail.get("target_seat") or row["assignee"]
+            rung_interrupt = detail.get("interrupt")
+            interrupt = (rung_interrupt if isinstance(rung_interrupt, bool)
+                         else bool(row["interrupt"]))
             message = format_reminder({
                 "execution_id": row["execution_id"], "goal": row["goal"],
                 "card_id": row["card_id"], "reason_code": row["reason_code"],
@@ -175,14 +183,14 @@ def enqueue_executive_messages(engine, org_id: str, channel: str = "slack",
                 "on conflict (org_id, card_id, channel) do nothing"),
                 {"i": new_id("ob"), "o": org_id,
                  "c": executive_card_id(row["execution_id"], row["event_id"]),
-                 "ch": channel, "p": json.dumps(payload), "seat": row["assignee"],
+                 "ch": channel, "p": json.dumps(payload), "seat": recipient,
                  "band": row["band"],
                  # The *surface* class, derived from the adapter this row is going out on. Layer
                  # 5's own channel_class is what it planned for; a commitment planned for the
                  # digest never reaches here because the enqueue filters on `channel_id`, so the
                  # two agree — and when a non-chat adapter ships, this follows it automatically.
                  "cclass": channel_class_for(channel).value,
-                 "interrupt": bool(row["interrupt"])})
+                 "interrupt": interrupt})
             queued += result.rowcount
     return queued
 
@@ -214,6 +222,31 @@ def executive_delivery_is_live(conn, org_id: str, card_id: str, *,
     return row is not None
 
 
+def mark_executive_delivered(conn, org_id: str, card_id: str, *, at: datetime,
+                             channel: str) -> bool:
+    """Confirm transport only after the adapter succeeded.
+
+    ``CREATED → PENDING`` means validated and queued, not delivered. Keeping this write on the
+    Layer 6 success path prevents Layer 5 tracking from claiming that a message reached a human
+    while it is still deferred, retrying, suppressed or cancelled in the outbox.
+    """
+    parsed = parse_executive_card_id(card_id)
+    if parsed is None:
+        return False
+    execution_id, event_id = parsed
+    result = conn.execute(text(
+        "update executions set delivered_at=coalesce(delivered_at,:n), updated_at=now() "
+        "where org_id=:o and execution_id=:x and closed_at is null"),
+        {"n": at, "o": org_id, "x": execution_id})
+    if getattr(result, "rowcount", 0) != 1:
+        return False
+    log_event(conn, org_id=org_id, execution_id=execution_id,
+              kind=EVENT_DELIVERY_CONFIRMED, reason_code="transport_delivered",
+              actor="delivery", detail={"channel": channel,
+                                          "reminder_event_id": event_id}, occurred_at=at)
+    return True
+
+
 def link_commitment_cards(engine, org_id: str, limit: int = 200) -> int:
     """Point each commitment at the card that surfaces it.
 
@@ -240,4 +273,5 @@ def link_commitment_cards(engine, org_id: str, limit: int = 200) -> int:
 
 __all__ = ["BRIDGE_VERSION", "EXECUTIVE_PREFIX", "enqueue_executive_messages",
            "executive_card_id", "executive_delivery_is_live", "format_reminder",
-           "is_executive_delivery", "link_commitment_cards", "parse_executive_card_id"]
+           "is_executive_delivery", "link_commitment_cards", "mark_executive_delivered",
+           "parse_executive_card_id"]

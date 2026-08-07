@@ -25,6 +25,7 @@
 | `test_delivery_routes.py` | 412 lines · 23 tests | `/effective` answers with the **real** gate, a refused write leaves nothing behind, the owner boundary holds |
 | `test_l6_outbox.py` | pre-existing | still green — retry ladder untouched |
 | `test_executive_bridge.py` | pre-existing | extended to carry the delivery object |
+| `test_delivery_atlas.py` | 9 tests | typed object/result projection, leased context, routing order, adapter boundary, endpoint/secret validation, analytics, schema and failover authority |
 
 **Three schema-conformance locks** catch the *silent* failure:
 
@@ -59,6 +60,11 @@ scheduler heartbeat. No new cron, worker, service or environment variable.
 > The column adds carry **non-volatile defaults**, so PostgreSQL 11+ does them without a table
 > rewrite. The cascade constraint is `not valid`, matching the 0033/0041 convention — *it binds
 > every future write without taking a full-table lock on deploy.*
+
+`0044_l52_atlas_delivery.sql` adds `delivery_presence`, a tenant-scoped leased row per seat.
+`expires_at > observed_at` is a database invariant and the org foreign key cascades on account
+erasure. The typed delivery object/result and analytics need no extra table: they project the
+existing `delivery_outbox` ledger.
 
 ### Step 2 — Deploy
 
@@ -157,16 +163,15 @@ to.** The tables can be left in place; they are inert.
 > **No SQL in this layer has ever run against Postgres.** This machine has no database, no
 > docker and no `psql`; CI has no service containers.
 
-What *has* been done to close the gap as far as it can be closed:
+What *has* been done to close the gap as far as it can be closed locally:
 
-- **All 47 statements this layer issues parse as real Postgres** — the migration's 19, every
-  literal query in the four modules, and both statements built by string interpolation at
-  runtime, **in every shape they can take** (the burst query's two recipient forms, the upsert
-  at 1, 2 and 11 columns). Zero failures.
+- SQL-shape and schema-conformance tests cover the admission queries and their runtime-generated
+  forms; migration `0044` adds an explicit lease invariant and tenant-erasure foreign key.
 - **Three schema-conformance tests** assert every column read or written exists in a migration,
   **derived from source rather than restated**.
 - **`'suppressed'` was proven to break no consumer** — `outbox.py` is the only reader of
   `delivery_outbox.status` in the whole repo.
+- The complete local Python suite, including the Atlas alignment tests, is green.
 
 *That proves syntax and naming. It does not prove "this column exists on your deployed table."*
 
@@ -174,8 +179,11 @@ What *has* been done to close the gap as far as it can be closed:
 
 | Gap | Detail |
 |---|---|
-| **`AttentionState.busy_until` has no producer** | GeniOS ingests calendars, but nothing yet projects *"in a meeting until"* per seat, and **a fabricated busy signal would be worse than none.** The branch, the field and its tests all exist so the projection plugs in without reopening a single decision below it. Today it is always `None` → "not busy" |
-| **One channel adapter** | `channel_class_for` reads Layer 5's `CHAT_CHANNELS`, so registering a second chat adapter makes it interruptive in **both** layers at once. Email would arrive as `ChannelClass.EMAIL`, deliberately **not** intrusive |
+| **No automatic calendar/client presence publisher** | `delivery_presence` and `/delivery/context` now make `busy_until`, activity and current surface real, leased gate inputs. A trusted surface must publish them; calendar events are not automatically projected into real-time presence, because a scheduled meeting is not proof that a person is still busy |
+| **No native email delivery** | Email still needs a provider and sender/domain, template, unsubscribe, bounce and complaint policy. There is intentionally no adapter that reports success without doing those jobs |
+| **No native mobile/OS push** | `mobile` is an authenticated durable pull inbox. APNs/FCM device registration, token rotation, receipts and notification permissions are not implemented |
+| **External adapters not live-proven here** | Slack, Teams and signed webhook adapters are code-complete, but this environment has not exercised real provider credentials or controlled outage/failover scenarios. Production webhook egress still needs network-level controls |
+| **Card-only cross-channel failover** | Cards follow a deterministic fallback ladder after terminal transport failure. Commitment reminders keep Layer 5's exact frozen channel plan; silently changing it would violate upstream authority |
 | **No admin role check** | Writes take `require_owner`, the strongest boundary this codebase has. `org_seats.role` exists; *a shared admin dependency belongs in `platform/auth.py` when one is written, not invented inside a settings router* |
 
 ---

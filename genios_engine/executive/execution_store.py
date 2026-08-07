@@ -27,13 +27,15 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
 
-from genios_engine.contracts.execution import ExecutionObject, ExecutionState
+from genios_engine.contracts.execution import OPEN_STATES, ExecutionObject, ExecutionState
 from genios_engine.executive.collect import ExecutionOutcome
+from genios_engine.executive.coordination import coordinate
 from genios_engine.executive.execution_guard import ValidationInput
 from genios_engine.executive.lifecycle import Transition
 from genios_engine.executive.reminder import ReminderState
@@ -315,7 +317,10 @@ def apply_transition(conn, *, org_id: str, execution_id: str, move: Transition,
 def record_reminder(conn, *, org_id: str, execution_id: str, at: datetime, reason_code: str,
                     next_check_at: datetime | None, urgency: str,
                     escalation_day: int | None = None,
-                    facts: Mapping[str, Any] | None = None) -> str:
+                    facts: Mapping[str, Any] | None = None,
+                    target_seat: str | None = None,
+                    target_audience: str | None = None,
+                    interrupt: bool | None = None) -> str:
     """Count the reminder, schedule the next look, say why it fired — and carry the vocabulary.
 
     ``facts`` is the grounded corpus from ``reminder.reminder_facts``: every value a reminder is
@@ -333,7 +338,8 @@ def record_reminder(conn, *, org_id: str, execution_id: str, at: datetime, reaso
     return log_event(conn, org_id=org_id, execution_id=execution_id,
                      kind="execution.reminded", reason_code=reason_code,
                      detail={"urgency": urgency, "escalation_day": escalation_day,
-                             "facts": dict(facts or {})},
+                             "facts": dict(facts or {}), "target_seat": target_seat,
+                             "target_audience": target_audience, "interrupt": interrupt},
                      occurred_at=at)
 
 
@@ -386,6 +392,43 @@ def complete_action(conn, *, org_id: str, execution_id: str, action_id: str, at:
               reason_code="action_completed", actor=actor, detail={"action_id": action_id},
               occurred_at=at)
     return True
+
+
+@dataclass(frozen=True, slots=True)
+class ActionCompletionResult:
+    recorded: bool
+    reason_code: str
+    unmet_dependencies: tuple[str, ...] = ()
+
+
+def complete_coordinated_action(conn, *, org_id: str, execution_id: str, action_id: str,
+                                at: datetime, actor: str) -> ActionCompletionResult:
+    """Complete one action only when its frozen dependencies are already complete.
+
+    The check and write share the caller's transaction. A concurrent prerequisite completion
+    may make this call conservatively return ``dependencies_unmet`` once, but it can never let a
+    dependent action jump ahead of an uncommitted prerequisite.
+    """
+    loaded = load(conn, org_id, execution_id)
+    if loaded is None or loaded[1].get("closed_at") is not None:
+        return ActionCompletionResult(False, "execution_not_open")
+    execution, row = loaded
+    if ExecutionState(row["state"]) not in OPEN_STATES:
+        return ActionCompletionResult(False, "state_not_actionable")
+    snapshot = coordinate(execution, action_completions(conn, org_id, execution_id))
+    if snapshot.invalid_completion_ids:
+        return ActionCompletionResult(False, "coordination_corrupt",
+                                      snapshot.invalid_completion_ids)
+    action = snapshot.action(action_id)
+    if action is None:
+        return ActionCompletionResult(False, "action_not_found")
+    if action.status == "completed":
+        return ActionCompletionResult(False, "already_completed")
+    if action.unmet_dependencies:
+        return ActionCompletionResult(False, "dependencies_unmet", action.unmet_dependencies)
+    recorded = complete_action(conn, org_id=org_id, execution_id=execution_id,
+                               action_id=action_id, at=at, actor=actor)
+    return ActionCompletionResult(recorded, "completed" if recorded else "lost_race")
 
 
 def action_completions(conn, org_id: str, execution_id: str) -> dict[str, datetime]:
@@ -473,7 +516,8 @@ def active_channels(conn, org_id: str) -> frozenset[str]:
     return frozenset({"in_app", *(item.channel for item in rows)})
 
 
-__all__ = ["STORE_VERSION", "action_completions", "active_channels", "apply_transition",
-           "authority_valid", "complete_action", "due_executions", "fire_escalation",
+__all__ = ["STORE_VERSION", "ActionCompletionResult", "action_completions", "active_channels",
+           "apply_transition", "authority_valid", "complete_action",
+           "complete_coordinated_action", "due_executions", "fire_escalation",
            "link_card", "load", "log_event", "persist", "reassign", "record_outcome",
            "record_reminder", "reminder_state", "supersede", "validation_input"]

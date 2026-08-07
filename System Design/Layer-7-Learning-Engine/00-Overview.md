@@ -1,236 +1,128 @@
 [Folder map](README.md) · [System Design index](../README.md)
 
----
+# Layer 7 in code · Layer 6 in Atlas — Learning & Evolution
 
-# Layer 7 — The Learning Engine (`feedback/`)
+The previous implementation was a strong but narrow calibration loop: explicit card judgments,
+Wilson bounds, mutes and bounded threshold nudges. The live layer now keeps that subsystem and
+adds the Atlas-wide Learning Engine around it.
 
-> The layer that closes the loop — and the one that is deliberately the most **conservative** in
-> the engine.
-
-Every other layer produces intelligence. Layer 7 asks whether it was any good, and adjusts. But
-it may only adjust in one direction, through one door, once a week, within a bounded range, and
-never by importing anything above it.
-
-**401 lines. It is the smallest layer, and its restraint is the design.**
-
----
-
-## §0 · At a glance
+## At a glance
 
 | | |
 |---|---|
-| **Package** | `genios_engine/feedback/` |
-| **Layer number** | 7 |
-| **Size** | 2 files · 401 lines |
-| **Input** | canonical human judgments on cards (Layer 6) |
-| **Output** | `rule_mutes` rows + `lvl3_config.scoring_defaults.rule_offsets` (Layer 3 data) |
-| **May import** | everything below. **Nothing imports it** |
-| **Writes upward?** | **Never.** It writes **down, as data** |
-| **LLM calls** | Zero |
-| **Cadence** | **once per UTC week**, per pack, per org — claimed atomically |
-| **Migration** | `0012_l6_feedback.sql`, `0034_l4_learning_authority.sql` |
+| Package | `genios_engine/feedback/` |
+| Atlas name | Layer 6 · Learning & Evolution Engine |
+| Code layer | 7, after `deliver/` |
+| Inputs | `DeliveryResult + Feedback + Enterprise Events`, including real execution outcomes |
+| Output contract | immutable, content-addressed `LearningObject` |
+| Dynamic brains | Organization · Behavior · Adaptive |
+| Other outputs | Runtime memory with TTL · learning metrics · knowledge review suggestions |
+| LLM in decisions | None |
+| Cadence | weekly claimed evolution + immediate governed explicit memory |
+| Main migration | `0045_atlas_l6_learning.sql` |
 
----
-
----
-
-## §1 · What was supposed to be built
-
-From the layer map:
-
-> **`feedback/` — Layer 7 — Learning Engine.** Precision windows, nudges, mutes, MACV. **Writes
-> learned state DOWN as data** (`rule_mutes`, `lvl3_config`) — **never imported upward.**
-
-Which implies four requirements:
-
-| # | Requirement | Why it is non-negotiable |
-|---|---|---|
-| 1 | **Learn from labels, not from silence** | an ignored card is not a rejected card |
-| 2 | **Bounded, reversible adjustments** | a learner that can move a threshold arbitrarily is a second reasoning engine |
-| 3 | **One write path, respecting pins** | *the calibrator gets no private door* |
-| 4 | **Exactly one run per period, atomically** | a double-run would double-step every nudge |
-
----
-
----
-
-## §2 · What exists
+## Component architecture
 
 ```mermaid
-flowchart LR
-    subgraph IN ["Signals it reads"]
-        A["card impressions<br/>*observability only*"]
-        B["canonical human judgments<br/>run_play · do_it_myself · wrong:*"]
+flowchart TD
+    IN["Canonical feedback<br/>Execution outcomes<br/>Graph observations<br/>Delivery results"] --> O
+
+    subgraph O["Learning Orchestrator — coordinates, never learns"]
+      S[Selector] --> P[Planner]
+      P --> R[Brain resolver]
+      R --> C[Confidence policy]
+      C --> G[Governance]
+      G --> SCH[Weekly database claim]
     end
-    subgraph CALC ["feedback/calibrate.py"]
-        C["precision_28d<br/>Wilson interval per rule"]
-        D["run_calibration<br/>weekly, atomic, claimed"]
-    end
-    subgraph OUT ["What it writes — DOWN, as data"]
-        E["rule_mutes<br/>*stop firing this rule*"]
-        F["lvl3_config.rule_offsets<br/>*±5, bounded ±15*"]
-        G["calibration_nudges<br/>*the audit ledger*"]
-        H["calibration_runs<br/>*the claim + the result*"]
-    end
-    A --> C
-    B --> C
-    C --> D
-    D --> E
-    D --> F
-    D --> G
-    D --> H
-    F -.->|"read by the L3 merge"| L3["Layer 3 effective config"]
-    E -.->|"read by the L4 runner"| L4["Layer 4"]
+
+    O --> U["10 analysis units"]
+    U --> V["Unit 11 · Learning Validation"]
+    V --> LIFE["Observed → Candidate → Validated → Governed"]
+    LIFE --> TMP[Temporary]
+    LIFE --> HR[Human review]
+    LIFE --> PRO[Promoted]
+    PRO --> PUB[Evolution Publisher]
+
+    PUB --> OB[Organization Brain]
+    PUB --> BB[Behavior Brain]
+    PUB --> AB[Adaptive Brain]
+    TMP --> RT[Runtime Context · TTL]
+    PUB --> MET[Metrics]
+    HR --> KS[Knowledge suggestion]
+    KS -. "human workflow only" .-> EB["Expert Brain · Git"]
 ```
 
-**Nothing in Layer 7 imports Layer 3 or Layer 4.** The loop closes through *tables*.
+There is no edge from code to the Expert Brain. Approval of a knowledge suggestion records the
+human decision and handoff; it does not edit a pack or Git.
 
----
+## What changed from the calibration-only layer
 
----
+| Before | Now |
+|---|---|
+| Card clicks measured apparent relevance | `execution_outcomes` measure whether acting worked |
+| One calibration module | typed contract, 11 units, governance, store, orchestrator, API |
+| Rule mutes + one bounded offset | three dynamic brains, runtime TTL, metrics, knowledge suggestions, plus calibration |
+| No generic promotion lifecycle | complete audited Atlas state machine |
+| No tenant learning policy surface | owner-controlled confidence, repetition, noise, conflict, review and TTL policy |
+| No rollback surface | versioned dynamic brain entries and explicit rollback |
 
-## §4 · The workflows
+## The safety model
 
-### W1 · One weekly calibration
+1. **Silence is not evidence.** Only explicit feedback enters preference/feedback learning.
+2. **One occurrence is not permanent learning.** Defaults require three observations over two
+   distinct days and 6500 confidence basis points.
+3. **Validation and permission are separate.** Strong evidence can still be rejected or routed
+   to human review by tenant policy.
+4. **Expert knowledge is human-owned.** Knowledge Evolution only creates suggestions.
+5. **Objects do not mutate.** Lifecycle and publication are separate rows with a transition log.
+6. **Numbers are deterministic.** Counts and basis points; no LLM decides confidence or promotion.
+7. **Every dynamic value is attributable.** Brain entries point to the LearningObject and retain
+   inactive versions after supersession or rollback.
+
+## Main flow
 
 ```mermaid
 sequenceDiagram
-    participant H as maintenance sweep (weekly)
-    participant C as run_calibration
-    participant TP as tenant_packs
-    participant CR as calibration_runs
-    participant J as canonical judgments (28d)
-    participant RM as rule_mutes
-    participant NL as calibration_nudges
+    participant H as Maintenance heartbeat
+    participant O as Learning Orchestrator
+    participant DB as PostgreSQL
+    participant U as 10 analysis units
+    participant G as Validation + Governance
+    participant P as Evolution Publisher
 
-    H->>C: per org, per active pack
-    C->>TP: SELECT ... FOR UPDATE
-    C->>CR: claim (org, pack, version, week)
+    H->>O: run per eligible organization
+    O->>DB: expire due temporary memories
+    O->>DB: claim organization + UTC week
     alt already claimed
-        CR-->>C: prior result → already_ran
+      DB-->>O: return prior result
+    else new claim
+      O->>DB: load 28-day durable input window
+      O->>U: normalized LearningBatch
+      U-->>O: immutable LearningObjects
+      loop each object
+        O->>DB: persist Observed object + transition
+        O->>G: evidence then enterprise policy
+        G-->>O: hold / reject / temporary / review / promote
+        O->>DB: append every transition
+        O->>P: publish only when permitted
+        P->>DB: versioned brain / TTL / metric / suggestion
+      end
+      O->>DB: complete run with counts and result
     end
-    C->>J: precision per rule, Wilson bounds
-    Note over C: impressions counted but NOT labelled<br/>timing complaints excluded
-    C->>C: drop rules not in the current manifest
-    C->>C: HOLD rules with ambiguous lineage
-    loop each scored rule
-        alt ub < 0.25 and judgments ≥ 12
-            C->>RM: mute
-        else lb ≥ 0.25 and muted
-            C->>RM: recover
-        end
-        alt eligible and not muted and not pinned
-            C->>C: lb ≥ 0.70 → offset −5   (loosen)
-            C->>C: ub < 0.40 → offset +5   (tighten)
-        end
-    end
-    C->>TP: guarded UPDATE lvl3_config + authority_revision++
-    C->>C: expire open signals/cards for newly muted rules
-    C->>NL: one row per change, with its statistics
-    C->>CR: completed + result
 ```
 
-### W2 · How a nudge reaches a decision
+## The retained calibration subsystem
 
-```mermaid
-flowchart LR
-    A["Layer 7 writes<br/>lvl3_config.rule_offsets[champion_quiet] = +5"] --> B["tenant_packs row"]
-    B --> C["**Layer 3 merge**<br/>LVL1 → LVL2 → LVL3<br/>then pins, then guardrails"]
-    C --> D["effective config<br/>+ NEW snapshot_id"]
-    D --> E["**Layer 4** runs with it"]
-    E --> F["every signal stamps<br/>the new config_snapshot_id"]
-    F --> G["the change is<br/>attributable, forever"]
-```
+`calibrate.py` is still authoritative for exact-lineage rule precision. It remains stricter than
+generic learning: Wilson intervals, current manifest membership, pack row lock, weekly unique
+claim, pin protection, ±5 weekly / ±15 total offsets, and immediate expiry after an auto-mute.
+The scheduler runs calibration and broader evolution as adjacent but separately claimed passes.
 
-**No import. No call. A table.**
+## Status
 
----
-
----
-
-## §5 · Strategies
-
-### S1 · Silence is not a label
-
-Impressions are observability. Only an explicit human judgment moves anything.
-
-### S2 · Separate "wrong about the world" from "wrong moment"
-
-`bad_timing` and `snooze` are excluded from precision. **A delivery problem must never mute a
-correct rule.**
-
-### S3 · Always compare against the harder bound
-
-Mute on the **upper** bound, recover on the **lower** bound, loosen on the **lower**, tighten on
-the **upper**. Small samples cannot act.
-
-### S4 · Harder to silence than to tune
-
-`MUTE_MIN_JUDGMENTS` (12) > `MIN_JUDGMENTS` (8), *because a mute stops the rule producing the
-judgments that would let it recover.*
-
-### S5 · Bounded and slow
-
-±5 per week, ±15 total. **Learning may nudge; it may never redefine.**
-
-### S6 · Never pool across lineages
-
-Outcomes belong to the exact pack version that produced them. Ambiguity → **hold**, and report it.
-
-### S7 · One transaction, one week, one claim
-
-Serialised on the tenant-pack row, claimed on `(org, pack, version, week)`, guarded on
-`authority_revision`.
-
-### S8 · A mute takes effect immediately
-
-Open signals and queued cards for a newly muted rule are expired in the same commit.
-
-### S9 · Write down, never up
-
-The only outputs are rows. Nothing in `feedback/` is imported by anything.
-
----
-
----
-
-## §7 · The map
-
-### 7.1 Files
-
-| Concern | File |
-|---|---|
-| Everything | `feedback/calibrate.py` |
-| The judgment CTEs it builds on | `reason/authority.py` (`AUDITED_CARD_JUDGMENTS_CTES`) |
-| The write path it uses | `packs/registry.py` (`write_lvl3_offset`) — *and its own guarded UPDATE* |
-| Where its output is consumed | `packs/merge.py` (LVL3), `reason/runner.py` (`rule_mutes`) |
-
-### 7.2 Tables
-
-`rule_mutes` · `calibration_runs` · `calibration_nudges` · `tenant_packs.lvl3_config` ·
-`tenant_packs.authority_revision`
-
-### 7.3 Endpoints
-
-| Endpoint | Purpose |
-|---|---|
-| `POST /feedback/calibrate` | force a pass |
-| `GET /feedback/precision` | the 28-day precision table with Wilson bounds |
-| `GET /v1/expertise/learned` | the nudges + auto-mutes this tenant has accrued |
-
-### 7.4 Where it runs
-
-Inside `run_maintenance_sweep`, **weekly**, per active pack per org — after distribution, before
-graph maintenance. Every failure is caught per org: *one org's failure ≠ the rest.*
-
-### 7.5 Scorecard against §1
-
-| Required | Status |
-|---|---|
-| Learn from labels, not silence | ✅ impressions are diagnostics only |
-| Bounded, reversible adjustments | ✅ ±5/week, ±15 total, mutes recover |
-| One write path, respecting pins | ✅ pin checked in Python **and** in SQL |
-| Exactly one run per period, atomically | ✅ row lock + claim + revision guard, one transaction |
-| Statistically honest | ✅ Wilson bounds, harder-bound comparisons |
-| Never imported upward | ✅ the loop closes through tables |
-| **Learns whether acting on it *worked*** | ❌ **`execution_outcomes` unread** |
+Against Atlas Layer 6, the code now implements the full structural contract: inputs, 11 units,
+immutable output, validation, governance, promotion, three dynamic brains, runtime TTL, metrics,
+human-only knowledge evolution, API, scheduling, versioning and rollback. The generic dynamic
+brain and Runtime outputs are not yet consumed by lower runtime layers; only the retained narrow
+calibration path currently changes Reasoning behavior. This and the other operational limits are
+listed in [05-Gaps.md](05-Gaps.md), not hidden inside the completion claim.

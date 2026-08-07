@@ -15,9 +15,11 @@ an owner changed). None of them decide anything — the sweep does that, and it 
 against live state before every message it sends."""
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner
@@ -151,7 +153,16 @@ def commitment(execution_id: str, org_id: str = Depends(get_current_org)) -> dic
             "from execution_events where org_id=:o and execution_id=:x "
             "order by occurred_at desc limit 100"),
             {"o": org_id, "x": execution_id}).mappings().all()
+        from genios_engine.contracts.execution import ExecutionObject
+        from genios_engine.executive.coordination import coordinate
+        payload = row["payload"]
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        execution = ExecutionObject.from_semantic_dict(payload)
+        coordination = coordinate(
+            execution, (item["action_id"] for item in actions if item["completed_at"] is not None))
     return {"commitment": dict(row), "actions": [dict(a) for a in actions],
+            "coordination": coordination.to_semantic_dict(),
             "escalation": [dict(e) for e in ladder], "events": [dict(e) for e in events]}
 
 
@@ -167,10 +178,66 @@ def complete_action(execution_id: str, action_id: str,
     _require_db()
     from genios_engine.executive import execution_store as store
     with _graph.engine.begin() as c:
-        done = store.complete_action(c, org_id=ctx.org_id, execution_id=execution_id,
-                                     action_id=action_id, at=_now(),
-                                     actor=ctx.actor_id or "human")
-    return {"recorded": done, "execution_id": execution_id, "action_id": action_id}
+        result = store.complete_coordinated_action(
+            c, org_id=ctx.org_id, execution_id=execution_id, action_id=action_id,
+            at=_now(), actor=ctx.actor_id or "human")
+    if result.reason_code in {"execution_not_open", "action_not_found"}:
+        raise HTTPException(404, result.reason_code.replace("_", " "))
+    if result.reason_code in {"dependencies_unmet", "coordination_corrupt",
+                              "state_not_actionable"}:
+        raise HTTPException(409, {"reason_code": result.reason_code,
+                                  "unmet_dependencies": result.unmet_dependencies})
+    return {"recorded": result.recorded, "reason_code": result.reason_code,
+            "execution_id": execution_id, "action_id": action_id}
+
+
+class CommitmentStateChange(BaseModel):
+    state: str
+    reason_code: str = Field("human_status_update", min_length=1, max_length=192)
+    detail: str = Field("", max_length=500)
+
+
+@router.post("/commitments/{execution_id}/transition")
+def transition_commitment(execution_id: str, body: CommitmentStateChange,
+                          ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Record start, waiting, block or resume without letting a human forge an ending.
+
+    Completion/cancellation/expiry remain guard-owned because each produces the outcome record
+    used for learning. This surface only makes the Atlas live-work states reachable.
+    """
+    _require_db()
+    from genios_engine.contracts.execution import ExecutionState
+    from genios_engine.contracts.validators import require_identifier
+    from genios_engine.executive import execution_store as store
+    from genios_engine.executive.lifecycle import LifecycleError, transition
+    try:
+        target = ExecutionState(body.state)
+    except ValueError as exc:
+        raise HTTPException(422, "state must be running, waiting, or blocked") from exc
+    if target not in {ExecutionState.RUNNING, ExecutionState.WAITING, ExecutionState.BLOCKED}:
+        raise HTTPException(422, "state must be running, waiting, or blocked")
+    try:
+        reason = require_identifier(body.reason_code, "reason code")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    at = _now()
+    with _graph.engine.begin() as conn:
+        loaded = store.load(conn, ctx.org_id, execution_id)
+        if loaded is None or loaded[1].get("closed_at") is not None:
+            raise HTTPException(404, "no open commitment with that id")
+        current = ExecutionState(loaded[1]["state"])
+        try:
+            move = transition(current, target, reason_code=reason,
+                              actor=ctx.actor_id or "human", at=at, detail=body.detail)
+        except LifecycleError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        changed = store.apply_transition(conn, org_id=ctx.org_id, execution_id=execution_id,
+                                         move=move, next_check_at=at)
+    if not changed:
+        raise HTTPException(409, "commitment changed concurrently; reload and retry")
+    return {"transitioned": True, "execution_id": execution_id,
+            "from_state": current.value, "to_state": target.value,
+            "reason_code": reason}
 
 
 @router.post("/commitments/{execution_id}/dismiss")

@@ -107,7 +107,8 @@ def test_a_stale_owner_before_first_delivery_is_re_planned_not_rerouted():
 def test_a_blocked_commitment_is_not_nudged_but_is_not_closed():
     execution = build().require()
     verdict = validate(execution, live(state=ExecutionState.BLOCKED))
-    assert verdict.action is GuardAction.SUPPRESS and verdict.terminal_state is None
+    assert verdict.action is GuardAction.PROCEED and verdict.terminal_state is None
+    assert verdict.reason_code == "valid_blocked"
 
 
 def test_deadline_without_evidence_expires_it_rather_than_cancelling_it():
@@ -157,7 +158,10 @@ def test_cooldown_prevents_two_reminders_in_one_day():
     execution = build().require()
     at = execution.escalation[0].fires_at + timedelta(minutes=1)
     decision = decide_reminder(execution, state=ExecutionState.PENDING,
-                               history=ReminderState(reminder_count=1, last_reminded_at=at),
+                               history=ReminderState(
+                                   reminder_count=1, last_reminded_at=at,
+                                   fired_escalation_days=frozenset({
+                                       execution.escalation[0].day_offset})),
                                now=at + timedelta(hours=2))
     assert not decision.should_remind and decision.reason_code == "cooldown"
 
@@ -168,9 +172,26 @@ def test_fatigue_hands_over_to_escalation_rather_than_tapering():
     decision = decide_reminder(
         execution, state=ExecutionState.PENDING,
         history=ReminderState(reminder_count=4,
+                              fired_escalation_days=frozenset(
+                                  rung.day_offset for rung in execution.escalation),
                               last_reminded_at=NOW - timedelta(days=2)),
         now=execution.deadline_at - timedelta(hours=1))
     assert not decision.should_remind and decision.reason_code == "fatigue_cap"
+
+
+def test_a_due_escalation_survives_blocked_state_cooldown_and_fatigue():
+    """Blocked work should not get ordinary nudges, but its promised escalation is exactly how
+    the block becomes visible to somebody who can clear it."""
+    execution = build().require()
+    rung = execution.escalation[2]
+    decision = decide_reminder(
+        execution, state=ExecutionState.BLOCKED,
+        history=ReminderState(reminder_count=99, last_reminded_at=rung.fires_at,
+                              fired_escalation_days=frozenset(
+                                  item.day_offset for item in execution.escalation[:2])),
+        now=rung.fires_at + timedelta(minutes=1))
+    assert decision.should_remind and decision.escalating
+    assert decision.escalation_day == rung.day_offset
 
 
 def test_an_unrouted_commitment_is_tracked_but_never_nudged():

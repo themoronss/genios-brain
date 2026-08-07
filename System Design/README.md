@@ -29,9 +29,9 @@ and import direction is enforced by a test.
 | 2 | `context/` | Context Intelligence | The live digital twin: entities, facts, situations, attention. | [Layer 2](Layer-2-Context-Intelligence/README.md) *(34 docs)* |
 | 3 | `packs/` | Domain Expertise | The four brains + capability content, shipped as data. | [Layer 3](Layer-3-Domain-Expertise/README.md) *(8 docs)* |
 | 4 | `reason/` | Reasoning Engine | Deterministic cognition: orchestrator, 17 units, decision maker. | [Layer 4](Layer-4-Reasoning-Engine/00-Overview.md) *(93 docs)* |
-| 5 | `executive/` | Executive Engine | Decision briefs + the Execution Object. Owns *who* and *where*. | [Layer 5](Layer-5-Executive-Engine/README.md) *(11 docs)* |
-| 6 | `deliver/` | Intelligence Distribution *(spec: 5.2 Delivery)* | Cards, channels, digest, outbox, admission gate. | [Layer 6](Layer-6-Intelligence-Distribution/README.md) *(10 docs)* |
-| 7 | `feedback/` | Learning Engine *(spec: 6 Learning & Evolution)* | Precision windows, nudges, mutes. Writes learned state **down** as data. | [Layer 7](Layer-7-Learning-Engine/README.md) *(7 docs)* |
+| 5 | `executive/` | Executive Engine | Decision briefs + the Execution Object. Owns *who* and *where*. | [Layer 5](Layer-5-Executive-Engine/README.md) *(13 docs)* |
+| 6 | `deliver/` | Intelligence Distribution *(Atlas: 5.2 Delivery)* | Cards, context, routing, channels, typed results, analytics, outbox and admission gate. | [Layer 6](Layer-6-Intelligence-Distribution/README.md) *(15 docs)* |
+| 7 | `feedback/` | Learning Engine *(Atlas: 6 Learning & Evolution)* | 11 governed units, outcome learning, dynamic brains, TTL memory, metrics, suggestions, calibration. | [Layer 7](Layer-7-Learning-Engine/README.md) *(14 docs)* |
 | — | `contracts/`, `platform/`, `api/` | Cross-cutting | Boundary types · composition root · transport. | [Cross-cutting](Cross-Cutting-Contracts-Platform-API/README.md) *(7 docs)* |
 
 ---
@@ -91,10 +91,10 @@ flowchart LR
     L5["**Layer 5 — executive**<br/>brief · Execution Object<br/>owner · channel · timing"]
     L5 -- "communication plan" --> L6
 
-    L6["**Layer 6 — deliver**<br/>cards · Slack · digest<br/>outbox · retries"]
+    L6["**Layer 6 — deliver**<br/>context · routing · channels<br/>outbox · results · retries"]
     L6 --> out["the person<br/>who has to act"]
 
-    out -- "outcomes" --> L7["**Layer 7 — feedback**<br/>precision · mutes · nudges"]
+    out -- "results + feedback + outcomes" --> L7["**Layer 7 — feedback**<br/>11 learning units · governance<br/>dynamic brains · TTL memory"]
     L7 -. "data, written down" .-> L4
 ```
 

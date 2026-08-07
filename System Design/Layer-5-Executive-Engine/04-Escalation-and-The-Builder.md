@@ -6,7 +6,7 @@
 
 ---
 
-## Unit 8 — Escalation (`escalation.py`)
+## Unit 7 — Escalation (`escalation.py`)
 
 > An escalation ladder is a promise made at planning time and kept later — which is why it is
 > built once, **frozen into the execution object, and never recomputed.** If it were derived
@@ -40,7 +40,7 @@ incapable of escalating on lapsed authority — not merely unlikely to.
 
 ---
 
-## Unit 4 — the Execution Object Builder (`execution.py`)
+## Unit 10 — the Execution Object Builder (`execution.py`)
 
 > The builder is **the last place that can refuse cheaply.** Once an execution object exists it
 > will be stored, delivered, reminded on and escalated; a commitment that was already dead on

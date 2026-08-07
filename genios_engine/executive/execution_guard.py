@@ -1,4 +1,4 @@
-"""Layer 5 · Unit — the Execution Validation Unit.  Is this still worth doing *right now*?
+"""Layer 5 · Unit 4 — the Execution Validation Unit.  Is this still worth doing *right now*?
 
 This is the unit the architecture note asked for, and it is the difference between a system
 people keep and a system people mute.
@@ -181,11 +181,13 @@ def validate(execution: ExecutionObject, state: ValidationInput) -> GuardVerdict
         return GuardVerdict(GuardAction.EXPIRE, "deadline_passed",
                             f"deadline was {execution.deadline_at.isoformat()}")
 
-    # 9. Blocked commitments hold their position: they still escalate (that is how a block gets
-    #    unblocked) but they are not nudged as though the owner were simply slow.
+    # A blocked commitment is still valid work. The reminder unit suppresses ordinary owner
+    # nudges while continuing the frozen escalation ladder. Returning SUPPRESS here used to
+    # short-circuit that unit entirely, so the exact state most in need of escalation could
+    # never escalate.
     if state.state is ExecutionState.BLOCKED:
-        return GuardVerdict(GuardAction.SUPPRESS, "blocked",
-                            "commitment is blocked; escalation applies, reminders do not")
+        return GuardVerdict(GuardAction.PROCEED, "valid_blocked",
+                            "commitment is blocked, live, and eligible for escalation")
 
     return GuardVerdict(GuardAction.PROCEED, "valid", "commitment is still live and unmet")
 

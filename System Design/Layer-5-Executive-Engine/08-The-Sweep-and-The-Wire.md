@@ -6,7 +6,7 @@
 
 ---
 
-## Unit 5 — Delivery (`deliver/executive_bridge.py`)
+## Layer 5.2 handoff (`deliver/executive_bridge.py`)
 
 The one unit that lives in Layer 6. **Layer 5 cannot import Layer 6, so it cannot send
 anything itself.** What it *can* do is write its decision down — and it does: the reminder
@@ -25,6 +25,13 @@ Three properties make it safe to send:
 3. **The message is re-validated at send.** *A reminder can sit through a retry backoff while
    the customer replies, so a commitment that closed in that window is cancelled rather than
    delivered.*
+4. **A widened escalation reaches its resolved target.** The event carries the rung's resolved
+   seat, audience and interrupt flag; the outbox uses those values instead of falling back to
+   the original owner.
+
+`CREATED → PENDING` emits `execution.queued`. It does not claim delivery. Only a successful
+Layer 5.2 adapter call stamps `executions.delivered_at` and emits
+`execution.delivery_confirmed`.
 
 **Exactly-once falls out of the synthetic key** `exec:<execution_id>:<event_id>` against the
 existing `(org, card, channel)` unique index — the same trick the daily digest already uses.

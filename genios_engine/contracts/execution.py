@@ -65,7 +65,7 @@ class ExecutionState(str, Enum):
     """
 
     CREATED = "created"          # built, not yet cleared for delivery
-    PENDING = "pending"          # validated and delivered; nobody has touched it
+    PENDING = "pending"          # validated and queued for Layer 5.2; nobody has touched it
     RUNNING = "running"          # a human or agent has picked it up
     WAITING = "waiting"          # acted on; waiting for the world to respond (reply, signature)
     BLOCKED = "blocked"          # cannot proceed — a dependency or an explicit human block
@@ -94,7 +94,7 @@ ALLOWED_TRANSITIONS: MappingProxyType = MappingProxyType({
                                ExecutionState.EXPIRED),
     ExecutionState.COMPLETED: (ExecutionState.ARCHIVED,),
     ExecutionState.CANCELLED: (ExecutionState.ARCHIVED,),
-    ExecutionState.EXPIRED:   (ExecutionState.ARCHIVED, ExecutionState.RUNNING),
+    ExecutionState.EXPIRED:   (ExecutionState.ARCHIVED,),
     ExecutionState.ARCHIVED:  (),
 })
 

@@ -751,6 +751,24 @@ def test_a_permitted_message_still_takes_the_authority_path_and_sends(monkeypatc
     assert any("from cards k join signals s" in sql for sql, _ in engine.log)
 
 
+def test_a_successful_executive_send_confirms_delivery_on_the_commitment(monkeypatch):
+    from genios_engine.deliver import outbox as outbox_module
+
+    confirmed = []
+    monkeypatch.setattr(outbox_module, "executive_delivery_is_live",
+                        lambda *args, **kwargs: True)
+    monkeypatch.setattr(outbox_module, "mark_executive_delivered",
+                        lambda conn, org_id, card_id, **kwargs:
+                        confirmed.append((org_id, card_id, kwargs)) or True)
+
+    row = outbox_row(card_id="exec:exec_1:exev_1")
+    out, _engine, adapter = run_drain(monkeypatch, [row], now=MORNING)
+
+    assert out["delivered"] == 1 and len(adapter.calls) == 1
+    assert confirmed == [("org_1", "exec:exec_1:exev_1",
+                          {"at": MORNING, "channel": "slack"})]
+
+
 def test_a_burst_arriving_at_once_sends_the_limit_and_holds_the_rest(monkeypatch):
     """Five messages come due in the same pass against a limit of three. Without the in-pass
     counter every one of them would read "0 delivered this hour" and go out together."""

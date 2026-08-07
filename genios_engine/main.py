@@ -17,6 +17,7 @@ from genios_engine.api.expertise_routes import router as expertise_router
 from genios_engine.api.identity_routes import router as identity_router
 from genios_engine.api.intelligence_routes import router as intelligence_router
 from genios_engine.api.knowledge_routes import router as knowledge_router
+from genios_engine.api.learning_routes import router as learning_router
 from genios_engine.api.policy_routes import router as policy_router
 from genios_engine.api.routes import router
 from genios_engine.api.situation_routes import router as situation_router
@@ -74,6 +75,7 @@ app.include_router(agent_mgmt_router)
 app.include_router(account_router)
 app.include_router(upload_router)
 app.include_router(knowledge_router)
+app.include_router(learning_router)
 app.include_router(identity_router)
 app.include_router(situation_router)
 app.include_router(policy_router)

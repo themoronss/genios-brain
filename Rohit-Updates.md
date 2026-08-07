@@ -1,5 +1,74 @@
 # Rohit Updates
 
+## Current CTO handoff — Atlas Layers 5, 5.2 and 6
+
+Status: **implemented, reconciled with the Atlas, documented from live code and locally verified.**
+
+Last updated: 2026-08-07
+
+The repository keeps a seven-layer code topology, so two Atlas names translate as follows:
+
+| Product/Atlas layer | Code package | System Design folder | Detailed CTO note |
+|---|---|---|---|
+| Layer 5 · Executive Engine | `genios_engine/executive/` (code L5) | `System Design/Layer-5-Executive-Engine/` | [`Rohit_Updates/Layer 5.md`](Rohit_Updates/Layer%205.md) |
+| Layer 5.2 · Delivery Engine | `genios_engine/deliver/` (code L6) | `System Design/Layer-6-Intelligence-Distribution/` | [`Rohit_Updates/Layer 5.2.md`](Rohit_Updates/Layer%205.2.md) |
+| Layer 6 · Learning & Evolution | `genios_engine/feedback/` (code L7) | `System Design/Layer-7-Learning-Engine/` | [`Rohit_Updates/Layer 6.md`](Rohit_Updates/Layer%206.md) |
+
+### Planned → current → integration
+
+| Layer | What the Atlas planned | What is true now | What still needs production integration |
+|---|---|---|---|
+| 5 | 10 deterministic Executive Units + multi-owner Coordination → one ExecutionObject | All ten units exist; immutable ExecutionObject, runtime dependency waves, owner/channel plan, stale guard, reminders, escalation, lifecycle, outcome collection, API and scheduler are connected | Concrete per-action multi-owner seat/agent assignment, digest batching, Redis acceleration and live-PostgreSQL proof |
+| 5.2 | Context-aware delivery orchestrator + 11 target units + tracking/retry/recovery/analytics → DeliveryResult | SEND/DEFER/SUPPRESS gate; recipient preferences; leased presence; typed DeliveryObject/Result; Slack, Teams, signed webhook and pull surfaces; terminal-failure-only failover; analytics; existing outbox remains the ledger | Native email, APNs/FCM, automatic trusted presence publisher, real provider/outage tests and live-PostgreSQL proof |
+| 6 | 11 governed Learning Units → three dynamic brains, TTL memory, metrics and knowledge suggestions; never edit Expert Brain | All 11 units, immutable LearningObject, full promotion lifecycle, tenant governance, actual execution-outcome learning, delivery-performance learning, Organization/Behavior/Adaptive publishers, TTL memory, metrics, human-review Knowledge Evolution, APIs and weekly scheduler are connected | Controlled lower-layer consumers/materializers for the new generic brains and Runtime memory; Redis cache; upstream free-text structuring; human-owned Git/PR authoring; live-PostgreSQL proof |
+
+### The closed product loop now present in code
+
+```text
+Layer 4 DecisionObject
+    → Layer 5 ExecutionObject + tracked commitment
+    → Layer 5.2 DeliveryObject / DeliveryResult
+    → explicit feedback + execution_outcomes + enterprise events
+    → Atlas Layer 6 governed LearningObject
+    → versioned Organization / Behavior / Adaptive state
+```
+
+The critical correction from the earlier notes is that `execution_outcomes` is no longer an
+unread table. Learning loads the indexed outcome cohort and uses it in Outcome Analysis,
+Recommendation Learning and Knowledge Evolution. `completed_unproven` remains neutral and visible;
+it is not fabricated into either success or failure.
+
+### Verification snapshot
+
+- Full local repository suite: **1795 passed**.
+- Layer 5 focused collection: **195 tests**.
+- Delivery-focused collection (`test_delivery*`, outbox and Executive bridge): **142 tests**.
+- Learning-focused collection: **17 tests**.
+- SQL table/column ratchets, account-erasure cascades and layer-topology checks: green.
+- `git diff --check`: green.
+- Existing non-blocking warning: Starlette's `httpx` test-client deprecation.
+- Still unproven locally: applying migrations `0041`, `0042`, `0044`, `0045` and exercising the
+  corresponding SQL/claims with live PostgreSQL and real external delivery credentials.
+
+### CTO deployment order
+
+1. Review the three detailed notes above and the matching System Design alignment pages.
+2. Apply migrations through `0045_atlas_l6_learning.sql` using the normal migration runner.
+3. Run one tenant's Executive sweep twice; first run may create commitments, second must create zero
+   duplicates.
+4. Exercise Delivery `/effective`, a leased context, each configured real adapter and controlled
+   terminal failure/failover.
+5. Inspect `/v1/learning/preview`, then allow the weekly claimed run; verify that weak evidence is
+   held, organization/knowledge changes require review, and no Expert Brain write exists.
+6. Keep native email/mobile push disabled until provider, identity, unsubscribe/token and receipt
+   lifecycles are chosen and tested.
+
+Everything below this section is retained historical context. Where an older Layer 5 note says
+outcomes are unread or a Layer 5.2 note says only one adapter exists, the linked dated layer note
+and the System Design folder above are the current authority.
+
+---
+
 ## Layer 4 — Reasoning Engine implementation
 
 > **Superseded on 2026-08-07.** This section describes the 7-unit kernel as it stood on 2026-08-06.

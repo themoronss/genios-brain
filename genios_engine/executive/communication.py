@@ -39,7 +39,7 @@ AGENT_CHANNEL = "agent"
 
 #: Concrete adapters that count as an interrupting chat channel.  Matches the adapter registry
 #: in ``deliver/channels/`` — v1 ships Slack; adding one is a registry entry plus a line here.
-CHAT_CHANNELS: tuple[str, ...] = ("slack",)
+CHAT_CHANNELS: tuple[str, ...] = ("slack", "teams")
 
 DEFAULTS: Mapping[str, Any] = {
     # Band cuts on the 0..100 projected score, matching the pack's own `bands` block so a tenant

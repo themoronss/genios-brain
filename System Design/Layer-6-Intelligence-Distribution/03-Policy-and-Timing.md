@@ -61,6 +61,6 @@ to `critical` is how a tenant says *"never wake me"*.
 |---|---|---|
 | **quiet hours** in the recipient's own timezone | `defer` until the window opens | DST-correct — proven against spring-forward, fall-back and +05:30 |
 | **burst limit** (per hour) | `defer` | distinct from the daily budget — *seven cards are a reasonable day and an unreasonable minute* |
-| **recipient busy** | `defer` | `AttentionState.busy_until` — **has no producer yet** (§7) |
+| **recipient busy** | `defer` | `AttentionState.busy_until` from an owner-authenticated, short-lived `delivery_presence` lease; automatic calendar/client publishing remains open |
 
 ---

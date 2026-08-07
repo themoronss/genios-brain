@@ -1,4 +1,4 @@
-"""Layer 5 · Unit 10 — the Feedback Collection Unit.
+"""Layer 5 · Unit 9 — the Feedback Collection Unit.
 
 Layer 7 currently learns from one source: what a human clicked on a card.  That is a good
 signal and a narrow one — it measures whether a recommendation *looked* right at the moment it

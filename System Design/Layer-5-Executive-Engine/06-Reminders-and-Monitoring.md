@@ -6,7 +6,7 @@
 
 ---
 
-## Unit 6 — Reminder (`reminder.py`)
+## Unit 5 — Reminder (`reminder.py`)
 
 > A reminder engine that fires on a timer is a **nag**. A reminder engine that fires when the
 > *business situation* still holds and has got worse is a **colleague**. The difference is
@@ -35,18 +35,22 @@ standing in the world:
 "max_reminders": 4,  "min_interval_hours": 20     # never twice inside a working day
 ```
 
-> After the configured number the unit **stops asking** and lets escalation take over. **A
+> After the configured number the unit **stops ordinary owner nudges** and lets escalation take over. **A
 > fifth identical nudge does not produce action; it produces a filter rule** — and after that
 > GeniOS is talking to nobody.
 
 And every reminder must first survive the guard. *That single guarantee is what buys the right
 to nudge at all.*
 
----
+Due ladder rungs are evaluated before cooldown and fatigue. This is deliberate: a promised
+manager escalation is not a fifth copy of an owner reminder, and it remains eligible while the
+commitment is explicitly `blocked`.
 
 ---
 
-## Unit 7 — Monitoring (`monitor.py`)
+---
+
+## Unit 6 — Monitoring (`monitor.py`)
 
 > The guard answers a binary question at a single moment: *may this fire now.* Monitoring
 > answers a continuous one: *how far has this actually got, and has it stopped moving.*

@@ -51,6 +51,8 @@ from genios_engine.contracts.validators import (
 )
 
 DELIVERY_VERSION = "delivery.v1"
+DELIVERY_OBJECT_VERSION = "delivery-object.v1"
+DELIVERY_RESULT_VERSION = "delivery-result.v1"
 
 #: The three urgency names, weakest first.  This orders them; it does not *assign* them —
 #: ``deliver/bands.py`` cuts a band from a score using the pack's own thresholds, and those
@@ -76,6 +78,22 @@ class DeliveryVerdict(str, Enum):
     SEND = "send"
     DEFER = "defer"
     SUPPRESS = "suppress"
+
+
+class DeliveryResultStatus(str, Enum):
+    """The public lifecycle of one materialised delivery.
+
+    The outbox has a few implementation-specific states (for example ``failed_terminal``).
+    Those names must not leak into the cross-layer contract, so they are projected onto this
+    smaller, stable vocabulary by ``deliver/results.py``.
+    """
+
+    QUEUED = "queued"
+    DEFERRED = "deferred"
+    DELIVERED = "delivered"
+    SUPPRESSED = "suppressed"
+    CANCELLED = "cancelled"
+    FAILED = "failed"
 
 
 #: How much each verdict constrains the delivery.  ``combine`` folds on this, so the ordering
@@ -146,6 +164,138 @@ class DeliveryCandidate:
         return {"org_id": self.org_id, "subject_id": self.subject_id, "channel": self.channel,
                 "channel_class": self.channel_class.value, "band": self.band,
                 "interrupt": self.interrupt, "recipient": self.recipient}
+
+
+@dataclass(frozen=True, slots=True)
+class DeliveryObject:
+    """The typed Layer 5.2 input materialised on an outbox row.
+
+    Layer 5 owns the recipient, priority and interruption decision. Layer 5.2 adds a concrete
+    destination, payload and retry policy. Keeping this immutable contract beside the admission
+    contract makes the existing "outbox row is the delivery object" design explicit without a
+    second persistence table or a second write that could drift.
+    """
+
+    delivery_id: str
+    org_id: str
+    subject_id: str
+    channel: str
+    channel_class: ChannelClass
+    band: str
+    interrupt: bool
+    payload: Mapping[str, Any]
+    recipient: str | None = None
+    retry_minutes: tuple[int, ...] = ()
+    created_at: datetime | None = None
+    schema_version: str = DELIVERY_OBJECT_VERSION
+
+    def __post_init__(self) -> None:
+        setattr_ = object.__setattr__
+        setattr_(self, "delivery_id", require_identifier(self.delivery_id, "delivery id"))
+        setattr_(self, "org_id", require_identifier(self.org_id, "org id"))
+        setattr_(self, "subject_id", require_identifier(self.subject_id, "subject id"))
+        setattr_(self, "channel", require_identifier(self.channel, "channel"))
+        setattr_(self, "channel_class",
+                 require_enum(self.channel_class, ChannelClass, "channel class"))
+        setattr_(self, "interrupt", require_bool(self.interrupt, "interrupt"))
+        band = require_identifier(self.band, "band")
+        if band not in BAND_ORDER:
+            raise ValueError(f"band must be one of {BAND_ORDER}, got {band!r}")
+        setattr_(self, "band", band)
+        if self.recipient is not None:
+            setattr_(self, "recipient", require_identifier(self.recipient, "recipient"))
+        setattr_(self, "payload", freeze_mapping(self.payload))
+        retry = tuple(self.retry_minutes)
+        if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0
+               for value in retry):
+            raise ValueError("retry_minutes must contain positive integers")
+        if tuple(sorted(set(retry))) != retry:
+            raise ValueError("retry_minutes must be sorted and unique")
+        setattr_(self, "retry_minutes", retry)
+        if self.created_at is not None:
+            setattr_(self, "created_at", require_aware(self.created_at, "created_at"))
+        setattr_(self, "schema_version",
+                 require_identifier(self.schema_version, "delivery object schema version"))
+
+    def to_semantic_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "delivery_id": self.delivery_id,
+            "org_id": self.org_id,
+            "subject_id": self.subject_id,
+            "recipient": self.recipient,
+            "channel": self.channel,
+            "channel_class": self.channel_class.value,
+            "band": self.band,
+            "interrupt": self.interrupt,
+            "payload": self.payload,
+            "retry_minutes": self.retry_minutes,
+            "created_at": self.created_at,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class DeliveryResult:
+    """The stable Layer 5.2 output consumed by analytics and Layer 6 learning.
+
+    It is a projection of durable outbox state, not a second mutable copy. ``metrics`` carries
+    transport facts only (attempts, deferrals and latency); it may never contain a new score or
+    recommendation.
+    """
+
+    delivery_id: str
+    org_id: str
+    subject_id: str
+    channel: str
+    status: DeliveryResultStatus
+    attempts: int
+    deferrals: int
+    recipient: str | None = None
+    delivered_at: datetime | None = None
+    reason_code: str | None = None
+    metrics: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
+    metadata: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
+    schema_version: str = DELIVERY_RESULT_VERSION
+
+    def __post_init__(self) -> None:
+        setattr_ = object.__setattr__
+        setattr_(self, "delivery_id", require_identifier(self.delivery_id, "delivery id"))
+        setattr_(self, "org_id", require_identifier(self.org_id, "org id"))
+        setattr_(self, "subject_id", require_identifier(self.subject_id, "subject id"))
+        setattr_(self, "channel", require_identifier(self.channel, "channel"))
+        setattr_(self, "status",
+                 require_enum(self.status, DeliveryResultStatus, "delivery result status"))
+        for name in ("attempts", "deferrals"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        if self.recipient is not None:
+            setattr_(self, "recipient", require_identifier(self.recipient, "recipient"))
+        if self.delivered_at is not None:
+            setattr_(self, "delivered_at", require_aware(self.delivered_at, "delivered_at"))
+        if self.reason_code is not None:
+            setattr_(self, "reason_code", require_identifier(self.reason_code, "reason code"))
+        setattr_(self, "metrics", freeze_mapping(self.metrics))
+        setattr_(self, "metadata", freeze_mapping(self.metadata))
+        setattr_(self, "schema_version",
+                 require_identifier(self.schema_version, "delivery result schema version"))
+
+    def to_semantic_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "delivery_id": self.delivery_id,
+            "org_id": self.org_id,
+            "subject_id": self.subject_id,
+            "recipient": self.recipient,
+            "channel": self.channel,
+            "status": self.status.value,
+            "attempts": self.attempts,
+            "deferrals": self.deferrals,
+            "delivered_at": self.delivered_at,
+            "reason_code": self.reason_code,
+            "metrics": self.metrics,
+            "metadata": self.metadata,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,5 +415,7 @@ class DeliveryDecision:
         return binding[0]
 
 
-__all__ = ["BAND_ORDER", "DELIVERY_VERSION", "INTRUSIVE_CHANNEL_CLASSES", "DeliveryCandidate",
-           "DeliveryDecision", "DeliveryVerdict"]
+__all__ = ["BAND_ORDER", "DELIVERY_OBJECT_VERSION", "DELIVERY_RESULT_VERSION",
+           "DELIVERY_VERSION", "INTRUSIVE_CHANNEL_CLASSES", "DeliveryCandidate",
+           "DeliveryDecision", "DeliveryObject", "DeliveryResult", "DeliveryResultStatus",
+           "DeliveryVerdict"]

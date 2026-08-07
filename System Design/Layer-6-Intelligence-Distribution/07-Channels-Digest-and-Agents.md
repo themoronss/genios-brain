@@ -10,11 +10,31 @@
 
 | Exit | Module | Note |
 |---|---|---|
-| **Slack** | `channels/slack.py` behind `channels/base.py` | one adapter today |
+| **Slack** | `channels/slack.py` behind `channels/base.py` | Slack incoming webhook; retains the original dedicated settings routes |
+| **Teams** | `channels/teams.py` | Teams Incoming Webhook or anonymous Workflow trigger, using an Adaptive Card and validated Microsoft endpoint host |
+| **Signed customer webhook** | `channels/webhook.py` | public HTTPS endpoint, canonical JSON and `X-Genios-Signature: sha256=...`; production still needs network egress controls |
+| **Pull surfaces** | `channels/surface.py`, `results.py` | `in_app`, `dashboard`, `api`, `application`, `extension`, and `mobile`; delivered means available through the authenticated inbox, not device push |
 | **Daily digest** | `digest.py` | *one line*: `"N cards waiting · top: <headline>"`. **Not a card, consumes no budget, outside the 2-notification cap.** Computed **on demand** — no periodic task |
 | **Agent push** | `push.py` | HMAC-SHA256 signed (`X-Genios-Signature`). The body **is** the `/v1/signals` poll projection, *so push and poll are interchangeable*. Carries **no execution request** |
 | **Agent API** | `agent_api.py` | the metered read-and-claim surface. A 15-minute claim lock, **first writer wins visibly** (409 on double claim), a `failed` result re-surfaces to the human. *Execution stays on the customer's side* |
 | **Executive bridge** | `executive_bridge.py` | Layer 5's commitments → real messages |
+
+#### Card routing and recovery
+
+`destination.py` orders every active registered destination deterministically. High/critical
+cards go to the primary destination first. A later destination is enqueued only after the
+previous adapter exhausts its bounded retry ladder and becomes `failed_terminal`.
+
+> Failover is transport recovery, never a policy escape. A suppressed, deferred, opted-out or
+> authority-revoked delivery is not moved to another channel. Layer 5 commitment reminders also
+> keep their exact frozen channel plan; changing that plan here would cross the authority line.
+
+#### Typed results and observability
+
+`DeliveryObject` and `DeliveryResult` expose the Atlas boundary without adding another mutable
+table. `results.py` projects the outbox ledger for `/delivery/results` and `/delivery/inbox`;
+`analytics.py` derives counted status, channel, attempt, deferral, failure and latency metrics
+from the same rows.
 
 #### `executive_bridge.py` — the wire, and why it runs this way round
 

@@ -1,52 +1,55 @@
-# Layer 7 · The Learning Engine — the folder map
+# Atlas Layer 6 · Learning & Evolution — live implementation map
 
-**This folder is the live truth of `genios_engine/feedback/`.** It is the source consulted before any action,
-update or improvement to this layer. If a document and the code disagree, the document is wrong —
-fix it in the same change that moved the code.
+This folder documents code package `genios_engine/feedback/`, which is **code Layer 7** because
+the repository counts Delivery as Layer 6. In the Atlas this same product capability is
+**Layer 6 · Learning & Evolution**. Package name is the stable identity; both numbers are shown
+so implementation and product design cannot drift silently.
 
-Start at **[00-Overview.md](00-Overview.md)** for the layer in one sitting. Use this page when you
-already know what you are looking for.
+> **Question:** What should the system change about itself?
 
----
-
-## The one question this layer answers
-
-> **What should the system change about itself?**
-
-```mermaid
-flowchart TD
-    R["Layer-7-Learning-Engine/"] --> A["01-The-Judgment-Taxonomy.md<br/><i>what counts as a label, and what never does</i>"]
-    R --> B["02-Precision-and-Wilson-Bounds.md<br/><i>why a raw ratio is not enough</i>"]
-    R --> C["03-Lineage-and-The-Weekly-Claim.md<br/><i>never pool across pack versions</i>"]
-    R --> D["04-Mutes-Nudges-and-The-Ledger.md<br/><i>bounded, reversible, attributable</i>"]
-    R --> E["05-Gaps.md<br/><b>execution_outcomes is written and unread</b>"]
-```
-
----
-
-## The documents
-
-| # | Document | Answers |
-|---|---|---|
-| 00 | [Overview](00-Overview.md) | The four requirements, what exists, the write-down loop |
-| 01 | [The Judgment Taxonomy](01-The-Judgment-Taxonomy.md) | Three classes — and why timing complaints are excluded from precision |
-| 02 | [Precision and Wilson Bounds](02-Precision-and-Wilson-Bounds.md) | Always compared against the bound that makes the action harder |
-| 03 | [Lineage and the Weekly Claim](03-Lineage-and-The-Weekly-Claim.md) | Exact-pack scoping, the row lock, and the revision guard |
-| 04 | [Mutes, Nudges and the Ledger](04-Mutes-Nudges-and-The-Ledger.md) | ±5 a week, ±15 ever, and a mute that takes effect in the same commit |
-| 05 | [Gaps](05-Gaps.md) | Layer 5 writes `execution_outcomes`; this layer still learns from clicks |
-
----
-
-## Where this layer sits
-
-| | |
+| Atlas contract | Live implementation |
 |---|---|
-| **Package** | `genios_engine/feedback/` |
-| **Layer number** | 7 — `genios_engine/LAYERS.py` |
-| **Spec alias** | The architecture atlas calls this **Layer 6 · Learning & Evolution** |
-| **Reads from** | canonical human judgments on cards (Layer 6) |
-| **Hands to** | `rule_mutes` rows + `lvl3_config.rule_offsets` — **written down as data** |
-| **May import** | everything below. **Nothing imports it** |
-| **LLM calls** | Zero |
+| Input | canonical feedback + `execution_outcomes` + graph observations + delivery results |
+| Core | 10 analysis units + Learning Validation + Governance |
+| Output | immutable `LearningObject` → Organization / Behavior / Adaptive brains, Runtime TTL, Metrics, or human-review suggestion |
+| Expert Brain | **Never edited. There is no Expert publisher.** |
+| Runtime | weekly atomic scheduler run; explicit memories can enter immediately with a bounded TTL |
+
+The Atlas publishers are live, governed and versioned. Generic Organization/Behavior/Adaptive
+entries and Runtime memories do not yet have a lower-layer consumer; the existing narrow
+`rule_mutes`/bounded `rule_offsets` calibration path is the learned state currently consumed by
+Reasoning.
+
+## Read in this order
+
+| # | Document | Purpose |
+|---|---|---|
+| 00 | [Overview](00-Overview.md) | Whole layer, one sitting |
+| 01 | [Judgment taxonomy](01-The-Judgment-Taxonomy.md) | Explicit label vs timing vs silence |
+| 02 | [Precision and Wilson bounds](02-Precision-and-Wilson-Bounds.md) | Conservative rule calibration |
+| 03 | [Lineage and weekly claim](03-Lineage-and-The-Weekly-Claim.md) | Replay identity and atomicity |
+| 04 | [Mutes, nudges and ledger](04-Mutes-Nudges-and-The-Ledger.md) | Existing bounded calibration subsystem |
+| 05 | [Gaps](05-Gaps.md) | Honest remaining limitations |
+| 06 | [Architecture and orchestrator](06-Architecture-and-Orchestrator.md) | Selector → planner → policy → publisher |
+| 07 | [The 11 learning units](07-The-11-Learning-Units.md) | Inputs, calculations and outputs per unit |
+| 08 | [Validation and governance](08-Validation-and-Governance.md) | Promotion state machine and enterprise controls |
+| 09 | [Brains and publishers](09-Brains-and-Publishers.md) | Versioning, TTL, suggestions and rollback |
+| 10 | [Storage, API and scheduler](10-Storage-API-and-Scheduler.md) | Tables, endpoints and runtime wiring |
+| 11 | [Atlas alignment](11-Atlas-Alignment.md) | Requirement-by-requirement evidence |
+| 12 | [Integration with Layers 5 and 5.2](12-Integration-with-Layers-5-and-5.2.md) | Exact outcome, delivery and learned-state seams across the closed loop |
+
+## Code map
+
+| Concern | Authority |
+|---|---|
+| Cross-layer contract | `genios_engine/contracts/learning.py` |
+| 10 analysis units | `genios_engine/feedback/units.py` |
+| Unit 11 + tenant governance | `genios_engine/feedback/governance.py` |
+| Persistence + evolution publisher | `genios_engine/feedback/store.py` |
+| Selector/planner/scheduler orchestration | `genios_engine/feedback/orchestrator.py` |
+| Existing rule calibration | `genios_engine/feedback/calibrate.py` |
+| Tenant surface | `genios_engine/api/learning_routes.py` |
+| Schema | `migrations/0045_atlas_l6_learning.sql` |
+| Verification | `tests/test_learning_atlas.py`, `tests/test_learning_authority.py` |
 
 [← System Design index](../README.md)

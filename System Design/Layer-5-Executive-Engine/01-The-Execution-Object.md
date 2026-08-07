@@ -46,19 +46,20 @@ executions look different.*
 ```mermaid
 stateDiagram-v2
     [*] --> created: built, not yet cleared
-    created --> pending: validated and delivered
+    created --> pending: validated and queued
     pending --> running: a human or agent picked it up
     running --> waiting: acted on, waiting for the world
     running --> blocked: dependency or explicit human block
+    waiting --> running: reply or dependency allows work to continue
     waiting --> completed: **success evidence landed**
     running --> completed
     blocked --> running
+    blocked --> waiting
     created --> cancelled: guard retired it as already stale
     pending --> cancelled
     running --> cancelled
     waiting --> expired: deadline passed, nothing observed
     pending --> expired
-    expired --> running: **the one reopening — a human picked lapsed work back up**
     completed --> archived
     cancelled --> archived
     expired --> archived
@@ -71,5 +72,9 @@ that retirement must be visible as a state, not as a row that silently never app
 `ALLOWED_TRANSITIONS` lives in **the contract**, so the Python state machine, the SQL guard
 and the tests all read one table. *A transition that is legal in Python and illegal in
 Postgres is how audit trails start disagreeing with themselves.*
+
+`pending` is intentionally **not** called delivered. Layer 5 emits `execution.queued` when the
+commitment clears validation; only Layer 5.2 adapter success sets `delivered_at` and emits
+`execution.delivery_confirmed`.
 
 ---

@@ -63,6 +63,22 @@ flowchart LR
 
 The contract itself refuses a read-only action carrying an external effect.
 
+---
+
+## Unit 2.5 — Execution Coordination (`coordination.py`)
+
+The plan is immutable; coordination is a deterministic projection over that plan plus recorded
+action completions. It reports each step as `ready`, `waiting` or `completed`, identifies the
+current wave, and refuses a completion whose declared dependencies are still open.
+
+Parallel preparation steps are released together. A downstream join becomes ready only after
+every prior-wave dependency completes. Corrupt historical completion order is surfaced as
+`invalid_completion_ids` rather than silently normalized.
+
+The commitment API returns this projection and the action-completion mutation enforces it in the
+same database transaction. Concrete per-action multi-owner seat/agent allocation is still open;
+today actions carry audience classes and owner-scoped steps resolve to the commitment owner.
+
 #### Two classifier bugs found by sweeping every shipped play
 
 | # | Bug | Fix |

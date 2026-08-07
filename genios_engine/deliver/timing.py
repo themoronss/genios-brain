@@ -122,15 +122,16 @@ class AttentionState:
     """What is true about this recipient's attention *right now*.
 
     Resolved by the caller and passed in whole, so this module stays a pure function of its
-    inputs.  The empty default is the honest v1 answer for ``busy_until``: GeniOS ingests
-    calendars, but nothing yet projects "in a meeting until" per seat, and a fabricated busy
-    signal would be worse than none.  The seam is here so that projection can be plugged in
-    without reopening any decision below.
+    inputs. Surface clients can now publish this state through a short-lived presence lease.
+    The empty default remains honest when nobody has reported context; calendar events are not
+    silently treated as proof that a person is still in a meeting.
     """
 
     busy_until: datetime | None = None        # in a meeting or a focus block until this instant
     interrupts_last_hour: int = 0
     oldest_interrupt_at: datetime | None = None   # start of the rolling burst window
+    current_activity: str | None = None
+    current_surface: str | None = None
 
 
 def _hours_from(moment: datetime) -> datetime:

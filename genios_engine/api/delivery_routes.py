@@ -4,12 +4,16 @@ The delivery gate is only as good as the settings it reads, and until this route
 settings could only be written with raw SQL.  A quiet-hours table nobody can edit is not a
 feature; it is dead schema that makes the product look like it ignores people.
 
-Four things live here, and the third is the one that earns the file:
+The original four admission controls still live here:
 
   ``GET  …/delivery/preferences``   what is stored, at every specificity.
   ``PUT  …/delivery/preferences``   set or change one row.
   ``GET  …/delivery/effective``     **what will actually happen to me, and when.**
   ``GET  …/delivery/held``          what the gate is sitting on right now, and why.
+
+Atlas alignment adds leased recipient context, typed delivery-object/result reads, authenticated
+pull-surface inboxes and deterministic analytics. They remain projections of the same outbox
+ledger rather than creating a second source of truth.
 
 ``/effective`` runs the real resolver and the real units against a real instant and reports the
 verdict for every band.  It is the same instinct as ``POST /channels/slack/test``: "did my
@@ -30,10 +34,11 @@ how two of them would start disagreeing.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
@@ -44,6 +49,8 @@ from genios_engine.deliver.gate import (
     channel_class_for,
     evaluate_delivery,
 )
+from genios_engine.deliver.presence import ActivityKind, Presence
+from genios_engine.deliver.results import load_delivery, load_inbox, load_results
 from genios_engine.executive.communication import CHAT_CHANNELS
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner
 from genios_engine.platform.wiring import make_graph_store
@@ -329,6 +336,143 @@ def held_messages(org_id: str, org: str = Depends(_org),
     return {"held": held,
             "deferred": sum(1 for item in held if item["status"] == "queued"),
             "suppressed": sum(1 for item in held if item["status"] == "suppressed")}
+
+
+# ── live delivery context ─────────────────────────────────────────────────────────────
+class PresenceUpdate(BaseModel):
+    """A leased context signal from a browser, app, extension or agent surface."""
+
+    seat_id: str
+    activity: ActivityKind = ActivityKind.UNKNOWN
+    surface: str = "unknown"
+    focus_mode: bool = False
+    busy_until: datetime | None = None
+    ttl_seconds: int = Field(300, ge=30, le=3600)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.put("/api/org/{org_id}/delivery/context")
+def set_delivery_context(org_id: str, body: PresenceUpdate,
+                         ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Publish short-lived context from an owner-authenticated product surface.
+
+    The current auth contract has no independently authenticated seat identity. Accepting an
+    arbitrary ``seat_id`` from a scoped key would let one integration hold another person's
+    notifications, so this mutation remains owner-only until that identity exists.
+    """
+    _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(seconds=body.ttl_seconds)
+    busy = body.busy_until
+    if busy is not None:
+        if busy.tzinfo is None:
+            raise HTTPException(422, "busy_until must carry a UTC offset")
+        busy = min(busy.astimezone(timezone.utc), expires)
+    try:
+        presence = Presence(org_id=ctx.org_id, seat_id=body.seat_id,
+                            activity=body.activity, surface=body.surface,
+                            focus_mode=body.focus_mode, observed_at=now,
+                            expires_at=expires, busy_until=busy)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    import json
+    with _graph.engine.begin() as conn:
+        conn.execute(text(
+            "insert into delivery_presence (org_id, seat_id, activity, surface, focus_mode, "
+            "busy_until, observed_at, expires_at, metadata) "
+            "values (:o,:s,:a,:surface,:focus,:busy,:observed,:expires,cast(:meta as jsonb)) "
+            "on conflict (org_id, seat_id) do update set activity=excluded.activity, "
+            "surface=excluded.surface, focus_mode=excluded.focus_mode, "
+            "busy_until=excluded.busy_until, observed_at=excluded.observed_at, "
+            "expires_at=excluded.expires_at, metadata=excluded.metadata, updated_at=now()"),
+            {"o": presence.org_id, "s": presence.seat_id,
+             "a": presence.activity.value, "surface": presence.surface,
+             "focus": presence.focus_mode, "busy": presence.busy_until,
+             "observed": presence.observed_at, "expires": presence.expires_at,
+             "meta": json.dumps(body.metadata, default=str)})
+    return jsonable_encoder(presence.to_semantic_dict())
+
+
+@router.get("/api/org/{org_id}/delivery/context/{seat_id}")
+def get_delivery_context(org_id: str, seat_id: str,
+                         org: str = Depends(_org)) -> dict:
+    _require_db()
+    with _graph.engine.connect() as conn:
+        row = conn.execute(text(
+            "select org_id, seat_id, activity, surface, focus_mode, busy_until, observed_at, "
+            "expires_at from delivery_presence where org_id=:o and seat_id=:s"),
+            {"o": org, "s": seat_id}).mappings().first()
+    if row is None:
+        raise HTTPException(404, "no delivery context for seat")
+    from genios_engine.deliver.presence import presence_from_row
+    presence = presence_from_row(dict(row))
+    now = datetime.now(timezone.utc)
+    return {**jsonable_encoder(presence.to_semantic_dict()), "active": presence.active_at(now),
+            "effective_busy_until": jsonable_encoder(presence.effective_busy_until(now))}
+
+
+@router.delete("/api/org/{org_id}/delivery/context/{seat_id}")
+def clear_delivery_context(org_id: str, seat_id: str,
+                           ctx: AuthCtx = Depends(require_owner)) -> dict:
+    _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    with _graph.engine.begin() as conn:
+        result = conn.execute(text(
+            "delete from delivery_presence where org_id=:o and seat_id=:s"),
+            {"o": ctx.org_id, "s": seat_id})
+    return {"deleted": int(result.rowcount or 0), "seat_id": seat_id}
+
+
+# ── typed output, pull surfaces and analytics ─────────────────────────────────────────
+@router.get("/api/org/{org_id}/delivery/results")
+def delivery_results(org_id: str, org: str = Depends(_org),
+                     channel: str | None = Query(None),
+                     limit: int = Query(100, ge=1, le=500)) -> dict:
+    _require_db()
+    with _graph.engine.connect() as conn:
+        results = load_results(conn, org, channel=channel, limit=limit)
+    return {"results": jsonable_encoder([item.to_semantic_dict() for item in results])}
+
+
+@router.get("/api/org/{org_id}/delivery/results/{delivery_id}")
+def delivery_result(org_id: str, delivery_id: str, org: str = Depends(_org)) -> dict:
+    _require_db()
+    with _graph.engine.connect() as conn:
+        pair = load_delivery(conn, org, delivery_id)
+    if pair is None:
+        raise HTTPException(404, "delivery not found")
+    delivery, result = pair
+    return jsonable_encoder({"delivery": delivery.to_semantic_dict(),
+                             "result": result.to_semantic_dict()})
+
+
+@router.get("/api/org/{org_id}/delivery/inbox")
+def delivery_inbox(org_id: str, org: str = Depends(_org),
+                   channel: str = Query("in_app"), recipient: str | None = Query(None),
+                   limit: int = Query(100, ge=1, le=500)) -> dict:
+    """Pull surface for app, dashboard, API, extension and mobile clients."""
+    _require_db()
+    from genios_engine.deliver.channels.surface import SURFACE_CHANNELS
+    if channel not in SURFACE_CHANNELS:
+        raise HTTPException(422, f"channel must be a pull surface: {sorted(SURFACE_CHANNELS)}")
+    with _graph.engine.connect() as conn:
+        rows = load_inbox(conn, org, channel=channel, recipient=recipient, limit=limit)
+    return {"deliveries": jsonable_encoder([
+        {"delivery": delivery.to_semantic_dict(), "result": result.to_semantic_dict()}
+        for delivery, result in rows])}
+
+
+@router.get("/api/org/{org_id}/delivery/analytics")
+def delivery_analytics(org_id: str, org: str = Depends(_org),
+                       days: int = Query(28, ge=1, le=365)) -> dict:
+    _require_db()
+    from genios_engine.deliver.analytics import load_analytics
+    with _graph.engine.connect() as conn:
+        report = load_analytics(conn, org, days=days)
+    return jsonable_encoder(report)
 
 
 __all__ = ["router"]

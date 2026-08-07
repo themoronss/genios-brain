@@ -91,6 +91,8 @@ def test_a_commitment_returns_its_plan_ladder_and_audit_trail_in_one_call(api):
     assert [e["day_offset"] for e in body["escalation"]] == [1, 2, 4, 7]
     assert any(e["kind"] == "execution.created" for e in body["events"])
     assert body["commitment"]["plan_hash"] == execution.plan_hash
+    assert body["coordination"]["ready_action_ids"] == ["a1"]
+    assert body["coordination"]["waiting_action_ids"] == ["a2", "a3"]
 
 
 def test_closed_commitments_are_hidden_unless_asked_for(api):
@@ -134,6 +136,36 @@ def test_ticking_a_step_is_recorded_and_is_idempotent(api):
     # The state machine is deliberately not advanced here: a step ticked on a commitment the
     # world has already killed must not resurrect it.
     assert db.executions[0]["state"] == "pending"
+
+
+def test_a_dependent_step_cannot_jump_ahead_of_its_prerequisite(api):
+    client, db, execution = api
+    base = f"/v1/executive/commitments/{execution.execution_id}/actions"
+    blocked = client.post(f"{base}/a2/complete")
+    assert blocked.status_code == 409
+    assert blocked.json()["detail"]["reason_code"] == "dependencies_unmet"
+    assert client.post(f"{base}/a1/complete").status_code == 200
+    assert client.post(f"{base}/a2/complete").json()["recorded"] is True
+
+
+def test_an_unvalidated_commitment_cannot_be_started_through_an_action(api):
+    client, db, execution = api
+    db.executions[0]["state"] = "created"
+    response = client.post(
+        f"/v1/executive/commitments/{execution.execution_id}/actions/a1/complete")
+    assert response.status_code == 409
+    assert response.json()["detail"]["reason_code"] == "state_not_actionable"
+    assert db.execution_actions[0]["completed_at"] is None
+
+
+def test_a_human_can_record_blocked_and_resume_states(api):
+    client, db, execution = api
+    url = f"/v1/executive/commitments/{execution.execution_id}/transition"
+    blocked = client.post(url, json={"state": "blocked", "reason_code": "legal_review"})
+    assert blocked.status_code == 200 and db.executions[0]["state"] == "blocked"
+    resumed = client.post(url, json={"state": "running", "reason_code": "dependency_cleared"})
+    assert resumed.status_code == 200 and db.executions[0]["state"] == "running"
+    assert db.events_of("execution.blocked") and db.events_of("execution.started")
 
 
 def test_dismissal_is_written_as_an_event_for_the_guard_to_act_on(api):
@@ -197,7 +229,9 @@ def test_mutating_a_closed_commitment_is_a_404(api):
     for path, body in ((f"/v1/executive/commitments/{execution.execution_id}/dismiss",
                         {"reason": "x"}),
                        (f"/v1/executive/commitments/{execution.execution_id}/reassign",
-                        {"seat_id": "seat_mgr"})):
+                        {"seat_id": "seat_mgr"}),
+                       (f"/v1/executive/commitments/{execution.execution_id}/transition",
+                        {"state": "blocked", "reason_code": "dependency_unmet"})):
         assert client.post(path, json=body).status_code == 404
 
 
@@ -222,6 +256,8 @@ def test_a_scoped_credential_cannot_reach_the_mutations(monkeypatch):
                         {"reason": "x"}),
                        (f"/v1/executive/commitments/{execution.execution_id}/reassign",
                         {"seat_id": "seat_mgr"}),
+                       (f"/v1/executive/commitments/{execution.execution_id}/transition",
+                        {"state": "blocked", "reason_code": "dependency_unmet"}),
                        ("/v1/executive/sweep", None)):
         assert client.post(path, json=body).status_code == 403
     assert client.get("/v1/executive/commitments").status_code == 403

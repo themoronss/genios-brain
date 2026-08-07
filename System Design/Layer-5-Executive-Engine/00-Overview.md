@@ -21,26 +21,26 @@ an escalation ladder and a clock — and then watches it until it is done, dead,
 |---|---|
 | **Package** | `genios_engine/executive/` |
 | **Layer number** | 5 |
-| **Size** | 22 files · ~4,300 lines |
+| **Size** | 23 Python modules |
 | **Input** | authoritative Layer 4 decisions (`signals` proving out against `reason/authority.py`) |
 | **Output** | **exactly one artifact** — the Execution Object (`execution.v1`) |
 | **May import** | `reason/` (L4), `packs/` (L3), `context/` (L2), `capture/` (L1), `contracts/`, `platform/` |
 | **May NOT import** | `deliver/` (L6) — enforced by `tests/test_layer_topology.py` |
 | **LLM calls** | **Zero.** A model may improve the *wording* of a reminder; it may never decide anything |
-| **Tests** | 156, in six files |
+| **Tests** | 195, in eleven `test_executive*.py` files |
 | **Migration** | `0041_l5_execution.sql` — 5 tables + one column on `org_seats` |
 | **Runs** | inside the existing scheduler heartbeat — **no new cron, worker, or service** |
-| **Status** | feature-complete, wired to Layer 6, scheduled — **its SQL has never run against Postgres** |
+| **Status** | Atlas core aligned; concrete per-action multi-owner seat allocation, digest batching and live-Postgres proof remain open |
 
 ---
 
 ---
 
-## §1 · What was supposed to be built
+## §1 · What is built now
 
-Layer 5 has **two halves**, and only one of them existed.
+Layer 5 contains both decision presentation and the Atlas operational engine.
 
-### 1.1 The decision-intelligence half — already built, and good
+### 1.1 Decision intelligence
 
 | What | Where |
 |---|---|
@@ -56,31 +56,21 @@ Layer 5 has **two halves**, and only one of them existed.
 > **The most important thing that was already right:** this layer never lets a model decide.
 > Every number it produces is arithmetic over stored truth.
 
-### 1.2 The operational half — entirely absent
-
-Not partially built. **Absent.** `grep` confirmed `reminder`, `escalation`, `execution
-object`, `execution state` appeared nowhere in the codebase.
-
-| Missing | Consequence |
-|---|---|
-| An **Execution Object** — the plan itself | A card said *"follow up with Acme"*. Nothing recorded what the steps were, who owned them, or by when |
-| **Owner resolution as Layer 5's job** | Ownership lived in `deliver/router.py`, so **Layer 6 was the authority on whose problem something was** |
-| **Reminders** | Zero. A card sat until it expired |
-| **Escalation** | Zero. Nothing ever reached a manager |
-| **Monitoring** | Nothing checked whether the recommended thing actually happened |
-| **Execution state** | A card had states. A *commitment* had none |
-| **Outcome truth for learning** | Layer 7 learned only from button clicks: whether a card *looked* right, never whether acting on it *worked* |
-
-### 1.3 The eleven units the spec names
+### 1.2 Atlas operational chain
 
 ```text
-1  Decision Interpreter      6  Reminder
-2  Execution Planning ⭐⭐⭐   7  Monitoring
-3  Communication Planning    8  Escalation
-4  Execution Object Builder  9  Execution Tracking
-5  Delivery                 10  Feedback Collection
-                            +   Execution Validation ⭐ (an addition, not in the spec)
+1   Decision Interpreter          6   Monitoring
+2   Execution Planning            7   Escalation
+2.5 Execution Coordination        8   Execution Tracking
+3   Communication Planning        9   Feedback Collection
+4   Execution Validation         10   Execution Object Builder
+5   Reminder
 ```
+
+All ten units exist. `coordination.py` projects ready/waiting/completed actions from the frozen
+dependency graph, blocks out-of-order completion, and exposes that state through the commitment
+API. The remaining Atlas refinement is **concrete per-action multi-owner seat/agent allocation**;
+today the object carries action audiences and one concrete commitment owner.
 
 ---
 
@@ -175,7 +165,7 @@ flowchart TD
     M --> R{"reminder due?"}
     R -- "rung due / 75% window / untouched" --> R2{"reminders < max?"}
     R2 -- yes --> SP["emit reminder event<br/>with routing plan + fact corpus"]
-    R2 -- no --> ES["hand over to escalation"]
+    R2 -- no --> ES["ordinary nudge stops; due ladder rungs still fire"]
     SP --> BR["deliver/executive_bridge<br/>**re-validates again at send**"]
     C1 --> OUT["execution_outcomes<br/>+ reminders_sent + escalations_fired"]
     C2 --> OUT
@@ -284,7 +274,7 @@ reads it. The dependency always points down.
 | Half | Files |
 |---|---|
 | **Decision intelligence** (pre-existing) | `brief.py`, `verbs.py`, `modes.py`, `summary.py`, `memory.py`, `explain.py`, `validate.py`, `authority.py` |
-| **Execution engine** (new) | `interpret.py`, `planning.py`, `communication.py`, `execution.py`, `execution_guard.py`, `reminder.py`, `monitor.py`, `escalation.py`, `lifecycle.py`, `collect.py`, `assignment.py` |
+| **Execution engine** | `interpret.py`, `planning.py`, `coordination.py`, `communication.py`, `execution.py`, `execution_guard.py`, `reminder.py`, `monitor.py`, `escalation.py`, `lifecycle.py`, `collect.py`, `assignment.py` |
 | **Machinery** | `execution_store.py` (the only SQL), `sweep.py` (the loop) |
 | **Contract** | `contracts/execution.py` |
 | **The wire** | `deliver/executive_bridge.py` (lives in Layer 6) |
@@ -300,6 +290,7 @@ reads it. The dependency always points down.
 |---|---|
 | `GET /v1/executive/commitments` · `/{id}` | the commitment list and one commitment in full |
 | `POST .../commitments/{id}/actions/{aid}/complete` | tick a step |
+| `POST .../commitments/{id}/transition` | record running, waiting, blocked or resumed work |
 | `POST .../commitments/{id}/dismiss` | a human cancels |
 | `POST .../commitments/{id}/reassign` | change the owner — **same `execution_id`** |
 | `POST /v1/executive/sweep` | force a pass for one tenant |
@@ -312,17 +303,19 @@ reads it. The dependency always points down.
 | Execution Object — frozen, content-addressed, replayable | ✅ round-trip proven |
 | Decision Interpreter — refuses non-instructions **by name** | ✅ |
 | Execution planning — kinds, waves, owners, deadlines | ✅ deterministic, no model |
+| Coordination — dependencies, parallel waves, ready/waiting projection | ✅ runtime-enforced; ⚠️ concrete per-action multi-owner seats not yet modelled |
 | Owner resolution owned by Layer 5 | ✅ moved down, behaviour identical, ratchet green |
 | Channel + interrupt owned by Layer 5 | ✅ reason-coded |
 | **Execution Validation (stale suppression)** | ✅ runs before **every** outbound moment |
 | Reminders on business relevance | ✅ fatigue-capped |
-| Escalation — urgency-scaled, expiry-capped | ✅ frozen at plan time |
+| Escalation — urgency-scaled, expiry-capped | ✅ frozen at plan time; resolved target reaches the actual outbox recipient |
 | Monitoring — progress, stalls, done-but-unproven | ✅ |
 | State machine + full audit trail | ✅ one transition table shared by code, SQL and tests |
-| Outcome records for Layer 7 | ✅ written and indexed — ⚠️ **not yet read** |
+| Outcome records for Atlas Layer 6 learning | ✅ written, indexed and consumed by `feedback/store.py::load_batch` |
 | Tenant-tunable via pack data | ✅ `sales` v1.8.0 `execution` block |
-| Orchestrator executed end to end | ✅ 33 scenarios against an in-memory double |
-| **A reminder actually reaches a human** | ✅ 16 scenarios |
+| Orchestrator executed end to end | ✅ exercised against a strict in-memory database double |
+| **A reminder actually reaches a human** | ✅ bridge and outbox scenarios cover target, dedupe and staleness |
+| Pending means queued; delivery means adapter success | ✅ separately audited as `execution.queued` / `execution.delivery_confirmed` |
 | Runs automatically — no new cron/worker/service | ✅ in the heartbeat, **before** distribution |
 | **Ever executed against Postgres** | ❌ **not once** |
 

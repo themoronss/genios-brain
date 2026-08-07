@@ -349,16 +349,13 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
                      {"n": decision.next_check_at, "o": org_id, "x": execution.execution_id})
         return _Step(f"suppressed_{verdict.reason_code}")
 
-    # --- first delivery ------------------------------------------------------------------
+    # --- release to Layer 5.2 ------------------------------------------------------------
     transitions = 0
     if state is ExecutionState.CREATED:
         move = transition(state, ExecutionState.PENDING, reason_code="validated",
                           actor="system", at=now, detail=verdict.detail)
         if store.apply_transition(conn, org_id=org_id, execution_id=execution.execution_id,
                                   move=move, next_check_at=now):
-            conn.execute(text("update executions set delivered_at=coalesce(delivered_at,:n) "
-                              "where org_id=:o and execution_id=:x"),
-                         {"n": now, "o": org_id, "x": execution.execution_id})
             state, transitions = ExecutionState.PENDING, 1
 
     # --- how far has it actually got ------------------------------------------------------
@@ -385,16 +382,31 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
         return _Step(f"quiet_{decision.reason_code}", transitioned=transitions)
 
     fired = 0
+    target_seat_id: str | None = None
+    target_audience: str | None = None
+    target_interrupt: bool | None = None
     if decision.escalating:
         directory = PgSeatDirectory(conn=conn, org_id=org_id)
         rung = next(step for step in execution.escalation
                     if step.day_offset == decision.escalation_day)
         target_seat = resolve_escalation_target(
             audience=rung.audience, owner_seat=current.get("assignee"), directory=directory)
-        if store.fire_escalation(conn, org_id=org_id, execution_id=execution.execution_id,
-                                 day_offset=rung.day_offset, at=now,
-                                 target_seat=target_seat.seat_id, reason_code=rung.reason_code):
-            fired = 1
+        target_seat_id = target_seat.seat_id
+        target_audience = target_seat.audience.value
+        target_interrupt = rung.interrupt
+        if not store.fire_escalation(conn, org_id=org_id,
+                                     execution_id=execution.execution_id,
+                                     day_offset=rung.day_offset, at=now,
+                                     target_seat=target_seat_id,
+                                     reason_code=rung.reason_code):
+            # Another worker fired this frozen rung after our reminder-state read. Recording a
+            # second reminder event here would turn one promised escalation into two messages.
+            conn.execute(text("update executions set next_check_at=:n, updated_at=now() "
+                              "where org_id=:o and execution_id=:x"),
+                         {"n": decision.next_check_at, "o": org_id,
+                          "x": execution.execution_id})
+            return _Step("escalation_lost_race", transitioned=transitions)
+        fired = 1
 
     # The grounded corpus travels with the event. Layer 6's bridge words the message from
     # exactly these values and nothing else, which is what keeps the invention guarantee intact
@@ -404,7 +416,9 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
                           reason_code=decision.reason_code,
                           next_check_at=decision.next_check_at, urgency=decision.urgency,
                           escalation_day=decision.escalation_day,
-                          facts=reminder_facts(execution, decision, now))
+                          facts=reminder_facts(execution, decision, now),
+                          target_seat=target_seat_id, target_audience=target_audience,
+                          interrupt=target_interrupt)
     return _Step(f"reminded_{decision.reason_code}", reminded=1, escalated=fired,
                  transitioned=transitions)
 

@@ -42,6 +42,7 @@ from genios_engine.deliver.executive_bridge import (
     executive_delivery_is_live,
     is_executive_delivery,
     link_commitment_cards,
+    mark_executive_delivered,
 )
 from genios_engine.deliver.gate import (
     PgDeliveryContext,
@@ -50,6 +51,7 @@ from genios_engine.deliver.gate import (
     channel_class_for,
     defer_until,
 )
+from genios_engine.deliver.destination import destination_from_row, route_destinations
 from genios_engine.executive.communication import may_interrupt
 from genios_engine.executive.execution import execution_config
 from genios_engine.platform.ids import new_id
@@ -127,7 +129,30 @@ def digest_card_id(day) -> str:
     return f"digest:{day.isoformat()}"
 
 
-def _current_digest_payload(engine, org_id: str, evaluation_time: datetime) -> dict:
+def _neutral_card_payload(card: dict, *, base_url: str = "") -> dict:
+    """Grounded adapter-neutral card bytes for Teams, webhook and pull surfaces."""
+    link = f"{base_url.rstrip('/')}/cards/{card.get('card_id')}" if base_url else None
+    return {"kind": "intelligence_card", "card_id": card.get("card_id"),
+            "headline": str(card.get("headline") or "")[:150],
+            "situation": str(card.get("situation") or "")[:300],
+            "band": str(card.get("urgency_band") or "standard"),
+            "score": card.get("score"), "url": link}
+
+
+def format_card_for_channel(channel: str, card: dict, *, base_url: str = "") -> dict:
+    return (format_card_message(card, base_url=base_url) if channel == "slack"
+            else _neutral_card_payload(card, base_url=base_url))
+
+
+def format_digest_for_channel(channel: str, digest: dict) -> dict:
+    if channel == "slack":
+        return format_digest_message(digest)
+    return {"kind": "daily_digest", "one_line": str(digest.get("one_line") or ""),
+            "items": list(digest.get("top_items") or digest.get("items") or [])[:5]}
+
+
+def _current_digest_payload(engine, org_id: str, evaluation_time: datetime,
+                            channel: str = "slack") -> dict:
     """Build a non-actionable digest from current authority immediately before send."""
     from genios_engine.executive.summary import build_summary
 
@@ -136,8 +161,8 @@ def _current_digest_payload(engine, org_id: str, evaluation_time: datetime) -> d
 
     store = _SummaryStore()
     store.engine = engine
-    return format_digest_message(
-        build_summary(store, org_id, "one_minute", eval_time=evaluation_time))
+    return format_digest_for_channel(
+        channel, build_summary(store, org_id, "one_minute", eval_time=evaluation_time))
 
 
 # ── enqueue ───────────────────────────────────────────────────────────────────────
@@ -172,7 +197,7 @@ def enqueue_pending(engine, org_id: str, channel: str = "slack",
             "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack"),
             {"o": org_id, "ch": channel, "authority_time": now}).fetchall()
         for r in rows:
-            payload = format_card_message(dict(r._mapping), base_url=base_url)
+            payload = format_card_for_channel(channel, dict(r._mapping), base_url=base_url)
             # A card is pushed to chat *because* it cleared the push band, so this path never
             # builds a CommunicationPlan — but it still has to say whether the card may break
             # through quiet hours. Asking Layer 5's own predicate, with the tenant's own config
@@ -197,6 +222,62 @@ def enqueue_pending(engine, org_id: str, channel: str = "slack",
                  "seat": r.assignee, "band": r.urgency_band, "cclass": channel_class,
                  "interrupt": interrupt})
             queued += res.rowcount
+    return queued
+
+
+def enqueue_failover(engine, org_id: str, *, failed_channel: str, channel: str,
+                     base_url: str = "") -> int:
+    """Move an authoritative card to the next configured destination after terminal failure.
+
+    A separate row preserves the failed attempt and its cause. Only ``failed_terminal`` opens
+    this path; a policy suppression, quiet-hours deferral or authority cancellation must never
+    be routed around on another channel.
+    """
+    if failed_channel == channel:
+        return 0
+    queued = 0
+    now = datetime.now(timezone.utc)
+    channel_class = channel_class_for(channel).value
+    with engine.begin() as c:
+        c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                  {"o": org_id})
+        rows = c.execute(text(
+            "select k.card_id,k.signal_id,k.headline,k.situation,k.urgency_band,"
+            "k.assignee,k.score_block,authority_cfg.effective as effective_config," +
+            AUTHORITATIVE_SCORE_SQL + " as score,s.reasoning_run_id,"
+            "s.reasoning_decision_hash,s.authority_pack_revision,s.authority_expires_at "
+            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
+            AUTHORITATIVE_SIGNAL_JOINS +
+            "where k.org_id=:o and k.state in ('queued','surfaced') "
+            "and s.status='open' and k.expires_at>:authority_time and " +
+            AUTHORITATIVE_SIGNAL_PREDICATE + " "
+            "and k.urgency_band in ('high','critical') "
+            "and exists (select 1 from delivery_outbox failed where failed.org_id=k.org_id "
+            "and failed.card_id=k.card_id and failed.channel=:failed "
+            "and failed.status='failed_terminal') "
+            "and not exists (select 1 from delivery_outbox next where next.org_id=k.org_id "
+            "and next.card_id=k.card_id and next.channel=:ch) "
+            "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack"),
+            {"o": org_id, "failed": failed_channel, "ch": channel,
+             "authority_time": now}).fetchall()
+        for row in rows:
+            payload = format_card_for_channel(channel, dict(row._mapping), base_url=base_url)
+            interrupt = may_interrupt(row.urgency_band, card_confidence_bp(row.score_block),
+                                      communication_config(row.effective_config))
+            result = c.execute(text(
+                "insert into delivery_outbox (id,org_id,card_id,channel,payload,signal_id,"
+                "reasoning_run_id,reasoning_decision_hash,authority_pack_revision,"
+                "authority_expires_at,recipient,band,channel_class,interrupt) "
+                "values (:i,:o,:card,:ch,cast(:payload as jsonb),:signal,:run,:decision,"
+                ":revision,:expires,:seat,:band,:cclass,:interrupt) "
+                "on conflict (org_id, card_id, channel) do nothing"),
+                {"i": new_id("ob"), "o": org_id, "card": row.card_id, "ch": channel,
+                 "payload": json.dumps(payload), "signal": row.signal_id,
+                 "run": row.reasoning_run_id, "decision": row.reasoning_decision_hash,
+                 "revision": row.authority_pack_revision, "expires": row.authority_expires_at,
+                 "seat": row.assignee, "band": row.urgency_band,
+                 "cclass": channel_class, "interrupt": interrupt})
+            queued += result.rowcount
     return queued
 
 
@@ -363,7 +444,7 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
                 continue
         else:
             try:
-                payload = _current_digest_payload(engine, r["org_id"], now)
+                payload = _current_digest_payload(engine, r["org_id"], now, r["channel"])
             except Exception as exc:  # noqa: BLE001 - never send stale fallback bytes
                 delay = next_attempt_delay(r["attempts"] + 1)
                 _finish(engine, r, now, ok=False,
@@ -451,6 +532,9 @@ def _finish(engine, row: dict, now: datetime, *, ok: bool, detail: str, terminal
                  "u": decision.unit if decision else None,
                  "r": decision.reason_code if decision else None})
             out["delivered"] += 1
+            if is_executive_delivery(row["card_id"]):
+                mark_executive_delivered(c, row["org_id"], row["card_id"], at=now,
+                                         channel=row["channel"])
             if not str(row["card_id"]).startswith("digest:") \
                     and not is_executive_delivery(row["card_id"]):
                 c.execute(text(
@@ -479,20 +563,37 @@ def run_distribution(engine, *, base_url: str = "",
     high/critical cards + the daily digest, then drain everything due. Called from the
     maintenance sweep; per-org failures isolate."""
     now = eval_time or datetime.now(timezone.utc)
-    totals = {"orgs": 0, "queued": 0, "digests": 0, "reminders": 0, "linked": 0}
+    totals = {"orgs": 0, "queued": 0, "failovers": 0, "digests": 0,
+              "reminders": 0, "linked": 0}
     with engine.connect() as c:
-        orgs = [r.org_id for r in c.execute(text(
-            "select distinct org_id from org_channels where active"))]
-    for org in orgs:
+        channel_rows = c.execute(text(
+            "select org_id, channel, config from org_channels where active "
+            "order by org_id, channel")).mappings().all()
+    grouped: dict[str, list] = {}
+    for row in channel_rows:
+        grouped.setdefault(str(row["org_id"]), []).append(destination_from_row(row))
+    for org, destinations in grouped.items():
         totals["orgs"] += 1
         try:
-            totals["queued"] += enqueue_pending(engine, org, base_url=base_url)
-            totals["digests"] += enqueue_digest(engine, org, eval_time=now)
+            push_routes = route_destinations(destinations, purpose="push")
+            if push_routes:
+                totals["queued"] += enqueue_pending(
+                    engine, org, channel=push_routes[0].channel, base_url=base_url)
+                for previous, fallback in zip(push_routes, push_routes[1:]):
+                    totals["failovers"] += enqueue_failover(
+                        engine, org, failed_channel=previous.channel,
+                        channel=fallback.channel, base_url=base_url)
+            digest_routes = route_destinations(destinations, purpose="digest")
+            if digest_routes:
+                totals["digests"] += enqueue_digest(
+                    engine, org, channel=digest_routes[0].channel, eval_time=now)
             # Layer 5 decided somebody needed nudging and wrote it down; this is where it
             # actually leaves the building. Linking runs first so a reminder can name the card
             # it belongs to.
             totals["linked"] += link_commitment_cards(engine, org)
-            totals["reminders"] += enqueue_executive_messages(engine, org, base_url=base_url)
+            for destination in destinations:
+                totals["reminders"] += enqueue_executive_messages(
+                    engine, org, channel=destination.channel, base_url=base_url)
         except Exception:      # noqa: BLE001 — one org's enqueue never blocks the rest
             pass
     totals.update(drain(engine, eval_time=now))

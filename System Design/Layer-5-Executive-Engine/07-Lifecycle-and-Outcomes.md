@@ -6,7 +6,7 @@
 
 ---
 
-## Unit 9 — Execution Tracking (`lifecycle.py`)
+## Unit 8 — Execution Tracking (`lifecycle.py`)
 
 Two rules make the history worth trusting.
 
@@ -20,24 +20,25 @@ and a detail**:
 > answers everything, and it is the difference between an incident that takes an afternoon and
 > one that takes ten minutes.
 
-**Terminal states are terminal.** `COMPLETED` and `CANCELLED` go only to `ARCHIVED`.
+**Terminal states are terminal.** `COMPLETED`, `CANCELLED` and `EXPIRED` go only to `ARCHIVED`.
 
 > If the world changes again, that is a **new** decision producing a **new** commitment.
 > Reopening would silently rewrite the outcome Layer 7 already learned from.
 
-The one exception is `EXPIRED → RUNNING`: *a human who picks up lapsed work has demonstrably
-not finished with it, and refusing them would just make them create a duplicate by hand.*
+The owner-only transition API makes `RUNNING`, `WAITING` and `BLOCKED` reachable while work is
+open. A resumed expired outcome requires a new Layer 4 decision and therefore a new commitment.
 
 ---
 
 ---
 
-## Unit 10 — Feedback Collection (`collect.py`)
+## Unit 9 — Feedback Collection (`collect.py`)
 
-> Layer 7 currently learns from one source: what a human clicked on a card. That measures
-> whether a recommendation **looked** right at the moment it arrived, which is not the same as
-> whether acting on it worked. **A card everybody clicks and nobody ever completes is, by the
-> click metric, a triumph.**
+> The original learner used only card judgments, which measured whether a recommendation
+> **looked** right at the moment it arrived. Atlas Layer 6 now also consumes these durable
+> execution outcomes, so it can measure whether acting on the recommendation **worked** and how
+> much reminder/escalation attention it cost. A card everybody clicks and nobody ever completes
+> is no longer counted as a triumph.
 
 #### The label taxonomy — the deliberate output
 

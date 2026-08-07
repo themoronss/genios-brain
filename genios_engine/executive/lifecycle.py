@@ -1,4 +1,4 @@
-"""Layer 5 · Unit 9 — the Execution Tracking Unit.  The state machine and its vocabulary.
+"""Layer 5 · Unit 8 — the Execution Tracking Unit.  The state machine and its vocabulary.
 
 A commitment's state is the only thing in this layer that legitimately changes.  Everything else
 — the decision, the plan, the ladder — is immutable and content-addressed; the row that points
@@ -16,12 +16,11 @@ detail.  "cancelled" answers nothing; "cancelled · authority_revoked · the pac
 answers everything, and it is the difference between an incident that takes an afternoon and one
 that takes ten minutes.
 
-Terminal states are terminal.  ``COMPLETED`` and ``CANCELLED`` go only to ``ARCHIVED``; there is
+Terminal states are terminal.  ``COMPLETED``, ``CANCELLED`` and ``EXPIRED`` go only to
+``ARCHIVED``; there is
 no reopening.  If the world changes again, that is a *new* decision producing a *new*
 commitment, which is both honest and necessary — reopening would silently rewrite the outcome
-Layer 7 already learned from.  The one exception is ``EXPIRED → RUNNING``, because a human who
-picks up lapsed work has demonstrably not finished with it, and refusing them would just make
-them create a duplicate by hand.
+Layer 7 already learned from.
 """
 
 from __future__ import annotations
@@ -54,7 +53,8 @@ class LifecycleError(RuntimeError):
 #: The audit vocabulary.  Fixed, because these strings are what dashboards group by and what
 #: support reads at 2am; a free-text kind column becomes unqueryable within a month.
 EVENT_CREATED = "execution.created"
-EVENT_DELIVERED = "execution.delivered"
+EVENT_QUEUED = "execution.queued"
+EVENT_DELIVERY_CONFIRMED = "execution.delivery_confirmed"
 EVENT_STARTED = "execution.started"
 EVENT_WAITING = "execution.waiting"
 EVENT_BLOCKED = "execution.blocked"
@@ -74,7 +74,7 @@ EVENT_ARCHIVED = "execution.archived"
 #: event kind at the call site (which is where the two drift apart).
 EVENT_FOR_STATE: dict[ExecutionState, str] = {
     ExecutionState.CREATED: EVENT_CREATED,
-    ExecutionState.PENDING: EVENT_DELIVERED,
+    ExecutionState.PENDING: EVENT_QUEUED,
     ExecutionState.RUNNING: EVENT_STARTED,
     ExecutionState.WAITING: EVENT_WAITING,
     ExecutionState.BLOCKED: EVENT_BLOCKED,
@@ -154,8 +154,8 @@ def is_terminal(state: ExecutionState) -> bool:
 
 
 __all__ = ["EVENT_ACTION_COMPLETED", "EVENT_ARCHIVED", "EVENT_BLOCKED", "EVENT_CANCELLED",
-           "EVENT_COMPLETED", "EVENT_CREATED", "EVENT_DELIVERED", "EVENT_ESCALATED",
+           "EVENT_COMPLETED", "EVENT_CREATED", "EVENT_DELIVERY_CONFIRMED", "EVENT_ESCALATED",
            "EVENT_EXPIRED", "EVENT_FOR_STATE", "EVENT_REASSIGNED", "EVENT_REMINDED",
-           "EVENT_REPLANNED", "EVENT_STARTED", "EVENT_SUPPRESSED", "EVENT_UNBLOCKED",
+           "EVENT_QUEUED", "EVENT_REPLANNED", "EVENT_STARTED", "EVENT_SUPPRESSED", "EVENT_UNBLOCKED",
            "EVENT_WAITING", "LIFECYCLE_VERSION", "LifecycleError", "Transition", "is_open",
            "is_terminal", "next_state", "transition"]

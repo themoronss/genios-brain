@@ -21,6 +21,8 @@ flowchart TD
     R --> D["06 · 07<br/><i>remind · monitor · track · collect outcomes</i>"]
     R --> E["08-The-Sweep-and-The-Wire.md<br/><i>what makes it a running system</i>"]
     R --> F["09-Bugs-Runbook-and-Gaps.md"]
+    R --> G["10-Atlas-Layer-5-Alignment.md<br/><i>unit-by-unit current verdict</i>"]
+    R --> H["11-Execution-Coordination.md<br/><i>dependency waves, completion gates, current allocation boundary</i>"]
 ```
 
 ---
@@ -38,7 +40,9 @@ flowchart TD
 | 06 | [Reminders and Monitoring](06-Reminders-and-Monitoring.md) | Business relevance not the calendar; done-but-unproven |
 | 07 | [Lifecycle and Outcomes](07-Lifecycle-and-Outcomes.md) | The state machine, and the labels Layer 7 will learn from |
 | 08 | [The Sweep and the Wire](08-The-Sweep-and-The-Wire.md) | validate → transition → observe → decide → speak |
-| 09 | [Bugs, Runbook and Gaps](09-Bugs-Runbook-and-Gaps.md) | Eight defects found, the deployment steps, and the unproven SQL |
+| 09 | [Bugs, Runbook and Gaps](09-Bugs-Runbook-and-Gaps.md) | Seventeen defects fixed, deployment steps, and current gaps |
+| 10 | [Atlas Layer 5 Alignment](10-Atlas-Layer-5-Alignment.md) | Current unit-by-unit evidence, lifecycle reconciliation and remaining 8% |
+| 11 | [Execution Coordination](11-Execution-Coordination.md) | Runtime dependency projection, action completion authority and the remaining multi-owner seam |
 
 ---
 

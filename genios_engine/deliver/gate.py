@@ -102,6 +102,10 @@ class DeliveryContext:
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"policy": describe_policy(self.policy),
                 "profile": describe_profile(self.profile),
+                "busy_until": (self.state.busy_until.isoformat()
+                               if self.state.busy_until else None),
+                "current_activity": self.state.current_activity,
+                "current_surface": self.state.current_surface,
                 "interrupts_last_hour": self.state.interrupts_last_hour,
                 "config_error": self.config_error}
 
@@ -115,7 +119,16 @@ def channel_class_for(channel: str) -> ChannelClass:
     treated as an in-app surface: an unknown adapter is far more likely to be a dashboard than a
     pager, and guessing "pager" would gate a surface nobody was going to be woken by.
     """
-    return ChannelClass.CHAT if str(channel) in CHAT_CHANNELS else ChannelClass.IN_APP
+    name = str(channel)
+    if name in CHAT_CHANNELS:
+        return ChannelClass.CHAT
+    if name == "email":
+        return ChannelClass.EMAIL
+    if name == "digest":
+        return ChannelClass.DIGEST
+    if name == "agent":
+        return ChannelClass.AGENT
+    return ChannelClass.IN_APP
 
 
 def candidate_from_row(row: Mapping[str, Any]) -> DeliveryCandidate:
@@ -280,7 +293,9 @@ def _as_moment(value: Any, label: str, errors: _Errors) -> datetime | None:
 def build_context(preferences: Mapping[str, Any], *, channel_enabled: bool,
                   recipient_active: bool, interrupts_last_hour: int = 0,
                   oldest_interrupt_at: datetime | None = None,
-                  busy_until: datetime | None = None) -> DeliveryContext:
+                  busy_until: datetime | None = None,
+                  current_activity: str | None = None,
+                  current_surface: str | None = None) -> DeliveryContext:
     """Resolved settings + live signals → the two frozen inputs the units consume.
 
     Pure, and total: it never raises.  Every branch that could fail resolves to the *default*
@@ -348,7 +363,9 @@ def build_context(preferences: Mapping[str, Any], *, channel_enabled: bool,
 
     state = AttentionState(busy_until=busy_until,
                            interrupts_last_hour=max(0, int(interrupts_last_hour)),
-                           oldest_interrupt_at=oldest_interrupt_at)
+                           oldest_interrupt_at=oldest_interrupt_at,
+                           current_activity=current_activity,
+                           current_surface=current_surface)
     return DeliveryContext(policy=policy, profile=profile, state=state,
                            config_error=errors.summary())
 
@@ -434,14 +451,46 @@ class PgDeliveryContext:
 
         return int((row or {}).get("sent") or 0), (row or {}).get("oldest")
 
+    def _presence(self, candidate: DeliveryCandidate, now: datetime) \
+            -> tuple[datetime | None, str | None, str | None]:
+        """Resolve one live, leased product-surface context for this recipient.
+
+        Org-wide surfaces have no person whose activity can be inferred. Expired rows are
+        ignored in SQL and again by the contract, so a client crash can never create a permanent
+        focus hold.
+        """
+        if candidate.recipient is None:
+            return None, None, None
+        try:
+            row = self._conn.execute(text(
+                "select org_id, seat_id, activity, surface, focus_mode, busy_until, "
+                "observed_at, expires_at from delivery_presence "
+                "where org_id=:o and seat_id=:s and expires_at>:now"),
+                {"o": candidate.org_id, "s": candidate.recipient,
+                 "now": now}).mappings().first()
+        except Exception:  # noqa: BLE001 — optional context must survive a rolling migration
+            # Presence is an additive politeness signal. During a rolling deploy an old schema,
+            # or a context provider that is temporarily unavailable, must not turn a healthy
+            # outbox into transport failures. Quiet hours and burst policy still apply.
+            return None, None, None
+        if row is None:
+            return None, None, None
+        from genios_engine.deliver.presence import presence_from_row
+        presence = presence_from_row(dict(row))
+        return (presence.effective_busy_until(now), presence.activity.value,
+                presence.surface)
+
     # -- the interface the outbox uses ---------------------------------------------------
     def resolve(self, candidate: DeliveryCandidate, *, now: datetime) -> DeliveryContext:
         preferences, channel_enabled, recipient_active = self._read_settings(candidate)
         interrupts, oldest = self._burst(candidate, now)
+        busy_until, activity, surface = self._presence(candidate, now)
         self._release()
         return build_context(preferences, channel_enabled=channel_enabled,
                              recipient_active=recipient_active,
-                             interrupts_last_hour=interrupts, oldest_interrupt_at=oldest)
+                             interrupts_last_hour=interrupts, oldest_interrupt_at=oldest,
+                             busy_until=busy_until, current_activity=activity,
+                             current_surface=surface)
 
     def _release(self) -> None:
         """End the read transaction between rows.

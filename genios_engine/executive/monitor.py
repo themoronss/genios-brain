@@ -1,4 +1,4 @@
-"""Layer 5 · Unit 7 — the Monitoring Unit.  Did any of this actually happen?
+"""Layer 5 · Unit 6 — the Monitoring Unit.  Did any of this actually happen?
 
 The guard answers a binary question at a single moment: may this fire *now*.  Monitoring answers
 a continuous one: how far has this commitment actually got, and has it stopped moving.  Both are

@@ -1,4 +1,4 @@
-"""Layer 5 · Unit 4 — the Execution Object Builder.
+"""Layer 5 · Unit 10 — the Execution Object Builder.
 
 Everything upstream produced a piece: an instruction, a plan, an owner, a channel, a ladder.
 This is where they become the one artifact the layer is allowed to emit, and where the

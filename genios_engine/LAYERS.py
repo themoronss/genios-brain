@@ -13,12 +13,13 @@ Translation across the three vocabularies (docs/LAYER_MAP.md has the full table)
     context       2     Context Intelligence         L2 Context graph
     packs         3     Domain Expertise             L4 Domain packs
     reason        4     Reasoning Engine             L3 Reasoning
+    executive     5     Executive Engine             Atlas L5 Executive
     deliver       6     Intelligence Distribution    L5 Delivery
-    feedback      7     Learning Engine              L6 Feedback
+    feedback      7     Learning Engine              Atlas L6 Learning & Evolution
 
-`deliver` currently also hosts what the target calls Executive Intelligence (5);
-an `executive` package will be extracted additively when that split happens —
-today's numbering places deliver at 6 so nothing may flow backwards out of it.
+The Executive/Delivery split is live: `executive` owns the immutable commitment, owner,
+communication intent and lifecycle; `deliver` owns context-aware admission, concrete adapters,
+retry/failover and delivery results. `deliver` may import `executive`, never the reverse.
 """
 from __future__ import annotations
 
@@ -27,9 +28,9 @@ LAYERS: dict[str, int] = {
     "context": 2,      # Context Intelligence — the live digital twin
     "packs": 3,        # Domain Expertise — packs are one mechanism inside it
     "reason": 4,       # Reasoning Engine — deterministic cognition
-    "executive": 5,    # Executive Intelligence — decision intelligence ONLY
-    "deliver": 6,      # Intelligence Distribution (who/when/where — never what/why)
-    "feedback": 7,     # Learning Engine
+    "executive": 5,    # Executive Engine — commitment, who, communication intent, lifecycle
+    "deliver": 6,      # Intelligence Distribution — admission, destination, transport, result
+    "feedback": 7,     # Atlas L6 Learning & Evolution (11 governed units; no Expert writes)
 }
 
 # Cross-cutting packages: outside the layer ordering.

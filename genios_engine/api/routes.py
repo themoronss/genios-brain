@@ -308,6 +308,33 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         calibration = {"orgs": len(orgs), "pack_runs": runs,
                        "already_ran": already_ran}
         _log.info("calibration pass complete: %d org(s), %d applied pack-run(s)", len(orgs), runs)
+    # Atlas Layer 6 LEARNING & EVOLUTION: the calibration loop above remains the exact-lineage
+    # rule tuner; this pass runs the broader 11-unit contract over feedback, real execution
+    # outcomes, normalized enterprise events and delivery results. Its weekly database claim is
+    # the authority, so process replicas and retries cannot double-publish learned state.
+    learning = None
+    if _graph is not None:
+        try:
+            from genios_engine.feedback.orchestrator import run_learning
+            learning_orgs = sorted(
+                set(_executive_orgs()) | {c.org_id for c in _connections.list_active()})
+            applied = already = published = held = 0
+            for org in learning_orgs:
+                try:
+                    result = run_learning(_graph, org, eval_time=now)
+                    applied += int(bool(result.get("applied")))
+                    already += int(bool(result.get("already_ran")))
+                    published += int(result.get("published", 0))
+                    held += int(result.get("held", 0))
+                except Exception:                            # noqa: BLE001 — one org != the rest
+                    _log.exception("learning evolution failed org=%s", org)
+            learning = {"orgs": len(learning_orgs), "runs": applied, "already_ran": already,
+                        "published": published, "held": held}
+            _log.info("learning pass complete: %d org(s), %d published object(s)",
+                      len(learning_orgs), published)
+        except Exception:                                   # noqa: BLE001 — never kill heartbeat
+            _log.exception("learning evolution pass failed")
+            learning = {"error": True}
     # L2 GRAPH MAINTENANCE — entity lifecycle + a health measurement, per org.
     #
     # Here rather than in the L2 drain because both are O(graph), not O(event): running
@@ -339,7 +366,8 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
             "executive": executive, "distribution": distribution,
-            "calibration": calibration, "graph_maintenance": graph_maintenance}
+            "calibration": calibration, "learning": learning,
+            "graph_maintenance": graph_maintenance}
 
 
 def _executive_orgs() -> list[str]:

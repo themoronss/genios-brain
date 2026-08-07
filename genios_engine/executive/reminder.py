@@ -142,6 +142,18 @@ def decide_reminder(execution: ExecutionObject, *, state: ExecutionState,
         return ReminderDecision(False, "not_remindable", "commitment has no owner to remind",
                                 urgency, execution.deadline_at)
 
+    # The ladder is a commitment made at planning time, not another generic reminder. It must
+    # survive the owner-reminder cooldown/fatigue cap, and it is the one communication still
+    # allowed while work is explicitly BLOCKED. The previous ordering checked those stops first,
+    # making the comment "escalation takes over" false exactly when the cap was reached.
+    due = due_rungs(execution, now=now, fired_days=history.fired_escalation_days)
+    if due:
+        rung = due[-1]
+        return ReminderDecision(True, f"escalation_{rung.action.value}",
+                                f"day {rung.day_offset} of the escalation ladder",
+                                URGENT if rung.interrupt else urgency,
+                                _recheck(now, settings), escalation_day=rung.day_offset)
+
     if state is not ExecutionState.PENDING and state is not ExecutionState.RUNNING \
             and state is not ExecutionState.WAITING:
         return ReminderDecision(False, "state_not_remindable", f"commitment is {state.value}",
@@ -161,16 +173,6 @@ def decide_reminder(execution: ExecutionObject, *, state: ExecutionState,
                                 f"{history.reminder_count} reminders already sent; "
                                 "escalation owns this commitment now",
                                 URGENT, _recheck(now, settings))
-
-    # Trigger 1 — the plan promised this moment. Highest priority because it is the only
-    # trigger the owner was told about in advance.
-    due = due_rungs(execution, now=now, fired_days=history.fired_escalation_days)
-    if due:
-        rung = due[-1]                      # the strongest rung that has come due
-        return ReminderDecision(True, f"escalation_{rung.action.value}",
-                                f"day {rung.day_offset} of the escalation ladder",
-                                URGENT if rung.interrupt else urgency,
-                                _recheck(now, settings), escalation_day=rung.day_offset)
 
     # Trigger 2 — the window is burning down with nothing observed.
     if elapsed_bp(execution, now) >= int(settings["deadline_warning_bp"]):

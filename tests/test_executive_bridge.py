@@ -116,6 +116,23 @@ def test_a_second_reminder_is_a_second_message():
     assert len(db.delivery_outbox) == 2
 
 
+def test_an_escalation_is_delivered_to_the_resolved_rung_target():
+    """Resolving a manager into the audit row is not enough: the actual outbox recipient must
+    be that manager, and the rung's own interrupt policy must replace the owner's base plan."""
+    db = world()
+    execution, engine = persisted(db, state=ExecutionState.BLOCKED)
+    rung = execution.escalation[2]
+    sweep.run_lifecycle(engine, eval_time=rung.fires_at + timedelta(minutes=1), effective=PACK)
+
+    event = db.events_of("execution.reminded")[-1]
+    assert event["detail"]["target_seat"] == "seat_mgr"
+    assert event["detail"]["target_audience"] == "manager"
+    assert bridge.enqueue_executive_messages(engine, "org_1") == 1
+    outbox = db.delivery_outbox[-1]
+    assert outbox["recipient"] == "seat_mgr"
+    assert outbox["interrupt"] is rung.interrupt
+
+
 def test_a_closed_commitment_is_cancelled_at_send_not_delivered():
     """A reminder can sit through a retry backoff, and the customer can reply inside that
     window. Sending it then is the exact nudge this layer exists to never send."""
@@ -142,6 +159,23 @@ def test_an_expired_commitment_is_not_delivered_either():
     with engine.begin() as conn:
         beyond = db.executions[0]["expires_at"] + timedelta(hours=1)
         assert bridge.executive_delivery_is_live(conn, "org_1", card_id, now=beyond) is False
+
+
+def test_transport_success_is_what_marks_a_commitment_delivered():
+    db = world()
+    execution, engine = nudged(db)
+    bridge.enqueue_executive_messages(engine, "org_1")
+    outbox = db.delivery_outbox[0]
+    assert db.executions[0]["delivered_at"] is None
+
+    delivered_at = NOW + timedelta(days=2)
+    with engine.begin() as conn:
+        assert bridge.mark_executive_delivered(
+            conn, "org_1", outbox["card_id"], at=delivered_at, channel="slack") is True
+    assert db.executions[0]["delivered_at"] == delivered_at
+    event = db.events_of("execution.delivery_confirmed")[-1]
+    assert event["detail"]["channel"] == "slack"
+    assert event["execution_id"] == execution.execution_id
 
 
 def test_a_foreign_card_id_is_never_treated_as_a_commitment():

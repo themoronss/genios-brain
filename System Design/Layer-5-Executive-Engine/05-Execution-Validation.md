@@ -6,9 +6,9 @@
 
 ---
 
-## The Execution Validation Unit ⭐ (`execution_guard.py`)
+## Unit 4 — Execution Validation ⭐ (`execution_guard.py`)
 
-**This is the single most important thing in the layer, and it is an addition to the spec.**
+**This is the single most important thing in the layer.**
 
 > The classic failure of any reminder engine is that it reminds you about something that
 > already happened. The plan was correct when it was made; the world moved; nobody told the
@@ -30,8 +30,11 @@ make the difference invisible in exactly the reports where it matters:*
 | `CANCEL` | it should never happen now — authority revoked, deal closed, human said no |
 | `EXPIRE` | the window closed with nothing observed |
 | `REROUTE` | valid work, wrong person — the rep left |
-| `SUPPRESS` | not now (blocked, cooldown) — **the commitment stays open** |
+| `SUPPRESS` | live work must not speak now (for example an inactive owner before release) |
 | `PROCEED` | proven still live and unmet |
+
+`BLOCKED` is valid live work, so the guard returns `PROCEED`. The Reminder Unit suppresses
+ordinary owner nudges for that state while still allowing the frozen escalation ladder to fire.
 
 #### Checks are ordered by authority, not by cost
 

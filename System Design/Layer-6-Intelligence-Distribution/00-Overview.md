@@ -23,14 +23,14 @@ message there with retries — without ever re-deciding *what* to say or *whethe
 |---|---|
 | **Package** | `genios_engine/deliver/` |
 | **Layer number** | 6 — **this is the spec's "Layer 5.2"** (§2) |
-| **Size** | 20 files · ~3,120 lines |
+| **Size** | 27 Python files · ~3,813 lines |
 | **Input** | authoritative signals (L4) · execution events (L5) |
-| **Output** | cards on a surface · Slack messages · a daily digest · agent webhooks |
+| **Output** | typed delivery results · Slack/Teams · signed webhooks · pull inboxes · digest · agent delivery |
 | **May import** | `executive/` (L5) and everything below. **Layer 5 may never import this** |
 | **LLM calls** | **One temp-0 call per card**, for copy only — behind two deterministic gates |
-| **Tests** | 114 for the admission half, in four files (plus the pre-existing outbox suite) |
-| **Migrations** | `0008_l5_delivery.sql`, `0032_l6_channels.sql`, `0042_l6_delivery_gate.sql` |
-| **Status** | feature-complete, in the existing drain — **no new worker**. Its SQL has never run against Postgres |
+| **Tests** | full local suite green; 9 focused Atlas-alignment tests plus the admission/outbox/bridge suites |
+| **Migrations** | `0008_l5_delivery.sql`, `0032_l6_channels.sql`, `0042_l6_delivery_gate.sql`, `0044_l52_atlas_delivery.sql` |
+| **Status** | Atlas core aligned in the existing drain. Native email and APNs/FCM remain open; SQL and external adapters still need live-infrastructure proof |
 
 ---
 
@@ -52,11 +52,12 @@ message there with retries — without ever re-deciding *what* to say or *whethe
 | **Band cuts from pack config** — a tenant redefines "critical" in one place | `bands.py` |
 | **Card pipeline** — build → render → validate → persist → push | `pipeline.py`, `card_builder.py`, `render.py`, `store.py` |
 
-### 1.2 The admission half — entirely absent
+### 1.2 The admission half — the gap this layer already closed
 
-Everything between the claim and the send. `grep` confirmed `quiet_hours`, `interrupt`,
-`opted_out`, `defer` appeared nowhere in `deliver/`. **The outbox had exactly two outcomes and
-neither of them meant *not yet*.**
+Before the admission build, everything between the claim and the send was absent. At that point
+`quiet_hours`, `interrupt`, `opted_out` and `defer` appeared nowhere in `deliver/`; the outbox had
+exactly two outcomes and neither meant *not yet*. The table below is the historical defect list
+that motivated the current gate, not the current implementation status.
 
 | Missing | Consequence |
 |---|---|
@@ -122,7 +123,7 @@ sequenceDiagram
     participant OB as outbox
     participant G as gate
     participant AU as authority
-    participant SL as Slack
+    participant CH as registered destination
 
     L4->>CB: signal + play + template
     CB->>CB: band · owner · evidence chain (≥2) · actions · +7d
@@ -140,8 +141,8 @@ sequenceDiagram
     G-->>OB: SEND / DEFER(not_before) / SUPPRESS + reason
     OB->>AU: still authoritative?
     AU-->>OB: yes
-    OB->>SL: POST
-    SL-->>OB: 200
+    OB->>CH: send / expose on pull surface
+    CH-->>OB: adapter result
     OB->>OB: delivered + the ADMITTING verdict recorded
 ```
 
@@ -257,7 +258,10 @@ limit, changes it, and nothing happens.*
 |---|---|
 | Admission contract | `contracts/delivery.py` |
 | Policy · timing · gate | `policy.py`, `timing.py`, `gate.py` |
-| Transport | `outbox.py`, `channels/base.py`, `channels/slack.py` |
+| Transport | `outbox.py`, `destination.py`, `channels/base.py`, `channels/slack.py`, `channels/teams.py`, `channels/webhook.py`, `channels/surface.py` |
+| Live recipient context | `presence.py` |
+| Typed delivery output | `results.py` |
+| Delivery analytics | `analytics.py` |
 | Card production | `card_builder.py`, `slots.py`, `render.py`, `bands.py`, `pipeline.py`, `store.py` |
 | Round trip | `actions.py` |
 | Ownership | `router.py` (delegates to L5) |
@@ -266,7 +270,7 @@ limit, changes it, and nothing happens.*
 ### 11.2 Tables
 
 `cards` · `card_events` · `delivery_outbox` (+ 7 gate columns) · `delivery_preferences` ·
-`org_channels` · `agent_webhooks`
+`delivery_presence` · `org_channels` · `agent_webhooks`
 
 ### 11.3 Endpoints
 
@@ -277,7 +281,11 @@ limit, changes it, and nothing happens.*
 | `GET /api/org/{org}/delivery/preferences` · `PUT` · `DELETE .../{seat}/{channel}` | the four specificities |
 | `GET /api/org/{org}/delivery/effective` | **a dry run of the real gate** at any instant |
 | `GET /api/org/{org}/delivery/held` | the operator view — what is held, by which unit, and why |
-| `GET /api/org/{org}/channels` · `PUT/DELETE .../slack` · `POST .../slack/test` | channel registration |
+| `PUT/GET/DELETE /api/org/{org}/delivery/context...` | publish and inspect leased activity, current surface and busy state |
+| `GET /api/org/{org}/delivery/results...` | stable typed result history and one materialised delivery object |
+| `GET /api/org/{org}/delivery/inbox` | authenticated durable pull surfaces |
+| `GET /api/org/{org}/delivery/analytics` | status/channel counts, attempts, deferrals, failures and latency |
+| `GET /api/org/{org}/channels` · dedicated Slack routes · generic `/{channel}` routes | Slack, Teams, signed webhook and pull-surface registration/testing |
 | `GET /v1/signals` · `POST /v1/signals/{id}/claim` · `/result` | the agent surface |
 
 ### 11.4 Scorecard
@@ -297,4 +305,12 @@ limit, changes it, and nothing happens.*
 | Card always ships and never invents | ✅ V-01 + V-02 + slot fallback |
 | Authority re-proved at send | ✅ |
 | Bounded retry, claim safety, idempotent enqueue | ✅ pre-existing, untouched |
+| Leased live activity/current-surface context | ✅ surface-published; automatic calendar projection remains open |
+| Typed `DeliveryObject` and `DeliveryResult` without a second ledger | ✅ outbox projections |
+| Deterministic destination routing and card failover | ✅ terminal transport failures only; never bypasses policy/authority |
+| Slack, Teams and signed webhook adapters | ✅ code-complete; real-provider proof pending |
+| App/dashboard/API/application/extension/mobile pull inbox | ✅ mobile is pull, not APNs/FCM |
+| Delivery analytics | ✅ deterministic outbox-derived metrics |
+| Native email delivery | ❌ provider and lifecycle decision required |
+| Native mobile/OS notification push | ❌ APNs/FCM lifecycle required |
 | **Run against a real Postgres** | ❌ **Steps 1 + 3 of the runbook** |

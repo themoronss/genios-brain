@@ -21,9 +21,25 @@ class Channel(Protocol):
 
 
 def get_channel(name: str):
-    """Registry — v1 has exactly one human channel. Unknown name → None (the outbox
-    marks the row failed_terminal with a clear reason; never a crash)."""
+    """The concrete adapter registry. Unknown name is a typed terminal failure, not a crash."""
     if name == "slack":
         from genios_engine.deliver.channels.slack import SlackWebhookChannel
         return SlackWebhookChannel()
+    if name == "teams":
+        from genios_engine.deliver.channels.teams import TeamsWebhookChannel
+        return TeamsWebhookChannel()
+    if name == "webhook":
+        from genios_engine.deliver.channels.webhook import SignedWebhookChannel
+        return SignedWebhookChannel()
+    from genios_engine.deliver.channels.surface import SURFACE_CHANNELS, SurfaceChannel
+    if name in SURFACE_CHANNELS:
+        return SurfaceChannel(name)
     return None
+
+
+def supported_channels() -> tuple[str, ...]:
+    from genios_engine.deliver.channels.surface import SURFACE_CHANNELS
+    return tuple(sorted({"slack", "teams", "webhook", *SURFACE_CHANNELS}))
+
+
+__all__ = ["Channel", "ChannelResult", "get_channel", "supported_channels"]

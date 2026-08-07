@@ -1,6 +1,6 @@
 """Layer 5 · the orchestrator, actually executed.
 
-``sweep.py`` and ``execution_store.py`` are the two modules that turn eleven correct units into a
+``sweep.py`` and ``execution_store.py`` turn the ten Atlas units plus Coordination into a
 running layer, and until this file existed neither had ever had a line executed — they were
 proven only by static SQL analysis. Static analysis cannot tell you that a COMPLETE verdict
 closes the row *and* writes the outcome *and* logs the event. That is what is tested here.
@@ -134,16 +134,16 @@ def test_an_unowned_deal_is_still_committed_to_just_unrouted():
 
 # --- pass 2: first delivery ---------------------------------------------------------------
 
-def test_the_first_pass_validates_then_delivers():
+def test_the_first_pass_validates_then_queues_for_delivery():
     db = world()
     execution, engine = persisted(db)
     report = sweep.run_lifecycle(engine, eval_time=NOW + timedelta(minutes=1), effective=PACK)
 
     row = db.open_execution()
-    assert row["state"] == "pending" and row["delivered_at"] is not None
+    assert row["state"] == "pending" and row["delivered_at"] is None
     assert report.transitioned == 1
-    assert db.events_of("execution.delivered")
-    # Order is the invariant: nothing may be delivered before the guard has spoken.
+    assert db.events_of("execution.queued")
+    # Order is the invariant: nothing may be queued before the guard has spoken.
     statements = db.statements()
     guard = next(i for i, s in enumerate(statements) if "select 1 from signals s" in s)
     move = next(i for i, s in enumerate(statements) if "update executions set state=" in s)
@@ -266,6 +266,20 @@ def test_a_rung_never_fires_twice_however_often_the_sweep_runs():
         sweep.run_lifecycle(engine, eval_time=at, effective=PACK)
     fired = [r for r in db.execution_escalations if r["fired_at"] is not None]
     assert len(fired) == 1 and db.executions[0]["reminder_count"] == 1
+
+
+def test_a_lost_escalation_race_does_not_emit_a_duplicate_message(monkeypatch):
+    db = world()
+    execution, engine = persisted(db, state=ExecutionState.PENDING)
+    rung = execution.escalation[0]
+    monkeypatch.setattr(store, "fire_escalation", lambda *args, **kwargs: False)
+
+    report = sweep.run_lifecycle(
+        engine, eval_time=rung.fires_at + timedelta(minutes=1), effective=PACK)
+
+    assert report.reminded == 0 and report.escalated == 0
+    assert report.reasons["escalation_lost_race"] == 1
+    assert not db.events_of("execution.reminded")
 
 
 def test_a_quiet_commitment_is_rescheduled_rather_than_nudged():
