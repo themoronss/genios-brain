@@ -1,0 +1,108 @@
+# Managed services — offering type under customer_support.offering.service.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is type -> family ->
+# canonical.
+
+identity:
+  id: customer_support.offering.service.managed_services
+  name: Managed Services
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.service
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  We run something on the client's behalf, continuously — their infrastructure, their helpdesk,
+  their security operations, their payroll. This is the type that most contradicts its own
+  family, and the contradiction is the point: the work is a service, but it is delivered on a
+  shared platform across many clients, so a fix frequently IS reusable. The service family
+  switches self-service deflection off because bespoke work has no recurring questions; managed
+  services switches it back on, because the runbooks, the platform and the failure modes are
+  genuinely common across the book.
+  The defining structural fact is that we are inside the client's operations rather than beside
+  them. When something breaks, it is broken for their users and our name is not on the screen —
+  so the incident is ours to fix and theirs to explain, and the communication obligation runs in
+  a direction no other type has. Their end users are not our customers and frequently cannot
+  contact us at all, which means our requester is usually the client's own operations lead
+  relaying symptoms they did not observe.
+  The second fact is that the SLA is the product. In most of this tree the SLA describes how
+  support behaves; here it describes the thing being sold. A breach is not a service failure
+  attached to a deliverable, it is the deliverable failing, and it usually carries contractual
+  credits rather than an apology.
+  The habit carried in from consulting and punished here is treating each incident as a fresh
+  problem to be reasoned about. At this scale the same failure recurs across clients, and an
+  organisation that does not run the aggregate view is paying senior people to rediscover known
+  errors on the client's clock.
+
+characteristics:
+  delivery: "continuous operation of something the client owns, run on our shared platform and our runbooks"
+  pricing_shape: "monthly retainer per environment, seat or device, frequently with contractual service credits attached to the SLA"
+  margin_profile: "improves with scale in a way no other service type does, because the platform and the runbooks amortise across the book — but collapses on any client whose environment is genuinely bespoke"
+  post_sale_load: "the entire offering is post-sale load; there is no deliverable that is ever finished"
+  support_load: "continuous with correlated spikes. A platform-side failure or an upstream vendor incident hits many clients at once, which is a product-shaped event inside a service-shaped contract"
+  resolution_locus: "our platform and our runbooks in the common case, the client's environment in the awkward one — and the awkward one is where margin dies, because it is bespoke labour billed at a fixed monthly rate"
+  notes: >
+    The economic test for whether a managed-services account is healthy is whether its incidents
+    are reusable. An account generating only bespoke incidents is a consulting engagement priced
+    as a retainer, and it will lose money quietly for the length of the contract.
+
+capabilities:
+  activates:
+    # Reversing the parent's deactivations. The family turns these off because bespoke work has
+    # no recurring questions; here the platform is shared and they do, so the deflection
+    # programme has something real to point at.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+  emphasises:
+    # The SLA is the product rather than a promise about the product, so every capability that
+    # touches the clock moves up a tier.
+    - customer_support.entitlement_and_sla.sla_management
+    - customer_support.entitlement_and_sla.breach_prevention
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    # We are inside their operations. Incidents are ours to run and theirs to explain.
+    - customer_support.escalation_and_incident.incident_management
+    - customer_support.escalation_and_incident.major_incident_communication
+    - customer_support.escalation_and_incident.postmortem
+    # Shared platform means correlated failure, which means the aggregate is worth running.
+    - customer_support.diagnosis_and_resolution.root_cause_analysis
+    - customer_support.support_operations.capacity_planning
+
+objects:
+  extends:
+    - object: customer_support.obj.core.sla_target
+      require_properties: [target_type, calendar_ref, breach_state]
+      note: >
+        The SLA is the deliverable here, so its clock is the product's specification rather than
+        an operational nicety. Which calendar it runs on decides what was actually sold, and a
+        breach usually triggers a contractual credit rather than an apology — which is why breach
+        state has to be a first-class recorded fact rather than something reconstructed at
+        invoice time.
+    - object: customer_support.obj.core.incident
+      require_properties: [affected_customer_count, is_customer_visible, closing_broadcast_sent]
+      note: >
+        A single platform failure is simultaneously N client-facing incidents. The count is the
+        blast radius across the book, and the closing broadcast has to reach client operations
+        leads who then have to explain it to their own users — a second, larger communication
+        that we cause and do not control.
+    - object: customer_support.obj.core.requester
+      require_properties: [is_admin, affected_user_ref]
+      note: >
+        Our requester is almost always the client's operations lead relaying symptoms observed by
+        someone else. The person suffering is invisible to us by construction, which breaks every
+        reproduction attempt that assumes the reporter saw the failure.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The reactivation of the two deflection capabilities is the most consequential line in this
+    file and is exactly the case the parent's metadata note anticipated. It is correct only while
+    the platform genuinely is shared; a managed-services book that has drifted into per-client
+    bespoke environments should have them switched off again at the account level, and the drift
+    is usually invisible until margin reports it.

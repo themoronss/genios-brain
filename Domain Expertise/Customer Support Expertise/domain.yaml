@@ -180,28 +180,24 @@ planned_objects:
   - {id: customer_support.obj.core.backlog, scope: core, referenced_by: 8}
   - {id: customer_support.obj.core.bug_report, scope: core, referenced_by: 6}
   - {id: customer_support.obj.core.capacity_plan, scope: core, referenced_by: 4}
-  - {id: customer_support.obj.core.churn_risk, scope: core, referenced_by: 19}
-  - {id: customer_support.obj.core.commitment, scope: core, referenced_by: 19}
-  - {id: customer_support.obj.core.content_gap, scope: core, referenced_by: 8}
-  - {id: customer_support.obj.core.conversation, scope: core, referenced_by: 21}
+  - {id: customer_support.obj.core.content_gap, scope: core, referenced_by: 9}
+  - {id: customer_support.obj.core.conversation, scope: core, referenced_by: 23}
   - {id: customer_support.obj.core.coverage_window, scope: core, referenced_by: 7}
-  - {id: customer_support.obj.core.customer_account, scope: core, referenced_by: 14}
-  - {id: customer_support.obj.core.effort_score, scope: core, referenced_by: 3}
-  - {id: customer_support.obj.core.escalation_owner, scope: core, referenced_by: 7}
-  - {id: customer_support.obj.core.intent, scope: core, referenced_by: 10}
-  - {id: customer_support.obj.core.issue, scope: core, referenced_by: 19}
-  - {id: customer_support.obj.core.named_contact, scope: core, referenced_by: 3}
-  - {id: customer_support.obj.core.product_area, scope: core, referenced_by: 16}
+  - {id: customer_support.obj.core.customer_account, scope: core, referenced_by: 16}
+  - {id: customer_support.obj.core.effort_score, scope: core, referenced_by: 5}
+  - {id: customer_support.obj.core.escalation_owner, scope: core, referenced_by: 9}
+  - {id: customer_support.obj.core.intent, scope: core, referenced_by: 11}
+  - {id: customer_support.obj.core.issue, scope: core, referenced_by: 22}
+  - {id: customer_support.obj.core.named_contact, scope: core, referenced_by: 4}
+  - {id: customer_support.obj.core.product_area, scope: core, referenced_by: 17}
   - {id: customer_support.obj.core.quality_scorecard, scope: core, referenced_by: 5}
   - {id: customer_support.obj.core.queue, scope: core, referenced_by: 13}
   - {id: customer_support.obj.core.resolution, scope: core, referenced_by: 11}
   - {id: customer_support.obj.core.root_cause, scope: core, referenced_by: 6}
-  - {id: customer_support.obj.core.satisfaction_score, scope: core, referenced_by: 12}
-  - {id: customer_support.obj.core.support_agent, scope: core, referenced_by: 17}
+  - {id: customer_support.obj.core.satisfaction_score, scope: core, referenced_by: 14}
+  - {id: customer_support.obj.core.support_agent, scope: core, referenced_by: 21}
   - {id: customer_support.obj.core.support_plan, scope: core, referenced_by: 3}
   - {id: customer_support.obj.core.workaround, scope: core, referenced_by: 5}
-  - {id: customer_support.obj.macro_management.macro, scope: macro_management, referenced_by: 1}
-  - {id: customer_support.obj.postmortem.postmortem, scope: postmortem, referenced_by: 1}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Glossary — terms that mean something specific HERE and are routinely confused

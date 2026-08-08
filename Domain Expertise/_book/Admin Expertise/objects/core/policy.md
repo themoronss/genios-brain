@@ -2,103 +2,141 @@
 
 # Policy
 
-`admin.obj.core.policy` · v1.0.0 · **draft** · scope **core**
+`admin.obj.core.policy` · v2.0.0 · **draft** · scope **core**
 
-> An internal rule the organisation has bound itself to, applying to a defined population, owned by a named person, approved by a named body, and enforced by a named mechanism. A policy is not the document that carries it — the document is evidence the policy exists, and "we updated the policy" usually means somebody edited a file. Three properties decide whether a policy is operating or merely published: whether the bound population has acknowledged it, whether anything technical or managerial actually enforces it, and whether it has been reviewed since the organisation last changed shape. A policy failing all three is a wish with a version number.
-
-
-Also called: `Internal Policy`, `Standard`, `Code`, `Rule`
+> An internal rule the organisation has bound itself to: applying to a defined population, owned by a named person, approved by a named body, and enforced by a named mechanism. A policy is not the document that carries it — the document is evidence the policy exists, and "we updated the policy" almost always means somebody edited a file. Three properties decide whether a policy is operating or merely published: whether the bound population has acknowledged it, whether anything technical or managerial actually enforces it, and whether it has been reviewed since the organisation last changed shape. A policy failing all three is a wish with a version number, and it will still be produced in evidence as though it were a control.
 
 
-## Attributes (40)
+**The discriminator.** Could we amend this ourselves, tomorrow, by our own decision? If yes it is a Policy — we imposed it and we can lift it. If it can only be complied with, escalated about or breached, it is a Compliance Obligation. Self-imposed and amendable is the test; seriousness is not, and neither is whether it is written down.
+
+
+Also called: `Internal Policy`, `Standard`, `Code of Conduct`, `Corporate Rule`, `Group Policy`
+
+
+### Questions this object answers
+
+- Could this rule actually be enforced against a named person today, or only quoted at them?
+- Is this something we chose, or something we are subject to — and therefore may we relax it?
+- Who is bound by this, and what proportion of them has acknowledged the version in force?
+- What actually stops a breach here — a system, a manager, or an assumption?
+- Has the organisation changed since this was written, and would anyone know?
+- If this were sent to a customer's security team tomorrow, would it be true?
+- Which policies could be retired without anyone noticing, and which nobody dares touch?
+
+
+### What it is NOT responsible for
+
+- Not an external duty — that is admin.obj.core.compliance_obligation. The obligation is imposed, unnegotiable, and breaches whether or not we knew. This object's derives_from_obligation_ref is the single field connecting them, and confusing the two in either direction is the most expensive error available in this subdomain.
+
+- Not the procedure implementing it — that is admin.obj.core.sop. A policy states what must be true; an SOP states how, step by step. A policy with no SOP behind it is an intention with an approval date, and each performer resolves "comply" for themselves.
+
+- Not the controlled artefact carrying the wording — that is admin.obj.core.document, which owns version, classification, retention and the approval block.
+
+- Not the approval route it defines. A delegation-of-authority policy sets who may approve what; the individual decision is admin.obj.core.approval and the person is admin.obj.core.approver.
+
+- Not the acknowledgement records it generates. Those are audit evidence (admin.obj.core.audit_evidence) and they are what an auditor actually tests — the wording is never what is tested.
+
+
+
+## Attributes (49)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
-| `rule_and_scope` | composite |  |  | What the rule is and precisely whom it binds. Vagueness here is not a drafting flaw, it is an enforceability flaw. | `policy_domain`, `title`, `scope_population`, `scope_excludes`, `mandatory` |
-| `authority_and_ownership` | composite |  |  | Who owns it, who approved it, and under what authority it stands. | `owner_ref`, `approving_body`, `approved_at`, `effective_from`, `in_force`, `version`, `supersedes_ref` |
-| `provenance` | composite |  |  | Why it exists. The answer is either an external duty or an internal decision, and the two get administered differently. | `origin`, `derives_from_obligation_ref`, `document_ref` |
-| `acknowledgement` | composite |  |  | Whether the bound population has been told, and can be shown to have been told. | `acknowledgement_required`, `attestation_cycle`, `acknowledgement_coverage_bp`, `last_attestation_run_at`, `mandatory_training_linked` |
-| `enforcement` | composite |  |  | What happens when someone does not follow it. Usually the emptiest section of a real policy set. | `enforcement_mechanism`, `breach_consequence`, `monitoring_frequency`, `externally_evidenced` |
-| `exceptions` | composite |  |  | The register of people permitted not to follow the rule. Its shape says more about the policy than the policy does. | `exception_process_exists`, `open_exceptions`, `oldest_exception_age_days` |
-| `review_currency` | composite |  |  | Whether anyone has checked the rule still matches the organisation. | `review_cycle_months`, `last_reviewed_at`, `review_due_at`, `has_overdue_action`, `is_orphaned`, `last_touched_at` |
-| `policy_domain` | value | enum | yes | The policy_domain of this object. |  |
-| `title` | value | string | yes | The title of this object. |  |
-| `scope_population` | value | string | yes | Exactly whom it binds — "all UK employees and contractors with system access", not "all staff". A policy whose population is undefined cannot compute a coverage denominator, so its acknowledgement rate is always 100% of the people who happened to sign it. |  |
-| `scope_excludes` | value | list |  | Named exclusions carried explicitly, because unstated exclusions become informal ones. Contractors, non-executive directors and overseas entities are the three that are always assumed out and never written out. |  |
-| `mandatory` | value | boolean |  | Whether compliance is compulsory or advisory. Guidance dressed as policy is the most reliable way to make the real policies unenforceable too. |  |
-| `owner_ref` | reference | ref |  | A named individual. Departmental ownership means the policy is reviewed by whoever is least busy, which is nobody. | admin.obj.core.employee_record |
-| `approving_body` | value | string |  | Board, ExCo, a named committee, or an individual with delegated authority. Approval by someone without the authority to grant it makes the policy void, not weak. |  |
-| `approved_at` | value | timestamp |  | The approved_at of this object. |  |
-| `effective_from` | value | timestamp |  | Deliberately separate from approved_at. A policy in force before its population was told is retrospectively binding, which is unenforceable in most employment jurisdictions and badly received in all of them. |  |
-| `in_force` | value | boolean |  | The in_force of this object. |  |
-| `version` | value | string |  | The version of this object. |  |
-| `supersedes_ref` | reference | ref |  | Self-referential. Without it, "which version was I bound by in March" has no answer, and that is the only version question that ever gets asked. | admin.obj.core.policy |
-| `origin` | value | enum |  | `inherited_unknown` is not a placeholder — it is the honest and very common state of a policy nobody can trace, and it is a distinct administrative problem: it cannot be retired safely because nobody knows what would break. |  |
-| `derives_from_obligation_ref` | reference | ref |  | The load-bearing link in this file. A policy implementing an external duty may be stricter than the duty, never looser, and it cannot be relaxed for commercial convenience. A policy with no obligation behind it can be relaxed by the people who wrote it — and should be, if it is not working. | admin.obj.core.compliance_obligation |
-| `document_ref` | reference | ref |  | The controlled artefact that carries the rule. The policy is the rule; the document is its evidence of existence. | admin.obj.core.document |
-| `acknowledgement_required` | value | boolean |  | The acknowledgement_required of this object. |  |
-| `attestation_cycle` | value | enum |  | `on_joining` alone quietly guarantees decay: five years in, most of the bound population last read the policy on their first afternoon, when they were also finding the toilets. |  |
-| `acknowledgement_coverage_bp` | value | integer |  | Share of the defined population with a current, recorded acknowledgement. Meaningless without a defined scope_population, which is why so many organisations report it at 100%. |  |
-| `last_attestation_run_at` | value | timestamp |  | The last_attestation_run_at of this object. |  |
-| `mandatory_training_linked` | value | boolean |  | Whether acknowledgement is backed by training with a pass mark. A tick-box attestation proves distribution and nothing else. |  |
-| `enforcement_mechanism` | value | enum |  | The most diagnostic field on this object. `technical_control` means the system will not let you breach it; `self_declaration` means we ask people to confess; `none` means the policy exists to be shown to somebody. Auditors test the mechanism, never the wording. |  |
-| `breach_consequence` | value | enum |  | `unclear` is the most common real value and is worse than `none` — nobody knows whether to escalate, so nobody does. |  |
-| `monitoring_frequency` | value | enum |  | The monitoring_frequency of this object. |  |
-| `externally_evidenced` | value | boolean |  | Whether this policy has been shown to an outside party — a customer security review, a certification audit, a regulator. Externally evidenced policies acquire a second constraint: changing them now requires telling somebody. |  |
-| `exception_process_exists` | value | boolean |  | A policy with no exception process does not get complied with, it gets ignored quietly by the people it does not fit. |  |
-| `open_exceptions` | value | integer |  | Count of live, approved departures from the rule. Zero is not a good sign — it usually means exceptions are being taken informally rather than not taken. |  |
-| `oldest_exception_age_days` | value | integer |  | An exception older than the review cycle is not an exception, it is an unacknowledged amendment to the policy. |  |
-| `review_cycle_months` | value | integer |  | The review_cycle_months of this object. |  |
-| `last_reviewed_at` | value | timestamp |  | The last_reviewed_at of this object. |  |
-| `review_due_at` | value | timestamp |  | The review_due_at of this object. |  |
-| `has_overdue_action` | value | boolean |  | An administrative action attached to this policy — an attestation run, a review, a control test — has passed its due date. |  |
-| `is_orphaned` | value | boolean |  | Nothing and nobody is attached to this policy in the graph. Published, unowned, unacknowledged, untested. |  |
-| `last_touched_at` | value | timestamp |  | One of the very few properties with a live Layer 2 source. Traffic about the policy, which is a poor but real proxy for whether it is part of how work is done. | `thread.last_inbound` |
+| `rule_and_scope` | composite |  |  | What the rule is and precisely whom it binds. Vagueness here is an enforceability flaw, not a drafting one. | `policy_domain`, `title`, `scope_population`, `scope_excludes`, `mandatory` |
+| `policy_domain` | value | enum | yes | Which family of rules this belongs to, which decides who reviews it and what it is tested against. |  |
+| `title` | value | string | yes | What the policy is called where people look for it. |  |
+| `scope_population` | value | string | yes | Exactly whom the rule binds — the denominator for everything downstream. |  |
+| `scope_excludes` | value | list |  | Named exclusions, carried explicitly. |  |
+| `mandatory` | value | boolean |  | Whether compliance is compulsory or advisory. |  |
+| `authority_and_ownership` | composite |  |  | Who owns it, who approved it, under what authority, and which wording is in force. | `owner_ref`, `approving_body`, `approved_at`, `communicated_at`, `effective_from`, `in_force`, `version`, `version_conflict_detected`, `supersedes_ref` |
+| `owner_ref` | reference | ref |  | The named individual accountable for the policy being current and operating. | admin.obj.core.employee_record |
+| `approving_body` | value | string |  | The body or individual that approved it, and whose authority it stands on. |  |
+| `approved_at` | value | timestamp |  | When the approving body signed the current wording. | `document.approved_at` |
+| `communicated_at` | value | timestamp |  | When the bound population was actually told. |  |
+| `effective_from` | value | timestamp |  | The date from which conduct is judged against this wording. |  |
+| `in_force` | value | boolean |  | Whether this wording currently binds anyone. |  |
+| `version` | value | string |  | The identity of this wording. | `document.version` |
+| `version_conflict_detected` | value | boolean |  | More than one version of this policy is in circulation and being followed. |  |
+| `supersedes_ref` | reference | ref |  | The version this one replaced. | admin.obj.core.policy |
+| `provenance` | composite |  |  | Why the policy exists. The answer is either an external duty or an internal decision, and the two are administered differently. | `origin`, `derives_from_obligation_ref`, `document_ref` |
+| `origin` | value | enum |  | What caused this policy to be written. |  |
+| `derives_from_obligation_ref` | reference | ref |  | The external duty this policy implements, where there is one. | admin.obj.core.compliance_obligation |
+| `document_ref` | reference | ref |  | The controlled artefact carrying the wording. | admin.obj.core.document |
+| `acknowledgement` | composite |  |  | Whether the bound population has been told, and can be shown to have been told. | `acknowledgement_required`, `attestation_cycle`, `acknowledgement_coverage_bp`, `unacknowledged_population_count`, `last_attestation_run_at`, `mandatory_training_linked` |
+| `acknowledgement_required` | value | boolean |  | Whether this rule needs a receipt to be enforceable. |  |
+| `attestation_cycle` | value | enum |  | How often the receipt is refreshed. |  |
+| `acknowledgement_coverage_bp` | value | integer |  | Share of the defined population with a current, recorded acknowledgement of the version in force. |  |
+| `unacknowledged_population_count` | value | integer |  | How many named people are bound by a version they have not acknowledged. |  |
+| `last_attestation_run_at` | value | timestamp |  | When the attestation cycle last completed. |  |
+| `mandatory_training_linked` | value | boolean |  | Whether acknowledgement is backed by training with a pass mark. |  |
+| `enforcement` | composite |  |  | What happens when someone does not follow it. Usually the emptiest section of a real policy set. | `enforcement_mechanism`, `breach_consequence`, `monitoring_frequency`, `last_control_test_at`, `externally_evidenced`, `implementing_sop_count`, `enforceability` |
+| `enforcement_mechanism` | value | enum | yes | What actually stops a breach, as distinct from what the document says. |  |
+| `breach_consequence` | value | enum |  | What happens to a person who breaches it. |  |
+| `monitoring_frequency` | value | enum |  | How often anyone checks whether the policy is being followed. |  |
+| `last_control_test_at` | value | timestamp |  | When the enforcement mechanism was last tested rather than described. |  |
+| `externally_evidenced` | value | boolean |  | Whether this policy has been shown to an outside party. |  |
+| `implementing_sop_count` | value | integer |  | How many procedures exist that actually operationalise this rule. |  |
+| `enforceability` | derived | number |  | Whether this policy could actually be enforced against a named person today. | `acknowledgement_coverage_bp`, `enforcement_mechanism`, `breach_consequence`, `effective_from`, `communicated_at`, `version_conflict_detected` |
+| `exception_register` | composite |  |  | The register of people permitted not to follow the rule. Its shape says more about the policy than the policy does. | `exception_process_exists`, `open_exceptions`, `oldest_exception_age_days`, `exception_density_bp` |
+| `exception_process_exists` | value | boolean |  | Whether there is a legitimate route to depart from the rule. |  |
+| `open_exceptions` | value | integer |  | Live, approved departures from the rule. |  |
+| `oldest_exception_age_days` | value | integer |  | How long the longest-running exception has been open. |  |
+| `exception_density_bp` | derived | integer |  | Share of the bound population operating under a live exception. | `open_exceptions`, `scope_population` |
+| `review_currency` | composite |  |  | Whether anyone has checked that the rule still matches the organisation. | `review_cycle_months`, `last_reviewed_at`, `review_due_at`, `has_overdue_action`, `review_ball_in_court`, `last_touched_at`, `engagement_trend`, `is_orphaned` |
+| `review_cycle_months` | value | integer |  | The interval the organisation set for itself. |  |
+| `last_reviewed_at` | value | timestamp |  | When the wording was last examined. |  |
+| `review_due_at` | value | timestamp |  | The self-imposed next review date. | `document.review_due_at` |
+| `has_overdue_action` | value | boolean |  | An administrative action attached to this policy has passed its due date. | `commitment.due_at`, `commitment.action` |
+| `review_ball_in_court` | value | enum |  | Who owes the next move on an in-flight review or approval. | `thread.ball_in_court` |
+| `last_touched_at` | value | timestamp |  | When there was last any traffic about this policy. | `thread.last_inbound` |
+| `engagement_trend` | derived | number |  | Whether conversation about this policy is rising or collapsing. | `derived.engagement` |
+| `is_orphaned` | derived | boolean |  | Nothing and nobody is attached to this policy in the graph. | `owner_ref`, `implementing_sop_count`, `acknowledgement_coverage_bp`, `last_touched_at` |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| governed_by | `admin.obj.core.compliance_obligation` | zero_or_many |  |  | — | The external duty this policy implements, where there is one. This edge decides whether the policy may be relaxed at all: with it, the floor is set outside the organisation; without it, the organisation owns both the rule and the power to change it.  |
-| references | `admin.obj.core.document` | one |  |  | — | The controlled artefact carrying the wording. One policy, one authoritative document — the rest are copies people are following. |
-| requires | `admin.obj.core.sop` | zero_or_many |  |  | — | A policy states what must be true; an SOP states how. A policy with no SOP behind it is an intention with an approval date. |
-| gates | `admin.obj.core.approval` | zero_or_many |  |  | — | Delegation-of-authority and procurement policies exist almost entirely to set who may approve what. This is the edge that makes them operative rather than decorative. |
-| covers | `admin.obj.core.access_right` | zero_or_many |  |  | — | Access and joiner-mover-leaver policies. The one place a policy can usually be enforced technically rather than asked about. |
-| issued_to | `admin.obj.core.employee_record` | zero_or_many |  |  | — | The acknowledgement population. The denominator, not the list of people who happened to sign. |
-| supersedes | `admin.obj.core.policy` | zero_or_one |  |  | — |  |
-| produces | `admin.obj.core.audit_evidence` | zero_or_many |  |  | — | Attestation records, control test results, exception approvals. The by-product that turns out to be the point at audit time. |
-| escalates_to | `admin.obj.core.escalation` | zero_or_many |  |  | — | The path a suspected breach takes. Undefined here means breaches get handled by whoever noticed, inconsistently, and usually not at all. |
+| governed_by | `admin.obj.core.compliance_obligation` | zero_or_many | 2200 bp | 8500 bp | — | The external duty this policy implements, where there is one. This edge decides whether the policy may be relaxed at all: with it, the floor is set outside the organisation; without it, the organisation owns both the rule and the power to change it. Layer 4 must not consider a relaxation on the far side of this edge.  |
+| issued_to | `admin.obj.core.employee_record` | zero_or_many | 1600 bp | 6500 bp | — | The acknowledgement population — the denominator, not the list of people who happened to sign. The cardinality of this edge against the actual headcount is the whole of enforceability, and it is the edge most often populated from a stale distribution list.  |
+| references | `admin.obj.core.document` | one | 1500 bp | 9500 bp | — | The controlled artefact carrying the wording. One policy, one authoritative document — every other copy is a version somebody is following, and every emailed attachment is a permanent fork.  |
+| requires | `admin.obj.core.sop` | zero_or_many | 1400 bp | 7000 bp | — | A policy states what must be true; an SOP states how. A policy with no SOP behind it is an intention with an approval date, and "comply" becomes whatever each person decides it means — which will be reasonable in every individual case and inconsistent across all of them.  |
+| gates | `admin.obj.core.approval` | zero_or_many | 1200 bp | 8000 bp | `exists: commitment.due_at` | Delegation-of-authority and procurement policies exist almost entirely to set who may approve what. This is the edge that makes them operative rather than decorative, and it is the one policy family that is routinely enforceable by configuration.  |
+| covers | `admin.obj.core.access_right` | zero_or_many | 1000 bp | 7500 bp | — | Access and joiner-mover-leaver policies. The one place a policy can usually be enforced technically rather than asked about, and therefore the one place the access log outranks the wording as evidence.  |
+| produces | `admin.obj.core.audit_evidence` | zero_or_many | 500 bp | 7000 bp | — | Attestation records, control test results, exception approvals. The by-product that turns out to be the point at audit time — what is tested is never the wording.  |
+| escalates_to | `admin.obj.core.escalation` | zero_or_many | 300 bp | 6000 bp | — | The path a suspected breach takes. Undefined here means breaches are handled by whoever noticed, inconsistently, and usually not at all.  |
+| supersedes | `admin.obj.core.policy` | zero_or_one | 300 bp | 9000 bp | — | Self-referential. The chain that answers which wording bound a given person on a given date. |
 
 
 ## States
 
-Initial `draft`
+Initial `draft` · terminal `superseded`, `expired`, `archived`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `draft` | Being written or rewritten. Binds nobody, however widely it has been circulated. | — |  |
-| `pending_approval` | With the approving body. The clock runs on them, and this is where most policy refreshes die. | `has_obs: legal_review` |  |
-| `approved` | Approved but not yet effective or not yet communicated. Not enforceable in this state. | — |  |
-| `published` | Communicated to the bound population, effective_from reached. | — |  |
-| `active` | Published, acknowledged and monitored. The only state in which the policy is genuinely operating. | — |  |
-| `at_risk` | In force but drifted — review overdue, coverage falling, or exceptions outnumbering compliance. | `edge_count <= 1` |  |
+| `draft` | Being written or rewritten. Binds nobody, however widely it has been circulated. | — | Whatever rule people are currently following is the previous version or their own judgement. |
+| `pending_approval` | With the approving body. The clock runs on them, and this is where most policy refreshes die. | `has_obs: legal_review` | The old wording is still the operative one, including its known defects. |
+| `approved` | Approved but not yet effective or not yet communicated. Not enforceable in this state. | — | The organisation believes the policy is live. The population has not been told. |
+| `published` | Communicated to the bound population and past effective_from. | — | Conduct can now be judged against this wording, whether or not anyone acknowledged it. |
+| `active` | Published, acknowledged and monitored. The only state in which the policy is genuinely operating. | `exists: thread.last_inbound` | Enforceable against a named person, and defensible as a control in an audit. |
+| `at_risk` | In force but drifted — review overdue, coverage falling, or exceptions outnumbering compliance. | `days_since(commitment.due_at) > 0` | Still quotable and no longer reliable. It will be produced in evidence exactly as though it were operating. |
 | `superseded` | A newer version is in force. The old wording still governs conduct that happened while it stood. | — |  |
 | `expired` | Passed its own end date without renewal. Rare, and always an accident. | — |  |
-| `archived` | Formally retired with a retirement decision recorded. Retiring a policy without recording why is how it comes back in three years. | — |  |
+| `archived` | Formally retired with a retirement decision recorded. Retiring without recording why is how a policy returns in three years. | — |  |
 
 
-## Inference patterns — 4 executable, 7 blocked
+## Inference patterns — 5 executable, 9 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `pol.overdue_policy_action` | deterministic | `exists: commitment.due_at` AND `days_since(commitment.due_at) > 0` | 9000 bp → `has_overdue_action` | An administrative commitment attached to this policy — a review, an attestation run, a control test — is past its due date. |  |
-| `pol.in_review_is_not_in_force` | deterministic | `has_obs: legal_review` | 7000 bp → `in_force` | A policy under legal or compliance interpretation is not a settled rule, whatever the published version says. |  |
-| `pol.orphaned_in_the_graph` | heuristic | `edge_count <= 1` AND `exists: thread.last_inbound` | 6500 bp → `is_orphaned` | A policy with a degree of one is attached to nobody: no owner edge, no acknowledgement population, no SOP, no control. Published and inert. |  |
-| `pol.exposed_by_a_customer_security_review` | heuristic | `has_obs: security_review_started` | 7000 bp → `externally_evidenced` | A customer security review has started, which is the moment internal policies become externally visible commitments. |  |
+| `pol.overdue_policy_action` | deterministic | `exists: commitment.due_at` AND `days_since(commitment.due_at) > 0` | 9000 bp → `has_overdue_action` | An administrative commitment attached to this policy — a review, an attestation run, a control test — is past its due date. | The review happened in a committee and nobody closed the commitment. Common, and worth tolerating: the cost of chasing a completed review is one email, and the cost of missing an uncompleted one is a policy set that reports current and is not.  |
+| `pol.in_review_is_not_in_force` | deterministic | `has_obs: legal_review` | 7000 bp → `in_force` | A policy under legal or compliance interpretation is not a settled rule, whatever the published version says. | The substrate's legal_review was built for contract redlines and will fire on plenty of things that are not policies at all.  |
+| `pol.orphaned_in_the_graph` | heuristic | `edge_count <= 1` AND `exists: thread.last_inbound` | 6500 bp → `is_orphaned` | A policy with a degree of one is attached to nobody: no owner edge, no acknowledgement population, no SOP, no control. Published and inert. | A low degree is often sparse graph coverage rather than a genuinely orphaned policy, which is why this sits at 6500 and should never fire an action alone.  |
+| `pol.exposed_by_a_customer_security_review` | heuristic | `has_obs: security_review_started` | 7000 bp → `externally_evidenced` | A customer security review has started, which is the moment internal policies become externally visible commitments. | The review may touch only a subset of the policy set, and this fires against whatever the thread is attached to.  |
+| `pol.refresh_stalled_on_us` | heuristic | `thread.ball_in_court = us` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 2.5, 'floor': 14}` | 6500 bp | A policy review or approval thread is waiting on us, well past the normal reply pace — the refresh has stalled and the old wording is still binding. | Thread scoping. A policy thread that has gone quiet may have moved to a committee paper the pipeline cannot see, which is where policy work usually goes to be slow.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -106,137 +144,284 @@ Initial `draft`
 | Pattern | Kind | Needs | Would yield | Statement |
 |---|---|---|---|---|
 | `pol.acknowledgement_recorded` | deterministic | `policy_acknowledged` (obs_kind), `employee.start_at` (fact_path) | 10000 bp | A named member of the bound population has recorded acknowledgement of the version in force. |
-| `pol.review_date_passed` | deterministic | `document.review_due_at` (fact_path) | 9500 bp | The review date the organisation set for itself has passed without a recorded review. |
+| `pol.review_date_passed` | deterministic | `document.review_due_at` (fact_path) | 9500 bp | The review date the organisation set for itself has passed with no recorded review. |
 | `pol.superseded_but_still_circulating` | deterministic | `document_superseded` (obs_kind), `document.version` (fact_path) | 9000 bp | A newer version is in force and the previous wording is still being distributed and followed. |
+| `pol.joiners_bound_but_never_told` | deterministic | `joiner_confirmed` (obs_kind), `employee.start_at` (fact_path), `policy_acknowledged` (obs_kind) | 9500 bp | People have joined the bound population since the last attestation run and have never acknowledged the policy. |
 | `pol.attestation_cycle_never_ran` | heuristic | `policy_acknowledged` (obs_kind), `derived.attestation_coverage` (derived) | 8500 bp | The attestation cycle is annual and no run has completed in over a year — the population is bound by a version most of them have not seen. |
 | `pol.enforced_only_by_self_declaration` | heuristic | `derived.control_enforcement_rate` (derived) | 8000 bp | No technical control or systematic review sits behind this policy — compliance is asserted by the people it constrains. |
 | `pol.exceptions_outnumber_compliance` | heuristic | `policy.exception_count` (fact_path), `policy.exception_expiry_at` (fact_path) | 8500 bp | Live exceptions cover a large share of the bound population — the rule has been amended informally and the register is where it was written down. |
 | `pol.breach_observed_and_unescalated` | heuristic | `policy_breach_observed` (obs_kind) | 7500 bp | Behaviour contrary to the policy has been observed and no escalation followed. |
+| `pol.control_claimed_but_never_tested` | heuristic | `access.reviewed_at` (fact_path), `evidence_provided` (obs_kind) | 8000 bp | The policy claims a technical control and no test of that control has ever been recorded. |
 
 
 ## Decision factors
 
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
-| acknowledgement_coverage | 2500 bp | increases | `acknowledgement_coverage_bp`, `attestation_cycle`, `scope_population`, `acknowledgement_required` |
-| enforcement_reality | 2000 bp | increases | `enforcement_mechanism`, `monitoring_frequency`, `breach_consequence` |
-| review_currency | 2000 bp | context | `review_due_at`, `last_reviewed_at`, `has_overdue_action` |
+| acknowledgement_coverage | 2500 bp | increases | `acknowledgement_coverage_bp`, `unacknowledged_population_count`, `attestation_cycle`, `scope_population`, `acknowledgement_required` |
+| enforcement_reality | 2000 bp | increases | `enforcement_mechanism`, `monitoring_frequency`, `breach_consequence`, `last_control_test_at` |
+| review_currency | 2000 bp | context | `review_due_at`, `last_reviewed_at`, `has_overdue_action`, `engagement_trend` |
 | obligation_linkage | 1500 bp | context | `derives_from_obligation_ref`, `origin`, `mandatory` |
-| exception_load | 1200 bp | decreases | `open_exceptions`, `oldest_exception_age_days`, `exception_process_exists` |
-| ownership_clarity | 800 bp | increases | `owner_ref`, `approving_body`, `is_orphaned` |
+| exception_load | 1200 bp | decreases | `open_exceptions`, `oldest_exception_age_days`, `exception_density_bp`, `exception_process_exists` |
+| ownership_clarity | 800 bp | increases | `owner_ref`, `approving_body`, `is_orphaned`, `implementing_sop_count` |
+
+
+## Preconditions
+
+- **`pol.population_is_countable`** scope_population resolves to a countable set of named people. _(unmet → Degrade — suppress acknowledgement_coverage_bp entirely rather than reporting it against a distribution list. An undefined denominator always yields full coverage, and that number is then quoted in a security questionnaire, at which point it stops being an internal inaccuracy.
+)_
+- **`pol.owner_is_a_named_person`** Ownership resolves to a named individual, not to a function. _(unmet → Block publication. Route to the approving body to name someone, not to the department — a departmentally owned policy is reviewed by whoever is least busy, and nobody is least busy.
+)_
+- **`pol.approving_body_holds_the_authority`** The body recorded as approving it actually holds delegated authority to approve policy in this domain. _(unmet → Block. Approval by a body without the authority makes the policy void rather than provisional, and the defect surfaces at the worst possible moment — the first time the policy is relied on in an action against someone.
+)_
+- **`pol.obligation_link_resolved`** Where the policy implements an external duty, that obligation is identified before any relaxation is considered. _(unmet → Block any relaxation and degrade everything else. The commonest reason a policy cannot be retired is not that it is needed — it is that nobody can say which duty it was answering, and no one will sign off removing it on that basis.
+)_
+- **`pol.version_in_force_determinable`** The wording in force on a given date can be established from the record. _(unmet → Block any enforcement action. "Which version was I bound by in March" is the only version question ever asked, it is asked adversarially, and an organisation that cannot answer it has no policy for that period regardless of what is in the register.
+)_
+- **`pol.communication_recorded_separately`** The date the population was told is recorded distinctly from the date of approval and the effective date. _(unmet → Degrade — treat effective_from as unproven and cap enforceability. Collapsing the three dates is what produces a policy that is retrospectively binding on paper, which fails at the first challenge and reads as bad faith while doing so.
+)_
 
 
 ## Constraints
 
-- **`pol.cannot_be_looser_than_obligation`** Where derives_from_obligation_ref is set, thepolicy cannot permit anything the obligation forbids. The external floor is not negotiable by the organisation that is subject to it.
-- **`pol.cannot_bind_retrospectively`** Cannot bind conduct occurring before effective_fromor before the population was informed.
-- **`pol.cannot_enforce_without_acknowledgement`** Cannot ground a disciplinary or contractualaction against a person with no acknowledgement of the version then in force.
-- **`pol.cannot_bind_outside_scope`** Cannot be applied to a population outside scope_population— most often contractors and overseas entities, who are assumed in and contractually are not.
-- **`pol.exception_cannot_be_permanent`** An exception must carry an expiry. A permanentexception is an amendment granted without the approving body.
-- **`pol.external_commitment_limits_change`** Once externally_evidenced, a relaxation mayrequire notifying the party it was evidenced to. Soft where the commitment was informational, hard where it was contractual. _(soft)_
+- **`pol.cannot_be_looser_than_the_obligation`** Where derives_from_obligation_ref is set, the policy cannot permit anything the obligation forbids.
+- **`pol.cannot_bind_retrospectively`** Cannot bind conduct occurring before effective_from, or before the population was told.
+- **`pol.cannot_enforce_without_acknowledgement`** Cannot ground a disciplinary or contractual action against a person with no acknowledgement of the version then in force.
+- **`pol.cannot_bind_outside_scope`** Cannot be applied to a population outside scope_population — most often contractors and overseas entities, who are assumed in and contractually are not.
+- **`pol.exception_cannot_be_permanent`** Every approved exception carries an expiry and a named approver.
+- **`pol.external_commitment_limits_change`** Once externally_evidenced, a relaxation may require notifying the party it was evidenced to. Soft where the commitment was informational, effectively hard where it was contractual. _(soft)_
+- **`pol.cannot_be_cited_as_a_control_without_a_mechanism`** A policy with enforcement_mechanism of none or self_declaration may not be presented as an operating control in an assurance context.
 
 
 ## Business rules
 
 - **`pol.unacknowledged_is_unenforceable`** A policy requiring acknowledgement may not be cited as grounds for disciplinary or contractual action against a person with no recorded acknowledgement of the version in force at the time. You cannot enforce a rule someone was never shown.
 
-- **`pol.policy_cannot_relax_an_obligation`** Where derives_from_obligation_ref is populated, the policy may be stricter than the external duty and never looser. A conflict is a defect in the policy, not a tension to be balanced — the obligation wins by construction because nobody here agreed to it.
+- **`pol.policy_cannot_relax_an_obligation`** Where derives_from_obligation_ref is populated, the policy may be stricter than the external duty and never looser. The obligation wins by construction, because nobody here agreed to it.
 
 - **`pol.named_owner_required`** A policy with no named individual owner may not reach published. Departmental ownership is the same as no ownership with better optics.
-- **`pol.effective_date_not_before_communication`** effective_from may not precede the date the bound population was told. Retrospective rules are unenforceable and read as bad faith.
-- **`pol.exception_without_expiry_is_a_repeal`** Every approved exception carries an expiry and a named approver. An exception without an expiry is a permanent private amendment to the policy granted by whoever was on duty.
+- **`pol.effective_date_not_before_communication`** effective_from may not precede the date the bound population was told. Set it from the later of approval and communication.
+- **`pol.exception_without_expiry_is_a_repeal`** Every approved exception carries an expiry and a named approver. An exception without an expiry is a permanent private amendment granted by whoever happened to be on duty.
 
+- **`pol.one_policy_one_review_cycle`** A policy bound into a composite handbook must still carry its own owner, review cycle and approval record. Publication may be joint; governance may not.
+ — _Otherwise a change to the travel section requires re-approving the disciplinary section, so nothing is ever changed and every constituent policy inherits the currency of the least changed one.
+_
 - **`pol.unreviewed_beyond_cycle_is_presumed_drifted`** Past review_due_at the policy is presumed no longer to match the organisation and its assurance value drops to zero. The wording did not change; the company did.
 
-- **`pol.enforcement_none_downgrades_the_claim`** A policy with enforcement_mechanism = none or self_declaration may not be presented as a control in an assurance context. It is a statement of intent.
-- **`pol.breach_consequence_must_be_stated`** breach_consequence = unclear must be resolved before publication. Where nobody knows what happens on breach, nothing happens on breach.
+- **`pol.enforcement_none_downgrades_the_claim`** A policy with enforcement_mechanism of none or self_declaration may not be presented as a control in an assurance context.
+- **`pol.breach_consequence_must_be_stated`** breach_consequence of unclear must be resolved before publication. Where nobody knows what happens on breach, nothing happens on breach.
 - **`pol.acknowledgement_denominator_must_be_defined`** acknowledgement_coverage_bp may not be reported unless scope_population resolves to a countable set. An undefined population always yields full coverage.
+- **`pol.orphan_is_a_retirement_candidate`** A policy with no owner, no acknowledgement population and no implementing procedure is a retirement candidate and must be listed as one rather than left in the set.
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **Rules that restate the general law — bribery, fraud, discrimination, health and safety duties — bind whether or not the individual acknowledged the internal policy.
+** — Nobody may argue they were unaware bribery was prohibited because they did not sign the anti-bribery policy. The acknowledgement rule exists to protect against novel internal rules, not against the law restated internally. Applied uniformly it produces the absurd result that the most serious misconduct is the least enforceable.
+ _(overrides pol.unacknowledged_is_unenforceable, pol.cannot_enforce_without_acknowledgement)_
+- **Health and safety rules bind people outside scope_population — visitors, contractors, anyone on the premises.
+** — Occupier duties run to everyone present, not to everyone who signed something. Scoping a safety policy to employees is a drafting error that is discovered by the first contractor injured on site.
+ _(overrides pol.cannot_bind_outside_scope)_
+- **Under a declared incident a named officer may authorise departure from a policy, with ratification by the approving body within a bounded window.
+** — A control that cannot be broken under fire gets bypassed permanently instead of temporarily, and the bypass goes unrecorded because recording it would mean admitting the first breach. The ratification window is the entire thing keeping the exception an exception. Note the scope: this permits deviation from our own implementation, never from an external duty sitting behind it.
+ _(overrides pol.exception_without_expiry_is_a_repeal)_
+- **A jurisdiction or entity may operate a stricter local version of a group policy. A looser one is never permitted.
+** — Group policy is a floor, not a ceiling. Insisting on uniformity across regimes produces a policy that is unlawful in the strictest jurisdiction and is nevertheless followed in all of them, which is the worst available outcome.
+
+- **A change that only confers an entitlement may take effect retrospectively.
+** — The retrospection rule exists to stop people being sanctioned under rules they had not seen. It has no work to do where the change grants a benefit, and applying it there delays the benefit for the sake of a principle that is not engaged.
+ _(overrides pol.cannot_bind_retrospectively, pol.effective_date_not_before_communication)_
+- **A policy that is the subject of litigation, a claim or a regulatory investigation is not amended until the matter closes, even where it is known to be defective.
+** — Amending a policy while it is the subject of a claim reads as an admission and destroys the ability to establish what was in force. The correct move is an interim instruction plus a recorded reason the review lapsed — not a quiet edit, and not a pretence the review happened.
+ _(overrides pol.unreviewed_beyond_cycle_is_presumed_drifted)_
+- **Where mandatory is false, enforcement_mechanism of none is correct rather than a defect.
+** — Genuine guidance exists and is useful. The failure is not guidance without enforcement — it is guidance presented as policy, which teaches the population that some policies are optional and leaves them unable to tell which.
+ _(overrides pol.enforcement_none_downgrades_the_claim)_
+
+
+## Best practices
+
+- **Compute the bound population from the joiner-mover-leaver feed, never from a distribution list.** — A distribution list is the population as it was when somebody last edited it. The people missing from it are the joiners — the population most likely to breach, least likely to have been told, and exactly the ones a coverage figure needs to count.
+
+- **Where a rule can be enforced by configuration, enforce it by configuration and delete the paragraph.** — A policy asking people not to do something they can still do produces a breach rate proportional to convenience. A spend limit in the finance system is worth more than the same limit in a PDF, it needs no attestation, and it cannot drift.
+
+- **Trigger attestation from material change and from joining, with the annual cycle only as a backstop.** — An annual cycle means the average new starter spends six months bound by rules nobody showed them, and a material change mid-year reaches nobody until the following spring. on_joining alone is worse still — five years in, the population last read the policy on their first afternoon.
+
+- **Run a real exception process with an owner, an expiry and a published register.** — A policy with no exception route is not complied with; it is ignored quietly by the people it does not fit, and their departure is invisible because there was nowhere to record it. A visible exception is a managed risk. A policy that has never granted one is almost never perfectly drafted — it is unenforced.
+
+- **Publish one authoritative copy and link to it. Never attach the policy to an email.** — Every attachment is a permanent fork that will still be followed in two years, held disproportionately by the most engaged part of the organisation. The tribunal question is which version they had, and an attachment answers it badly.
+
+- **Name what happens on breach, inside the policy.** — Where nobody knows what happens on breach, nothing happens on breach — and the second breach is harder to act on than the first, because inaction on the first has established the precedent that this rule is not enforced.
+
+- **Write at the reading level and in the language of the bound population, and state the rule before the rationale.** — A policy the population cannot parse is not a rule, it is a defence. Acknowledgement of a document nobody understood is evidence of distribution and nothing more, and it will be characterised that way by the first person who challenges it.
+
+- **Record why the policy was written at the moment it is written, including inherited_unknown when that is the honest answer.** — Provenance is cheap to capture and impossible to reconstruct. It is the field that makes retirement arguable three years later, and its absence is the single commonest reason a dead policy cannot be removed.
+
+- **Test the enforcement mechanism periodically by attempting the prohibited action.** — Auditors test the mechanism and never the wording, and so should we — first. A control nobody has attempted to break is a control nobody has evidence for, and the first person to test it will otherwise be an outsider with a report to write.
+
+- **Maintain a meta-policy governing template, ownership, review cycle, exception process and retirement route.** — Mundane and the highest-leverage document in any policy set. Without it each policy is governed however its author felt at the time, and the set becomes ungovernable at roughly forty documents.
+
+
+
+## Anti-patterns
+
+- **Every incident produces a new policy.** — tempting because Writing a policy is the fastest visible response to an incident, it is cheap, and it demonstrates action to a board within a week. Fixing the control that actually failed is slow, expensive and invisible.
+ Instead: Ask what would have stopped it. If the answer is a configuration, change the configuration and write nothing. Add a policy only where the rule is genuinely a matter of human choice.
+
+- **An annual click-through with a 100% completion rate.** — tempting because Completion is the number the platform reports and the number the board asks for, so the process is optimised for completion. Nobody wants to present 78%, and 78% is what an honest denominator would produce.
+ Instead: Sample comprehension rather than completion, attest on change rather than on date, report coverage against an HRIS-derived denominator, and let the number be ugly.
+
+- **Twenty policies bound into one document, approved as a unit and reviewed as a unit.** — tempting because One approval is easier to obtain than twenty and one review date is easier to track. It is genuinely the path of least resistance for a small governance function.
+ Instead: One policy, one owner, one review cycle, one approval record. Bind them together for publication if it helps readers; never for governance.
+
+- **A policy adopted unedited from a template, a certification body or a previous employer.** — tempting because It is fast, it looks professional, and it passes a first-round security questionnaire — which is usually the immediate reason it was needed.
+ Instead: Delete every clause you cannot evidence today and add them back as they become true. A short accurate policy beats a comprehensive aspirational one in every setting where it matters.
+
+- **Exceptions are granted informally to whoever is senior enough to ask.** — tempting because It is faster than the process, the requester is important, and refusing costs the administrator far more than granting. Each individual grant is defensible.
+ Instead: One route for everyone, with the approval level scaled to the risk rather than to the requester's grade, and the register published internally.
+
+- **Uploading the policy to the intranet is counted as telling people.** — tempting because It is the step that can be evidenced with a timestamp and it is genuinely necessary. It is mistaken for sufficient because nothing distinguishes the two in the record.
+ Instead: Record published and communicated as separate dates and set effective_from from the later of the two. Where communication cannot be evidenced, say so rather than assuming it.
+
+- **Policies are added and never retired.** — tempting because Retiring one requires somebody to argue that a control is unnecessary and to own that argument the next time something goes wrong. Nobody has ever been promoted for deleting a policy.
+ Instead: Record origin at creation, including inherited_unknown. A policy whose origin nobody can name is the retirement candidate, and the recording is what makes the argument possible later.
+
+- **A mandatory policy with nothing behind it that says how to comply.** — tempting because The policy answers the governance requirement and closes the action. Writing the procedure is ten times the work, belongs to a different function, and nobody is chasing it.
+ Instead: Treat an unimplemented mandatory policy as incomplete rather than published, and route the gap to the SOP backlog rather than logging it as a policy issue.
+
+- **A statutory floor is treated as an internal preference and traded away for commercial convenience.** — tempting because derives_from_obligation_ref was never populated, so the policy looks exactly like every other internal rule — self-imposed, negotiable, and inconveniently strict. The person relaxing it is usually acting entirely in good faith.
+ Instead: Populate the obligation link at creation, and make relaxable a gate on Layer 4 rather than a factor it weighs.
+
+
+
+## Dependencies
+
+- `admin.obj.core.document` — requires (hard)
+- `admin.obj.core.employee_record` — requires (hard)
+- `admin.obj.core.compliance_obligation` — enriches (soft)
+- `admin.obj.core.compliance_obligation` — invalidated_by (hard)
+- `admin.obj.core.sop` — enriches (soft)
+- `admin.obj.core.approval` — requires (soft)
+- `admin.obj.core.access_right` — enriches (soft)
+- `admin.obj.core.audit_evidence` — enriches (soft)
+- `admin.obj.core.contract` — invalidated_by (soft)
+- `admin.obj.core.employee_record` — invalidated_by (soft)
 
 
 ## Inputs
 
-- **email** — circulation, review traffic and approval requests
-- **email** — who owes the next move on a policy review
-- **document** — the controlled artefact carrying the wording, version and approval block
 - **register** — policy register: owner, cycle, approving body, exception log
+- **document** — the controlled artefact carrying wording, version and approval block
 - **attestation** — acknowledgement returns and training completions
 - **hris** — the bound population and its joiners, movers and leavers
-- **access_log** — whether the technical control the policy claims actually exists andfires
+- **access_log** — whether the technical control the policy claims actually exists and fires
+- **email** — circulation, review traffic and approval requests
+- **email** — who owes the next move on a policy review
+- **derived** — trajectory of conversation about the policy
 - **regulator** — findings and directions that create or tighten a policy
 - **contract** — customer commitments that bind an internal policy from outside
+- **signed_form** — wet-signed acknowledgement in the employment pack
+- **manual_entry** — somebody typed the policy metadata into the register once
 
 
 ## Outputs
 
-- **`enforceability_bp`** Whether this policy could actually be enforcedagainst a named person today — acknowledgement, currency and consequence combined. → L4.reasoning_unit, L4.decision_maker
-- **`assurance_value`** What this policy is worth as a control in an auditor a security review, as opposed to as a document. → L4.reasoning_unit
-- **`relaxable`** False where an external obligation sits behind it.Stops Layer 4 treating a statutory floor as a negotiable internal preference. → L4.decision_maker
-- **`attestation_gap`** Named members of the bound population with no currentacknowledgement. → L5.execution_planning
-- **`policy_drift_days`** Days past the organisation's own review date. → L4.reasoning_unit, L6.learning_unit
-- **`communication_scope`** Who must be told when this changes, and howformally. → L5.communication_planning, L5.2.channel_planner
+- **`enforceability_bp`** Whether this policy could actually be enforced against a named person today — acknowledgement, currency, communication and consequence combined. → L4.reasoning_unit, L4.decision_maker
+- **`assurance_value`** What this policy is worth as a control in an audit or a security review, as opposed to as a document. Almost never the same answer. → L4.reasoning_unit
+- **`relaxable`** False where an external obligation sits behind it. Stops Layer 4 treating a statutory floor as a negotiable internal preference — the single most important thing this object tells the stack. → L4.decision_maker
+- **`attestation_gap`** Named members of the bound population with no current acknowledgement. Confidential by construction; it is a list of people the policy cannot be enforced against. → L5.execution_planning
+- **`policy_drift_days`** Days past the organisation's own review date, weighted by how much the organisation has changed since. → L4.reasoning_unit, L6.learning_unit
+- **`communication_scope`** Who must be told when this changes, and how formally. Widens permanently once externally_evidenced is set. → L5.communication_planning, L5.2.channel_planner
+- **`implementation_gap`** The policy states what must be true and nothing states how. Feeds the SOP backlog rather than the policy backlog. → L4.reasoning_unit, L5.execution_planning
 
 
 ## Events
 
 - **`pol.published`** Policy Published
 - **`pol.attestation_launched`** Attestation Cycle Launched
-- **`pol.coverage_shortfall`** Acknowledgement Shortfall
+- **`pol.coverage_shortfall`** Acknowledgement Shortfall — invalidates enforceability, acknowledgement_coverage_bp
 - **`pol.review_overdue`** Policy Review Overdue
 - **`pol.exception_granted`** Exception Granted
 - **`pol.breach_suspected`** Breach Suspected
-- **`pol.externally_committed`** Policy Committed Externally
+- **`pol.externally_committed`** Policy Committed Externally — invalidates enforceability
+- **`pol.owner_departed`** Policy Owner Departed — invalidates owner_ref, is_orphaned, last_control_test_at
 - **`pol.superseded`** Policy Superseded
+- **`pol.obligation_changed`** Underlying Obligation Changed — invalidates in_force, review_due_at, enforceability
 
 
 ## Actions
 
-- **Launch an attestation cycle** (agent) — Against a resolvedpopulation, not a distribution list. The two differ by exactly the people who joined since the last run.
-- **Chase the acknowledgement gap** (agent) — Named individualswith their manager copied. A broadcast reminder to everyone reaches the people who already signed.
-- **Trigger the scheduled review** (system) —
-- **Route to the approving body** (human) — To the bodywith the authority to approve it. Approval by the wrong body makes the policy void rather than provisional.
-- **Expire lapsed exceptions** (system) — An exceptionpast its expiry reverts to non-compliance. Silent renewal is how exceptions become the policy.
-- **Map the policy to its obligation** (human) — Establisheswhether this is relaxable at all. The commonest reason a policy cannot be retired is that nobody knows which duty it was answering.
-- **Retire the policy** (human) — With a recorded retirement decision.A policy retired without a reason recorded comes back within three years, usually after an incident.
-- **Escalate a suspected breach** (human) —
+- **Launch an attestation cycle** (agent) — Against a resolved population, not a distribution list. The two differ by exactly the people who joined since the last run, who are the ones most likely to breach.
+- **Chase the acknowledgement gap** (agent) — Named individuals with their manager copied. A broadcast reminder reaches the people who already signed and nobody else.
+- **Trigger the scheduled review** (system) — Opens the review with the owner named and the change since last review attached, rather than sending a bare reminder.
+- **Test the enforcement mechanism** (human) — Attempt the prohibited thing and confirm it fails. The only action here that distinguishes a policy that stops behaviour from one that describes it.
+- **Route to the approving body** (human) — To the body with the authority to approve it. Approval by the wrong body makes the policy void rather than provisional.
+- **Expire lapsed exceptions** (system) — An exception past its expiry reverts to non-compliance and must be re-argued. Silent renewal is how exceptions become the policy.
+- **Map the policy to its obligation** (human) — Establishes whether it is relaxable at all. The commonest reason a policy cannot be retired is that nobody knows which duty it was answering.
+- **Commission the implementing procedure** (human) — Where a mandatory policy has no SOP behind it, each person resolves compliance for themselves — reasonably in every case and inconsistently across all of them.
+- **Retire the policy** (human) — With a recorded retirement decision. A policy retired without a reason recorded comes back within three years, usually after an incident and usually worse.
+- **Escalate a suspected breach** (human) — Down the defined path. Where none is defined, the breach is handled by whoever noticed, which is indistinguishable from not being handled.
 
 
 ## Evidence
 
-- **attestation** · 9500 bp — A named person's recorded acknowledgement ofa named version on a date. The only evidence that makes a policy enforceable against an individual.
-- **register** · 8500 bp — The policy register: owner, approving body, cycle,exception log. Strong because it is maintained deliberately rather than as a by-product.
-- **document** · 8000 bp — The controlled artefact with its approval block.Proves the policy exists, never that it operates.
-- **access_log** · 8000 bp — Evidence the technical control the policy claimsis actually configured and firing. Outranks the wording every time.
-- **hris** · 7500 bp — The bound population, with joiners and leavers. Thedenominator nobody has.
-- **signed_form** · 7500 bp — Wet-signed acknowledgement, typically in theemployment pack. Strong and almost always stale.
-- **regulator** · 7000 bp — A finding or direction that created or tightenedthis policy. Establishes provenance beyond argument.
-- **email** · 4500 bp — Circulation and reply-approval. Proves it was sent,which is not the same as told and nowhere near acknowledged.
-- **manual_entry** · 3000 bp — Someone typed it into the register once. Coveragefigures from here should be treated as a claim.
-- **derived** · 3000 bp — Inferred from graph shape and traffic. Corroboratingonly.
+- **attestation** · 9500 bp — A named person's recorded acknowledgement of a named version on a date. The only evidence that makes a policy enforceable against an individual, and the one nothing in the pipeline currently reads.
+- **register** · 8500 bp — The policy register: owner, approving body, cycle, exception log. Strong because it is maintained deliberately rather than as a by-product — and silent on whether any of it operates.
+- **access_log** · 8000 bp — Evidence the technical control the policy claims is actually configured and firing. Outranks the wording every time, and is the only source that can prove enforcement rather than intent.
+- **document** · 8000 bp — The controlled artefact with its approval block. Proves the policy exists and what it said. Proves nothing whatever about whether it operates.
+- **hris** · 7500 bp — The bound population with its joiners and leavers. The denominator nobody has, and the only honest source for it.
+- **signed_form** · 7500 bp — Wet-signed acknowledgement, typically in the employment pack. Strong at the moment of signing and almost always five years stale by the time it is produced.
+- **regulator** · 7000 bp — A finding or direction that created or tightened this policy. Establishes provenance beyond argument and settles the relaxable question on its own.
+- **contract** · 7000 bp — A customer commitment that binds an internal policy from outside. Converts a relaxable rule into an effectively fixed one without anyone internal deciding so.
+- **email** · 4500 bp — Circulation and reply-approval. Proves it was sent, which is not the same as told and nowhere near acknowledged.
+- **manual_entry** · 3000 bp — Someone typed it into the register once. Coverage figures originating here should be treated as a claim rather than a measurement.
+- **derived** · 3000 bp — Inferred from graph shape and traffic. Corroborating only, never sole grounds.
 
 
 ## Metrics
 
-- **acknowledgement_coverage** (percent) — Current acknowledgements over the definedbound population. Only meaningful where the denominator is computed rather than assumed.
-- **review_overdue_rate** (percent) — Share of the policy set past its own reviewdate. The cheapest available read on governance health.
-- **orphaned_policy_count** (count) — Policies with no owner, no attestation andno linked control. Every policy set has some and no report lists them.
-- **exception_density** (percent) — Live exceptions over bound population. Abovea modest share the policy no longer describes the organisation.
-- **time_to_publish_a_change** (days) — Approved change to communicated change.The window in which people are bound by wording nobody has read.
-- **enforced_control_share** (percent) — Share of policies with a technical orsystematic enforcement mechanism rather than self-declaration.
-- **breach_escalation_rate** (percent) — Suspected breaches that reached a recordedescalation. A low rate means the consequence is theoretical.
+- **acknowledgement_coverage** (percent) — Current acknowledgements over the defined bound population. Only meaningful where the denominator is computed rather than assumed.
+- **review_overdue_rate** (percent) — Share of the policy set past its own review date. The cheapest available read on governance health and the first number an auditor asks for.
+- **orphaned_policy_count** (count) — Policies with no owner, no attestation and no linked control. Every policy set has some and no report lists them.
+- **exception_density** (percent) — Live exceptions over bound population. A target band rather than a minimum — zero means exceptions are being taken informally, and a high share means the rule has been repealed by practice.
+- **joiner_attestation_lag** (days) — Start date to first acknowledgement. Under an annual cycle the average new starter spends months bound by rules nobody showed them, and this is the number that says how many.
+- **time_to_publish_a_change** (days) — Approved change to communicated change. The window in which people are bound by wording nobody has read.
+- **enforced_control_share** (percent) — Share of policies with a technical or systematic enforcement mechanism rather than self-declaration.
+- **breach_escalation_rate** (percent) — Suspected breaches reaching a recorded escalation. A low rate means the consequence is theoretical and everyone who saw it now knows.
+- **policy_set_size** (count) — Counted deliberately. A set that only grows is a set nobody reads, and growth is the measurable symptom of policy-as-incident-response.
+
+
+## References
+
+- **ISO/IEC 27001:2022 — Information security management systems** · standard
+- **Statement of Applicability** · framework
+- **COSO Internal Control — Integrated Framework** · framework
+- **Three lines model (Institute of Internal Auditors)** · framework
+- **UK GDPR / EU GDPR Article 5(2) and Article 24 — accountability** · standard
+- **GDPR Article 30 — records of processing activities** · standard
+- **ACAS Code of Practice on disciplinary and grievance procedures** · standard
+- **Delegation of Authority matrix** · framework
+- **Segregation of duties** · framework
+- **NIST Cybersecurity Framework 2.0 — Govern function** · framework
+- **Policy on policies (policy management framework)** · framework
+- **ISO 30301 — Management systems for records** · standard
 
 
 ## Examples
 
-- **Information security policy, annual attestation, ISO 27001 aligned** — origin certification.Relaxable only within what the standard permits, which most people discover during the surveillance audit.
-- **Delegation of authority matrix** — Almost pure gates-approval. Enforceable technicallyin the finance system, and therefore one of the few policies that genuinely operates.
-- **Travel and expense policy with a per-night cap** — enforcement_mechanism = sampled_review.Exception density is the real metric; when half the senior team has a standing exception the cap has been repealed informally.
-- **Data retention policy** — derives_from_obligation_ref populated — it exists becauseof a statutory duty. It may be stricter than the duty and never shorter, and the automation must be able to read a legal hold.
-- **Remote working policy written during a pandemic, never reviewed** — origin incident_response,review four years overdue. Nobody follows it, nobody has retired it, and it is the wording that would be produced at a tribunal.
-- **Anti-bribery policy inherited from a company that was acquired** — origin inherited_unknown.Cannot be retired safely because nobody can say which certification or contract it was answering.
+- **Information security policy, annual attestation, ISO 27001 aligned** _(typical)_ — origin certification. Relaxable only within what the standard permits, which most organisations discover during their first surveillance audit rather than when they wrote it.
+- **Delegation of authority matrix** _(typical)_ — Almost pure gates-approval. Enforceable technically in the finance system, and therefore one of the very few policies that genuinely operates rather than merely existing.
+- **Travel and expense policy with a per-night cap** _(typical)_ — enforcement_mechanism sampled_review. Exception density is the real metric here; when half the senior team holds a standing exception the cap has been repealed informally, and the document is the last place to notice.
+- **Data retention policy** _(edge)_ — derives_from_obligation_ref populated. It may be stricter than the statutory duty and never shorter, and the automation behind it must be able to read a legal hold — the one case where deleting on schedule is itself the breach.
+- **Remote working policy written during a pandemic, never reviewed** _(edge)_ — origin incident_response, review four years overdue. Nobody follows it, nobody has retired it, and it is the wording that would be produced at a tribunal.
+- **Anti-bribery policy inherited from an acquired company** _(edge)_ — origin inherited_unknown. Cannot be retired safely because nobody can say which certification or customer contract it was answering, so it will outlive everyone involved.
+- **A statutory filing deadline recorded as a policy** _(misclassification)_ — Imposed, unnegotiable, breaches by itself on the date. It is admin.obj.core.compliance_obligation, and filing it here tells Layer 4 it may be deprioritised against internal work — the most expensive misclassification available in this domain.
+- **A three-page description of how to raise a purchase order, filed as a policy** _(misclassification)_ — It is admin.obj.core.sop. Filing it here means the policy set reports coverage of procurement governance that consists entirely of instructions.
+- **Clear desk policy, no owner, last reviewed 2019, acknowledged by nobody since** _(counterexample)_ — Present in the register, absent from the organisation. It scores as a control on every governance report, and pol.orphaned_in_the_graph is the only check in this file that would ever surface it.
 
 ## Metadata
 
-owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional**
+owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Four of eleven patterns are executable today: an overdue attached commitment, legal review in progress, graph orphaning, and exposure by a customer security review. That thinness is the honest picture — the substrate can see traffic about a policy and almost nothing about whether it operates. policy_acknowledged is the standout ask: every LMS and policy portal emits it on every attestation, nothing consumes it, and without it the library cannot tell an enforceable rule from a published one. The boundary with admin.obj.core.compliance_obligation is deliberate and load-bearing. A policy is internal, relaxable by the body that approved it, and enforced only as far as the organisation chooses to enforce it. An obligation is external, unnegotiable, and breaches by itself. derives_from_obligation_ref is the one field that connects them, and the rule pol.policy_cannot_relax_an_obligation is the one that stops Layer 4 confusing them.
+> Rewritten from the 18-section shape onto the 23-section schema. The substance of the earlier file — the acknowledgement and enforcement analysis, the exception register reading, the obligation boundary — is preserved and extended; the shape is discarded. Five of thirteen patterns are executable today: an overdue attached commitment, legal review in progress, graph orphaning, exposure by a customer security review, and a policy refresh stalled on our side of the thread. That thinness is the honest picture — the substrate can see traffic about a policy and almost nothing about whether it operates. policy_acknowledged remains the standout ask: every LMS and policy portal emits it on every attestation, nothing consumes it, and without it the library cannot tell an enforceable rule from a published one. Second is the joiner feed (employee.start_at with joiner_confirmed) — the enforceability hole opens continuously rather than at review time, and every joiner between attestation runs is bound by a rule nobody showed them. The boundary with admin.obj.core.compliance_obligation is deliberate and load-bearing. A policy is self-imposed, amendable by the body that approved it, and enforced only as far as the organisation chooses. An obligation is imposed, unnegotiable, and breaches by itself. derives_from_obligation_ref is the one field connecting them, and pol.policy_cannot_relax_an_obligation is the rule that stops Layer 4 confusing them.

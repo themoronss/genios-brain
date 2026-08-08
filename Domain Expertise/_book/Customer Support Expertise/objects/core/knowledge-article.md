@@ -43,7 +43,7 @@ Also called: `KB Article`, `Help Center Article`, `Doc`, `Support Article`, `Sol
 | `view_count_30d` | value | integer |  | The most reported and least informative number on the object. High views are equally consistent with a great article and with one people keep being sent to and bouncing off. On its own it should move no decision.  |  |
 | `article_to_ticket_rate_bp` | value | integer |  | Share of views followed by a contact from the same person within the window. THE number. A high-traffic article with a high conversion rate is actively costing money — it is intercepting people and failing them.  |  |
 | `deflection_attributed_count` | value | integer |  | Contacts credited as avoided. Kept because it is what gets reported, flagged because it is the most gamed metric in support: it improves when help is harder to find, since a customer who never searched never converted.  |  |
-| `feedback_positive_count` | value | integer |  | The feedback positive count. |  |
+| `feedback_positive_count` | value | integer |  | How many readers marked this article as having helped. Treat it as weak positive evidence and never as proof: the people it failed mostly leave without voting, so a high count with a high subsequent-ticket rate means the article satisfies the people it was already going to satisfy. |  |
 | `feedback_negative_count` | value | integer |  | Read as a lower bound and nothing more. Thumbs-down is submitted by a small, angry, unrepresentative minority; zero of them across heavy traffic says nothing about the article and quite a lot about the feedback widget.  |  |
 | `effectiveness_bp` | value | integer |  | Composite. Should be dominated by article_to_ticket_rate_bp and unmoved by view counts. |  |
 | `last_linked_in_thread_at` | value | timestamp |  | Live today, and honest about its limits: it only sees articles pasted into email threads we ingest. It undercounts help-centre traffic by approximately everything, and is useful as a signal that AGENTS still trust the article, not that customers reach it.  | `thread.last_inbound` |
@@ -53,16 +53,16 @@ Also called: `KB Article`, `Help Center Article`, `Doc`, `Support Article`, `Sol
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| covers | `customer_support.obj.core.intent` | zero_or_many |  |  | — | The edge coverage is actually measured on. An article covering no recorded intent is not coverage of anything, whatever the article count says.  |
-| documents | `customer_support.obj.core.issue` | zero_or_many |  |  | — | Many articles, one issue. When the issue is fixed, every article documenting it is simultaneously wrong — this edge is what makes that a query instead of a surprise.  |
-| deflects | `customer_support.obj.core.ticket` | zero_or_many |  |  | — | Deliberately reversible in reading: the same edge records the article deflecting the contact and the contact that happened anyway. Modelling only the success case is how deflection numbers become fiction.  |
-| references | `customer_support.obj.core.resolution` | zero_or_many |  |  | — | The resolution this was written from. The durable articles are almost always a resolution somebody bothered to write down the second time it occurred.  |
-| caused_by | `customer_support.obj.core.content_gap` | zero_or_one |  |  | — | The gap this was written to close. An article created with no recorded gap is an article somebody wanted to write, which is a different and much less useful thing.  |
-| belongs_to | `customer_support.obj.core.product_area` | zero_or_one |  |  | — | Required for the only real accuracy test there is — did this area ship a change after the article was verified. |
-| assigned_to | `customer_support.obj.core.support_agent` | zero_or_one |  |  | — | The named owner. Unset is a finding. |
-| supersedes | `customer_support.obj.core.knowledge_article` | zero_or_one |  |  | — | Self-referential. Superseding without retiring the predecessor leaves two answers in the index, and search will keep returning the older one because it has the backlinks.  |
-| requires | `customer_support.obj.core.entitlement` | zero_or_one |  |  | — | When the article is gated, entitlement decides reachability. A gated answer is not a deflection and must never be counted as one.  |
-| attaches_to | `customer_support.obj.core.conversation` | zero_or_many |  |  | — | Where an agent linked it. Agent link behaviour is a quiet, honest quality vote — see the routing-around pattern. |
+| covers | `customer_support.obj.core.intent` | zero_or_many | 7500 bp | 4000 bp | — | The edge coverage is actually measured on. An article covering no recorded intent is not coverage of anything, whatever the article count says. What the customer was trying to do, in their words. Matching on intent rather than on title keywords is the difference between an article that is found and one that merely exists. |
+| documents | `customer_support.obj.core.issue` | zero_or_many | 8500 bp | 5000 bp | — | Many articles, one issue. When the issue is fixed, every article documenting it is simultaneously wrong — this edge is what makes that a query instead of a surprise. The article documents an underlying problem rather than a single report. KCS structures knowledge around the issue precisely so one article serves every future ticket about it. |
+| deflects | `customer_support.obj.core.ticket` | zero_or_many | 8000 bp | 4500 bp | — | Deliberately reversible in reading: the same edge records the article deflecting the contact and the contact that happened anyway. Modelling only the success case is how deflection numbers become fiction. The deflection edge and the unit of value in KCS — reuse is review. Low confidence here is a direct measurement of how little of the Solve loop is actually running, not of how good the article is. |
+| references | `customer_support.obj.core.resolution` | zero_or_many | 7000 bp | 5000 bp | — | The resolution this was written from. The durable articles are almost always a resolution somebody bothered to write down the second time it occurred. What the article claims will make the problem stop. When this diverges from what actually resolved the tickets, the article is stale and nothing reports it. |
+| caused_by | `customer_support.obj.core.content_gap` | zero_or_one | 6500 bp | 4000 bp | — | The gap this was written to close. An article created with no recorded gap is an article somebody wanted to write, which is a different and much less useful thing. The article exists BECAUSE a gap was observed. Preserving that link is what lets the Evolve loop measure whether authoring is aimed at demand. |
+| belongs_to | `customer_support.obj.core.product_area` | zero_or_one | 6000 bp | 7000 bp | — | Required for the only real accuracy test there is — did this area ship a change after the article was verified. Ownership and decay both follow the product area: an article's shelf life is set by how fast its surface changes. |
+| assigned_to | `customer_support.obj.core.support_agent` | zero_or_one | 4500 bp | 6500 bp | — | The named owner. Unset is a finding. A named owner. An article without one decays silently and nobody is accountable for the decay. |
+| supersedes | `customer_support.obj.core.knowledge_article` | zero_or_one | 5500 bp | 6000 bp | — | Self-referential. Superseding without retiring the predecessor leaves two answers in the index, and search will keep returning the older one because it has the backlinks. Self-referential supersession. Versioning matters here more than almost anywhere else, because a Layer 6 suggestion needs an addressable id and version to point at. |
+| requires | `customer_support.obj.core.entitlement` | zero_or_one | 3500 bp | 5000 bp | — | When the article is gated, entitlement decides reachability. A gated answer is not a deflection and must never be counted as one. Some knowledge is gated to a plan tier. A gated article is not self-service for the customer who cannot reach it. |
+| attaches_to | `customer_support.obj.core.conversation` | zero_or_many | 5000 bp | 5000 bp | — | Where an agent linked it. Agent link behaviour is a quiet, honest quality vote — see the routing-around pattern. Where capture happens. KCS is explicit that knowledge is captured in the workflow while responding, in the requester's context — not written up afterwards. |
 
 
 ## States
@@ -119,6 +119,13 @@ Initial `draft`
 | blast_radius | 500 bp | context | `inbound_link_count`, `view_count_30d` |
 
 
+## Preconditions
+
+- **`ka.issue_or_intent_identified`** An article must attach to a known issue or a known intent before it can be reused deliberately. _(unmet → degrade)_
+- **`ka.owner_named`** A named owner must exist before publication. _(unmet → block)_
+- **`ka.audience_decided`** The audience — internal or external — must be decided before the article can be counted as self-service coverage. _(unmet → block)_
+
+
 ## Constraints
 
 - **`ka.no_reuse_after_unverified_release`** May not be sent as an authoritative answer when the documented area has shipped a change since last_verified_at.
@@ -142,6 +149,39 @@ Initial `draft`
 
 - **`ka.no_customer_identifiers_in_public_articles`** Articles drafted from a ticket must not carry account names, ticket bodies or reproduction data. This is the most frequent real incident caused by knowledge authoring, and it is caused by the correct instinct of writing from a real case.
 
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **An article may be kept internal even though it is correct and would answer the customer's question.** — Some workarounds should not be taught at scale — they are load-bearing, unsupported, or would mask a defect we intend to fix. Publishing them converts a temporary accommodation into an expectation.
+- **When the product has changed underneath an article, deleting it beats updating it.** — A rewritten article inherits the old one's search ranking and reader trust while describing a different system. A confidently wrong article outranks no article, which is why removal is sometimes the higher-value edit. _(overrides ka.edit_must_not_advance_verification)_
+- **An article that is factually perfect and never surfaces is treated as absent, not as coverage.** — KCS captures in the requester's context because the customer's words are the search terms of the next customer. Rewriting into internal vocabulary is the single most common way a good article becomes invisible.
+- **An article on a rare but critical path is maintained on a calendar even though nothing reuses it.** — Reuse is review works because demand is a good proxy for importance. Disaster-recovery and data-loss procedures are the case where it is not — they are used almost never and must be right the one time they are. _(overrides ka.orphan_is_not_coverage)_
+
+
+## Best practices
+
+- **Write the article while answering the ticket, in the requester's own words.** — KCS Capture. Written afterwards it never gets written, and written in internal vocabulary it never gets found — the customer's phrasing is the next customer's search query.
+- **Improve the article the moment it is found wrong, rather than filing a correction.** — KCS Improve. A correction queue is a place where corrections wait; the person who just discovered the error has more context than anyone who will read that queue later.
+- **Attach the article to the ticket every time it is used.** — Reuse is review. The link is what turns the collection from an opinion into a measured asset, and it is the only input the Evolve loop has.
+- **Keep a consistent article structure so a reader can skip to the part they need.** — KCS Structure. Support readers are not reading, they are scanning under pressure, and a well-written narrative performs worse than a plain one with predictable headings.
+
+
+## Anti-patterns
+
+- **Treating an article view as a deflected contact.** — tempting because Views are trivially instrumented and deflection is the metric leadership asks for, so the substitution is nearly irresistible. Instead: Measure article-view-then-ticket as the failure signal, and treat unresolved self-service as a churn input rather than a saving.
+- **Scheduling quarterly reviews of the whole knowledge base.** — tempting because It is auditable, it is easy to staff, and it looks like diligence. Instead: Reuse is review — drive maintenance from demand and from observed failure, with a calendar floor only for rare-but-critical procedures.
+- **Authoring articles in the vocabulary of the team that built the feature.** — tempting because The author is an expert, the internal name is the precise one, and precision feels like quality. Instead: Capture in the requester's context and keep their phrasing in the title and the first paragraph.
+- **Raising deflection by making it harder to reach a human.** — tempting because It works immediately, it needs no content investment, and every dashboard improves at once. Instead: Judge self-service on subsequent-contact rate and on effort, never on deflection alone.
+
+
+## Dependencies
+
+- `customer_support.obj.core.issue` — derived_from (soft)
+- `customer_support.obj.core.ticket` — enriches (soft)
+- `customer_support.obj.core.content_gap` — derived_from (soft)
+- `customer_support.obj.core.product_area` — invalidated_by (hard)
+- `customer_support.obj.core.macro` — enriches (soft)
 
 
 ## Inputs
@@ -213,6 +253,14 @@ Initial `draft`
 - **deflection_attributed** (count) — Retained because it is what gets reported. Flagged because it is the most gamed number in support — it improves when help is harder to find.
 
 
+## References
+
+- **KCS v6 Practices Guide** · methodology · Consortium for Service Innovation
+- **KCS Solve loop** · methodology
+- **KCS Evolve loop** · methodology
+- **Deflection is not first contact resolution** · practitioner
+
+
 ## Examples
 
 - **"Resetting your API key" — 4k views/month, thumbs never used, ticket volume on the same intent flat and high** — The canonical silent failure. Every reported number looks healthy. It is being found, read, and failed, and no field currently on the object can say so.
@@ -224,7 +272,7 @@ Initial `draft`
 
 ## Metadata
 
-owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **partial**
+owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
 > Five of thirteen patterns are executable, and all five read graph degree or a maintenance commitment — the only two things in today's substrate that touch a document at all. The eight needs_signal entries are, between them, the entire argument for a support_v1 pack: knowledge.viewed_at joined to ticket_created is the highest-value single ask in this brain, and both halves are already collected everywhere and joined nowhere.

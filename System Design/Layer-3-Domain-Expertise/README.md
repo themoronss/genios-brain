@@ -1,53 +1,59 @@
-# Layer 3 · Domain Expertise — the folder map
+# Layer 3 · Domain Expertise
 
-**This folder is the live truth of `genios_engine/packs/`.** It is the source consulted before any action,
-update or improvement to this layer. If a document and the code disagree, the document is wrong —
-fix it in the same change that moved the code.
+Layer 3 answers one question:
 
-Start at **[00-Overview.md](00-Overview.md)** for the layer in one sitting. Use this page when you
-already know what you are looking for.
+> Given this already-qualified business situation, what is the smallest relevant, reproducible
+> expertise package that Layer 4 may reason over?
 
----
+The canonical implementation is the deterministic Domain Compiler in
+`genios_engine/packs/compiler/`. It combines the authored Expert Brain in `Domain Expertise/`
+with tenant-scoped Organization, Behavior, and Adaptive brain entries. It does not query the
+Context Graph and it does not make recommendations, decisions, or LLM calls.
 
-## The one question this layer answers
-
-> **How should an expert understand this situation?**
-
-```mermaid
-flowchart TD
-    R["Layer-3-Domain-Expertise/"] --> A["01-The-Four-Brains.md<br/><i>universal · organization · behavioral · adaptive</i>"]
-    R --> B["02-Pack-Manifests.md<br/><i>the expertise, as data</i>"]
-    R --> C["03-The-Merge-Engine.md<br/><i>precedence, pins, guardrails, hashing</i>"]
-    R --> D["04-The-Pack-Registry.md<br/><i>immutability and tenant application</i>"]
-    R --> E["05-Native-Capabilities.md<br/><i>the next-generation shape, shadow-only</i>"]
-    R --> F["06-Gaps.md"]
+```text
+BusinessSituationObject + SituationContextSlice  Layer 2 output
+        |
+        v
+Domain Compiler / Orchestrator          Layer 3
+        |---- Expert Brain              Git-authored, versioned YAML
+        `---- Runtime Brains             Organization + Behavior + Adaptive, DB
+        |
+        v
+ExpertisePackage                        immutable, content-addressed
+        |
+        v
+Layer 4 Reasoning
 ```
 
----
+## Read in this order
 
-## The documents
-
-| # | Document | Answers |
-|---|---|---|
-| 00 | [Overview](00-Overview.md) | The layer in one sitting — spec, inventory, workflows, strategies, map |
-| 01 | [The Four Brains](01-The-Four-Brains.md) | Universal · Organization · Behavioral · Adaptive, and where each is stored |
-| 02 | [Pack Manifests](02-Pack-Manifests.md) | The seven sections of a manifest, the rule grammar, the two shipped packs |
-| 03 | [The Merge Engine](03-The-Merge-Engine.md) | LVL1→2→3, pin dominance, guardrails, and content addressing |
-| 04 | [The Pack Registry](04-The-Pack-Registry.md) | Immutability enforced against a race, tenant application, the effective config |
-| 05 | [Native Capabilities](05-Native-Capabilities.md) | `deal_cooling` v1 and v2, `deal_health` — built, and shadow-only |
-| 06 | [Gaps](06-Gaps.md) | Two domains shipped, capabilities unwired, zero golden cases |
-
----
-
-## Where this layer sits
-
-| | |
+| Document | Purpose |
 |---|---|
-| **Package** | `genios_engine/packs/` |
-| **Layer number** | 3 — `genios_engine/LAYERS.py` |
-| **Reads from** | admin overrides (LVL2) · learned nudges from Layer 6 Learning (LVL3) |
-| **Hands to** | an **effective config** + its snapshot id → Layer 4 |
-| **May import** | `contracts/` · `platform/` |
-| **LLM calls** | Zero |
+| [00 · Overview](00-Overview.md) | Boundary, invariants, lifecycle, and current implementation |
+| [01 · The Four Brains](01-The-Four-Brains.md) | Ownership, persistence, authority, and precedence |
+| [07 · Domain Compiler](07-Domain-Compiler.md) | The eight units, failure semantics, determinism, and production operation |
+| [06 · Gaps](06-Gaps.md) | Honest remaining activation and corpus gaps |
 
-[← System Design index](../README.md)
+The following documents describe the earlier pack/effective-config runtime that still exists for
+compatibility while the new boundary is activated end to end:
+
+- [02 · Pack Manifests](02-Pack-Manifests.md)
+- [03 · Merge Engine](03-The-Merge-Engine.md)
+- [04 · Pack Registry](04-The-Pack-Registry.md)
+- [05 · Native Capabilities](05-Native-Capabilities.md)
+
+## Current code map
+
+| Concern | Location |
+|---|---|
+| Authoring source | `Domain Expertise/` |
+| Boundary contracts | `genios_engine/contracts/domain_expertise.py` |
+| Catalog and compiler | `genios_engine/packs/compiler/` |
+| Production composition | `genios_engine/packs/domain_wiring.py` |
+| Package persistence | `migrations/0048_l3_domain_compiler.sql` |
+| Contract/compiler tests | `tests/test_domain_expertise_compiler.py` |
+
+Layer 3 may import `contracts/` and platform utilities. Layer 6 may publish versioned runtime-brain
+rows, but it never imports Layer 3 or edits the Expert Brain. Layer 3 only reads the pinned snapshot.
+
+[System Design index](../README.md)

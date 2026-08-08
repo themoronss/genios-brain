@@ -18,9 +18,9 @@ Also called: `Manager Escalation`, `Tier Escalation`, `Executive Escalation`, `R
 | `ownership_transfer` | composite |  |  | The actual mechanics of the handoff. If nothing in this component is populated, no ownership moved and this object should not exist.  | `direction`, `level`, `receiver_named`, `receiving_owner_ref`, `previous_owner_ref`, `receiver_accepted_at`, `bounce_count` |
 | `context_handoff` | composite |  |  | What travelled with the ownership. Modelled separately from the transfer on purpose — they are routinely done independently, and the gap between them is the defining failure of this object.  | `context_handed_over`, `context_package`, `diagnosis_repeats`, `handoff_note` |
 | `stakes` | composite |  |  | What is actually at risk, as distinct from how loud the request was. | `severity_perceived`, `severity_assessed`, `churn_linked`, `executive_visible`, `entitlement_ref` |
-| `timing` | composite |  |  | The short unmarked window, and whether we were inside it. | `requested_at`, `window_state`, `acknowledged_to_customer_at`, `time_to_accept_hours`, `de_escalated_at` |
+| `timing` | composite |  |  | The clock of the transfer itself: requested, acknowledged, context transferred, resolved. Escalations have their own timeline, separate from the ticket's, and the gap between requested and acknowledged is where the customer decides whether escalating achieved anything. | `requested_at`, `window_state`, `acknowledged_to_customer_at`, `time_to_accept_hours`, `de_escalated_at` |
 | `observed_signals` | composite |  |  | The only component with live Layer 2 sources today. Everything here is generic relationship telemetry pressed into support service — read the notes on the patterns.  | `ball_in_court`, `last_customer_contact_at`, `sentiment_at_request`, `attached_party_count` |
-| `outcome` | composite |  |  | How it ended, and what it cost beyond the ticket. | `outcome`, `closed_at`, `credibility_cost` |
+| `outcome` | composite |  |  | How the transfer ended — resolved by the receiver, returned to the original owner, superseded by an incident, or abandoned. A returned escalation is worse than one never raised, because the customer now knows the ladder does not work. | `outcome`, `closed_at`, `credibility_cost` |
 | `origin` | value | enum | yes | The discriminator. customer_initiated is a relationship event — trust in the current owner has failed and the repair is social before it is technical. agent_initiated and system_triggered are process events — the work exceeded the owner's reach or a clock fired, and the repair is logistical. Collapsing these into a single "escalated" flag is the most common modelling error in this domain and it destroys the only piece of information that changes what you do next. `unknown` is a real and frequent state: a manager request made on a phone call and never written down.  |  |
 | `reason` | value | enum | yes | The stated reason for the transfer. Required because an escalation without a reason is an escalation the receiver cannot triage — they inherit the ticket and the search for why it was sent. `wrong_owner` and `capacity` are deliberately included: they are the honest reasons for a large share of sideways transfers and they are almost never recorded, because recording them looks like an admission.  |  |
 | `reason_note` | value | string |  | Free text. Present because the enum above will be wrong roughly one time in five and a forced-choice field with no escape hatch produces confident garbage.  |  |
@@ -41,7 +41,7 @@ Also called: `Manager Escalation`, `Tier Escalation`, `Executive Escalation`, `R
 | `churn_linked` | value | boolean |  | Whether this escalation is attached to a live renewal or retention risk. Changes who must be told, not what must be fixed. |  |
 | `executive_visible` | value | boolean |  | Whether someone above the working level on either side is now watching. Once true it does not go back to false, and the reporting obligation it creates outlives the ticket.  |  |
 | `entitlement_ref` | reference | ref |  | Bounds what may be promised during the escalation. The most common way an escalation makes things permanently worse is a senior person promising something outside entitlement in order to calm the room.  | customer_support.obj.core.entitlement |
-| `requested_at` | value | timestamp |  | When the transfer was asked for, by whoever asked. |  |
+| `requested_at` | value | timestamp |  | When the transfer was asked for, by the customer or by a rule. Measured from the request rather than from acknowledgement, because the wait that damages the relationship starts the moment the customer asks for someone else. |  |
 | `window_state` | value | enum |  | Where we are against the short unmarked window. A first-class property rather than a derivation because the window is the actual expertise of this object and burying it in a score makes it unarguable. too_early costs the escalating agent credibility with the receiver; missed costs the account. Nobody agrees on where the boundaries are, which is exactly why it should be written down and reviewed.  |  |
 | `acknowledged_to_customer_at` | value | timestamp |  | When we told the customer their escalation was received and by whom. Separate from receiver_accepted_at, and far more urgent: the customer cannot see acceptance and can see silence. An internally perfect escalation nobody mentioned to the customer reads identically to being ignored.  |  |
 | `time_to_accept_hours` | value | duration |  | requested_at to receiver_accepted_at. The metric an escalation process is actually judged on internally. |  |
@@ -50,8 +50,8 @@ Also called: `Manager Escalation`, `Tier Escalation`, `Executive Escalation`, `R
 | `last_customer_contact_at` | value | timestamp |  | Live today. Thread-scoped, so it under-reports any escalation being run over phone or chat. | `thread.last_inbound` |
 | `sentiment_at_request` | value | number |  | Live today, and weak. Engine-computed as an observation balance over a sales-shaped vocabulary — it can see `objection` and `timeline_slip` and cannot see angry language, a cancellation threat or a refund demand. Corroborating only.  | `derived.sentiment` |
 | `attached_party_count` | value | integer |  | How many people are now attached. Escalations grow the graph and that growth is one of the few genuinely observable escalation signatures available today via edge_count. The source path named here does not exist yet; edge_count is the live proxy and it counts graph degree, which includes bystanders who were merely CC'd.  | `derived.escalation_pressure` |
-| `outcome` | value | enum |  | How it ended. `bounced_back` and `withdrawn` are separated from `de_escalated` because Layer 6 must learn opposite lessons from them: one is the path failing, one is the customer giving up on the path, one is the path working.  |  |
-| `closed_at` | value | timestamp |  | The closed at. |  |
+| `outcome` | value | enum |  | How the transfer ended — resolved by the receiver, returned to the original owner, superseded by an incident, or abandoned. A returned escalation is worse than one never raised, because the customer now knows the ladder does not work. |  |
+| `closed_at` | value | timestamp |  | When the escalation ended, which is frequently well before the underlying ticket does. Closing the escalation while leaving the ticket open is normal and healthy; the reverse means ownership was never really transferred. |  |
 | `credibility_cost` | value | enum |  | Judgemental and deliberately retained. Escalations have a cost that survives the ticket being closed — with the customer when the path visibly failed, and with the receiver when it should never have been sent. A support org that never records this optimises escalation volume down to zero by making escalation socially expensive, which is the same outcome as not having a process.  |  |
 
 
@@ -59,17 +59,17 @@ Also called: `Manager Escalation`, `Tier Escalation`, `Executive Escalation`, `R
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| escalates_to | `customer_support.obj.core.escalation_owner` | one |  |  | — | Cardinality is `one`, not `zero_or_one`, and that is the definition enforced structurally. Zero named receivers is not an escalation with a missing field — it is a different object.  |
-| attaches_to | `customer_support.obj.core.ticket` | one |  |  | — | An escalation is always about something. Attaching to an account rather than a ticket is how escalations become permanent. |
-| assigned_to | `customer_support.obj.core.support_agent` | zero_or_one |  |  | — | The previous owner. Kept attached after the transfer — they are the fastest recovery route when context did not travel. |
-| caused_by | `customer_support.obj.core.issue` | zero_or_one |  |  | — | Populated for process-event escalations, usually empty for relationship-event ones. When forty escalations point at one issue, the escalation process is not the problem.  |
-| merges_into | `customer_support.obj.core.incident` | zero_or_one |  |  | — | When enough escalations share a cause it stops being escalation management and becomes incident management. Recognising that boundary late is the standard failure of a major incident's first hour.  |
-| references | `customer_support.obj.core.customer_sentiment` | zero_or_one |  |  | — | Reads sentiment, never sets it. Sentiment is evidence for an escalation, not a consequence of one. |
-| influences | `customer_support.obj.core.churn_risk` | zero_or_one |  |  | — | A bounced escalation moves churn risk more than the original fault did. The customer can forgive a defect; they read a failed escalation path as who we are. |
-| produces | `customer_support.obj.core.commitment` | zero_or_many |  |  | — | Escalations generate promises, usually more senior and less checked than routine ones. Every commitment created here should be bounded by entitlement_ref before it is spoken.  |
-| requires | `customer_support.obj.core.entitlement` | zero_or_one |  |  | — | Bounds what may be offered to settle it. Checked, never assumed. |
-| measures | `customer_support.obj.core.sla_target` | zero_or_one |  |  | — | An escalation frequently has its own clock, distinct from the ticket's. Reusing the ticket's SLA target for the escalation is how an escalation runs "in SLA" for a week.  |
-| belongs_to | `customer_support.obj.core.customer_account` | one |  |  | — |  |
+| escalates_to | `customer_support.obj.core.escalation_owner` | one | 9200 bp | 6500 bp | — | Cardinality is `one`, not `zero_or_one`, and that is the definition enforced structurally. Zero named receivers is not an escalation with a missing field — it is a different object. The named receiver. This edge is what makes the object an escalation at all — without it the record is a complaint with a workflow attached. |
+| attaches_to | `customer_support.obj.core.ticket` | one | 8800 bp | 9500 bp | — | An escalation is always about something. Attaching to an account rather than a ticket is how escalations become permanent. What is being escalated. Almost always present and almost never the interesting part. |
+| assigned_to | `customer_support.obj.core.support_agent` | zero_or_one | 7000 bp | 8500 bp | — | The previous owner. Kept attached after the transfer — they are the fastest recovery route when context did not travel. Who held it before. Whether context travelled with ownership is the difference between an escalation and a restart. |
+| caused_by | `customer_support.obj.core.issue` | zero_or_one | 6000 bp | 4500 bp | — | Populated for process-event escalations, usually empty for relationship-event ones. When forty escalations point at one issue, the escalation process is not the problem. Escalations cluster on issues. When several point at one, the escalation path is not the problem and no amount of ownership transfer will fix it. |
+| merges_into | `customer_support.obj.core.incident` | zero_or_one | 5000 bp | 4000 bp | — | When enough escalations share a cause it stops being escalation management and becomes incident management. Recognising that boundary late is the standard failure of a major incident's first hour. Several escalations converging is one of the earliest reliable signals that an incident should be declared. |
+| references | `customer_support.obj.core.customer_sentiment` | zero_or_one | 6500 bp | 4000 bp | — | Reads sentiment, never sets it. Sentiment is evidence for an escalation, not a consequence of one. Distinguishes the customer-initiated escalation, which is a relationship event, from the internally-triggered one, which is a process event. They need opposite responses. |
+| influences | `customer_support.obj.core.churn_risk` | zero_or_one | 6000 bp | 4000 bp | — | A bounced escalation moves churn risk more than the original fault did. The customer can forgive a defect; they read a failed escalation path as who we are. An unresolved escalation inside the renewal window is the highest-signal combination available in this domain. |
+| produces | `customer_support.obj.core.commitment` | zero_or_many | 4500 bp | 3000 bp | — | Escalations generate promises, usually more senior and less checked than routine ones. Every commitment created here should be bounded by entitlement_ref before it is spoken. Escalations generate promises at a higher rate than any other event in support, and capture them at a lower rate. |
+| requires | `customer_support.obj.core.entitlement` | zero_or_one | 6500 bp | 6000 bp | — | Bounds what may be offered to settle it. Checked, never assumed. Bounds what the receiver may promise. The classic escalation failure is a senior person committing to something the contract does not cover in order to end the call. |
+| measures | `customer_support.obj.core.sla_target` | zero_or_one | 5500 bp | 6000 bp | — | An escalation frequently has its own clock, distinct from the ticket's. Reusing the ticket's SLA target for the escalation is how an escalation runs "in SLA" for a week. Frequently the trigger, and a poor one on its own — a breach is a fact about a clock, not evidence that a transfer of ownership will help. |
+| belongs_to | `customer_support.obj.core.customer_account` | one | 7500 bp | 7000 bp | — | Escalations are read at account level far more than at ticket level. A second escalation from the same account in a quarter means something a second escalation across two accounts does not. |
 
 
 ## States
@@ -131,6 +131,13 @@ Initial `new`
 | graph_sprawl | 800 bp | decreases | `attached_party_count`, `last_customer_contact_at` |
 
 
+## Preconditions
+
+- **`esc.named_receiver_exists`** A named receiving owner must exist before an escalation can be created. _(unmet → block)_
+- **`esc.ticket_actually_stuck`** The underlying work must genuinely be blocked or exhausted, not merely unfinished. _(unmet → degrade)_
+- **`esc.entitlement_known`** Entitlement must be known before the receiver is put in a position to promise anything. _(unmet → degrade)_
+
+
 ## Constraints
 
 - **`esc.no_escalation_without_named_receiver`** An escalation cannot exist without a named human receiver. A queue, a rota or a distribution list is not a receiver — none of them can accept ownership.
@@ -160,6 +167,40 @@ Initial `new`
 
 - **`esc.repeat_escalation_outranks_severity`** A second escalation on the same account or issue must be handled above its assessed severity. The first escalation tested the fault; the second tests whether we have a process, and losing that test is not recoverable at the working level.
 
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **An escalation may be legitimately refused when the ticket is simply not finished yet.** — Escalating unfinished work moves the queue rather than the problem, and it teaches the organisation that escalation is a way to skip diagnosis. Refusing needs to be a visible, explainable move rather than a silent non-response. _(overrides esc.named_receiver_required)_
+- **When the trigger is relationship damage rather than technical difficulty, the correct receiver is the account owner and not a senior engineer.** — Customer-initiated escalations are relationship events. Routing one to deeper technical expertise answers a question nobody asked and usually adds a day.
+- **An account that escalates routinely has destroyed the signal, and its escalations are read on severity rather than on the fact of escalation.** — The mechanism assumes escalation is costly to the customer. Where it is not, treating each one as high-signal starves every other account of attention — and the real finding is usually a mis-set expectation at sale.
+- **A team may escalate before the customer asks, when the outcome is already known to be unacceptable.** — Waiting for the customer to demand a manager converts a recoverable situation into a relationship event. The best escalations are the ones the customer never had to request.
+- **An executive-to-executive escalation may bypass the ladder entirely.** — It is a commercial conversation wearing a support ticket's clothing. Forcing it through tiers wastes everyone's time and the tiers cannot resolve what it is actually about.
+
+
+## Best practices
+
+- **Hand over a written statement of what was tried, what was ruled out, and what the customer has already been told.** — The characteristic failure is escalating the ticket without the context, so the receiver restarts a diagnosis the customer has already sat through twice. That repetition, not the delay, is what customers describe as the worst part.
+- **Tell the customer the escalation occurred and name what changes because of it.** — A silent escalation gets no relationship credit at all. The customer experiences the same wait and concludes that asking for a manager achieved nothing, which is the opposite of the intended effect.
+- **Raise it on the trajectory, not on the complaint.** — Escalating early costs credibility; escalating late costs the account. The window between is short and unmarked, and the only cheap way to stay inside it is to watch the trajectory rather than wait for the demand.
+- **Return the outcome to the agent who escalated.** — Otherwise escalation is a place tickets disappear into, agents stop learning what they could have done, and the same escalation recurs.
+
+
+## Anti-patterns
+
+- **Using escalation to move a ticket up the queue rather than to transfer ownership.** — tempting because It works, it is faster than arguing about priority, and the two mechanisms look identical from the agent's side of the screen. Instead: Fix priority through triage; reserve escalation for genuine transfers of ownership.
+- **Reassigning the ticket to a senior owner with no handover note.** — tempting because The history is 'all there in the ticket', and writing the summary takes longer than the reassignment. Instead: Require what-was-tried, what-was-ruled-out and what-the-customer-was-told before the transfer commits.
+- **Escalating up and then bouncing the ticket back down when the receiver disagrees.** — tempting because Each hop is individually defensible — the receiver genuinely believes it belongs elsewhere. Instead: Treat a bounce as a reviewable event and fix the routing rule that produced it.
+- **A senior receiver committing to something the contract does not cover, to make the escalation stop.** — tempting because It ends the immediate pain, the receiver has the authority, and nobody in the room is measured on the precedent. Instead: Check entitlement before the transfer commits, and route genuinely commercial asks to the account team.
+
+
+## Dependencies
+
+- `customer_support.obj.core.escalation_owner` — requires (hard)
+- `customer_support.obj.core.ticket` — requires (hard)
+- `customer_support.obj.core.entitlement` — requires (soft)
+- `customer_support.obj.core.incident` — invalidated_by (hard)
+- `customer_support.obj.core.churn_risk` — enriches (soft)
 
 
 ## Inputs
@@ -241,6 +282,14 @@ Initial `new`
 - **customer_wait_after_escalation** (hours) — Time with ball_in_court on us after a transfer. Computable today from live facts, unlike everything above it.
 
 
+## References
+
+- **ITIL 4 — escalation as functional and hierarchic transfer** · standard
+- **Google SRE — incident command and ownership** · framework
+- **First contact resolution benchmarks** · research
+- **The Effortless Experience — effort predicts loyalty** · book
+
+
 ## Examples
 
 - **Customer asks for a manager on a call, third contact on the same bug** — origin customer_initiated, reason repeat_contact. A relationship event: the technical fix is necessary and will not settle it. If it is handled as a routing problem the manager arrives, asks what happened, and confirms the customer's suspicion that nobody has been listening.
@@ -253,7 +302,7 @@ Initial `new`
 
 ## Metadata
 
-owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **partial**
+owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
 > Twelve inference patterns: four executable, eight needs_signal. Every executable one is a PRECURSOR pattern reading generic relationship telemetry — a broken commitment nobody answered for, an objection left past this customer's own reply cadence, sentiment turning while we hold the ball, a thread quietly acquiring people. None of them observe an escalation, because nothing in the substrate can. That is the correct trade: the precursors fire while the situation is still cheap to fix, and by the time an escalation is declared the credibility is already spent. The two highest-value Layer 2 asks this object generates are `escalation_requested` and `escalation_accepted`. The first is unusually tractable — the phrasing is stereotyped in every language support runs in. The second is the more important of the pair: without it there is no machine-checkable difference between an escalation and a complaint, and escalation rate remains a number that measures how freely people click a button. `ticket.reopen_count` is the cheapest strong predictor in the domain and needs no language model at all; it is a counter, and its absence is why this brain cannot currently tell a first contact from a fourth.

@@ -344,7 +344,9 @@ attributes:
   type: value
   data_type: integer
 - name: feedback_positive_count
-  purpose: The feedback positive count.
+  purpose: 'How many readers marked this article as having helped. Treat it as weak positive evidence
+    and never as proof: the people it failed mostly leave without voting, so a high count with a high
+    subsequent-ticket rate means the article satisfies the people it was already going to satisfy.'
   type: value
   data_type: integer
 - name: feedback_negative_count
@@ -422,68 +424,110 @@ states:
 relationships:
 - target: customer_support.obj.core.intent
   cardinality: zero_or_many
-  description: 'The edge coverage is actually measured on. An article covering no recorded intent is not
-    coverage of anything, whatever the article count says.
-
-    '
+  description: The edge coverage is actually measured on. An article covering no recorded intent is not
+    coverage of anything, whatever the article count says. What the customer was trying to do, in their
+    words. Matching on intent rather than on title keywords is the difference between an article that
+    is found and one that merely exists.
   type: covers
+  weight_bp: 7500
+  confidence_bp: 4000
+  priority: 3
+  direction: outbound
 - target: customer_support.obj.core.issue
   cardinality: zero_or_many
-  description: 'Many articles, one issue. When the issue is fixed, every article documenting it is simultaneously
-    wrong — this edge is what makes that a query instead of a surprise.
-
-    '
+  description: Many articles, one issue. When the issue is fixed, every article documenting it is simultaneously
+    wrong — this edge is what makes that a query instead of a surprise. The article documents an underlying
+    problem rather than a single report. KCS structures knowledge around the issue precisely so one article
+    serves every future ticket about it.
   type: documents
+  weight_bp: 8500
+  confidence_bp: 5000
+  priority: 1
+  direction: outbound
 - target: customer_support.obj.core.ticket
   cardinality: zero_or_many
   description: 'Deliberately reversible in reading: the same edge records the article deflecting the contact
     and the contact that happened anyway. Modelling only the success case is how deflection numbers become
-    fiction.
-
-    '
+    fiction. The deflection edge and the unit of value in KCS — reuse is review. Low confidence here is
+    a direct measurement of how little of the Solve loop is actually running, not of how good the article
+    is.'
   type: deflects
+  weight_bp: 8000
+  confidence_bp: 4500
+  priority: 2
+  direction: outbound
 - target: customer_support.obj.core.resolution
   cardinality: zero_or_many
-  description: 'The resolution this was written from. The durable articles are almost always a resolution
-    somebody bothered to write down the second time it occurred.
-
-    '
+  description: The resolution this was written from. The durable articles are almost always a resolution
+    somebody bothered to write down the second time it occurred. What the article claims will make the
+    problem stop. When this diverges from what actually resolved the tickets, the article is stale and
+    nothing reports it.
   type: references
+  weight_bp: 7000
+  confidence_bp: 5000
+  priority: 4
+  direction: outbound
 - target: customer_support.obj.core.content_gap
   cardinality: zero_or_one
-  description: 'The gap this was written to close. An article created with no recorded gap is an article
-    somebody wanted to write, which is a different and much less useful thing.
-
-    '
+  description: The gap this was written to close. An article created with no recorded gap is an article
+    somebody wanted to write, which is a different and much less useful thing. The article exists BECAUSE
+    a gap was observed. Preserving that link is what lets the Evolve loop measure whether authoring is
+    aimed at demand.
   type: caused_by
+  weight_bp: 6500
+  confidence_bp: 4000
+  priority: 5
+  direction: outbound
 - target: customer_support.obj.core.product_area
   cardinality: zero_or_one
-  description: Required for the only real accuracy test there is — did this area ship a change after the
-    article was verified.
+  description: 'Required for the only real accuracy test there is — did this area ship a change after
+    the article was verified. Ownership and decay both follow the product area: an article''s shelf life
+    is set by how fast its surface changes.'
   type: belongs_to
+  weight_bp: 6000
+  confidence_bp: 7000
+  priority: 6
+  direction: outbound
 - target: customer_support.obj.core.support_agent
   cardinality: zero_or_one
-  description: The named owner. Unset is a finding.
+  description: The named owner. Unset is a finding. A named owner. An article without one decays silently
+    and nobody is accountable for the decay.
   type: assigned_to
+  weight_bp: 4500
+  confidence_bp: 6500
+  priority: 9
+  direction: outbound
 - target: customer_support.obj.core.knowledge_article
   cardinality: zero_or_one
-  description: 'Self-referential. Superseding without retiring the predecessor leaves two answers in the
-    index, and search will keep returning the older one because it has the backlinks.
-
-    '
+  description: Self-referential. Superseding without retiring the predecessor leaves two answers in the
+    index, and search will keep returning the older one because it has the backlinks. Self-referential
+    supersession. Versioning matters here more than almost anywhere else, because a Layer 6 suggestion
+    needs an addressable id and version to point at.
   type: supersedes
+  weight_bp: 5500
+  confidence_bp: 6000
+  priority: 7
+  direction: outbound
 - target: customer_support.obj.core.entitlement
   cardinality: zero_or_one
-  description: 'When the article is gated, entitlement decides reachability. A gated answer is not a deflection
-    and must never be counted as one.
-
-    '
+  description: When the article is gated, entitlement decides reachability. A gated answer is not a deflection
+    and must never be counted as one. Some knowledge is gated to a plan tier. A gated article is not self-service
+    for the customer who cannot reach it.
   type: requires
+  weight_bp: 3500
+  confidence_bp: 5000
+  priority: 10
+  direction: outbound
 - target: customer_support.obj.core.conversation
   cardinality: zero_or_many
   description: Where an agent linked it. Agent link behaviour is a quiet, honest quality vote — see the
-    routing-around pattern.
+    routing-around pattern. Where capture happens. KCS is explicit that knowledge is captured in the workflow
+    while responding, in the requester's context — not written up afterwards.
   type: attaches_to
+  weight_bp: 5000
+  confidence_bp: 5000
+  priority: 8
+  direction: outbound
 inference_patterns:
   deterministic:
   - id: ka.orphaned_no_inbound_links
@@ -857,6 +901,22 @@ outputs:
   description: A human must re-check the claim against the shipping product.
   consumed_by:
   - L5.execution_planning
+preconditions:
+- id: ka.issue_or_intent_identified
+  statement: An article must attach to a known issue or a known intent before it can be reused deliberately.
+  requires:
+  - customer_support.obj.core.issue
+  - customer_support.obj.core.intent
+  if_unmet: degrade
+- id: ka.owner_named
+  statement: A named owner must exist before publication.
+  requires:
+  - customer_support.obj.core.support_agent
+  if_unmet: block
+- id: ka.audience_decided
+  statement: The audience — internal or external — must be decided before the article can be counted as
+    self-service coverage.
+  if_unmet: block
 constraints:
 - id: ka.no_reuse_after_unverified_release
   statement: May not be sent as an authoritative answer when the documented area has shipped a change
@@ -1164,6 +1224,120 @@ actions:
   actor: human
   effect: Redirect, never delete. A deleted article's inbound links fail silently and the traffic simply
     disappears from the numbers.
+dependencies:
+- target: customer_support.obj.core.issue
+  kind: derived_from
+  strength: soft
+  description: Most durable articles are written from a diagnosed issue rather than from a single ticket.
+- target: customer_support.obj.core.ticket
+  kind: enriches
+  strength: soft
+  description: Reuse links are what make the article measurable. Without them the collection can only
+    be judged on opinion.
+- target: customer_support.obj.core.content_gap
+  kind: derived_from
+  strength: soft
+  description: 'Demand-driven authoring: the gap is the reason the article exists.'
+- target: customer_support.obj.core.product_area
+  kind: invalidated_by
+  strength: hard
+  description: A change in the product area is what makes an article wrong. This is the decay mechanism
+    and it is silent.
+- target: customer_support.obj.macro_management.macro
+  kind: enriches
+  strength: soft
+  description: The macro is what the agent sends; the article is what the customer finds. Same knowledge,
+    two surfaces, and content excellent as one is usually poor as the other.
+exceptions:
+- id: ka.deliberately_internal
+  statement: An article may be kept internal even though it is correct and would answer the customer's
+    question.
+  why: Some workarounds should not be taught at scale — they are load-bearing, unsupported, or would mask
+    a defect we intend to fix. Publishing them converts a temporary accommodation into an expectation.
+  frequency: occasional
+- id: ka.delete_rather_than_fix
+  statement: When the product has changed underneath an article, deleting it beats updating it.
+  overrides:
+  - ka.edit_must_not_advance_verification
+  why: A rewritten article inherits the old one's search ranking and reader trust while describing a different
+    system. A confidently wrong article outranks no article, which is why removal is sometimes the higher-value
+    edit.
+  frequency: occasional
+- id: ka.correct_and_unfindable
+  statement: An article that is factually perfect and never surfaces is treated as absent, not as coverage.
+  why: KCS captures in the requester's context because the customer's words are the search terms of the
+    next customer. Rewriting into internal vocabulary is the single most common way a good article becomes
+    invisible.
+  frequency: common
+- id: ka.reuse_is_review_has_a_floor
+  statement: An article on a rare but critical path is maintained on a calendar even though nothing reuses
+    it.
+  overrides:
+  - ka.orphan_is_not_coverage
+  why: Reuse is review works because demand is a good proxy for importance. Disaster-recovery and data-loss
+    procedures are the case where it is not — they are used almost never and must be right the one time
+    they are.
+  frequency: rare
+best_practices:
+- id: ka.capture_in_the_workflow
+  statement: Write the article while answering the ticket, in the requester's own words.
+  why: KCS Capture. Written afterwards it never gets written, and written in internal vocabulary it never
+    gets found — the customer's phrasing is the next customer's search query.
+  applies_when: Any ticket answered without an existing article.
+- id: ka.fix_at_the_moment_of_use
+  statement: Improve the article the moment it is found wrong, rather than filing a correction.
+  why: KCS Improve. A correction queue is a place where corrections wait; the person who just discovered
+    the error has more context than anyone who will read that queue later.
+- id: ka.link_every_reuse
+  statement: Attach the article to the ticket every time it is used.
+  why: Reuse is review. The link is what turns the collection from an opinion into a measured asset, and
+    it is the only input the Evolve loop has.
+- id: ka.structure_before_prose
+  statement: Keep a consistent article structure so a reader can skip to the part they need.
+  why: KCS Structure. Support readers are not reading, they are scanning under pressure, and a well-written
+    narrative performs worse than a plain one with predictable headings.
+anti_patterns:
+- id: ka.views_counted_as_deflection
+  statement: Treating an article view as a deflected contact.
+  why_it_happens: Views are trivially instrumented and deflection is the metric leadership asks for, so
+    the substitution is nearly irresistible.
+  cost: Deflection only asks whether a contact reached an agent — an abandonment counts as success. A
+    customer who read the article, failed, and gave up is recorded identically to one who was helped,
+    so the worst outcome in support is reported as the best.
+  instead: Measure article-view-then-ticket as the failure signal, and treat unresolved self-service as
+    a churn input rather than a saving.
+  detectable_by:
+  - view_count
+  - ka.view_is_not_deflection
+- id: ka.review_by_calendar
+  statement: Scheduling quarterly reviews of the whole knowledge base.
+  why_it_happens: It is auditable, it is easy to staff, and it looks like diligence.
+  cost: It spends the most effort on the articles nobody uses and reaches the high-traffic ones on the
+    same cadence as the dead ones. Meanwhile decay happens on product release timelines, not on review
+    timelines.
+  instead: Reuse is review — drive maintenance from demand and from observed failure, with a calendar
+    floor only for rare-but-critical procedures.
+  detectable_by:
+  - last_reviewed_at
+  - reuse_count
+- id: ka.write_for_the_expert
+  statement: Authoring articles in the vocabulary of the team that built the feature.
+  why_it_happens: The author is an expert, the internal name is the precise one, and precision feels like
+    quality.
+  cost: The article is unfindable by the people it was written for, so it is simultaneously correct and
+    useless — and its existence suppresses anyone writing the findable version.
+  instead: Capture in the requester's context and keep their phrasing in the title and the first paragraph.
+  detectable_by:
+  - search_miss_rate
+- id: ka.hide_the_contact_button
+  statement: Raising deflection by making it harder to reach a human.
+  why_it_happens: It works immediately, it needs no content investment, and every dashboard improves at
+    once.
+  cost: It converts solvable problems into silent churn. The metric improves precisely because the experience
+    got worse, which makes it the most dangerous number in support.
+  instead: Judge self-service on subsequent-contact rate and on effort, never on deflection alone.
+  detectable_by:
+  - ka.view_is_not_deflection
 examples:
 - label: '"Resetting your API key" — 4k views/month, thumbs never used, ticket volume on the same intent
     flat and high'
@@ -1185,6 +1359,30 @@ examples:
 - label: Article written from one enterprise ticket, published with the account's hostname in the example
   note: 'Two failures at once: a data-exposure incident, and an article scoped to a single customer''s
     configuration that will mislead everyone else.'
+references:
+- title: KCS v6 Practices Guide
+  kind: methodology
+  author: Consortium for Service Innovation
+  url: https://www.serviceinnovation.org/included/docs/KCS_v6_Practices_Guide_2023_06_08.pdf
+  note: 'The authority for this entire object. Solve loop: Capture, Structure, Reuse, Improve. Evolve
+    loop: collection health driven by demand and usage. ''Reuse is review'' shapes the states, the freshness
+    attributes and the maintenance position taken above.'
+- title: KCS Solve loop
+  kind: methodology
+  url: https://library.serviceinnovation.org/KCS/KCS_v6/KCS_v6_Practices_Guide/030/030
+  note: Capture happens in the workflow while responding, in the requester's context — the source of the
+    capture-in-the-workflow practice and of the write-for-the-expert anti-pattern.
+- title: KCS Evolve loop
+  kind: methodology
+  url: https://library.serviceinnovation.org/KCS/KCS_v6/KCS_v6_Practices_Guide/030/040
+  note: The Evolve loop depends entirely on people doing the right thing in the Solve loop — it is the
+    aggregate of many correctly-handled events. This is why the reuse link is modelled as the unit of
+    value.
+- title: Deflection is not first contact resolution
+  kind: practitioner
+  url: https://www.inbenta.com/articles/first-contact-resolution-vs-deflection
+  note: Deflection measures only whether a contact reached a live agent, so abandonment scores as success.
+    The direct source of the views-counted-as-deflection and hide-the-contact-button anti-patterns.
 metadata:
   owner: Customer Support
   created_by: ai
@@ -1214,4 +1412,4 @@ metadata:
     which is the precise mistake this object was written about.
 
     '
-  completeness: partial
+  completeness: complete

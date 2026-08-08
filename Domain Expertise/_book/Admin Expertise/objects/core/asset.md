@@ -2,103 +2,130 @@
 
 # Asset
 
-`admin.obj.core.asset` · v1.0.0 · **draft** · scope **core**
+`admin.obj.core.asset` · v2.0.0 · **draft** · scope **core**
 
-> A tangible or licensed item the organisation owns or controls, which at any moment is in somebody's hands. The object is not the item; it is the CUSTODY CLAIM over the item — a named holder, a date it went out, a date it is expected back, and a date somebody last proved it still exists where the record says. Strip those four away and you have an inventory list, which is a document about the past. Keep them and you have a register, which is a document that can be shown to be wrong. The difference matters because recovery fails silently: nobody in the building is inconvenienced by a laptop that was never returned except the balance sheet, and by the time anyone notices, the custodian has been gone eighteen months and the device is still authenticated.
-
-
-Also called: `Company Property`, `Issued Equipment`, `Register Line`, `Fixed Asset`, `Kit`
+> A tangible or licensed item the organisation owns or controls which, at any given moment, is in somebody's hands. The object is not the item; it is the CUSTODY CLAIM over the item — a named holder, a date it went out, a date it is expected back, and a date somebody last proved it still exists where the record says it does. Strip those four away and what remains is an inventory list, which is a document about the past. Keep them and you have a register, which is a document that can be shown to be wrong. That difference is the whole object, because recovery fails silently: by the time anyone notices, the custodian has been gone eighteen months, the device is still authenticated, and the seat attached to it is still billing.
 
 
-## Attributes (41)
+**The discriminator.** Custody, not ownership. If the organisation owns it but nobody can name the individual who currently holds it and the date it is due back, this is an inventory row, not an Asset. A department is not a custodian and a shared mailbox is not a custodian — if the answer to "who do I ring" is a group, the item is already effectively unrecoverable and the register is recording a belief rather than a claim.
+
+
+Also called: `Company Property`, `Issued Equipment`, `Register Line`, `Fixed Asset`, `Kit`, `Loan Item`
+
+
+### Questions this object answers
+
+- Who holds this right now, on whose authority, and did they ever sign for it?
+- When is it due back, and how far past due are we?
+- When did anyone last prove this row is true, and by what method?
+- What would we lose if it never came back — replacement cost, or a notifiable data incident?
+- Which items are still issued to people who have already left?
+- How many rows in this register have nobody attached to them at all?
+- Which recovery is unowned, and who should own it?
+
+
+### What it is NOT responsible for
+
+- Not the entitlement that travelled with the device — admin.obj.core.access_right owns the VPN certificate, the licence seat and the building badge permission. Reclaiming the laptop and leaving the account live is the most common half-done offboarding, and it happens because one object was made to carry both.
+- Not the person — admin.obj.core.employee_record owns the holder. This object owns only the edge between them.
+- Not the purchase — admin.obj.core.invoice and admin.obj.core.budget_line own acquisition and the cost line. This object starts at goods receipt and ends at evidenced disposal.
+- Not the lease — admin.obj.core.contract owns the terms, including a return date the organisation did not choose and cannot move.
+- Not the facility — admin.obj.core.facility owns the physical space. Hybrid working broke most registers precisely because they conflated where the item lives with where the custodian sits.
+
+
+## Attributes (44)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
 | `identity_and_classification` | composite |  |  | What the item is, and how much the organisation should care about it. | `asset_tag`, `category`, `serial_number`, `model`, `ownership_type`, `criticality` |
 | `custody` | composite |  |  | Who holds it, on whose authority, and whether they ever signed for it. | `custodian_ref`, `custodian_known`, `issued_at`, `issue_authorised_by`, `acceptance_signed`, `location_ref` |
-| `return_and_recovery` | composite |  |  | The half of the lifecycle every register under-models. Issue is a happy path with a person standing in front of you; recovery is a chase against someone who has already left.  | `due_back_at`, `return_reason`, `recovery_state`, `recovery_attempts`, `recovery_due_at`, `recovery_ball_in_court`, `last_custodian_contact_at`, `returned_at`, `recovery_owner` |
-| `verification` | composite |  |  | When somebody last proved the item is where the row says it is, and how. | `last_verified_at`, `verification_method`, `custody_verified`, `reconciliation_variance` |
+| `return_and_recovery` | composite |  |  | The half of the lifecycle every register under-models. Issue is a happy path with a person standing in front of you; recovery is a chase against someone who has already left.  | `due_back_at`, `return_reason`, `recovery_state`, `recovery_attempts`, `recovery_due_at`, `recovery_ball_in_court`, `last_custodian_contact_at`, `returned_at`, `recovery_owner`, `days_past_due` |
+| `verification` | composite |  |  | When somebody last proved the item is where the row says it is, and how. | `last_verified_at`, `verification_method`, `custody_verified`, `verification_age_days`, `reconciliation_variance` |
 | `value_and_lifecycle` | composite |  |  | What it cost, what it is worth now, and how it is allowed to leave. | `acquisition_cost`, `net_book_value`, `in_service_at`, `warranty_end_at`, `disposal_method`, `disposed_at` |
-| `data_and_licence_risk` | composite |  |  | Why an unreturned laptop is a data-protection incident and an unreturned monitor is only a cost. Most registers treat both as one line.  | `data_bearing`, `contains_personal_data`, `wipe_certificate_ref`, `licences_attached` |
-| `asset_tag` | value | string | yes | The register's primary key, and the only field that survives a device being reimaged, renamed and reissued. Serial numbers get transcribed wrong; hostnames get changed by the user. A physical tag is the cheapest control in this entire object. |  |
-| `category` | value | enum | yes | The category of this object. |  |
-| `serial_number` | value | string |  | Manufacturer identifier. Necessary for warranty and insurance claims, useless for day-to-day custody because nobody reads the underside of a laptop. |  |
-| `model` | value | string |  | The model of this object. |  |
-| `ownership_type` | value | enum |  | Leased and customer_supplied items carry a contractual return date set by somebody outside the organisation. Missing it is a breach, not an internal untidiness. |  |
-| `criticality` | value | enum |  | Operational consequence of the item being unavailable, independent of its value. A £40 access card into a plant room outranks a £2,000 monitor. |  |
-| `custodian_ref` | reference | ref |  | The named person accountable for the item. A department is not a custodian; a team inbox is not a custodian. If the answer to "who do I ring" is a group, the item is already effectively unrecoverable. | admin.obj.core.employee_record |
-| `custodian_known` | value | boolean |  | False means the register row is orphaned. This is the honest field most inventories quietly avoid having. |  |
-| `issued_at` | value | timestamp |  | The issued_at of this object. |  |
-| `issue_authorised_by` | reference | ref |  | Who approved the issue. Matters at recovery, not at issue — it names who has standing to chase. | admin.obj.core.approver |
-| `acceptance_signed` | value | boolean |  | Whether the custodian signed for the item. Without it the organisation has an assertion, not an obligation, and every recovery conversation starts with "I was never given that". |  |
-| `location_ref` | reference | ref |  | Where the item is meant to be. Distinct from where the custodian is meant to be, which is why hybrid working broke most asset registers. | admin.obj.core.facility |
-| `due_back_at` | value | timestamp |  | The expected return date. The most valuable field in this object and the one most registers leave null, because at issue nobody knows when it comes back — so the register records an open-ended loan and nothing ever becomes overdue. |  |
-| `return_reason` | value | enum |  | The return_reason of this object. |  |
-| `recovery_state` | value | enum |  | The state machine of the chase, kept separate from the object's own state because an item can be operationally fine and administratively lost. |  |
-| `recovery_attempts` | value | integer |  | Count of chases. Three unanswered chases is not persistence, it is a decision that nobody has taken deliberately. |  |
-| `recovery_owner` | value | string |  | The named human chasing. Unowned recovery is the default failure — everyone assumes IT, IT assumes HR, HR assumes the line manager. |  |
-| `recovery_due_at` | value | timestamp |  | Live today only when the return promise was captured as a tracked commitment in a thread ("I'll post it back on Friday"). That is a genuine administrative use of the commitment primitive, and it is also the only overdue clock this object currently has. | `commitment.due_at` |
-| `recovery_ball_in_court` | value | enum |  | `nobody` is the dangerous value — a recovery nobody is waiting on is a recovery that has stopped. | `thread.ball_in_court` |
-| `last_custodian_contact_at` | value | timestamp |  | The last_custodian_contact_at of this object. | `thread.last_inbound` |
-| `returned_at` | value | timestamp |  | The returned_at of this object. |  |
-| `last_verified_at` | value | timestamp |  | When somebody last obtained positive evidence the item exists in the stated custody. A row created three years ago and never touched is not a record of a laptop; it is a record of a belief about a laptop. |  |
-| `verification_method` | value | enum |  | Attestation is cheap and weak; endpoint check-in is strong and only works for things that phone home, which is why furniture registers drift worst. |  |
-| `custody_verified` | value | boolean |  | Whether the current custody claim has independent support, as opposed to being the last thing anyone typed. |  |
-| `reconciliation_variance` | value | integer |  | Items in the register minus items evidenced at the last count, for this category. The number that converts an asset register from an administrative artefact into an audit finding. A variance of zero on a first count is not a clean register, it is an uncounted one. |  |
-| `acquisition_cost` | value | money |  | The acquisition_cost of this object. |  |
-| `net_book_value` | value | money |  | What Finance will write off if it never comes back. Usually far below what it costs to replace, which is why value-based recovery prioritisation under-chases laptops. |  |
-| `in_service_at` | value | timestamp |  | The in_service_at of this object. |  |
-| `warranty_end_at` | value | timestamp |  | The warranty_end_at of this object. |  |
-| `disposal_method` | value | enum |  | The disposal_method of this object. |  |
-| `disposed_at` | value | timestamp |  | The disposed_at of this object. |  |
-| `data_bearing` | value | boolean |  | Whether the item can hold data. Splits this object into two risk classes and almost nothing else about it matters as much. |  |
-| `contains_personal_data` | value | boolean |  | Escalates an unreturned data_bearing item from a cost to a notifiable event in most jurisdictions. |  |
-| `wipe_certificate_ref` | reference | ref |  | Evidence of secure erasure. In a governed context a device wiped without a certificate was not wiped. | admin.obj.core.document |
-| `licences_attached` | value | list |  | Software seats travelling with the device. Recovered hardware with unrecovered licences is the quietest recurring cost in this object — the seat keeps billing. |  |
+| `data_and_licence_risk` | composite |  |  | Why an unreturned laptop is a data-protection incident and an unreturned monitor is only a cost. Most registers treat both as one line and prioritise the one with the higher price.  | `data_bearing`, `contains_personal_data`, `wipe_certificate_ref`, `licences_attached`, `data_exposure_risk` |
+| `asset_tag` | value | string | yes | The register's primary key, and the only field that survives a device being reimaged, renamed and reissued.  |  |
+| `category` | value | enum | yes | The class of item, which decides which controls apply and which recovery route works. |  |
+| `serial_number` | value | string |  | Manufacturer identifier, for warranty, insurance and police reports. |  |
+| `model` | value | string |  | What was actually issued, which matters at refresh and at replacement costing. |  |
+| `ownership_type` | value | enum |  | Whether the return date is ours to move. |  |
+| `criticality` | value | enum |  | Operational consequence of the item being unavailable, independent of its value. |  |
+| `custodian_ref` | reference | ref |  | The named individual accountable for the item. | admin.obj.core.employee_record |
+| `custodian_known` | value | boolean |  | Whether anyone is attached to this row at all. |  |
+| `issued_at` | value | timestamp |  | When custody transferred. The start of every duration this object cares about. |  |
+| `issue_authorised_by` | reference | ref |  | Who approved the issue, and therefore who has standing to chase. | admin.obj.core.approver |
+| `acceptance_signed` | value | boolean |  | Whether the custodian signed for the item. |  |
+| `location_ref` | reference | ref |  | Where the item is meant to be, as distinct from where the custodian is meant to be. | admin.obj.core.facility |
+| `due_back_at` | value | timestamp |  | The expected return date. |  |
+| `return_reason` | value | enum |  | Why the item is coming back, which decides the route and the urgency. |  |
+| `recovery_state` | value | enum |  | The state machine of the chase. |  |
+| `recovery_attempts` | value | integer |  | How many times someone has chased. |  |
+| `recovery_owner` | value | string |  | The named human chasing. |  |
+| `recovery_due_at` | value | timestamp |  | The promised return date, when the promise was made in a thread. | `commitment.due_at` |
+| `recovery_ball_in_court` | value | enum |  | Whose move the recovery is waiting on. | `thread.ball_in_court` |
+| `last_custodian_contact_at` | value | timestamp |  | When we last heard from the person holding it. | `thread.last_inbound` |
+| `returned_at` | value | timestamp |  | When the item physically came back and condition was checked. |  |
+| `days_past_due` | derived | integer |  | How far past the expected return the item is, which drives escalation, not the chase count. | `commitment.due_at` |
+| `last_verified_at` | value | timestamp |  | When somebody last obtained positive evidence the item exists in the stated custody. |  |
+| `verification_method` | value | enum |  | How the last verification was obtained, which decides what it is worth. |  |
+| `custody_verified` | value | boolean |  | Whether the current custody claim has independent support. |  |
+| `verification_age_days` | derived | integer |  | How stale the claim is, which is the honest measure of register quality. | `last_verified_at` |
+| `reconciliation_variance` | value | integer |  | Items in the register minus items evidenced at the last count, for this category. |  |
+| `acquisition_cost` | value | money |  | What was paid, which is what insurance and replacement budgeting work from. |  |
+| `net_book_value` | value | money |  | What Finance writes off if it never comes back. |  |
+| `in_service_at` | value | timestamp |  | When the item entered productive use, which starts depreciation and the refresh clock. |  |
+| `warranty_end_at` | value | timestamp |  | When repair stops being free and replacement starts being the cheaper answer. |  |
+| `disposal_method` | value | enum |  | How the item left, which is the difference between controlled disposal and loss. |  |
+| `disposed_at` | value | timestamp |  | When it left the estate, with evidence. |  |
+| `data_bearing` | value | boolean |  | Whether the item can hold data. |  |
+| `contains_personal_data` | value | boolean |  | Whether non-return is a notifiable event rather than a cost. |  |
+| `wipe_certificate_ref` | reference | ref |  | Evidence of secure erasure. | admin.obj.core.document |
+| `licences_attached` | value | list |  | Software seats travelling with the device. |  |
+| `data_exposure_risk` | derived | enum |  | The blended reason to chase this item ahead of a more expensive one. | `data_bearing`, `contains_personal_data`, `wipe_certificate_ref`, `criticality` |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| issued_to | `admin.obj.core.employee_record` | zero_or_one |  |  | — | The custody edge. Zero_or_one deliberately: an item in stock has no holder, and the moment this edge is absent while the item is not in stock, the register is lying.  |
-| governed_by | `admin.obj.core.policy` | zero_or_many |  |  | — | Acceptable use, home-working equipment, and secure-disposal policies. The policy is what makes non-return a breach rather than a disappointment. |
-| governed_by | `admin.obj.core.contract` | zero_or_one |  |  | — | Lease or rental terms. Sets a return date the organisation did not choose and cannot move. |
-| allocated_to | `admin.obj.core.budget_line` | zero_or_one |  |  | — | Capex or opex line the item was bought against, and the line the write-off lands on. |
-| belongs_to | `admin.obj.core.facility` | zero_or_one |  |  | — | Physical home. Meaningless for a laptop, load-bearing for a fire extinguisher. |
-| requires | `admin.obj.core.document` | zero_or_many |  |  | — | Signed issue form, condition photos, wipe certificate. The evidence trail that makes recovery enforceable. |
-| works_with | `admin.obj.core.access_right` | zero_or_many |  |  | — | Devices and entitlements are recovered together or not at all. Reclaiming the laptop while leaving the VPN certificate on it is the most common half-done offboarding.  |
-| produces | `admin.obj.core.commitment` | zero_or_many |  |  | — | The return promise. Today this is the only part of recovery the engine can actually see. |
-| escalates_to | `admin.obj.core.escalation` | zero_or_one |  |  | — | Where an unrecovered item goes when chasing has demonstrably stopped working — usually payroll deduction or write-off approval. |
+| issued_to | `admin.obj.core.employee_record` | zero_or_one | 3000 bp | 8000 bp | — | The custody edge, and the one this object exists for. zero_or_one deliberately: an item in stock has no holder. The moment this edge is absent while the item is not in stock, the register is lying, and nothing in the system currently notices.  |
+| works_with | `admin.obj.core.access_right` | zero_or_many | 1500 bp | 7000 bp | — | Devices and entitlements are recovered together or not at all. Reclaiming the laptop and leaving the VPN certificate, the SSO session and the licence seat live is the commonest half-done offboarding, and the half that is left behind is the half that costs money and creates exposure.  |
+| governed_by | `admin.obj.core.policy` | zero_or_many | 1200 bp | 8500 bp | — | Acceptable use, home-working equipment and secure-disposal policies. The policy is what makes non-return a breach rather than a disappointment, and an acknowledged policy is what makes the breach actionable.  |
+| governed_by | `admin.obj.core.contract` | zero_or_one | 1000 bp | 9000 bp | `commitment.action != None` | Lease or rental terms. Sets a return date the organisation did not choose and cannot move, with a penalty schedule attached. External deadlines outrank internal prioritisation and this edge is how Layer 4 learns that.  |
+| requires | `admin.obj.core.document` | zero_or_many | 1000 bp | 8000 bp | — | Signed issue form, condition photographs, wipe certificate. The evidence trail that makes recovery enforceable and disposal defensible. Without it the organisation has a story.  |
+| produces | `admin.obj.core.commitment` | zero_or_many | 800 bp | 6500 bp | — | The return promise. Today this is the only part of recovery the engine can actually see, which means the register's overdue report currently covers only those returns somebody happened to promise in writing.  |
+| allocated_to | `admin.obj.core.budget_line` | zero_or_one | 600 bp | 7500 bp | — | Capex or opex line the item was bought against, and the line the write-off lands on. |
+| escalates_to | `admin.obj.core.escalation` | zero_or_one | 500 bp | 6000 bp | `days_since(commitment.due_at) > 30` | Where an unrecovered item goes when chasing has demonstrably stopped working — usually payroll deduction, line-manager escalation or write-off approval. An escalation that never fires is how a chase becomes permanent.  |
+| belongs_to | `admin.obj.core.facility` | zero_or_one | 400 bp | 6000 bp | — | Meaningless for a laptop, load-bearing for a fire extinguisher or a plant-room key. |
 
 
 ## States
 
-Initial `new`
+Initial `new` · terminal `disposed`, `archived`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `new` | Procured and receipted, not yet tagged into the register. The window in which most items are lost before they were ever tracked. | — |  |
+| `new` | Procured and receipted, not yet tagged into the register. The window in which most items are lost before they were ever tracked.  | — | The organisation owns something it cannot yet account for. |
 | `active` | In the register and in stock. Held by the organisation, not by a person. | — |  |
-| `issued` | In a named person's custody. | — |  |
+| `issued` | In a named person's custody. | — | A recovery obligation now exists and has a counterparty. |
 | `overdue` | Past its expected return with no return recorded. | `days_since(commitment.due_at) > 0` |  |
-| `at_risk` | Custody claim is stale or the custodian has stopped responding. Distinct from overdue — an item can be within its loan period and already unrecoverable.  | `derived.engagement <= 0.3` |  |
+| `at_risk` | The custody claim is stale or the custodian has stopped responding. Distinct from overdue: an item can be well within its loan period and already unrecoverable.  | `derived.engagement <= 0.3` |  |
 | `returned` | Physically back, condition checked, custody edge cleared. | — |  |
 | `disposed` | Left the organisation deliberately, with evidence. | — |  |
-| `archived` | Register row retained for audit after disposal. Never delete the row; the row is the evidence that disposal was controlled. | — |  |
+| `archived` | Register row retained for audit after disposal. Never delete the row; the row is the evidence that disposal was controlled.  | — |  |
 
 
-## Inference patterns — 4 executable, 6 blocked
+## Inference patterns — 5 executable, 9 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `ast.return_commitment_past_due` | deterministic | `exists: commitment.action` AND `days_since(commitment.due_at) > 0` | 8500 bp → `recovery_state` | A return was promised in a thread and the promised date has passed. |  |
-| `ast.orphaned_register_row` | deterministic | `edge_count = 0` | 9000 bp → `custodian_known` | A register row with no person attached to it. Nobody holds this; nobody is chasing it. |  |
-| `ast.recovery_chase_unanswered` | heuristic | `thread.ball_in_court = them` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 7}` | 7000 bp → `recovery_state` | The ball has sat with the custodian for several multiples of their normal reply time. |  |
-| `ast.custodian_thread_gone_quiet` | heuristic | `derived.engagement <= 0.3` AND `exists: commitment.due_at` | 6000 bp → `custody_verified` | Two-way contact with the custodian has collapsed while a return obligation is open. |  |
+| `ast.return_commitment_past_due` | deterministic | `exists: commitment.action` AND `days_since(commitment.due_at) > 0` | 8500 bp → `recovery_state` | A return was promised in a thread and the promised date has passed. | The item arrived in the post yesterday and nobody closed the commitment. Returns are recorded in a spreadsheet or a helpdesk queue, never as a typed event, so the closing half of the cycle is invisible and this pattern will keep firing on items already back on the shelf. That is the single largest source of a wrong nudge here.  |
+| `ast.orphaned_register_row` | deterministic | `edge_count = 0` | 9000 bp → `custodian_known` | A register row with no person attached to it: nobody holds this and nobody is chasing it. | A newly created row for stock that has genuinely not been issued yet. Distinguishing an in-stock item from an abandoned one needs asset.custodian, which does not exist — so this fires correctly on the record and sometimes wrongly on the world.  |
+| `ast.recovery_chase_unanswered` | heuristic | `thread.ball_in_court = them` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 7}` | 7000 bp → `recovery_state` | The ball has sat with the custodian for several multiples of their normal reply time. | Annual leave, sick leave or a corporate address disabled on the last working day. The third case is the dangerous one: the chase is being sent into a mailbox nobody will ever open, and the silence reads identically to being ignored.  |
+| `ast.custodian_thread_gone_quiet` | heuristic | `derived.engagement <= 0.3` AND `exists: commitment.due_at` | 6000 bp → `custody_verified` | Two-way contact with the custodian has collapsed while a return obligation is open. | Silence is entirely compatible with a fortnight in Spain. It is only worth acting on because the alternative reading — the custodian has left and nobody told the register — is the expensive one, and the cheap containment step (remote wipe) is reversible.  |
+| `ast.recovery_stalled_with_nobody_waiting` | heuristic | `exists: commitment.action` AND `thread.ball_in_court = nobody` | 6800 bp → `recovery_owner` | A return obligation is open and nobody is waiting on anybody: the chase has stopped. | The item came back and the thread closed naturally. Without asset_returned this cannot be distinguished from abandonment — which is the point: the two look identical from here, and only one of them is fine.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -106,11 +133,14 @@ Initial `new`
 | Pattern | Kind | Needs | Would yield | Statement |
 |---|---|---|---|---|
 | `ast.issued_and_never_returned` | deterministic | `asset.due_back_at` (fact_path), `asset_returned` (obs_kind) | 9500 bp | The expected return date has passed with no return observation against the item. |
-| `ast.custodian_left_still_holding` | deterministic | `leaver_confirmed` (obs_kind), `asset.custodian` (fact_path) | 9800 bp | The custodian's departure has been confirmed and the custody edge is still open. |
-| `ast.issued_without_signed_acceptance` | deterministic | `asset_issued` (obs_kind), `document_signed` (obs_kind) | 9000 bp | An issue event exists with no corresponding signature. |
+| `ast.custodian_left_still_holding` | deterministic | `leaver_confirmed` (obs_kind), `asset.custodian` (fact_path) | 9800 bp | The custodian's departure is confirmed and the custody edge is still open. |
+| `ast.issued_without_signed_acceptance` | deterministic | `asset_issued` (obs_kind), `document_signed` (obs_kind) | 9000 bp | An issue event exists with no corresponding signature against it. |
+| `ast.lease_return_window_opening` | deterministic | `contract.end_at` (fact_path), `contract.notice_period_days` (fact_path) | 9400 bp | A leased item's contractual return date is inside the notice window. |
 | `ast.register_row_never_reconciled` | heuristic | `asset.last_verified_at` (fact_path) | 8000 bp | No verification of any kind since the row was created. |
 | `ast.device_stopped_checking_in` | heuristic | `asset.last_seen_at` (fact_path) | 7500 bp | An endpoint-managed device has not contacted the estate in weeks while still recorded as issued. |
 | `ast.pool_item_held_beyond_the_pool_window` | heuristic | `asset.issued_at` (fact_path), `derived.pool_loan_duration` (derived) | 6500 bp | A shared-pool item has been out with one person far longer than a pool loan lasts. |
+| `ast.licence_seat_still_billing_after_return` | heuristic | `asset_returned` (obs_kind), `access_revoked` (obs_kind) | 8200 bp | The hardware came back and the software seat attached to it is still active. |
+| `ast.contractor_holding_with_no_leaver_route` | heuristic | `contract.end_at` (fact_path), `asset.custodian` (fact_path) | 7000 bp | The holder is engaged through a third party, so no employment departure event will ever fire. |
 
 
 ## Decision factors
@@ -118,61 +148,166 @@ Initial `new`
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
 | custody_certainty | 2500 bp | increases | `custodian_known`, `custody_verified`, `acceptance_signed`, `custodian_ref` |
-| recovery_urgency | 2000 bp | increases | `due_back_at`, `recovery_state`, `recovery_attempts`, `recovery_ball_in_court`, `last_custodian_contact_at` |
-| data_risk | 2000 bp | increases | `data_bearing`, `contains_personal_data`, `wipe_certificate_ref` |
+| recovery_urgency | 2000 bp | increases | `due_back_at`, `days_past_due`, `recovery_state`, `recovery_attempts`, `recovery_ball_in_court`, `last_custodian_contact_at` |
+| data_risk | 2000 bp | increases | `data_bearing`, `contains_personal_data`, `wipe_certificate_ref`, `data_exposure_risk` |
 | asset_value | 1500 bp | increases | `acquisition_cost`, `net_book_value`, `criticality` |
-| verification_recency | 1200 bp | context | `last_verified_at`, `verification_method`, `reconciliation_variance` |
+| verification_recency | 1200 bp | context | `last_verified_at`, `verification_age_days`, `verification_method`, `reconciliation_variance` |
 | contractual_exposure | 800 bp | increases | `ownership_type`, `licences_attached` |
+
+
+## Preconditions
+
+- **`ast.tagged_before_issue`** The item exists as a tagged register row before it is placed in anybody's hands. _(unmet → Block the issue. An untagged item issued today is an item that will never be recovered, because there is no row for the recovery to attach to. This is a block, not a degrade — the cost of holding a joiner's laptop for an hour is trivial against the cost of an untracked device in the field.
+)_
+- **`ast.custodian_is_a_named_individual`** Custody resolves to one person, not to a team, a role or a shared mailbox. _(unmet → Block. Route to the line manager to name an individual. A recovery is a conversation and a group cannot have one.
+)_
+- **`ast.expected_return_is_set`** due_back_at carries a value, even where the honest value is the end of employment. _(unmet → Degrade, and flag. The item may issue, but it enters the register as an open-ended loan and must be reported as such — an open-ended loan is not a compliant row, it is an invisible one.
+)_
+- **`ast.recovery_route_exists`** A contact route that survives the corporate account being disabled has been captured against the custodian.
+ _(unmet → Degrade to a manager-mediated chase. Do not send a recovery contact into a disabled mailbox and record it as an attempt; that is the most common way recovery silently fails while the recovery_attempts counter rises.
+)_
+- **`ast.ownership_terms_known`** For a non-owned item, the governing lease or supply contract is resolved. _(unmet → Degrade, and treat the return date as externally set and unknown, which is a higher risk posture than internally set and known. Never assume `owned`.
+)_
+- **`ast.disposal_evidence_available`** For a data-bearing item, a wipe or destruction certificate can be obtained before disposal. _(unmet → Block the disposal. A device wiped without a certificate was not wiped.)_
 
 
 ## Constraints
 
-- **`ast.no_disposal_without_wipe_evidence`** A data_bearing asset cannot be disposed ofwithout an attached wipe or destruction certificate.
-- **`ast.leased_return_date_is_external`** A leased asset's return date is set by the lessorand cannot be rescheduled by internal prioritisation. Missing it is a contractual breach with a defined penalty.
-- **`ast.payroll_deduction_needs_a_clause`** The cost of an unreturned item may only bededucted from final pay where the employment contract or a signed acceptance permits it. Most organisations discover this at the moment they need it.
-- **`ast.custodian_must_be_an_individual`** Custody cannot be assigned to a team, a roleor a shared mailbox.
-- **`ast.register_row_survives_disposal`** A register row is archived, never deleted. Therow is the evidence that disposal was controlled.
-- **`ast.recovery_contact_must_respect_leaver_status`** Chasing a former employee througha disabled corporate address achieves nothing and is the most common reason recovery silently fails; a personal contact route must be captured before the last working day. _(soft)_
+- **`ast.no_disposal_without_wipe_evidence`** A data-bearing asset cannot be disposed of without an attached wipe or destruction certificate.
+- **`ast.leased_return_date_is_external`** A leased asset's return date is set by the lessor and cannot be rescheduled by internal prioritisation.
+- **`ast.payroll_deduction_needs_a_clause`** The cost of an unreturned item may only be deducted from final pay where the employment contract or a signed acceptance permits it.
+- **`ast.custodian_must_be_an_individual`** Custody cannot be assigned to a team, a role or a shared mailbox.
+- **`ast.register_row_survives_disposal`** A register row is archived, never deleted.
+- **`ast.recovery_contact_must_respect_leaver_status`** A recovery contact must use a route that still reaches the person. _(soft)_
+- **`ast.no_reissue_before_wipe`** A returned data-bearing item cannot be reissued before erasure is evidenced.
 
 
 ## Business rules
 
 - **`ast.no_issue_without_named_custodian`** An item may not move to `issued` without a named individual custodian. A team, a department or a role is not a custodian.
+
+- **`ast.every_issue_sets_an_expected_return`** due_back_at must be populated at issue, even where the honest answer is "end of employment". A null expected return means nothing can ever become overdue, which is how registers achieve a hundred per cent compliance rate while losing a third of their fleet.
+
 - **`ast.no_issue_without_signed_acceptance`** An issue without a signed acceptance is recorded but not enforceable. An issue log with no signatures is a list, not a register, and it will not survive its first dispute.
 
-- **`ast.every_issue_sets_an_expected_return`** due_back_at must be populated at issue, even if the honest answer is "end of employment". A null expected return means nothing can ever become overdue, which is how registers achieve a 100% compliance rate while losing a third of their fleet.
-
-- **`ast.leaver_triggers_recovery`** Confirmation that the custodian is leaving must open a recovery on every item issued to them, before their last working day, not after.
-- **`ast.data_bearing_disposal_requires_certificate`** A data_bearing item may not move to `disposed` without a wipe or destruction certificate attached.
+- **`ast.leaver_triggers_recovery`** Confirmation that the custodian is leaving must open a recovery on every item issued to them before their last working day, not after.
+ — _Recovery probability falls off a cliff at the last working day, not at the due date. Every day of the notice period spent is a day of leverage spent.
+_
+- **`ast.data_bearing_disposal_requires_certificate`** A data-bearing item may not move to `disposed` without a wipe or destruction certificate attached.
 - **`ast.write_off_requires_approval`** An unrecovered item may only be written off with a recorded approval at or above the net book value threshold. Silent write-off destroys the only signal that recovery is failing.
+
 - **`ast.stale_verification_is_not_presence`** A row not verified within the register's verification window records a belief, not a location, and must not be counted as evidenced in a reconciliation.
 
 - **`ast.recovery_must_have_a_named_owner`** An open recovery with no recovery_owner is unowned and will not progress. Everyone assumes IT; IT assumes HR; HR assumes the line manager.
+
+- **`ast.containment_precedes_recovery_on_data_bearing_items`** Where a data-bearing item is past due and the custodian is uncontactable, the remote wipe is taken before the chase continues. Data exposure is contained in minutes; hardware recovery takes weeks and often never completes.
+
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **Kit may be issued to a joiner before the signed acceptance is returned, provided the signature is obtained within five working days and the row is flagged until it is.
+** — A control that cannot be bent on a joiner's first morning gets bypassed permanently rather than temporarily — the laptop goes out anyway and the register never hears about it. The five-day window is what keeps the exception an exception rather than a new default.
+ _(overrides ast.no_issue_without_signed_acceptance)_
+- **Recovery contact is suspended, not closed, during bereavement, serious illness or a live grievance or disciplinary process.
+** — An automated chase into a bereavement is the single fastest way to destroy the credibility of the whole asset programme, and credibility is what makes every other recovery work. The obligation survives; the contact pauses, with a review date, and containment steps that do not involve the person (wipe, licence reclaim) still proceed.
+ _(overrides ast.recovery_must_have_a_named_owner, ast.leaver_triggers_recovery)_
+- **A non-data-bearing, non-access item below the de minimis threshold may be closed to loss without a full approval cycle, on a periodic batch approval instead.
+** — Chasing a £15 headset costs more than the headset in administrator time. The exception is dangerous only if the two exclusions are dropped: a £40 access card and a £30 USB key are both below any sensible threshold and neither may ever be closed this way.
+ _(overrides ast.write_off_requires_approval)_
+- **Customer-supplied equipment does not enter stock on return; it goes back to the customer under the terms of their contract, with a receipt from them.
+** — Treating it as ours to redeploy is a contractual breach and, where it is data-bearing, a processor obligation. The register row is still archived — but the disposal_method is return_to_lessor, not resale, and the evidence has to come from outside the organisation.
+ _(overrides ast.register_row_survives_disposal)_
+- **Where the custodian is engaged through a third party, recovery is triggered by the engagement end date and enforced against the supplier, not by an HR leaver event.
+** — No leaver event will ever fire for a contractor, so an HR-triggered process is structurally blind to a population that routinely holds laptops, badges and system access. The gap between the HRIS population and the equipment population is never reconciled anywhere.
+ _(overrides ast.leaver_triggers_recovery)_
+- **For a reported theft, recovery stops at wipe, insurance claim and crime reference; the chase is not continued against the custodian.
+** — Continuing to chase a victim reads as an accusation, and the balance of probability has already moved. What must not stop is the data-incident assessment, which is a separate obligation with a separate clock.
+ _(overrides ast.recovery_must_have_a_named_owner)_
+
+
+## Best practices
+
+- **Apply the asset tag and open the register row at goods receipt, before the item reaches a desk.** — The window between delivery and issue is where items disappear without ever having existed administratively. Nothing that was never tagged can ever be reported missing.
+
+- **Populate due_back_at at issue, using end of employment where nothing better is known.** — A null return date makes overdue unreachable, and a register that can never report an overdue item cannot report the only failure it exists to catch. "Unknown" is a worse answer than "when they leave" because it produces no clock at all.
+
+- **Capture a personal email address and postal address as part of the offboarding checklist.** — Every recovery mechanism the organisation has runs through a mailbox that is disabled on the last working day. Ninety seconds during the exit conversation is the difference between a recoverable item and a write-off, and it cannot be done retrospectively.
+
+- **On an unreachable custodian holding a data-bearing device, wipe first and continue the chase afterwards.** — Data exposure is contained in minutes and hardware recovery takes weeks. Doing them in the other order — which is the norm, because the wipe feels final — means the exposure runs for the entire length of a failing chase.
+
+- **Pair asset recovery and access revocation into a single offboarding task with a single owner.** — Split across IT and HR, each assumes the other has done the half they cannot see. The device is visible and gets recovered; the entitlement is invisible and does not.
+
+- **Run continuous cycle counting weighted by data risk and criticality rather than an annual full count.
+** — A full count is scheduled, deferred, and eventually done badly by whoever was free. A standing sample of the highest-risk categories produces a variance figure every month and is the only thing that keeps last_verified_at meaningful.
+
+- **Assign a single named recovery owner at the moment a recovery opens, not when it stalls.** — Unowned recovery is the default failure and it is invisible: no clock runs, nobody is annoyed, and the item quietly ages out. The owner does not need authority, only a name.
+
+- **Attach a prepaid return label or a booked collection to every chase.** — Most non-returns are friction, not intent. A chase that asks someone to find a box, print a label and visit a post office converts a willing custodian into a non-responder.
+
+
+
+## Anti-patterns
+
+- **A list of what was bought, presented as a record of what is held.** — tempting because Procurement data is easy to obtain and complete; custody data is hard to obtain and always partial. The finance export looks authoritative, so it becomes the register, and it contains no custodian, no due date and no verification.
+ Instead: Keep the procurement export as an input and require the four custody fields — holder, issue date, expected return, last verified — before a row counts as a register row.
+
+- **Chasing the most expensive items first.** — tempting because Net book value is the only ranking field most registers actually populate, and it produces a defensible-looking priority list in one sort.
+ Instead: Rank on data_exposure_risk and criticality first, value third.
+- **Offboarding marked complete because the checklist was completed, not because the item came back.** — tempting because The checklist is what the process owner can see and measure, and closing it produces the completion metric everyone is judged on. Verification is somebody else's system.
+ Instead: Make offboarding completion conditional on the custody edge closing — asset returned or formally written off — not on a tick.
+
+- **A recovery that is chased indefinitely and never closed either way.** — tempting because Closing it as recovered is false and closing it as written off requires an approval and an admission. Sending another chaser requires neither, so the chase continues forever at zero cost to everyone except the accuracy of the register.
+ Instead: Cap recovery_attempts. On the cap, force one of three outcomes: escalate, write off with approval, or close as recovered with evidence. No fourth option.
+
+- **A shared-pool item issued once and never returned to the pool, because pool loans have no due date.** — tempting because Pool items are deliberately exempted from the due-date discipline to keep them easy to borrow, which is a reasonable trade until nobody notices that the pool has emptied.
+ Instead: Set due_back_at to the pool window at issue, and treat a statistical outlier against the learned pool duration as overdue.
+
+- **Laptop, dock, charger and monitor tracked as a single register row.** — tempting because They were issued together on one form and creating four rows quadruples the administration for what feels like the same event.
+ Instead: One row per recoverable unit; bundle only for items that genuinely cannot be separated.
+
+- **Recovery chasers sent to the corporate address of someone who left last month.** — tempting because The recovery process reads the custodian record, the custodian record holds the work email, and the automation has no way to know the mailbox is dark. Every chase is logged as sent.
+ Instead: Capture a personal route before the last working day; block automated chases on a leaver whose corporate route is disabled and route to the manager instead.
+
+
+
+## Dependencies
+
+- `admin.obj.core.employee_record` — requires (hard)
+- `admin.obj.core.document` — requires (hard)
+- `admin.obj.core.policy` — requires (hard)
+- `admin.obj.core.contract` — requires (soft)
+- `admin.obj.core.commitment` — derived_from (soft)
+- `admin.obj.core.access_right` — enriches (soft)
+- `admin.obj.core.budget_line` — enriches (soft)
+- `admin.obj.core.facility` — enriches (soft)
+- `admin.obj.core.escalation` — enriches (soft)
 
 
 ## Inputs
 
 - **register** — the asset register itself — tag, category, custodian, dates
 - **signed_form** — issue acceptance and return receipt
-- **hris** — joiner and leaver dates, manager, location
-- **telemetry** — endpoint last check-in, device location, encryption state
+- **hris** — joiner and leaver dates, manager, work location
+- **telemetry** — endpoint last check-in, device identity, encryption state
 - **erp** — purchase, capitalisation, net book value, disposal posting
 - **email** — recovery chases and return promises
 - **email** — last contact with the custodian
 - **derived** — collapse in two-way contact during an open recovery
 - **manual_entry** — stock count results and condition notes
-- **contract** — lease return dates and end-of-term penalties
+- **contract** — lease return dates, notice periods and end-of-term penalties
+- **attestation** — custodian confirms they still hold it
 
 
 ## Outputs
 
-- **`custody_confidence_bp`** How sure we are the stated custodian actuallyholds the item. → L4.reasoning_unit, L4.decision_maker
-- **`recovery_priority_bp`** Blended urgency from data risk, value andcontactability. Not a decision — the input to one. → L4.reasoning_unit
-- **`unrecovered_exposure`** Net book value plus attached licence spendon items past due. The number that gets an asset programme funded. → L4.reasoning_unit, L6.learning_unit
-- **`recovery_plan`** Ordered chase, escalation and write-off steps witha named owner at each step. → L5.execution_planning
-- **`custodian_reachability`** Best channel and timing for the chase,including the personal address captured at offboarding. → L5.2.channel_planner
-- **`reconciliation_variance`** Register count minus evidenced countby category. → L4.reasoning_unit, L6.learning_unit
-- **`data_breach_candidate`** True when a data_bearing item holding personaldata is past due with an uncontactable custodian. → L4.decision_maker
+- **`custody_confidence_bp`** How sure we are the stated custodian actually holds the item. → L4.reasoning_unit, L4.decision_maker
+- **`recovery_priority_bp`** Blended urgency from data risk, criticality, value and contactability. Not a decision — the input to one. → L4.reasoning_unit
+- **`unrecovered_exposure`** Net book value plus attached licence spend on items past due. The number that gets an asset programme funded. → L4.reasoning_unit, L6.learning_unit
+- **`recovery_plan`** Ordered chase, escalation and write-off steps with a named owner at each step. → L5.execution_planning
+- **`custodian_reachability`** Best channel and timing for the chase, including the personal address captured before the corporate account was disabled. → L5.2.channel_planner
+- **`reconciliation_variance`** Register count minus evidenced count by category. → L4.reasoning_unit, L6.learning_unit
+- **`data_breach_candidate`** True when a data-bearing item holding personal data is past due with an uncontactable custodian. A containment decision, not an inventory one. → L4.decision_maker, L5.communication_planning
 
 
 ## Events
@@ -180,61 +315,79 @@ Initial `new`
 - **`ast.issued`** Asset Issued
 - **`ast.return_due`** Return Due
 - **`ast.recovery_overdue`** Recovery Overdue
-- **`ast.custody_disputed`** Custody Disputed
-- **`ast.custodian_unreachable`** Custodian Unreachable
+- **`ast.custody_disputed`** Custody Disputed — invalidates custody_verified, custodian_known
+- **`ast.custodian_unreachable`** Custodian Unreachable — invalidates custody_verified
 - **`ast.returned`** Asset Returned
 - **`ast.written_off`** Asset Written Off
-- **`ast.variance_detected`** Reconciliation Variance Detected
+- **`ast.variance_detected`** Reconciliation Variance Detected — invalidates custody_verified
 
 
 ## Actions
 
-- **Issue the asset** (human) — Create the custody edge, capture thesignature, and set due_back_at even when the honest value is end of employment.
-- **Capture signed acceptance** (agent) — Turns an assertioninto an obligation. Thirty seconds at issue; the whole argument at recovery.
-- **Chase the return** (agent) — Send the recovery contact with a prepaid return route attached. Chases without a return mechanism are requests, not recoveries.
+- **Issue the asset** (human) — Create the custody edge, capture the signature, and set due_back_at even when the honest value is end of employment.
+- **Capture signed acceptance** (agent) — Turns an assertion into an obligation. Thirty seconds at issue; the whole argument at recovery.
+- **Chase the return** (agent) — Send the recovery contact with a prepaid return route attached. A chase without a return mechanism is a request, not a recovery.
 - **Escalate to the line manager** (human) — The manager is the only person with residual influence over a departed employee, and only for a few weeks.
-- **Verify custody** (agent) — Request attestation or readthe endpoint check-in. Converts a belief into evidence at near-zero cost.
-- **Remote wipe the device** (system) — Contains the data exposurewithout recovering the hardware. The correct first move on an unreachable custodian and routinely done last.
-- **Reclaim attached licences** (system) — Recovers the recurringcost even when the hardware never comes back.
-- **Propose write-off** (human) — Ends the chase deliberatelyand with an approval, rather than by everyone forgetting.
-- **Schedule a stock count** (human) — The only thingthat produces reconciliation_variance. Registers that are never counted are never wrong.
+- **Verify custody** (agent) — Request attestation or read the endpoint check-in. Converts a belief into evidence at near-zero cost.
+- **Remote wipe the device** (system) — Contains the data exposure without recovering the hardware. The correct first move on an unreachable custodian, and routinely done last.
+- **Reclaim attached licences** (system) — Recovers the recurring cost even when the hardware never comes back.
+- **Propose write-off** (human) — Ends the chase deliberately and with an approval, rather than by everyone forgetting.
+- **Schedule a stock count** (human) — The only thing that produces reconciliation_variance. Registers that are never counted are never wrong.
+- **Capture a personal contact route** (agent) — Taken before the last working day, it is the difference between a recoverable item and a written-off one. Taken after, it cannot be taken at all.
 
 
 ## Evidence
 
-- **signed_form** · 10000 bp — A signed acceptance or return receipt. Nothingoutranks it, and it is the only artefact that survives a dispute.
-- **telemetry** · 8500 bp — Endpoint check-in with device identity. Machine-generated,hard to fake, and available for free to anyone already running MDM.
-- **register** · 7000 bp — The register row itself. Strong at issue and decayingcontinuously afterwards — somebody typed it once.
-- **erp** · 6500 bp — Purchase and capitalisation records. Proves the itemexists and what it cost; says nothing about where it is.
-- **attestation** · 6000 bp — The custodian confirms they still hold it.Cheap, and exactly as reliable as the person answering.
-- **email** · 5500 bp — A written return promise. Creates an obligation;does not create a return.
-- **manual_entry** · 5000 bp — Stock-count notes. Only as good as the count,and counts are usually done by whoever was free.
-- **derived** · 3500 bp — Inferred from contact collapse. Corroborating only— never grounds for a write-off on its own.
+- **signed_form** · 10000 bp — A signed acceptance or return receipt. Nothing outranks it, and it is the only artefact that survives a dispute.
+- **telemetry** · 8500 bp — Endpoint check-in with device identity. Machine-generated, hard to fake, and already paid for by anyone running MDM.
+- **register** · 7000 bp — The register row itself. Strong at issue and decaying continuously afterwards — somebody typed it once.
+- **erp** · 6500 bp — Purchase and capitalisation records. Proves the item exists and what it cost; says nothing about where it is.
+- **attestation** · 6000 bp — The custodian confirms they still hold it. Cheap, and exactly as reliable as the person answering.
+- **contract** · 9000 bp — Lease terms and return obligations. Externally authored, therefore not open to internal reinterpretation.
+- **email** · 5500 bp — A written return promise. Creates an obligation; does not create a return.
+- **manual_entry** · 5000 bp — Stock-count notes. Only as good as the count, and counts are usually done by whoever was free.
+- **derived** · 3500 bp — Inferred from contact collapse. Corroborating only — never grounds for a write-off on its own.
 
 
 ## Metrics
 
-- **register_accuracy** (percent) — Share of rows evidenced at the last count.The headline number and the one that has never been measured in most organisations.
-- **recovery_rate_at_exit** (percent) — Share of items recovered within thirtydays of a leaver's last working day. Falls off a cliff after that and never recovers.
+- **register_accuracy** (percent) — Share of rows evidenced at the last count. The headline number, and one that has never been measured in most organisations.
+- **recovery_rate_at_exit** (percent) — Share of items recovered within thirty days of a leaver's last working day. Falls off a cliff after that and never recovers.
 - **mean_recovery_days** (days) —
-- **unrecovered_value** (currency) — Net book value of items past due with no return.
-- **orphaned_row_share** (percent) — Rows with no attached custodian. The honestmeasure of whether this is a register or a list.
-- **verification_age_p90** (days) — Ninetieth percentile age of last_verified_at.A p90 above a year means the register describes a remembered estate.
-- **signed_acceptance_coverage** (percent) — Share of issued items with a signature.The leading indicator for every recovery dispute the organisation will lose.
+- **unrecovered_value** (currency) — Net book value plus attached licence spend on items past due with no return.
+- **orphaned_row_share** (percent) — Rows with no attached custodian. The honest measure of whether this is a register or a list.
+- **verification_age_p90** (days) — Ninetieth percentile age of last_verified_at. A p90 above a year means the register describes a remembered estate.
+- **signed_acceptance_coverage** (percent) — Share of issued items carrying a signature. The leading indicator for every recovery dispute the organisation is going to lose.
+- **containment_lead_time** (hours) — Hours from custodian-unreachable to remote wipe on a data-bearing item. Usually measured in weeks because containment is attempted after recovery fails, not before.
+
+
+## References
+
+- **ISO/IEC 19770-1 — IT asset management systems** · standard
+- **ISO 55000 — Asset management** · standard
+- **ISO/IEC 27001:2022 Annex A 5.9 (inventory of associated assets) and 5.11 (return of assets)** · standard
+- **NIST SP 800-88 Rev. 1 — Guidelines for Media Sanitization** · standard
+- **ITIL 4 — IT Asset Management practice** · framework
+- **Joiner-Mover-Leaver (JML)** · framework
+- **Chain of custody** · framework
+- **Perpetual inventory and cycle counting** · practitioner
+- **Delegation of Authority matrix** · framework
 
 
 ## Examples
 
-- **Laptop issued to a remote joiner** — data_bearing true, acceptance signed electronicallyat induction, due_back_at set to end_of_employment. Recoverable only if a personal address was captured before the corporate account was disabled.
-- **Access card to a plant room** — criticality critical, acquisition_cost trivial. Value-basedprioritisation will never chase it, and it is the one item on this list that lets a stranger into a hazardous space.
-- **Leased multifunction printer** — ownership_type leased, return date set by the lessor.Missing it triggers an automatic extension at full rate — an external, non-negotiable deadline of exactly the kind this domain is built around.
-- **Pool laptop out for eleven months** — No due_back_at because pool loans have none. Effectivelya permanent issue that nobody ever approved, and invisible to every overdue report.
-- **Machine tool held by a contractor** — Custodian is not an employee, so no leaver eventwill ever fire. Recovery depends on the vendor contract, not on HR.
-- **Monitor returned, docking station not** — Partial return closed as complete becausethe register tracks the bundle as one row. The commonest quiet variance in any office estate.
+- **Laptop issued to a remote joiner** _(typical)_ — data_bearing true, acceptance signed electronically at induction, due_back_at set to end of employment. Recoverable only if a personal address was captured before the corporate account was disabled.
+- **Access card to a plant room** _(edge)_ — criticality critical, acquisition_cost trivial. Value-based prioritisation will never chase it, and it is the one item on this list that lets a stranger into a hazardous space.
+- **Leased multifunction printer** _(edge)_ — ownership_type leased, return date set by the lessor with a notice period before it. Missing the notice triggers automatic extension at full rate — an external, non-negotiable deadline of exactly the kind this domain is built around. The hard drive inside it is data_bearing and is almost never wiped.
+- **Pool laptop out for eleven months** _(edge)_ — No due_back_at, because pool loans have none. Effectively a permanent issue that nobody approved, and invisible to every overdue report.
+- **Machine tool held by an agency contractor** _(edge)_ — Custodian is not an employee, so no leaver event will ever fire. Recovery depends on the supplier contract, not on HR, and nobody owns the join.
+- **Monitor returned, docking station not** _(misclassification)_ — Partial return closed as complete because the register tracks the bundle as one row. The row now reads `returned` and is wrong, silently, forever.
+- **Personal phone with corporate mail on it** _(misclassification)_ — Frequently recorded as an Asset because it holds company data. It is not — the organisation owns nothing and can recover nothing. The correct object is admin.obj.core.access_right over the mail entitlement, revocable in one action.
+- **Software licence seat with no device** _(counterexample)_ — Tracked here only where the seat is genuinely tied to a device. A floating seat is an entitlement, belongs to admin.obj.core.access_right, and is recovered by revocation rather than by collection.
 
 ## Metadata
 
-owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional**
+owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Four of ten patterns are executable today, and all four run on generic thread and commitment primitives rather than on anything asset-shaped — which is the honest state of play. The ranked Layer 1/2 ask this object generates is: (1) asset.due_back_at, without which nothing can ever be overdue; (2) leaver_confirmed, which arrives at HR weeks before it arrives here; (3) asset.last_seen_at from MDM, which is free custody verification the security team already reads for a different purpose; (4) asset_returned, so the closing half of the cycle stops being invisible. Sibling objects employee_record and access_right share the same failure shape and should be reviewed together.
+> Five of thirteen patterns are executable today, and all five run on generic thread and commitment primitives rather than on anything asset-shaped — which is the honest state of play, not a gap in authoring. The ranked Layer 1/2 ask this object generates is: (1) asset.due_back_at, without which nothing can ever be overdue; (2) leaver_confirmed, which reaches HR weeks before it reaches here and is shared with employee_record and access_right; (3) asset.last_seen_at from MDM, free custody verification the security team already reads for a different purpose; (4) asset_returned, so the closing half of the cycle stops being invisible and the overdue report stops over-reporting; (5) contract.end_at and contract.notice_period_days, which are the only route to catching a lease auto-extension before it costs money. Reviewed together with admin.obj.core.employee_record and admin.obj.core.access_right — the three share one failure shape and one missing event.

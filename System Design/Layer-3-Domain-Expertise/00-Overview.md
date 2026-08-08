@@ -1,288 +1,191 @@
-[Folder map](README.md) · [System Design index](../README.md)
+[Folder map](README.md) · [The Four Brains](01-The-Four-Brains.md) · [Domain Compiler](07-Domain-Compiler.md)
 
----
+# Layer 3 — Domain Expertise
 
-# Layer 3 — Domain Expertise (`packs/`)
+Layer 3 is a deterministic expertise-assembly boundary. Layer 2 identifies and qualifies a
+business situation. Layer 3 resolves only the relevant domain knowledge, binds it to the
+situation, adds permitted runtime knowledge, records evidence, and publishes one immutable
+`ExpertisePackage`. Layer 4 alone reasons over that package.
 
-> **Pack = data. Engine = code.**
-> The engine reads this layer; it hardcodes nothing about sales, support, or finance.
-> Adding a domain is adding a manifest — **zero engine change, zero deploy.**
+## Contract
 
-Layer 3 is where *what a business domain means* is written down. Not how to reason — that
-is Layer 4. Not what is true — that is Layer 2. Layer 3 holds the **expertise**: which
-patterns matter, what they are called, what to do about them, how heavily to weigh them,
-and where the floors and ceilings sit.
-
-Every byte of it is content-addressed, versioned, immutable, tenant-scoped, and stamped
-onto every signal it produces — so any decision the system ever made can be replayed
-against the exact configuration that produced it.
-
----
-
-## §0 · At a glance
-
-| | |
-|---|---|
-| **Package** | `genios_engine/packs/` |
-| **Layer number** | 3 |
-| **Size** | 11 files · ~1,650 lines — **almost all of it data** |
-| **Input** | Admin overrides (LVL2), learned nudges from Layer 6 Learning (LVL3) |
-| **Output** | An **effective config** + its snapshot id — what Layer 4 executes |
-| **May import** | `contracts/`, `platform/` |
-| **LLM calls** | Zero |
-| **Shipped packs** | `sales` v1.8.0 (20 rules) · `general` v1.1.0 (5 rules) |
-| **Shipped capabilities** | `sales.deal_cooling` v1 · `sales.deal_cooling_full` v2 · `deal_health` |
-| **Tables** | `pack_registry`, `tenant_packs`, `config_snapshots`, `user_models`, `user_model_proposals` |
-| **Migrations** | `0007_l4_packs.sql`, `0023_user_models.sql`, `0034_l4_learning_authority.sql` |
-
----
-
----
-
-## §1 · What was supposed to be built
-
-### 1.1 The spec
-
-From the layer map:
-
-> **`packs/` — Layer 3 — Domain Expertise.** The **four brains** + capability content,
-> **shipped as data**.
-> *Universal* = pack manifests · *Organization* = org settings/knowledge ·
-> *Behavioral* = user_models · *Adaptive* = calibration + outcomes.
-
-### 1.2 The six requirements this implies
-
-| # | Requirement | Why it is non-negotiable |
+| | Layer 2 -> Layer 3 | Layer 3 -> Layer 4 |
 |---|---|---|
-| 1 | **Domain knowledge must be data, never code** | Adding "admin" or "legal" must not require a deploy or an engine change |
-| 2 | **A published version is immutable** | Historical signals must be replayable *honestly* — the bytes that produced a decision cannot change under it |
-| 3 | **Content addressing** | The snapshot id *is* the config's identity; a key reorder must not change it, and any value change must |
-| 4 | **Four levels of override, with precedence** | Expert baseline → admin override → learned nudge, with pins and absolute guardrails |
-| 5 | **Per-tenant application with zero deploy** | 30 startups, 30 different configurations, one running engine |
-| 6 | **Every signal carries its config snapshot** | Replay resolves snapshot → effective → **byte-identical** signal |
+| Object | `BusinessSituationObject` + `SituationContextSlice` | `ExpertisePackage` |
+| Common envelope | both inputs carry `org_id`, `schema_version`, `trace_id`, `visibility` | BSO envelope is inherited unchanged |
+| Semantic identity | situation id + semantic hash | content-addressed package id + semantic hash |
+| Required content | type, confidence, importance, evidence, entities, relationships, timeline, dependencies, state, metadata | capabilities, objects, four brain slices, bindings, confidence, evidence, brain snapshot |
+| Forbidden | raw graph fetches, unresolved guesses | recommendation, score, decision, action choice |
 
----
+Both contracts are frozen value objects. Visibility is parsed at ingress. Signal ids and source
+trace ids are sorted and unique. Confidence and importance use integer basis points. Unsupported
+schema versions fail closed.
 
----
-
-## §2 · What exists — the inventory
-
-```mermaid
-flowchart TB
-    subgraph B ["The four brains"]
-        b1["**Universal**<br/>pack manifests<br/>sales_v1 · general_v1"]:::u
-        b2["**Organization**<br/>tenant_packs.lvl2_config<br/>+ pins + L1 canon"]:::o
-        b3["**Behavioral**<br/>user_models<br/>voice · policy · red lines"]:::h
-        b4["**Adaptive**<br/>lvl3_config.rule_offsets<br/>+ rule_mutes (from Layer 6 Learning)"]:::a
-    end
-
-    subgraph M ["The machinery"]
-        m1["merge.py<br/>the ONLY producer of<br/>effective config"]:::m
-        m2["snapshot.py<br/>canonical JSON → sha256"]:::m
-        m3["registry.py<br/>register · apply · effective"]:::m
-        m4["wiring.py<br/>which packs exist"]:::m
-    end
-
-    subgraph C ["Native capabilities"]
-        c1["deal_cooling v1<br/>7 units"]:::c
-        c2["deal_cooling_full v2<br/>17 units"]:::c
-        c3["deal_health<br/>signal composition"]:::c
-    end
-
-    b1 --> m1
-    b2 --> m1
-    b4 --> m1
-    m1 --> m2 --> OUT["effective config<br/>+ snapshot_id"]
-    m3 --> m1
-    C -.-> OUT
-    b3 -.-> L5["read by Layer 5/5.2<br/>for voice + policy"]
-
-    classDef u fill:#eef,stroke:#88a
-    classDef o fill:#efe,stroke:#8a8
-    classDef h fill:#fee,stroke:#a88
-    classDef a fill:#ffe,stroke:#aa8
-    classDef m fill:#eee,stroke:#888
-    classDef c fill:#eef7ff,stroke:#68a
-```
-
----
-
----
-
-## §4 · The workflows
-
-### W1 · A pack's lifecycle
-
-```mermaid
-sequenceDiagram
-    participant E as engineer
-    participant W as packs/wiring.py
-    participant R as pack_registry
-    participant A as admin
-    participant T as tenant_packs
-    participant LEARN6 as Layer 6 Learning
-    participant L4 as Layer 4
-
-    E->>W: add manifest to BUILTIN_PACKS
-    W->>R: register() — content-addressed, immutable
-    Note over R: re-registering different bytes<br/>under the same version RAISES
-
-    A->>T: apply_to_tenant(org, pack, version)
-    Note over T: version changed → lvl3_config RESET<br/>authority_revision += 1
-
-    A->>T: lvl2_config overrides + pins
-    LEARN6->>T: write_lvl3_offset(rule, offset)
-    Note over T: rejected if the path is pinned
-
-    L4->>R: effective(org, pack)
-    R->>R: merge → pins → guardrails
-    R->>R: snapshot_id = sha256(canonical)
-    R->>R: persist + read back + verify
-    R-->>L4: (effective, snapshot_id)
-    Note over L4: every signal produced<br/>stamps config_snapshot_id
-```
-
-### W2 · Precedence, resolved for one path
+## Pipeline
 
 ```mermaid
 flowchart TD
-    Q["what is gate.c_min<br/>for org X?"] --> A["LVL1 pack says 60"]
-    A --> B{"LVL2 admin<br/>set it?"}
-    B -- "yes: 40" --> C["candidate = 40"]
-    B -- no --> C2["candidate = 60"]
-    C --> D{"LVL3 learned<br/>nudge?"}
-    C2 --> D
-    D -- "yes: 35" --> E["candidate = 35"]
-    D -- no --> E2["candidate unchanged"]
-    E --> F{"path pinned?"}
-    E2 --> F
-    F -- yes --> G["forced back to LVL2 (40),<br/>else LVL1 (60)"]
-    F -- no --> H["candidate stands"]
-    G --> I{"guardrail:<br/>c_min ≥ 50?"}
-    H --> I
-    I -- violated --> J["**clamped to 50**<br/>+ recorded in<br/>_guardrail_rejections"]
-    I -- ok --> K["effective value"]
+    BSO[BusinessSituationObject] --> C[1 Capability Resolver]
+    C --> O[2 Object Resolver]
+    C --> K[4 Knowledge Retriever]
+    O --> A[5 Context Adapter]
+    K --> BR[3 Brain Resolver]
+    O --> BR
+    BR --> E[6 Evidence Aggregator]
+    A --> E
+    E --> X[7 Expertise Builder]
+    X --> P[8 Expertise Publisher]
+    P --> EP[ExpertisePackage]
 ```
 
-### W3 · Where each brain enters a decision
+The context adapter is embedded where authored predicates and object bindings are evaluated; it
+adapts only the supplied BSO and relevant context slice. It never reads the graph behind Layer 2.
 
-```mermaid
-flowchart LR
-    U["Universal<br/>pack manifest"] --> M["merge"]
-    O["Organization<br/>lvl2 + pins"] --> M
-    AD["Adaptive<br/>lvl3 offsets"] --> M
-    M --> EFF["effective config"]
-    EFF --> L4["Layer 4<br/>rules · scoring · gate"]
-    L4 --> SIG["signal<br/>+ config_snapshot_id"]
-    SIG --> L5["Layer 5<br/>execution block:<br/>escalation · reminders"]
-    B["Behavioral<br/>user_models"] --> L5
-    B --> D52["Layer 5.2<br/>voice · channel · red lines"]
-    L5 --> D52
-    D52 --> OUT["the person"]
-    OUT -.-> LEARN6["Layer 6 Learning"] -.-> AD
+## The source model
+
+The authored Expert Brain is global by concept and referenced by use:
+
+```text
+Domain
+  models + offerings
+  capabilities
+    capability.yaml
+    objects.yaml                 references, not copies
+    knowledge.yaml               references, not copies
+    situations/                  the routing entry points
+  objects/
+    core/                        reusable domain concepts
+    <capability>/                capability-owned concepts
+  playbooks + rules + heuristics + mental-models + decision-frameworks
+  registry/situation-capability-map.yaml
 ```
 
----
+An object is defined once. Capabilities and situations declare which objects and knowledge
+artifacts they require. A business situation activates a focused slice, not an entire domain.
+Inference patterns remain inside the object because they answer how that specific concept is
+recognized from evidence.
 
----
+## Authoring and runtime are separate
 
-## §5 · Strategies — the decisions behind the code
+```text
+Authoring Engine
+  YAML schemas + authoring tools + validation + generated registries
+        |
+        v
+Expert Brain catalog snapshot
+        |
+        +----------------------+
+                               v
+Runtime Engine          Organization / Behavior / Adaptive snapshots
+                               |
+                               v
+Domain Compiler ----------------+
+        |
+        v
+ExpertisePackage
+```
 
-### S1 · Data, not code — and the proof is a shipped refactor
+- Expert Brain knowledge is written by domain experts and versioned in Git.
+- Organization knowledge is discovered or explicitly configured for one tenant.
+- Behavior knowledge is observed about operating patterns and communication preferences.
+- Adaptive knowledge is learned from governed outcomes.
+- The compiler reads all four; it writes none of them.
 
-Moving four rules from `sales_v1` to `general_v1` in version 1.4.0 fixed a real
-mislabelling bug **with zero engine change**. That is the architecture's own regression
-test: if adding or moving expertise ever requires touching `reason/`, the boundary has
-leaked.
+## Routing
 
-### S2 · Immutable versions, or replay is a lie
+Routing starts from the generated `situation-capability-map.yaml`, keyed by Layer 2 situation type.
+That reverse index provides bounded candidates. Authored situation predicates then narrow those
+candidates using only facts already present in the BSO.
 
-A published `(pack_id, version)` can never change bytes. Without it, *"why did the system
-say that in March?"* is unanswerable, because the config that produced it may have been
-edited in place.
+The resolver:
 
-### S3 · Content addressing over version strings
+1. honors explicit domain hints or searches the three registered domains;
+2. rejects unknown domains;
+3. distinguishes predicate `false` from missing context;
+4. fails with `SituationContextIncomplete` rather than guessing when required context is missing;
+5. skips explicitly marked capability stubs and reports them in package metadata;
+6. unions required and optional object manifests, then applies `never_load`;
+7. enforces maximum capability and object expansion;
+8. verifies that generated registries have not drifted from authored situations.
 
-A version string is a promise; a content hash is a fact. The snapshot id is derived from
-the **effective** bytes — including runtime overlays — so a signal's provenance cannot drift
-from what actually ran.
+## Knowledge loading and binding
 
-### S4 · Precedence is explicit, and violations are visible
+Required objects fail closed when missing. Optional objects remain visible in metadata and lower
+package confidence. Explicit model and offering ids from BSO metadata select overlays; the compiler
+does not infer a business model from prose. Capability knowledge manifests resolve playbooks,
+rules, heuristics, mental models, and decision frameworks.
 
-Three levels, then pins, then guardrails, in that order, every time. A clamped value is
-**recorded**, not silently swallowed. An operator who cannot see that their setting was
-refused will keep setting it.
+Object-to-entity bindings use authored type identity and the entities already carried by the BSO.
+Unbound objects remain knowledge objects; a binding is never fabricated.
 
-### S5 · Learned tuning has exactly one door, and it can be locked
+## Runtime brains and authority
 
-`write_lvl3_offset` is the only path. It is one atomic statement, it increments
-`authority_revision`, and the pin check lives in the `WHERE` clause — so the guard cannot be
-bypassed by a race or forgotten by a caller.
+Runtime entries are tenant-scoped and included only when relevant to a selected capability,
+object, situation, explicit brain subject key, or BSO entity. The package visibility can never be
+wider than the runtime evidence visibility. Incompatible entries are excluded and receipted in
+metadata.
 
-### S6 · Version change resets learning
+There are two independent axes:
 
-A correction learned against v1.5's arithmetic is not valid for v1.8's. Discarding LVL3 on
-version change is the conservative choice, and the alternative — silently carrying it — is
-the kind of error nobody would ever trace.
-
-### S7 · Never re-enable what an admin disabled
-
-`ensure_default` applies only when a pack row is **absent**. A background run must never
-undo a human's configuration decision.
-
-### S8 · Optional units degrade confidence; required units block
-
-Capability v2's `_REQUIRED` set encodes a product principle: *a situation that cannot feed
-one unit should lower the confidence of the answer, not withhold advice the buyer is
-actively waiting for.*
-
-### S9 · Integers everywhere
-
-Basis points, not floats. Every threshold, weight and multiplier is an integer, so a
-decision is bit-for-bit reproducible on replay.
-
----
-
----
-
-## §7 · The map
-
-### 7.1 Files
-
-| Concern | File |
+| Axis | Precedence |
 |---|---|
-| Universal brain — manifests | `sales_v1.py`, `general_v1.py` |
-| Merge engine | `merge.py` |
-| Content addressing | `snapshot.py` |
-| Registry | `registry.py` |
-| Wiring & defaults | `wiring.py` |
-| Native capabilities | `capabilities/deal_cooling.py`, `capabilities/deal_cooling_v2.py`, `capabilities/deal_health.py` |
-| Capability contracts | `contracts/reasoning.py` |
+| Preference | Expert < Behavior < Organization < Adaptive |
+| Permission | Adaptive < Behavior < Expert < Organization |
 
-### 7.2 Tables
+This is not a blind overwrite merge. Each brain remains a separate package section. Runtime entries
+compete only when they declare the same `conflict_key`; preference conflicts resolve Adaptive over
+Organization over Behavior, while same-rank ambiguity fails closed. Behavior and Adaptive entries
+are rejected if they attempt to define permission, policy, compliance, security, retention,
+approval, constraint, or equivalent authority.
 
-`pack_registry` · `tenant_packs` · `config_snapshots` · `user_models` ·
-`user_model_proposals` · `signals.config_snapshot_id` / `.pack_id` / `.pack_version`
+## Determinism and replay
 
-### 7.3 Endpoints
+For the same BSO, authored Git snapshot, and runtime-brain rows:
 
-| Endpoint | Purpose |
+- selections are sorted;
+- YAML floats are normalized before hashing;
+- catalog documents and brain values receive semantic content hashes;
+- the combined brain snapshot is content-addressed;
+- the context-slice hash and graph/selector versions are pinned in package metadata;
+- the package id is derived from the complete package body;
+- publisher retries return the byte-identical stored package;
+- attempting to reuse an id for different bytes fails;
+- PostgreSQL rejects package updates.
+
+The output is therefore reproducible without relying on a version label alone.
+
+## Failure and degradation policy
+
+| Condition | Result |
 |---|---|
-| `GET /v1/expertise/domains` | which packs exist, and which are active for this tenant |
-| `GET /v1/expertise/learned` | the LVL3 nudges + auto-mutes this tenant has accrued |
-| `POST /v1/expertise/request` | *customers request domains, never author them* |
-| `GET /v1/usermodel/{user}` · `POST /v1/usermodel/seed` · `PATCH .../field` | the Behavioral brain |
-| `GET /v1/usermodel/{user}/proposals` · `POST /v1/usermodel/proposals/{id}/decide` | learned persona changes, human-approved |
+| No route for a situation type | fail closed |
+| Authored predicate needs absent BSO context | fail closed, name the missing path |
+| Registry points to missing situation/capability | authoring-integrity failure |
+| All selected capabilities are stubs | fail closed |
+| Required object absent | fail closed |
+| Optional object absent | package continues, confidence reduced, receipt emitted |
+| Referenced optional artifact absent | package continues, receipt emitted |
+| Runtime row belongs to another tenant | excluded |
+| Runtime visibility is narrower than package audience | excluded, receipt emitted |
+| Behavior/Adaptive attempts permission authority | fail closed |
+| Package id already stores different bytes | fail closed |
 
-### 7.4 Scorecard against §1
+The compiler never compensates for missing knowledge by asking an LLM to guess.
 
-| Required | Status |
-|---|---|
-| Domain knowledge is data, never code | ✅ proven by the 1.4.0 rule move |
-| Published versions are immutable | ✅ checksum + canonical form, race-safe |
-| Content addressing | ✅ sorted-key canonical JSON → sha256 |
-| Four levels with precedence | ✅ LVL1→2→3, pins, guardrails, rejections recorded |
-| Per-tenant, zero deploy | ✅ `apply_to_tenant`, non-clobbering defaults |
-| Every signal carries its snapshot | ✅ `config_snapshot_id` + `pack_id` + `pack_version` |
-| The four brains | ⚠️ Universal / Organization / Adaptive fully wired; **Behavioral stored and governed but thinly consumed** |
-| Capability content | ⚠️ three manifests built; **shadow-only, not the live path** |
+## Current implemented inventory
+
+The catalog loads the three authored domains: Admin, Customer Support, and Sales. The corpus is
+intentionally at mixed maturity: Customer Support and Sales contain routable situations, while
+Admin and a number of capabilities remain authoring work. The compiler exposes stubs and missing
+optional knowledge instead of presenting authored quantity as runtime readiness.
+
+The older `sales`/`general` Python pack registry, LVL2/LVL3 effective-config merge, and native
+deal capabilities remain present as a compatibility runtime. They are not the canonical model for
+new Domain Expertise authoring and must not be confused with the new `ExpertisePackage` boundary.
+
+## Production state
+
+The Layer 3 compiler, contracts, persistence migration, composition root, and corpus-backed tests
+are implemented. The remaining work is activation across adjacent layers: Layer 2 must publish the
+typed BSO in the live runner, Layer 4 must consume the package, and migration/query behavior must be
+proven against production-like PostgreSQL and concurrency. See [06 · Gaps](06-Gaps.md).

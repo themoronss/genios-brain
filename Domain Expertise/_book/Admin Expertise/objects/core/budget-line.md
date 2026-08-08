@@ -2,106 +2,129 @@
 
 # Budget Line
 
-`admin.obj.core.budget_line` · v1.0.0 · **draft** · scope **core**
+`admin.obj.core.budget_line` · v2.0.0 · **draft** · scope **core**
 
-> A named pot of money with an owner, a purpose and a period, against which spend is committed, consumed and reported. Administratively it is not an accounting record — it is a promise about what may be spent, and the whole craft is keeping the promise and the ledger in the same conversation. They diverge because a ledger records money that has left, while a budget holder needs to know about money that cannot come back: the signed order, the raised requisition, the renewal that auto-renews in eleven days. The gap between those two figures is where every "but I had budget" argument lives, and it is entirely an administrative artefact rather than a financial one.
+> A named pot of money with one owner, one purpose and one period, against which spend is committed, consumed and reported. Administratively it is not an accounting record — it is a promise about what may be spent, and the craft is keeping that promise and the ledger in the same conversation. It carries four numbers, and the whole object exists because almost every system reports three of them correctly and the fourth — commitment — not at all.
 
 
-Also called: `Budget Head`, `Cost Line`, `Allocation`, `Budget Envelope`
+**The discriminator.** Commitment, not consumption. A ledger account tells you what has been paid; a budget line must tell you what can no longer be avoided. If the figure quoted as "available" is allocation minus what has been invoiced, this object is not being used — a general ledger account is, wearing its name.
+
+
+Also called: `Budget Head`, `Cost Line`, `Allocation`, `Budget Envelope`, `Cost Code`, `Spending Envelope`
+
+
+### Questions this object answers
+
+- How much of this allocation is genuinely still free, net of everything already committed?
+- What has been committed that has not yet been invoiced, and how confident are we that we have found all of it?
+- Can this proposed spend be covered, and by whose authority?
+- This line has been frozen — what exactly can the freeze not stop, and who has to be told?
+- Is the burn ahead of plan, or merely ahead of the calendar on a line whose spend was always going to be seasonal?
+- Who actually owns this line, and are they still here?
+
+
+### What it is NOT responsible for
+
+- NOT the ledger. Posted transactions and account balances belong to the finance system; this object exists precisely because the ledger cannot see a commitment.
+- NOT the commitment itself. admin.obj.core.purchase_order and admin.obj.core.contract create the obligations; this line aggregates them and is why it is always aggregating incompletely.
+- NOT the approval. admin.obj.core.approval owns whether a person may commit this money; the line only owns whether the money exists.
+- NOT the spend request. admin.obj.core.request owns the ask; this object gates it.
+- NOT the forecast model. Where an organisation runs driver-based planning, this object consumes the output and owns the period control, not the modelling.
 
 
 ## Attributes (41)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
-| `identity_and_scope` | composite |  |  | What this line is for and who answers for it. | `line_code`, `line_name`, `owner_ref`, `cost_centre`, `category`, `entity`, `purpose` |
-| `period` | composite |  |  | The window it lives in, and whether anything survives the end of it. | `fiscal_period`, `period_start_at`, `period_end_at`, `carry_forward_allowed`, `phasing` |
-| `the_four_numbers` | composite |  |  | Allocated, committed, consumed, available. Everyone quotes the fourth and almost nobody computes it correctly, because the second is invisible in most systems.  | `allocated_amount`, `committed_amount`, `consumed_amount`, `available_amount`, `currency` |
-| `commitment_detail` | composite |  |  | The part that is spent but not yet invoiced. The reason this object exists. | `open_po_value`, `approved_uninvoiced_value`, `recurring_charge_run_rate`, `accrual_value`, `commitment_confidence_bp` |
+| `identity_and_scope` | composite |  |  | What this line is for and who answers for it. | `line_code`, `line_name`, `owner_ref`, `cost_centre`, `category`, `entity`, `purpose_statement` |
+| `line_code` | value | string | yes | The code the finance system knows it by. |  |
+| `line_name` | value | string |  | The name the business actually uses for this money. |  |
+| `owner_ref` | reference | ref | yes | The one named person accountable for the outturn. | admin.obj.core.stakeholder |
+| `cost_centre` | value | string |  | The organisational unit the line sits under, and the scope most freezes are actually issued at. |  |
+| `category` | value | enum |  | The class of spend, which determines how badly the commitment gap bites. |  |
+| `entity` | value | string |  | The legal entity carrying the allocation. |  |
+| `purpose_statement` | value | string |  | What the money was granted for, in a sentence. |  |
+| `period` | composite |  |  | The window this line lives in, and whether anything survives the end of it. | `fiscal_period`, `period_start_at`, `period_end_at`, `period_elapsed_bp`, `carry_forward_allowed`, `phasing` |
+| `fiscal_period` | value | string |  | The named period the allocation belongs to. |  |
+| `period_start_at` | value | timestamp |  | When the allocation becomes committable. |  |
+| `period_end_at` | value | timestamp |  | When it stops. |  |
+| `period_elapsed_bp` | derived | integer |  | How far through the period we are. | `period_start_at`, `period_end_at` |
+| `carry_forward_allowed` | value | boolean |  | Whether unspent allocation survives the period boundary. |  |
+| `phasing` | value | list |  | Expected spend by month, so that "ahead of plan" can be distinguished from "ahead of the calendar". |  |
+| `the_four_numbers` | composite |  |  | Allocated, committed, consumed, available. Everyone quotes the fourth, almost nobody computes it correctly, because the second is invisible in most systems.  | `allocated_amount`, `committed_amount`, `consumed_amount`, `available_amount`, `currency` |
+| `allocated_amount` | value | money | yes | The authorised total for the period. |  |
+| `committed_amount` | derived | money |  | Money that can no longer be recovered by deciding not to spend it. THE number. | `open_po_value`, `approved_uninvoiced_value`, `recurring_charge_run_rate` |
+| `consumed_amount` | value | money |  | Invoiced and posted. What the ledger calls spend. |  |
+| `available_amount` | derived | money |  | Genuine headroom, net of commitment. | `allocated_amount`, `committed_amount`, `consumed_amount` |
+| `currency` | value | string |  | The currency the allocation is denominated in. |  |
+| `commitment_detail` | composite |  |  | The part that is spent but not yet invoiced. The reason this object exists at all. | `open_po_value`, `approved_uninvoiced_value`, `recurring_charge_run_rate`, `accrual_value`, `commitment_confidence_bp` |
+| `open_po_value` | value | money |  | Commitment raised through the purchase order system. |  |
+| `approved_uninvoiced_value` | value | money |  | Approved spend with no purchase order behind it. |  |
+| `recurring_charge_run_rate` | value | money |  | Subscriptions and retainers that will land whether or not anybody acts. |  |
+| `accrual_value` | value | money |  | Cost incurred where no invoice has arrived. |  |
+| `commitment_confidence_bp` | value | integer |  | How complete we believe committed_amount to be. |  |
 | `control_state` | composite |  |  | Freezes, holds and the authority to spend against this line at all. | `freeze_state`, `freeze_reason`, `frozen_at`, `approval_threshold`, `virement_allowed`, `spend_authority_ref` |
-| `trajectory` | composite |  |  | Where the line is going, as distinct from where it is. | `burn_rate`, `period_elapsed_bp`, `forecast_outturn`, `variance_bp`, `last_reforecast_at` |
-| `line_code` | value | string | yes | The code the finance system knows it by. Rarely the name anybody in the business uses, which is the first cause of miscoding. |  |
-| `line_name` | value | string |  | The name the business uses. Keeping both is not redundancy — it is the translation layer that stops spend landing on the wrong line. |  |
-| `owner_ref` | reference | ref | yes | One named person. A line owned by a department is a line owned by nobody, and it is reliably the one that overspends — not through profligacy but because no single person ever sees the total. | admin.obj.core.stakeholder |
-| `cost_centre` | value | string |  | The cost_centre of this object. |  |
-| `category` | value | enum |  | Category decides how badly the commitment gap bites. Software and professional services are the worst — long-dated commitments, invoices in arrears, and renewals that commit money without anybody raising anything. |  |
-| `entity` | value | string |  | The legal entity. Matters in multi-entity groups where a virement across entities is an intercompany transaction, not a transfer. |  |
-| `purpose` | value | string |  | What the money was granted for. The sentence that decides whether a proposed spend is a use or a repurposing. |  |
-| `fiscal_period` | value | string |  | e.g. "FY26". Timing authority is as real as monetary authority — a live budget that starts in April is not budget available in March. |  |
-| `period_start_at` | value | timestamp |  | The period_start_at of this object. |  |
-| `period_end_at` | value | timestamp |  | An external, non-negotiable deadline. Unspent allocation typically evaporates here, which is the sole cause of the March buying season. |  |
-| `carry_forward_allowed` | value | boolean |  | Where false, the object generates a predictable annual burst of low-value, badly specified spend in the final weeks. That behaviour is a rational response to the rule, and the rule is the thing to fix. |  |
-| `phasing` | value | list |  | Expected spend by month. A line without phasing cannot distinguish "on track" from "hasn't started yet", and both look identical at 40% consumed in month six. |  |
-| `allocated_amount` | value | money | yes | The authorised total. The only one of the four numbers that is reliably correct in every system. |  |
-| `committed_amount` | value | money |  | THE number. Raised purchase orders, signed contracts, approved requisitions, renewals inside their notice window. Money that cannot be recovered by deciding not to spend it. Most finance systems can compute this and almost none show it on the report a budget holder reads, which is why the surprise at period end is universal and universally treated as an accident. |  |
-| `consumed_amount` | value | money |  | Invoiced and posted. What the ledger calls spend and what a budget holder calls history. |  |
-| `available_amount` | value | money |  | allocated minus committed minus consumed. Almost everyone computes it as allocated minus consumed, which overstates headroom by exactly the commitment gap and is why "I had budget" is usually said sincerely. |  |
-| `currency` | value | string |  | The currency of this object. |  |
-| `open_po_value` | value | money |  | The visible half of the commitment. Easiest to capture, and the half most organisations stop at. |  |
-| `approved_uninvoiced_value` | value | money |  | Approved spend with no PO behind it: services engaged on an email, subscriptions bought on a card, work already under way. The invisible half of the commitment, and usually the larger. |  |
-| `recurring_charge_run_rate` | value | money |  | Subscriptions and retainers that will land whether or not anybody acts. The commitment nobody raises, because renewing requires doing nothing. A line's uncommitted headroom is a fiction until the remaining months of run rate are subtracted from it. |  |
-| `accrual_value` | value | money |  | Cost incurred, invoice not received. The number that makes the month-end close late and the one that reconciles this object to the ledger. |  |
-| `commitment_confidence_bp` | value | integer |  | How complete we believe committed_amount to be. Low confidence is the honest state for most lines and should be reported as such — a precise-looking wrong number does more damage than an acknowledged range. |  |
-| `freeze_state` | value | enum |  | soft_freeze stops new commitment and honours existing; hard_freeze attempts to stop payment too and cannot, because an obligation already incurred is a debt. Collapsing the two is how a freeze turns into a supplier-relations incident. |  |
-| `freeze_reason` | value | string |  | The freeze_reason of this object. |  |
-| `frozen_at` | value | timestamp |  | The frozen_at of this object. |  |
-| `approval_threshold` | value | money |  | The value above which spend against this line needs a higher authority. The band, not the person — people change more often than bands. |  |
-| `virement_allowed` | value | boolean |  | Whether money may be moved in or out. A line that can be topped up from elsewhere has a soft limit, and everybody involved knows it. |  |
-| `spend_authority_ref` | reference | ref |  | Who may authorise against this line. Distinct from owner_ref — the owner is accountable for the outturn, the authority signs the individual commitment. | admin.obj.core.approver |
-| `burn_rate` | value | number |  | Consumption per month, actual. Useless without phasing on a seasonal line. |  |
-| `period_elapsed_bp` | value | integer |  | How far through the period we are. Paired with consumption, the cheapest early-warning signal that exists. |  |
-| `forecast_outturn` | value | money |  | Where the line lands. A forecast that has not moved in three months is not a forecast, it is the original budget being retyped. |  |
-| `variance_bp` | value | integer |  | Forecast against allocated. Negative is underspend and is treated as harmless, which is why it is never investigated and frequently means a programme has quietly stopped. |  |
-| `last_reforecast_at` | value | timestamp |  | The last_reforecast_at of this object. |  |
-| `last_commitment_promised_at` | value | timestamp |  | One of the few live sources on this object: the date by which somebody promised the spend against this line would land. When it passes with no invoice, the accrual is real. | `commitment.due_at` |
-| `last_correspondence_at` | value | timestamp |  | The last_correspondence_at of this object. | `thread.last_inbound` |
+| `freeze_state` | value | enum |  | Whether, and how hard, spending against this line has been stopped. |  |
+| `freeze_reason` | value | string |  | Why the line was frozen, in terms that can be repeated to the people it affects. |  |
+| `frozen_at` | value | timestamp |  | When the freeze took effect. |  |
+| `approval_threshold` | value | money |  | The value above which spend against this line needs a higher authority. |  |
+| `virement_allowed` | value | boolean |  | Whether money may be moved into or out of this line. |  |
+| `spend_authority_ref` | reference | ref |  | Who may authorise an individual commitment against this line. | admin.obj.core.approver |
+| `trajectory` | composite |  |  | Where the line is going, as distinct from where it is. | `burn_rate`, `forecast_outturn`, `variance_bp`, `last_reforecast_at`, `last_commitment_promised_at`, `last_correspondence_at` |
+| `burn_rate` | derived | number |  | Actual consumption per month. | `consumed_amount`, `period_elapsed_bp` |
+| `forecast_outturn` | value | money |  | Where the line is expected to land at period end. |  |
+| `variance_bp` | derived | integer |  | Forecast against allocation. | `forecast_outturn`, `allocated_amount` |
+| `last_reforecast_at` | value | timestamp |  | When somebody last genuinely revisited the outturn. |  |
+| `last_commitment_promised_at` | value | timestamp |  | The date by which somebody promised the spend against this line would land. | `commitment.due_at` |
+| `last_correspondence_at` | value | timestamp |  | When anything last moved in writing about this line. | `thread.last_inbound` |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| owns | `admin.obj.core.stakeholder` | one |  |  | — | One named holder. Shared ownership of a budget line reliably produces a line nobody watches. |
-| covers | `admin.obj.core.invoice` | zero_or_many |  |  | — | Invoices coded here. The consumed half of the picture, and the only half most reporting shows. |
-| covers | `admin.obj.core.expense` | zero_or_many |  |  | — | Reimbursements land here with no commitment behind them, which is why travel is the category most often over budget without anybody having overspent — the money was gone weeks before the claim arrived.  |
-| references | `admin.obj.core.purchase_order` | zero_or_many |  |  | — | The visible commitment. Easy to count and, on most lines, the smaller half. |
-| governed_by | `admin.obj.core.contract` | zero_or_many |  |  | — | Contracts with auto-renewal commit this line without anyone raising anything. Renewing takes no action, which is precisely why the commitment is invisible until the invoice arrives.  |
-| requires | `admin.obj.core.approval` | zero_or_many |  |  | — | Where spend crosses approval_threshold. |
-| gates | `admin.obj.core.request` | zero_or_many |  |  | — | A request for spend is answerable only against a line with genuine headroom. Available-as-reported is the wrong test and the usual one. |
-| measures | `admin.obj.core.deadline` | zero_or_one |  |  | — | period_end_at is an external, non-negotiable date, and the sole reason the March buying season exists. |
-| produces | `admin.obj.core.audit_evidence` | zero_or_many |  |  | — | Approved allocations, vierements and freeze instructions. The paper trail that proves the money was granted before it was spent. |
-| escalates_to | `admin.obj.core.escalation` | zero_or_one |  |  | — | Fires on overcommitment, which is a governance event rather than a finance one — someone committed money they did not have the authority to commit. |
+| owns | `admin.obj.core.stakeholder` | one | 1500 bp | 8500 bp | — | One named holder. Shared ownership reliably produces a line nobody watches, because each owner assumes the total is somebody else's view.  |
+| covers | `admin.obj.core.invoice` | zero_or_many | 1500 bp | 9000 bp | — | Invoices coded here. The consumed half of the picture, and the only half most reporting shows. |
+| references | `admin.obj.core.purchase_order` | zero_or_many | 1500 bp | 8000 bp | — | The visible commitment. Easy to count and, on most professional-services lines, the smaller half of what is actually committed. |
+| governed_by | `admin.obj.core.contract` | zero_or_many | 1400 bp | 7000 bp | `contract.auto_renew = True` | Contracts with auto-renewal commit this line without anybody raising anything. Renewing takes no action, which is exactly why the commitment stays invisible until the invoice arrives.  |
+| covers | `admin.obj.core.expense` | zero_or_many | 1000 bp | 8500 bp | — | Reimbursements land here with no commitment behind them at all, which is why travel is the category most often over budget without anybody having overspent — the money went in January and the line found out in March.  |
+| gates | `admin.obj.core.request` | zero_or_many | 1000 bp | 7500 bp | — | A request for spend is answerable only against genuine headroom. Available-as-reported is the wrong test and it is the usual one. |
+| requires | `admin.obj.core.approval` | zero_or_many | 800 bp | 8000 bp | `budget.committed > 0` | Where an individual commitment crosses approval_threshold. The band belongs to the line; the signature belongs to the approver. |
+| escalates_to | `admin.obj.core.escalation` | zero_or_one | 700 bp | 6500 bp | — | Fires on overcommitment, which is a governance event rather than a finance one — somebody committed money they were not authorised to commit. |
+| measures | `admin.obj.core.deadline` | zero_or_one | 400 bp | 9000 bp | — | period_end_at is external and non-negotiable, and it is the sole reason the year-end buying season exists. |
+| produces | `admin.obj.core.audit_evidence` | zero_or_many | 200 bp | 8000 bp | — | Approved allocations, virements and freeze instructions. The paper trail proving the money was granted before it was spent. |
 
 
 ## States
 
-Initial `draft`
+Initial `draft` · terminal `closed`, `cancelled`, `archived`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `draft` | Proposed in the planning round, not yet authorised. Real money is routinely committed against lines in this state. | — |  |
-| `approved` | Allocated and authorised for the period. | — |  |
+| `draft` | Proposed in the planning round, not yet authorised. | — | Real money is routinely committed against lines in this state, on the strength of a planning conversation. |
+| `approved` | Allocated and authorised for the period. | `has_obs: budget_approved` |  |
 | `active` | Live and being spent against. | — |  |
-| `at_risk` | Committed plus consumed is approaching allocated, or the burn is ahead of phasing. The state that must be entered on commitment rather than on consumption, or it is entered too late to matter.  | — |  |
-| `breached` | Committed plus consumed exceeds allocated. The obligations still stand; only the cover has gone. | — |  |
+| `at_risk` | Committed plus consumed is approaching allocated, or burn is ahead of phasing. This state must be entered on COMMITMENT rather than on consumption, or it is entered too late to be actionable.  | — | There is still a decision to take. Once it is breached, there is only a consequence to manage. |
+| `breached` | Committed plus consumed exceeds allocated. The obligations still stand; only the cover has gone. | — | A governance event. Somebody committed money they did not have the authority to commit, and the useful question is who rather than how much. |
 | `on_hold` | Soft freeze. No new commitment; existing obligations honoured. | `has_obs: budget_freeze` |  |
-| `escalated` | Overcommitment referred upward for virement, supplementary allocation or cancellation. | — |  |
+| `escalated` | Overcommitment or a freeze conflict referred upward for virement, supplementary allocation or cancellation. | — |  |
 | `closed` | Period ended, line no longer accepts commitment. Accruals may still be posting against it. | — |  |
+| `cancelled` | Allocation withdrawn before the period ran. | — | Any commitment already raised becomes somebody's problem, and naming whose is the entire administrative task. |
 | `archived` | Reconciled and closed out. Retained for audit long after anybody cares about the number. | — |  |
-| `cancelled` | Allocation withdrawn before the period ran. Any commitment already raised becomes somebody else's problem, and naming whose is the whole administrative task. | — |  |
 
 
-## Inference patterns — 4 executable, 8 blocked
+## Inference patterns — 5 executable, 9 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `bl.freeze_declared_directly` | deterministic | `has_obs: budget_freeze` | 9200 bp → `freeze_state` | A budget freeze has been observed against this line. |  |
-| `bl.approved_then_frozen` | deterministic | `has_obs: budget_approved` AND `has_obs: budget_freeze` | 8800 bp → `commitment_confidence_bp` | This line was approved and has since been frozen — commitments raised on the strength of the approval are now uncovered. |  |
-| `bl.spend_promised_and_date_passed` | deterministic | `exists: commitment.action` AND `days_since(commitment.due_at) > 0` | 8000 bp → `accrual_value` | Somebody committed to spend against this line by a date that has now passed with no invoice. |  |
-| `bl.frozen_by_a_neighbouring_line` | heuristic | `neighbor_has_obs: budget_freeze` AND `no_obs: budget_freeze` | 6800 bp → `freeze_state` | An adjacent line in the same cost centre has been frozen and this one has not been named — freezes are almost never issued to a single line. |  |
+| `bl.freeze_declared_directly` | deterministic | `has_obs: budget_freeze` | 9200 bp → `freeze_state` | A budget freeze has been observed against this line. | A freeze discussed as a possibility reads identically to one declared. Acting on a hypothetical freeze stops committed work for a fortnight and costs more credibility than the freeze saves.  |
+| `bl.approved_then_frozen` | deterministic | `has_obs: budget_approved` AND `has_obs: budget_freeze` | 8800 bp → `commitment_confidence_bp` | This line was approved and has since been frozen — commitments raised on the strength of the approval are now uncovered. | Where the approval is a supplementary allocation granted in response to the freeze, the sequence reads backwards and the line is in better shape than the pattern claims, not worse. The engine has no ordering between the two observations.  |
+| `bl.spend_promised_and_date_passed` | deterministic | `exists: commitment.action` AND `days_since(commitment.due_at) > 0` | 8000 bp → `accrual_value` | Somebody committed to spend against this line by a date that has now passed with no invoice. | The commitment may have been delivered and invoiced through a route this thread never sees, in which case the accrual would double-count a cost already posted. Raising an accrual on a paid invoice is the one error in this object that a period-end reviewer will definitely catch, and it wastes their time rather than the money.  |
+| `bl.frozen_by_a_neighbouring_line` | heuristic | `neighbor_has_obs: budget_freeze` AND `no_obs: budget_freeze` | 6800 bp → `freeze_state` | An adjacent line in the same cost centre has been frozen and this one has not been named — freezes are almost never issued to a single line. | A targeted freeze on one programme genuinely does not extend to its neighbours, and treating it as if it does halts spend nobody asked to halt. Deliberately weak at 6800 for that reason: worth raising as a question, never worth enforcing as a block.  |
+| `bl.freeze_lands_on_outstanding_promises` | heuristic | `has_obs: budget_freeze` AND `exists: commitment.action` | 7600 bp → `approved_uninvoiced_value` | A freeze has arrived while somebody still owes a delivery date on spend against this line. | The outstanding promise may be about something the freeze legitimately stops — a not-yet-placed order rather than work already under way. The two are indistinguishable from the thread, and the difference decides whether the freeze saves money or merely delays an argument.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -111,11 +134,12 @@ Initial `draft`
 | `bl.line_specific_commitment_recorded` | deterministic | `budget.committed` (fact_path), `budget.allocated` (fact_path), `budget.consumed` (fact_path) | 9800 bp | An explicit commitment amount is held against this line. |
 | `bl.overcommitted` | deterministic | `budget.committed` (fact_path), `budget.allocated` (fact_path) | 9600 bp | Committed plus consumed exceeds the allocation. |
 | `bl.auto_renewal_commits_the_line` | deterministic | `contract.end_at` (fact_path), `contract.notice_period_days` (fact_path), `contract.auto_renew` (fact_path) | 9000 bp | A contract coded here is inside its notice window and will renew, committing the next term. |
-| `bl.burn_ahead_of_phasing` | heuristic | `budget.consumed` (fact_path), `derived.budget_burn_rate` (derived) | 8000 bp | Consumption is materially ahead of the period elapsed, adjusted for expected phasing. |
-| `bl.approved_uninvoiced_services_running` | heuristic | `approval_granted` (obs_kind), `po_raised` (obs_kind) | 7500 bp | Work was approved and is under way with no purchase order and no invoice yet. |
+| `bl.burn_ahead_of_phasing` | heuristic | `budget.consumed` (fact_path), `derived.budget_burn_rate` (derived) | 8000 bp | Consumption is materially ahead of period elapsed, adjusted for expected phasing. |
+| `bl.approved_uninvoiced_services_running` | heuristic | `approval_granted` (obs_kind), `po_raised` (obs_kind) | 7500 bp | Work was approved and is under way with no purchase order raised and no invoice yet received. |
 | `bl.material_underspend_late_in_period` | heuristic | `budget.consumed` (fact_path), `derived.budget_burn_rate` (derived) | 7000 bp | Well into the period and consumption is far below phasing — a programme has probably stopped. |
-| `bl.march_buying_season` | heuristic | `po_raised` (obs_kind), `derived.commitment_clustering` (derived) | 6500 bp | A cluster of low-value, thinly specified commitments in the final weeks of a non-carry-forward period. |
-| `bl.owner_unknown_or_departed` | heuristic | `employee.end_at` (fact_path), `leaver_confirmed` (obs_kind) | 8500 bp | The named owner of this line has left or was never set. |
+| `bl.year_end_buying_season` | heuristic | `po_raised` (obs_kind), `derived.commitment_clustering` (derived) | 6500 bp | A cluster of low-value, thinly specified commitments in the final weeks of a non-carry-forward period. |
+| `bl.owner_unknown_or_departed` | heuristic | `employee.end_at` (fact_path), `leaver_confirmed` (obs_kind) | 8500 bp | The named owner of this line has left the organisation, or was never set. |
+| `bl.renewal_window_closing_unnoticed` | heuristic | `renewal_window_open` (obs_kind), `contract.notice_period_days` (fact_path) | 8800 bp | A contract on this line is approaching the last date on which it could be cancelled, and nobody has been told. |
 
 
 ## Decision factors
@@ -124,38 +148,125 @@ Initial `draft`
 |---|---|---|---|
 | committed_not_invoiced | 3000 bp | decreases | `committed_amount`, `open_po_value`, `approved_uninvoiced_value`, `recurring_charge_run_rate` |
 | uncommitted_headroom | 2000 bp | increases | `available_amount`, `allocated_amount`, `consumed_amount` |
-| freeze_state | 1800 bp | decreases | `freeze_state`, `freeze_reason`, `frozen_at` |
+| freeze_posture | 1800 bp | decreases | `freeze_state`, `freeze_reason`, `frozen_at` |
 | burn_trajectory | 1500 bp | context | `burn_rate`, `period_elapsed_bp`, `phasing`, `forecast_outturn` |
 | accrual_completeness | 900 bp | increases | `accrual_value`, `commitment_confidence_bp` |
 | recurring_charge_exposure | 500 bp | decreases | `recurring_charge_run_rate`, `period_end_at` |
 | ownership_clarity | 300 bp | context | `owner_ref`, `spend_authority_ref`, `cost_centre` |
 
 
+## Preconditions
+
+- **`bl.allocation_authorised`** The allocation has been authorised for the named period before anything is committed against it. _(unmet → BLOCK new commitment and record the attempt. Committing against a draft allocation is routine and it is the origin of most overcommitment — the planning conversation is treated as the authorisation because it felt like one.
+)_
+- **`bl.one_named_owner_exists`** Exactly one named individual owns the outturn. _(unmet → DEGRADE, and escalate to the cost centre lead within the period rather than at year end. An unowned line does not fail loudly; it fails silently and is discovered by whoever inherits the variance.
+)_
+- **`bl.commitment_register_reachable`** Open purchase orders, approved-uninvoiced work and remaining run rate can each be enumerated. _(unmet → DEGRADE and publish commitment_confidence_bp alongside every figure. Reporting a headroom number without stating how complete the commitment behind it is manufactures a precision nobody has, and the holder spends against it.
+)_
+- **`bl.phasing_exists_before_burn_is_judged`** An expected spend profile exists before any burn or variance judgement is made. _(unmet → DEGRADE to reporting consumption only. Do NOT alert. An unphased burn alert fires on every seasonal line every January and destroys the credibility of the alert that matters later.
+)_
+- **`bl.freeze_scope_resolved`** Before a freeze is enforced, its scope is resolved to lines rather than assumed from a cost centre. _(unmet → DEGRADE to raising a question with the issuer, not to enforcing a block. Freezes arrive as one line in an email and are enforced against everything the reader can think of, which stops work nobody intended to stop.
+)_
+- **`bl.period_boundary_known`** period_start_at and period_end_at are known before commitment is accepted. _(unmet → BLOCK. A live budget starting in April is not budget available in March, and the two are committed against interchangeably whenever the boundary is not enforced.)_
+
+
 ## Constraints
 
-- **`bl.no_commitment_beyond_allocation`** Cannot commit above allocated without a recordedvirement or supplementary approval.
-- **`bl.period_boundary`** Cannot commit into a period that has not been allocated. A livebudget starting in April is not budget available in March.
+- **`bl.no_commitment_beyond_allocation`** Cannot commit above allocated without a recorded virement or supplementary approval.
+- **`bl.period_boundary`** Cannot commit into a period that has not been allocated. A live budget starting in April is not budget available in March.
 - **`bl.freeze_blocks_new_commitment`** Cannot raise new commitment against a frozen line.
-- **`bl.freeze_cannot_void_obligation`** Cannot cancel an obligation already incurred. Thegoods arrived; the debt survives the budget.
-- **`bl.virement_authority`** Cannot move money between lines on the receiving owner's authorityalone.
-- **`bl.no_carry_forward_by_default`** Cannot carry unspent allocation into the next periodunless carry_forward_allowed is true.
-- **`bl.single_owner`** Cannot have more than one accountable owner. _(soft)_
+- **`bl.freeze_cannot_void_obligation`** Cannot cancel an obligation already incurred. The goods arrived; the debt survives the budget.
+- **`bl.virement_authority`** Cannot move money between lines on the receiving owner's authority alone.
+- **`bl.no_carry_forward_by_default`** Cannot carry unspent allocation into the next period unless carry_forward_allowed is true.
+- **`bl.single_accountable_owner`** Cannot have more than one accountable owner, though it may have several spend authorities. _(soft)_
+- **`bl.headroom_quoted_net_of_commitment`** Cannot quote available headroom on a ledger basis to anyone making a spend decision.
 
 
 ## Business rules
 
-- **`bl.available_is_net_of_commitment`** available_amount is allocated minus committed minus consumed. Any report showing allocated minus consumed as "available" overstates headroom by exactly the commitment gap and must be labelled as a ledger view, not a budget view.
-
+- **`bl.available_is_net_of_commitment`** available_amount is allocated minus committed minus consumed. Any report showing allocated minus consumed as "available" overstates headroom by exactly the commitment gap and must be labelled a ledger view rather than a budget view.
+ — _This is the rule the object exists for. Every other rule here is downstream of it._
 - **`bl.no_commitment_without_headroom`** A commitment must not be raised where it would take committed plus consumed above allocated without a recorded virement or supplementary approval.
-- **`bl.freeze_stops_commitment_not_obligation`** A freeze prevents new commitment. It cannot void an obligation already incurred — the goods arrived, the debt is real. A hard freeze applied to existing payables produces a supplier incident, not a saving.
+- **`bl.freeze_stops_commitment_not_obligation`** A freeze prevents new commitment. It cannot void an obligation already incurred — the goods arrived and the debt is real. A hard freeze applied to existing payables produces a supplier incident, not a saving.
 
 - **`bl.one_named_owner`** Exactly one named owner. Departmental ownership is the reliable predictor of an unwatched line, because no single person ever sees the total.
-- **`bl.auto_renewal_is_a_commitment`** A contract inside its notice window is committed for the next term whether or not anyone acts. Excluding it from committed_amount because no PO exists is the most common single cause of a correct-looking budget that is already overspent.
+- **`bl.auto_renewal_is_a_commitment`** A contract inside its notice window is committed for the next term whether or not anybody acts. Excluding it from committed_amount because no purchase order exists is the most common single cause of a correct-looking budget that is already overspent.
 
-- **`bl.accrue_at_period_end`** Cost incurred and not invoiced at period end must be accrued against this line. An unaccrued receipt makes the next period carry a cost it did not create.
+- **`bl.accrue_at_period_end`** Cost incurred and not invoiced at period end must be accrued against this line. — _An unaccrued receipt makes the next period carry a cost it did not create, and the next holder inherits a variance they cannot explain._
+- **`bl.publish_commitment_confidence`** Any headroom figure published to a decision-maker carries commitment_confidence_bp alongside it. — _A precise-looking wrong number does more damage than an acknowledged range, because nobody argues with a precise number until the invoice arrives._
 - **`bl.underspend_is_a_signal`** Material underspend is investigated, not celebrated. It usually means a programme quietly stopped, and nobody investigates it because nothing is on fire.
+- **`bl.virement_needs_the_allocating_authority`** Moving money between lines requires the authority that would have been needed to allocate it, not the authority of whoever owns the receiving line.
+- **`bl.brief_committed_first`** A budget briefing states committed before it states balance. — _Leading with the balance is how a holder leaves a briefing believing they have money they have already spent, and they will spend it again._
 
-- **`bl.virement_needs_the_same_authority`** Moving money between lines requires the authority that would have been needed to allocate it, not the authority of whoever owns the receiving line.
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **Commitments raised before frozen_at are honoured and paid despite the freeze.** — The goods arrived and the debt is real. A freeze applied backwards buys a supplier incident and late payment interest, not a saving — and the saving it appears to make is reversed the moment somebody reads the contract.
+ _(overrides bl.freeze_blocks_new_commitment)_
+- **A contingency line sitting at full headroom late in the period is working as designed and must not be reported as underspend.** — Reporting it as underspend produces two bad outcomes: it gets raided in the year-end sweep, and the following year's allocation is cut on the evidence that it was not needed. Both remove the option the line existed to preserve.
+ _(overrides bl.underspend_is_a_signal, bl.material_underspend_late_in_period)_
+- **Capital lines are judged against milestone completion rather than against elapsed period.** — Capital spend is lumpy by nature — nothing then everything. Applying a monthly phasing test generates an alert every month for eight months and none in the month that matters.
+ _(overrides bl.burn_ahead_of_phasing, bl.phasing_exists_before_burn_is_judged)_
+- **A recharge line may legitimately exceed its allocation where the spend is matched by recoverable income.** — The gross figure breaches and the net does not. Blocking it stops billable work, and the real control is the recovery rate rather than the allocation — which is a different report that usually nobody runs.
+ _(overrides bl.no_commitment_beyond_allocation)_
+- **Spend required for safety, statutory compliance or business continuity proceeds against a frozen line and is ratified afterwards.** — A control that cannot be broken under fire gets bypassed permanently rather than temporarily. The ratification window is what keeps the exception an exception, and the count of unratified emergencies is the honest health metric for the freeze itself.
+ _(overrides bl.freeze_blocks_new_commitment, bl.no_commitment_without_headroom)_
+- **Movements below a published threshold between lines in the same cost centre may be made on the owner's own authority.** — Requiring an allocating authority's signature for a small internal reallocation costs more in cycle time than the amount being moved, and the predictable response is miscoding rather than compliance. The threshold must be published, or every virement becomes small.
+ _(overrides bl.virement_authority)_
+- **Allocation supporting a commitment already raised but not delivered carries into the next period even where carry-forward is otherwise disallowed.** — Otherwise the obligation lands on a period that never budgeted for it, and the incoming holder inherits a variance created by somebody else's timing. This is the legitimate version of carry-forward, and refusing it is what drives the illegitimate versions.
+ _(overrides bl.no_carry_forward_by_default)_
+
+
+## Best practices
+
+- **Order every budget report and every briefing committed, consumed, available — in that order.** — Ordering is not presentation. A holder who reads the balance first anchors on it and hears the commitment as a caveat; a holder who reads commitment first understands the balance as a residual. The same four numbers produce opposite behaviour depending on their order, and almost every system defaults to the wrong one.
+
+- **Add the remaining term value of every auto-renewing contract inside its notice window to committed_amount.** — Renewal commits money by nobody doing anything, so it is absent from every commitment figure built around purchase orders. On a software line this is routinely the majority of the commitment, and its absence is the most common cause of a correct-looking budget that is already overspent.
+
+- **Either establish a spend profile for the line, or report consumption without alerting on it.** — An unphased burn alert is not a weak control, it is a negative one. It fires on every seasonal line in the early months, its audience learns to dismiss it within a cycle, and the genuine alert later in the year arrives into an audience that has already stopped reading.
+
+- **State how complete the commitment figure is believed to be, every time the figure is quoted.** — Nobody argues with a precise number until the invoice arrives. An acknowledged range invites the holder to fill in what is missing from their own knowledge, which is the only mechanism that has ever improved commitment visibility in practice.
+
+- **List the obligations a freeze cannot stop before anybody announces what the freeze will save.** — The saving announced on day one is almost always gross of existing commitment, and the correction lands three weeks later in front of the same audience. Enumerating first costs an afternoon and preserves the credibility of the next freeze.
+
+- **Assign exactly one accountable owner per line, separately from the spend authorities who sign individual commitments.** — Accountability for an outturn does not divide. Where two people share it, each sees their own half and neither sees the total, and the line is discovered at year end by whoever is left holding it.
+
+- **Investigate underspend above a materiality threshold with the same seriousness as overspend.** — Underspend is celebrated because nothing is on fire. It is usually the earliest available evidence that a programme has quietly stopped, and finding that out in month seven rather than at year end is worth considerably more than the money saved.
+
+- **Reforecast on a fixed cadence, and treat an unchanged forecast as a finding rather than as stability.** — A forecast that has not moved in three months is the original budget being retyped. The cadence is cheap; the discipline of actually changing the number is what produces accuracy.
+- **Make budget line reassignment a step in the joiner-mover-leaver checklist, not a finance task.** — An orphaned line generates no alert, blocks nothing and inconveniences nobody, so it is never found by the people who would care. The only reliable trigger is the leaver process, which already runs and already has an owner.
+
+
+
+## Anti-patterns
+
+- **Reporting headroom as allocation minus what has been invoiced.** — tempting because It is what the ledger can compute, it is what every standard report offers, and it produces a number that is arithmetically correct for a question nobody asked. Nobody ever decides to report it this way; it is simply the default that ships.
+ Instead: Compute available net of commitment and label the ledger version explicitly as a ledger view wherever it still appears.
+- **Omitting auto-renewing contracts from committed_amount because no purchase order was raised for them.** — tempting because Commitment is computed from the PO register because that is the register that exists. A renewal generates no PO, so it generates no row, so it is not commitment. Instead: Compute commitment from POs plus approved-uninvoiced work plus remaining renewal term value, and state the confidence.
+- **Submitting the original allocation as the forecast outturn, month after month.** — tempting because Changing the forecast invites a conversation about why, an unchanged forecast invites none, and the forecast is collected as a return rather than used as a decision input. The incentive points exactly one way.
+ Instead: Track forecast movement as a metric in its own right. A line whose forecast never moves is a line nobody is managing, regardless of how accurate the number turns out to be.
+- **Alerting on consumption against elapsed time with no expected spend profile.** — tempting because It requires only two numbers the system already has, and it looks like proactive control. Instead: Require phasing before enabling the alert. Where phasing does not exist, report consumption without alerting and say why.
+- **The only accurate record of commitment is a spreadsheet on the budget holder's own machine.** — tempting because It exists precisely because the finance system does not show committed_amount. The holder built it out of necessity, it works, and it is nobody's job to replace it because it is not officially there.
+ Instead: Treat the shadow tracker as a requirements document. It is a precise specification of what the finance system fails to provide, written by the person who needed it most.
+- **Reporting a material underspend as a saving in the period review.** — tempting because Underspend has no victim, generates no complaint and reads as prudence. Investigating it costs effort to produce bad news about something currently being praised. Instead: Investigate material underspend on the same cadence as overspend, and separate 'not spent' from 'not needed' explicitly in the review.
+- **Recording a team, function or department as the owner of a budget line.** — tempting because It is true in a management sense, it avoids an awkward conversation about who is accountable, and every finance system accepts a free-text owner field. Instead: One named individual, recorded as a reference rather than as text, and re-checked at every leaver event.
+- **Treating the final-month spending surge as an integrity problem to be policed.** — tempting because It looks like poor discipline and the individual purchases are genuinely thin. Challenging buyers is a visible response that costs the finance function nothing and produces immediate apparent action.
+ Instead: Change the rule. Allow carry-forward for committed-but-undelivered work, or move to a rolling allocation. Fix the incentive, not the buyer.
+- **Reading a freeze as an instruction to stop paying what has already been incurred.** — tempting because The word freeze sounds total, the instruction arrives as one line in an email, and halting payments is the fastest visible way to demonstrate compliance with it. Instead: Default to soft_freeze. Require an explicit written instruction, from a named person, before extending a freeze to obligations already incurred.
+
+
+## Dependencies
+
+- `admin.obj.core.approval` — requires (hard)
+- `admin.obj.core.purchase_order` — requires (hard)
+- `admin.obj.core.contract` — requires (hard)
+- `admin.obj.core.stakeholder` — requires (hard)
+- `admin.obj.core.invoice` — enriches (soft)
+- `admin.obj.core.expense` — enriches (soft)
+- `admin.obj.core.policy` — derived_from (soft)
+- `admin.obj.core.employee_record` — invalidated_by (hard)
+- `admin.obj.core.escalation` — enriches (soft)
+- `admin.obj.core.audit_evidence` — enriches (soft)
 
 
 ## Inputs
@@ -173,77 +284,98 @@ Initial `draft`
 
 ## Outputs
 
-- **`true_available_bp`** Headroom net of commitment, as a share of allocation.The number the ledger view does not give. → L4.reasoning_unit, L4.decision_maker
-- **`commitment_gap`** Committed but not yet invoiced. The figure thiswhole object exists to surface. → L4.reasoning_unit, L4.decision_maker
-- **`spend_authorisation`** Whether a proposed commitment can be covered.Tested against net available, never against the ledger. → L4.decision_maker, L5.execution_planning
-- **`freeze_impact_list`** Obligations already incurred against a frozenline. What the freeze cannot undo, itemised before anyone announces a saving. → L5.execution_planning
-- **`accrual_schedule`** Period-end accrual candidates with their evidence. → L4.reasoning_unit
-- **`budget_holder_briefing`** The four numbers in the order that changesbehaviour — committed first, balance last. → L5.communication_planning, L5.2.channel_planner
-- **`reforecast_trigger`** Trajectory has departed far enough from phasingto warrant a reforecast rather than a comment. → L4.reasoning_unit, L6.learning_unit
+- **`true_available_bp`** Headroom net of commitment, as a share of allocation. The number the ledger view cannot give. → L4.reasoning_unit, L4.decision_maker
+- **`commitment_gap`** Committed but not yet invoiced. The figure this whole object exists to surface. → L4.reasoning_unit, L4.decision_maker
+- **`spend_authorisation`** Whether a proposed commitment can be covered. Tested against net available, never against the ledger. → L4.decision_maker, L5.execution_planning
+- **`freeze_impact_list`** Obligations already incurred against a frozen line. What the freeze cannot undo, itemised before anybody announces a saving. → L5.execution_planning
+- **`accrual_schedule`** Period-end accrual candidates with the evidence for each. → L4.reasoning_unit
+- **`budget_holder_briefing`** The four numbers in the order that changes behaviour — committed first, balance last. → L5.communication_planning, L5.2.channel_planner
+- **`reforecast_trigger`** Trajectory has departed far enough from phasing to warrant a reforecast rather than a comment. → L4.reasoning_unit, L6.learning_unit
+- **`commitment_confidence`** How complete the commitment figure is believed to be. Published alongside the figure, never instead of it. → L4.reasoning_unit, L6.learning_unit
 
 
 ## Events
 
 - **`bl.allocated`** Budget Allocated
-- **`bl.frozen`** Budget Frozen
-- **`bl.cover_withdrawn_after_approval`** Cover Withdrawn After Approval
+- **`bl.frozen`** Budget Frozen — invalidates available_amount, forecast_outturn
+- **`bl.cover_withdrawn_after_approval`** Cover Withdrawn After Approval — invalidates commitment_confidence_bp, available_amount
 - **`bl.commitment_date_passed`** Promised Spend Not Invoiced
 - **`bl.at_risk`** Line At Risk
 - **`bl.overcommitted`** Line Overcommitted
 - **`bl.period_closing`** Period End Approaching
-- **`bl.orphaned`** Line Owner Departed
+- **`bl.orphaned`** Line Owner Departed — invalidates owner_ref, forecast_outturn
+- **`bl.reforecast_due`** Reforecast Overdue
 
 
 ## Actions
 
-- **Recompute available net of commitment** (system) — Replacesthe ledger view with the budget view. The single highest-value action on this object.
-- **Reconcile the commitment register** (agent) — OpenPOs, approved uninvoiced work and remaining run rate, in one figure with a stated confidence.
-- **Brief the budget holder** (agent) — Committed first, balancelast. Leading with the balance is how a holder leaves a briefing believing they have money they have already spent.
-- **List what the freeze cannot stop** (agent) — Obligations already incurred, before anybody announces a saving that is not one.
+- **Recompute available net of commitment** (system) — Replaces the ledger view with the budget view. The single highest-value action on this object and the cheapest.
+- **Reconcile the commitment register** (agent) — Open POs, approved-uninvoiced work and remaining run rate, in one figure with a stated confidence.
+- **Brief the budget holder** (agent) — Committed first, balance last. Leading with the balance is how a holder leaves believing they have money they have already spent.
+- **List what the freeze cannot stop** (agent) — Obligations already incurred, itemised before anybody announces a saving that is not one.
 - **Raise a period-end accrual** (human) — Recognises cost incurred without an invoice. Keeps the close honest and the next period clean.
-- **Request a virement** (human) — Requires the authoritythat would have allocated the money, not the authority of the receiving line.
-- **Escalate an overcommitment** (human) — Names whocommitted the money and under what authority. Uncomfortable, and the only version that prevents a repeat.
-- **Reforecast the outturn** (human) — A forecast unchanged forthree months is the original budget being retyped.
-- **Reassign an orphaned line** (agent) — Triggered by a leaver.Nothing breaks when a line is orphaned, which is exactly why it stays orphaned.
+- **Request a virement** (human) — Requires the authority that would have allocated the money, not the authority of the receiving line.
+- **Escalate an overcommitment** (human) — Names who committed the money and under what authority. Uncomfortable, and the only version that prevents a repeat.
+- **Reforecast the outturn** (human) — A forecast unchanged for three months is the original budget being retyped.
+- **Reassign an orphaned line** (agent) — Triggered from the leaver process. Nothing breaks when a line is orphaned, which is exactly why it stays orphaned unless something external pushes.
+- **Take the renewal decision inside the notice window** (human) — The only moment the renewal can be decided rather than defaulted. One day later the next term is committed and the conversation is about exit, not choice.
 
 
 ## Evidence
 
-- **erp** · 10000 bp — Posted ledger and commitment register. Definitive,and unreachable from this stack today.
-- **document** · 9000 bp — The approved budget paper and any supplementaryallocation. Proof the money was granted before it was spent.
-- **contract** · 8800 bp — Committed term value and renewal mechanics. Thecommitment nobody raises.
-- **register** · 8000 bp — Contract and PO registers. Strong for the visiblehalf of commitment, silent on the invisible half.
-- **email** · 6000 bp — Freeze instructions and allocation approvals. Howmost of this is actually communicated, and how little of it is filed.
-- **manual_entry** · 5500 bp — The budget holder's own tracker. Frequentlymore accurate than the finance system on commitment, and trusted by nobody with authority.
-- **hris** · 5000 bp — Owner and cost-centre structure. Decides accountability,not amounts.
-- **derived** · 3500 bp — Burn rates and clustering. Directional only, andworthless unless phasing-adjusted.
+- **erp** · 10000 bp — Posted ledger and commitment register. Definitive, and unreachable from this stack today.
+- **document** · 9000 bp — The approved budget paper and any supplementary allocation. Proof the money was granted before it was spent.
+- **contract** · 8800 bp — Committed term value and renewal mechanics. The commitment nobody raises and the one no PO report contains.
+- **register** · 8000 bp — Contract and purchase order registers. Strong for the visible half of commitment, entirely silent on the invisible half.
+- **email** · 6000 bp — Freeze instructions and allocation approvals. How most of this is actually communicated, and how little of it is filed.
+- **manual_entry** · 5500 bp — The budget holder's own tracker. Frequently more accurate than the finance system on commitment, and trusted by nobody with authority — which is a governance problem, not a data problem.
+- **hris** · 5000 bp — Owner and cost centre structure. Decides accountability, never amounts.
+- **derived** · 3500 bp — Burn rates and clustering. Directional only, and actively misleading unless phasing-adjusted.
 
 
 ## Metrics
 
-- **commitment_visibility_bp** (basis_points) — Share of true commitment reflectedin the reported figure. The honest measure of whether this object is working at all.
-- **forecast_accuracy_bp** (basis_points) — Outturn against the last reforecast.Improves the moment commitment becomes visible and not before.
-- **period_end_surprise_value** (currency) — Value of commitment discovered inthe final month. The number this object exists to drive to zero.
-- **overcommitment_incidents** (count) — Lines that exceeded allocation on commitment.Counted as governance events, with a name attached.
-- **unaccrued_receipt_value** (currency) — Goods or services received, not invoiced,not accrued at close. Makes the next period carry a cost it did not create.
-- **reforecast_frequency** (count) — Reforecasts per period. A line reforecastonce a year is a line nobody is managing.
-- **final_month_spend_share** (percent) — Share of annual spend committed in thelast month. Measures the use-it-or-lose-it rule, not the buyers.
+- **commitment_visibility_bp** (basis_points) — Share of true commitment reflected in the reported figure. The honest measure of whether this object is working at all.
+- **period_end_surprise_value** (currency) — Value of commitment discovered in the final month of the period. The number this object exists to drive to zero.
+- **forecast_accuracy_bp** (basis_points) — Outturn against the last reforecast. Improves the moment commitment becomes visible and not one day before.
+- **overcommitment_incidents** (count) — Lines that exceeded allocation on commitment. Counted as governance events, with a name attached to each.
+- **unaccrued_receipt_value** (currency) — Goods or services received, not invoiced, not accrued at close. Makes the next period carry a cost it did not create.
+- **reforecast_frequency** (count) — Reforecasts per period. A line reforecast once a year is a line nobody is managing; one reforecast weekly is a line nobody believes.
+- **final_month_spend_share** (percent) — Share of annual spend committed in the final month. It measures the use-it-or-lose-it rule, not the buyers.
+- **orphaned_line_count** (count) — Lines whose named owner has left. Nothing breaks when a line is orphaned, which is exactly why the count only ever goes up.
+
+
+## References
+
+- **Commitment (encumbrance) accounting** · framework
+- **Purchase order commitment reporting (open PO report)** · framework
+- **Flexed budget and phasing-adjusted variance analysis** · framework
+- **Accruals concept — cost recognised when incurred, not when invoiced** · standard
+- **Beyond Budgeting and rolling forecasts** · methodology
+- **Fiscal year-end spending surge in public finance** · research
+- **Virement rules in budgetary control** · framework
+- **Auto-renewal and notice-period-before-expiry** · framework
+- **RACI — accountability is singular** · framework
+- **Segregation of duties in budget control** · framework
 
 
 ## Examples
 
-- **Software line, 40% consumed at month nine** — Looks healthy. Three annual renewals insidetheir notice windows commit the remaining 70%, and none of them appear anywhere.
-- **Consultancy engagement approved on an email, no PO** — approved_uninvoiced_value. Workunder way, ledger empty, budget holder confident.
-- **Freeze announced after the goods arrived** — The obligation stands. A hard freeze herebuys a supplier incident, not a saving.
-- **Line approved in January, frozen in March** — Everything committed in between is uncovered.It surfaces one invoice at a time over the next quarter.
-- **Travel line over budget with no overspend** — Six weeks of claims arrived at once. Themoney went in January; the line found out in March.
-- **Owner left in March, line still spending** — Nothing breaks, nothing alerts. Discoveredby whoever inherits the variance at year end.
-- **£180k underspend on a change programme** — Celebrated in the review. The programme hadstopped in July and nobody had said so.
-- **Nine low-value POs raised in the final fortnight** — A rational response to a use-it-or-lose-itrule. Fix the rule, not the buyers.
+- **Software line, forty per cent consumed at month nine** _(misclassification)_ — Looks healthy. Three annual renewals inside their notice windows commit the remaining seventy per cent, and none of them appear anywhere in the figure.
+- **Consultancy engagement approved on an email thread, no purchase order** _(typical)_ — approved_uninvoiced_value. Work under way, ledger empty, budget holder confident.
+- **Freeze announced after the goods arrived** _(edge)_ — The obligation stands. A hard freeze here buys a supplier incident, not a saving.
+- **Line approved in January, frozen in March** _(edge)_ — Everything committed in between is uncovered. It surfaces one invoice at a time over the next quarter, each arriving as an individual surprise.
+- **Travel line over budget with nobody having overspent** _(misclassification)_ — Six weeks of claims arrived at once. The money went in January and the line found out in March.
+- **Owner left in March, line still spending** _(edge)_ — Nothing breaks, nothing alerts. Discovered by whoever inherits the variance at year end.
+- **Large underspend on a change programme, praised at the review** _(misclassification)_ — The programme had stopped in July and nobody had said so. The saving is the symptom.
+- **Nine low-value POs raised in the final fortnight** _(typical)_ — A rational response to a use-it-or-lose-it rule. Fix the rule, not the buyers.
+- **Contingency line untouched in month eleven** _(counterexample)_ — Working exactly as designed. Reporting it as underspend gets it raided this year and cut next year.
 
 ## Metadata
 
-owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional**
+owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> The only finance object with natively administrative executable patterns, because budget_freeze and budget_approved are both live Layer 2 observation kinds — bl.approved_then_frozen in particular fires today and catches a sequence almost no organisation handles. Everything numeric is still dark. `budget.committed` is the single most valuable unmet ask in the subdomain: it is the number that surprises people at period end, most ERPs already compute it, and nothing projects it into a typed fact. Second is the contract triple (end_at, notice_period_days, auto_renew), because auto-renewal commits money by nobody doing anything and is therefore absent from every commitment figure built around purchase orders. Note the deliberate reading of a freeze as soft rather than hard: a freeze stops new commitment and cannot void an obligation already incurred, and collapsing the two turns a budget instruction into a supplier-relations incident.
+> The only finance object with natively administrative executable patterns, because budget_freeze and budget_approved are both live Layer 2 observation kinds. Five of thirteen fire today, and bl.approved_then_frozen is the standout: it catches a sequence almost no organisation handles, using nothing but two observations that already exist. bl.freeze_lands_on_outstanding_promises is the other one worth defending — an outstanding commitment at freeze time is the best proxy available for approved-but-uninvoiced work, which is the half of commitment no purchase order report contains.
+Everything numeric is still dark. `budget.committed` is the single most valuable unmet ask in the subdomain: it is the number that surprises people at period end, most ERPs already compute it, and nothing projects it into a typed fact. Second is the contract triple — end_at, notice_period_days, auto_renew — because auto-renewal commits money by nobody doing anything and is therefore absent from every commitment figure built around purchase orders.
+Note two deliberate authoring choices. A freeze is read as SOFT rather than hard, because it stops new commitment and cannot void an obligation already incurred, and collapsing the two turns a budget instruction into a supplier-relations incident. And the year-end buying season is treated as a rule defect rather than a buyer defect throughout — it is a rational response to use-it-or-lose-it, and policing it produces the same spend with better paperwork.

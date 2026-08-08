@@ -2,98 +2,151 @@
 
 # Entitlement
 
-`customer_support.obj.core.entitlement` · v1.0.0 · **draft** · scope **core**
+`customer_support.obj.core.entitlement` · v2.0.0 · **draft** · scope **core**
 
-> What this customer is contractually owed: which channels they may use, during which hours, against which response targets, through which named people, for how many seats, until when. It BOUNDS what may be promised — it does not describe what is happening. Entitlement says a four-hour first response exists; SLA Target is the timestamp four hours from now on this ticket and whether the clock is running. Two rules govern this object and both are behavioural rather than technical: it is CHECKED, never assumed, and it EXPIRES SILENTLY. Nothing fires when a term ends, a plan downgrades or a seat count is cut, so the record an agent is reading is routinely last quarter's. Over-serving against a stale record is not generosity — it sets a precedent that the renewal conversation then has to unwind, and the unwinding is more expensive than the service was.
-
-
-Also called: `Support Entitlement`, `Contractual Coverage`, `Service Schedule`, `Support Plan Instance`
+> What this customer is contractually owed: which channels they may use, during which hours, against which response targets, on which products and severities, through which named people, for how many seats, until when. It BOUNDS what may be promised — it does not describe what is happening. Two rules govern this object and both are behavioural rather than technical: it is CHECKED, never assumed, and it EXPIRES SILENTLY. Nothing fires when a term ends, a plan downgrades or a seat count is cut, so the record an agent is reading is routinely last quarter's. Over-serving against a stale record is not generosity — it sets a precedent that the renewal conversation then has to unwind, and the unwinding is more expensive than the service was.
 
 
-## Attributes (37)
+**The discriminator.** Entitlement says a four-hour first response EXISTS for this customer; SLA Target is the timestamp four hours from now on this ticket and whether the clock is running. Entitlement is a scope with a term; SLA Target is an instrument with a state. If changing the answer requires reading a contract, it is Entitlement; if it requires reading a ticket, it is not.
+
+
+Also called: `Support Entitlement`, `Contractual Coverage`, `Service Schedule`, `Support Plan Instance`, `Service Level Agreement (the document, not the clock)`, `Coverage Terms`
+
+
+### Questions this object answers
+
+- May this response target, this channel, this escalation path be promised to this customer at all — or would promising it manufacture a breach that did not previously exist?
+- Is this customer entitled RIGHT NOW, as opposed to having been entitled when someone last looked at the record?
+- How old is what we believe about this customer's contract, and how much should that staleness discount every downstream promise?
+- Which clock basis applies — business hours against the customer's calendar, or calendar hours 24x7 — and in whose timezone?
+- Are we already serving materially beyond what was sold, and has anyone written that down with an owner and an end date?
+- Is the person in front of us permitted by contract to raise this ticket, and does that matter enough to act on right now?
+- Which severities and request types may this plan raise, so that a sev-1 declaration is settled as an entitlement question before it becomes a triage argument?
+
+
+### What it is NOT responsible for
+
+- Not the clock. Start, pause, deadline and breach state belong to customer_support.obj.core.sla_target, which instantiates targets WITHIN these bounds.
+- Not the priority decision. Entitlement bounds what may be promised; it never decides what gets worked first. That is customer_support.obj.core.ticket plus the triage capability.
+- Not the commercial relationship. ARR, renewal health and expansion belong to customer_support.obj.core.customer_account; they are read here as weight and never as scope.
+- Not the staffing reality. Whether anyone is actually awake to honour 24x7 belongs to customer_support.obj.core.coverage_window; entitlement states the obligation, not the rota.
+- Not the plan catalogue. Standard tier definitions belong to customer_support.obj.core.support_plan; this object holds the terms actually sold to THIS account, including the overrides that make the tier name misleading.
+- Not the escalation itself. Whether an executive escalation path exists is an entitlement term; who received it and why is customer_support.obj.core.escalation.
+
+
+## Attributes (61)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
-| `contract_terms` | composite |  |  | What the paper says. The only authoritative part of this object; everything else is context around it. | `plan`, `effective_at`, `expires_at`, `auto_renews`, `terms_in_flux` |
-| `validity` | composite |  |  | Whether the entitlement binds right now. Separated from Contract Terms because an expired contract still has terms — they just stopped applying, and the two questions get confused constantly at the point of promise.  | `is_entitled`, `in_grace_period`, `grace_period_days` |
-| `coverage` | composite |  |  | When and through what the customer may reach us. The half of entitlement that gets breached by accident rather than by decision. | `entitled_channels`, `coverage_hours`, `coverage_timezone`, `coverage_calendar` |
-| `response_commitments` | composite |  |  | The targets the contract promises. These are the CEILING on what may be committed to a customer, not a forecast of what will happen — the SLA Target object owns the clock.  | `entitled_first_response_minutes`, `entitled_resolution_hours`, `entitled_severity_levels` |
-| `people_and_seats` | composite |  |  | Who may raise a ticket and how many of them there are. The most frequently exceeded term and the least frequently enforced. | `named_contacts`, `named_contact_limit`, `contact_outside_named_list`, `seat_count`, `seats_in_use`, `seat_expansion_blocked`, `has_technical_account_manager` |
-| `commercial_context` | composite |  |  | Read by Layer 4 to weigh, never to decide. Entitlement bounds the promise; ARR does not widen it. This component exists so that over-service is visible as an economic fact, not so that a large account gets served past its plan.  | `account_ref`, `account_arr`, `renewal_at`, `downgrade_risk`, `serving_beyond_entitlement` |
-| `verification` | composite |  |  | How we know any of the above, and how old that knowledge is. The staleness field matters more than most of the values it qualifies. | `last_verified_at`, `verification_source`, `support_plan_ref` |
-| `plan` | value | enum | yes | The tier of record. `unknown` and `none` are deliberately distinct: `none` is a positive finding (we checked, this account buys no support) and `unknown` is an open task. Systems that collapse the two default to serving everybody, which is exactly how support becomes a cost centre nobody can size. `custom` is not a cop-out — enterprise agreements routinely override two or three terms and leave the rest of the tier intact, and forcing those into the nearest standard tier is how the wrong target gets quoted.  | `entitlement.plan` |
-| `effective_at` | value | timestamp |  | When this entitlement started. Matters for backdated claims and for disputes about a ticket raised during a gap between terms. |  |
+| `contract_terms` | composite |  |  | What the paper says. The only authoritative part of this object; everything else is context around it or judgement about it. Kept as its own group so that "what was signed" and "does it bind today" can never be answered by the same field, which is the collapse that lets an expired contract keep quoting live targets.  | `plan`, `plan_is_custom_override`, `effective_at`, `expires_at`, `auto_renews`, `renewal_notice_days`, `terms_in_flux`, `superseded_by_ref` |
+| `plan` | value | enum | yes | The tier of record. `unknown` and `none` are deliberately distinct: `none` is a positive finding (we checked, this account buys no support) and `unknown` is an open task. Systems that collapse the two default to serving everybody, which is exactly how support becomes a cost centre nobody can size. `custom` is not a cop-out — enterprise agreements routinely override two or three terms and leave the rest of the tier intact, and forcing those into the nearest standard tier is how the wrong target gets quoted with confidence.  | `entitlement.plan` |
+| `plan_is_custom_override` | value | boolean |  | True when the named tier is materially overridden by a side letter or bespoke schedule. Exists because the dangerous case is not plan = custom — that one announces itself — but plan = premium with two rewritten terms nobody outside the account team knows about. Every tier-to-target mapping in every support tool is wrong for exactly these accounts, which are also the largest ones.  |  |
+| `effective_at` | value | timestamp |  | When this entitlement started. Matters for backdated claims and for the genuinely common dispute about a ticket raised during a gap between terms — a renewal signed late leaves a window in which the customer believes they were covered and the record says otherwise.  |  |
 | `expires_at` | value | timestamp | yes | The single most load-bearing field on this object and the one nothing in the pipeline emits. A null expiry means UNKNOWN, never "perpetual" — an unknown expiry is a verification task, not a licence. Silent expiry is the defining failure mode of this object: no event fires, the cached record still reads `premium`, and the first anyone learns of it is when the renewal team asks why we ran a sev-1 bridge for a lapsed account.  | `entitlement.expires_at` |
-| `auto_renews` | value | boolean |  | Changes what expiry means. On an auto-renewing contract, expires_at is a checkpoint; on a fixed-term one it is a cliff. Same date, opposite operational reading.  |  |
-| `terms_in_flux` | value | boolean |  | True while the contract is actively being negotiated or under legal review. The one window in which the cached record is guaranteed to be wrong soon, and the only part of this object the pipeline can currently detect.  |  |
-| `is_entitled` | value | boolean |  | The resolved answer to "does this customer have paid support right now". Derived from plan, expires_at and grace, never asserted directly. |  |
-| `in_grace_period` | value | boolean |  | Serving past expiry on purpose. Legitimate and common — cutting a renewing customer off on day one of a lapse is a commercial own-goal — but it must be a decision with an owner and an end date, otherwise it silently becomes the new entitlement.  |  |
-| `grace_period_days` | value | integer |  | How long the grace runs. Null with in_grace_period true is the shape of an open-ended concession and should be treated as a defect. |  |
-| `entitled_channels` | value | list |  | e.g. email, help centre, chat, phone, shared Slack channel. Read by Layer 5.2 as a hard filter on reply channel. Breaching this is almost never a decision — an agent answers on whatever channel the customer used, and phone support the customer never bought becomes the norm one call at a time.  |  |
-| `coverage_hours` | value | enum |  | When the clock may run. Distinct from staffing: an account entitled to 24x7 that we cover only in one region is a coverage gap in Layer 4's terms, and this field is what makes that comparison expressible at all.  | `entitlement.coverage_hours` |
-| `coverage_timezone` | value | string |  | The customer's business hours, not ours. Getting this backwards is the most common source of a first-response breach that nobody can explain afterwards. |  |
-| `coverage_calendar` | value | string |  | Which holiday calendar applies. Routinely omitted from support tooling and routinely argued about in January, when one side's public holiday is the other side's Tuesday.  |  |
-| `entitled_first_response_minutes` | value | integer |  | The contractual first-response ceiling. What may be PROMISED. The SLA Target object holds what will actually happen. |  |
-| `entitled_resolution_hours` | value | integer |  | Frequently absent from real contracts, and its absence is meaningful: most support agreements commit to a response, not a fix. Populating this from a marketing page is a common and expensive authoring error.  |  |
-| `entitled_severity_levels` | value | list |  | Which severities this plan may raise. A standard-tier account declaring sev-1 is an entitlement question before it is a triage question. |  |
-| `named_contacts` | value | list |  | The people the contract permits to raise tickets. On enterprise agreements this is a closed list and enforcing it is what the customer is paying for. |  |
-| `named_contact_limit` | value | integer |  | How many named contacts the plan allows. |  |
-| `contact_outside_named_list` | value | boolean |  | Set when the current requester is not on the named list. Almost always resolved by serving them anyway — which is correct once and a policy by the fifth time.  |  |
-| `seat_count` | value | integer |  | Seats sold. The commercial denominator behind every per-seat support entitlement. |  |
-| `seats_in_use` | value | integer |  | Seats actually provisioned. The gap between this and seat_count is a renewal conversation, in either direction. |  |
-| `seat_expansion_blocked` | value | boolean |  | True when the buying side has frozen spend, so the seat count is a ceiling that will fall rather than a floor that will grow. |  |
-| `has_technical_account_manager` | value | boolean |  | A named human as a contract term. Changes routing, escalation path and tone, so it belongs on entitlement rather than in a CRM note. |  |
-| `account_ref` | reference | ref |  | The account this entitlement covers. One account may hold several entitlements across products. | customer_support.obj.core.customer_account |
-| `account_arr` | value | money |  | Context for Layer 4's weighing, never an override. ARR does not widen entitlement. It is here so that cost-to-serve is computable and so that over-service on a small account is visible as the loss it is.  | `account.arr` |
-| `renewal_at` | value | timestamp |  | Distinct from expires_at — the renewal decision usually precedes the contract end by a quarter. Every precedent set inside that window is priced into the renewal.  | `account.renewal_at` |
-| `downgrade_risk` | value | enum |  | Whether the entitlement recorded today is likely to survive the next term. Inferable from commercial pressure signals long before the paper changes, which is the only early warning support gets before a plan quietly drops a tier.  |  |
-| `serving_beyond_entitlement` | value | boolean |  | True when observed service exceeds the contracted level. Not a violation to be blocked — it is often the right call — but an unrecorded one is a liability, because at renewal the customer is buying what they experienced, not what they signed.  |  |
-| `last_verified_at` | value | timestamp |  | When the entitlement was last checked against a system of record. The staleness of this field is more decision-relevant than most of the values it qualifies; a plan verified eleven months ago is a rumour.  |  |
-| `verification_source` | value | enum |  | How we know. `agent_assertion` and `cached_record` are listed explicitly because they are the two most common sources in practice and the two weakest, and a system that does not distinguish them from `contract` cannot tell a fact from a habit.  |  |
-| `support_plan_ref` | reference | ref |  | The plan template this entitlement instantiates. The template holds the standard terms; this object holds the ones actually sold, including the overrides. | customer_support.obj.core.support_plan |
+| `auto_renews` | value | boolean |  | Changes what expiry means. On an auto-renewing contract expires_at is a checkpoint; on a fixed-term one it is a cliff. Same date, opposite operational reading — and the wrong reading produces either a cut-off customer or a year of unpriced service.  |  |
+| `renewal_notice_days` | value | integer |  | The notice period before auto-renewal in which the customer may cancel. The real deadline on an auto-renewing contract is not expires_at, it is expires_at minus this — which is also the window in which every over-service precedent gets priced. Absent from almost all support tooling and present in almost all enterprise contracts.  |  |
+| `terms_in_flux` | value | boolean |  | True while the contract is actively being negotiated or under legal review. The one window in which the cached record is guaranteed to be wrong soon, and — this is the whole reason it is a field rather than a note — the only part of this object the pipeline can currently detect at all.  |  |
+| `superseded_by_ref` | reference | ref |  | Self-referential. The entitlement that replaced this one. Kept rather than overwritten because tickets raised under the old terms are judged against the old terms — an entitlement change does not rewrite clocks already running, and a system that overwrites in place cannot defend last month's breach report.  | customer_support.obj.core.entitlement |
+| `validity` | composite |  |  | Whether the entitlement binds right now. Separated from contract_terms because an expired contract still has terms — they just stopped applying — and the two questions get confused constantly at the exact moment a promise is being made. Grace is modelled here with an owner and an end date because a grace period without both is not a concession, it is a new entitlement nobody agreed to.  | `is_entitled`, `in_grace_period`, `grace_period_days`, `grace_expires_at`, `grace_owner` |
+| `is_entitled` | derived | boolean |  | The resolved answer to "does this customer have paid support right now". Derived from plan, term dates and grace, never asserted directly — an assertable is_entitled is a field an agent under pressure will set to true, and then it is a belief wearing the clothes of a fact.  | `plan`, `effective_at`, `expires_at`, `in_grace_period`, `grace_expires_at` |
+| `in_grace_period` | value | boolean |  | Serving past expiry on purpose. Legitimate and common — cutting a renewing customer off on day one of a lapse is a commercial own-goal — but it must be a decision with an owner and an end date, otherwise it silently becomes the new entitlement and the renewal conversation starts from a worse place than it needed to.  |  |
+| `grace_period_days` | value | integer |  | How long the grace runs. Null while in_grace_period is true is the shape of an open-ended concession and should be treated as a defect rather than as missing data, because the two are indistinguishable to a queue and only one of them is recoverable.  |  |
+| `grace_expires_at` | value | timestamp |  | The date the concession ends. Exists separately from grace_period_days so that grace can be granted against a calendar event — "until their renewal signs" — rather than only against a duration, which is how it is actually granted in practice.  |  |
+| `grace_owner` | value | string |  | Who authorised serving past expiry. The single field that turns a drift into a decision. An unowned grace is how a support organisation discovers at renewal that it has been running a free premium plan for a quarter, with no one to point at and no one to unwind it.  |  |
+| `coverage` | composite |  |  | When and through what the customer may reach us. The half of entitlement that gets breached by accident rather than by decision — nobody decides to answer on an unentitled channel, they just reply to whatever arrived. Every SLA is bound to a calendar, and coverage is where that binding lives.  | `entitled_channels`, `coverage_hours`, `clock_basis`, `coverage_timezone`, `coverage_calendar`, `excluded_periods` |
+| `entitled_channels` | value | list |  | Which surfaces this contract permits. Read by Layer 5.2 as a hard filter on reply channel. Breaching this is almost never a decision — an agent answers on whatever channel the customer used — and phone support the customer never bought becomes the norm one call at a time, after which it cannot be withdrawn without a fight the account team has to have.  |  |
+| `coverage_hours` | value | enum |  | When the clock may run. Distinct from staffing: an account entitled to 24x7 that we cover only in one region is a coverage gap in Layer 4's terms, and this field is what makes that comparison expressible at all. Distinct also from clock_basis — coverage says which hours exist, clock_basis says how elapsed time is counted inside them.  | `entitlement.coverage_hours` |
+| `clock_basis` | value | enum |  | Business hours or calendar hours. The distinction that almost every SLA dispute traces back to and that almost no support record stores explicitly: a business-hours clock pauses overnight and at weekends, a calendar-hours clock counts every minute 24x7, and a four-hour target means two completely different deadlines under the two. Stored here rather than on sla_target because it is a contract term, not an instrument setting.  |  |
+| `coverage_timezone` | value | string |  | The customer's business hours, not ours. Getting this backwards is the most common source of a first-response breach that nobody can explain afterwards, because both sides' reports are internally consistent and describe different days.  |  |
+| `coverage_calendar` | value | string |  | Which holiday calendar applies. Routinely omitted from support tooling and routinely argued about in January, when one side's public holiday is the other side's Tuesday. The dispute is never about whether we were late; it is about whether the hours counted.  |  |
+| `excluded_periods` | value | list |  | Windows the contract removes from the clock — announced maintenance, agreed freezes, the customer's own change-blackout. Exclusions are never derivable from inclusions, which is why they are a field and not a computation, and an exclusion that exists in the contract but not in the tool reappears as an unexplained breach every quarter.  |  |
+| `scope` | composite |  |  | What the entitlement applies TO. An SLA policy binds targets to a scope — which products, which environments, which request types, which severities — and this is the component that scope is drawn from. Modelled explicitly because scope disputes look like deadline disputes and are settled with completely different evidence.  | `covered_products`, `covered_environments`, `entitled_request_types`, `entitled_severity_levels`, `excluded_scope` |
+| `covered_products` | value | list |  | Which products or modules this entitlement covers. Multi-product accounts routinely hold different tiers per product, and the cheapest way to breach an enterprise SLA is to answer a question about the module they bought at standard tier using the premium clock they bought for a different one.  |  |
+| `covered_environments` | value | list |  | Production, staging, sandbox, on-premise. Almost all enterprise support agreements cover production at a materially higher level than anything else, and almost all support tooling stores none of it, so a sandbox outage arrives looking exactly like a production one.  |  |
+| `entitled_request_types` | value | list |  | Which kinds of contact this entitlement's targets apply to. The ITIL split matters commercially, not just taxonomically: an incident is an unplanned interruption to service and a service request is a formal request for something to be provided, and contracts routinely cover incidents 24x7 while leaving service requests on business hours. Collapsing them is how a password reset consumes an out-of-hours engineer.  |  |
+| `entitled_severity_levels` | value | list |  | Which severities this plan may raise. A standard-tier account declaring sev-1 is an entitlement question before it is a triage question, and answering it in that order removes most of the heat — the argument is with the contract, not with the agent. Severity here uses the SEV1–SEV4 blast-radius convention, not the customer's adjective.  |  |
+| `excluded_scope` | value | list |  | What the contract explicitly does not cover — custom code, third-party integrations, data recovery, training. Written down separately because exclusions are where the money is: they are negotiated hard, then stored nowhere, then discovered by an agent three hours into work the contract never bought.  |  |
+| `response_commitments` | composite |  |  | The targets the contract promises. These are the CEILING on what may be committed to a customer, not a forecast of what will happen — SLA Target owns the clock and the queue owns the reality. The breach remedy sits here rather than in a commercial system because it changes the cost of a breach by an order of magnitude and therefore changes how a breach should be triaged.  | `entitled_first_response_minutes`, `entitled_next_response_minutes`, `entitled_resolution_hours`, `response_targets_by_severity`, `breach_remedy`, `service_credit_bp` |
+| `entitled_first_response_minutes` | value | integer |  | The contractual first-response ceiling. What may be PROMISED. Note that "first response" means the first substantive human reply — a contract that does not define it that way has sold an autoresponder, and reading it generously is how a queue reports perfect attainment on tickets nobody has read.  |  |
+| `entitled_next_response_minutes` | value | integer |  | The update cadence owed after the first reply. The most commonly omitted term and the one customers actually experience — a ticket answered in four minutes and then silent for six days met its SLA and failed its customer. Where a contract carries this, honouring it is worth more than shaving the first-response number.  |  |
+| `entitled_resolution_hours` | value | integer |  | Frequently absent from real contracts, and its absence is meaningful: most support agreements commit to a response, not a fix, because a fix time cannot be honestly promised for a fault nobody has diagnosed. Populating this from a marketing page is a common and expensive authoring error — it manufactures an obligation the legal team never accepted.  |  |
+| `response_targets_by_severity` | value | object |  | The per-severity target table, which is how real contracts are actually written. Kept as structure rather than as a single number because the flattened version silently quotes the sev-1 target on a sev-3 ticket, which is the pleasant-sounding error that produces most manufactured breaches.  |  |
+| `breach_remedy` | value | enum |  | What the customer is owed when we miss. Changes the operational meaning of a breach completely: a breach with no remedy is a trust problem, a breach carrying service credits is a finance problem, and a breach carrying a termination right is a company problem. Triage should know which before it decides how hard to fight for the deadline.  |  |
+| `service_credit_bp` | value | integer |  | The credit owed on breach, in basis points of the period fee. Present so that breach cost is computable rather than rhetorical — "we breached forty times last quarter" and "we owe eleven percent of their annual fee" are the same fact and only one of them gets a meeting.  |  |
+| `people_and_seats` | composite |  |  | Who may raise a ticket and how many of them there are. The most frequently exceeded term and the least frequently enforced, which is a fair description of why it is worth modelling: an unenforced limit is a discount nobody agreed to give, and it compounds silently because each individual instance is obviously the right call.  | `named_contacts`, `named_contact_limit`, `contact_outside_named_list`, `authorised_domains`, `seat_count`, `seats_in_use`, `seat_utilisation_bp`, `seat_expansion_blocked`, `has_technical_account_manager`, `tam_ref` |
+| `named_contacts` | value | list |  | The people the contract permits to raise tickets. On enterprise agreements this is a closed list and enforcing it is a substantial part of what the customer is paying for — it is what keeps their own internal support load off our queue. Confidential because it is a list of named individuals at a customer, and it must never widen past the account team.  |  |
+| `named_contact_limit` | value | integer |  | How many named contacts the plan allows. The commercially meaningful number; the list above is only its instantiation, and the two disagree more often than anyone expects because leavers are never removed.  |  |
+| `contact_outside_named_list` | value | boolean |  | Set when the current requester is not on the named list. Almost always resolved by serving them anyway — which is correct once and a policy by the fifth time. The value of the field is entirely cumulative: one instance is noise, a quarter of instances is a renewal line item.  |  |
+| `authorised_domains` | value | list |  | The email domains that resolve to this account. How requester-to-entitlement matching actually works in practice, and the source of both its worst false negatives (contractors on their own domain) and its worst false positives (a consumer address at a large free provider matching nothing). Stored explicitly so that a failed match is legible as a matching failure rather than as an entitlement finding.  |  |
+| `seat_count` | value | integer |  | Seats sold. The commercial denominator behind every per-seat support entitlement and behind any honest cost-to-serve number — support cost per seat is comparable across accounts in a way that support cost per ticket never is.  |  |
+| `seats_in_use` | value | integer |  | Seats actually provisioned. The gap between this and seat_count is a renewal conversation in either direction — over the line is a true-up, far under it is an account that will downgrade and has not told anyone yet.  |  |
+| `seat_utilisation_bp` | derived | integer |  | Provisioned seats as a proportion of seats sold, in basis points. Derived rather than stored because both inputs move independently and a cached ratio is wrong within a week. Read in both directions: above 10000 is an enforcement question, far below it is a churn indicator dressed as a quiet account.  | `seats_in_use`, `seat_count` |
+| `seat_expansion_blocked` | value | boolean |  | True when the buying side has frozen spend, so the seat count is a ceiling that will fall rather than a floor that will grow. Matters to support specifically because support meets the consequence first — the over-limit user contacts us to ask why they cannot log in, weeks before anyone in sales learns the budget moved.  |  |
+| `has_technical_account_manager` | value | boolean |  | A named human as a contract term. Changes routing, escalation path and tone, so it belongs on the entitlement rather than in a CRM note — a TAM the ticket cannot see is a TAM the customer paid for and did not get.  |  |
+| `tam_ref` | reference | ref |  | The specific person. Present because "has a TAM" and "has THIS TAM who is on leave until Thursday" produce different routing, and the second question is the one that gets asked during an incident.  | customer_support.obj.core.support_agent |
+| `commercial_context` | composite |  |  | Read by Layer 4 to weigh, never to decide. Entitlement bounds the promise; ARR does not widen it. This component exists so that over-service is visible as an economic fact, not so that a large account gets served past its plan — and the decision_factor that reads it is deliberately typed `context` rather than `increases` for exactly that reason.  | `account_ref`, `account_arr`, `renewal_at`, `days_to_renewal`, `downgrade_risk`, `serving_beyond_entitlement`, `over_service_delta_bp` |
+| `account_ref` | reference | ref | yes | The account this entitlement covers. One account may hold several entitlements across products and terms, which is why the edge runs this way round — an account with one entitlement is a simplification, not the model.  | customer_support.obj.core.customer_account |
+| `account_arr` | value | money |  | Context for Layer 4's weighing, never an override. ARR does not widen entitlement. It is here so that cost-to-serve is computable and so that over-service on a small account is visible as the loss it is, rather than as a series of individually defensible kindnesses.  | `account.arr` |
+| `renewal_at` | value | timestamp |  | Distinct from expires_at — the renewal decision usually precedes the contract end by a quarter. Every precedent set inside that window is priced into the renewal, which makes this the field that decides whether a given over-service is cheap or expensive.  | `account.renewal_at` |
+| `days_to_renewal` | derived | integer |  | The countdown, derived so it cannot go stale. Exists because "renewing in three weeks" and "renewed last month" call for opposite handling of the identical ticket, and a raw timestamp forces every consumer to do that arithmetic itself and get it wrong differently.  | `renewal_at` |
+| `downgrade_risk` | value | enum |  | Whether the entitlement recorded today is likely to survive the next term. Inferable from commercial pressure signals long before the paper changes, which is the only early warning support gets before a plan quietly drops a tier. Confidential without qualification — this is our judgement about the customer's intentions and it must never reach them.  |  |
+| `serving_beyond_entitlement` | value | boolean |  | True when observed service exceeds the contracted level. Not a violation to be blocked — it is often the right call — but an unrecorded one is a liability, because at renewal the customer is buying what they experienced, not what they signed, and the gap between the two is the size of the argument.  |  |
+| `over_service_delta_bp` | derived | integer |  | How far observed service exceeds what was contracted, in basis points of the contracted level. Derived so it is arguable: "we are serving this account at roughly twice its tier" is a sentence a support manager can escalate, and "this account feels heavy" is not.  | `serving_beyond_entitlement`, `account_arr`, `derived.contact_frequency` |
+| `verification` | composite |  |  | How we know any of the above, and how old that knowledge is. The staleness field matters more than most of the values it qualifies — this component is the reason the object can distinguish a fact from a habit, and removing it would leave a record that is confidently wrong in exactly the cases that cost money.  | `last_verified_at`, `verification_staleness_days`, `verification_source`, `verified_by`, `support_plan_ref`, `entitlement_confidence_bp` |
+| `last_verified_at` | value | timestamp |  | When the entitlement was last checked against a system of record. The staleness of this field is more decision-relevant than most of the values it qualifies; a plan verified eleven months ago is a rumour with a timestamp.  |  |
+| `verification_staleness_days` | derived | integer |  | Age of the belief, derived so nothing has to remember to update it. Should discount the confidence of every field this object emits — not the truth of them, the confidence, which is a different and more useful operation than marking the record invalid.  | `last_verified_at` |
+| `verification_source` | value | enum |  | How we know. `agent_assertion` and `cached_record` are listed explicitly because they are the two most common sources in practice and the two weakest, and a system that does not distinguish them from `contract` cannot tell a fact from a habit. Note the ordering is not a ranking of accuracy but of independence — see the evidence section.  |  |
+| `verified_by` | value | string |  | Who performed the check. Present so that verification is attributable and therefore auditable; a verification nobody signed is indistinguishable from one that never happened, and both look identical in the metric.  |  |
+| `support_plan_ref` | reference | ref |  | The plan template this entitlement instantiates. The template holds the standard terms; this object holds the ones actually sold, including the overrides. Zero is legitimate — bespoke agreements instantiate no template at all.  | customer_support.obj.core.support_plan |
+| `entitlement_confidence_bp` | derived | integer |  | How much this object's own answers should be trusted, in basis points. Derived from source strength, staleness and whether paper is currently moving. Exists so that "we believe this account is premium" can be handed downstream WITH its uncertainty rather than as a bare claim — the difference between a brain that degrades gracefully and one that is confidently wrong.  | `verification_source`, `verification_staleness_days`, `terms_in_flux` |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| covers | `customer_support.obj.core.customer_account` | one |  |  | — | The unit of entitlement is the account, never the person. An individual is entitled only through the account they belong to. |
-| belongs_to | `customer_support.obj.core.support_plan` | zero_or_one |  |  | — | The plan is the template, this is the instance. Zero_or_one because bespoke enterprise agreements exist that instantiate no template at all, and forcing them onto the nearest plan is how the wrong response target gets quoted with confidence.  |
-| gates | `customer_support.obj.core.sla_target` | zero_or_many |  |  | — | An SLA target may only exist within the bounds of an entitlement. This is the single most important edge in the domain — an SLA clock instantiated without one is measuring a promise nobody sold.  |
-| covers | `customer_support.obj.core.coverage_window` | zero_or_many |  |  | — | coverage_hours in the abstract resolves into concrete windows against a timezone and a holiday calendar. The windows are where the breach actually happens. |
-| references | `customer_support.obj.core.named_contact` | zero_or_many |  |  | — | The closed list of people who may raise a ticket. Where the list is enforced, enforcement is part of what was bought. |
-| gates | `customer_support.obj.core.ticket` | zero_or_many |  |  | — | Bounds what may be promised on the ticket. It does not decide whether the ticket is worked — an unentitled customer with a live outage is still a business decision. |
-| gates | `customer_support.obj.core.escalation` | zero_or_many |  |  | — | Executive escalation paths and named on-call access are contract terms on most enterprise agreements. Granting one outside entitlement is the most expensive precedent in support, because it is the one the customer remembers.  |
-| influences | `customer_support.obj.core.churn_risk` | zero_or_many |  |  | — | Both directions. Under-serving against entitlement is a churn driver; sustained over-serving hides one, because the account renews on an experience the contract never priced and the disappointment lands a year later.  |
-| covers | `customer_support.obj.core.requester` | zero_or_many |  |  | — | A requester inherits entitlement from the account. They never carry their own, which is why "but I'm a paying customer" is answered at the account level. |
+| gates | `customer_support.obj.core.sla_target` | zero_or_many | 2200 bp | 9500 bp | — | An SLA target may only exist within the bounds of an entitlement. The single most important edge in the domain — a clock instantiated without one is measuring a promise nobody sold, and its breaches are noise that trains the queue to ignore the real ones. High weight, lower-than-perfect confidence, because in practice clocks routinely exist with no traceable entitlement behind them and the model has to be able to say so.  |
+| covers | `customer_support.obj.core.customer_account` | one | 1800 bp | 9800 bp | — | The unit of entitlement is the account, never the person. An individual is entitled only through the account they belong to, which is the whole answer to "but I'm a paying customer" from someone using a personal address.  |
+| gates | `customer_support.obj.core.ticket` | zero_or_many | 1500 bp | 9000 bp | — | Bounds what may be promised on the ticket. Worth traversing on every single contact and not only on disputes, because the breach is created at the moment of reassurance, not at the moment of lateness. It does NOT decide whether the ticket is worked — an unentitled customer with a live outage is still a business decision, made by a human.  |
+| covers | `customer_support.obj.core.coverage_window` | zero_or_many | 1200 bp | 8000 bp | — | coverage_hours in the abstract resolves into concrete windows against a timezone and a holiday calendar. Traverse this whenever the question is "may I promise Thursday evening" rather than "what tier are they" — the windows are where the breach actually happens, and the obligation and the rota are two different objects on purpose.  |
+| belongs_to | `customer_support.obj.core.support_plan` | zero_or_one | 900 bp | 7500 bp | `absent: entitlement.custom_terms` | The plan is the template, this is the instance. Zero_or_one because bespoke enterprise agreements exist that instantiate no template at all, and forcing them onto the nearest plan is how the wrong response target gets quoted with confidence. The condition is the point: the edge is safe to traverse for defaults only while no custom terms exist.  |
+| gates | `customer_support.obj.core.escalation` | zero_or_many | 900 bp | 7000 bp | — | Executive escalation paths and named on-call access are contract terms on most enterprise agreements. Granting one outside entitlement is the most expensive precedent in support, because it is the one the customer remembers and the one they will ask for by name next time.  |
+| gates | `customer_support.obj.core.commitment` | zero_or_many | 700 bp | 6500 bp | — | Every "I'll come back to you Friday evening" is a commitment that must land inside coverage. Worth traversing because this is the cheapest preventable breach in the file — the promise is made hours before it is broken, and commitment.due_at already exists in the substrate while coverage_hours does not.  |
+| references | `customer_support.obj.core.named_contact` | zero_or_many | 500 bp | 6000 bp | `exists: entitlement.named_contacts` | The closed list of people who may raise a ticket. Where the list is enforced, enforcement is part of what was bought. Deliberately low weight relative to the gates above: acting on this edge in the moment is almost always wrong, and its value is cumulative and commercial.  |
+| covers | `customer_support.obj.core.requester` | zero_or_many | 500 bp | 8500 bp | — | A requester inherits entitlement from the account and never carries their own. Worth traversing to resolve which entitlement applies to a contact, and worth NOT trusting when the match ran on an email domain — see authorised_domains.  |
+| influences | `customer_support.obj.core.churn_risk` | zero_or_many | 500 bp | 5000 bp | — | Both directions, which is why it is bidirectional rather than two edges. Under-serving against entitlement is a churn driver. Sustained over-serving HIDES one, because the account renews on an experience the contract never priced and the disappointment lands a year later at a worse moment. Low confidence honestly stated: the causal link is real and the evidence for any individual instance of it is weak.  |
+| gates | `customer_support.obj.core.incident` | zero_or_many | 400 bp | 5500 bp | — | Whether this account is owed proactive incident communication, a status bridge, or a written RCA is a contract term on enterprise agreements and a courtesy everywhere else. Worth traversing during a major incident specifically to know who must be told versus who may be told.  |
+| supersedes | `customer_support.obj.core.entitlement` | zero_or_one | 300 bp | 7000 bp | — | Self-referential. A renewal creates a new entitlement and archives the old one; it does not edit it in place. Traverse this when judging a ticket raised before the change — an entitlement change does not rewrite clocks that were already running, and a system that overwrote the record cannot prove what was owed last month.  |
 
 
 ## States
 
-Initial `unknown`
+Initial `unknown` · terminal `archived`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `unknown` | No verified entitlement. The honest default and the state most accounts are actually in, because "the CRM says premium" is not verification. Promising from here is guessing.  | — |  |
-| `active` | A verified entitlement inside its term. The only state in which a response target may be committed without a caveat. | — |  |
-| `verified` | Checked against a system of record within the current term. Distinct from `active` because `active` is a belief and `verified` is a receipt, and the difference is exactly what stops an agent quoting last year's plan.  | — |  |
-| `at_risk` | In term, but the commercial signals say the next term will be smaller. Serve to the contract; stop setting precedents. | `has_obs: budget_freeze` |  |
-| `expired` | The term ended. Nothing may be promised from here and anything served is a concession with an owner. The most consequential state in this object and the only one the pipeline cannot currently detect.  | — |  |
-| `revoked` | Withdrawn before term end — non-payment, breach, or a cancelled contract. Different from expiry, and Layer 6 must not learn from the two together. | — |  |
-| `archived` | Superseded by a later entitlement, kept because tickets raised under it are judged against its terms, not the new ones. | — |  |
+| `unknown` | No verified entitlement. The honest default and the state most accounts are actually in, because "the CRM says premium" is not verification. Promising from here is guessing.  | — | Serve if the situation warrants it, but every commitment made from here is a concession until proven otherwise, and it should be counted as one.  |
+| `active` | A believed entitlement inside its term. Sufficient to bound a promise; not sufficient to defend one in a dispute.  | — | Targets may be quoted with the standard caveat that they are contractual ceilings. |
+| `verified` | Checked against a system of record within the current term. Distinct from `active` because `active` is a belief and `verified` is a receipt, and the difference is exactly what stops an agent quoting last year's plan with this year's confidence.  | — | The only state in which a response target may be committed without a caveat. |
+| `at_risk` | In term, but the commercial signals say the next term will be smaller. Serve to the contract; stop setting precedents.  | `has_obs: budget_freeze` | Every over-service in this window is quoted back across the renewal table as evidence of what the customer already receives. The cost of generosity is at its highest here.  |
+| `expired` | The term ended. Nothing may be promised from here and anything served is a concession with an owner. The most consequential state in this object and the only one the pipeline cannot currently detect at all.  | — | SLA targets must not be instantiated. Existing open clocks continue under the old terms. |
+| `revoked` | Withdrawn before term end — non-payment, breach, or a cancelled contract. Different from expiry, and Layer 6 must not learn from the two together: one is a lapse in attention and the other is a decision somebody made.  | — | Service is a legal and commercial question, not a support one. Route, do not absorb. |
+| `archived` | Superseded by a later entitlement, kept because tickets raised under it are judged against its terms and not the new ones.  | — | Read-only. Still authoritative for clocks that started while it was in force. |
 
 
-## Inference patterns — 4 executable, 10 blocked
+## Inference patterns — 6 executable, 12 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `ent.terms_in_flux_while_paper_moves` | deterministic | `has_obs: contract_requested` AND `has_obs: legal_review` | 8000 bp → `terms_in_flux` | A contract has been requested and legal is reviewing it — whatever entitlement is cached is about to be wrong. |  |
-| `ent.no_contract_anywhere_in_the_graph` | heuristic | `no_obs: contract_requested` AND `neighbor_no_obs: contract_requested` | 4000 bp → `is_entitled` | No contract has ever been requested by this account or anyone connected to it — most likely nobody is buying support here. |  |
-| `ent.downgrade_pressure_before_renewal` | heuristic | `has_obs: discount_pressure` AND `neighbor(deal.status) = open` | 5500 bp → `downgrade_risk` | Active discount pressure on a live commercial conversation — the tier recorded today is a poor prediction of the tier after this negotiation. |  |
-| `ent.spend_frozen_upstream` | heuristic | `has_obs: budget_freeze` | 6000 bp → `seat_expansion_blocked` | A budget freeze on the buying side — the seat count is a ceiling that will fall, not a floor that will grow. |  |
+| `ent.terms_in_flux_while_paper_moves` | deterministic | `has_obs: contract_requested` AND `has_obs: legal_review` | 8000 bp → `terms_in_flux` | A contract has been requested and legal is reviewing it — whatever entitlement is cached is about to be wrong.  | Legal review of a DPA, an indemnity clause or a security addendum touches nothing in the service schedule, so the entitlement survives the negotiation completely unchanged and the flag caused a re-verification nobody needed. That is the cheap error and it is the reason this pattern flags rather than blocks.  |
+| `ent.no_contract_anywhere_in_the_graph` | heuristic | `no_obs: contract_requested` AND `neighbor_no_obs: contract_requested` | 4000 bp → `is_entitled` | No contract has ever been requested by this account or anyone connected to it — most likely nobody is buying support here.  | Any contract signed before this pipeline was connected leaves no trace whatsoever, so a ten-year enterprise customer and a free trial are literally indistinguishable here. On an established install base this pattern is wrong far more often than it is right, and its confidence reflects that rather than its logic.  |
+| `ent.downgrade_pressure_before_renewal` | heuristic | `has_obs: discount_pressure` AND `neighbor(deal.status) = open` | 5500 bp → `downgrade_risk` | Active discount pressure on a live commercial conversation — the tier recorded today is a poor prediction of the tier after this negotiation.  | Discount pressure on an EXPANSION deal. The account is buying more, negotiating hard on the increment, and the support tier is going up rather than down — but the observation is identical and the flag says the opposite of the truth.  |
+| `ent.spend_frozen_upstream` | heuristic | `has_obs: budget_freeze` | 6000 bp → `seat_expansion_blocked` | A budget freeze on the buying side — the seat count is a ceiling that will fall, not a floor that will grow.  | A freeze in a department entirely unrelated to this product, mentioned in passing on a thread that happens to touch this account. Large organisations always have some budget frozen somewhere, and the extractor cannot tell whose.  |
+| `ent.compounded_downgrade_pressure` | heuristic | `has_obs: discount_pressure` AND `has_obs: budget_freeze` | 6800 bp → `downgrade_risk` | Both a budget freeze and active discount pressure on the same account — two independent commercial signals pointing the same way.  | A single procurement-led cost review that produces both observations from one memo. The two signals then have one cause, the corroboration is illusory, and 6800 overstates what is actually known — which is one fact stated twice.  |
+| `ent.expansion_lost_upstream` | heuristic | `has_obs: closed_lost_mention` AND `no_obs: contract_requested` | 5000 bp → `downgrade_risk` | A closed-lost mention on this account with no new paper moving — the commercial relationship has stopped progressing and the recorded tier is unlikely to survive.  | The lost deal was an expansion into a second product while the base contract renews happily. Support then treats a growing account as at-risk, gets cautious with precedent exactly where generosity was cheap, and the effect is invisible because nobody measures the help that was not given.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -102,139 +155,354 @@ Initial `unknown`
 |---|---|---|---|---|
 | `ent.expired_by_date_of_record` | deterministic | `entitlement.expires_at` (fact_path) | 10000 bp | The entitlement's expiry date has passed. |
 | `ent.plan_of_record` | deterministic | `entitlement.plan` (fact_path) | 9500 bp | The billing or contract system states the support plan for this account. |
-| `ent.coverage_of_record` | deterministic | `entitlement.coverage_hours` (fact_path) | 9500 bp | The contract states the coverage hours for this account. |
+| `ent.coverage_of_record` | deterministic | `entitlement.coverage_hours` (fact_path), `entitlement.clock_basis` (fact_path) | 9500 bp | The contract states the coverage hours and clock basis for this account. |
 | `ent.verified_on_this_contact` | deterministic | `entitlement_checked` (obs_kind), `entitlement_expired` (obs_kind) | 9000 bp | An entitlement check was actually performed while handling this contact. |
 | `ent.seat_limit_reached` | deterministic | `entitlement.seat_count` (fact_path), `entitlement.seats_in_use` (fact_path) | 8500 bp | Provisioned seats have reached or exceeded the seats sold. |
+| `ent.severity_outside_entitled_levels` | deterministic | `ticket.severity` (fact_path), `entitlement.entitled_severity_levels` (fact_path) | 8800 bp | The customer has declared a severity their plan does not entitle them to raise.  |
 | `ent.expiry_lands_inside_open_work` | heuristic | `entitlement.expires_at` (fact_path), `account.renewal_at` (fact_path) | 8000 bp | The entitlement expires while tickets raised under it are still open. |
-| `ent.serving_beyond_what_was_bought` | heuristic | `derived.contact_frequency` (derived), `account.arr` (fact_path) | 6500 bp | Contact volume and effort against this account are far above what its plan and value would support. |
+| `ent.serving_beyond_what_was_bought` | heuristic | `derived.contact_frequency` (derived), `account.arr` (fact_path) | 6500 bp | Contact volume and effort against this account are far above what its plan and value would support.  |
 | `ent.channel_used_outside_entitlement` | heuristic | `ticket.channel` (fact_path), `entitlement.plan` (fact_path) | 8500 bp | The contact arrived on a channel this plan does not include. |
-| `ent.commitment_lands_outside_coverage` | heuristic | `entitlement.coverage_hours` (fact_path) | 8000 bp | A promised follow-up is due at a time this account's coverage does not cover. |
+| `ent.commitment_lands_outside_coverage` | heuristic | `entitlement.coverage_hours` (fact_path), `entitlement.coverage_timezone` (fact_path) | 8000 bp | A promised follow-up is due at a time this account's coverage does not cover. |
 | `ent.requester_not_on_the_named_list` | heuristic | `entitlement.named_contacts` (fact_path) | 7500 bp | The person raising this ticket is not one of the contract's named contacts. |
+| `ent.verification_record_is_stale` | heuristic | `entitlement_checked` (obs_kind), `entitlement_verification_interval` (baseline) | 7000 bp | The entitlement has not been checked against a system of record within the current term, so what we believe about it is a rumour with a timestamp.  |
 
 
 ## Decision factors
 
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
-| entitlement_validity | 2500 bp | increases | `is_entitled`, `expires_at`, `in_grace_period`, `plan` |
-| verification_freshness | 1800 bp | increases | `last_verified_at`, `verification_source` |
-| coverage_fit | 1800 bp | context | `entitled_channels`, `coverage_hours`, `coverage_timezone`, `entitled_severity_levels` |
-| commercial_weight | 1500 bp | context | `account_arr`, `renewal_at`, `has_technical_account_manager` |
-| downgrade_pressure | 1200 bp | decreases | `downgrade_risk`, `seat_expansion_blocked`, `terms_in_flux` |
-| over_service_exposure | 1200 bp | decreases | `serving_beyond_entitlement`, `seats_in_use`, `seat_count`, `contact_outside_named_list` |
+| entitlement_validity | 2400 bp | increases | `is_entitled`, `expires_at`, `in_grace_period`, `plan` |
+| verification_freshness | 1800 bp | increases | `last_verified_at`, `verification_staleness_days`, `verification_source`, `entitlement_confidence_bp` |
+| coverage_fit | 1600 bp | context | `entitled_channels`, `coverage_hours`, `clock_basis`, `coverage_timezone`, `coverage_calendar` |
+| commercial_weight | 1400 bp | context | `account_arr`, `renewal_at`, `days_to_renewal`, `has_technical_account_manager` |
+| scope_fit | 1100 bp | context | `covered_products`, `covered_environments`, `entitled_request_types`, `entitled_severity_levels`, `excluded_scope` |
+| downgrade_pressure | 1000 bp | decreases | `downgrade_risk`, `seat_expansion_blocked`, `terms_in_flux` |
+| over_service_exposure | 700 bp | decreases | `serving_beyond_entitlement`, `over_service_delta_bp`, `seat_utilisation_bp`, `contact_outside_named_list` |
+
+
+## Preconditions
+
+- **`ent.pre.account_resolved`** The requester must resolve to an account before entitlement can be looked up at all. Entitlement is an account-level object; there is no such thing as a personally entitled individual, and attempting to resolve one produces a confident answer about the wrong contract.
+ _(unmet → block)_
+- **`ent.pre.system_of_record_reachable`** A contract, billing or CRM source must be readable within the handling window. When none is, the object still answers — from cache, with verification_source = cached_record and entitlement_confidence_bp reduced accordingly — because an agent with a stale tier and a staleness warning is materially better off than an agent with nothing.
+ _(unmet → degrade)_
+- **`ent.pre.term_dates_present`** effective_at and expires_at must be present to answer whether the entitlement binds today. A null expiry means UNKNOWN and must degrade the object to state = unknown; it must never resolve to entitled, because "no end date recorded" and "perpetual" are the same data and opposite facts.
+ _(unmet → degrade)_
+- **`ent.pre.clock_reference_known`** The customer's timezone, holiday calendar and clock basis must be known before any coverage-relative question — "may I promise Thursday evening", "are we inside hours now" — can be answered. Without them the object may still state the tier and the targets, but must refuse the coverage_window_now output rather than compute it in our own timezone.
+ _(unmet → degrade)_
+- **`ent.pre.cache_not_known_stale`** While paper is provably in motion, cached entitlement may bound continued service but may not bound a NEW commitment until it is re-checked. This is the one precondition that blocks, and it blocks the narrowest possible thing: a promise made from a record we can see is changing.
+ _(unmet → block)_
+- **`ent.pre.scope_dimensions_present`** Covered products, environments and request types must be resolved before the object claims that anything is IN scope. Absent them, the object may say what tier exists and must not say that this particular contact is covered by it — an inclusive default here is how work the contract never bought gets three hours into a diagnosis.
+ _(unmet → degrade)_
 
 
 ## Constraints
 
 - **`ent.cannot_promise_unentitled_channel`** A channel outside entitled_channels may not be offered or committed to, however the customer reached us.
-- **`ent.cannot_commit_outside_coverage`** No commitment may be scheduled outside the account's coverage window in the customer's timezone.
+
+- **`ent.cannot_commit_outside_coverage`** No commitment may be scheduled outside the account's coverage window, evaluated in the customer's timezone against the contract's calendar and clock basis.
+
 - **`ent.expired_entitlement_bounds_nothing`** An expired or revoked entitlement may not be used to justify any promise. Service may still be given; it is a concession, not an obligation.
-- **`ent.target_is_a_ceiling_not_a_forecast`** entitled_first_response_minutes is the maximum that may be promised, never a prediction of what will happen. Confusing the two is how a contractual target becomes a customer expectation that queue reality cannot meet.
-- **`ent.named_contact_limit_binds_commercially`** The named-contact limit binds the contract even where it is not technically enforced. Unenforced limits are an unpriced discount. _(soft)_
-- **`ent.grace_is_discretionary`** Grace-period service is discretionary and time-boxed. It is not a state a customer may claim. _(soft)_
+
+- **`ent.target_is_a_ceiling_not_a_forecast`** entitled_first_response_minutes is the maximum that may be promised, never a prediction of what will happen. Quote it as a ceiling and give any estimate separately.
+
+- **`ent.scope_before_target`** Scope must be established before any target is quoted. A four-hour response on a module the contract does not cover is not a generous answer, it is a fabricated obligation.
+
+- **`ent.cache_may_not_bound_a_new_promise_while_paper_moves`** While a contract is under negotiation or legal review, cached entitlement may not bound a new commitment without re-verification.
+
+- **`ent.named_contact_limit_binds_commercially`** The named-contact limit binds the contract even where it is not technically enforced. Unenforced limits are an unpriced discount.
+ _(soft)_
+- **`ent.grace_is_discretionary`** Grace-period service is discretionary, owned and time-boxed. It is not a state a customer may claim and not a state that may exist without a named owner.
+ _(soft)_
 
 
 ## Business rules
 
-- **`ent.no_promise_beyond_entitlement`** No channel, coverage window, response target or escalation path may be committed to a customer beyond what the entitlement of record contains. This is the rule the object exists to enforce and it has no exception that an agent may grant alone.
+- **`ent.no_promise_beyond_entitlement`** No channel, coverage window, response target, severity or escalation path may be committed to a customer beyond what the entitlement of record contains. This is the rule the object exists to enforce and it has no exception that an agent may grant alone.
 
-- **`ent.no_sla_without_entitlement`** An SLA target must not be instantiated for an account with no entitlement of record. A clock without a contract behind it measures a promise nobody sold and breaches on it are noise that trains the queue to ignore real ones.
+- **`ent.no_sla_without_entitlement`** An SLA target must not be instantiated for an account with no entitlement of record. A clock without a contract behind it measures a promise nobody sold, and breaches on it are noise that trains the queue to ignore real ones.
 
 - **`ent.unknown_is_not_entitled`** plan = unknown must be treated as unverified, never as sufficient. Defaulting unknown to served is how a support organisation discovers, at renewal, that a third of its volume came from accounts that bought nothing.
-
+ — _Serving is fine. Counting it as entitled is not, because that is what makes it invisible._
 - **`ent.verify_before_the_promise_not_after`** Entitlement must be checked BEFORE a response target is stated, not after the customer disputes it. Every expensive entitlement conversation in support is a verification that happened in the wrong order.
 
 - **`ent.recheck_while_paper_is_moving`** While a contract is under negotiation or legal review, the cached entitlement must be re-checked before it bounds any new promise.
 
+- **`ent.entitlement_change_does_not_rewrite_open_clocks`** A change of entitlement applies to work raised after it takes effect. Clocks already running keep the terms they started under, and the superseded entitlement is archived rather than overwritten.
+ — _Overwriting in place makes last month's breach report indefensible and lets a downgrade retroactively create or erase breaches nobody committed.
+_
 - **`ent.over_service_must_be_recorded`** Serving beyond entitlement is permitted and often correct, but it must be recorded as a concession with a named owner and an end date. An unrecorded concession is indistinguishable from an entitlement within one quarter, and the renewal team inherits it.
 
-- **`ent.grace_must_be_bounded`** An entitlement in grace with no grace_period_days is an open-ended concession and must be flagged rather than served.
+- **`ent.grace_must_be_bounded`** An entitlement in grace with no grace_period_days, no grace_expires_at and no grace_owner is an open-ended concession and must be flagged rather than served.
+
 - **`ent.arr_does_not_widen_entitlement`** Account value may change the priority of the work and must never change the scope of what was sold. Where the two conflict the answer is an exception with an owner, not a quietly wider entitlement.
 
+- **`ent.support_does_not_negotiate_scope`** A dispute about what the contract contains is routed to the account owner the same day, never settled by the agent handling the ticket.
+ — _An agent who concedes scope has changed the contract; an agent who refuses it has become the face of a commercial decision they did not make. Both are worse than a same-day handoff.
+_
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **During an incident of our own making, entitlement stops bounding the communication. Everyone affected gets told, on whatever channel reaches them, regardless of plan, coverage hours or named-contact list — including the accounts entitled to nothing.
+** — The breach of trust is ours. Charging entitlement rules against a customer whose service WE interrupted converts a service failure into a commercial insult, and it is the one thing customers narrate afterwards. The commercial argument is the same as the ethical one: the cost of telling an unentitled account about an outage is one email, and the cost of them discovering it from a status page is the renewal.
+ _(overrides ent.no_promise_beyond_entitlement, ent.cannot_promise_unentitled_channel, ent.cannot_commit_outside_coverage, ent.named_contact_limit_binds_commercially)_
+- **When entitlement lapses partway through a live conversation, finish the contact. Do not stop mid-diagnosis to raise a contractual point. Close the loop, then raise it — with the account owner, not with the customer.
+** — Stopping costs more than finishing. The labour saved is minutes; the story generated is permanent and gets told in the renewal meeting by someone who was not there. The boundary that matters is between FINISHING this contact and STARTING the next one — the second is where the exception ends, and an organisation that cannot draw that line has not made an exception, it has made a policy.
+ _(overrides ent.expired_entitlement_bounds_nothing, ent.no_sla_without_entitlement)_
+- **On enterprise accounts where the executive sponsor's expectation exceeds the signed schedule, serve to the expectation ONCE, and escalate the mismatch to the account owner the same day. Support is never the party that reconciles a contract with a sponsor's memory.
+** — The mismatch is real and it is not the customer's fault — somebody in a pre-sales conversation said something that never reached the schedule. Refusing in the moment makes support the face of a commercial decision it did not make and cannot defend; conceding silently makes the expectation permanent. Serving once and escalating the same day is the only move that leaves both the relationship and the contract intact, and the same-day part is what makes it an exception rather than a habit.
+ _(overrides ent.no_promise_beyond_entitlement, ent.arr_does_not_widen_entitlement)_
+- **An expiry date that has passed while a renewal is genuinely in motion — an order form signed, paper with legal, a contract requested — is a lapse in administration, not in entitlement. Serve to the prior terms and open a bounded grace.
+** — Billing systems lag countersignature routinely. Declining a customer whose renewal is on a desk waiting for a signature is a self-inflicted churn event, and it is the false positive that ent.expired_by_date_of_record cannot detect on its own. This is the exception most worth automating, because the condition is one of the few that can actually fire today.
+ _(overrides ent.expired_entitlement_bounds_nothing, ent.unknown_is_not_entitled)_
+- **Where the contact concerns data loss, a suspected security incident, or a regulated obligation, entitlement never gates the response. Plan, expiry and scope are irrelevant.
+** — The liability is ours regardless of what was bought. A lapsed support plan does not lapse a breach-notification duty or a duty of care over customer data, and an organisation that lets an entitlement check delay a security response has invented a governance failure to save a support cost. This is the only exception on the list with no commercial argument behind it and it is the least arguable.
+ _(overrides ent.no_promise_beyond_entitlement, ent.expired_entitlement_bounds_nothing, ent.scope_before_target, ent.no_sla_without_entitlement)_
+- **When the customer produces a signed schedule or amendment that contradicts our record, serve to their document and verify afterwards. Their paper outranks our CRM.
+** — Our evidence ordering already says a contract outranks a billing system which outranks a CRM — and it does not stop applying because the copy in the room is theirs. Amendments signed by a regional sales team and never keyed into any system are common enough that "we have no record of that" is a statement about our filing, not about their entitlement. Verify after, and if their document is wrong the conversation belongs to the account owner rather than to the agent.
+ _(overrides ent.unknown_is_not_entitled, ent.verify_before_the_promise_not_after)_
+- **The named-contact list yields when the only listed contact is unreachable and the system is down. Serve whoever is in front of you, record the substitution, and reconcile it later.
+** — The named-contact term exists to protect our queue from an unfiltered customer, not to protect us from their outage. Enforcing it during a production incident because the listed contact is on a plane is the purest available example of a rule applied correctly to catastrophic effect. Record it — the pattern across a quarter is a genuine renewal conversation about how many contacts they actually need.
+ _(overrides ent.named_contact_limit_binds_commercially)_
+
+
+## Best practices
+
+- **Check entitlement before the first substantive reply, not before the first promise — the two are usually the same message and only one of them is under time pressure.
+** — Every expensive entitlement conversation in support is a verification that happened in the wrong order. Doing it at greeting time costs nothing and removes the decision from the moment when the agent is trying to be reassuring.
+
+- **Put plan, expiry, coverage and entitled channels on the agent's first screen, above the conversation. Do not put them one click away.
+** — Most entitlement breaches are not decisions. They are an agent answering without ever having seen the terms. A policy corrects people who knew; placement corrects people who did not, and the second group is much larger.
+
+- **Over-serve when it is right, and write it down in the same action — owner, reason, end date. Never as a follow-up task.
+** — An unrecorded concession is indistinguishable from an entitlement within a quarter. Recorded at the moment, it is a data point the renewal owner can price; recorded later, it is not recorded. This is the single practice that most separates support organisations that read as cost centres from ones that do not.
+
+- **Treat anything within 30 days of expires_at — or within renewal_notice_days on an auto-renewing contract — as requiring fresh verification before any target is quoted.
+** — The renewal decision precedes the term end, so the tier can change before the date does. Verifying on the date is verifying after the fact.
+
+- **Scope SLA policies to entitlement attributes — plan, covered products, request type, severity — and never to queue names or tag values.
+** — An SLA policy binds targets to a scope, and queue names drift within a quarter while contract terms do not. A policy scoped to "Tier 2 EMEA" silently stops applying the day someone renames the queue, and nothing errors.
+
+- **Store coverage_timezone, coverage_calendar and clock_basis explicitly on the entitlement. Never inherit them from the support organisation's own settings.
+** — Every SLA is bound to a calendar, and disputes almost always trace to which one. Inheriting ours produces first-response breaches that nobody can explain afterwards, because both sides' reports are internally consistent and describe different days.
+
+- **When a customer asks a second, in-scope question during an out-of-scope contact, answer both. Do not split the contact to keep the scope tidy.
+** — First contact resolution sits around 70–79% in good centres and moves customer satisfaction close to one-for-one, so splitting a contact to protect a scope boundary trades a measurable satisfaction loss for a bookkeeping gain. Record the out-of-scope half as a concession instead — that keeps the commercial fact without paying the experience cost.
+
+- **Compare entitled_channels and coverage_hours against the actual rota every quarter, and treat a gap as a commercial defect rather than an operational one.
+** — An entitled channel we do not staff shows up as abandonment, not as a breach — healthy abandonment sits around 2–5% and anything above 8% indicates a real staffing or routing failure. The number appears in an operations report while the cause is in a contract, which is why it survives so long.
+
+- **When a customer declares a severity above their plan, answer the entitlement question before the triage question.
+** — It moves the argument from the agent to the contract, where it is far less heated and far more quickly resolved. It also preserves the SEV1–SEV4 blast-radius convention, which stops being comparable across a queue the moment declarations are settled by insistence.
+
+
+
+## Anti-patterns
+
+- **Quoting the plan from the CRM field without checking a system of record.** — tempting because It is on screen, it is free, and it is right most of the time. Verification costs two minutes the agent does not have when the queue is deep, and the last fifty times it would have changed nothing.
+ Instead: Treat the CRM as a prior with a visible staleness stamp, and verify whenever the record is older than the account's contract cadence or the account is inside its renewal window.
+
+- **Computing coverage hours, channels and targets from the plan name.** — tempting because It is how every support tool ships, it is correct for the standard tiers, and building a per-account override table looks like unnecessary work until the first custom agreement.
+ Instead: Read the schedule. Keep the tier mapping as a default and let plan_is_custom_override suspend it entirely rather than partially.
+
+- **Answering on the channel the customer used, without checking it is entitled.** — tempting because It is polite, it is fast, and refusing a channel in the moment feels petty and bureaucratic. No individual instance is defensible as a refusal.
+ Instead: Answer on the entitled channel, say plainly why, and name the route to buying the one they used. A decline with a path is a renewal conversation.
+
+- **Serving beyond the contract because it is the right thing to do, and not recording it.** — tempting because The agent is optimising the one interaction they can see, and inside a single ticket generosity is always the right call. Recording it feels like bureaucracy imposed on a good deed.
+ Instead: Serve AND record: owner, reason, end date, in the same action. The generosity is not the problem; the invisibility is.
+
+- **Treating plan = unknown as served, and counting it as entitled volume.** — tempting because Refusing service because of a data gap is indefensible, so the system defaults open — and everyone agrees that is correct, because it is. The error is not in serving; it is in the counting that follows.
+ Instead: Serve, and classify as unknown. Keep `none` and `unknown` as separate values in every report, so the unverified volume is legible as a verification backlog rather than as revenue.
+
+- **Telling the customer "you'll hear from us within four hours" because that is the target.** — tempting because The contractual number is the only number the agent has, repeating it sounds reassuring, and it is technically accurate. Producing an honest queue-based estimate requires information the agent does not have.
+ Instead: Quote the ceiling as a ceiling and give a separate estimate, or give no estimate and a named next update. A named update time honoured beats a fast time missed.
+
+- **Granting scope, channels or escalation paths outside the contract because the account is large.
+** — tempting because The ARR is on the screen next to the ticket, and protecting revenue looks like commercial judgement rather than like scope drift. Nobody is ever criticised in the moment for it.
+ Instead: Keep ARR as a priority weight and route every scope question to the account owner the same day. This is why commercial_weight is typed `context` rather than `increases`.
+
+- **Automatically bouncing contacts who are not on the named-contact list.
+** — tempting because The limit is a real contract term, manual enforcement never happens, and automating it is the only enforcement that scales. It looks like straightforward contract hygiene.
+ Instead: Serve, flag quietly on the account, and review monthly with the renewal owner. Enforce the limit commercially at renewal, where it was sold.
+
+- **Updating the entitlement record in place when a contract renews or changes tier.** — tempting because One row per account is simpler, the new terms are the ones that matter going forward, and versioning a contract record looks like over-engineering for an edge case.
+ Instead: Create a new entitlement, link the old one through superseded_by_ref, and archive rather than delete.
+
+
+
+## Dependencies
+
+- `customer_support.obj.core.customer_account` — requires (hard)
+- `customer_support.obj.core.support_plan` — derived_from (soft)
+- `customer_support.obj.core.coverage_window` — enriches (hard)
+- `customer_support.obj.core.requester` — enriches (soft)
+- `customer_support.obj.core.sla_target` — blocks (hard)
+- `customer_support.obj.core.ticket` — blocks (soft)
+- `customer_support.obj.core.escalation` — blocks (soft)
+- `customer_support.obj.core.churn_risk` — enriches (soft)
+- `customer_support.obj.core.customer_account` — invalidated_by (hard)
+- `customer_support.heu.sla_management.entitlement_change_does_not_rewrite_open_clocks` — requires (hard)
+- `customer_support.pb.sla_management.coverage_arithmetic` — enriches (soft)
+- `customer_support.pb.ticket_triage.entitlement_before_complaint` — enriches (soft)
 
 
 ## Inputs
 
-- **contract** — the service schedule — plan, term, coverage hours, response targets, named contacts, seats
+- **contract** — the service schedule — plan, term, coverage hours, clock basis, scope, response targets, named contacts, seats, exclusions, breach remedies
+
+- **erp** — what is actually invoiced, for how many seats, and until when
 - **crm** — plan of record, renewal date, ARR, account owner
-- **erp** — what is actually invoiced, and for how many seats
+- **portal** — the plan the customer can see when they log in
 - **ticket** — the channel and severity the customer actually used, versus what they bought
 - **email** — contracting activity visible in the thread
 - **email** — who is waiting on whom while terms are being negotiated
 - **derived** — two-way volume against this account, as a crude effort proxy
+- **register** — provisioned seats and licence counts
 - **manual_entry** — an agent stating the plan from memory
 
 
 ## Outputs
 
-- **`entitlement_valid`** Whether paid support applies right now. The gate every downstream promise sits behind. → L4.reasoning_unit, L4.decision_maker
-- **`promisable_response_target`** The CEILING that may be stated to the customer. Not a forecast — Layer 5 must not quote it as one. → L5.communication_planning
-- **`permitted_channels`** Hard filter on reply channel. The most directly actionable thing this object produces. → L5.2.channel_planner
-- **`coverage_window_now`** Whether we are inside covered hours in the CUSTOMER's timezone, not ours. → L5.execution_planning, L5.2.channel_planner
-- **`verification_staleness_days`** Age of the entitlement record. Should lower confidence in every field it qualifies. → L4.reasoning_unit
-- **`over_service_delta`** How far observed service exceeds the contracted level. Feeds cost-to-serve and renewal risk. → L4.reasoning_unit, L6.learning_unit
-- **`escalation_permitted`** Whether the escalation path being requested is a contract term or a favour. → L4.decision_maker
+- **`entitlement_valid`** Whether paid support applies right now. The gate every downstream promise sits behind, and the one that must be emitted with entitlement_confidence_bp attached or it will be read as certainty.
+ → L4.reasoning_unit, L4.decision_maker
+- **`promisable_response_target`** The CEILING that may be stated to the customer. Not a forecast — Layer 5 must not quote it as one, and the most common failure downstream of this object is that it does.
+ → L5.communication_planning
+- **`permitted_channels`** Hard filter on reply channel. The most directly actionable thing this object produces, and the cheapest breach to prevent because it is decided at send time.
+ → L5.2.channel_planner
+- **`coverage_window_now`** Whether we are inside covered hours in the CUSTOMER's timezone, on the contract's clock basis, against the contract's holiday calendar. Three inputs, all of which are routinely defaulted to ours.
+ → L5.execution_planning, L5.2.channel_planner
+- **`scope_fit`** Whether this product, environment, request type and severity are inside what was bought. Emitted separately from entitlement_valid because a valid entitlement covering the wrong module is the failure this object most often catches late.
+ → L4.reasoning_unit, L4.decision_maker
+- **`verification_staleness_days`** Age of the entitlement record. Should lower confidence in every field it qualifies rather than invalidate any of them — the record is usually right, and being right on average is not the same as being safe to promise from.
+ → L4.reasoning_unit
+- **`over_service_delta`** How far observed service exceeds the contracted level. Feeds cost-to-serve and renewal risk, and belongs to the account owner rather than to the agent.
+ → L4.reasoning_unit, L6.learning_unit
+- **`escalation_permitted`** Whether the escalation path being requested is a contract term or a favour. Two very different conversations, and support routinely has the second one while believing it is having the first.
+ → L4.decision_maker
+- **`breach_cost_signal`** What a breach on this entitlement actually costs — nothing, a service credit, or a termination right. Changes how hard the queue should fight for a deadline and is currently invisible to every triage decision.
+ → L4.decision_maker, L6.learning_unit
 
 
 ## Events
 
 - **`ent.verified`** Entitlement Verified
-- **`ent.expired`** Entitlement Expired
+- **`ent.expired`** Entitlement Expired — invalidates is_entitled, entitled_channels, coverage_hours, entitled_first_response_minutes, response_targets_by_severity, customer_support.obj.core.sla_target
 - **`ent.expiring_soon`** Entitlement Expiring Soon
-- **`ent.terms_in_flux`** Entitlement Terms In Flux
+- **`ent.plan_changed`** Entitlement Plan Changed — invalidates entitled_channels, coverage_hours, clock_basis, entitled_first_response_minutes, entitled_severity_levels, response_targets_by_severity, named_contact_limit
+- **`ent.terms_in_flux`** Entitlement Terms In Flux — invalidates plan, expires_at, entitled_first_response_minutes, entitled_channels, coverage_hours
 - **`ent.downgrade_pressure_detected`** Downgrade Pressure Detected
 - **`ent.spend_frozen`** Spend Frozen Upstream
+- **`ent.grace_started`** Grace Period Started
+- **`ent.grace_expired`** Grace Period Ended — invalidates is_entitled
 - **`ent.over_service_detected`** Serving Beyond Entitlement
 - **`ent.seat_limit_reached`** Seat Limit Reached
 
 
 ## Actions
 
-- **Verify entitlement against the system of record** (agent) — Read the contract or billing record, not the cached field. The cheapest action in this file and the one most often skipped because the cached field is right there and usually right.
+- **Verify entitlement against the system of record** (agent) — Read the contract or billing record, not the cached field. The cheapest action in this file and the one most often skipped, because the cached field is right there and usually right.
+
 - **Re-check entitlement while paper is moving** (system) — Invalidate the cached entitlement so the next promise is made against current terms.
-- **State the entitled response target to the customer** (agent) — Quote the contractual ceiling, never a personal estimate. An agent's optimistic guess becomes the remembered promise.
+- **State the entitled response target to the customer** (agent) — Quote the contractual ceiling as a ceiling, and give any estimate separately and honestly. An agent's optimistic guess becomes the remembered promise.
+
 - **Decline a request outside entitlement** (human) — Declines the scope while naming the route to obtain it. A decline without a path is a churn event; a decline with one is a renewal conversation.
+
 - **Serve beyond entitlement as a recorded concession** (human) — Serve the request AND record it with an owner and an end date. This action exists specifically so that over-service has to pass through something that writes it down.
-- **Hand the commercial question to the account owner** (human) — Support should never negotiate scope. Every minute spent arguing entitlement with a customer is a minute the account team should have spent instead.
+
+- **Open a grace period with an owner and an end date** (human) — Turns "we are still serving them" into a decision with a name and a date on it. The only legitimate way to serve past expiry more than once.
+
+- **Hand the commercial question to the account owner** (human) — Support should never negotiate scope. Every minute spent arguing entitlement with a customer is a minute the account team should have spent instead, and it is spent worse.
+
 - **Raise a seat true-up** (human) — Turns an enforcement problem into a commercial one, which is where it belongs.
-- **Surface entitlement at the top of the ticket** (system) — Most entitlement breaches are not decisions — they are an agent answering without ever seeing the terms. Placement beats policy here.
+- **Surface entitlement at the top of the ticket** (system) — Most entitlement breaches are not decisions — they are an agent answering without ever seeing the terms. Placement beats policy here, and it beats training by a wider margin still.
+
+- **Archive the prior entitlement on renewal** (system) — Creates the new entitlement and links the old one rather than editing in place, so clocks that started under the old terms remain defensible.
+
 
 
 ## Evidence
 
-- **contract** · 10000 bp — The signed service schedule. Nothing outranks it, including a billing system that disagrees with it.
-- **erp** · 8500 bp — What is actually invoiced. Occasionally more current than the contract, because downgrades hit billing before anyone updates the paper.
-- **portal** · 7000 bp — The customer-facing plan display. Strong because it is what the customer believes they bought — and where the two diverge, their belief is the one you will be arguing with.
-- **crm** · 6000 bp — The plan field. Someone typed it once, usually at signature, and nothing has touched it since a renewal changed the tier.
-- **register** · 5500 bp — A seat or licence register. Precise about counts, silent about terms.
-- **derived** · 3500 bp — Inferred from contracting activity and engagement shape. Corroborating only — it can time a change, never state one.
-- **manual_entry** · 3000 bp — An agent asserting the plan. The most common source in practice and barely evidence at all.
-- **ticket** · 2000 bp — What the customer says they are entitled to. Weakest, and stated with the most confidence — customers sincerely misremember their own contracts.
+- **contract** · 10000 bp — The signed service schedule. Nothing outranks it, including a billing system that disagrees with it. Decays not as a record of what was signed — that is permanent — but as a claim about what is in force, because a superseded contract is a perfect record of a promise that ended.
+
+- **erp** · 8500 bp — What is actually invoiced. Occasionally more current than the contract, because downgrades hit billing before anyone updates the paper. Deliberately NOT declared independent of crm or portal: in most stacks both are written from the order that created this record.
+
+- **portal** · 7000 bp — The customer-facing plan display. Strong because it is what the customer believes they bought — and where the two diverge, their belief is the one you will be arguing with. Not independent of erp: it renders from it.
+
+- **crm** · 6000 bp — The plan field. Someone typed it once, usually at signature, and nothing has touched it since a renewal changed the tier. Not independent of erp, for the reason above.
+
+- **register** · 5500 bp — A seat or licence register. Precise about counts, silent about terms, and it usually counts deactivated users as provisioned.
+
+- **derived** · 3500 bp — Inferred from contracting activity and engagement shape. Genuinely independent of every system of record, which is the only reason it is worth anything — it can TIME a change, never state one.
+
+- **manual_entry** · 3000 bp — An agent asserting the plan. The most common source in practice and barely evidence at all. Explicitly not independent of crm — the agent read it there — so an agent note agreeing with the CRM adds nothing whatsoever.
+
+- **ticket** · 2000 bp — What the customer says they are entitled to. Weakest, stated with the most confidence, and genuinely independent of everything we hold — customers sincerely misremember their own contracts, and occasionally they are the ones holding the signed amendment.
+
 
 
 ## Metrics
 
-- **entitlement_verification_rate** (percent) — Share of contacts where entitlement was checked against a system of record before a target was promised. The number that separates checking from assuming.
+- **entitlement_verification_rate** (percent) — Share of contacts where entitlement was checked against a system of record BEFORE a target was promised. The number that separates checking from assuming, and the one an automated lookup will happily take to 100% without verifying anything.
+
 - **verification_staleness_days** (days) — Median age of the entitlement record at the moment it is used. Rises silently and is the leading indicator of every mismatch below.
-- **entitlement_mismatch_rate** (percent) — Share of contacts where the entitlement believed at promise time differed from the contract of record.
-- **expired_entitlement_contacts** (count) — Contacts served against a lapsed entitlement. The direct measure of silent expiry, and it can only be computed retrospectively today.
-- **over_service_rate** (percent) — Share of accounts consuming materially more support than their plan contains. The single most useful input to a cost-to-serve conversation.
-- **concession_recording_rate** (percent) — Share of over-service events recorded as concessions with an owner and an end date. Measures the discipline, not the generosity.
-- **entitlement_check_latency** (seconds) — How long verification takes. Not vanity — verification that costs two minutes gets skipped under queue pressure, which is when it matters most.
+
+- **entitlement_mismatch_rate** (percent) — Share of contacts where the entitlement believed at promise time differed from the contract of record. The honest measure of whether this object works.
+
+- **expired_entitlement_contacts** (count) — Contacts served against a lapsed entitlement. The direct measure of silent expiry, and it can only be computed retrospectively today, which is the same as saying it is never computed.
+
+- **over_service_rate** (percent) — Share of accounts consuming materially more support than their plan contains. A TARGET BAND and not a minimum, deliberately: zero over-service means an organisation that is never generous, and rigidity loses accounts as reliably as cost does. The failure is unrecorded over-service, not over-service.
+
+- **concession_recording_rate** (percent) — Share of over-service events recorded as concessions with an owner and an end date. Measures the discipline, not the generosity — and it is the discipline that decides whether support reads as a cost centre at renewal.
+
+- **channel_breach_rate** (percent) — Share of replies sent on a channel the entitlement does not include. Almost never a decision, always a drift, and the cheapest of all these numbers to move.
+
+- **coverage_promise_violations** (count) — Commitments scheduled outside the customer's covered hours. Counted at the moment of promising rather than at the moment of breach, because that is the only moment it is free to fix.
+
+- **entitlement_check_latency** (seconds) — How long verification takes. Not vanity — verification that costs two minutes gets skipped under queue pressure, which is exactly when it matters most.
+
+
+
+## References
+
+- **SLA policy mechanics — calendars, pause conditions and policy scope** · framework
+- **ITIL 4 — incident, service request and problem; service level management** · standard
+- **Incident severity practice, SEV1–SEV4 (Google SRE lineage)** · practitioner
+- **Published support-metric benchmarks — FCR, first response time and abandonment** · research
+- **Customer Support domain glossary — Entitlement versus SLA Target** · internal
 
 
 ## Examples
 
-- **Enterprise 24x7 with two named contacts** — Coverage is the easy part. The named-contact limit is what is actually being sold, and it is unenforced in most tooling, so the account routinely runs eleven contacts through a two-contact plan.
-- **Standard business-hours plan, customer in a different timezone** — coverage_timezone is theirs, not ours. Reading it as ours produces first-response breaches nobody can explain in the post-hoc review.
-- **Expired forty days ago, still being served** — The archetype. No event fired, the cached record still reads premium, and the discovery happens when the renewal team asks who authorised the sev-1 bridge.
-- **Downgraded at renewal, agent working from last quarter's context** — Worse than an expiry, because everything still says 'entitled' — just at a tier that no longer includes the phone number the customer is calling.
-- **Free trial with a production outage** — Entitlement bounds the promise and does not decide the response. Serve it, and record it as a concession — otherwise the trial converts on an experience the paid plan does not contain.
-- **Custom enterprise agreement with two overridden terms** — plan = custom. The tier-to-coverage mapping every support tool relies on is wrong for exactly these accounts, which are also the largest ones.
+- **Enterprise 24x7 with two named contacts** _(typical)_ — Coverage is the easy part. The named-contact limit is what is actually being sold, it is unenforced in most tooling, and the account routinely runs eleven contacts through a two-contact plan. The correct handling is a quiet quarterly count, not an auto-reply.
+
+- **Standard business-hours plan, customer eight time zones away** _(typical)_ — coverage_timezone is theirs, not ours. Reading it as ours produces first-response breaches nobody can explain in the post-hoc review, because both reports are internally consistent and describe different days.
+
+- **Sev-1 on calendar hours, everything else on business hours** _(typical)_ — The enterprise norm, and the case a single clock_basis per contract cannot express. A model that forces one basis quotes the wrong deadline on either the most urgent tickets or on all the rest, and picks the wrong one silently.
+
+- **Expired forty days ago, still being served** _(edge)_ — The archetype this object exists for. No event fired, the cached record still reads premium, and the discovery happens when the renewal team asks who authorised the sev-1 bridge. Note that the individual decisions were all defensible; only the aggregate is not.
+
+- **Downgraded at renewal, agent working from last quarter's context** _(edge)_ — Worse than an expiry, because everything still says "entitled" — just at a tier that no longer includes the phone number the customer is calling. This is the case ent.plan_changed exists to catch and the case nothing currently catches.
+
+- **Free trial with a production outage** _(edge)_ — Entitlement bounds the promise and does not decide the response. Serve it, and record it as a concession — otherwise the trial converts on an experience the paid plan does not contain, and the first paid month is a disappointment nobody predicted.
+
+- **Custom enterprise agreement with two overridden terms** _(edge)_ — plan = premium, plan_is_custom_override = true. The tier-to-coverage mapping every support tool relies on is wrong for exactly these accounts, which are also the largest ones — the worst possible correlation for a silent error.
+
+- **An account renewing next week that has been over-served all year** _(misclassification)_ — Reads as a healthy account on every operational metric — fast responses, high satisfaction, no escalations — and is in fact the most expensive renewal in the book, because everything they experienced now has to be either priced or withdrawn. The metrics are not wrong; they are measuring the wrong contract.
+
+- **A four-hour clock on a ticket with no entitlement behind it** _(misclassification)_ — Frequently mistaken for an entitlement problem. It is an SLA Target problem: someone instantiated a clock from a queue default rather than from a contract. The breach is real, the obligation is imaginary, and the fix belongs to policy scoping rather than to this object.
+
+- **The customer says they have 24x7; the CRM says business hours** _(misclassification)_ — Read as a customer misremembering, which is the common case — and it is the case where our evidence ordering is right. But an amendment signed by a regional team and never keyed in produces an identical conversation, and there the customer is correct and we are the ones with a filing problem. Ask them to send the schedule before deciding which one this is.
+
+- **An entitled channel with an 11% abandonment rate** _(counterexample)_ — Not an entitlement failure at all. The contract is being honoured on paper and broken in practice by a rota that cannot staff the channel — healthy abandonment sits around 2–5% and above 8% signals a real staffing or routing failure. Fixing this object would change nothing; the defect is in coverage_window and capacity planning.
+
 
 ## Metadata
 
-owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **partial**
+owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Almost nothing on this object is executable today, and that is the honest answer rather than an authoring shortfall. Four of fourteen patterns can fire, and all four infer from CONTRACTING activity visible in email threads — contract_requested, legal_review, discount_pressure, budget_freeze — because that is the only trace a commercial agreement leaves in a substrate built for a sales pipeline. Not one of them can read a plan, an expiry date, a coverage window or a seat count, which are the four fields the object exists for. Ranked, the asks are: (1) entitlement.expires_at — silent expiry is the failure mode this whole object is built around and nothing currently watches for it; (2) entitlement.coverage_hours — the cheapest win in the file, because commitment.due_at is already live and one missing field turns a recorded breach into a prevented one; (3) entitlement.plan, which also unlocks the channel comparison; (4) the entitlement_checked / entitlement_expired observation pair, without which "we verify entitlement" is a claim with no receipt behind it. entitlement.seat_count, entitlement.seats_in_use and entitlement.named_contacts are invented here rather than drawn from planned_substrate, which has no seat or named-contact field — support hits both ceilings before sales does, because the over-limit user contacts support to ask why they cannot log in.
+> All twenty-three sections authored. Sixty-one attributes across eight composites; eighteen inference patterns, of which SIX are executable and twelve are needs_signal.
+The honest headline is unchanged from the first pass and worth restating rather than burying: every executable pattern here infers from CONTRACTING ACTIVITY visible in email threads — contract_requested, legal_review, discount_pressure, budget_freeze, closed_lost_mention — because that is the only trace a commercial agreement leaves in a substrate built for a sales pipeline. Not one of them can read a plan, an expiry date, a coverage window or a seat count, which are the four fields the object exists for. Six executable patterns on an object with nothing to read is not authoring optimism; it is that the pipeline can watch a contract being negotiated and cannot see the contract.
+Ranked, the asks are: (1) entitlement.expires_at — silent expiry is the failure mode this whole object is built around and nothing currently watches for it; (2) entitlement.coverage_hours with entitlement.clock_basis and entitlement.coverage_timezone — the cheapest win in the file, because commitment.due_at is already live and three missing fields turn a recorded breach into a prevented one; (3) entitlement.plan, which also unlocks the channel and severity comparisons; (4) the entitlement_checked / entitlement_expired observation pair, without which "we verify entitlement" is a claim with no receipt behind it. entitlement.seat_count, entitlement.seats_in_use, entitlement.named_contacts, entitlement.entitled_severity_levels, entitlement.clock_basis and the entitlement_verification_interval baseline are invented here rather than drawn from planned_substrate, which carries none of them — support hits the seat and named-contact ceilings before sales does, because the over-limit user contacts support to ask why they cannot log in.
+Two deliberate calls a reviewer should push on. First, over_service_rate is typed `target_band` rather than `lower_is_better`: an organisation that never over-serves is rigid, and rigidity loses accounts as reliably as cost does — the failure is UNRECORDED over-service, not over-service. Second, none of the seven exceptions suspends ent.over_service_must_be_recorded, and that is the load-bearing constraint on the whole section: an exception that is also invisible is not an exception, it is a drift with a good story attached.

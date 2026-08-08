@@ -23,8 +23,10 @@ Cross-cutting (outside the ordering): `contracts/` (boundary types; imports plat
 **The rule that matters:** a lower import rank never imports a higher import rank. Cross-layer needs are
 met by *injection* (platform/wiring resolves and passes values down) or by *data* (a table
 written above, read below). Today Reasoning consumes `rule_mutes` and
-`lvl3_config.rule_offsets`; the new versioned Organization, Behavior and Adaptive entries plus
-Runtime memories are governed and published but do not yet have typed lower-layer consumers.
+`lvl3_config.rule_offsets`. The Layer 3 `DomainCompiler` now reads versioned Organization,
+Behavior and Adaptive entries through a typed, tenant-scoped snapshot and emits an immutable
+`ExpertisePackage`; the active Layer 2 -> Layer 3 -> Layer 4 runner cutover is still pending.
+Runtime memories still have no typed lower-layer consumer.
 Metrics is not a brain. Learning never edits the Expert Brain; knowledge evolution stops at a
 human-review suggestion. Layer 6 uses PostgreSQL as source of truth, carries source visibility and
 trace through every sink, and treats any future Redis/LLM integration as non-authoritative.

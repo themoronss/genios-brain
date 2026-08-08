@@ -248,6 +248,7 @@ def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict
 # unrecoverable UI state (the upload API has no re-index-existing-file operation).
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
+    "expertise_packages",
     "learning_input_rejections", "learning_object_evaluations", "learning_transitions",
     "knowledge_suggestions",
     "temporary_memories",

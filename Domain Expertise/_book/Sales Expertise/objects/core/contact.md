@@ -2,76 +2,104 @@
 
 # Contact
 
-`sales.obj.core.contact` · v1.0.0 · **draft** · scope **core**
+`sales.obj.core.contact` · v1.1.0 · **draft** · scope **core**
 
-> Any known person at a counterparty organisation, before we know what role they play in a decision. The base object that Stakeholder, Champion and Decision Maker specialise. Its discriminator is reachability and nothing else: a Contact is someone we can address, and every judgement about influence, authority or advocacy belongs to one of the role objects and requires its own evidence. The object it is most often confused with is Lead — a Lead is this object plus evidence the person might be in market, which is a claim about a moment in time rather than a fact about a person. Contacts outlive leads, deals and jobs; modelling them as the same row is why deduplication is the CRM project every company runs twice.
+> Any known person at a counterparty organisation, before we know what role they play in a decision. The base object that Stakeholder, Champion and Decision Maker specialise. Its only claim is reachability: a Contact is someone we can address, and every judgement about influence, authority or advocacy belongs to one of the role objects and requires its own evidence. Contacts outlive leads, deals and jobs; modelling a person and a moment in that person's life as the same row is why deduplication is the CRM project every company runs twice.
+
+
+**The discriminator.** A Contact is a person we can address; a Lead is that same person plus evidence they might be in market — so a Contact is a durable fact and a Lead is a perishable claim, and the same human can be one Contact and three Leads across five years.
 
 
 Also called: `Person`, `CRM Contact`, `Counterparty Contact`
 
 
-## Attributes (30)
+### Questions this object answers
+
+- Can we lawfully reach this person at all, on which channel, and in which local window?
+- Has a human on the other side actually done anything, or have we only been sending?
+- Which archetype should the first message be written against, before anything individual about them is known?
+- Who else do we already hold at this account, and where do they sit relative to each other?
+- Is this record still true, or is it a name at an employer they left eleven months ago?
+- Did the last message arrive, or did it merely leave?
+
+
+### What it is NOT responsible for
+
+- NOT authority. Who can approve spend lives on sales.obj.core.decision_maker and requires independent evidence; job_title here is a string, never a permission.
+- NOT advocacy. Someone selling on our behalf internally is sales.obj.core.champion.
+- NOT intent. The claim that this person might be in market is sales.obj.core.lead.
+- NOT the archetype. sales.obj.core.persona is the class and carries priors; this is the instance and carries observations.
+- NOT the commercial relationship. That is sales.obj.core.account; one company can hold several.
+- NOT a stake in the outcome. sales.obj.core.stakeholder owns that, and it is a broader population than the people we can email.
+
+
+## Attributes (32)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
 | `identity` | composite |  |  | Who this person is, as stated by them or by a public source. | `full_name`, `job_title`, `department`, `seniority_band`, `linkedin_url` |
-| `reachability` | composite |  |  | Whether and how we can actually address them. The object's whole reason to exist. | `primary_email`, `email_deliverability`, `phone`, `preferred_channel`, `timezone` |
+| `reachability` | composite |  |  | Whether and how we can actually address them. The object's whole reason to exist. | `primary_email`, `email_deliverability`, `phone`, `preferred_channel`, `timezone`, `is_reachable` |
 | `affiliation` | composite |  |  | Where they sit, and whether they still sit there. | `account_ref`, `company_ref`, `reports_to`, `is_current_employee` |
 | `classification` | composite |  |  | The archetype we read them against, and the unconfirmed guess at their part in the deal. | `persona_ref`, `role_hypothesis` |
-| `engagement` | composite |  |  | Observed interaction, as opposed to declared attributes. The only section the pipeline fills on its own. | `first_contacted_at`, `last_inbound_at`, `ball_in_court`, `engagement_trend`, `sentiment` |
-| `provenance_and_permission` | composite |  |  | Where the record came from and whether we are allowed to use it. Checked before anything else. | `source_channel`, `consent_status`, `do_not_contact` |
-| `full_name` | value | string | yes | The full_name of this object. |  |
-| `job_title` | value | string |  | As written by them, never normalised in place. Title inflation is regional and size-dependent — "Head of" is a director in London and a VP in New York — so the coarse seniority_band is a separate field and the raw string is preserved for the human reading it. |  |
-| `department` | value | string |  | More predictive of what they care about than seniority is. Discovery questions are chosen by function, not by rank. |  |
-| `seniority_band` | value | enum |  | Deliberately coarse, and deliberately not authority. Seniority changes the value of a reply and the cost of wasting one; it says nothing about whether this person can spend money. |  |
-| `linkedin_url` | value | string |  | The linkedin_url of this object. |  |
+| `engagement` | composite |  |  | Observed interaction, as opposed to declared attributes. The only section the pipeline fills on its own, and therefore the only section that is current by construction.  | `first_contacted_at`, `last_inbound_at`, `ball_in_court`, `engagement_trend`, `sentiment` |
+| `provenance_and_permission` | composite |  |  | Where the record came from and whether we are allowed to use it. Checked before anything else, because a perfect contact we may not lawfully email is a liability rather than an asset.  | `source_channel`, `consent_status`, `do_not_contact`, `record_staleness_days` |
+| `full_name` | value | string | yes | The name they answer to, as they write it. The only attribute with no useful default — a record without one cannot be addressed, deduplicated or discussed in a deal review.  |  |
+| `job_title` | value | string |  | As written by them, never normalised in place. Title inflation is regional and size-dependent — "Head of" is a director in London and a VP in New York — so the coarse seniority_band is a separate field and the raw string is preserved for the human reading it.  |  |
+| `department` | value | string |  | More predictive of what they care about than seniority is. Discovery questions are chosen by function, not by rank: a director of security and a director of revenue share a band and share nothing else.  |  |
+| `seniority_band` | value | enum |  | Deliberately coarse, and deliberately not authority. Seniority changes the value of a reply and the cost of wasting one; it says nothing about whether this person can spend money.  |  |
+| `linkedin_url` | value | string |  | The public profile. Useful as a second identity key when the email changes and the person does not, which is the ordinary case after a job move.  |  |
 | `primary_email` | value | string | yes | The identity key in practice. A contact with no address is a name on a slide. |  |
-| `email_deliverability` | value | enum |  | Distinguishes "did not reply" from "never arrived". Those two states demand opposite responses — one wants a different message, the other wants a different address — and collapsing them is how a rep runs a nine-touch sequence into a dead mailbox. |  |
-| `phone` | value | string |  | The phone of this object. |  |
+| `email_deliverability` | value | enum |  | Distinguishes "did not reply" from "never arrived". Those two states demand opposite responses — one wants a different message, the other wants a different address — and collapsing them is how a rep runs a nine-touch sequence into a dead mailbox.  |  |
+| `phone` | value | string |  | The second channel, and the one that survives a mailbox change. Recorded even where the motion is email-only, because it is the only route left after a hard bounce.  |  |
 | `preferred_channel` | value | enum |  | Read by Layer 5.2 when planning a channel. Never read by Layer 4. |  |
-| `timezone` | value | string |  | IANA name. Send time is the cheapest lever on reply rate and the one most often left to the sender's own clock. |  |
-| `account_ref` | reference | ref |  | The commercial relationship. Distinct from company_ref because one company can hold several accounts. | sales.obj.core.account |
-| `company_ref` | reference | ref |  | The legal employer. | sales.obj.core.company |
-| `reports_to` | reference | ref |  | Self-referential. Gives an org chart without a separate object, and is what makes a missing committee seat visible. | sales.obj.core.contact |
-| `is_current_employee` | value | boolean |  | Defaults true and decays silently. Roughly a fifth of B2B contact records go stale within a year, and the system's only current detector — a reply that never comes — is indistinguishable from being ignored. Treat unknown as suspect after a bounce, not after silence. |  |
-| `persona_ref` | reference | ref |  | The archetype this instance is read against. A prior for outreach, never evidence about this individual. | sales.obj.core.persona |
-| `role_hypothesis` | value | enum |  | Named a hypothesis on purpose. The moment it is confirmed by independent evidence the contact should be specialised into Stakeholder, Champion or Decision Maker and the judgement should live there. Leaving it here is exactly how a title becomes an authority claim. |  |
-| `first_contacted_at` | value | timestamp |  | Start of the cadence clock. Needed to tell a cold prospect from a long-running relationship that went quiet. |  |
+| `timezone` | value | string |  | IANA name. Send time is the cheapest lever on reply rate and the one most often left to the sender's own clock.  |  |
+| `account_ref` | reference | ref |  | The commercial relationship. Distinct from company_ref because one company can hold several accounts, and territory routing follows the account rather than the legal entity.  | sales.obj.core.account |
+| `company_ref` | reference | ref |  | The legal employer. What a departure changes, and what an acquisition renames. | sales.obj.core.company |
+| `reports_to` | reference | ref |  | Self-referential. Gives an org chart without a separate object, and is what makes a missing committee seat visible — two hops up from a user is usually where the money sits.  | sales.obj.core.contact |
+| `is_current_employee` | value | boolean |  | Defaults true and decays silently. Roughly a fifth of B2B contact records go stale within a year, and the system's only current detector — a reply that never comes — is indistinguishable from being ignored. Treat unknown as suspect after a bounce, not after silence.  |  |
+| `persona_ref` | reference | ref |  | The archetype this instance is read against. A prior for outreach, never evidence about this individual.  | sales.obj.core.persona |
+| `role_hypothesis` | value | enum |  | Named a hypothesis on purpose. The moment it is confirmed by independent evidence the contact should be specialised into Stakeholder, Champion or Decision Maker and the judgement should live there. Leaving it here is exactly how a title becomes an authority claim.  |  |
+| `first_contacted_at` | value | timestamp |  | Start of the cadence clock. Needed to tell a cold prospect from a long-running relationship that went quiet — the two look identical on last_inbound_at alone.  |  |
 | `last_inbound_at` | value | timestamp |  | The only proof in the substrate that a human on the other side did something. | `thread.last_inbound` |
-| `ball_in_court` | value | enum |  | `us` means they replied and we owe them — the strongest low-cost engagement signal available. `nobody` is the dangerous one: it looks calm and it means the thread died. | `thread.ball_in_court` |
-| `engagement_trend` | value | number |  | Engine-computed two-way volume against the prior fortnight. <= 0.5 means it has halved. | `derived.engagement` |
-| `sentiment` | value | number |  | Engine-computed observation balance, roughly -1..1. Corroborating only — tone is the noisiest thing in an email thread. | `derived.sentiment` |
-| `source_channel` | value | enum |  | Attribution that is worth capturing the day it happens and impossible to reconstruct a week later. Referral and list_purchase are the two extremes of every downstream conversion metric. |  |
-| `consent_status` | value | enum |  | Legal basis for contacting them. `unknown` fails closed in every jurisdiction that matters. |  |
+| `ball_in_court` | value | enum |  | `us` means they replied and we owe them — the strongest low-cost engagement signal available. `nobody` is the dangerous one: it looks calm and it means the thread died.  | `thread.ball_in_court` |
+| `engagement_trend` | value | number |  | Engine-computed two-way volume against the prior fortnight. At or below 0.5 it has halved, which is a louder signal than any absolute volume because it is relative to this person.  | `derived.engagement` |
+| `sentiment` | value | number |  | Engine-computed observation balance, roughly -1..1. Corroborating only — tone is the noisiest thing in an email thread and a terse reply from a busy director reads negative.  | `derived.sentiment` |
+| `source_channel` | value | enum |  | Attribution that is worth capturing the day it happens and impossible to reconstruct a week later. Referral and list_purchase are the two extremes of every downstream conversion metric.  |  |
+| `consent_status` | value | enum |  | Legal basis for contacting them. `unknown` fails closed in every jurisdiction that matters, because the cost of being wrong is regulatory rather than commercial.  |  |
 | `do_not_contact` | value | boolean |  | Absolute. Overrides intent, fit, seniority and any escalation path. |  |
+| `is_reachable` | derived | boolean |  | The single gate Layer 5.2 checks before any send. Computed rather than stored so it cannot drift from its inputs: permitted, unbounced, employed, and not suppressed.  | `primary_email`, `email_deliverability`, `consent_status`, `do_not_contact`, `is_current_employee` |
+| `record_staleness_days` | derived | integer |  | Days since any verified attribute last changed. The honest measure of whether this record describes a person or describes a person's past — and the trigger for re-verification that a calendar reminder is a poor substitute for.  | `last_inbound_at`, `first_contacted_at`, `is_current_employee` |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| belongs_to | `sales.obj.core.account` | one |  |  | — | A contact with no account is unroutable — no owner, no territory, no context. |
-| references | `sales.obj.core.persona` | zero_or_one |  |  | — | The class this instance is read against. The arrow points class -> instance and never back. |
-| reports_to | `sales.obj.core.contact` | zero_or_one |  |  | — | Self-referential. Two hops up from a user is usually where the money sits. |
-| precedes | `sales.obj.core.lead` | zero_or_many |  |  | — | A contact becomes a lead when intent evidence attaches. Many, not one — the same person can be a lead twice in three years and the second time is usually the better one.  |
-| precedes | `sales.obj.core.stakeholder` | zero_or_one |  |  | — | Stakeholder, Champion and Decision Maker specialise this object. The specialisation is a claim carrying its own evidence, never a rename of the row.  |
-| member_of | `sales.obj.core.buying_committee` | zero_or_one |  |  | — |  |
-| influences | `sales.obj.core.deal` | zero_or_many |  |  | — |  |
+| belongs_to | `sales.obj.core.account` | one | 2500 bp | 9000 bp | — | A contact with no account is unroutable — no owner, no territory, no context. This is the heaviest edge on the object because every other one is read through it.  |
+| belongs_to | `sales.obj.core.company` | one | 1200 bp | 8500 bp | — | The legal employer, deliberately separate from the account. An acquisition changes this edge and leaves the account edge alone; a subsidiary purchase does the reverse.  |
+| references | `sales.obj.core.persona` | zero_or_one | 1000 bp | 5000 bp | — | The class this instance is read against. The arrow points class -> instance and never back: a contact's behaviour may recalibrate the persona through Layer 6 and only through a human merge.  |
+| reports_to | `sales.obj.core.contact` | zero_or_one | 1500 bp | 4000 bp | — | Self-referential. Two hops up from a user is usually where the money sits, which makes this the edge that turns a contact list into an escalation path.  |
+| precedes | `sales.obj.core.lead` | zero_or_many | 2000 bp | 6000 bp | `has_obs: demo_requested` | A contact becomes a lead when intent evidence attaches. Many, not one — the same person can be a lead twice in three years and the second time is usually the better one. The condition names the least ambiguous trigger only; the grammar ANDs, so Lead's own patterns carry the other intent kinds.  |
+| precedes | `sales.obj.core.stakeholder` | zero_or_one | 1800 bp | 5000 bp | `has_obs: introduction` | Stakeholder, Champion and Decision Maker specialise this object. The specialisation is a claim carrying its own evidence, never a rename of the row.  |
+| precedes | `sales.obj.core.champion` | zero_or_one | 900 bp | 3500 bp | — | The advocacy specialisation. Rare relative to the contact population and disproportionately predictive, which is why it is a separate object with its own evidence bar.  |
+| precedes | `sales.obj.core.decision_maker` | zero_or_one | 900 bp | 3000 bp | — | The authority specialisation, and the one this object refuses to make on its own. Nothing on a Contact may promote it; the promotion needs a signed document, a stated approval or an observed contract request.  |
+| member_of | `sales.obj.core.buying_committee` | zero_or_one | 1200 bp | 3500 bp | — | Committee membership is asserted about a person and observed about a room. Held weakly here because attendance is the only cheap proxy and attendance is not membership.  |
+| influences | `sales.obj.core.deal` | zero_or_many | 800 bp | 4000 bp | `neighbor(deal.status) = open` | Influence on a live deal, held at low weight on purpose: a Contact influencing a deal is an observation about traffic, and the objects that model influence properly are Stakeholder and Champion.  |
 
 
 ## States
 
-Initial `unknown`
+Initial `unknown` · terminal `disqualified`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `unknown` | The record exists. Nothing about it has been verified, including whether the person still works there. | — |  |
-| `identified` | Name and employer resolved, address unverified. Most purchased and scraped records stop here permanently. | — |  |
-| `contacted` | We have sent something. One-way, and the state that flatters a pipeline the most. | `has_obs: followup_sent` |  |
-| `engaged` | Two-way. They replied and the ball came back to us. | `thread.ball_in_court = us` |  |
-| `dormant` | Previously two-way, now silent well past this person's own reply cadence. | `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 4.0, 'floor': 30}` |  |
-| `inactive` | Left the role or the company. Reachable in principle and worthless for this account. | — |  |
-| `disqualified` | Consent withdrawn, do-not-contact set, or explicitly asked not to be approached. | — |  |
+| `unknown` | The record exists. Nothing about it has been verified, including whether the person still works there.  | — | Not safe to send. Enrichment and permission checks come before any cadence. |
+| `identified` | Name and employer resolved, address unverified. Most purchased and scraped records stop here permanently.  | — | Addressable in principle. Verification is cheaper than the first bounce. |
+| `contacted` | We have sent something. One-way, and the state that flatters a pipeline the most. | `has_obs: followup_sent` | Activity has occurred and nothing has been learned. Counts as cost, not progress. |
+| `engaged` | Two-way. They replied and the ball came back to us. | `thread.ball_in_court = us` | A live human at a live address. The only state that justifies investing rep time. |
+| `dormant` | Previously two-way, now silent well past this person's own reply cadence. | `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 4.0, 'floor': 30}` | The relationship is not dead and the moment is. Re-approach needs a new reason, not a fifth follow-up on the old one.  |
+| `inactive` | Left the role or the company. Reachable in principle and worthless for this account. | — | Stop every sequence here and open one at their new employer — the same person elsewhere is the best lead in the territory.  |
+| `disqualified` | Consent withdrawn, do-not-contact set, or explicitly asked not to be approached. | — | Terminal and global. No owner, no sequence and no escalation path overrides it. |
 
 
 ## Inference patterns — 6 executable, 5 blocked
@@ -81,12 +109,12 @@ Initial `unknown`
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `contact.reply_proves_the_address` | deterministic | `exists: thread.last_inbound` | 9800 bp → `email_deliverability` | An inbound message exists on this person's thread, so the address is live. |  |
-| `contact.introduced_by_a_third_party` | deterministic | `has_obs: introduction` | 8500 bp → `source_channel` | An introduction observation names this person. |  |
-| `contact.ball_came_back_to_us` | heuristic | `thread.ball_in_court = us` AND `exists: thread.last_inbound` | 9000 bp | They replied and we now owe the response — the cheapest proof of a live human. |  |
-| `contact.silent_past_their_own_cadence` | heuristic | `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 4.0, 'floor': 30}` | 7500 bp | Silent for four times this person's learned reply cadence, floored at thirty days. |  |
-| `contact.two_way_volume_halved` | heuristic | `derived.engagement <= 0.5` AND `exists: thread.last_inbound` | 7000 bp | Interaction volume has fallen to half the prior fortnight while the thread is still notionally live. |  |
-| `contact.in_the_pricing_conversation` | heuristic | `has_obs: pricing_discussed` | 5500 bp → `role_hypothesis` | Present in a pricing discussion, so plausibly holds or influences a budget. |  |
+| `contact.reply_proves_the_address` | deterministic | `exists: thread.last_inbound` | 9800 bp → `email_deliverability` | An inbound message exists on this person's thread, so the address is live. | An autoresponder, a shared-mailbox ticketing robot or a mail-loop handler produces an inbound message indistinguishable from a human reply at this layer. The address is genuinely live and the person may not exist at all — which is exactly how info@ acquires a persona and an owner.  |
+| `contact.introduced_by_a_third_party` | deterministic | `has_obs: introduction` | 8500 bp → `source_channel` | An introduction observation names this person. | The observation also fires when WE introduce someone on our own side, and when the buyer forwards a thread internally. Neither is a referral into this account, and source_channel then over-credits the highest-converting channel in the enum with work it did not do.  |
+| `contact.ball_came_back_to_us` | heuristic | `thread.ball_in_court = us` AND `exists: thread.last_inbound` | 9000 bp | They replied and we now owe the response — the cheapest proof of a live human. | An out-of-office flips the ball to us and proves nothing. The strongest cheap engagement signal available is also the one an autoresponder forges most convincingly, and the forgery arrives fastest of all.  |
+| `contact.silent_past_their_own_cadence` | heuristic | `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 4.0, 'floor': 30}` | 7500 bp | Silent for four times this person's learned reply cadence, floored at thirty days. | A baseline built from two exchanges is not a baseline. One unusually fast pair of replies sets a tight cadence and the rule then fires on someone behaving entirely normally; the thirty-day floor is the only thing standing between this pattern and a flood.  |
+| `contact.two_way_volume_halved` | heuristic | `derived.engagement <= 0.5` AND `exists: thread.last_inbound` | 7000 bp | Interaction volume has fallen to half the prior fortnight while the thread is still notionally live. | Email volume halves the moment a deal graduates to a scheduled weekly call. The relationship strengthened and the measured channel narrowed, and the engine can only see the channel it is connected to.  |
+| `contact.in_the_pricing_conversation` | heuristic | `has_obs: pricing_discussed` | 5500 bp → `role_hypothesis` | Present in a pricing discussion, so plausibly holds or influences a budget. | A procurement analyst, a finance business partner and an incumbent vendor's account manager all sit in pricing conversations with no authority whatsoever. This fires on all three, and on the champion who is building somebody else's business case.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -104,33 +132,134 @@ Initial `unknown`
 
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
-| reachability_confirmed | 2500 bp | increases | `primary_email`, `email_deliverability`, `do_not_contact` |
+| reachability_confirmed | 2500 bp | increases | `primary_email`, `email_deliverability`, `do_not_contact`, `is_reachable` |
 | responsiveness | 2000 bp | context | `last_inbound_at`, `ball_in_court`, `engagement_trend` |
 | organisational_position | 2000 bp | context | `job_title`, `seniority_band`, `department` |
 | persona_fit | 1500 bp | increases | `persona_ref`, `role_hypothesis` |
 | account_relevance | 1500 bp | increases | `account_ref`, `company_ref` |
-| contactability_risk | 500 bp | decreases | `consent_status`, `is_current_employee` |
+| contactability_risk | 500 bp | decreases | `consent_status`, `is_current_employee`, `record_staleness_days` |
+
+
+## Preconditions
+
+- **`contact.identity_resolved`** A name and an employer must resolve to exactly one person before any judgement is attached. Two rows for one human is not a cosmetic defect: it splits the engagement history that every cadence rule reads, so both halves look colder than the person actually is.
+ _(unmet → block)_
+- **`contact.permission_resolved`** consent_status and do_not_contact must be known before the first outbound. Unknown is treated as absent, never as permitted, because the cost of being wrong here is regulatory and lands on the whole domain rather than on this deal.
+ _(unmet → block)_
+- **`contact.address_present`** At least one of primary_email or phone must exist. Without a channel the object holds knowledge nobody can act on.
+ _(unmet → degrade)_
+- **`contact.account_resolved`** account_ref should be resolved before the contact enters a territory queue. Unresolved is workable — the discovering rep holds it — but every account-level read, including the neighbour patterns, returns nothing until it lands.
+ _(unmet → degrade)_
+- **`contact.thread_exists_for_engagement_reads`** Every engagement attribute is meaningless until a thread exists. Absent a thread the correct value is unknown, and the failure mode is treating it as zero — a contact we have never written to then scores identically to one who stopped replying.
+ _(unmet → degrade)_
+- **`contact.persona_before_first_message`** A persona assignment should exist before the first outbound is composed. Without one the message is written against no reader, which is the generic copy this object's classification section exists to prevent.
+ _(unmet → degrade)_
 
 
 ## Constraints
 
-- **`contact.no_send_without_consent`** No outbound where consent_status is none, withdrawnor unknown.
-- **`contact.no_send_after_bounce`** No further sends to an address with email_deliverability= bounced.
-- **`contact.no_authority_inference`** Authority may never be asserted from job_title orseniority_band on this object.
-- **`contact.persona_is_a_prior`** A persona attribute may not be written onto this contactas an observed value.
-- **`contact.one_owner`** Only one rep may hold an active sequence against a contact ata time. _(soft)_
+- **`contact.no_send_without_consent`** No outbound where consent_status is none, withdrawn or unknown.
+- **`contact.no_send_after_bounce`** No further sends to an address with email_deliverability = bounced.
+- **`contact.no_authority_inference`** Authority may never be asserted from job_title or seniority_band on this object.
+- **`contact.persona_is_a_prior`** A persona attribute may not be written onto this contact as an observed value.
+- **`contact.one_owner`** Only one rep may hold an active sequence against a contact at a time. _(soft)_
 
 
 ## Business rules
 
 - **`contact.no_authority_claim_on_a_contact`** A Contact may never carry a confirmed authority or advocacy value. role_hypothesis is a hypothesis and Layer 4 must not read it as evidence of who can approve; authority lives on Decision Maker and requires an independent source. This is the rule the whole object exists to hold.
-
+ — _The object is the base class for three role objects. If it can hold their conclusions, they stop being loaded and the account map degenerates into a list of titles with confidence scores.
+_
 - **`contact.do_not_contact_is_absolute`** do_not_contact = true blocks every outbound action regardless of intent, fit or escalation path.
+ — _Absolute rather than weighted because a suppression that can be outvoted by a high enough fit score is not a suppression.
+_
 - **`contact.unknown_consent_fails_closed`** consent_status of none, withdrawn or unknown blocks cold outbound. Unknown is treated as absent, never as permitted.
+ — _Fail-closed is the only safe default when the missing value and the prohibited value are indistinguishable from inside the system.
+_
 - **`contact.bounced_address_is_unreachable`** A bounced primary_email must halt the sequence rather than continue it. Repeated sends to a dead mailbox damage the sending domain's reputation for every other deal in the territory, which is a cost paid by accounts that had nothing to do with this one.
-
+ — _The externality is the point. Deliverability is a shared resource across the whole tenant and a per-sequence decision spends it.
+_
 - **`contact.dormant_after_own_cadence`** A contact silent for four times their own learned reply cadence, floored at thirty days, is dormant and must not be counted as engaged pipeline.
+ — _Relative to the person, not to the calendar. A fixed threshold flags a monthly-cadence executive who is behaving normally and misses a daily-cadence operator who has gone quiet.
+_
 - **`contact.one_record_per_person_per_account`** A second contact record with the same primary_email on the same account is a duplicate and must be merged before either is worked.
+ — _Duplicates split the engagement history, so both rows read colder than the person is and the dormancy rule fires on someone who replied last week to the other row.
+_
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **A reply from info@, sales@ or a ticketing address satisfies every reachability pattern here and refers to no person at all. The record must be marked as a channel, not specialised, not given a persona, and not counted in contacts_per_account.
+** — The corruption is subtle rather than loud: the account map gains a person who does not exist, coverage looks better than it is, and the fictional person is often the most responsive "contact" in the account.
+ _(overrides contact.reply_proves_the_address, contact.ball_came_back_to_us, contact.one_record_per_person_per_account)_
+- **Where an EA fronts the mailbox, ball_in_court and reply cadence measure the assistant. The dormancy and engagement patterns are reading the wrong person and must be suspended until the two are modelled as separate contacts.
+** — The EA is the reachable contact and the executive is the audience. Collapsed into one row, a fast administrative acknowledgement reads as executive engagement and a slow executive decision reads as a dead thread.
+ _(overrides contact.dormant_after_own_cadence, contact.silent_past_their_own_cadence, contact.ball_came_back_to_us)_
+- **An inbound message from the person themselves establishes a lawful basis for replying on that thread, whatever consent_status records. The fail-closed rule governs COLD outbound; answering someone who wrote to you is not cold outbound.
+** — Applying the cold-outbound gate to a reply is the failure mode that makes a compliance system look broken to its own users, and it teaches reps to route around it entirely.
+ _(overrides contact.unknown_consent_fails_closed)_
+- **Mailbox-full, out-of-office relay failures and reputation-filter rejections look like hard bounces at the transport layer. One failure suspends the send; it does not set email_deliverability = bounced or halt the sequence permanently.
+** — Permanent-looking is not permanent. Retiring an address on a single 5xx discards reachable buyers at a rate nobody measures, because the discarded ones never appear in any funnel again.
+ _(overrides contact.bounced_address_is_unreachable, contact.address_hard_bounced, contact.no_send_after_bounce)_
+- **The same human legitimately holds two contact records when they sit at two accounts — a contractor, a board member, a partner-channel principal. Merging them destroys territory attribution and hands one rep another rep's relationship.
+** — The duplicate rule keys on email plus account for exactly this reason, and the case is rare enough that a merge tool keyed on email alone will find it and be wrong.
+ _(overrides contact.one_record_per_person_per_account)_
+- **Contacts with a known seasonal shape — academic calendars, retail change-freezes, the August shutdown across continental Europe — trip the dormancy rule while behaving exactly as expected. Suppress the flag rather than re-approach with a fifth follow-up.
+** — Re-approaching a contact during a known freeze burns the one re-engagement message that would have worked in September.
+ _(overrides contact.dormant_after_own_cadence, contact.silent_past_their_own_cadence)_
+
+
+## Best practices
+
+- **Record source_channel and referred_by at the moment the record is created, never later.** — Provenance is unreconstructable a week after the forwarding thread is buried, and the referral-versus-list distinction has a wider effect on conversion than every other field on this object combined.
+
+- **Verify the address before the first send rather than after the third bounce.** — Verification costs a fraction of a penny; a bounce spends sender reputation that is shared by every other deal on the domain.
+
+- **Store job_title verbatim and band seniority separately.** — Title inflation is regional and size-dependent. Normalising in place destroys the string a human needs to judge the person and replaces it with a band that is wrong in both directions.
+
+- **When authority or advocacy is confirmed, create the role object. Do not upgrade role_hypothesis and carry on.
+** — The role objects carry evidence bars this one deliberately lacks. Annotating in place means the claim exists with no bar attached, and nothing downstream can tell the difference.
+
+- **Trigger employment re-verification from a bounce, not from a quiet fortnight.** — Silence has a dozen causes and non-delivery has two. Re-verifying on silence generates constant noise; re-verifying on a bounce catches the departure that corrupts the org chart.
+
+- **Schedule against the recipient's timezone, not the sender's.** — Send time moves reply rate more than any single copy change available to a rep, and it is free. It is also the lever most often surrendered to whatever hour the sender happened to be working.
+
+- **Merge duplicates before either row is worked, never after.** — After the second cadence starts, the buyer has already formed the impression the merge was meant to prevent, and merging the rows does not unsend the mail.
+
+
+
+## Anti-patterns
+
+- **Reading seniority_band or job_title as evidence that this person can approve spend.** — tempting because The title is often the only populated field on day one, and inside the buyer's own organisation titles genuinely do signal authority. Importing that convention across the company boundary feels like ordinary inference rather than a category error.
+ Instead: Keep it as role_hypothesis, and require an independent source — a signed document, a stated approval, an observed contract request — before creating a Decision Maker.
+
+- **Treating a non-reply as a decision and moving the record to disqualified.** — tempting because Absence of a reply feels like an answer, and closing the row is emotionally cheaper than leaving an open question in the queue.
+ Instead: Move to dormant, keep the record live, and separate non-delivery from non-response before concluding anything.
+
+- **Running a nine-touch cadence against an address that bounced on touch one.** — tempting because The sequencing tool reports "sent" and no one reads the bounce class back into the record. The dashboard shows healthy activity throughout.
+ Instead: Halt on the first hard bounce and route to re-verification.
+- **Promoting enriched contacts to Leads to hit a top-of-funnel number.** — tempting because Lead count is a target, contacts are abundant, and the promotion takes one click. It is also defensible in the moment: they do fit the ICP.
+ Instead: Keep them as Contacts on a target list. A lead requires an observed act, not a matching firmographic.
+
+- **Overwriting job_title with a cleaned, standardised version.** — tempting because It makes the CRM tidy and the reports groupable, and the normalisation is usually right in the majority case.
+ Instead: Preserve the raw string; write the normalised value into seniority_band beside it.
+- **Creating a contact for info@ or support@, assigning it a persona, and working it.** — tempting because It replies. It is often the fastest-responding address at the account, which makes it look like the best contact rather than the least human one.
+ Instead: Mark it as a channel, use it to request a routing, and create the contact only when a named human answers.
+
+
+
+## Dependencies
+
+- `sales.obj.core.account` — requires (hard)
+- `sales.obj.core.company` — requires (soft)
+- `sales.obj.core.company` — invalidated_by (soft)
+- `sales.obj.core.persona` — enriches (soft)
+- `sales.obj.core.icp` — enriches (soft)
+- `sales.obj.core.lead` — blocks (hard)
+- `sales.obj.core.stakeholder` — enriches (soft)
+- `sales.obj.core.decision_maker` — enriches (soft)
+- `sales.obj.core.buying_committee` — enriches (soft)
+- `sales.heu.lead_qualification.title_is_not_authority_a_vp` — enriches (hard)
 
 
 ## Inputs
@@ -148,67 +277,86 @@ Initial `unknown`
 
 ## Outputs
 
-- **`reachable`** Permitted, unbounced and not do-not-contact. Gate beforeany send. → L5.2.channel_planner
+- **`reachable`** Permitted, unbounced and not do-not-contact. Gate before any send. → L5.2.channel_planner
 - **`channel_preference`** Channel and local send window. → L5.2.channel_planner
-- **`engagement_state`** unknown / contacted / engaged / dormant, fromthe states machine. → L4.reasoning_unit
-- **`persona_assignment`** Persona id plus confidence, for message relevancebefore anything individual is known. → L5.communication_planning
-- **`org_position`** Reporting line and department, for committee coveragechecks. → L4.reasoning_unit
-- **`record_staleness`** Days since any verified attribute changed. Drivesre-verification. → L6.learning_unit
+- **`engagement_state`** unknown / contacted / engaged / dormant, from the states machine. → L4.reasoning_unit
+- **`persona_assignment`** Persona id plus confidence, for message relevance before anything individual is known. → L5.communication_planning
+- **`org_position`** Reporting line and department, for committee coverage checks. → L4.reasoning_unit
+- **`record_staleness`** Days since any verified attribute changed. Drives re-verification. → L6.learning_unit
 
 
 ## Events
 
 - **`contact.first_reply`** First Reply Received
-- **`contact.went_dormant`** Contact Went Dormant
+- **`contact.went_dormant`** Contact Went Dormant — invalidates role_hypothesis
 - **`contact.became_a_lead`** Contact Became A Lead
-- **`contact.unreachable`** Contact Unreachable
-- **`contact.consent_withdrawn`** Consent Withdrawn
+- **`contact.unreachable`** Contact Unreachable — invalidates ball_in_court, engagement_trend, last_inbound_at, role_hypothesis, reports_to
+- **`contact.consent_withdrawn`** Consent Withdrawn — invalidates is_reachable
+- **`contact.employer_changed`** Employer Changed — invalidates job_title, department, seniority_band, reports_to, account_ref, persona_ref
 
 
 ## Actions
 
-- **Verify the email address** (system) — Cheap, and worthdoing before the sequence rather than after the third bounce.
-- **Enrich from a public source** (agent) — Title, department,employer. Enrichment is a prior; it never confirms authority.
-- **Send the first message** (agent) — Opens the cadence clock.
-- **Re-verify employment** (agent) — Triggered by dormancy orbounce, not by the calendar.
-- **Promote to a role object** (human) — Create Stakeholder,Champion or Decision Maker with its own evidence. Never a rename of this record.
-- **Merge a duplicate record** (human) — Merge beforeworking. Two reps on two rows against one person loses the account, not the deal.
-- **Add to do-not-contact** (system) — Immediate and global acrossevery sequence and owner.
+- **Verify the email address** (system) — Cheap, and worth doing before the sequence rather than after the third bounce.
+- **Enrich from a public source** (agent) — Title, department, employer. Enrichment is a prior; it never confirms authority.
+- **Send the first message** (agent) — Opens the cadence clock. Irreversible in the only sense that matters — a first impression is spent once.
+- **Re-verify employment** (agent) — Triggered by dormancy or bounce, not by the calendar.
+- **Promote to a role object** (human) — Create Stakeholder, Champion or Decision Maker with its own evidence. Never a rename of this record.
+- **Merge a duplicate record** (human) — Merge before working. Two reps on two rows against one person loses the account, not the deal.
+- **Add to do-not-contact** (system) — Immediate and global across every sequence and owner.
 
 
 ## Evidence
 
-- **email** · 9500 bp — A reply from the address. Proof of reachability andof a live human, in one artefact.
-- **meeting_transcript** · 8500 bp — They attended and spoke. Confirms identity,role language and department.
-- **contract** · 8000 bp — Named in a signed document. Authoritative foridentity, silent on reachability.
-- **crm** · 7000 bp — Someone typed it once. Strong on structure, unreliableon currency.
-- **calendar** · 6000 bp — Accepted an invitation — reachability withoutcontent.
-- **manual_entry** · 5500 bp — Seller correction after a conversation. Highsignal, no audit trail.
-- **website** · 3000 bp — Public title. Weakest, and the most likely to bea year out of date.
-- **derived** · 4000 bp — Inferred from engagement shape. Corroborating only,never sole grounds.
+- **email** · 9500 bp — A reply from the address. Proof of reachability and of a live human, in one artefact.
+- **meeting_transcript** · 8500 bp — They attended and spoke. Confirms identity, role language and department.
+- **contract** · 8000 bp — Named in a signed document. Authoritative for identity, silent on reachability.
+- **crm** · 7000 bp — Someone typed it once. Strong on structure, unreliable on currency.
+- **calendar** · 6000 bp — Accepted an invitation — reachability without content.
+- **manual_entry** · 5500 bp — Seller correction after a conversation. High signal, no audit trail.
+- **website** · 3000 bp — Public title. Weakest, and the most likely to be a year out of date.
+- **derived** · 4000 bp — Inferred from engagement shape. Corroborating only, never sole grounds — and independent of nothing, because it is computed from the email stream it would corroborate.
 
 
 ## Metrics
 
 - **reply_rate** (percent) — Share of contacted contacts that reply at least once.
-- **time_to_first_reply** (hours) — Feeds the reply_cadence baseline every dormancyrule depends on.
-- **bounce_rate** (percent) — Above roughly two percent the sending domain is atrisk for the whole territory.
-- **record_staleness_median** (days) — Median age of the newest verified attribute.The honest measure of database health.
-- **duplicate_rate** (percent) — Share of contacts sharing an address with anotherrecord.
-- **contacts_per_account** (count) — Below three on an enterprise deal is single-threadingwith extra steps.
+- **time_to_first_reply** (hours) — Feeds the reply_cadence baseline every dormancy rule depends on.
+- **bounce_rate** (percent) — Above roughly two percent the sending domain is at risk for the whole territory.
+- **record_staleness_median** (days) — Median age of the newest verified attribute. The honest measure of database health.
+- **duplicate_rate** (percent) — Share of contacts sharing an address with another record.
+- **contacts_per_account** (count) — Below three on an enterprise deal is single-threading with extra steps.
+
+
+## References
+
+- **Predictable Revenue** · book · Aaron Ross and Marylou Tyler
+- **MEDDICC** · methodology · Dick Dunkel and Jack Napoli
+- **The Challenger Sale** · book · Matthew Dixon and Brent Adamson
+- **The Qualified Sales Leader** · practitioner · John McMahon
+- **GDPR Article 6(1) — lawfulness of processing** · standard
+- **RFC 3463 — Enhanced Mail System Status Codes** · standard
+- **M3AAWG Sender Best Common Practices** · standard
 
 
 ## Examples
 
-- **Referred by a customer, replied once, no meeting yet** — A real contact and not yeta Lead. Reachable, warm, no intent evidence. Promoting it on warmth is how the top of the funnel inflates.
-- **Procurement analyst on the pricing thread** — The classic misclassification. Discussingprice gets them read as a decision maker; role_hypothesis = budget_holder at the very most, and usually gatekeeper.
-- **info@ shared mailbox** — Not a contact — a channel. The corruption is subtle: it getsa persona, a role hypothesis and a reply, and the account map gains a person who does not exist.
-- **VP who forwards everything to their EA** — The EA is the reachable contact; the VP isthe audience. Modelled as one person, every cadence rule reads the wrong reply latency.
-- **Ex-employee with a live personal address** — is_current_employee false. Worthless forthis account and one of the best leads available for their new one — which nothing currently watches for.
+- **Referred by a customer, replied once, no meeting yet** _(typical)_ — A real contact and not yet a Lead. Reachable, warm, no intent evidence. Promoting it on warmth is how the top of the funnel inflates.
+
+- **Procurement analyst on the pricing thread** _(misclassification)_ — The classic error. Discussing price gets them read as a decision maker; role_hypothesis = budget_holder at the very most, and usually gatekeeper. The pattern that fires here is deliberately capped at 5500 for exactly this reason.
+
+- **info@ shared mailbox** _(counterexample)_ — Not a contact — a channel. The corruption is subtle: it gets a persona, a role hypothesis and a reply, and the account map gains a person who does not exist.
+
+- **VP who forwards everything to their EA** _(edge)_ — The EA is the reachable contact; the VP is the audience. Modelled as one person, every cadence rule reads the wrong reply latency and the deal looks either hotter or colder than it is.
+
+- **Ex-employee with a live personal address** _(edge)_ — is_current_employee false. Worthless for this account and one of the best leads available for their new one — which nothing currently watches for.
+
+- **Contact who bounced once during a mail-provider outage** _(edge)_ — Looks identical to a departure at the transport layer. Suspending the send is right; retiring the address is a permanent decision made on a transient signal.
+
 
 ## Metadata
 
-owner **Sales** · updated 2026-08-08 · review **unreviewed** · confidence **provisional**
+owner **Sales** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Ten patterns: five executable against the pipeline today, five blocked. The highest-value signal gap is contact_departed — L2 emits champion_change for a mapped champion only, so an ordinary contact leaving the account is completely invisible. Sequences keep running into a dead mailbox, the reporting line rots, and the departure itself is the strongest lead source in B2B going unwatched. It is cheap to detect from bounce plus auto-reply text.
+> Ten patterns: FIVE executable against the pipeline today, FIVE blocked. The highest-value signal gap is contact_departed — L2 emits champion_change for a mapped champion only, so an ordinary contact leaving the account is completely invisible. Sequences keep running into a dead mailbox, the reporting line rots, and the departure itself is the strongest lead source in B2B going unwatched. It is cheap to detect from bounce plus auto-reply text. Second is email_bounced: without delivery telemetry the system cannot tell silence from non-delivery, and those two states want opposite next actions. Exactly one corroborates edge is declared — email_bounced against contact_departed — because SMTP status codes and message-body language are genuinely independent mechanisms; every other pattern here reads the same email stream and may not raise its own confidence under Rule 11.

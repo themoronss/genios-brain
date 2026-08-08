@@ -2,110 +2,167 @@
 
 # Incident
 
-`customer_support.obj.core.incident` · v1.0.0 · **draft** · scope **core**
+`customer_support.obj.core.incident` · v2.0.0 · **draft** · scope **core**
 
-> Something broken for many customers at once, modelled as a single object with one clock and one communication stream. An Incident is not a big Ticket and it is not an Issue: the Issue is the defect, the Incident is the period during which customers are experiencing it, and those two end on different days. The incident ends when impact stops; the issue ends when the defect is gone. Almost every "we already fixed that" second wave lives in the gap between those two dates. Its purpose is to collapse N tickets into one problem so that one person owns the answer, one message goes out, and nobody spends the outage writing forty slightly different explanations of the same fault.
+> Something broken for many customers at once, modelled as a single object with one clock, one named commander and one communication stream. ITIL defines an incident as an unplanned interruption to a service or a reduction in its quality, and is explicit that the goal is to RESTORE SERVICE, not to find the cause — this object inherits that goal, which is why mitigated_at and resolved_at are two fields and not one.
+An Incident is not a big Ticket and it is not an Issue. The Issue is the defect; the Incident is the period during which customers are experiencing it; and those two end on different days. The incident ends when impact stops, the issue ends when the defect is gone, and almost every "but you said you fixed that" second wave lives in the gap between those two dates.
+Its purpose is to collapse N tickets into one problem so that one person owns the answer, one message goes out, and nobody spends the outage writing forty slightly different explanations of the same fault.
 
 
-Also called: `Major Incident`, `Outage`, `Service Disruption`, `Sev`
+**The discriminator.** If the fault is confined to one account it is an Escalation, however loud, however expensive and however senior the person on the phone — an Incident is defined by unrelated accounts sharing one cause, so twenty tickets from one enterprise customer is an escalation and twenty accounts with one ticket each is an incident, and the two demand opposite responses.
 
 
-## Attributes (45)
+Also called: `Major Incident`, `Outage`, `Service Disruption`, `Sev`, `Sev1`, `Service Interruption`
+
+
+### Questions this object answers
+
+- Are these contacts one problem or several, and how sure are we?
+- How broken is this, on blast-radius grounds only — and which grounds are inadmissible?
+- Should individual triage on the covered tickets stop right now?
+- What happens to the SLA clocks on the tickets this covers, and who decides?
+- Who owns the decision, who owns the message, and are they the same person (they should not be)?
+- Is a customer broadcast due, and who exactly is in the cohort that must receive it?
+- Has everyone who was told it started been told it ended?
+- How long were we broken before we knew — and how long after we knew before we acted?
+- Is this the same fault as a previous incident, and does that change what happens next?
+- Does this require a blameless postmortem, and is it blocked from closing until there is one?
+
+
+### What it is NOT responsible for
+
+- NOT the defect itself. customer_support.obj.core.issue owns the fault and outlives the incident; closing this object says nothing about whether the code is fixed.
+
+- NOT a single angry account. customer_support.obj.core.escalation owns that, and misfiling one as an incident wastes a bridge and teaches the team that severity tracks volume.
+
+- NOT the per-customer promise clock. customer_support.obj.core.sla_target owns each clock; this object only sets a policy over the clocks it covers, and whether that policy is contractually permitted is a customer_support.obj.core.entitlement question.
+
+- NOT the written learning. customer_support.obj.postmortem.postmortem owns the timeline, the contributing factors and the action items; this object only asserts that one is owed.
+
+- NOT the engineering fix. customer_support.obj.core.bug_report owns that, and it routinely stays open long after this object is closed.
+
+- NOT the wording, channel or send mechanics of the broadcast. Layer 5 plans the message and Layer 5.2 delivers it; this object supplies the cohort, the cadence and the deadline.
+
+
+
+## Attributes (64)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
-| `blast_radius` | composite |  |  | How much of the customer base is affected. The section severity is supposed to be derived from, and the section that is hardest to populate during the first ten minutes.  | `blast_radius`, `affected_customer_count`, `affected_account_count`, `affected_product_areas`, `is_customer_visible`, `degradation_type` |
-| `classification` | composite |  |  | The judgement calls — severity and whether this is a major incident. | `severity`, `is_major`, `is_declared`, `commercial_exposure` |
-| `clock` | composite |  |  | Five timestamps, of which the interesting one is not resolved_at. The distance from detected_at to declared_at is the number this object exists to reduce.  | `started_at`, `detected_at`, `declared_at`, `mitigated_at`, `resolved_at`, `time_to_declare_minutes` |
-| `detection` | composite |  |  | How we found out, and what the cluster looked like at the moment of declaration. | `detection_source`, `first_signal_kind`, `cluster_size_at_declaration`, `last_customer_contact_at`, `cluster_sentiment` |
-| `command` | composite |  |  | Who is running it. An incident without a named human is a group chat. | `incident_commander_ref`, `comms_owner_ref`, `engineering_engaged`, `bridge_open` |
-| `communication` | composite |  |  | The stream that replaces individual replies. During an outage the update cadence is the product; customers forgive the fault and do not forgive the silence.  | `status_page_published`, `last_broadcast_at`, `broadcast_cadence_minutes`, `customers_notified_count`, `closing_broadcast_sent` |
-| `queue_effects` | composite |  |  | What this incident does to normal support work while it is live. | `triage_suspended`, `sla_clock_policy`, `covered_ticket_count` |
-| `aftermath` | composite |  |  | What has to be true after impact stops for this not to happen again. | `root_cause_ref`, `recurrence_of_ref`, `postmortem_required`, `credit_owed` |
-| `severity` | value | enum | yes | How broken it is, derived from blast_radius and degradation_type. Deliberately NOT derived from customer tone, customer tier or executive attention — those are real inputs to priority and to who gets told first, and routing them into severity is how a total outage for eight hundred trial users gets logged as a sev3 because none of them shouted. `unclassified` is the honest initial value and is not a synonym for low.  |  |
-| `is_major` | value | boolean |  | Whether the major-incident process is engaged — commander, bridge, status page, executive notification. Kept separate from severity because organisations set the major threshold differently and some declare major on reputational grounds at a severity that would not otherwise warrant it.  |  |
-| `is_declared` | value | boolean |  | Whether a human has declared this. The single most consequential field on the object, and the one whose default value costs the most: an undeclared cluster is being worked by six agents writing six different explanations.  |  |
-| `blast_radius` | value | enum |  | `single_customer` is included so the object can say "this is not an incident" out loud. A single furious enterprise account is an Escalation and takes an entirely different response; treating it as an incident wastes a bridge and treating a real incident as an escalation loses everyone else.  |  |
-| `affected_customer_count` | value | integer |  | Distinct end users known to be affected. Almost always an undercount — most affected customers never contact support. |  |
-| `affected_account_count` | value | integer |  | Distinct paying accounts. The more useful of the two counts, because unrelated accounts is the discriminator between an incident and one account having a bad week.  |  |
-| `affected_product_areas` | value | list |  | Where it hurts. A cluster spanning several areas usually means the cause is beneath all of them — auth, storage, network — and the severity is higher than any single area suggests. |  |
-| `is_customer_visible` | value | boolean |  | Whether customers can perceive it without being told. An invisible incident — wrong invoice totals, silently dropped webhooks — is more dangerous, not less, because the clock on trust starts when they find out, not when it started.  |  |
-| `degradation_type` | value | enum |  | `data_issue` and `security_event` are separated out because both carry disclosure obligations and neither is proportional to how many people noticed.  |  |
-| `started_at` | value | timestamp |  | When impact actually began. Almost always earlier than detected_at, and usually established retroactively. |  |
-| `detected_at` | value | timestamp |  | When anyone in the company first knew. Not when the first ticket arrived — when someone connected the tickets. |  |
-| `declared_at` | value | timestamp |  | When the incident process started. The gap from detected_at is the expensive one. |  |
-| `mitigated_at` | value | timestamp |  | When customer impact stopped. Distinct from resolved_at, and it is the one customers experience. |  |
-| `resolved_at` | value | timestamp |  | When the underlying fault was fixed and the workaround retired. |  |
-| `time_to_declare_minutes` | value | integer |  | declared_at minus detected_at. The one number on this object that is genuinely controllable by the support function, and the one most teams do not measure because it is embarrassing.  |  |
-| `detection_source` | value | enum |  | Worth recording per incident and reading in aggregate: a team whose detection_source is predominantly ticket_cluster is being told about its own outages by its customers, and that is a monitoring finding disguised as a support statistic.  |  |
-| `first_signal_kind` | value | string |  | Free text for what the first tell actually was, e.g. "three unrelated accounts reporting empty exports within nine minutes". |  |
-| `cluster_size_at_declaration` | value | integer |  | How many contacts had arrived when someone declared. Read against time_to_declare_minutes it says whether the team declares on evidence or on volume. Declaring at forty tickets is declaring late.  |  |
-| `last_customer_contact_at` | value | timestamp |  | One of only two properties with a live source today. On an incident node this reads the freshest inbound across the attached threads and acts as a crude proxy for whether the wave is still arriving or has passed.  | `thread.last_inbound` |
-| `cluster_sentiment` | value | number |  | Engine-computed observation balance. Populated only where Layer 2 attaches observations to this node directly; treat a missing value as unknown rather than as neutral. Useful for pacing the communications, never for setting severity.  | `derived.sentiment` |
-| `incident_commander_ref` | reference | ref |  | The one person who decides. Not the most senior person present, and explicitly not the person fixing it. | customer_support.obj.core.escalation_owner |
-| `comms_owner_ref` | reference | ref |  | Deliberately a separate person from the commander. When the two collapse into one, the updates stop precisely when the fix gets interesting — which is precisely when customers most need to hear something.  | customer_support.obj.core.escalation_owner |
-| `engineering_engaged` | value | boolean |  | The engineering engaged. |  |
-| `bridge_open` | value | boolean |  | Whether a live channel exists. Cheap to open, and reopening one after standing it down costs almost nothing. |  |
-| `status_page_published` | value | boolean |  | Whether it is publicly acknowledged. The most-argued decision in any incident and one of the least reversible: publishing early is recoverable, publishing after customers have already told each other is not.  |  |
-| `last_broadcast_at` | value | timestamp |  | The last broadcast at. |  |
-| `broadcast_cadence_minutes` | value | integer |  | The promised interval between updates. It is a commitment with a clock, and "no news" is not an acceptable reason to miss it — an update that says nothing changed is still an update.  |  |
-| `customers_notified_count` | value | integer |  | Size of the cohort actually reached. Compared against affected_account_count this is the notification gap, and it is usually larger than anyone expects. |  |
-| `closing_broadcast_sent` | value | boolean |  | Whether everyone told about the incident was told it ended. Skipping this is the most common single failure in incident communication: the customer's incident does not end when ours does, it ends when they hear.  |  |
-| `triage_suspended` | value | boolean |  | Whether normal individual triage on covered tickets has stopped. The correct value during a live incident is true, and the classic error is leaving it false so that agents keep working the cluster one ticket at a time.  |  |
-| `sla_clock_policy` | value | enum |  | What happens to the SLA targets on covered tickets. During a declared incident the individual clocks are not a useful prioritisation signal — every one of them is breaching for the same reason — and letting them drive the queue actively fights the response.  |  |
-| `covered_ticket_count` | value | integer |  | How many tickets this incident absorbed. The N in "N tickets, one problem". |  |
-| `commercial_exposure` | value | boolean |  | Whether cancellation or contractual language has appeared anywhere in the cluster. Raises the urgency of communication and of executive involvement. It must never raise severity — see business_rules.  |  |
-| `root_cause_ref` | reference | ref |  | Populated during or after, never at declaration. Waiting for root cause before declaring is the most expensive habit in incident response. | customer_support.obj.core.root_cause |
-| `recurrence_of_ref` | reference | ref |  | Self-referential. A second occurrence of the same fault is a materially worse event than the first: the fault is now a pattern, the last postmortem is now evidence of a process that did not work, and customers price it accordingly.  | customer_support.obj.core.incident |
-| `postmortem_required` | value | boolean |  | Boolean rather than a ref so that the requirement can be asserted before anyone has written anything. |  |
-| `credit_owed` | value | boolean |  | Whether contractual service credits are triggered. Determined by entitlement, not by severity, and the two disagree more often than teams expect. |  |
+| `impact` | composite |  |  | How much of the customer base is affected, and in what way. The only admissible input to severity, and the hardest block on the object to populate in the first ten minutes — which is exactly why teams reach for contact volume instead, and exactly why they get it wrong.  | `blast_radius`, `affected_account_count`, `affected_customer_count`, `affected_product_areas`, `affected_regions`, `is_customer_visible`, `degradation_type` |
+| `classification` | composite |  |  | The judgement calls made from `impact` — how broken, whether the major-incident machinery is engaged, whether a human has actually declared, and what it is worth commercially. Kept separate from `impact` so that a wrong severity is recordable rather than unrepresentable: the postmortem needs to be able to argue with the call that was made.  | `severity`, `severity_rationale`, `is_major`, `is_declared`, `commercial_exposure` |
+| `clock` | composite |  |  | Seven timestamps and five intervals, arranged so the standard decomposition falls out: MTTD = started_at → detected_at, MTTA = detected_at → acknowledged_at, MTTR = acknowledged_at → mitigated_at, and total duration ≈ the sum of the three. The interesting number is not resolved_at. It is time_to_detect_minutes, which most teams never compute because computing it requires admitting how long the system was broken before anyone noticed — and it is the cheapest interval to shorten, because shortening it is a detection investment rather than an engineering one.  | `started_at`, `detected_at`, `acknowledged_at`, `declared_at`, `mitigated_at`, `resolved_at`, `closed_at`, `time_to_detect_minutes`, `time_to_acknowledge_minutes`, `time_to_restore_minutes`, `time_to_declare_minutes`, `total_duration_minutes` |
+| `detection` | composite |  |  | How we found out and what the cluster looked like at the moment of declaration. Read per incident it is context; read in aggregate it is a verdict on monitoring, because a team whose detection_source is predominantly ticket_cluster is being told about its own outages by its customers.  | `detection_source`, `first_signal_kind`, `distinct_symptom_count`, `cluster_size_at_declaration`, `last_customer_contact_at`, `cluster_sentiment` |
+| `command` | composite |  |  | Who is running it. An incident without a named human is a group chat with a clock. For SEV1 and SEV2 the Incident Commander owns coordination, the severity call and communications — and does not debug; a commander with their hands in the code stops commanding within ten minutes and nobody notices until the next update is forty minutes late.  | `incident_commander_ref`, `comms_owner_ref`, `scribe_named`, `engineering_engaged`, `bridge_open`, `responder_count` |
+| `communication` | composite |  |  | The stream that replaces individual replies. During an outage the update cadence is the product: customers forgive the fault and do not forgive the silence, and from outside the company an overdue update and a worsening outage are indistinguishable.  | `status_page_published`, `status_page_component_scope`, `last_broadcast_at`, `broadcast_cadence_minutes`, `broadcast_overdue`, `customers_notified_count`, `notification_coverage_bp`, `closing_broadcast_sent` |
+| `queue_effects` | composite |  |  | What this incident does to normal support work while it is live. This block is the reason the object earns its place operationally rather than documentarily — everything else describes the event, this decides what four hundred tickets and eleven agents do next.  | `triage_suspended`, `sla_clock_policy`, `covered_ticket_count`, `individually_answered_count`, `channel_abandonment_bp` |
+| `aftermath` | composite |  |  | What has to be true after impact stops for this not to happen again. The most sensitive block on the object under Rule 10: a root cause routinely names a vendor, a configuration change and a person, none of which may be widened into customer-facing copy, which is why the customer-facing fields live in `communication` and not here.  | `root_cause_ref`, `recurrence_of_ref`, `is_recurrence`, `postmortem_required`, `postmortem_ref`, `credit_owed`, `action_items_open_count` |
+| `blast_radius` | value | enum | yes | The shape of who is affected, coarse on purpose. `single_customer` is an allowed value specifically so the object can say "this is not an incident" out loud: a single furious enterprise account is an Escalation and takes an entirely different response. Treating it as an incident wastes a bridge; treating a real incident as an escalation strands everyone who did not shout.  |  |
+| `affected_account_count` | value | integer |  | Distinct PAYING accounts known to be affected. The more useful of the two counts and the real discriminator against an escalation: unrelatedness is what makes a cluster an incident, not size. Twenty tickets from one account is one account.  |  |
+| `affected_customer_count` | value | integer |  | Distinct end users known to be affected. Almost always a severe undercount, because most affected customers never contact support — which is why this number may inform the communication cohort and must never be the basis of a severity downgrade.  |  |
+| `affected_product_areas` | value | list |  | Where it hurts. A cluster spanning several areas usually means the cause is beneath all of them — auth, storage, network — and the severity is therefore higher than any single area suggests. Breadth here is one of the few cheap severity signals available early.  |  |
+| `affected_regions` | value | list |  | Which deployment regions or shards are degraded. Modelled separately from product areas because regional incidents have a distinctive communication problem: telling everyone panics the customers who are fine, telling nobody strands the ones who are not.  |  |
+| `is_customer_visible` | value | boolean |  | Whether customers can perceive it without being told. An invisible incident — wrong invoice totals, silently dropped webhooks, a stale cache serving last week's numbers — is more dangerous, not less: the clock on trust starts when they find out, not when it started, and the discovery is usually made by their finance team rather than by us.  |  |
+| `degradation_type` | value | enum |  | What kind of broken. `data_issue` and `security_event` are separated out because both carry disclosure obligations on statutory clocks, and neither obligation is proportional to how many people noticed. `third_party_dependency` exists so the postmortem can be about our dependency rather than about their outage.  |  |
+| `severity` | value | enum | yes | How broken it is, on the standard four-point scale: SEV1 critical, major outage, all-hands; SEV2 high, significant degradation; SEV3 medium, minor impact with a workaround; SEV4 cosmetic, no user impact. Deliberately typed `value` and not `derived`, even though the business rules permit only blast_radius and degradation_type as grounds — because severity is a human call made under uncertainty in the first five minutes, and a model that cannot record a WRONG severity cannot let the postmortem argue with the one that was made. `unclassified` is the honest initial value and is not a synonym for low.  | `incident.severity` |
+| `severity_rationale` | value | string |  | The one-line stated grounds for the severity call, in the commander's words, at the time. Exists because severity is the field most often revised in hindsight and least often revised honestly: without a contemporaneous rationale the postmortem reconstructs the reasoning from the outcome, which is the definition of hindsight bias and the reason severity calibration never improves.  |  |
+| `is_major` | value | boolean |  | Whether the major-incident process is engaged — commander, bridge, status page, executive notification. Kept separate from severity because organisations set the major threshold differently, and because there is a legitimate case where the two disagree: a small-radius security or data-correctness event with a statutory notification clock is major at a severity that would not otherwise warrant it.  |  |
+| `is_declared` | value | boolean | yes | Whether a human has declared this. The single most consequential field on the object and the one whose default costs the most: an undeclared cluster is being worked by six agents writing six different explanations of the same fault, each of them individually reasonable.  | `incident.status` |
+| `commercial_exposure` | value | boolean |  | Whether cancellation or contractual language has appeared anywhere in the cluster. Raises the urgency of communication and the case for executive involvement. It must never raise severity — a customer threatening to leave is one customer, however expensive.  |  |
+| `started_at` | value | timestamp |  | When impact actually began. Almost always earlier than detected_at and usually established retroactively from telemetry during the postmortem. Recording it is what makes MTTD computable at all, and declining to reconstruct it is how a team keeps its detection gap permanently invisible.  | `incident.started_at` |
+| `detected_at` | value | timestamp |  | When anyone in the company first knew. Not when the first ticket arrived — when somebody connected the tickets. The distinction matters: in most support-detected incidents the first ticket lands twenty minutes before anyone treats it as a signal, and that twenty minutes belongs to MTTD, not to MTTA.  |  |
+| `acknowledged_at` | value | timestamp |  | When a named responder actually started working it, as distinct from when the alert fired. The end of MTTA. The interval it closes is the one paging policy and on-call staffing can move directly, and it is the interval most likely to be silently long at 3am, at weekends and in the handover window of a follow-the-sun rota.  |  |
+| `declared_at` | value | timestamp |  | When the incident process started — commander named, triage suspended, broadcast clock running. The gap from detected_at is the expensive one and the one this object exists to reduce. Note it is not the same as acknowledged_at: an engineer can be head-down on a fault for an hour before anyone tells support, and that hour is invisible to every SRE metric and entirely visible to the customer.  |  |
+| `mitigated_at` | value | timestamp |  | When customer impact stopped. The end of MTTR and the one moment the customer actually experiences. Distinct from resolved_at, and conflating the two is how "resolved" gets said to customers while a workaround is holding the service together.  |  |
+| `resolved_at` | value | timestamp |  | When the underlying fault was fixed and the workaround retired. Often days after mitigated_at, and the gap between them is where the second wave lives — customers hitting the fault again after being told it was over.  |  |
+| `closed_at` | value | timestamp |  | When the incident record was closed, which requires the postmortem for sev1 and sev2. A separate timestamp from resolved_at because the gap between them measures how long the organisation takes to learn, and a gap of weeks means the postmortem was written from memory of the first ten minutes — the part actually worth learning from and the part that decays fastest.  |  |
+| `time_to_detect_minutes` | derived | integer |  | MTTD for this incident: started_at → detected_at. The gap nobody funds and the cheapest one to close, because closing it is instrumentation rather than engineering. It is also the only interval in the decomposition that no amount of heroism during the response can recover — every minute spent undetected is a minute of impact already spent.  | `started_at`, `detected_at` |
+| `time_to_acknowledge_minutes` | derived | integer |  | MTTA: detected_at → acknowledged_at. Measures the paging path and the on-call roster, not the engineering. A long MTTA with a short MTTR is a staffing finding wearing an engineering costume, and teams routinely fix the wrong one because MTTR is the number the dashboards ship with.  | `detected_at`, `acknowledged_at` |
+| `time_to_restore_minutes` | derived | integer |  | MTTR: acknowledged_at → mitigated_at. The interval everyone reports and the only one that is genuinely hard to shorten. Reporting it alone is the standard misrepresentation — a forty-minute MTTR on top of a three-hour MTTD is a three-hour-forty outage to the customer and a forty-minute outage in the review deck.  | `acknowledged_at`, `mitigated_at` |
+| `time_to_declare_minutes` | derived | integer |  | declared_at minus detected_at. The one number on this object genuinely controllable by the support function, and the one most teams do not measure because it is embarrassing. Read against cluster_size_at_declaration it says whether the team declares on evidence or on volume — declaring at forty tickets is declaring late whatever the elapsed time says.  | `detected_at`, `declared_at` |
+| `total_duration_minutes` | derived | integer |  | started_at → mitigated_at, which is approximately MTTD + MTTA + MTTR. The customer-facing duration and the only one that belongs in an apology. Authored as derived from the three intervals rather than from the two endpoints so that any consumer displaying it is forced to have the decomposition in hand and cannot quietly report MTTR under this name.  | `time_to_detect_minutes`, `time_to_acknowledge_minutes`, `time_to_restore_minutes` |
+| `detection_source` | value | enum |  | How we first found out. Worth recording per incident and reading in aggregate: a team whose detection_source is predominantly ticket_cluster is being told about its own outages by its customers, and that is a monitoring finding disguised as a support statistic.  |  |
+| `first_signal_kind` | value | string |  | Free text for what the first tell actually was — "three unrelated accounts reporting empty exports within nine minutes". Kept as prose rather than as an enum because the useful part is the specific coincidence, and because the next person triaging a similar cluster recognises the sentence far faster than they recognise a category.  |  |
+| `distinct_symptom_count` | value | integer |  | How many DIFFERENT descriptions of the problem arrived. Counter-intuitively a high count raises confidence rather than lowering it: customers describe the symptom they personally hit, so one cause with a deep failure point produces many surface descriptions. Systems that cluster on text similarity systematically miss exactly these, which is the single biggest reason automated duplicate detection underperforms a human reading five tickets.  |  |
+| `cluster_size_at_declaration` | value | integer |  | How many contacts had already arrived when someone declared. Read against time_to_declare_minutes it is the honest measure of declaration discipline. Declaring at forty is declaring late; a healthy organisation declares in single digits and stands most of them down.  |  |
+| `last_customer_contact_at` | value | timestamp |  | One of only two attributes with a live source in today's substrate. On an incident node this reads the freshest inbound across the attached threads and acts as a crude proxy for whether the wave is still arriving or has passed — which is the difference between an incident that needs a broadcast now and a backlog that needs staffing.  | `thread.last_inbound` |
+| `cluster_sentiment` | value | number |  | Engine-computed observation balance across the cluster. Populated only where Layer 2 attaches observations to this node directly; treat a missing value as unknown rather than as neutral. Useful for pacing the communications and choosing the register of the message, never for setting severity.  | `derived.sentiment` |
+| `incident_commander_ref` | reference | ref |  | The one person who decides. Not the most senior person present and explicitly not the person fixing it: the IC owns coordination, the severity call and communications, delegates the debugging, and keeps the response organised. Required for sev1 and sev2.  | customer_support.obj.core.escalation_owner |
+| `comms_owner_ref` | reference | ref |  | Deliberately a separate person from the commander. When the two collapse into one, the updates stop precisely when the fix gets interesting — which is precisely when customers most need to hear something, and precisely when nobody in the room notices the silence.  | customer_support.obj.core.escalation_owner |
+| `scribe_named` | value | boolean |  | Whether someone is keeping the timeline while it happens. Unglamorous and load-bearing: without a scribe the postmortem timeline is reconstructed from chat scrollback and memory days later, and the first ten minutes — the part worth learning from — is precisely the part nobody can reconstruct.  |  |
+| `engineering_engaged` | value | boolean |  | Whether the people who can actually change the system are in the room. Tracked separately from bridge_open because a bridge with only support on it is a status meeting: it produces accurate updates about a fault nobody present can fix.  |  |
+| `bridge_open` | value | boolean |  | Whether a live coordination channel exists. Cheap to open, and standing one down after opening it costs almost nothing — which is the asymmetry teams that under-declare have stopped believing.  |  |
+| `responder_count` | value | integer |  | How many people are engaged. Rises with severity and also, unhelpfully, with visibility: an executive-attended incident attracts responders who are watching rather than working. Useful as a load figure for the commander and as a cost figure for the postmortem, never as a severity signal.  |  |
+| `status_page_published` | value | boolean |  | Whether it is publicly acknowledged. The most-argued decision in any incident and one of the least reversible in effect: publishing early is recoverable, publishing after customers have already told each other is not — at that point the message is a correction rather than an announcement.  |  |
+| `status_page_component_scope` | value | list |  | Which components the public entry names. Over-scoping is itself a customer-visible failure: marking the whole platform degraded when one export job is broken makes every unaffected customer check their own systems, and it converts a contained incident into a company-wide trust event.  |  |
+| `last_broadcast_at` | value | timestamp |  | When the affected cohort was last told anything. Paired with broadcast_cadence_minutes this is the field that generates the most useful automated nudge in the whole domain, because the silence is invisible from inside the incident and deafening from outside it.  |  |
+| `broadcast_cadence_minutes` | value | integer |  | The promised interval between updates. It is a Commitment with a clock, and "no news" is not an acceptable reason to miss it — an update that says nothing has changed is still an update, and is usually the one customers quote back approvingly afterwards.  |  |
+| `broadcast_overdue` | derived | boolean |  | Whether the promised update window has elapsed. Derived rather than declared on purpose: the person who owes the update is the last person who will notice it is late, because from inside a bridge the last twenty minutes feel like four.  | `last_broadcast_at`, `broadcast_cadence_minutes` |
+| `customers_notified_count` | value | integer |  | Size of the cohort actually reached. Compared against affected_account_count this is the notification gap, and it is reliably larger than anyone in the room expects — status page subscribers are a small and self-selected fraction of the affected.  |  |
+| `notification_coverage_bp` | derived | integer |  | Notified over affected, in basis points. The single number that predicts the size of the second wave: every affected account that was never told will contact support after mitigation asking what happened, and each of those contacts costs more than the broadcast would have.  | `customers_notified_count`, `affected_account_count` |
+| `closing_broadcast_sent` | value | boolean |  | Whether everyone told about the incident was told it ended. Skipping this is the most common single failure in incident communication, and the reason is structural: internally the incident really is over, the bridge stands down and everyone goes back to work — but the customer's incident does not end when ours does, it ends when they hear.  |  |
+| `triage_suspended` | value | boolean |  | Whether normal individual triage on covered tickets has stopped. The correct value during a live declared incident is true, and the classic error is leaving it false so that agents keep working the cluster one ticket at a time — the slowest possible way to say one thing, and it consumes exactly the people needed to run the broadcast.  |  |
+| `sla_clock_policy` | value | enum |  | What happens to the SLA targets on covered tickets. During a declared incident the individual clocks are not a useful prioritisation signal — every one of them is breaching for the same reason, so ranking by time-to-breach ranks by nothing and actively fights the response. `suspended_pending_review` is the honest default when entitlement has not been checked, because whether suspension is contractually permitted is a contract question and some enterprise agreements define outage minutes as counting.  | `sla.clock_state` |
+| `covered_ticket_count` | value | integer |  | How many tickets this incident absorbed. The N in "N tickets, one problem", and the denominator for every argument about whether declaring was worth it.  |  |
+| `individually_answered_count` | value | integer |  | How many covered tickets received a bespoke reply after declaration. The cleanest available measure of whether triage suspension actually happened rather than merely being announced, and in practice it is much higher than anyone claims — because every agent's queue view still shows their own timers going red and answering is the visible, rewarded behaviour.  |  |
+| `channel_abandonment_bp` | value | integer |  | Share of live contacts — chat and phone — given up before being answered, in basis points. Healthy queues run around 2–5 per cent and anything above 8 per cent signals a real staffing or routing failure; during an incident it spikes minutes before email volume moves, which makes it one of the few genuinely leading support-side detectors.  |  |
+| `root_cause_ref` | reference | ref |  | Populated during or after, never at declaration. Waiting for root cause before declaring is the most expensive habit in incident response: incident management restores service, problem management diagnoses the disease, and confusing the order costs the entire detection-to-declaration window.  | customer_support.obj.core.root_cause |
+| `recurrence_of_ref` | reference | ref |  | Self-referential. A second occurrence of the same fault is a materially worse event than the first: the fault is now a pattern, the previous postmortem is now evidence that the process did not work, and customers price it accordingly in the renewal conversation.  | customer_support.obj.core.incident |
+| `is_recurrence` | derived | boolean |  | A boolean shadow of recurrence_of_ref, so that consumers which cannot traverse the graph still get the one fact that changes the commercial reading of the event. Cheap redundancy, deliberately kept.  | `recurrence_of_ref` |
+| `postmortem_required` | value | boolean |  | Whether a written blameless postmortem is owed. A boolean rather than a ref so the requirement can be asserted at declaration, before anyone has written anything. True for every sev1 and sev2, and true for any recurrence regardless of severity.  |  |
+| `postmortem_ref` | reference | ref |  | The document itself, once it exists. Separate from postmortem_required so that the gap between "owed" and "written" is measurable — that gap, in days, is the most honest single indicator of whether an organisation actually learns from incidents or merely survives them.  | customer_support.obj.postmortem.postmortem |
+| `credit_owed` | value | boolean |  | Whether contractual service credits are triggered. Determined by entitlement and measured availability, not by severity, and the two disagree more often than teams expect: a long sev3 can breach an availability target that a short sev1 does not.  |  |
+| `action_items_open_count` | value | integer |  | How many postmortem actions remain undone. The number that turns a postmortem from a ritual into a control: an organisation with a rising count of open incident actions and a falling recurrence rate is lucky, not improving, and it will discover which one it was at the worst possible moment.  |  |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| covers | `customer_support.obj.core.ticket` | many |  |  | — | The N tickets that turned out to be one problem. `covers` and not `owns` on purpose — the tickets keep their own requesters and their own notification obligations, which is exactly why they are merged into the incident and never closed as duplicates.  |
-| caused_by | `customer_support.obj.core.issue` | zero_or_one |  |  | — | The defect behind it. Incident and Issue are different objects with different end dates; collapsing them is how an incident gets closed while the fault is still shipping.  |
-| caused_by | `customer_support.obj.core.root_cause` | zero_or_one |  |  | — | Known late or never. An incident with no root_cause after resolution is not closed, it is abandoned. |
-| references | `customer_support.obj.core.bug_report` | zero_or_many |  |  | — | The engineering artefact. One incident routinely produces several, and the incident closes before any of them do. |
-| assigned_to | `customer_support.obj.core.escalation_owner` | one |  |  | — | The incident commander. Cardinality is deliberately `one` — two commanders is the same as none. |
-| escalates_to | `customer_support.obj.core.escalation` | zero_or_many |  |  | — | Named accounts frequently open their own escalation on top of a live incident. Those are not duplicates to be suppressed: the incident answers "what is broken", the escalation answers "what happens to us specifically", and the second question survives the first.  |
-| produces | `customer_support.obj.core.commitment` | zero_or_many |  |  | — | Every broadcast makes a promise. "Next update in thirty minutes" is a Commitment with a clock, and missing it costs more trust than the outage itself.  |
-| blocks | `customer_support.obj.core.sla_target` | zero_or_many |  |  | — | Suspends the individual clocks it covers. Whether that suspension is contractually permitted is an entitlement question, not an incident one. |
-| influences | `customer_support.obj.core.customer_sentiment` | zero_or_many |  |  | — | In both directions. A well-run incident measurably improves sentiment against baseline; a silent one destroys it faster than any single bad ticket. |
-| influences | `customer_support.obj.core.churn_risk` | zero_or_many |  |  | — | The recurrence, not the first occurrence, is what shows up in renewal conversations. |
-| documents | `customer_support.obj.core.knowledge_article` | zero_or_many |  |  | — | The status-page entry, the known-issue note and the workaround article. Written during, not after — an article published after mitigation deflects nobody. |
-| attaches_to | `customer_support.obj.core.product_area` | zero_or_many |  |  | — | Breadth across areas is itself a severity signal — it usually means the cause is beneath all of them. |
-| precedes | `customer_support.obj.core.incident` | zero_or_many |  |  | — | Self-referential — recurrence. Reading this edge backwards is the cheapest incident-prevention exercise there is and almost nobody runs it. |
+| covers | `customer_support.obj.core.ticket` | many | 1700 bp | 9000 bp | `edge_count >= 2` | The N tickets that turned out to be one problem. `covers` and not `owns` on purpose — the tickets keep their own requesters and their own notification obligations, which is exactly why they are merged into the incident and never closed as duplicates. The condition is literal: one ticket covered by an incident is a mislabelled ticket, not a small incident.  |
+| assigned_to | `customer_support.obj.core.escalation_owner` | one | 1250 bp | 8000 bp | — | The incident commander. Cardinality is deliberately `one` — two commanders is the same as none. The heaviest edge after the ticket cluster because everything this object decides is decided by whoever this points at, and an unset value here is not missing data, it is an incident nobody is running.  |
+| caused_by | `customer_support.obj.core.issue` | zero_or_one | 1150 bp | 7000 bp | — | The defect behind it. Incident and Issue are different objects with different end dates; collapsing them is how an incident gets closed while the fault is still shipping. Confidence is only 7000 because the issue is frequently attached late and wrongly the first time — the first hypothesis in an incident is usually the second-most-likely cause.  |
+| produces | `customer_support.obj.core.commitment` | zero_or_many | 900 bp | 7500 bp | — | Every broadcast makes a promise. "Next update in thirty minutes" is a Commitment with a clock, and missing it costs more trust than the outage itself, because a missed update is a thing we controlled and the fault may not have been.  |
+| blocks | `customer_support.obj.core.sla_target` | zero_or_many | 800 bp | 8500 bp | — | Suspends, or at least dethrones, the individual clocks it covers. Worth traversing because it is the edge that stops the queue fighting the response — but whether the suspension is contractually permitted is an entitlement question, not an incident one, which is why the default policy is suspended_pending_review.  |
+| caused_by | `customer_support.obj.core.root_cause` | zero_or_one | 700 bp | 5000 bp | — | Known late or never. Confidence 5000 is honest rather than pessimistic: root cause attached during a live incident is a hypothesis, and roughly half of first attributions change in the postmortem. An incident with no root_cause after resolution is not closed, it is abandoned.  |
+| escalates_to | `customer_support.obj.core.escalation` | zero_or_many | 600 bp | 6000 bp | — | Named accounts frequently open their own escalation on top of a live incident. Those are not duplicates to be suppressed: the incident answers "what is broken", the escalation answers "what happens to US specifically", and the second question survives the first by days. Direction is inbound because the escalation attaches to the incident, not the reverse.  |
+| attaches_to | `customer_support.obj.core.product_area` | zero_or_many | 500 bp | 6500 bp | — | Breadth across areas is itself a severity signal — it usually means the cause is beneath all of them. Worth traversing early precisely because it is one of the few severity inputs available before anyone has diagnosed anything.  |
+| documents | `customer_support.obj.core.knowledge_article` | zero_or_many | 450 bp | 5500 bp | — | The status-page entry, the known-issue note and the workaround article. Written during, not after — an article published after mitigation deflects nobody, and KCS is explicit that capture happens in the workflow and in the requester's words rather than afterwards in ours.  |
+| produces | `customer_support.obj.postmortem.postmortem` | zero_or_one | 450 bp | 6000 bp | — | Mandatory for sev1 and sev2 and for any recurrence. Worth traversing because the postmortem is where the action items live, and an incident whose predecessor's action items are still open should be read as a process failure rather than as bad luck.  |
+| references | `customer_support.obj.core.bug_report` | zero_or_many | 300 bp | 5000 bp | — | The engineering artefact. One incident routinely produces several, and the incident closes before any of them do — which is the normal and correct state of affairs, and the reason incident closure must never be gated on engineering closure.  |
+| influences | `customer_support.obj.core.customer_sentiment` | zero_or_many | 300 bp | 6000 bp | — | In both directions, which is why the edge is worth having at all. A well-run incident measurably improves sentiment against baseline — customers who watched us handle it well tell people — and a silent one destroys it faster than any single bad ticket.  |
+| precedes | `customer_support.obj.core.incident` | zero_or_many | 300 bp | 3500 bp | — | Self-referential — recurrence. Confidence is deliberately low because the link is almost always made by a human noticing, and humans notice recurrence only when the same person happens to be on both. Reading this edge backwards once a quarter is the cheapest incident-prevention exercise there is and almost nobody runs it.  |
+| gates | `customer_support.obj.core.entitlement` | zero_or_many | 300 bp | 7000 bp | — | Entitlement gates two decisions on this object and neither of them is severity: whether SLA clocks may be suspended, and whether service credits are owed. Traversed at resolution rather than at declaration, which is why its priority is low and its confidence is not.  |
+| influences | `customer_support.obj.core.churn_risk` | zero_or_many | 300 bp | 4000 bp | `neighbor_has_obs: closed_lost_mention` | The recurrence, not the first occurrence, is what shows up in renewal conversations. The condition is the honest part: a single well-handled outage is not churn risk and asserting the edge unconditionally would make every incident look commercially dangerous, which is how an alert becomes background noise.  |
 
 
 ## States
 
-Initial `unknown`
+Initial `unknown` · terminal `closed`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `unknown` | No cluster visible. Also the state an incident sits in while it is being worked as forty separate tickets. | — |  |
-| `identified` | A cluster is suspected. Nobody has declared. The expensive state — the correct exit is forward into `active` within minutes, and the common exit is sideways into "let's see if more come in".  | `edge_count >= 4` AND `neighbor(thread.ball_in_court) = us` |  |
-| `active` | Declared. Commander named, individual triage suspended, broadcast running. | — |  |
-| `escalated` | Major incident. Status page published, executives notified, bridge open. | — |  |
-| `resolved` | Customer impact has stopped. Covered tickets may still be open and usually are — this state means mitigated, not fixed, and saying "resolved" to customers at this point without qualification is how the second wave gets framed as a lie.  | — |  |
-| `verified` | Impact confirmed ended across the affected cohort, closing broadcast sent, no second wave. | — |  |
-| `closed` | Root cause recorded and postmortem complete. An incident closed before this is an incident that will recur with no one accountable for the fact. | — |  |
+| `unknown` | No cluster visible. Also, and this is the point, the state an incident sits in while it is being worked as forty separate tickets by six different agents.  | — | Nothing is coordinated. Every covered customer is receiving a bespoke and slightly different answer. |
+| `identified` | A cluster is suspected. Nobody has declared. The expensive state — the correct exit is forward into `active` within minutes, and the common exit is sideways into "let's see if more come in", which is a decision to keep paying the cost of not knowing.  | `edge_count >= 4` AND `neighbor(thread.ball_in_court) = us` | The detection-to-declaration clock is running and is not being measured. Every minute here shows up later as time_to_declare_minutes and as tickets answered inconsistently.  |
+| `active` | Declared. Commander named, individual triage suspended, broadcast cadence running. | — | Covered tickets stop being individually prioritised and the SLA clocks over them stop being a meaningful queue ordering. One message, one voice, one owner.  |
+| `escalated` | Major incident. Status page published, executives notified, bridge open, engineering engaged. Not a higher severity by itself — is_major and severity are separate fields for exactly this reason.  | — | The event is now public and externally narrated. Downgrading from here requires telling people. |
+| `resolved` | Customer impact has stopped. Covered tickets may still be open and usually are — this state means MITIGATED, not fixed, and saying "resolved" to customers here without qualification is how the second wave gets framed as a lie.  | — | The response can stand down. The issue behind it is still shipping and the workaround is still load-bearing. |
+| `verified` | Impact confirmed ended across the affected cohort, closing broadcast sent, no second wave after a deliberate watch period.  | — | The customers' incident has ended, which is a later and different event from ours ending. |
+| `closed` | Root cause recorded and the blameless postmortem complete. An incident closed before this is an incident that will recur with nobody accountable for the fact.  | — | The organisation has extracted whatever it is going to extract from this event. |
 
 
-## Inference patterns — 4 executable, 9 blocked
+## Inference patterns — 5 executable, 11 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `incident.cluster_of_threads_all_awaiting_us` | heuristic | `edge_count >= 4` AND `neighbor(thread.ball_in_court) = us` | 5000 bp | A wide node whose attached threads are all waiting on us — the shape a ticket cluster makes when the only thing visible is email. |  |
-| `incident.wide_node_with_a_live_inbound_wave` | heuristic | `edge_count >= 6` AND `hours_since(thread.last_inbound) <= 6` | 5800 bp | A wide node still taking inbound in the last six hours — size plus recency, which together are much more incident-shaped than size alone. |  |
-| `incident.simultaneous_slippage_across_the_cluster` | heuristic | `edge_count >= 3` AND `neighbor_has_obs: timeline_slip` | 4200 bp | A wide node where an attached thread carries a slipped date — during an unacknowledged incident, promised dates move across many threads at once. |  |
-| `incident.churn_language_across_the_cluster` | heuristic | `edge_count >= 3` AND `neighbor_has_obs: closed_lost_mention` | 5200 bp → `commercial_exposure` | A wide node where an attached thread carries cancellation language. Raises commercial exposure and the urgency of communication. |  |
+| `incident.cluster_of_threads_all_awaiting_us` | heuristic | `edge_count >= 4` AND `neighbor(thread.ball_in_court) = us` | 5000 bp | A wide node whose attached threads are all waiting on us — the shape a ticket cluster makes when the only thing visible is email.  | Monday morning after a long weekend produces exactly this shape and is not an incident. So does a single agent going on holiday, and so does any queue that took a staffing hit. All three are real operational findings and none of them is a fault in the product.  |
+| `incident.wide_node_with_a_live_inbound_wave` | heuristic | `edge_count >= 6` AND `hours_since(thread.last_inbound) <= 6` | 5800 bp | A wide node still taking inbound in the last six hours — size plus recency, which together are much more incident-shaped than size alone.  | A busy named account in the middle of an implementation. High degree, constant fresh inbound, entirely healthy — and indistinguishable from a live wave without distinct-account counting, which is the signal this pattern most wants and cannot have.  |
+| `incident.wide_cluster_with_nothing_sent_outbound` | heuristic | `edge_count >= 4` AND `neighbor_no_obs: followup_sent` | 5400 bp | A wide node where not one attached thread has had anything sent to it — many customers waiting and no message has gone to any of them.  | `neighbor_no_obs: followup_sent` proves no outbound was OBSERVED, not that none was sent. A team answering by phone or through a chat widget looks completely silent to this pattern, and a queue that works that way will trip it every single day until somebody switches it off — at which point they have also switched off the real signal.  |
+| `incident.simultaneous_slippage_across_the_cluster` | heuristic | `edge_count >= 3` AND `neighbor_has_obs: timeline_slip` | 4200 bp | A wide node where an attached thread carries a slipped date — during an unacknowledged incident, promised dates move across many threads at once.  | A release slipping. One engineering delay moves promised dates across every thread waiting on that release, which is synchronised slippage with a cause that is not an incident. It is still worth someone's attention, but it wants a roadmap conversation rather than a bridge.  |
+| `incident.churn_language_across_the_cluster` | heuristic | `edge_count >= 3` AND `neighbor_has_obs: closed_lost_mention` | 5200 bp → `commercial_exposure` | A wide node where an attached thread carries cancellation language. Raises commercial exposure and the urgency of communication.  | `closed_lost_mention` is a deal-stage extractor. In a support graph it fires on a sales thread that happens to share a node with support correspondence, and on any message discussing a churned account historically rather than threatening to become one.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -114,58 +171,202 @@ Initial `unknown`
 |---|---|---|---|---|
 | `incident.declared_on_the_record` | deterministic | `incident_declared` (obs_kind), `incident.status` (fact_path) | 10000 bp | A human declared an incident and the incident tool recorded it. |
 | `incident.severity_recorded_by_the_incident_tool` | deterministic | `incident.severity` (fact_path) | 9500 bp | A severity was set in the incident tool. |
+| `incident.acknowledged_by_a_named_responder` | deterministic | `incident.started_at` (fact_path), `incident_declared` (obs_kind) | 9000 bp | A named responder picked up the alert and started working, which ends the MTTA interval. |
 | `incident.blast_radius_from_distinct_affected_accounts` | deterministic | `derived.affected_account_count` (derived), `ticket.created_at` (fact_path) | 9000 bp | Contacts about this fault span N distinct paying accounts. |
 | `incident.resolved_on_the_record` | deterministic | `incident_resolved` (obs_kind) | 9800 bp | The incident was marked resolved. |
-| `incident.ticket_creation_burst_above_baseline` | heuristic | `ticket_volume` (baseline), `ticket_created` (obs_kind) | 8000 bp | Ticket creation for a product area jumps sharply above its learned baseline within a short window. |
+| `incident.ticket_creation_burst_above_baseline` | heuristic | `ticket_volume` (baseline), `ticket_created` (obs_kind) | 8000 bp | Ticket creation for a product area jumps sharply above its learned baseline within a short window.  |
 | `incident.same_area_across_unrelated_accounts` | heuristic | `ticket_created` (obs_kind), `ticket.queue` (fact_path) | 8600 bp | Several unrelated accounts open contacts against the same product area inside one window. |
-| `incident.self_service_spike_precedes_the_queue` | heuristic | `self_service_attempted` (obs_kind), `self_service_abandoned` (obs_kind) | 6000 bp | Help-centre traffic against a topic spikes and abandonment rises before contact volume moves. |
+| `incident.self_service_spike_precedes_the_queue` | heuristic | `self_service_attempted` (obs_kind), `self_service_abandoned` (obs_kind) | 6000 bp | Help-centre traffic against a topic spikes and abandonment rises before contact volume moves.  |
 | `incident.first_response_time_collapses_against_baseline` | heuristic | `first_response_time` (baseline), `derived.backlog_age` (derived) | 5500 bp | First response time across a queue degrades sharply against its learned baseline. |
 | `incident.synchronised_angry_language` | heuristic | `angry_language` (obs_kind), `derived.escalation_pressure` (derived) | 6500 bp | Escalation pressure and angry language rise across several accounts inside the same window. |
+| `incident.detection_lag_reconstructed_after_the_fact` | heuristic | `incident.started_at` (fact_path), `incident.status` (fact_path) | 7500 bp | Telemetry shows the fault began materially earlier than the first human knowledge of it — the MTTD interval, which is invisible until somebody reconstructs it.  |
 
 
 ## Decision factors
 
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
-| blast_radius_measured | 2800 bp | increases | `blast_radius`, `affected_account_count`, `affected_customer_count`, `affected_product_areas` |
+| blast_radius_measured | 2800 bp | increases | `blast_radius`, `affected_account_count`, `affected_customer_count`, `affected_product_areas`, `affected_regions` |
 | customer_visibility | 1600 bp | increases | `is_customer_visible`, `degradation_type`, `status_page_published` |
-| time_to_declare | 1500 bp | context | `detected_at`, `declared_at`, `time_to_declare_minutes`, `cluster_size_at_declaration` |
-| communication_staleness | 1500 bp | decreases | `last_broadcast_at`, `broadcast_cadence_minutes`, `customers_notified_count`, `closing_broadcast_sent` |
-| contractual_exposure | 1200 bp | increases | `credit_owed`, `commercial_exposure` |
-| cluster_coherence | 900 bp | increases | `cluster_size_at_declaration`, `affected_product_areas`, `first_signal_kind`, `detection_source` |
-| recurrence | 500 bp | increases | `recurrence_of_ref`, `root_cause_ref`, `postmortem_required` |
+| response_latency | 1500 bp | context | `started_at`, `detected_at`, `acknowledged_at`, `declared_at`, `time_to_detect_minutes`, `time_to_declare_minutes`, `cluster_size_at_declaration` |
+| communication_staleness | 1500 bp | decreases | `last_broadcast_at`, `broadcast_cadence_minutes`, `broadcast_overdue`, `notification_coverage_bp`, `closing_broadcast_sent` |
+| contractual_exposure | 1200 bp | increases | `credit_owed`, `commercial_exposure`, `sla_clock_policy` |
+| cluster_coherence | 900 bp | increases | `cluster_size_at_declaration`, `distinct_symptom_count`, `affected_product_areas`, `first_signal_kind`, `detection_source` |
+| recurrence | 500 bp | increases | `recurrence_of_ref`, `is_recurrence`, `action_items_open_count`, `postmortem_required` |
+
+
+## Preconditions
+
+- **`incident.has_attached_work`** The node must have attached tickets or threads. An incident with nothing hanging off it has no cluster to reason about, no cohort to notify and no tickets to suspend.
+ _(unmet → block — there is nothing to say about an incident with no attached work, and saying it confidently would be worse.)_
+- **`incident.distinct_accounts_resolvable`** Distinct paying accounts across the cluster must be resolvable before blast_radius may be asserted as anything other than unknown.
+ _(unmet → degrade — say "several attached threads are waiting simultaneously" at low confidence and refuse to say "incident". This is the precondition that most often fails today, because nothing in the substrate counts accounts, and the degrade path is the entire honest output of this object in the current pipeline.
+)_
+- **`incident.window_bounded`** Cluster counts must be bounded to a time window. An unbounded count accumulates across months and every long-lived issue eventually crosses any threshold.
+ _(unmet → degrade — fall back to the recency predicate on thread.last_inbound, which is coarse but bounded.)_
+- **`incident.declaration_is_a_human_act`** is_declared may only become true through a human action. No pattern in this file, at any confidence, may set it.
+ _(unmet → block auto-declaration and degrade to a prompt. The asymmetry is deliberate: a prompt that turns out to be nothing costs a glance, and an auto-declaration that turns out to be nothing costs the credibility of every future declaration.
+)_
+- **`incident.commander_named_before_active`** incident_commander_ref must be set before the incident may enter `active`, and for sev1 and sev2 it must name someone who is not debugging.
+ _(unmet → block — an incident in `active` with no named commander is a group chat with a clock and should not be represented as coordinated.)_
+- **`incident.entitlement_known_before_suspending_clocks`** Entitlement terms must be resolved before sla_clock_policy may be set to `suspended` rather than `suspended_pending_review`.
+ _(unmet → degrade — set suspended_pending_review, which stops the clocks driving the queue without asserting a contractual position nobody has checked. The distinction matters at renewal, when a customer's lawyer reads the incident record.
+)_
+- **`incident.notification_cohort_intact`** Every covered ticket must still carry its own requester before a broadcast cohort can be constructed.
+ _(unmet → block the closing broadcast and raise it as a defect. A cohort assembled from tickets that were closed as duplicates is silently incomplete, and the failure surfaces as customers who were told it started and never told it ended.
+)_
 
 
 ## Constraints
 
-- **`incident.cannot_close_while_impact_live`** Cannot enter resolved while customers are still experiencing the fault, regardless of whether a fix has shipped.
+- **`incident.cannot_close_while_impact_live`** Cannot enter `resolved` while customers are still experiencing the fault, regardless of whether a fix has shipped.
+
 - **`incident.severity_not_from_tone_or_tier`** Severity cannot be raised or lowered by customer sentiment, account value, contract tier or executive attention.
+
 - **`incident.entitlement_does_not_change_severity`** Entitlement determines notification order and credits owed. It cannot change how broken the system is.
+
 - **`incident.no_broadcast_without_named_owner`** No customer broadcast may be sent without comms_owner_ref set — an unattributed outage message invites replies that reach nobody.
+
 - **`incident.covered_tickets_not_answered_individually`** Tickets covered by an active incident cannot receive bespoke individual replies while triage is suspended.
-- **`incident.status_page_scope`** A status page entry may describe only components confirmed affected. Over-scoping an entry is itself a customer-visible failure. _(soft)_
-- **`incident.no_silent_downgrade`** Severity may not be reduced without a broadcast to the already-notified cohort. A quiet downgrade reads externally as an abandoned incident. _(soft)_
+
+- **`incident.no_auto_declaration`** No inference pattern may set is_declared, at any confidence, including a hypothetical future pattern reading a real incident signal.
+
+- **`incident.status_page_scope`** A status page entry may describe only components confirmed affected. Over-scoping an entry is itself a customer-visible failure.
+ _(soft)_
+- **`incident.no_silent_downgrade`** Severity may not be reduced without a broadcast to the already-notified cohort. A quiet downgrade reads externally as an abandoned incident.
+ _(soft)_
 
 
 ## Business rules
 
-- **`incident.declare_early_declaring_is_cheap`** A suspected cluster spanning three or more unrelated contacts must trigger a declaration prompt, not further investigation. Declaring costs a channel, a commander and one broadcast, and un-declaring costs nothing; not declaring costs every ticket in the cluster being answered differently by a different person.
-
-- **`incident.suspend_individual_triage`** While an incident is active, tickets it covers must not be worked individually. Working the cluster one ticket at a time is the classic error: it is the slowest possible way to say one thing, it guarantees inconsistent answers, and it consumes exactly the agents needed to run the broadcast.
-
-- **`incident.sla_clocks_do_not_govern`** Individual ticket SLA targets covered by an active incident must not drive queue prioritisation. Every covered clock is breaching for the same reason, so ranking by time-to-breach ranks by nothing and actively fights the response.
-
+- **`incident.declare_early_declaring_is_cheap`** A suspected cluster spanning three or more unrelated contacts must trigger a declaration prompt, not further investigation.
+ — _Declaring costs a channel, a commander and one broadcast; un-declaring costs nothing. Not declaring costs every ticket in the cluster being answered differently by a different person, and that cost is paid in full before anyone notices it is being paid.
+_
+- **`incident.suspend_individual_triage`** While an incident is active, tickets it covers must not be worked individually.
+ — _Working the cluster one ticket at a time is the classic error: it is the slowest possible way to say one thing, it guarantees inconsistent answers, and it consumes exactly the agents needed to run the broadcast.
+_
+- **`incident.sla_clocks_do_not_govern`** Individual ticket SLA targets covered by an active incident must not drive queue prioritisation.
+ — _Every covered clock is breaching for the same reason, so ranking by time-to-breach ranks by nothing and actively fights the response. Note this is a prioritisation rule, not a contractual one — whether the clocks legally pause is an entitlement question.
+_
 - **`incident.severity_is_blast_radius`** severity must be derived from blast_radius and degradation_type only. Customer tone, account tier, executive attention and contract value are inputs to priority and to notification order, never to severity.
+ — _SEV1 through SEV4 are a blast-radius scale — critical outage, significant degradation, minor impact with a workaround, cosmetic. Any other input makes the scale incomparable between two incidents, which is the one thing it exists to be.
+_
+- **`incident.commander_required_when_active`** An incident in state `active` must have incident_commander_ref set, and for sev1 and sev2 the commander must not be the person debugging.
+ — _The IC owns coordination, the severity call and communications. A commander with their hands in the code stops commanding within ten minutes and nobody in the room notices until the next update is forty minutes late.
+_
+- **`incident.comms_owner_distinct_from_commander`** comms_owner_ref should name a different person from incident_commander_ref. — _When they are the same, updates stop the moment the fix gets interesting. Warning rather than blocking because a three-person team at 3am genuinely cannot staff both roles — see the exceptions.
+_
+- **`incident.broadcast_before_fix`** A customer-visible incident must broadcast before it is fixed, not after. — _Waiting for certainty produces a first message that arrives after customers have already told each other, at which point the message is a correction rather than an announcement. Scoped to customer-visible incidents deliberately — see the exception for invisible faults.
+_
+- **`incident.covered_tickets_merge_never_close`** Tickets covered by an incident are merged, never closed as duplicates. — _Closing them destroys the per-customer notification list, and the notification list is the only way the closing broadcast reaches the people who actually asked. The damage is invisible at the moment it is done and obvious three hours later.
+_
+- **`incident.no_silent_resolution`** An incident may not reach `verified` until closing_broadcast_sent is true for every notified customer.
+ — _Our incident ends when the fix ships. Theirs ends when they hear. Skipping this is the most common failure in incident communication._
+- **`incident.recurrence_requires_postmortem`** An incident with recurrence_of_ref populated requires a postmortem regardless of severity.
+ — _The second occurrence is evidence that the first postmortem did not work, which is a finding about the process rather than about the fault._
+- **`incident.postmortem_blocks_closure`** A sev1 or sev2 incident may not reach `closed` until postmortem_ref is populated, and the postmortem must be blameless.
+ — _Blamelessness is not politeness — it is the only way to get the real timeline, because the moment attribution is on the table people stop volunteering detail, and the detail is the entire product of the exercise.
+_
+- **`incident.measure_detection_not_just_restoration`** time_to_detect_minutes must be computed and recorded for every sev1 and sev2, which requires reconstructing started_at from telemetry.
+ — _Total duration ≈ MTTD + MTTA + MTTR, and a team reporting only MTTR is reporting the interval it is best at. MTTD is the cheapest one to shorten and the only one that stays permanently invisible unless somebody goes back into the graphs after the adrenaline has worn off.
+_
 
-- **`incident.commander_required_when_active`** An incident in state active must have incident_commander_ref set. An incident with no named commander is a group chat with a clock.
-- **`incident.comms_owner_distinct_from_commander`** comms_owner_ref should name a different person from incident_commander_ref. When they are the same, updates stop the moment the fix gets interesting.
 
-- **`incident.broadcast_before_fix`** A customer-visible incident must broadcast before it is fixed, not after. Waiting for certainty produces a first message that arrives after customers have already told each other, at which point the message is a correction rather than an announcement.
+## Exceptions — where the rules above are legitimately wrong
 
-- **`incident.covered_tickets_merge_never_close`** Tickets covered by an incident are merged, never closed as duplicates. Closing them destroys the per-customer notification list, and the notification list is the only way the closing broadcast reaches the people who actually asked.
+- **One account IS the blast radius when the account is the deployment — a single-tenant installation, a dedicated region, or an OEM/white-label customer whose own end users are the real affected population.
+** — The discriminator "unrelated accounts, not one loud one" is a proxy for "many humans are broken", and in single-tenant and reseller topologies the proxy inverts. A white-label partner with forty thousand end users produces exactly one account in the ticket system. Counting accounts here declares a sev3 on what is, to the people experiencing it, a total outage.
+ _(overrides incident.severity_not_from_tone_or_tier, incident.blast_radius_from_distinct_affected_accounts)_
+- **For security events and confirmed data-correctness faults, the INTERNAL declaration is still immediate — commander, bridge, triage suspension — but the status page and the broadcast wait for legal and compliance sign-off.
+** — "Publish early" is right when the cost of being early is an embarrassing correction. It is wrong when the published copy becomes the disclosure of record, starts a statutory notification clock, or characterises an event before anyone knows whether data left the building. Note what this exception does NOT suspend: is_declared, the commander, or triage suspension. Teams that read it as permission to delay everything are using it to avoid the conversation.
+ _(overrides incident.broadcast_before_fix, incident.status_page_scope)_
+- **A covered ticket whose symptom does not actually match the incident must be pulled out and worked individually, even while triage is suspended for everything else.
+** — Suspension is right for the cluster and catastrophic for the one ticket that was swept into it by timing. That customer receives a broadcast about a fault they did not hit, hears nothing about the one they did, and surfaces two days later with "you told me about that and ignored my actual problem" — which is a worse outcome than any inconsistency the suspension was preventing. Assume roughly one in twenty covered tickets is a passenger and look for it.
+ _(overrides incident.suspend_individual_triage, incident.covered_tickets_not_answered_individually)_
+- **Where the agreement defines outage minutes as counting toward response or availability commitments, sla_clock_policy stays `running` or `suspended_pending_review`, never `suspended`.
+** — The rule that SLA clocks must not GOVERN queue prioritisation is an operational one and stays true. It is routinely over-read as "the clocks stop", which is a contractual claim nobody in the incident channel is authorised to make. Enterprise agreements frequently define credits by the minute, and a suspension recorded in the incident log is read at renewal as an attempt to avoid them.
+ _(overrides incident.sla_clocks_do_not_govern)_
+- **On a team small enough that the commander is also the only person who can fix it, the roles merge and the commander's job degrades to a checklist and a timer.
+** — "The IC does not debug" is correct at scale and actively harmful at three people on-call at 3am, where insisting on a non-debugging commander removes the only person who can end the incident. The honest degradation is not to abandon the role but to shrink it: whoever is not head-down holds the timer, and if everyone is head-down the fixer sets a fifteen-minute alarm for the update. Teams that skip this step do not produce a faster fix, they produce a fix with no communication attached to it.
+ _(overrides incident.commander_required_when_active, incident.comms_owner_distinct_from_commander)_
+- **An incident repaired before any customer could perceive it legitimately has status_page_published false, no broadcast, and no notification cohort.
+** — "Broadcast before you fix" is scoped to customer-visible incidents and is routinely over-applied by teams that have just been burned by silence. Broadcasting a fault nobody experienced trains customers to ignore the status page, which costs precisely when it matters. The judgement is on is_customer_visible and it is genuinely hard — a silently dropped webhook is invisible today and extremely visible at month end, and that one is not covered by this exception.
+ _(overrides incident.broadcast_before_fix, incident.no_silent_resolution)_
+- **is_major may be true at sev3 or sev4 when a small-radius data or security event carries a regulatory notification clock. Set is_major, do not inflate severity.
+** — This is the one legitimate case where severity and the major-incident process disagree, and the temptation is to resolve the disagreement by raising severity — which corrupts the scale for every future comparison. Keeping them as two fields is precisely so this case has somewhere to live: the blast radius really is small, and the response really does need executives, legal and a bridge.
+ _(overrides incident.severity_is_blast_radius)_
+- **A recurrence of the same third-party or same-cause fault, while the action item from the previous postmortem is still open, reopens and re-ranks that action item rather than producing a second document.
+** — A second postmortem that says exactly what the first one said is a ritual, and running it teaches the organisation that postmortems are paperwork. The finding is not about the fault, it is about why the action was not done — which belongs in the original document, escalated, with a name and a date attached. This exception is frequently abused as a way to avoid writing anything, so it holds only while the prior action item is genuinely open and genuinely addresses this cause.
+ _(overrides incident.recurrence_requires_postmortem, incident.postmortem_blocks_closure)_
+- **A wide node whose most recent inbound is two days old is a staffing or triage backlog, not a live incident, and the clustering heuristics must not be read as incident evidence.
+** — The executable heuristics on this object detect "many customers waiting on us", which is what an incident looks like and also what a queue looks like after a bad week, a holiday or a resignation. The recency test is the cheapest available separator and it is authored as an exception rather than folded into each pattern so that the distinction is stated once and stays arguable. A backlog wants capacity_planning, not a bridge.
+ _(overrides incident.cluster_of_threads_all_awaiting_us, incident.wide_cluster_with_nothing_sent_outbound, incident.declare_early_declaring_is_cheap)_
 
-- **`incident.no_silent_resolution`** An incident may not reach verified until closing_broadcast_sent is true for every notified customer. Our incident ends when the fix ships; theirs ends when they hear.
-- **`incident.recurrence_requires_postmortem`** An incident with recurrence_of_ref populated requires a postmortem regardless of severity. The second occurrence is evidence that the first postmortem did not work.
+
+## Best practices
+
+- **Declare on the third unrelated account, not the thirtieth ticket.** — Unrelatedness is the discriminator and count is not. Three unrelated accounts in nine minutes is far more diagnostic than thirty tickets from one customer, and waiting for volume converts a cheap decision into an expensive one while the evidence has not actually improved.
+
+- **Name an incident commander who is not touching the code, for every sev1 and sev2.** — The IC owns coordination, the severity call and communications. A commander with their hands in the fix stops commanding within ten minutes, and the first visible symptom is a missed update rather than a missed decision — by which time the customers have already noticed.
+
+- **Give the customer message to a second named person.** — Two roles, two attention budgets. The commander's attention is pulled toward the interesting part of the incident precisely when the customer needs the boring part, and one person cannot hold both without dropping the one nobody in the room is watching.
+
+- **Promise an update interval and meet it, including when nothing has changed.** — From outside the company an overdue update and a worsening outage are indistinguishable. A "nothing new, still working, next update in thirty minutes" message costs one minute and is the thing customers quote approvingly afterwards.
+
+- **Suspend individual triage on covered tickets and make the suspension visible in every agent's queue view.** — Suspension that is announced in an incident channel and invisible in the tool does not happen. Agents see their own timers going red and answer, because answering is the visible and rewarded behaviour and "did not answer" is measured nowhere.
+
+- **Attach covered tickets to the incident. Never close them as duplicates.** — Two customers who reported the same thing are two people owed an answer. Closing as duplicate destroys the notification list, and the notification list is the only route the closing broadcast has to the people who actually asked.
+
+- **Make the severity call within the first five minutes on blast-radius grounds, write the rationale down, and revisit it deliberately.** — Severity set once and never revisited is the normal failure, and a rationale captured at the time is the only thing that lets the postmortem argue with the call instead of rationalising it from the outcome.
+
+- **Publish the known-issue and workaround article while the incident is live, in the customers' own words.** — An article published after mitigation deflects nobody. KCS is explicit that capture happens in the workflow rather than afterwards, and in the requester's language rather than ours — the customer's words are the search terms of the next customer, and during an incident you have forty samples of them.
+
+- **Send the closing broadcast to exactly the cohort that received the first one.** — Our incident ends when the fix ships; theirs ends when they hear. Every affected account never told it ended becomes a contact after mitigation asking what happened, and each of those costs more than the broadcast would have.
+
+- **Reconstruct started_at from telemetry and report MTTD next to MTTR in every postmortem.** — Total duration ≈ MTTD + MTTA + MTTR, and a team reporting only MTTR is reporting the interval it is best at. MTTD is the cheapest one to shorten — instrumentation rather than engineering — and the only one that stays invisible unless somebody deliberately goes back into the graphs.
+
+- **Once a quarter, walk the recurrence edges from the current incidents back through their predecessors.** — Recurrence is noticed today only when the same human happens to be on both incidents, which makes detection a function of rota luck. Reading the edge backwards is a twenty-minute exercise that reliably finds the fault the organisation has been paying for repeatedly.
+
+- **Treat a declaration that turned out to be nothing as a success, publicly.** — The whole object rests on declaring being cheap. Teams that tally wasted senior time on stood-down bridges raise their own declaring threshold within weeks, and the raised threshold is invisible — it shows up months later as a rising time_to_declare that nobody can attribute.
+
+
+
+## Anti-patterns
+
+- **Agents keep answering covered tickets individually after the incident is declared.** — tempting because Every agent's queue view still shows their own SLA timers going red, and answering is the visible, rewarded behaviour. Nobody is measured on "did not answer". The individually reasonable decision — "I'll just handle mine" — is taken eleven times in parallel.
+ Instead: Suspend triage in the tool, not just in the channel, and route every covered ticket to the broadcast.
+- **The team investigates until it knows what is broken, then declares.** — tempting because It sounds responsible. Declaring on an unconfirmed cluster feels like alarming people over nothing, and "let's confirm before we escalate" is a sentence nobody argues with in the moment.
+ Instead: Declare on blast radius and symptom. Root cause is an aftermath field and is populated during or after, never at declaration.
+- **The severity is raised because a large account escalated, or lowered because nobody complained.** — tempting because Severity is the only lever that reliably moves resources, so an escalation with an executive attached is routed through it. In the other direction, silence is read as evidence of low impact because it is the only evidence available in the first ten minutes.
+ Instead: Route account pressure into priority, notification order and executive engagement. Keep severity on blast radius and degradation type, and record the rationale.
+- **Blast radius is estimated from how many tickets have arrived.** — tempting because It is the only number available in the first ten minutes, and it correlates most of the time, which is what makes it dangerous — the technique works until the case where it inverts.
+ Instead: Estimate from telemetry and affected accounts. Treat contact volume as a floor on impact and never as an estimate of it.
+- **One person runs the incident and writes the updates.** — tempting because It is one person's incident and adding people feels like overhead. There is also a genuinely good argument available — the commander has the best picture, so their updates would be the most accurate.
+ Instead: Name a second person for comms whenever the team can staff it, and where it cannot, set an alarm for the cadence.
+- **Covered tickets are bulk-closed as duplicates of the incident.** — tempting because It makes the queue look clean, it is literally what the duplicate button is for, and it feels like the tidy version of merging. The damage is completely invisible at the moment it is done.
+ Instead: Merge. The merged ticket keeps its requester and its clock, because two people who reported the same thing are two people owed an answer.
+- **The incident is resolved internally, the bridge closes, and no closing broadcast goes out.** — tempting because Internally the incident really is over. The bridge stands down, everyone goes back to the work they abandoned, and the customers were never in the room — so there is no moment at which their absence is felt.
+ Instead: Gate `verified` on closing_broadcast_sent and make it the last item on the commander's checklist rather than the first item on nobody's.
+- **The review reports mean time to restore and omits detection and acknowledgement.** — tempting because MTTR is the number the vendor dashboards ship with, it is the one engineering can improve, and improving it produces a good chart. MTTD requires reconstructing started_at, which means admitting how long the system was broken before anyone noticed.
+ Instead: Report MTTD, MTTA and MTTR together, with total duration derived from all three so the components cannot be quietly dropped.
+- **Stood-down incidents are tallied as wasted senior time and the declaring threshold is raised.** — tempting because A bridge with nine people on it for twenty minutes has a visible cost and an invisible benefit, and somebody responsible for that cost is doing their job by noticing. "Let's be more disciplined about declaring" is the natural conclusion and sounds like rigour.
+ Instead: Treat a stand-down as a success and say so. Measure the cost of late declarations, which is larger and never counted, against the cost of early ones, which is small and always counted.
+
+
+## Dependencies
+
+- `customer_support.obj.core.ticket` — requires (hard)
+- `customer_support.obj.core.escalation_owner` — requires (hard)
+- `customer_support.obj.core.requester` — requires (hard)
+- `customer_support.obj.core.entitlement` — requires (soft)
+- `customer_support.obj.core.issue` — enriches (soft)
+- `customer_support.obj.core.root_cause` — enriches (soft)
+- `customer_support.obj.core.product_area` — enriches (soft)
+- `customer_support.obj.core.commitment` — requires (soft)
+- `customer_support.obj.core.sla_target` — blocks (hard)
+- `customer_support.obj.postmortem.postmortem` — requires (hard)
+- `customer_support.obj.core.incident` — invalidated_by (hard)
+- `customer_support.obj.core.churn_risk` — enriches (soft)
 
 
 ## Inputs
@@ -173,95 +374,154 @@ Initial `unknown`
 - **derived** — freshest inbound across the attached threads
 - **derived** — whether the attached threads are waiting on us
 - **derived** — observation balance across the cluster
-- **ticket** — creation burst, product area, queue, reopen rate
-- **telemetry** — error rate, availability, latency against SLO
+- **ticket** — creation burst, product area, queue, distinct accounts, reopen rate
+- **telemetry** — error rate, availability, latency against SLO, and the reconstructed start time
 - **status_page** — published component state and subscriber notification receipts
 - **help_center** — search spike and article abandonment on the affected topic
-- **chat** — concurrent live-chat volume and queue wait
+- **chat** — concurrent live-chat volume, queue wait and abandonment
 - **phone** — call volume and abandon rate
-- **manual_entry** — declaration, severity, commander, blast radius
+- **manual_entry** — declaration, severity, severity rationale, commander, blast radius
 
 
 ## Outputs
 
-- **`incident_confidence_bp`** How sure we are that these contacts are one problem rather than several. → L4.reasoning_unit
-- **`blast_radius_estimate`** The severity input. Deliberately separate from any sentiment or tier signal so it cannot be contaminated downstream. → L4.reasoning_unit, L4.decision_maker
-- **`triage_suspension`** Whether covered tickets should stop being worked individually. The single most operationally consequential thing this object emits. → L4.decision_maker, L5.execution_planning
+- **`incident_confidence_bp`** How sure we are that these contacts are one problem rather than several. Never a declaration. → L4.reasoning_unit
+- **`blast_radius_estimate`** The severity input. Deliberately separate from any sentiment or tier signal so it cannot be contaminated downstream — the separation is structural, not advisory.
+ → L4.reasoning_unit, L4.decision_maker
+- **`triage_suspension`** Whether covered tickets should stop being worked individually. The single most operationally consequential thing this object emits.
+ → L4.decision_maker, L5.execution_planning
 - **`sla_clock_directive`** Whether covered SLA clocks run, pause, or pause pending contractual review. → L4.reasoning_unit
 - **`broadcast_due`** True when the promised cadence has elapsed. An update saying nothing has changed still counts. → L5.communication_planning
-- **`notification_cohort`** Every requester who must hear the next update and the closing message. Destroyed if covered tickets are closed as duplicates. → L5.2.channel_planner
+- **`notification_cohort`** Every requester who must hear the next update and the closing message. Destroyed if covered tickets are closed as duplicates, which is why that is a blocking rule.
+ → L5.2.channel_planner
+- **`detection_gap_minutes`** MTTD. Emitted separately from total duration so that a consumer cannot report the response time and quietly omit the part before anyone noticed.
+ → L6.learning_unit
 - **`time_to_declare_minutes`** Detection to declaration. The number this object exists to reduce. → L6.learning_unit
-- **`postmortem_trigger`** Whether this event requires a written postmortem. → L6.learning_unit
+- **`postmortem_trigger`** Whether this event requires a written blameless postmortem, and whether closure is blocked until it exists. → L6.learning_unit
 
 
 ## Events
 
 - **`incident.cluster_suspected`** Incident Cluster Suspected
-- **`incident.declared`** Incident Declared
-- **`incident.severity_changed`** Severity Changed
+- **`incident.declared`** Incident Declared — invalidates customer_support.obj.core.sla_target
+- **`incident.severity_changed`** Severity Changed — invalidates severity_rationale, postmortem_required
 - **`incident.broadcast_sent`** Broadcast Sent
 - **`incident.broadcast_overdue`** Broadcast Overdue
 - **`incident.mitigated`** Impact Stopped
-- **`incident.resolved`** Incident Resolved
-- **`incident.recurred`** Incident Recurred
+- **`incident.resolved`** Incident Resolved — invalidates triage_suspended, sla_clock_policy
+- **`incident.recurred`** Incident Recurred — invalidates customer_support.obj.postmortem.postmortem, root_cause_ref
 
 
 ## Actions
 
 - **Declare the incident** (human) — Open the incident, name a commander, stop individual triage, start the broadcast clock. Cheap, reversible, and routinely delayed past the point where it would have helped.
-- **Name an incident commander** (human) — One person decides. Explicitly not the person fixing it — a commander with their hands in the code stops commanding within ten minutes.
+
+- **Name an incident commander** (human) — One person decides. Explicitly not the person fixing it — the IC coordinates, calls severity, owns communications and delegates the debugging.
+
 - **Suspend individual triage on covered tickets** (system) — Stops agents writing forty different explanations of one fault. The single highest-leverage automated move in the whole domain.
 - **Attach matching tickets to the incident** (agent) — Merge, never close. Closing as duplicate destroys the notification list and the closing broadcast then reaches nobody.
-- **Send a customer broadcast** (human) — One message, one voice, every affected requester. Sent before certainty — an update that says 'we are investigating' is an update.
+
+- **Send a customer broadcast** (human) — One message, one voice, every affected requester. Sent before certainty — an update that says "we are investigating" is an update.
+
 - **Promise the next update** (agent) — Emit a Commitment with a due time. During an outage the promise is the product, and a missed update costs more than the fault did.
-- **Publish to the status page** (human) — Publicly acknowledge. Argued about more than any other incident decision and asymmetric: publishing early is recoverable, publishing late is not.
-- **Engage engineering** (human) —
+
+- **Publish to the status page** (human) — Publicly acknowledge. Argued about more than any other incident decision and asymmetric: publishing early is recoverable, publishing after customers have told each other is not.
+
+- **Engage engineering** (human) — Puts people who can change the system in the room. A bridge without them is a status meeting about a fault nobody present can fix.
+- **Reconstruct started_at from telemetry** (human) — Makes MTTD computable. Done after mitigation, in the graphs, by someone who would rather be asleep — which is why it is skipped, and why the detection gap stays unfunded.
+
 - **Reduce severity or stand down** (human) — As blast radius shrinks. Requires explicit permission to be safe — teams that punish over-declaration stop declaring, which is the failure mode this object is built against.
+
 - **Tell everyone it ended** (human) — Reaches the same cohort as the first message. The most-skipped step in incident communication.
-- **Open a postmortem** (human) — Blameless, and within days rather than weeks — memory of the first ten minutes, which is the part worth learning from, is gone by then.
+- **Open a blameless postmortem** (human) — Blameless, and within days rather than weeks — memory of the first ten minutes, which is the part worth learning from, is gone by then. Blamelessness is not politeness: it is the only way to get the real timeline.
+
 
 
 ## Evidence
 
-- **telemetry** · 9500 bp — Instrumented failure against a known-good baseline. Proof of the fault, though silent on how many customers noticed.
-- **status_page** · 9000 bp — Our own published acknowledgement. Definitionally true once posted, and irreversible.
+- **telemetry** · 9500 bp — Instrumented failure against a known-good baseline. Proof of the fault, and silent on how many customers noticed. Does not decay: the graphs are still there next quarter, which is what makes started_at reconstructable at all.
+
+- **status_page** · 9000 bp — Our own published acknowledgement. Definitionally true once posted, and irreversible in effect if not in fact.
 - **ticket** · 7500 bp — A cluster of independent contacts. The earliest real evidence in most incidents and the one most often dismissed as coincidence for the first twenty minutes.
-- **chat** · 6000 bp — Concurrent live sessions. Faster than email and correspondingly noisier.
+
+- **chat** · 6000 bp — Concurrent live sessions. Faster than email and correspondingly noisier; abandonment here leads every other support-side signal.
 - **phone** · 5800 bp — Call volume. A blunt instrument that is nonetheless the only channel where customers escalate within seconds.
 - **email** · 5500 bp — Threads describing the same symptom in different words. The substrate we actually have, and the reason the executable heuristics above are weak rather than absent.
-- **help_center** · 4500 bp — Search and abandonment spike. Leading and noisy — corroborating only, never sole grounds for declaring.
-- **derived** · 4000 bp — Graph shape: degree, ball-in-court, sentiment balance. Suggestive of a cluster, never proof of a cause.
+
+- **help_center** · 4500 bp — Search and abandonment spike. Leading and noisy — corroborating only, never sole grounds for declaring. Genuinely independent of the ticket stream, which is what makes it worth carrying despite the strength.
+
+- **derived** · 4000 bp — Graph shape: degree, ball-in-court, sentiment balance. Suggestive of a cluster, never proof of a cause. Carries no independence claim because everything it reads is computed from the same correspondence the email source provides.
+
 - **survey** · 2000 bp — CSAT arrives days late. Excellent for measuring the damage, useless for detecting it.
 
 
 ## Metrics
 
-- **time_to_detect** (minutes) — Impact start to anyone in the company knowing.
-- **time_to_declare** (minutes) — Detection to declaration. The number this object exists to reduce and the one most teams avoid measuring.
-- **time_to_first_broadcast** (minutes) — Declaration to the first customer-facing message.
-- **broadcast_interval_adherence** (percent) — Share of promised update windows actually met. Missing these costs more trust than the fault.
-- **time_to_mitigate** (minutes) — Declaration to impact stopping. The interval customers actually experience.
+- **time_to_detect** (minutes) — MTTD — impact start to anyone in the company knowing. The gap nobody funds and the cheapest to close. A team that cannot produce this number is not measuring its outages, it is measuring its response to them.
+
+- **time_to_acknowledge** (minutes) — MTTA — alert to a named responder actually starting. Measures the paging path and the on-call roster, not the engineering.
+- **time_to_restore** (minutes) — MTTR — responder starting to customer impact stopping. The number everyone reports, and meaningless on its own: total duration ≈ MTTD + MTTA + MTTR.
+
+- **time_to_declare** (minutes) — Detection to declaration. The number this object exists to reduce and the one most teams avoid measuring, because it is entirely within their control and therefore entirely attributable.
+
+- **time_to_first_broadcast** (minutes) — Declaration to the first customer-facing message. The customer's clock starts here, not at declaration.
+- **broadcast_interval_adherence** (percent) — Share of promised update windows actually met. Missing these costs more trust than the fault, because the cadence was ours to control.
 - **individually_answered_share** (percent) — Share of covered tickets that received a bespoke reply after declaration. The cleanest measure of whether triage suspension really happened, and it is usually much higher than anyone claims.
-- **notification_coverage** (percent) — Customers notified against customers affected. The gap is where the second wave of tickets comes from.
-- **affected_account_count** (count) — Distinct paying accounts per incident.
-- **cluster_size_at_declaration** (count) — Contacts already received when declaration happened. Declaring at forty is declaring late.
+
+- **notification_coverage** (percent) — Customers notified against customers affected. The gap is precisely where the second wave of tickets comes from.
+- **channel_abandonment_rate** (percent) — Live contacts given up before being answered. Healthy queues sit at 2–5 per cent; above 8 per cent is a real staffing or routing failure. During an incident it spikes before email volume moves, which makes it a leading detector rather than a lagging report. An abandonment is not a deflection and counting it as one is the most gamed measurement in support.
+
+- **affected_account_count** (count) — Distinct paying accounts per incident. The discriminator against an escalation, expressed as a number.
+- **cluster_size_at_declaration** (count) — Contacts already received when declaration happened. Declaring at forty is declaring late whatever the elapsed time says.
 - **incident_recurrence_rate** (percent) — Share of incidents linked to a prior one. The honest measure of whether postmortems change anything.
-- **customer_detected_incident_share** (percent) — Share where detection_source was a customer rather than monitoring. A support metric that is really a monitoring verdict.
+- **customer_detected_incident_share** (percent) — Share where detection_source was a customer rather than monitoring. A support metric that is really a monitoring verdict, and the single most useful number to put in front of an engineering leader who does not believe MTTD matters.
+
+- **postmortem_action_closure_rate** (percent) — Share of postmortem action items closed within their own due dates. A falling recurrence rate with a falling closure rate means the organisation has been lucky, and it will find out which at the worst possible moment.
+
+
+
+## References
+
+- **ITIL 4 — incident, service request, problem and known error** · standard
+- **Google SRE — incident response and the Incident Commander role** · framework
+- **Google SRE — blameless postmortem culture** · book · Google (Site Reliability Engineering)
+- **Incident severity levels SEV1–SEV4** · framework
+- **Incident metrics — MTTD, MTTA and MTTR** · framework
+- **SLA mechanics — calendar versus business hours, pause conditions and stop events** · standard
+- **KCS v6 Practices Guide** · methodology · Consortium for Service Innovation
+- **Support measurement benchmarks — FCR, deflection and abandonment** · research
 
 
 ## Examples
 
-- **Authentication outage, no tickets for the first six minutes** — Nobody can log in, so nobody can open a ticket in the portal. The queue looks quiet and the incident is total. The clearest case for never treating contact volume as blast radius.
-- **Three unrelated accounts, three different symptoms, nine minutes** — 'Export is empty', 'dashboard is blank', 'API returns 200 with no rows'. One storage fault. Nothing in the wording connects them; only the timing and the area do. This is the canonical incident and the canonical late declaration.
-- **Silent data issue — invoice totals wrong for one billing cohort** — Invisible, low volume, disclosure obligations, and a severity far above what the ticket count suggests. is_customer_visible false makes it worse, not better.
-- **Third-party payment provider down** — Not our fault, entirely our incident. Customers do not have a relationship with our vendor. degradation_type third_party_dependency exists so the postmortem can be about our dependency rather than their outage.
-- **One enterprise account, twenty tickets, an executive on the phone** — The counter-example, and the one this object is most often misused for. Loud, expensive and blast_radius single_customer. It is an Escalation. Declaring an incident here costs a bridge and, worse, teaches the team that severity tracks volume.
-- **Regional degradation affecting one cloud region** — blast_radius segment. The hard part is the notification cohort — telling everyone panics customers who are fine, telling nobody strands the ones who are not.
-- **Same fault, three weeks later** — recurrence_of_ref populated. Operationally identical to the first and commercially far worse: the previous postmortem is now evidence that the process did not work.
+- **Authentication outage, no tickets for the first six minutes** _(edge)_ — Nobody can log in, so nobody can open a ticket in the portal. The queue looks quiet and the incident is total. The clearest possible case for never treating contact volume as blast radius — and the reason detection_source matters, because this one is only found by monitoring or by chat, never by the ticket stream.
+
+- **Three unrelated accounts, three different symptoms, nine minutes** _(typical)_ — "Export is empty", "dashboard is blank", "API returns 200 with no rows". One storage fault. Nothing in the wording connects them; only the timing and the area do. This is the canonical incident, the canonical late declaration, and the canonical case where distinct_symptom_count being HIGH is the evidence rather than the noise.
+
+- **Silent data issue — invoice totals wrong for one billing cohort** _(edge)_ — Invisible, low volume, disclosure obligations, and a severity far above what the ticket count suggests. is_customer_visible false makes it worse, not better: the trust clock starts when their finance team finds it, which is month end.
+
+- **Third-party payment provider down** _(typical)_ — Not our fault, entirely our incident. Customers do not have a relationship with our vendor. degradation_type third_party_dependency exists so the postmortem can be about our dependency rather than about their outage.
+
+- **One enterprise account, twenty tickets, an executive on the phone** _(misclassification)_ — The counter-example, and the one this object is most often misused for. Loud, expensive, and blast_radius single_customer. It is an Escalation. Declaring an incident here costs a bridge and, far worse, teaches the team that severity tracks volume.
+
+- **White-label partner outage — one account, forty thousand end users** _(counterexample)_ — The mirror of the case above and the reason the single-tenant exception exists. One account in the ticket system, a population in reality. The account count says escalation and every other signal says sev1.
+
+- **Regional degradation affecting one cloud region** _(edge)_ — blast_radius segment. The hard part is not severity, it is the notification cohort: telling everyone panics customers who are fine, telling nobody strands the ones who are not, and affected_regions exists so the cohort can be built at all.
+
+- **Monday morning, eleven threads waiting, nothing broken** _(misclassification)_ — Fires incident.cluster_of_threads_all_awaiting_us at 5000 and is a backlog after a long weekend. The separator is recency — the last inbound is two days old — which is exactly what the wide_and_quiet exception encodes. Worth someone's attention, and it wants capacity planning rather than a bridge.
+
+- **Cosmetic misalignment in the dashboard header after a release** _(typical)_ — SEV4. No user impact, no bridge, no commander, no broadcast. Recorded as an incident anyway because the severity scale needs a floor — without SEV4 in the vocabulary every trivial defect is argued up to SEV3, and the scale compresses from the bottom.
+
+- **Same fault, three weeks later, previous action item still open** _(edge)_ — recurrence_of_ref populated. Operationally identical to the first and commercially far worse: the previous postmortem is now evidence that the process did not work. This is the case the second_postmortem_reopens_the_first exception was written for — reopen the action, do not write the same document twice.
+
 
 ## Metadata
 
-owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **partial**
+owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Four of thirteen patterns are executable, and all four live in `heuristic:` — nothing in today's substrate can deterministically establish an incident, so the whole deterministic block is honest backlog. The four that run are graph-shape approximations of a ticket cluster built from edge_count, neighbor_fact and neighbor_has_obs; none exceeds 5800 confidence and none is permitted to auto-declare. Ranked asks this object generates, in order: `incident_declared` (obs, L2) — a deliberate human act with a timestamp, trivially cheap to capture, and everything here hangs from it; `ticket_created` + a per-area `ticket_volume` baseline (L2) — the burst that is genuinely the first signal in most real incidents; `derived.affected_account_count` (L2) — without distinct-account counting the brain cannot tell an incident from an escalation, which is the one distinction this object exists to hold. One engine-level ask sits behind all four executable patterns: a `neighbor_obs_count` predicate. The grammar can ask whether some neighbour carries an observation but not how many, and "how many" is what clustering means.
+> All 23 sections authored. 64 attributes across 8 composite groups; 15 relationships weighted to sum to 10000; 16 inference patterns, of which 5 are executable and 11 are honest Layer 1/2 backlog; 9 exceptions, 12 best practices, 9 anti-patterns and 8 references.
+Five of sixteen patterns are executable and all five live in `heuristic:`. Nothing in today's substrate can deterministically establish that an incident exists, so the whole deterministic block is backlog and says so. The five that run are graph-shape approximations of a ticket cluster built from edge_count, neighbor_fact, neighbor_has_obs and neighbor_no_obs; none exceeds 5800 confidence, and none is permitted to set is_declared — that prohibition is authored as a hard constraint rather than left to convention, because the first team to wire a 5800-confidence heuristic to an auto-declare will discover Monday morning.
+Ranked asks this object generates, in order. (1) `incident_declared` (obs, L2) — a deliberate human act with a timestamp and an author, trivially cheap to capture, and everything here hangs from it; whoever implements it must carry the is_test flag or the brain will suspend triage during game days. (2) `ticket_created` plus a per-area, per-hour-of-week `ticket_volume` baseline (L2) — the burst that is genuinely the first signal in most real incidents. (3) `derived.affected_account_count` (L2) — without distinct-account counting the brain cannot tell an incident from an escalation, which is the one distinction this object exists to hold. (4) `incident.started_at` (L1) — the anchor for MTTD, and the only interval in the standard decomposition that is structurally never measured; that is not a coincidence, and it is the cheapest one to close.
+One engine-level ask sits behind all five executable patterns: a `neighbor_obs_count` predicate. The grammar can ask whether SOME neighbour carries an observation but not HOW MANY do, and "how many" is what clustering means. Every clustering heuristic in this file is weaker than it needs to be for that single reason.
+Two authored positions a reviewer should push on. First, severity is typed `value` rather than `derived` even though the business rules admit only blast_radius and degradation_type as grounds — the argument is that a model which cannot represent a WRONG severity cannot let the postmortem argue with the call that was made, and severity_rationale exists to make that argument possible. Second, the `corroborates` links are declared on only three patterns and one of them carries an explicit partial-independence caveat; Rule 11 permits confidence to rise only on genuinely independent evidence, and patterns that share the edge_count term are the same evidence counted twice however different their statements read.

@@ -1,0 +1,119 @@
+# Hybrid — offering family node.
+#
+# INHERITANCE: declares a DIFF and never a copy. Resolution is family -> canonical.
+#
+# The question this tree answers for support is: WHERE DOES A FIX LAND? Product answers "in the
+# artefact", Service answers "in somebody's hands, again". Hybrid is the family where the honest
+# answer is "it depends, and deciding which is the first act of support".
+
+identity:
+  id: customer_support.offering.hybrid
+  name: Hybrid
+  kind: offering_family
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A product sold with the work that makes it useful: software plus implementation, a platform
+  plus a managed team, hardware plus installation and maintenance. Hybrid is not a midpoint
+  between the other two families and should not be modelled as one. It is the case where BOTH
+  economics are live at once inside a single account, and where every ticket has to be sorted
+  into one of them before it can be worked.
+  That sorting decision is the whole discipline. A defect in the shared artefact is a product
+  problem: reusable fix, aggregate view, one change retires the class. The identical symptom
+  caused by this client's configuration, their data or the work we did for them is a service
+  problem: bespoke labour, no aggregation, margin consumed by the hour. The symptom does not
+  tell you which — the customer cannot know, and frequently neither can the first agent — and
+  getting it wrong is expensive in both directions. Called product when it is service, the
+  ticket sits waiting for a fix that will never ship because engineering correctly sees one
+  affected customer. Called service when it is product, the account is billed or served for
+  something that will recur across the install base and should have been fixed once.
+  The second structural fact is that customers experience one vendor. They do not see the
+  boundary between our platform and our people, and they will not accept it as an explanation.
+  "That is a configuration issue, not a bug" is true, useless, and reliably the sentence that
+  turns a ticket into an escalation.
+  Both inherited habits fail here. The product operator aggregates everything and buries the
+  bespoke half in an issue tracker where it starves. The services operator treats everything as
+  bespoke and hand-answers forty instances of one defect. Hybrid support is defined by holding
+  two dispositions at once and choosing between them early, explicitly, and out loud.
+
+characteristics:
+  delivery: "a shared artefact plus per-client work that makes it fit; the client buys an outcome and receives both"
+  pricing_shape: "recurring licence or subscription plus services revenue — implementation, configuration, managed operations — usually on separate lines the customer reads as one"
+  margin_profile: "two margins in one account. The licence line behaves like a product and the services line is bounded by utilisation, so blended margin is meaningless and the split is the number that matters"
+  post_sale_load: "high and permanently mixed. Some post-signature work compounds across clients and some is consumed entirely by one, and the ratio between them is the health of the business"
+  support_load: "bimodal. A correlated product-shaped spike when the shared artefact breaks, and a steady uncorrelated service-shaped stream from configuration, data and integration work — reported through one queue and needing two treatments"
+  resolution_locus: "decided per ticket rather than per offering. Our codebase, this client's configuration, this client's data, a third-party integration, or work we did that has to be redone. Naming which one is the first act, and a queue that cannot record the answer cannot learn from it"
+  notes: >
+    The practical test at ticket time is a counterfactual: would fixing this help the next
+    client? If yes it is product, however bespoke it feels. If no it is service, however much it
+    looks like a bug. That question is cheap, answerable in the first minute, and almost never
+    asked.
+
+capabilities:
+  activates:
+    # The named relationship is real here because implementation created one. Inherited from
+    # neither parent: product does not need it and service assumes it.
+    - customer_support.support_management.account_relationship_management
+  emphasises:
+    # Everything about this family is triage. The sorting decision is made once, early, by
+    # somebody who may not have the information — which is exactly the shape triage exists for.
+    - customer_support.intake_and_triage.ticket_triage
+    - customer_support.intake_and_triage.routing_and_assignment
+    # The bug-or-configuration question is a root cause question wearing a scope question's
+    # clothing, and answering it wrongly is the family's characteristic failure.
+    - customer_support.diagnosis_and_resolution.root_cause_analysis
+    - customer_support.diagnosis_and_resolution.issue_reproduction
+    # Where the boundary sits has to be said out loud before it is discovered in an invoice.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # The product half genuinely deflects; the service half genuinely does not. Content gap
+    # analysis is what keeps the line between them honest instead of ideological.
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+    # Two margins in one account, and only one of them is visible without this.
+    - customer_support.support_operations.cost_to_serve
+    - customer_support.escalation_and_incident.engineering_handoff
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [issue_ref, customer_account_ref, resolution_type]
+      note: >
+        Both dimensions are mandatory here and each is optional in one of the parent families.
+        issue_ref carries the product half and would be dead weight in a pure service queue;
+        customer_account_ref carries the service half and is frequently absent in a pure product
+        one. resolution_type is what records which way the sorting decision went, and a hybrid
+        business that does not capture it cannot tell whether its support cost is compounding
+        or evaporating.
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, coverage_hours]
+      note: >
+        Two entitlements in one account — the licence terms and the services agreement — with
+        different clocks and different scopes. Customers reason about them as one, so the object
+        has to hold both and support has to know which one a given ticket is being answered
+        under before it promises anything.
+    - object: customer_support.obj.core.issue
+      require_properties: [product_area_ref]
+      note: >
+        The issue link is what makes the counterfactual answerable after the fact. Without it,
+        "would fixing this have helped the next client?" can only be answered by opinion, and the
+        product/service split degrades into whichever answer was commercially convenient.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    No deactivations, deliberately. Hybrid is the one family where every canonical capability has
+    a genuine referent, because both economics are present — which is also why it is the hardest
+    to run and the one where borrowed instincts do the most damage. The claim most worth arguing
+    with is that the product/service sort should happen at triage rather than after diagnosis.
+    Triage frequently lacks the information; the counterargument is that deferring the decision
+    means it gets made implicitly by whoever picks the ticket up, which is worse than making it
+    early and revising it.

@@ -2,99 +2,131 @@
 
 # Action Item
 
-`admin.obj.core.action_item` · v1.0.0 · **draft** · scope **core**
+`admin.obj.core.action_item` · v2.0.0 · **draft** · scope **core**
 
-> A commitment agreed in a meeting and recorded in that meeting's minutes, with an owner, a date and a line reference. It differs from a plain commitment in exactly one respect and the difference is decisive: it has a witnessed record. That record makes it enforceable without anyone's memory being tested, survives the departure of everyone in the room, and — where the minutes were circulated and not challenged — makes it agreed by the whole meeting rather than by the person who happened to say yes. It also makes it fragile in a way a plain commitment is not, because the record is produced by one person after the event, and if that person does not produce it the item never existed.
-
-
-Also called: `Action Point`, `AP`, `Matter Arising`, `Minute Action`, `Follow-up`
+> A commitment agreed in a meeting and recorded in that meeting's minutes, with an owner, a date and a line reference. It differs from a plain commitment in exactly one respect and the difference is decisive: it has a witnessed record. That record makes it enforceable without anyone's memory being tested, survives the departure of everyone in the room, and — where the minutes were circulated and not challenged — makes it agreed by the whole meeting rather than by the person who happened to say yes.
 
 
-## Attributes (37)
+**The discriminator.** Remove the meeting and the minute and what is left is a plain commitment. The authority of this object comes from the forum and the record, not from the wording of the promise — which is why the same sentence carries a different weight depending on which room it was said in, and why an action item nobody minuted is weaker than an email nobody minuted.
+
+
+Also called: `Action Point`, `AP`, `Matter Arising`, `Minute Action`, `Resolution Action`, `Follow-up`
+
+
+### Questions this object answers
+
+- What did this meeting actually commit the organisation to, and who holds each item?
+- Which items must be read out at the next sitting, and in what order?
+- Has the record gone out yet, and is anything binding on anyone until it does?
+- Was the owner in the room when this was allocated to them — and if not, have they been told?
+- How many sittings has this survived, and at what point is carrying it again dishonest?
+- May this item appear in an automated reminder at all, or is the forum reserved?
+- Was closure reported to the forum that raised it, or only ticked in a tracker?
+
+
+### What it is NOT responsible for
+
+- NOT a plain commitment — admin.obj.core.commitment owns promises made outside a forum, and every rule there applies here unchanged.
+- NOT the meeting. Attendance, agenda and quorum belong to admin.obj.core.meeting; this object is one line of that meeting's output.
+- NOT the minutes. The document itself is admin.obj.core.document; this object references it and is not it.
+- NOT a decision. A meeting's resolutions are records of what was agreed; an action item is what somebody must now do about it.
+- NOT an approval. Sign-off the item waits on is admin.obj.core.approval, and time spent there is not the owner's lateness.
+
+
+## Attributes (44)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
 | `provenance` | composite |  |  | Which meeting made it, and where in the record it sits. This object's entire authority comes from here. | `meeting_ref`, `meeting_held_at`, `minute_ref`, `minute_line`, `agenda_item_ref`, `recorded_by_ref`, `recorded_verbatim` |
-| `the_item` | composite |  |  | The commitment itself. Deliberately the same shape as admin.obj.core.commitment, because it is one. | `action`, `owner_ref`, `due_at`, `is_dated`, `is_specific`, `criticality` |
+| `meeting_ref` | reference | ref | yes | The meeting that created it. | admin.obj.core.meeting |
+| `meeting_held_at` | value | timestamp |  | When the sitting took place, which starts the minutes clock. | `meeting.start_at` |
+| `minute_ref` | reference | ref |  | The minutes document that carries this item. | admin.obj.core.document |
+| `minute_line` | value | string |  | The formal item reference within the record. |  |
+| `agenda_item_ref` | reference | ref |  | The agenda line the item arose under. | admin.obj.core.document |
+| `recorded_by_ref` | reference | ref |  | The minute-taker. | admin.obj.core.stakeholder |
+| `recorded_verbatim` | value | boolean |  | Whether the wording is the owner's or the minute-taker's paraphrase. |  |
+| `the_item` | composite |  |  | The commitment itself. Deliberately the same shape as admin.obj.core.commitment, because it is one. | `action`, `owner_ref`, `due_at`, `is_dated`, `date_source`, `is_specific`, `criticality` |
+| `action` | value | string | yes | The thing agreed, in the owner's own verb. | `commitment.action` |
+| `owner_ref` | reference | ref | yes | The one person named in the minute. | admin.obj.core.stakeholder |
+| `due_at` | value | timestamp |  | The date recorded against the item, where one exists. | `commitment.due_at` |
+| `is_dated` | derived | boolean |  | Whether an explicit date exists at all. | `commitment.due_at` |
+| `date_source` | value | enum |  | Where the date came from, since most minuted dates are inherited rather than agreed. |  |
+| `is_specific` | value | boolean |  | Whether the wording lets a third party tell it was done. |  |
+| `criticality` | value | enum |  | Consequence of the item not being done, as distinct from the effort of doing it. |  |
 | `the_room` | composite |  |  | Whether the people who mattered were present when it was agreed. The most under-recorded determinant of whether it gets done. | `owner_was_present`, `chair_sponsored`, `agreed_by_consensus`, `objections_recorded` |
-| `carry` | composite |  |  | How many meetings it has survived without being done. An action item's real age is measured in meetings, not days. | `carried_over_count`, `first_raised_at`, `first_raised_meeting_ref`, `last_reported_at`, `last_reported_status` |
-| `record_health` | composite |  |  | Whether the minute that carries this item actually reached anyone. | `minutes_circulated_at`, `minutes_approved_at`, `is_matter_arising`, `confidentiality` |
-| `discharge` | composite |  |  | How it ended, and in which meeting that was confirmed. | `state`, `closed_at`, `closure_reported_in_ref`, `closure_quality`, `closure_evidence_ref` |
-| `meeting_ref` | reference | ref | yes | The meeting that created it. Mandatory — an action item without a meeting is a commitment, and should be recorded as one rather than dressed up. | admin.obj.core.meeting |
-| `meeting_held_at` | value | timestamp |  | Live today. Its main administrative use is as a clock start for the minutes, not for the action. | `meeting.start_at` |
-| `minute_ref` | reference | ref |  | The minutes document. The item's whole evidentiary weight sits in one paragraph of a file that, in most organisations, nobody re-reads until there is a dispute. | admin.obj.core.document |
-| `minute_line` | value | string |  | The item reference — "AP 7.3", "Minute 24/118". Trivial-looking and load-bearing: it is what lets an item be carried across a year of meetings without being silently reworded into something easier. |  |
-| `agenda_item_ref` | reference | ref |  | The agenda line the item arose under. Determines which forum owns it and therefore who can close it. | admin.obj.core.document |
-| `recorded_by_ref` | reference | ref |  | The minute-taker. The single point of failure for this entire object; when they are absent or overloaded, the meeting still happens and its decisions do not survive it. | admin.obj.core.stakeholder |
-| `recorded_verbatim` | value | boolean |  | Whether the wording is the owner's or the minute-taker's paraphrase. Paraphrase is where scope quietly expands and contracts. |  |
-| `action` | value | string | yes | The thing agreed. Same field as on commitment, same rule — keep the owner's verb. | `commitment.action` |
-| `owner_ref` | reference | ref | yes | One person, named in the minute. Meetings are the worst offender for assigning to a function — "Finance to confirm" is an action item with no owner, and it will be read out unchanged at the next four meetings. | admin.obj.core.stakeholder |
-| `due_at` | value | timestamp |  | Where a date exists at all. In practice most minuted actions are dated implicitly to the next meeting, which is a real deadline nobody writes down and everybody obeys. | `commitment.due_at` |
-| `is_dated` | value | boolean |  | The best single predictor of whether a minuted action is ever done. An undated action point is not a slow commitment; it is a sentence in a document. |  |
-| `is_specific` | value | boolean |  | Whether the wording lets a third party tell it was done. Minutes are unusually prone to failing this, because the room already knew what was meant. |  |
-| `criticality` | value | enum |  | The criticality of this object. |  |
-| `owner_was_present` | value | boolean |  | Whether the owner was in the room when it was assigned to them. An action item allocated to an absent person is allocated to nobody: they learn about it from a document, they did not agree to it, and they are entirely correct to feel that way. |  |
-| `chair_sponsored` | value | boolean |  | Whether the chair asked for it. Chair-sponsored items get done and everything else competes on merit, which is a losing position in any meeting. |  |
-| `agreed_by_consensus` | value | boolean |  | Whether the meeting agreed or one person volunteered while everyone else looked at their laptops. |  |
-| `objections_recorded` | value | boolean |  | Whether anyone dissented on the record. Matters at board and committee level, where an unrecorded objection is later indistinguishable from agreement. |  |
-| `carried_over_count` | value | integer |  | Number of meetings at which this item has been reported and not closed. The most diagnostic number on the object. Past about three, the item is not slow — it is not going to be done, and reading it out again is the meeting performing tracking rather than doing it. |  |
-| `first_raised_at` | value | timestamp |  | The first_raised_at of this object. |  |
-| `first_raised_meeting_ref` | reference | ref |  | Preserved so an item cannot be laundered into a new one by being reworded at meeting five. | admin.obj.core.meeting |
-| `last_reported_at` | value | timestamp |  | The last_reported_at of this object. |  |
-| `last_reported_status` | value | enum |  | `no_update` is a real and common value and must be recordable. An item reported with no update three meetings running is being managed by attrition. |  |
-| `minutes_circulated_at` | value | timestamp |  | When the record actually reached the attendees. Until this is set, the action item is hearsay; the gap between meeting_held_at and this field is the window in which most meeting output is lost. |  |
-| `minutes_approved_at` | value | timestamp |  | When the next meeting adopted the minutes. At that moment the item stops being one person's account and becomes the organisation's. |  |
-| `is_matter_arising` | value | boolean |  | Whether it appears under matters arising rather than as new business. A section that only ever grows is a committee that has stopped closing things. |  |
-| `confidentiality` | value | enum |  | `reserved` covers board reserved business — items that exist, bind someone, and must not appear in any general tracker or reminder. Getting this wrong is a governance incident, not a preference. |  |
-| `state` | value | enum |  | The state of this object. |  |
-| `closed_at` | value | timestamp |  | The closed_at of this object. |  |
-| `closure_reported_in_ref` | reference | ref |  | The meeting where closure was confirmed. An item closed in the tracker but never reported closed to the room is still open as far as the record is concerned. | admin.obj.core.meeting |
-| `closure_quality` | value | enum |  | The closure_quality of this object. |  |
-| `closure_evidence_ref` | reference | ref |  | The closure_evidence_ref of this object. | admin.obj.core.document |
+| `owner_was_present` | value | boolean |  | Whether the owner was in the room when it was assigned to them. |  |
+| `chair_sponsored` | value | boolean |  | Whether the chair asked for it personally. |  |
+| `agreed_by_consensus` | value | boolean |  | Whether the meeting agreed, or one person volunteered while everyone else looked at their laptops. |  |
+| `objections_recorded` | value | boolean |  | Whether anyone dissented on the record. |  |
+| `carry` | composite |  |  | How many sittings it has survived without being done. An action item's real age is measured in meetings, not days. | `carried_over_count`, `first_raised_at`, `first_raised_meeting_ref`, `last_reported_at`, `last_reported_status`, `is_matter_arising` |
+| `carried_over_count` | value | integer |  | Number of sittings at which this has been reported and not closed. |  |
+| `first_raised_at` | value | timestamp |  | When the item first appeared, preserved so its true age survives rewording. |  |
+| `first_raised_meeting_ref` | reference | ref |  | The sitting that originally raised it. | admin.obj.core.meeting |
+| `last_reported_at` | value | timestamp |  | When the owner last gave the forum an update. |  |
+| `last_reported_status` | value | enum |  | What the owner told the room the last time it was raised. |  |
+| `is_matter_arising` | value | boolean |  | Whether it appears under matters arising rather than as new business. |  |
+| `record_health` | composite |  |  | Whether the minute carrying this item actually reached anyone, and whether the organisation has adopted it. | `minutes_circulated_at`, `minutes_approved_at`, `circulation_lag_hours`, `confidentiality` |
+| `minutes_circulated_at` | value | timestamp |  | When the record actually reached the attendees. |  |
+| `minutes_approved_at` | value | timestamp |  | When the following sitting formally adopted the minutes. |  |
+| `circulation_lag_hours` | derived | integer |  | Sitting to circulation, in hours. | `meeting_held_at`, `minutes_circulated_at` |
+| `confidentiality` | value | enum |  | Whether this item may appear in general reporting at all. |  |
+| `discharge` | composite |  |  | How it ended, and in which forum that was confirmed. | `state`, `closed_at`, `closure_reported_in_ref`, `closure_quality`, `closure_evidence_ref`, `closed_by_the_forum` |
+| `state` | value | enum | yes | The lifecycle position of the item. |  |
+| `closed_at` | value | timestamp |  | When the item was discharged. |  |
+| `closure_reported_in_ref` | reference | ref |  | The sitting where closure was confirmed to the forum. | admin.obj.core.meeting |
+| `closure_quality` | value | enum |  | What kind of proof stands behind the closure. |  |
+| `closure_evidence_ref` | reference | ref |  | The deliverable that discharges the item. | admin.obj.core.document |
+| `closed_by_the_forum` | derived | boolean |  | Whether the meeting that raised it actually accepted the closure. | `closure_reported_in_ref`, `meeting_ref` |
+| `linkage` | composite |  |  | The objects this item is the meeting-side face of. | `commitment_ref`, `blocked_by_ref`, `obligation_ref` |
+| `commitment_ref` | reference | ref |  | The underlying promise, of which this object is the minuted form. | admin.obj.core.commitment |
+| `blocked_by_ref` | reference | ref |  | Sign-off the item cannot proceed without. | admin.obj.core.approval |
+| `obligation_ref` | reference | ref |  | The external obligation the action discharges, where there is one. | admin.obj.core.compliance_obligation |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| belongs_to | `admin.obj.core.meeting` | one |  |  | — | The defining edge. This object cannot exist without it — the meeting is not context here, it is the source of authority. It also means the item inherits the meeting's confidentiality, its attendee list and its minute cycle, none of which a plain commitment has.  |
-| references | `admin.obj.core.commitment` | one |  |  | — | An action item IS a commitment with a record attached. Every rule on that object applies unchanged; nothing is redefined here. The relationship is stated explicitly so that a Layer 4 chase policy written for commitments does not have to be rewritten for this.  |
-| assigned_to | `admin.obj.core.stakeholder` | one |  |  | — | One named person in the minute. "Finance to confirm" resolves to nobody and behaves accordingly. |
-| attaches_to | `admin.obj.core.document` | zero_or_one |  |  | — | The minutes. Zero is permitted by the model and is the state in which most action items die. |
-| precedes | `admin.obj.core.meeting` | zero_or_one |  |  | — | The next sitting, where it will be read out again. The real due date of most minuted actions, and one nobody writes in the date column. |
-| requires | `admin.obj.core.approval` | zero_or_many |  |  | — | Sign-off the item cannot proceed without. Frequently the reason an item carries over four times while its owner is blamed. |
-| governed_by | `admin.obj.core.deadline` | zero_or_one |  |  | — | When the action discharges an external date — a filing, a notice period — the committee's own timetable is irrelevant to it. |
-| escalates_to | `admin.obj.core.escalation` | zero_or_many |  |  | — | Usually to the chair, and usually far later than it should be. |
-| produces | `admin.obj.core.document` | zero_or_many |  |  | — | What the action was to deliver — the paper, the schedule, the policy. In a governed forum this artefact is the closure. |
+| belongs_to | `admin.obj.core.meeting` | one | 2500 bp | 8500 bp | `exists: meeting.start_at` | The defining edge. This object cannot exist without it — the meeting is not context here, it is the source of authority. The item also inherits the meeting's confidentiality, its attendee list and its minute cycle, none of which a plain commitment has.  |
+| references | `admin.obj.core.commitment` | one | 2000 bp | 9000 bp | — | An action item IS a commitment with a record attached. Every rule on that object applies unchanged and nothing is redefined here. Stated explicitly so a chase policy written for commitments does not have to be written twice.  |
+| assigned_to | `admin.obj.core.stakeholder` | one | 1500 bp | 5500 bp | — | One named person in the minute. "Finance to confirm" resolves to nobody and behaves accordingly at each of the next four sittings. |
+| documents | `admin.obj.core.document` | zero_or_one | 1400 bp | 6000 bp | — | The minutes. Zero is permitted by the model and is the state in which most action items die — not overruled, not cancelled, simply never written down by the one person who was going to write them down.  |
+| precedes | `admin.obj.core.meeting` | zero_or_one | 1100 bp | 6500 bp | — | The next sitting, where it will be read out again. This is the real due date of most minuted actions and the one nobody writes in the date column, which is why the work compresses into the three days before the meeting.  |
+| requires | `admin.obj.core.approval` | zero_or_many | 900 bp | 5500 bp | — | Sign-off the item cannot proceed without. Frequently the reason an item carries over four times while its owner is blamed for it at each sitting. |
+| produces | `admin.obj.core.document` | zero_or_many | 800 bp | 7000 bp | — | What the action was to deliver — the paper, the schedule, the policy. In a governed forum this artefact is the closure and there is no other kind. |
+| escalates_to | `admin.obj.core.escalation` | zero_or_many | 700 bp | 5000 bp | `days_since(commitment.due_at) > 0` | Usually to the chair, and usually two sittings later than it should have been. |
+| governed_by | `admin.obj.core.deadline` | zero_or_one | 600 bp | 6500 bp | — | When the action discharges an external date — a filing, a notice period — the committee's own timetable is irrelevant to it and carrying it over is not available. |
+| evidences | `admin.obj.core.compliance_obligation` | zero_or_one | 500 bp | 5500 bp | — | Where a committee action is how the organisation discharges an obligation, the minute is part of the audit trail. Assurance committees exist almost entirely to produce this edge, and almost never record it.  |
 
 
 ## States
 
-Initial `draft`
+Initial `draft` · terminal `closed`, `cancelled`, `superseded`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `draft` | Spoken in the room and not yet in a circulated minute. The most fragile state in the domain — the item is real, binding and invisible. | `exists: commitment.action` AND `absent: commitment.due_at` |  |
-| `open` | In the record, owned and dated. Includes items carried forward — carry is a count, not a state, because calling it one lets a committee report carried items as something other than open. | `exists: commitment.action` AND `exists: commitment.due_at` |  |
-| `in_progress` | The owner has reported movement to the room. | — |  |
-| `overdue` | Past its date, or past the meeting at which it was to be complete. | `days_since(commitment.due_at) > 0` |  |
-| `escalated` | Raised to the chair or to a parent committee. | — |  |
-| `closed` | Reported complete and accepted by the meeting. Not merely ticked in a tracker. | — |  |
-| `cancelled` | The meeting agreed to drop it. Healthy, rare, and the correct ending for most items on their fourth carry. | — |  |
-| `superseded` | Replaced by a later resolution on the same subject. The obligation survived; this wording did not. | — |  |
+| `draft` | Spoken in the room and not yet in a circulated minute. | `exists: commitment.action` AND `absent: commitment.due_at` | Real, binding and invisible. Nobody holds the record, so nobody is wrong, so nobody is chased. |
+| `open` | In the record, owned and dated. Includes items carried forward — carry is a count, not a state, because making it a state lets a committee report carried items as something other than open.  | `exists: commitment.action` AND `exists: commitment.due_at` | Chaseable between sittings and reportable at the next one. |
+| `in_progress` | The owner has reported movement to the room. | — | The forum has a status it can rely on. Chasing here costs credibility. |
+| `pending_approval` | Waiting on a signature the owner does not hold. | — | Carry-over from this state must not be counted against the owner. It is the forum's own queue. |
+| `overdue` | Past its date, or past the sitting at which it was to be complete. | `days_since(commitment.due_at) > 0` | It will be read out again. Whether that achieves anything depends entirely on carried_over_count. |
+| `escalated` | Raised to the chair or to a parent committee. | — | The forum has admitted it cannot move the item on its own authority. |
+| `closed` | Reported complete and accepted by the meeting. | — | Closed on the record, not merely ticked. Check closed_by_the_forum before believing the tracker. |
+| `cancelled` | The meeting agreed to drop it. | — | Healthy, rare, and the correct ending for most items on their fourth carry. |
+| `superseded` | Replaced by a later resolution on the same subject. | — | The obligation survived; this wording did not. Preserve first_raised_meeting_ref or the age is laundered. |
 
 
-## Inference patterns — 4 executable, 7 blocked
+## Inference patterns — 4 executable, 12 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `ai.action_against_a_meeting_that_happened` | deterministic | `exists: commitment.action` AND `days_since(meeting.start_at) > 0` | 8500 bp | A commitment is attached to a node whose meeting has already taken place. |  |
-| `ai.undated_minute_line` | deterministic | `exists: commitment.action` AND `absent: commitment.due_at` AND `exists: meeting.start_at` | 9000 bp → `is_dated` | An action agreed in a meeting with no date attached to it. |  |
-| `ai.past_its_date_and_still_open` | deterministic | `exists: commitment.action` AND `exists: meeting.start_at` AND `days_since(commitment.due_at) > 0` | 9200 bp → `state` | A minuted action has passed its date without discharge and will be read out again. |  |
-| `ai.no_record_went_out` | heuristic | `days_since(meeting.start_at) >= 3` AND `no_obs: followup_sent` | 7500 bp → `state` | The meeting happened, nothing has been sent since, and whatever was agreed in that room is currently held only in people's heads. |  |
+| `ai.action_against_a_meeting_that_happened` | deterministic | `exists: commitment.action` AND `days_since(meeting.start_at) > 0` | 8500 bp | A commitment sits on a node whose meeting has already taken place. | A commitment made by email on the day after a meeting attaches to the same node and is not a minuted action at all. This is the cleanest discriminator the substrate can offer and it is still a proximity argument rather than a provenance one.  |
+| `ai.undated_minute_line` | deterministic | `exists: commitment.action` AND `absent: commitment.due_at` AND `exists: meeting.start_at` | 9000 bp → `is_dated` | An action agreed in a meeting with no date attached to it. | The room may have said "by the next meeting" — a real and binding date that this pattern cannot see, because it lives in the convention rather than in the sentence.  |
+| `ai.past_its_date_and_still_open` | deterministic | `exists: commitment.action` AND `exists: meeting.start_at` AND `days_since(commitment.due_at) > 0` | 9200 bp → `state` | A minuted action has passed its date without discharge and will be read out again. | Nothing in the substrate can close an item, so this will insist an action is overdue while its owner sits in the sitting holding the finished document. That specific embarrassment is why committees stop trusting automated action trackers, usually permanently.  |
+| `ai.no_record_went_out` | heuristic | `days_since(meeting.start_at) >= 3` AND `no_obs: followup_sent` | 7500 bp → `state` | The meeting happened, nothing has been sent since, and whatever was agreed in that room is currently held only in people's heads. | A phone call is a follow-up too, and minutes circulated through a document platform rather than email are invisible here. The pattern detects silence on one channel and infers silence everywhere.  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -102,49 +134,147 @@ Initial `draft`
 | Pattern | Kind | Needs | Would yield | Statement |
 |---|---|---|---|---|
 | `ai.minute_line_reference` | deterministic | `minutes_circulated` (obs_kind), `document.version` (fact_path) | 9800 bp | The item carries a formal minute reference, which makes it a matter of record rather than a note. |
-| `ai.adopted_at_the_next_sitting` | deterministic | `document.approved_at` (fact_path) | 9600 bp | The minutes carrying this item were formally approved at the following meeting, so the item is now the organisation's record and not the minute-taker's account. |
+| `ai.adopted_at_the_next_sitting` | deterministic | `document.approved_at` (fact_path) | 9600 bp | The minutes carrying this item were formally approved at the following meeting, so the item is now the organisation's record rather than the minute-taker's account. |
+| `ai.owner_named_in_the_minute` | deterministic | `commitment.owner` (fact_path) | 9400 bp | The minute names a person against the item rather than a function. |
+| `ai.closed_before_the_next_sitting` | deterministic | `handover_completed` (obs_kind), `evidence_provided` (obs_kind) | 9000 bp | The action was discharged and confirmed between sittings, so it should not be read out again. |
 | `ai.owner_was_not_in_the_room` | heuristic | `meeting.attendees` (fact_path), `commitment.owner` (fact_path) | 8500 bp | The item was allocated to someone who was not present, so they have been assigned work they did not agree to and will hear about it from a document. |
 | `ai.carried_across_consecutive_sittings` | heuristic | `meeting.series_id` (fact_path), `agenda_circulated` (obs_kind) | 8800 bp | The same action has appeared at three consecutive meetings of the same series without closing, which means it is not slow — it is not going to be done. |
-| `ai.reported_with_no_update` | heuristic | `commitment.state` (fact_path) | 8000 bp | The owner has reported 'no update' at successive meetings, which is not a status — it is a refusal that the forum is accepting. |
-| `ai.closed_before_the_next_sitting` | heuristic | `handover_completed` (obs_kind) | 9000 bp | The action was discharged and confirmed between meetings, so it should not be read out again. |
+| `ai.reported_with_no_update` | heuristic | `commitment.state` (fact_path) | 8000 bp | The owner has reported 'no update' at successive sittings, which is not a status — it is a refusal the forum is accepting. |
+| `ai.reworded_between_sittings` | heuristic | `document.version` (fact_path), `document_superseded` (obs_kind) | 7800 bp | The same obligation has reappeared under softer wording, which resets its apparent age and hides how long the forum has failed to close it. |
 | `ai.chair_asked_for_it` | heuristic | `prebrief_delivered` (obs_kind) | 7500 bp | The chair requested the action personally, which changes its delivery odds more than its content does. |
+| `ai.forum_never_closes_anything` | heuristic | `commitment_delivery_rate` (baseline), `meeting.series_id` (fact_path) | 8200 bp | This forum's actions are raised and carried and almost never closed, so the problem is the meeting rather than any of its items. |
+| `ai.reserved_forum_item` | heuristic | `document.classification` (fact_path) | 9000 bp | The item was raised in a session whose business is reserved, so it must never enter any general tracker or reminder. |
+| `ai.item_blocked_not_neglected` | heuristic | `approval_requested` (obs_kind), `approval.state` (fact_path) | 8400 bp | The item has carried repeatedly because it is waiting on an approval, not because its owner has ignored it. |
 
 
 ## Decision factors
 
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
-| carry_over_count | 2200 bp | increases | `carried_over_count`, `first_raised_at`, `last_reported_status` |
-| owner_was_in_the_room | 1600 bp | increases | `owner_was_present`, `agreed_by_consensus` |
-| record_quality | 1500 bp | increases | `recorded_verbatim`, `minute_line`, `minutes_circulated_at`, `minutes_approved_at` |
-| date_present | 1500 bp | increases | `is_dated`, `due_at` |
-| next_meeting_proximity | 1200 bp | context | `meeting_held_at`, `due_at` |
-| chair_sponsorship | 1000 bp | increases | `chair_sponsored`, `criticality` |
-| forum_authority | 1000 bp | context | `meeting_ref`, `confidentiality`, `criticality` |
+| carry_over_count | 2000 bp | increases | `carried_over_count`, `first_raised_at`, `last_reported_status`, `is_matter_arising` |
+| record_reached_the_people_it_binds | 1600 bp | increases | `minutes_circulated_at`, `minutes_approved_at`, `minute_line`, `recorded_verbatim`, `owner_was_present` |
+| owner_was_in_the_room | 1500 bp | increases | `owner_was_present`, `agreed_by_consensus`, `owner_ref` |
+| date_present_and_owned | 1300 bp | increases | `is_dated`, `due_at`, `date_source` |
+| forum_authority | 1200 bp | context | `meeting_ref`, `confidentiality`, `criticality` |
+| next_sitting_proximity | 1100 bp | context | `meeting_held_at`, `due_at` |
+| chair_sponsorship | 900 bp | increases | `chair_sponsored`, `criticality` |
+| blocked_on_approval | 400 bp | decreases | `state`, `blocked_by_ref`, `last_reported_status` |
+
+
+## Preconditions
+
+- **`ai.meeting_resolved`** The item resolves to exactly one meeting that actually sat. _(unmet → Block promotion to this object and record it as admin.obj.core.commitment instead. Inventing a meeting to hold an ordinary promise gives a tracker forums that never sat, and those forums then acquire their own carried items.
+)_
+- **`ai.record_exists_before_enforcement`** Minutes carrying this item have been circulated before the item is enforced against anyone. _(unmet → Degrade to a private nudge to the minute-taker, not a chase to the owner. Until the record exists the item binds nobody, and chasing on an uncirculated draft is how a secretariat loses the authority it needs for everything else.
+)_
+- **`ai.owner_is_a_person`** The minute names one natural person, not a function or a directorate. _(unmet → Raise it back to the chair at the point of minuting, not at the next sitting. A functional owner discovered six weeks later has already cost the six weeks.)_
+- **`ai.absent_owner_notified`** Where the owner was not in the room, they have been told directly and separately from the minutes. _(unmet → Do not count the item as live and do not chase it. They did not agree to it, they have not seen it, and the first they will hear of it is an overdue notice.)_
+- **`ai.confidentiality_inherited`** The item's confidentiality has been inherited from its meeting before it may enter any tracker or digest. _(unmet → Block from all general reporting. An item may never be less restricted than the forum that made it — Rule 10, and in a governed context also a governance incident.)_
+- **`ai.series_identified`** The meeting is resolved to its series before carry-over is computed or reported. _(unmet → Degrade to per-sitting reporting and say so. Reporting a carry count of zero because the series is unknown is worse than reporting nothing, because it reads as good news.)_
+- **`ai.closure_authority_known`** The forum entitled to close the item is identified before any closure is accepted. _(unmet → Hold the item open. A tracker tick by an administrator is not closure, and the next person to read the minutes will raise it again in front of the chair.)_
 
 
 ## Constraints
 
-- **`ai.must_have_a_meeting`** An action item without a meeting is not this object. Recordit as admin.obj.core.commitment instead of inventing a meeting for it.
-- **`ai.single_named_owner`** Exactly one named person. Functional ownership is rejectedat capture.
-- **`ai.reserved_stays_reserved`** Reserved and restricted items may not appear in generaltrackers, digests or automated reminders.
-- **`ai.no_silent_rewording`** The action text may not be edited after the minutes are adopted;a changed scope is a new item that references the old one.
-- **`ai.closure_needs_the_forum`** Only the meeting that raised an item may close it. Atracker tick is not closure.
-- **`ai.chase_respects_the_cycle`** Chasing between sittings is proportionate to criticality;weekly reminders on a quarterly committee's items simply teach people to filter the sender. _(soft)_
+- **`ai.must_have_a_meeting`** An action item without a meeting is not this object. Record it as admin.obj.core.commitment rather than inventing a meeting for it.
+- **`ai.single_named_owner`** Exactly one named person. Functional ownership is rejected at minute-taking.
+- **`ai.reserved_stays_reserved`** Reserved and restricted items may not appear in general trackers, digests or automated reminders, at any level of aggregation.
+- **`ai.no_silent_rewording`** The action text may not be edited after the minutes are adopted. A changed scope is a new item that references the old one.
+- **`ai.closure_needs_the_forum`** Only the meeting that raised an item may close it. A tracker tick is not closure.
+- **`ai.age_survives_rewording`** first_raised_at and first_raised_meeting_ref are written once and never updated, whatever happens to the wording.
+- **`ai.chase_respects_the_cycle`** Chasing between sittings is proportionate to criticality and to the forum's cadence. Weekly reminders on a quarterly committee's items teach people to filter the sender. _(soft)_
 
 
 ## Business rules
 
-- **`ai.owner_must_be_a_person`** An action item must name one person. A function, a team or "the group" is rejected at minute-taking, not at the next meeting.
+- **`ai.owner_must_be_a_person`** An action item must name one person. A function, a team or 'the group' is rejected at minute-taking, not at the next sitting.
 - **`ai.default_date_is_the_next_meeting`** An action item with no explicit date inherits the next sitting of its meeting as its due date, marked as inferred. This is what the room already assumes; writing it down is the only thing that makes it chaseable.
 
 - **`ai.minutes_before_the_next_sitting`** Minutes must be circulated before the next sitting of the same meeting, or every action in them is unenforceable at the meeting whose job it is to enforce them.
-
 - **`ai.absent_owner_must_be_notified`** An action assigned to someone not in the room is not live until they have been told directly and separately from the minutes. Minutes are a record, not a notification.
 - **`ai.third_carry_forces_a_decision`** On its third carry-over an item must be re-owned, re-scoped or cancelled. It may not be read out unchanged a fourth time. A matters-arising list that only grows is a committee that has stopped closing things and started performing tracking.
 
-- **`ai.reserved_business_never_leaves_the_room`** An item with confidentiality = reserved must not appear in any general tracker, digest or automated reminder, regardless of how overdue it is.
-- **`ai.closure_is_reported_to_the_room`** Closure is confirmed at the meeting that raised it. An item closed only in a tracker remains open on the record and will be raised again by someone reading the minutes.
+- **`ai.reserved_business_never_leaves_the_room`** An item with confidentiality of reserved or restricted must not appear in any general tracker, digest or automated reminder, regardless of how overdue it is.
+- **`ai.closure_is_reported_to_the_room`** Closure is confirmed at the meeting that raised it. An item closed only in a tracker remains open on the record and will be raised again by whoever reads the minutes.
+- **`ai.carry_from_blocked_is_not_the_owners`** Carry-over accrued while state = pending_approval is not counted against the owner in any per-person report. — _Being blamed at three consecutive sittings for somebody else's signature is how a forum learns that accepting an action is unsafe._
+- **`ai.age_is_preserved_across_rewording`** Editing the action text never resets first_raised_at, first_raised_meeting_ref or carried_over_count.
+- **`ai.no_item_without_a_line_reference`** An adopted minute must give each action a line reference. An action without one cannot be carried, matched or closed against the record.
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **A genuine standing item — risk register review, health and safety report — is not a carried action and must not be counted as one.** — Some things are supposed to appear at every sitting forever. Counting them as carry-over inflates the number that should be diagnostic and trains the chair to ignore it, which destroys the one metric that would otherwise catch a genuinely stuck item.
+ _(overrides ai.third_carry_forces_a_decision, ai.carried_across_consecutive_sittings)_
+- **An item raised in a reserved or closed session never enters a tracker, a digest or a reminder, at any level of aggregation, however overdue.** — A count of one in a reserved category identifies the item as surely as naming it. This is the exception that must be applied before any other rule on this object, because every other rule is about making items visible.
+ _(overrides ai.third_carry_forces_a_decision, ai.default_date_is_the_next_meeting)_
+- **An action the chair directs in the room is live immediately and does not wait for the minutes to be circulated.** — The record follows the instruction; it does not create it. Waiting for the minutes on a chair's direct instruction is how a secretariat loses a week and the chair's confidence at the same time.
+ _(overrides ai.minutes_before_the_next_sitting, ai.record_exists_before_enforcement)_
+- **An owner who was not in the room may legitimately refuse the allocation, and the refusal is not non-delivery.** — They did not agree to it. Recording their refusal as a slip is how a forum acquires the habit of allocating work to whoever is not there, which is the single most corrosive practice in meeting operations and also the easiest.
+ _(overrides ai.owner_must_be_a_person, ai.absent_owner_must_be_notified)_
+- **Where the action serves a statutory or contractual date, the committee's meeting cycle is irrelevant and the item may not be carried.** — "We'll pick it up next quarter" is a perfectly normal sentence in a committee and a breach if the action was a filing. The forum's timetable feels authoritative inside the room and has no standing at all outside it.
+ _(overrides ai.default_date_is_the_next_meeting)_
+- **Where a sitting was cancelled or inquorate, its items neither carry nor go overdue against it.** — Nothing was decided, so nothing was owed, and an item that has 'carried' through two cancelled sittings has in fact carried once. Counting cancellations as carries makes an absent chair look like a failing owner.
+ _(overrides ai.past_its_date_and_still_open, ai.third_carry_forces_a_decision)_
+- **A parent board or committee may close or cancel a subordinate forum's item without that forum reporting it.** — The closure authority runs upward. A subcommittee cannot refuse to close an item the board has stood down, and the rule that only the raising forum may close would otherwise leave the item open forever with nobody entitled to touch it.
+ _(overrides ai.closure_needs_the_forum)_
+- **Where naming the owner in the minute would itself disclose reserved information, the item is recorded against a role and the name is held separately by the secretary.** — Occasionally the identity of the person doing the work is the sensitive fact — an investigation, a personnel matter. The correct answer is a named owner in a restricted register rather than a functional owner in an open one, and the two look identical in any report that does not distinguish them.
+ _(overrides ai.owner_must_be_a_person, ai.single_named_owner)_
+
+
+## Best practices
+
+- **Read every action back aloud — verb, owner, date — before the meeting moves on.** — It costs four seconds at the only moment when everyone who could contradict it is present. It converts a mumble into a commitment, catches the functional owner immediately, and is the single highest-yield habit in meeting operations.
+
+- **Get the minutes out within two working days of the sitting.** — After about a week the attendees' recollections have diverged and the minutes stop being a record and start being a proposal that somebody will argue with. Circulation lag is the best single predictor of whether a forum's actions land.
+
+- **Give every undated action the next sitting as its date, marked as inferred, and say so in the minute.** — It is what the room already means. Writing it down converts a shared assumption into something chaseable, and marking it inferred keeps the chase honest with the one person who was not there.
+
+- **Tell anyone allocated work in their absence directly, not by copying them the minutes.** — Nobody reads minutes for a meeting they did not attend. A direct message also gives them the chance to decline before the item has aged, which is the cheapest possible moment for that conversation.
+
+- **Order the matters-arising list by carry count, not by agenda number.** — The oldest item should be the first embarrassment rather than the last line nobody reaches. Agenda order systematically protects the items that have failed longest.
+
+- **At the third carry, put cancellation on the agenda as the default option.** — The forum usually takes it, and nobody ever proposes it — because proposing it means saying out loud that a year of tracking achieved nothing. Making it the default converts an admission into a routine agenda mechanic.
+
+- **Close items against an attached artefact, and report the closure to the forum that raised them.** — A tracker tick is not closure, and a verbal assurance at a sitting is closure only if it is minuted. Doing both is what makes the item recoverable three years later by an auditor who was not there — which is the whole purpose of this object.
+
+- **Carry the original minute reference with the item forever, even as its wording is refined.** — It is what lets an item be tracked across a year of sittings without being laundered into new business. Trivial to maintain, and impossible to reconstruct once lost.
+
+- **Pre-brief the chair on the two or three items that need their sponsorship, before the meeting rather than during it.** — Chair sponsorship is the strongest available accelerant and it is allocated in the ten minutes before a meeting, not in it. An administrator who uses that window well moves more items than any reminder system.
+
+
+
+## Anti-patterns
+
+- **"Finance to confirm the depreciation policy" is minuted as an action item.** — tempting because Nobody in the room wants to name a colleague who is not there to object, and the function genuinely is responsible. It is polite, it is accurate, and it is unfalsifiable at the moment it is written.
+ Instead: Name one person before the meeting moves on. If nobody in the room will accept it, that refusal is the finding and belongs in the minute.
+- **The meeting happened, the decisions were real, and three weeks later nothing has been circulated.** — tempting because Minute-writing is unbudgeted work that lands on the busiest person in the room, and its absence produces no complaint from anybody. Every other task competes with it and wins.
+ Instead: Track circulation lag as a first-class metric and alert on it at 48 hours. It is the highest-yield alert in the whole domain and it is about a document, not an action.
+- **The matters-arising section has grown every quarter for two years and nothing has ever been cancelled.** — tempting because Carrying an item costs one line and thirty seconds. Cancelling it requires somebody to say that a year of tracking achieved nothing, in front of the person who owned it.
+ Instead: Propose cancellation as the default at the third carry, and report matters_arising_length to the chair as a number rather than a list.
+- **The item is assigned to whoever is not in the room.** — tempting because Assigning to an absent colleague meets no resistance, which makes it the path of least friction in any meeting running late. It is also frequently the right person.
+ Instead: Allocate to someone present, or allocate provisionally and notify them directly the same day with an explicit right to decline.
+- **An item that has failed for a year reappears at sitting five under new wording as fresh business.** — tempting because Refining an action feels like progress, and the softer version is genuinely easier to close. Nobody is being dishonest; the item is simply retyped by a different secretary.
+ Instead: Keep first_raised_at, first_raised_meeting_ref and the original minute line immutable. A changed scope is a new item that explicitly references the old one.
+- **Items are closed in the action tracker and never reported closed to the forum that raised them.** — tempting because The administrator knows it is done and the tracker is theirs to maintain. Reporting it costs a line in a paper nobody is asking for.
+ Instead: Report closures to the raising forum and record the sitting in closure_reported_in_ref. Closure is an event in the room, not a state in a spreadsheet.
+- **An automated action digest includes an item from a board reserved session.** — tempting because The tracker inherits nothing from the forum. Confidentiality is a property of the meeting and the item is a row, and no digest was ever built to ask.
+ Instead: Inherit confidentiality from the meeting at capture and suppress before any aggregation, including counts.
+- **An item carried three times behind an unsigned approval is reported as the owner's failure at each sitting.** — tempting because The action register records one owner and one date. Nothing in the matters-arising line distinguishes 'not done' from 'cannot be done yet', and the owner is the name on the row.
+ Instead: Model pending_approval as a distinct state, exclude that carry from per-person reporting, and put the approver on the agenda instead.
+- **The only complete record of a forum's open actions is a spreadsheet on the secretary's laptop.** — tempting because It is faster, more accurate and more current than any shared tool, so the shared tool is never adopted. Everyone is genuinely better off until the week the secretary is away.
+ Instead: Keep the authoritative register somewhere the deputy can reach, even at the cost of it being slightly less good.
+
+
+## Dependencies
+
+- `admin.obj.core.meeting` — requires (hard)
+- `admin.obj.core.commitment` — derived_from (hard)
+- `admin.obj.core.document` — requires (hard)
+- `admin.obj.core.stakeholder` — requires (hard)
+- `admin.obj.core.approval` — blocks (soft)
+- `admin.obj.core.deadline` — enriches (soft)
+- `admin.obj.core.escalation` — enriches (soft)
+- `admin.obj.core.employee_record` — invalidated_by (hard)
 
 
 ## Inputs
@@ -153,20 +283,24 @@ Initial `draft`
 - **calendar** — whether the meeting happened at all
 - **email** — the action as agreed
 - **email** — the date, where one was given
-- **email** — whether anything went out after the meeting
+- **email** — whether anything went out after the sitting
 - **document** — circulated minutes, action columns, minute references
 - **meeting_transcript** — who volunteered, who was told, who objected
-- **manual_entry** — the minute-taker's own tracker — usually a spreadsheet, usually authoritative
+- **register** — a secretariat-maintained action register
+- **manual_entry** — the minute-taker's own tracker
+- **attestation** — the owner's verbal report at the sitting
 
 
 ## Outputs
 
-- **`action_state`** Standing of the item, including the draft state inwhich it is real but unrecorded. → L4.reasoning_unit, L4.decision_maker
-- **`carry_pressure_bp`** How many sittings this has survived, weightedby forum authority. → L4.reasoning_unit
-- **`record_gap`** True when a meeting has produced actions and no minuteshave gone out. The highest-yield alert this object can raise. → L4.decision_maker, L5.execution_planning
-- **`next_sitting_agenda`** Items that must be read out at the next meeting,in carry order. → L5.execution_planning
-- **`owner_notification`** Who needs telling directly because they werenot in the room. → L5.communication_planning, L5.2.channel_planner
-- **`forum_closure_rate`** Per-meeting closure performance, fed backfor learning. → L6.learning_unit
+- **`action_state`** Standing of the item, including the draft state in which it is real but unrecorded. → L4.reasoning_unit, L4.decision_maker
+- **`carry_pressure_bp`** How many sittings this has survived, weighted by forum authority. The number that should order the matters-arising list. → L4.reasoning_unit
+- **`record_gap`** True when a meeting has produced actions and no minutes have gone out. The highest-yield alert this object can raise, and it is time-critical rather than important. → L4.decision_maker, L5.execution_planning
+- **`next_sitting_agenda`** Items that must be read out at the next meeting, in carry order rather than agenda order. → L5.execution_planning
+- **`owner_notification`** Who needs telling directly because they were not in the room. Minutes are a record, not a notification. → L5.communication_planning, L5.2.channel_planner
+- **`suppression_flag`** True when the item must never appear in a digest or automated reminder, whatever its state. → L5.communication_planning, L5.2.channel_planner
+- **`closure_on_the_record`** Whether the forum accepted the closure, as distinct from whether a tracker was ticked. → L4.reasoning_unit, L6.learning_unit
+- **`forum_closure_rate`** Per-meeting closure performance, fed back for learning. Read per forum; the average is meaningless. → L6.learning_unit
 
 
 ## Events
@@ -176,56 +310,81 @@ Initial `draft`
 - **`ai.minutes_adopted`** Minutes Adopted
 - **`ai.carried_over`** Action Carried Over
 - **`ai.went_overdue`** Action Overdue
+- **`ai.owner_disowned`** Owner Rejected The Allocation — invalidates owner_ref, due_at
 - **`ai.escalated_to_chair`** Escalated to the Chair
 - **`ai.closed`** Action Closed
+- **`ai.reworded`** Action Reworded — invalidates is_specific, carried_over_count
 - **`ai.lost`** Action Lost
 
 
 ## Actions
 
-- **Capture the action as it is agreed** (agent) — In the meeting,with owner and date read back aloud. Reading it back is what converts a mumble into a commitment, and it takes four seconds.
-- **Circulate the minutes** (agent) — Within two working days. After a week the attendees' memories have diverged and the minutes become a proposal rather than a record.
-- **Tell the absent owner directly** (agent) — Separatelyfrom the minutes. Nobody reads minutes they were not in the meeting for.
-- **Put a date on an undated action** (agent) — Default to the next sitting and say so. An inferred date that everybody can see beats a shared assumption nobody wrote down.
-- **Build the matters-arising list** (agent) — Orderedby carry count, not by agenda number. The oldest item should be the first embarrassment, not the last line.
-- **Propose closing a stale item** (agent) — On the third carry,put cancellation on the agenda as the default option. The forum will usually take it, and nobody ever proposes it.
-- **Escalate to the chair** (human) — Chair sponsorship isthe only reliable accelerant available inside a committee.
-- **Attach the deliverable to the item** (agent) — Closesit against the record rather than against a verbal assurance at the next sitting.
+- **Capture the action as it is agreed** (agent) — In the meeting, with owner and date read back aloud. Reading it back is what converts a mumble into a commitment, and it takes four seconds.
+- **Circulate the minutes** (agent) — Within two working days. After a week the attendees' memories have diverged and the minutes stop being a record and become a proposal.
+- **Tell the absent owner directly** (agent) — Separately from the minutes. Nobody reads minutes for a meeting they were not in, and an allocation they have not seen is not an allocation.
+- **Put a date on an undated action** (agent) — Default to the next sitting and say so. An inferred date everybody can see beats a shared assumption nobody wrote down.
+- **Build the matters-arising list** (agent) — Ordered by carry count, not by agenda number. The oldest item should be the first embarrassment rather than the last line nobody reaches.
+- **Propose closing a stale item** (agent) — On the third carry, put cancellation on the agenda as the default option. The forum usually takes it, and nobody ever proposes it.
+- **Re-own the item at the sitting** (human) — The correct response to a third carry far more often than a fourth reading is, and the only place it can be done without a private conversation first.
+- **Escalate to the chair** (human) — Chair sponsorship is the only reliable accelerant available inside a committee, and it cannot be requested twice for the same item.
+- **Attach the deliverable to the item** (agent) — Closes it against the record rather than against a verbal assurance at the next sitting.
+- **Report the closure to the meeting that raised it** (agent) — Without this the item is closed in the tracker and open on the record, and the next chair will raise it.
 
 
 ## Evidence
 
-- **document** · 9800 bp — Adopted minutes with a line reference. As closeto incontrovertible as administrative evidence gets, and it survives everyone who was in the room.
-- **meeting_transcript** · 8500 bp — Verbatim capture of the assignment.Stronger than minutes on wording, weaker on authority — nobody adopted it.
-- **email** · 8000 bp — Minutes circulated to attendees without objection.Agreement by silence, and it holds up.
-- **calendar** · 6000 bp — Proves the meeting occurred and roughly who wasinvited. Says nothing about what was agreed.
-- **manual_entry** · 7000 bp — The secretary's action log. Usually the mostaccurate object in the organisation and stored in a spreadsheet on one laptop.
-- **register** · 8500 bp — A formal action register maintained by a secretariat.Where one exists it outranks everything except adopted minutes.
-- **derived** · 3500 bp — Inferred from meeting and thread shape. Corroboratingonly.
+- **document** · 9800 bp — Adopted minutes with a line reference. As close to incontrovertible as administrative evidence gets, and it survives everyone who was in the room.
+- **register** · 8800 bp — A formal action register maintained by a secretariat. Where one exists it outranks everything except adopted minutes, and it is usually a spreadsheet on one laptop.
+- **meeting_transcript** · 8500 bp — Verbatim capture of the assignment. Stronger than minutes on wording, weaker on authority — nobody adopted it.
+- **email** · 8000 bp — Minutes circulated to attendees without objection. Agreement by silence, and it holds up better than people expect.
+- **manual_entry** · 7000 bp — The secretary's own action log. Frequently the most accurate object in the organisation and stored where nobody else can reach it.
+- **attestation** · 6800 bp — The owner's verbal report at the sitting. Worth more here than in a plain tracker, because it was given in front of people who could have contradicted it.
+- **calendar** · 6000 bp — Proves the meeting occurred and roughly who was invited. Says nothing whatsoever about what was agreed.
+- **derived** · 3500 bp — Inferred from meeting and thread shape. Corroborating only, and never grounds for telling a committee it has failed.
 
 
 ## Metrics
 
-- **minutes_circulation_lag** (hours) — Sitting to circulation. The best singlehealth measure of a secretariat, and the one that most predicts whether actions land.
-- **action_closure_rate** (percent) — Closed by the next sitting, over raised.Read per forum; averaging across forums hides the one committee that never closes anything.
-- **average_carry_count** (count) — Mean sittings survived. Creeping above twois the earliest sign a forum has become a status meeting.
-- **undated_action_share** (percent) — Actions minuted with no date. Usually athird, and usually a surprise to the chair.
-- **absent_owner_share** (percent) — Actions assigned to people not in the room.Correlates with non-delivery more strongly than any property of the action itself.
-- **matters_arising_length** (count) — Items in the matters-arising section. Alist that only ever grows is the whole diagnosis in one number.
+- **minutes_circulation_lag** (hours) — Sitting to circulation. The best single health measure of a secretariat, and the one that most predicts whether actions land at all.
+- **action_closure_rate** (percent) — Closed by the next sitting, over raised. Read per forum; averaging across forums hides the one committee that has never closed anything.
+- **average_carry_count** (count) — Mean sittings survived. Creeping above two is the earliest sign a forum has become a status meeting rather than a decision-making one.
+- **undated_action_share** (percent) — Actions minuted with no date. Usually about a third, and usually a surprise to the chair.
+- **absent_owner_share** (percent) — Actions assigned to people who were not in the room. Correlates with non-delivery more strongly than any property of the action itself.
+- **matters_arising_length** (count) — Items in the matters-arising section. A list that only ever grows is the whole diagnosis in one number.
+- **on_record_closure_share** (percent) — Closures confirmed at the forum, over closures recorded anywhere. The gap between the two is what the next chair will find.
+- **false_overdue_rate** (percent) — Items reported overdue at a sitting that were already complete. One of these in front of a chair costs more trust than twenty correct nudges earn.
+
+
+## References
+
+- **Robert's Rules of Order** · framework
+- **Chartered Governance Institute — minute taking and action registers** · practitioner
+- **UK Corporate Governance Code — recording of directors' concerns in the minutes** · standard
+- **ISO 30301 — Management systems for records** · standard
+- **Conversations for Action — the request / promise cycle** · framework · Fernando Flores
+- **RACI responsibility assignment** · framework
+- **PRINCE2 — exception reporting to the project board** · methodology
+- **Company secretarial practice — matters arising and the action register** · practitioner
+- **GDPR Art. 30 — records of processing activities** · standard
 
 
 ## Examples
 
-- **"AP 7.3 — Finance to confirm the depreciation policy by 30 June"** — No named owner.Will be read out unchanged at the next four meetings and closed by exhaustion.
-- **Board action assigned to a director who dialled out before that item** — owner_was_presentfalse, confidentiality reserved. They will discover it in the minutes and object, correctly.
-- **Weekly ops meeting: "chase the landlord", no date** — is_dated false. The room means'by next Tuesday'. Nobody writes it down, so it is not chaseable, and it is genuinely not late until someone declares a date.
-- **An item on its fourth carry, reported 'no update' three times** — The forum has decidednot to do it and has not said so. Cancellation is the honest ending and nobody will propose it.
-- **Audit committee action closed in the tracker, never reported to the committee** — closure_qualityasserted. On the record it is still open, and the next chair will raise it.
-- **Meeting held, minutes never circulated** — Every action in that room is in state draft— real, binding, and invisible. The characteristic failure of meeting operations, and no system emits an event for it.
+- **"AP 7.3 — Finance to confirm the depreciation policy by 30 June"** _(misclassification)_ — Dated, referenced, and owned by nobody. It will be read out unchanged at the next four sittings and closed by exhaustion. The date is the part everyone looks at and the owner is the part that decides the outcome.
+
+- **Board action assigned to a director who had dialled out before that item** _(edge)_ — owner_was_present false, confidentiality reserved. They will discover it in the minutes and object, correctly, and the objection will be recorded as a delay.
+- **Weekly ops meeting: "chase the landlord", no date** _(typical)_ — The room means "by next Tuesday". Nobody writes it down, so it is not chaseable, and it is genuinely not late until somebody declares a date. One line in the minute fixes it permanently.
+
+- **An item on its fourth carry, reported 'no update' three sittings running** _(edge)_ — The forum has decided not to do it and has not said so. Cancellation is the honest ending and nobody will propose it, because proposing it means admitting the previous three readings were theatre.
+- **Audit committee action closed in the tracker, never reported to the committee** _(misclassification)_ — closure_quality asserted, closed_by_the_forum false. On the record it is still open, and the next chair will raise it in front of the auditors.
+- **Meeting held, minutes never circulated** _(counterexample)_ — Every action in that room is in state draft — real, binding and invisible. The characteristic failure of meeting operations, and no system emits an event for it because nothing happened.
+
+- **"I'll send you the schedule on Thursday", said on a call two days after the board meeting** _(misclassification)_ — Attaches to the same node as the board's actions and is not one. It is admin.obj.core.commitment — no forum, no minute, no witnesses, and no right to the authority this object carries.
+- **Risk register review, standing item at every quarterly sitting for six years** _(counterexample)_ — Twenty-four appearances and zero carry-over. Counting it as a carried action inflates the one number on this object that is supposed to be diagnostic.
 
 ## Metadata
 
-owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional**
+owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Four of eleven patterns fire. What is striking about the seven that do not is that they nearly all wait on one thing — the minutes — and the minutes are already being written by hand every week in every organisation using this. meeting.attendees is the cheapest ask on the whole object: the roster is already inside the calendar payload and is discarded at ingestion, and it is what stands between the brain and the strongest known predictor of a minuted action never being done. meeting.series_id is second, because without it a weekly committee is thirty unrelated events and carry-over — the diagnostic number for this object — cannot be computed at all.
+> Rewritten onto the 23-section schema. Four of thirteen patterns fire. What is striking about the nine that do not is that they nearly all wait on one thing — the minutes — and the minutes are already being written by hand every week in every organisation that would use this. meeting.attendees is the cheapest ask on the whole object: the roster is already inside the calendar payload and is discarded at ingestion, and it is what stands between the brain and the strongest known predictor of a minuted action never being done. meeting.series_id is second, because without it a weekly committee is thirty unrelated events and carry-over — the diagnostic number for this object — cannot be computed at all. document.classification is third and is a safety ask rather than a value one: until it exists, no automated digest built on this object can be trusted not to surface reserved business.

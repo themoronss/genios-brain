@@ -282,7 +282,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - blocks **Contact** / `contact.crm_states_the_title` (would yield 8000 bp)
 - blocks **Persona** / `persona.assigned_from_normalised_title` (would yield 8500 bp)
-- Contact: The CRM connectorreads the record; the title is never projected into a typed L2 fact, so persona assignment has nothing to key on and every contact starts unclassified.
+- Contact: The CRM connector reads the record; the title is never projected into a typed L2 fact, so persona assignment has nothing to key on and every contact starts unclassified.
 - Persona: The obvious routeto assignment and the one that does not exist. Without it every contact starts unclassified and outreach falls back to generic copy, which is the failure this object was built to prevent.
 
 ### `pain_stated` · obs_kind
@@ -310,7 +310,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ### `email_bounced` · obs_kind
 
 - blocks **Contact** / `contact.address_hard_bounced` (would yield 10000 bp)
-- Contact: Delivery telemetry is availablefrom every mail provider and none of it is ingested. Without it the system cannot tell silence from non-delivery, and those two states want opposite next actions.
+- Contact: Delivery telemetry is available from every mail provider and none of it is ingested. Without it the system cannot tell silence from non-delivery, and those two states want opposite next actions.
 
 ### `icp.active_profile_version` · fact_path
 
@@ -358,7 +358,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ### `contact_departed` · obs_kind
 
 - blocks **Contact** / `contact.left_the_company` (would yield 9500 bp)
-- Contact: L2 emits champion_change, whichonly fires for a mapped champion. An ordinary contact leaving is invisible, so sequences keep running into a dead mailbox and the org chart silently rots. This is the single highest-value gap on this object: it is cheap to detect from bounce plus auto-reply text and it corrupts every downstream map when missed.
+- Contact: L2 emits champion_change, which only fires for a mapped champion. An ordinary contact leaving is invisible, so sequences keep running into a dead mailbox and the org chart silently rots. This is the single highest-value gap on this object: it is cheap to detect from bounce plus auto-reply text and it corrupts every downstream map when missed.
 
 ### `crm.account.arr` · fact_path
 
@@ -481,7 +481,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ### `crm.contact.manager_id` · fact_path
 
 - blocks **Contact** / `contact.reporting_line_from_the_org_chart` (would yield 9000 bp)
-- Contact: reports_to is the fieldthat makes a missing committee seat visible — two hops up from a user is usually where the money sits — and nothing populates it. The org chart exists in every HRIS and every enrichment vendor, and reaches neither the CRM projection nor the graph, so the escalation path has to be discovered by asking.
+- Contact: reports_to is the field that makes a missing committee seat visible — two hops up from a user is usually where the money sits — and nothing populates it. The org chart exists in every HRIS and every enrichment vendor, and reaches neither the CRM projection nor the graph, so the escalation path has to be discovered by asking.
 
 ### `crm.deal.budget` · fact_path
 
@@ -874,7 +874,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ### `derived.reply_hour_histogram` · derived
 
 - blocks **Contact** / `contact.timezone_from_reply_behaviour` (would yield 7000 bp)
-- Contact: Every reply alreadycarries a timestamp; nothing aggregates them per contact. Send-time is the cheapest available lever on reply rate and is currently set by the sender's clock.
+- Contact: Every reply already carries a timestamp; nothing aggregates them per contact. Send-time is the cheapest available lever on reply rate and is currently set by the sender's clock.
 
 ### `derived.reply_term_frequency` · derived
 

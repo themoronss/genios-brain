@@ -1,0 +1,1529 @@
+identity:
+  id: admin.obj.travel_booking.trip
+  scope: capability
+  name: Trip
+  domain: admin
+  subdomain: travel_and_events
+  owner_capability: admin.travel_and_events.travel_booking
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Business Travel
+    - Journey
+    - Travel Request
+    - Itinerary Root
+
+purpose:
+  statement: >
+    One person's authorised journey, from the business reason that justifies it to the claim that
+    closes it. The trip binds five things that live in five different systems and are almost never
+    joined: the approval that authorised the spend, the budget it commits, the bookings that
+    implement it, the duty-of-care obligation the organisation takes on the moment somebody boards,
+    and the reconciliation that finally tells anyone what it cost. Its economics are governed by one
+    variable — lead time — and its risk is governed by another the organisation usually cannot
+    answer at all: where exactly is this person right now.
+  discriminator: >
+    The trip is the COMMITMENT TO TRAVEL, not the booking. Bookings are replaceable — the flight can
+    be changed twice and the hotel swapped and it is still the same trip, still the same approval,
+    still the same duty of care. Anything that disappears when the ticket is reissued was never the
+    object. The practical test: if the itinerary were rebuilt from scratch tomorrow, what would have
+    to survive unchanged? That is the trip.
+  answers:
+    - Why is this journey happening, and did somebody with authority agree to it before money moved?
+    - What will it cost, against which budget, and how much of that is already unrecoverable?
+    - Can this person lawfully enter and work there on these dates?
+    - Where are they, and who is responsible for them if something happens?
+    - Has it been reconciled, evidenced and claimed inside the window?
+  not:
+    - >
+      NOT a booking. A flight, a hotel and a transfer are implementations. Modelling the booking as
+      the unit is why cancelling a trip leaves three orphaned reservations and an unused ticket
+      credit nobody reclaims.
+    - >
+      NOT an itinerary. `admin.obj.core.itinerary` is the sequenced, on-the-ground schedule — the
+      thing the traveller actually reads. The trip is the authorisation and accountability wrapper
+      around it, and it survives the itinerary being rewritten mid-journey.
+    - >
+      NOT an expense claim. `admin.obj.core.expense` is what comes back afterwards. Treating the
+      claim as the record of the trip means the organisation only learns what it spent after it has
+      spent it, which is the position most travel functions are actually in.
+    - >
+      NOT a meeting. The meeting is the reason; the trip is the cost and the obligation. They are
+      routinely conflated, which is how a two-hour meeting acquires a two-day journey nobody
+      questioned.
+
+attributes:
+
+  - name: justification
+    purpose: Why the organisation is paying for somebody to be somewhere else.
+    type: composite
+    contains: [purpose_category, business_reason, meeting_ref, alternative_considered,
+               attendee_count_from_org]
+
+  - name: itinerary_shape
+    purpose: The bare geometry of the journey. Detail lives in the itinerary object.
+    type: composite
+    contains: [origin, destination, additional_stops, depart_at, return_at, duration_days,
+               international, itinerary_ref]
+
+  - name: traveller
+    purpose: Who is going, and under what employment basis.
+    type: composite
+    contains: [traveller_ref, employment_basis, first_time_traveller, accessibility_needs,
+               emergency_contact_recorded]
+
+  - name: authorisation
+    purpose: Whether somebody with authority agreed before money moved.
+    type: composite
+    contains: [approval_ref, approved_at, approved_by_ref, approval_precedes_booking,
+               budget_line_ref, authorised_amount]
+
+  - name: commercial
+    purpose: What it costs, and how much of that can still be recovered.
+    type: composite
+    contains: [estimated_cost, committed_cost, sunk_cost, refundable_portion, currency,
+               booked_at, lead_time_days, fare_class, preferred_supplier_used, unused_credit_value]
+
+  - name: compliance
+    purpose: Whether the journey is within policy and lawful at the destination.
+    type: composite
+    contains: [policy_compliant, policy_exceptions, documentation_ready, visa_required,
+               visa_state, permit_required, tax_presence_risk]
+
+  - name: duty_of_care
+    purpose: The obligation the organisation takes on the moment the traveller departs.
+    type: composite
+    contains: [risk_rating, risk_assessment_done, traveller_locatable, insurance_confirmed,
+               briefing_delivered, checkin_expected, lone_traveller]
+
+  - name: sustainability
+    purpose: The reportable environmental cost.
+    type: composite
+    contains: [emissions_kg, mode_of_transport, lower_carbon_option_available]
+
+  - name: closure
+    purpose: The reconciliation half — the half that quietly does not happen.
+    type: composite
+    contains: [state, reconciled_at, claim_ref, claim_due_at, receipts_complete,
+               actual_cost, variance_to_estimate]
+
+  - name: purpose_category
+    purpose: The class of reason.
+    type: value
+    data_type: enum
+    allowed_values: [client_meeting, internal_meeting, conference, training, site_visit,
+                     audit_or_inspection, recruitment, relocation, other]
+    required: true
+    description: >
+      Recorded as an enum so travel can be counted by reason. `internal_meeting` dominating the
+      distribution is the finding that survives every cost-reduction exercise, because it is the only
+      category the organisation fully controls.
+
+  - name: business_reason
+    purpose: Why this journey, in the requester's own words.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      "Client meeting" is a category, not a reason. A usable reason names what cannot be achieved
+      without being present, and it is the only thing that makes a later refusal defensible.
+
+  - name: meeting_ref
+    purpose: The meeting the journey exists for.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.meeting
+    description: >
+      The join that makes a trip auditable. A trip with no reachable meeting is either badly recorded
+      or was never necessary, and both are worth surfacing.
+
+  - name: alternative_considered
+    purpose: Whether a remote alternative was assessed.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      A one-field control with an unusually high yield. Asking the question at request time removes a
+      material share of internal travel without anybody having to refuse anything.
+
+  - name: attendee_count_from_org
+    purpose: How many people from this organisation are travelling to the same event.
+    type: derived
+    data_type: integer
+    derived_from: [meeting_ref, destination, depart_at]
+    description: >
+      Individually approved, collectively unexamined. Four people flying to the same two-hour meeting
+      is a decision nobody made, because each approval was reasonable on its own.
+
+  - name: origin
+    purpose: Where the journey starts.
+    type: value
+    data_type: string
+
+  - name: destination
+    purpose: Primary destination.
+    type: value
+    data_type: string
+    required: true
+
+  - name: additional_stops
+    purpose: Further destinations on a multi-leg journey.
+    type: value
+    data_type: list
+
+  - name: depart_at
+    purpose: Departure.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [meeting.start_at]
+    description: >
+      `meeting.start_at` is the nearest live substrate path and is a proxy, not the value — it is the
+      reason for the journey rather than the journey. Useful today precisely because it is the only
+      forward-looking date the pipeline can see.
+
+  - name: return_at
+    purpose: Return.
+    type: value
+    data_type: timestamp
+
+  - name: duration_days
+    purpose: Length of the journey.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [depart_at, return_at]
+
+  - name: international
+    purpose: Whether a border is crossed.
+    type: derived
+    data_type: boolean
+    derived_from: [origin, destination, additional_stops]
+    description: >
+      Flips almost every other requirement on this object at once — documentation, insurance, tax
+      presence, risk rating and reporting all change on this single boolean.
+
+  - name: itinerary_ref
+    purpose: The detailed schedule.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.itinerary
+
+  - name: traveller_ref
+    purpose: Who is going.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    required: true
+
+  - name: employment_basis
+    purpose: The basis on which they travel.
+    type: value
+    data_type: enum
+    allowed_values: [employee, contractor, agency, candidate, guest, board_member]
+    default: employee
+    description: >
+      Contractors, candidates and guests routinely travel on the organisation's arrangements while
+      sitting outside its insurance and its duty-of-care programme. The gap is discovered at the
+      point of an incident.
+
+  - name: first_time_traveller
+    purpose: Whether this is the person's first business trip, or first to this destination.
+    type: value
+    data_type: boolean
+    default: false
+    description: The population that most needs a briefing and is least likely to ask for one.
+
+  - name: accessibility_needs
+    purpose: Requirements affecting how the journey must be arranged.
+    type: value
+    data_type: string
+    sensitivity: confidential
+
+  - name: emergency_contact_recorded
+    purpose: Whether somebody can be reached if something happens.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+
+  - name: approval_ref
+    purpose: The authorisation.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+
+  - name: approved_at
+    purpose: When it was authorised.
+    type: value
+    data_type: timestamp
+
+  - name: approved_by_ref
+    purpose: Who authorised it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+
+  - name: approval_precedes_booking
+    purpose: Whether authorisation actually came before commitment.
+    type: derived
+    data_type: boolean
+    derived_from: [approved_at, booked_at]
+    description: >
+      The most quietly important field on this object. An approval granted after a non-refundable
+      booking is not a control — it is a signature on a decision already made, and it is the normal
+      state wherever travel is booked by the traveller.
+
+  - name: budget_line_ref
+    purpose: What it is charged to.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+
+  - name: authorised_amount
+    purpose: The amount authorised, where a cap was set.
+    type: value
+    data_type: money
+
+  - name: estimated_cost
+    purpose: Expected total at request time.
+    type: value
+    data_type: money
+
+  - name: committed_cost
+    purpose: What has actually been spent or contracted so far.
+    type: value
+    data_type: money
+    description: >
+      The number that matters for budget purposes and the one that appears nowhere until the claim
+      lands. Committed-but-not-yet-invoiced travel is a standard period-end surprise.
+
+  - name: sunk_cost
+    purpose: What cannot be recovered if the trip is cancelled today.
+    type: derived
+    data_type: money
+    derived_from: [committed_cost, refundable_portion]
+    description: >
+      Changes the cancellation decision entirely and is almost never presented at the moment the
+      decision is being made.
+
+  - name: refundable_portion
+    purpose: How much could still be recovered.
+    type: value
+    data_type: money
+
+  - name: currency
+    purpose: Currency of the committed amounts.
+    type: value
+    data_type: string
+
+  - name: booked_at
+    purpose: When the first commitment was made.
+    type: value
+    data_type: timestamp
+
+  - name: lead_time_days
+    purpose: Days between booking and departure.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [booked_at, depart_at]
+    description: >
+      The single most actionable number on the object. Cost is dominated by it, and it is a function
+      of how fast the approval moved — which makes most travel overspend an administrative
+      throughput problem rather than a purchasing one.
+
+  - name: fare_class
+    purpose: Class of travel taken.
+    type: value
+    data_type: enum
+    allowed_values: [economy, premium_economy, business, first, rail_standard, rail_first, not_applicable]
+    default: economy
+
+  - name: preferred_supplier_used
+    purpose: Whether the negotiated supplier was used.
+    type: value
+    data_type: boolean
+    description: >
+      Booking off-programme forfeits the negotiated rate and, more importantly, removes the traveller
+      from the tracking feed the duty-of-care obligation depends on.
+
+  - name: unused_credit_value
+    purpose: Value of tickets cancelled but still redeemable.
+    type: value
+    data_type: money
+    description: >
+      A real asset with an expiry date, held by the airline, tracked by nobody, and written off by
+      default. Most organisations discover the balance only when a travel management company reports it.
+
+  - name: policy_compliant
+    purpose: Whether the journey sits inside the travel policy.
+    type: derived
+    data_type: boolean
+    derived_from: [fare_class, lead_time_days, preferred_supplier_used, estimated_cost]
+
+  - name: policy_exceptions
+    purpose: The specific breaches, where there are any.
+    type: value
+    data_type: list
+
+  - name: documentation_ready
+    purpose: Whether the traveller can lawfully make this journey.
+    type: derived
+    data_type: boolean
+    derived_from: [visa_state, permit_required, international]
+
+  - name: visa_required
+    purpose: Whether entry requires a visa.
+    type: value
+    data_type: boolean
+
+  - name: visa_state
+    purpose: Where the visa process has got to.
+    type: value
+    data_type: enum
+    allowed_values: [not_required, not_started, submitted, approved, refused, expired, unknown]
+    default: unknown
+    description: >
+      The long-lead external dependency that actually cancels trips. Queue times are measured in
+      weeks and are entirely outside the organisation's control, which is why documentation should be
+      resolved before flights are booked and almost never is.
+
+  - name: permit_required
+    purpose: Whether working at the destination needs a permit distinct from entry.
+    type: value
+    data_type: boolean
+    description: >
+      Entering as a visitor and working are different permissions, and the distinction is routinely
+      missed for short technical visits. It is the version of this that ends in a border refusal.
+
+  - name: tax_presence_risk
+    purpose: Whether the pattern of travel creates a taxable presence or social-security exposure.
+    type: derived
+    data_type: enum
+    allowed_values: [none, monitor, likely, established]
+    default: none
+    derived_from: [destination, duration_days, traveller_ref]
+    description: >
+      Accumulates across trips rather than arising from one. Nobody owns the aggregate, so it is
+      discovered by a tax authority rather than by the organisation.
+
+  - name: risk_rating
+    purpose: The destination's assessed risk level.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, extreme, unassessed]
+    default: unassessed
+
+  - name: risk_assessment_done
+    purpose: Whether a documented assessment exists for this journey.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: traveller_locatable
+    purpose: Whether the organisation could say where this person is right now.
+    type: derived
+    data_type: boolean
+    derived_from: [preferred_supplier_used, itinerary_ref, checkin_expected]
+    description: >
+      The duty-of-care question in one field. If the answer is no, every policy document about
+      traveller safety is describing a capability the organisation does not have.
+
+  - name: insurance_confirmed
+    purpose: Whether cover is in force for this traveller on these dates.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: briefing_delivered
+    purpose: Whether a destination briefing was given.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: checkin_expected
+    purpose: Whether the traveller is expected to check in during the journey.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: lone_traveller
+    purpose: Whether the person is travelling alone.
+    type: derived
+    data_type: boolean
+    derived_from: [attendee_count_from_org]
+
+  - name: emissions_kg
+    purpose: Estimated emissions for the journey.
+    type: derived
+    data_type: number
+    unit: kg_co2e
+    derived_from: [origin, destination, mode_of_transport, fare_class]
+    description: >
+      Reportable under Scope 3 category 6 in an increasing number of jurisdictions. Fare class is an
+      input because premium cabins are allocated a multiple of the economy figure.
+
+  - name: mode_of_transport
+    purpose: Primary mode.
+    type: value
+    data_type: enum
+    allowed_values: [air, rail, road, sea, mixed]
+    default: air
+
+  - name: lower_carbon_option_available
+    purpose: Whether a viable lower-emission alternative existed.
+    type: derived
+    data_type: boolean
+    derived_from: [origin, destination, duration_days, mode_of_transport]
+
+  - name: state
+    purpose: Where the trip is in its life.
+    type: value
+    data_type: enum
+    allowed_values: [draft, pending_approval, approved, booked, in_progress, completed,
+                     cancelled, overdue, expired]
+    default: draft
+
+  - name: reconciled_at
+    purpose: When the trip was financially closed.
+    type: value
+    data_type: timestamp
+
+  - name: claim_ref
+    purpose: The expense claim that closes it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.expense
+
+  - name: claim_due_at
+    purpose: The deadline for submitting the claim.
+    type: value
+    data_type: timestamp
+
+  - name: receipts_complete
+    purpose: Whether the evidence is all present.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: actual_cost
+    purpose: What it finally cost.
+    type: value
+    data_type: money
+
+  - name: variance_to_estimate
+    purpose: Difference between the estimate that justified it and the outcome.
+    type: derived
+    data_type: money
+    derived_from: [estimated_cost, actual_cost]
+    description: >
+      Systematically under-estimated at request time, because the estimate is what the approval is
+      judged against. Measuring the variance is what makes the next estimate honest.
+
+states:
+  initial: draft
+  terminal: [completed, cancelled, expired]
+  values:
+    - name: draft
+      description: A journey somebody is thinking about. Cheap to abandon, and the only state where that is true.
+    - name: pending_approval
+      description: With an approver, and the fare rising while it waits.
+      implies: Every day here has a measurable cost, which is unusual for an approval queue.
+    - name: approved
+      description: Authorised, not yet booked. The correct order and the less common one.
+    - name: booked
+      description: Money committed. Some portion is now unrecoverable.
+      implies: A cancellation from here has a price, and a duty-of-care obligation has begun to form.
+    - name: in_progress
+      description: The traveller has departed.
+      implies: The organisation is now responsible for a person it may not be able to locate.
+    - name: completed
+      description: Returned and financially closed. Both halves, not just the first.
+    - name: cancelled
+      description: Called off. Sunk cost crystallises and any unused ticket credit becomes an asset with an expiry.
+    - name: overdue
+      description: >
+        Returned, unreconciled past the claim window, or awaiting documentation with departure
+        approaching. The state most trips linger in.
+      implies: Either the traveller is out of pocket or the organisation does not know what it spent.
+    - name: expired
+      description: >
+        Departure passed with no decision, or a claim window closed unclaimed. Nobody chose either
+        outcome.
+  transitions:
+    - {from: draft, to: pending_approval}
+    - {from: pending_approval, to: approved}
+    - {from: pending_approval, to: cancelled}
+    - {from: pending_approval, to: expired}
+    - {from: approved, to: booked}
+    - {from: approved, to: cancelled}
+    - {from: booked, to: in_progress}
+    - {from: booked, to: cancelled}
+    - {from: booked, to: overdue}
+    - {from: in_progress, to: completed}
+    - {from: in_progress, to: overdue}
+    - {from: overdue, to: completed}
+    - {from: overdue, to: expired}
+
+relationships:
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 2200
+    confidence_bp: 8500
+    priority: 1
+    conditions:
+      - {path: thread.ball_in_court, op: "=", value: them}
+    evidence: [portal, email]
+    description: >
+      The authorisation, and the edge whose ORDER matters more than its existence. Approval after a
+      non-refundable booking satisfies this relationship and controls nothing.
+
+  - type: produces
+    target: admin.obj.core.expense
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1800
+    confidence_bp: 8000
+    priority: 2
+    evidence: [erp, portal, signed_form]
+    description: >
+      The closing half. A trip with no reachable claim is either unreconciled or was paid on a
+      corporate card nobody matched back, and the two look identical from here.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1500
+    confidence_bp: 7500
+    priority: 3
+    evidence: [erp, portal]
+    description: Where the committed cost lands, and the reason committed-but-uninvoiced travel surprises people at period end.
+
+  - type: references
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 7000
+    priority: 4
+    conditions:
+      - {path: meeting.status, op: "=", value: confirmed}
+    evidence: [calendar, portal]
+    description: >
+      The reason for the journey. A cancelled meeting should propagate here immediately and almost
+      never does, which is how people fly to events that are no longer happening.
+
+  - type: belongs_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: one
+    weight_bp: 1200
+    confidence_bp: 9000
+    priority: 5
+    evidence: [hris, portal]
+    description: The traveller. Also the route to insurance eligibility, emergency contact and accumulated tax presence.
+
+  - type: requires
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 8000
+    priority: 6
+    evidence: [document, portal]
+    description: >
+      Passport, visa, permit, insurance certificate. Long external lead times make this the
+      dependency that actually cancels trips, and it is the one resolved last.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 8000
+    priority: 7
+    description: Fare class, advance-purchase rules, preferred suppliers, per-diem rates.
+
+  - type: attaches_to
+    target: admin.obj.core.itinerary
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 300
+    confidence_bp: 6500
+    priority: 8
+    description: The on-the-ground schedule. Rewritten freely without the trip changing.
+
+  - type: references
+    target: admin.obj.core.vendor
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 6500
+    priority: 9
+    description: >
+      Travel management company, airlines, hotels. The tracking feed the duty-of-care obligation
+      depends on comes from here, which is why off-programme booking is a safety issue and not only
+      a cost one.
+
+inference_patterns:
+
+  deterministic:
+
+    - id: trp.reason_meeting_cancelled
+      statement: "The meeting the journey exists for is no longer confirmed."
+      status: executable
+      when:
+        - {path: meeting.status, op: "!=", value: confirmed}
+        - {fn: hours_since, path: meeting.start_at, op: "<=", value: 0}
+      yields: {confidence_bp: 8500, attribute: state, value: overdue}
+      evidence_fields: [meeting.status, meeting.start_at]
+      false_positive: >
+        A meeting moved rather than cancelled, or a second meeting added at the destination that keeps
+        the journey worthwhile. Both are common and both need a human to confirm.
+      note: >
+        The single most valuable thing this object can do with today's substrate. The meeting is
+        cancelled in a calendar; the flight is not cancelled anywhere; and nothing currently connects
+        the two, so people fly to events that are no longer happening.
+
+    - id: trp.travel_commitment_past_due
+      statement: "A commitment relating to this journey was promised and its date has passed."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 7500, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        The commitment was met and never closed. Travel promises — sending an itinerary, submitting a
+        visa form, returning a claim — are closed in a portal, not as a typed event.
+
+    - id: trp.no_followup_after_return
+      statement: "The journey's meeting happened and nothing has been sent since."
+      status: executable
+      when:
+        - {path: meeting.status, op: "=", value: confirmed}
+        - {fn: hours_since, path: meeting.start_at, op: ">=", value: 72}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 7000, attribute: state, value: overdue}
+      evidence_fields: [meeting.status, meeting.start_at]
+      note: >
+        A weak proxy for an unreconciled trip and an honest one: the strongest available signal that
+        somebody travelled and then nothing happened. Real reconciliation detection needs the claim
+        window, which does not exist yet.
+
+  heuristic:
+
+    - id: trp.approval_chase_while_fare_rises
+      statement: "The request has sat with the approver well past their normal reply pace."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2, floor: 2}}
+      yields: {confidence_bp: 8000, attribute: state, value: overdue}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: The approver is themselves travelling, which is the specific irony this object cannot yet detect.
+      note: >
+        The tightest chase threshold in the Admin brain, deliberately. Every other approval queue
+        costs time; this one costs money on a curve, and a two-day delay is measurable in the fare.
+
+    - id: trp.approver_moved_mid_request
+      statement: "The approver's role changed while the request was pending."
+      status: executable
+      when:
+        - {has_obs: champion_change}
+      yields: {confidence_bp: 7000, attribute: state, value: overdue}
+      evidence_fields: [thread.last_inbound]
+      note: Travel requests routed to a person rather than a role stop dead when that person moves.
+
+    - id: trp.late_booking_cost_penalty
+      statement: "Booked close to departure, at a fare materially above the advance-purchase norm."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: policy_compliant, value: false}
+      requires_signals:
+        - {kind: fact_path, name: trip.booked_at, owner_layer: L1}
+        - {kind: fact_path, name: trip.depart_at, owner_layer: L1,
+           note: "Together these give lead_time_days, the single most actionable number on the object. Cost is dominated by it, and it is mostly a function of approval throughput — which makes travel overspend an administrative problem the administrative function can actually fix."}
+
+    - id: trp.documentation_not_ready
+      statement: "Departure approaches and the visa or permit is not in place."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: documentation_ready, value: false}
+      requires_signals:
+        - {kind: fact_path, name: trip.visa_state, owner_layer: L1}
+        - {kind: fact_path, name: trip.depart_at, owner_layer: L1,
+           note: "Documentation queue times are measured in weeks and sit entirely outside the organisation's control. This is what actually cancels trips, and it is resolved after the flights are booked rather than before."}
+
+    - id: trp.traveller_not_locatable
+      statement: "The traveller has departed and the organisation cannot say where they are."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: traveller_locatable, value: false}
+      requires_signals:
+        - {kind: fact_path, name: trip.itinerary_source, owner_layer: L1,
+           note: "Off-programme bookings never reach the tracking feed. The duty-of-care obligation is unaffected by how the ticket was bought, which is the whole problem."}
+        - {kind: obs_kind, name: trip_departed, owner_layer: L2}
+
+    - id: trp.unreconciled_past_claim_window
+      statement: "Returned, and the claim window has closed with nothing submitted."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: expired}
+      requires_signals:
+        - {kind: fact_path, name: trip.claim_due_at, owner_layer: L1}
+        - {kind: obs_kind, name: expense_claim_submitted, owner_layer: L2,
+           note: "Two opposite failures share this signal: the traveller is personally out of pocket, or the organisation has spent money it has not recorded. Which one it is depends on who paid, and nothing currently distinguishes them."}
+
+    - id: trp.unused_ticket_credit_expiring
+      statement: "A cancelled ticket holds redeemable value with an expiry approaching."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: unused_credit_value, value: null}
+      requires_signals:
+        - {kind: fact_path, name: trip.unused_credit_expires_at, owner_layer: L1,
+           note: "A real asset held by the airline, tracked by nobody, written off by default. Usually surfaced only when a travel management company volunteers the balance."}
+
+    - id: trp.duplicate_travel_to_one_event
+      statement: "Several colleagues are travelling to the same destination for the same event."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: attendee_count_from_org, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.concurrent_travel_to_destination, owner_layer: L2,
+           note: "Each approval is individually reasonable and the aggregate is a decision nobody made. Only a cross-request view can see it, and no approval workflow has one."}
+
+    - id: trp.tax_presence_accumulating
+      statement: "Days at a destination are accumulating towards a taxable presence threshold."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: tax_presence_risk, value: likely}
+      requires_signals:
+        - {kind: derived, name: derived.days_by_jurisdiction_12m, owner_layer: L2,
+           note: "A property of the sequence of trips, never of one. Nobody owns the aggregate, so it is discovered by a tax authority rather than by the organisation."}
+
+    - id: trp.approval_after_booking
+      statement: "The authorisation post-dates the first commitment of money."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: approval_precedes_booking, value: false}
+      requires_signals:
+        - {kind: fact_path, name: trip.booked_at, owner_layer: L1}
+        - {kind: fact_path, name: approval.requested_at, owner_layer: L1,
+           note: "The quietest and most important control failure on this object. It is the normal state wherever travellers book their own travel, and it converts the approval step into a signature on a decision already taken."}
+
+inputs:
+  - source: portal
+    signal: the travel request and its booking record
+    fills: [purpose_category, business_reason, destination, depart_at, return_at, estimated_cost, state]
+    reliability_bp: 8500
+  - source: erp
+    signal: committed and actual cost, budget coding, supplier invoices
+    fills: [committed_cost, actual_cost, budget_line_ref, currency]
+    reliability_bp: 9000
+  - source: calendar
+    signal: the meeting the journey exists for, and whether it is still happening
+    path: meeting.status
+    fills: [meeting_ref, depart_at]
+    reliability_bp: 7000
+    description: The only forward-looking date the pipeline can currently see for this object.
+  - source: hris
+    signal: traveller, employment basis, emergency contact
+    fills: [traveller_ref, employment_basis, emergency_contact_recorded]
+    reliability_bp: 9000
+  - source: document
+    signal: passport, visa, permit, insurance certificate
+    fills: [visa_state, permit_required, insurance_confirmed]
+    reliability_bp: 9500
+  - source: email
+    signal: the request and approval thread where no travel system exists
+    path: thread.ball_in_court
+    fills: [state]
+    reliability_bp: 5500
+    description: The normal case in organisations below a few hundred people.
+  - source: regulator
+    signal: entry requirements, work-permit rules, per-diem substantiation rules
+    fills: [visa_required, permit_required]
+    reliability_bp: 9500
+  - source: derived
+    signal: lead time, sunk cost, emissions, concurrent travel, accumulated presence
+    fills: [lead_time_days, sunk_cost, emissions_kg, attendee_count_from_org, tax_presence_risk]
+    reliability_bp: 6000
+
+outputs:
+  - name: cancellation_economics
+    type: string
+    derived_from: [sunk_cost, refundable_portion, unused_credit_value]
+    description: >
+      What cancelling costs today versus tomorrow. The information the decision needs and never has
+      at the moment it is being made.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: readiness_bp
+    type: integer
+    derived_from: [documentation_ready, insurance_confirmed, briefing_delivered, visa_state]
+    description: Whether this journey can lawfully and safely happen on these dates.
+    consumed_by: [L4.reasoning_unit, L5.execution_planning]
+  - name: duty_of_care_gap
+    type: boolean
+    derived_from: [traveller_locatable, insurance_confirmed, emergency_contact_recorded, risk_assessment_done]
+    description: The one output that matters when something goes wrong, and the one nobody queries beforehand.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: committed_not_invoiced
+    type: number
+    derived_from: [committed_cost, actual_cost]
+    consumed_by: [L4.reasoning_unit, L5.execution_planning]
+  - name: policy_breach_list
+    type: list
+    derived_from: [policy_compliant, policy_exceptions, fare_class, preferred_supplier_used]
+    consumed_by: [L4.reasoning_unit]
+  - name: reconciliation_outstanding
+    type: boolean
+    derived_from: [reconciled_at, claim_ref, receipts_complete, claim_due_at]
+    consumed_by: ["L5.2.channel_planner", L6.learning_unit]
+  - name: emissions_report_line
+    type: number
+    derived_from: [emissions_kg, mode_of_transport]
+    consumed_by: [L6.learning_unit]
+
+events:
+  - id: trp.requested
+    name: Trip Requested
+    severity: info
+    payload: [traveller_ref, destination, depart_at, estimated_cost, purpose_category]
+  - id: trp.approved
+    name: Trip Approved
+    severity: notable
+    payload: [approved_by_ref, approved_at, authorised_amount, lead_time_days]
+  - id: trp.booked
+    name: Trip Booked
+    severity: notable
+    payload: [booked_at, committed_cost, refundable_portion, preferred_supplier_used]
+    invalidates: [estimated_cost, sunk_cost]
+  - id: trp.reason_disappeared
+    name: Reason For Travel Cancelled
+    emitted_when:
+      - {path: meeting.status, op: "!=", value: confirmed}
+    severity: critical
+    payload: [meeting_ref, sunk_cost, refundable_portion, depart_at]
+    description: >
+      The meeting is off and the flight is not. Emitted with the cancellation economics attached,
+      because the decision is worthless without them.
+  - id: trp.departed
+    name: Traveller Departed
+    severity: critical
+    payload: [traveller_ref, destination, traveller_locatable, insurance_confirmed, risk_rating]
+    description: The moment the duty-of-care obligation becomes live, and the moment to know whether it can be met.
+  - id: trp.documentation_at_risk
+    name: Documentation Not Ready
+    severity: critical
+    payload: [visa_state, permit_required, depart_at]
+  - id: trp.returned_unreconciled
+    name: Returned Without Reconciliation
+    severity: notable
+    payload: [return_at, claim_due_at, committed_cost]
+  - id: trp.credit_expiring
+    name: Unused Ticket Credit Expiring
+    severity: notable
+    payload: [unused_credit_value]
+
+actions:
+  - id: trp.request
+    name: Raise the travel request
+    actor: human
+    cost: trivial
+    reversible: true
+  - id: trp.approve
+    name: Approve the trip
+    actor: human
+    cost: trivial
+    reversible: true
+    effect: Authorises spend. Only a control if it happens before booking.
+  - id: trp.book
+    name: Book the journey
+    actor: human
+    cost: low
+    reversible: false
+    effect: >
+      Irreversible in the sense that matters — some portion becomes unrecoverable immediately, and
+      every subsequent decision is made against a sunk cost.
+  - id: trp.start_documentation
+    name: Start visa and permit applications
+    actor: human
+    cost: moderate
+    reversible: true
+    effect: >
+      The longest lead time in the whole process and the one started last. Beginning it before
+      booking inverts the usual failure.
+  - id: trp.confirm_alternative
+    name: Assess a remote alternative
+    actor: human
+    cost: trivial
+    reversible: true
+    effect: A single question at request time that removes a material share of internal travel without a refusal.
+  - id: trp.cancel
+    name: Cancel the trip
+    actor: human
+    cost: moderate
+    reversible: false
+    effect: Crystallises the sunk cost and creates a ticket credit with an expiry that must be tracked.
+  - id: trp.rebook
+    name: Rebook against an existing credit
+    actor: human
+    cost: low
+    reversible: true
+    effect: The only way credits are ever recovered, and it requires somebody to know they exist.
+  - id: trp.brief_traveller
+    name: Deliver the destination briefing
+    actor: human
+    cost: low
+    reversible: true
+  - id: trp.locate_traveller
+    name: Locate the traveller
+    actor: system
+    cost: trivial
+    reversible: true
+    effect: Only possible where the booking went through the programme. Off-programme travel is invisible here.
+  - id: trp.reconcile
+    name: Reconcile and close the trip
+    actor: human
+    cost: moderate
+    reversible: true
+    effect: The half that quietly does not happen, and without which the organisation never learns what travel costs.
+  - id: trp.escalate_undecided
+    name: Escalate an undecided request as departure approaches
+    actor: system
+    cost: trivial
+    reversible: true
+
+preconditions:
+  - id: trp.reason_before_request
+    statement: A testable business reason and a purpose category exist before the request is routed.
+    requires: [business_reason, purpose_category]
+    if_unmet: >
+      Return it. "Client meeting" is a category, not a reason, and an approver given only a category
+      is approving a destination rather than a journey.
+  - id: trp.approval_before_commitment
+    statement: Authorisation is recorded before any money is committed.
+    requires: [approval_ref, approved_at]
+    if_unmet: >
+      Block the booking. This is the one precondition on the object that is genuinely a control; every
+      other check can degrade to a warning without loss.
+  - id: trp.documentation_assessed_before_booking
+    statement: Entry and work-permit requirements are assessed before flights are bought.
+    requires: [visa_required, permit_required, international]
+    if_unmet: >
+      Warn and proceed. Blocking is wrong — the assessment is often only possible once dates are
+      firm — but proceeding silently is how a non-refundable ticket meets a six-week visa queue.
+  - id: trp.insurance_in_force
+    statement: Travel insurance covers this traveller, on this basis, for this destination and these dates.
+    requires: [insurance_confirmed, employment_basis]
+    if_unmet: >
+      Block for high and extreme risk ratings, warn otherwise. Contractors and guests are the
+      population most often outside cover and least often checked.
+  - id: trp.budget_identified
+    statement: A budget line exists before commitment.
+    requires: [budget_line_ref]
+    if_unmet: Warn. Travel is the commonest source of uncoded committed spend at period end.
+  - id: trp.emergency_contact_on_file
+    statement: An emergency contact is recorded before departure.
+    requires: [emergency_contact_recorded]
+    if_unmet: Block for international or high-risk journeys. It is a thirty-second field that only matters once.
+
+constraints:
+  - id: trp.no_travel_without_authorisation
+    statement: No journey may be booked at the organisation's expense without a recorded authorisation.
+    hard: true
+    why: Otherwise the approval is retrospective and the control is decorative.
+  - id: trp.no_departure_without_documentation
+    statement: An international journey may not proceed without valid entry documentation.
+    hard: true
+    why: A border refusal costs the fare, the meeting and, in some jurisdictions, future entry.
+  - id: trp.extreme_risk_needs_named_acceptance
+    statement: Travel to an extreme-risk destination requires a documented risk assessment and a named senior acceptance.
+    hard: true
+    why: >
+      ISO 31030 puts the obligation on the organisation, not the traveller. An undocumented decision
+      to send somebody somewhere dangerous is the version of this that ends in a prosecution.
+  - id: trp.traveller_must_be_locatable
+    statement: A traveller on an international journey must be locatable through the programme.
+    hard: false
+    why: >
+      Soft because enforcing it would block legitimate off-programme bookings, but every exception
+      should be a recorded decision rather than an unnoticed default.
+  - id: trp.per_diem_requires_substantiation
+    statement: Per-diem and expense treatment must meet the substantiation rules of the relevant tax authority.
+    hard: true
+    why: Unsubstantiated allowances become taxable pay, retrospectively, for the traveller.
+  - id: trp.personal_travel_data_minimised
+    statement: Passport, visa and accessibility data are held only as long as the journey requires.
+    hard: true
+    why: >
+      Traveller data is personal data and some of it is special category. Travel systems retain it
+      indefinitely by default because nobody has ever asked them not to.
+  - id: trp.claim_window_is_fixed
+    statement: Expense claims are submitted within the stated window.
+    hard: false
+    why: >
+      Soft deliberately. Enforcing it strictly leaves the traveller personally out of pocket for a
+      failure that is usually administrative rather than theirs.
+
+business_rules:
+  - id: trp.approval_precedes_booking
+    statement: Authorisation must pre-date the first commitment of money.
+    then: block_booking
+    severity: blocking
+  - id: trp.cancelled_reason_reopens_the_trip
+    statement: If the meeting the journey exists for is cancelled, the trip returns to a decision with its cancellation economics attached.
+    when: [{path: meeting.status, op: "!=", value: confirmed}]
+    then: reopen_decision
+    severity: blocking
+  - id: trp.sunk_cost_shown_at_decision
+    statement: Any cancellation or change decision is presented with sunk cost and refundable portion.
+    then: attach_economics
+    severity: blocking
+  - id: trp.off_programme_booking_flags_duty_of_care
+    statement: A booking outside the programme raises a locatability flag, not only a cost exception.
+    then: flag_locatability
+    severity: warning
+  - id: trp.credits_are_assets
+    statement: An unused ticket credit is recorded as an asset with an expiry, not written off at cancellation.
+    then: record_credit
+    severity: warning
+  - id: trp.high_risk_requires_assessment
+    statement: High and extreme risk ratings require a documented assessment before approval.
+    then: require_assessment
+    severity: blocking
+  - id: trp.unreconciled_after_window_is_expired
+    statement: A trip past its claim window with nothing submitted is expired, not merely late.
+    then: mark_expired
+    severity: warning
+  - id: trp.contractor_travel_checks_cover
+    statement: Non-employee travellers require an explicit insurance and duty-of-care check.
+    then: require_cover_check
+    severity: blocking
+
+decision_factors:
+  - name: authorisation_integrity
+    weight_bp: 2200
+    direction: increases
+    description: >
+      Whether a real authorisation exists and pre-dates commitment. Ranked first because an approval
+      granted after a non-refundable booking is not evidence of a decision — it is evidence that one
+      was not required.
+    reads: [approval_ref, approved_at, approval_precedes_booking, authorised_amount]
+  - name: duty_of_care_readiness
+    weight_bp: 2200
+    direction: increases
+    description: >
+      Whether the organisation could meet its obligation if something happened. Weighted equal to
+      authorisation because it is the only factor here whose failure is measured in harm rather than
+      in money.
+    reads: [traveller_locatable, insurance_confirmed, risk_rating, risk_assessment_done, emergency_contact_recorded]
+  - name: legal_readiness
+    weight_bp: 1800
+    direction: increases
+    description: Whether the traveller may lawfully enter and work there on these dates. Binary in effect, and driven by external queues.
+    reads: [documentation_ready, visa_state, permit_required, international]
+  - name: commercial_exposure
+    weight_bp: 1600
+    direction: decreases
+    description: >
+      Committed cost, and how much of it is already unrecoverable. Direction is decreases because
+      exposure argues against changing course, not against the journey.
+    reads: [committed_cost, sunk_cost, refundable_portion, lead_time_days]
+  - name: justification_strength
+    weight_bp: 1400
+    direction: increases
+    description: Whether the reason survives the question of whether anybody needed to be there.
+    reads: [business_reason, purpose_category, alternative_considered, meeting_ref, attendee_count_from_org]
+  - name: policy_position
+    weight_bp: 800
+    direction: context
+    description: >
+      Context rather than decreases: a policy breach on a genuinely urgent trip is a finding about
+      the approval process, not about the traveller.
+    reads: [policy_compliant, policy_exceptions, fare_class, preferred_supplier_used]
+
+evidence:
+  - source: erp
+    strength_bp: 9500
+    independent_of: [portal, calendar, derived]
+    decays: false
+    description: Invoices and settled cost. The only source that knows what was actually paid.
+  - source: document
+    strength_bp: 9500
+    independent_of: [portal, erp]
+    decays: false
+    description: Visa, permit, insurance certificate. Definitive for legal readiness.
+  - source: regulator
+    strength_bp: 9500
+    independent_of: [portal, erp]
+    decays: false
+    description: Entry rules and substantiation requirements.
+  - source: portal
+    strength_bp: 8500
+    independent_of: [erp, calendar]
+    decays: true
+    description: The travel management system. Strong for bookings made through it and blind to everything else.
+  - source: signed_form
+    strength_bp: 9000
+    independent_of: [portal]
+    decays: false
+    description: Risk acceptance and expense certification.
+  - source: hris
+    strength_bp: 8500
+    independent_of: [portal, erp]
+    decays: false
+    description: Traveller, employment basis, emergency contact.
+  - source: calendar
+    strength_bp: 6500
+    independent_of: [erp, portal]
+    decays: true
+    description: >
+      The reason for the journey and whether it still stands. Weak as a record and uniquely valuable
+      as a trigger, because it is the only place a cancelled reason appears at all.
+  - source: email
+    strength_bp: 5500
+    independent_of: [portal, erp]
+    decays: true
+    description: Where no travel system exists. Common below a few hundred people and for guest travel.
+  - source: derived
+    strength_bp: 4500
+    independent_of: []
+    decays: true
+    description: Lead time, sunk cost, emissions, concurrent travel, accumulated presence. Corroborating only.
+
+metrics:
+  - name: advance_booking_days
+    unit: days
+    direction: higher_is_better
+    owner_layer: L6
+    description: >
+      Median lead time. The single most cost-elastic number in travel administration, and mostly a
+      measure of how fast approvals move rather than of how well travel is bought.
+    calibrates: [trp.late_booking_cost_penalty, trp.approval_chase_while_fare_rises]
+  - name: approval_before_booking_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Share of trips authorised before money moved. Bounds how much the approval control is worth.
+    calibrates: [trp.approval_after_booking]
+  - name: traveller_locatable_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: >
+      Share of live journeys the organisation could locate right now. The number to have before an
+      incident rather than after.
+    calibrates: [trp.traveller_not_locatable]
+  - name: unreconciled_trip_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [trp.unreconciled_past_claim_window]
+  - name: unused_credit_balance
+    unit: currency
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [trp.unused_ticket_credit_expiring]
+  - name: cost_variance_to_estimate
+    unit: percent
+    direction: target_band
+    owner_layer: L6
+    description: Systematically negative at request time, because the estimate is what the approval is judged against.
+  - name: trips_per_meeting
+    unit: count
+    direction: lower_is_better
+    owner_layer: L6
+    description: Concurrent travel to one event. The aggregate nobody approves.
+    calibrates: [trp.duplicate_travel_to_one_event]
+  - name: emissions_per_trip
+    unit: kg_co2e
+    direction: lower_is_better
+    owner_layer: L6
+
+dependencies:
+  - target: admin.obj.core.approval
+    kind: requires
+    strength: hard
+    description: Without it the journey has no authorisation, and the object cannot leave pending_approval.
+  - target: admin.obj.core.employee_record
+    kind: requires
+    strength: hard
+    description: Traveller identity, employment basis, insurance eligibility and emergency contact all resolve here.
+  - target: admin.obj.core.budget_line
+    kind: requires
+    strength: hard
+    description: Committed cost has nowhere to land without it.
+  - target: admin.obj.core.document
+    kind: requires
+    strength: hard
+    description: >
+      Visa, permit and insurance. The longest external lead time in the process and the reason trips
+      are cancelled — flights are the easy part.
+  - target: admin.obj.core.meeting
+    kind: invalidated_by
+    strength: hard
+    description: >
+      If the reason disappears the trip's justification is void. This is the most valuable
+      invalidation edge in the object and almost nothing implements it.
+  - target: admin.obj.core.expense
+    kind: enriches
+    strength: hard
+    description: The closing half. Without it the organisation never learns actual cost.
+  - target: admin.obj.core.policy
+    kind: enriches
+    strength: soft
+    description: Fare class, advance purchase, preferred suppliers, per diems.
+  - target: admin.obj.core.itinerary
+    kind: derived_from
+    strength: soft
+    description: The on-the-ground schedule, rewritten freely without changing the trip.
+  - target: admin.obj.core.vendor
+    kind: enriches
+    strength: soft
+    description: The travel management company, and the source of the tracking feed duty of care depends on.
+
+exceptions:
+  - id: trp.emergency_travel
+    statement: Travel in response to an incident may be booked before authorisation, ratified within two working days.
+    overrides: [trp.approval_before_commitment, trp.no_travel_without_authorisation]
+    why: >
+      A control that cannot be bypassed when a site is on fire gets bypassed permanently instead of
+      temporarily. The ratification window is what keeps this an exception rather than a new default.
+    frequency: occasional
+  - id: trp.candidate_and_guest_travel
+    statement: Non-employee travellers may be booked without an HRIS record, provided cover and a duty-of-care owner are explicitly named.
+    overrides: [trp.insurance_in_force]
+    why: >
+      Candidates and guests travel on the organisation's arrangements while sitting outside its
+      systems. The exception exists so the gap is named at booking rather than discovered at an incident.
+    frequency: common
+  - id: trp.regulated_inspection_travel
+    statement: Travel required by a regulator or an inspection regime is not discretionary and is not subject to cost-reduction refusal.
+    overrides: [trp.request]
+    why: >
+      A statutory inspection is an obligation, not a journey somebody chose. Applying discretionary
+      travel policy to it produces a breach and a saving of a few hundred pounds.
+    frequency: rare
+  - id: trp.high_risk_with_compensating_controls
+    statement: Travel to a high-risk destination may proceed below the usual threshold where documented compensating measures exist.
+    overrides: [trp.extreme_risk_needs_named_acceptance]
+    why: >
+      Blanket prohibition produces undeclared travel, which is far more dangerous than declared
+      travel with tracking and a local security arrangement.
+    frequency: rare
+  - id: trp.credit_write_off_below_de_minimis
+    statement: Ticket credits below a threshold may be written off rather than tracked.
+    overrides: [trp.credits_are_assets]
+    why: >
+      The administrative cost of tracking a small credit exceeds its value. The threshold has to be
+      explicit, or write-off silently becomes the treatment for everything.
+    frequency: common
+
+best_practices:
+  - id: trp.decide_fast_because_the_fare_moves
+    statement: Treat travel approval as time-critical and route it with the shortest queue in the organisation.
+    why: >
+      Cost here is a function of lead time, and lead time is mostly approval throughput. It is the
+      only administrative queue where the delay has a directly measurable price, which makes it the
+      easiest to justify fixing.
+  - id: trp.documentation_before_flights
+    statement: Resolve visas and permits before committing to non-refundable travel.
+    why: >
+      Documentation queues are weeks long and outside the organisation's control; flights are
+      minutes and inside it. Doing them in the usual order guarantees the expensive commitment meets
+      the slow dependency.
+  - id: trp.ask_whether_anyone_needs_to_go
+    statement: Ask at request time whether a remote alternative was considered, and record the answer.
+    why: >
+      The highest-yield single field on the object. It removes a material share of internal travel
+      without anybody having to refuse anything, which is why it survives where refusal policies do not.
+  - id: trp.show_sunk_cost_at_the_decision
+    statement: Present sunk cost and refundable portion whenever a change or cancellation is being considered.
+    why: >
+      The decision is otherwise made on the original price, which is no longer the relevant number.
+      People cancel too little when they cannot see what is recoverable and too much when they cannot
+      see what is not.
+  - id: trp.book_through_the_programme_for_locatability
+    statement: Treat programme booking as a safety requirement, not only a commercial one.
+    why: >
+      The tracking feed comes from the booking channel. Off-programme travel forfeits the rate, which
+      is annoying, and forfeits the ability to find the person, which is not.
+  - id: trp.close_the_trip_not_just_the_journey
+    statement: Reconcile every trip, including those with no personal claim.
+    why: >
+      Card-paid trips generate no claim and therefore no closure, which is why travel spend is always
+      understated until the card statement is matched — usually a month later and by someone else.
+  - id: trp.track_credits_as_assets
+    statement: Record ticket credits with their expiry and check them before every new booking.
+    why: >
+      They are real money with a deadline, held by a supplier, forgotten by default. The only cost of
+      recovering them is remembering they exist.
+  - id: trp.aggregate_before_approving
+    statement: Show the approver who else is already travelling to the same event.
+    why: >
+      Each request is reasonable alone. Four people at one two-hour meeting is a decision nobody
+      made, and it is invisible to any workflow that reasons one request at a time.
+
+anti_patterns:
+  - id: trp.approval_after_the_ticket
+    statement: An approval step that runs after the booking has been made.
+    why_it_happens: >
+      The traveller books first because fares rise while they wait, and the approval is then a
+      formality nobody wants to be the one to refuse. Everyone involved is behaving sensibly.
+    cost: >
+      The control provides nothing. Refusing now costs the fare, so approvals are effectively
+      automatic, and the organisation believes it has a travel authorisation process when it has a
+      travel notification process.
+    instead: >
+      Make approval fast enough that booking first is not rational — hours, not days — and measure
+      approval_before_booking_rate rather than approval completion.
+    detectable_by: [approval_before_booking_rate, trp.approval_after_booking]
+  - id: trp.flight_outlives_the_meeting
+    statement: A cancelled meeting that leaves the travel untouched.
+    why_it_happens: >
+      The meeting is cancelled in a calendar by an organiser who has no idea anyone booked travel for
+      it, and the trip lives in a different system with no link back.
+    cost: >
+      People fly to events that are not happening, or discover it the night before and cancel at
+      maximum penalty. Both outcomes are entirely avoidable with one join.
+    instead: >
+      Hold the meeting reference on the trip and treat a status change as a reopened decision, with
+      the cancellation economics attached.
+    detectable_by: [trp.reason_meeting_cancelled]
+  - id: trp.duty_of_care_as_a_policy_document
+    statement: A traveller-safety policy in an organisation that cannot say where its travellers are.
+    why_it_happens: >
+      The policy is cheap to write and satisfies the question when it is asked in a governance
+      meeting. The capability requires programme booking, a tracking feed and somebody watching it.
+    cost: >
+      The obligation is real whether or not the capability exists. The gap surfaces at exactly the
+      moment it cannot be closed, and ISO 31030 puts it on the organisation rather than the traveller.
+    instead: >
+      Measure traveller_locatable_rate monthly and treat off-programme bookings as safety exceptions
+      requiring a recorded decision.
+    detectable_by: [traveller_locatable_rate, trp.traveller_not_locatable]
+  - id: trp.reconciliation_that_never_closes
+    statement: Trips that end when the traveller gets home rather than when the money is accounted for.
+    why_it_happens: >
+      The journey is over, the meeting happened, and nothing external forces closure. Card-paid trips
+      produce no claim, so there is not even a form to chase.
+    cost: >
+      Travel spend is understated for a month or a quarter, budget holders make decisions on a number
+      that is wrong in one direction only, and travellers who paid personally are left out of pocket.
+    instead: >
+      Close on the card statement as well as on the claim, and treat a trip past its window as
+      expired rather than merely late.
+    detectable_by: [unreconciled_trip_share, trp.unreconciled_past_claim_window]
+  - id: trp.policy_enforced_on_the_traveller_only
+    statement: Measuring compliance as fare class and supplier while ignoring the approval delay that forced the breach.
+    why_it_happens: >
+      Traveller behaviour is easy to measure and easy to attribute. Approval latency is diffuse and
+      belongs to managers rather than to travel.
+    cost: >
+      The compliance report blames the population with the least control over the outcome, the real
+      cause is never addressed, and the same breaches recur every quarter.
+    instead: >
+      Report late bookings against approval latency, not against the traveller, and treat a policy
+      breach on an urgent trip as a finding about the process.
+    detectable_by: [advance_booking_days, approval_before_booking_rate]
+  - id: trp.credits_written_off_silently
+    statement: Cancelling a trip and treating the ticket value as lost.
+    why_it_happens: >
+      The credit sits with the airline, has no owner, appears in no ledger, and expires quietly. The
+      person who cancelled has moved on by the time it lapses.
+    cost: A recurring, invisible loss that in a mid-sized organisation runs to a meaningful annual figure.
+    instead: Record the credit with its expiry as an asset and check the balance before every new booking.
+    detectable_by: [unused_credit_balance, trp.unused_ticket_credit_expiring]
+
+examples:
+  - label: Two-day client visit booked three weeks ahead through the programme
+    kind: typical
+    note: Approved before booking, documentation not required, reconciled within the window. The case everything is designed for.
+  - label: Same-week internal meeting flown by four colleagues
+    kind: edge
+    note: >
+      Four individually reasonable approvals and one collective decision nobody made. Invisible to
+      any workflow reasoning one request at a time.
+  - label: Non-refundable ticket bought before a visa application was started
+    kind: typical
+    note: >
+      The commonest expensive failure. The flight took minutes and the visa takes six weeks, and they
+      were done in that order.
+  - label: Meeting cancelled four days out, travel untouched
+    kind: edge
+    note: >
+      The trip is still in `booked` and nothing connects the calendar to the reservation. Detectable
+      today with the substrate that exists.
+  - label: Contractor travelling on the organisation's arrangements
+    kind: misclassification
+    note: >
+      Booked like an employee, outside the insurance policy and outside the duty-of-care programme.
+      The gap is found at the point of an incident.
+  - label: Trip paid entirely on a corporate card
+    kind: misclassification
+    note: >
+      Generates no expense claim, so nothing closes it. Reads as reconciled because there is nothing
+      outstanding to see.
+  - label: Regulatory site inspection
+    kind: counterexample
+    note: Not discretionary and not subject to cost-reduction refusal. Applying travel policy to it produces a breach and a trivial saving.
+  - label: Cancelled long-haul ticket with a twelve-month credit
+    kind: edge
+    note: A four-figure asset with an expiry, held by the airline, owned by nobody, written off by default.
+
+references:
+  - title: ISO 31030:2021 — Travel risk management, guidance for organizations
+    kind: standard
+    note: >
+      The reference standard for duty of care in business travel. Places the obligation on the
+      organisation rather than the traveller, which is what makes traveller_locatable a control
+      rather than a nicety.
+  - title: GHG Protocol Scope 3, Category 6 — Business Travel
+    kind: standard
+    note: The basis for emissions reporting on this object, including the cabin-class multiplier.
+  - title: GBTA business travel programme practice
+    kind: practitioner
+    note: Source of the advance-purchase cost curve and of the leakage/off-programme booking framing.
+  - title: OECD Model Tax Convention, Article 5 (permanent establishment) and Article 15
+    kind: standard
+    note: >
+      Why accumulated days by jurisdiction matter, and why the risk is a property of the sequence of
+      trips rather than of any one of them.
+  - title: IATA ticketing and reissue rules
+    kind: standard
+    note: The mechanics of refundability, change fees and residual ticket value that make sunk_cost and unused_credit_value real fields.
+  - title: HMRC and IRS expense substantiation rules for travel and subsistence
+    kind: standard
+    note: Why per-diem treatment without evidence becomes taxable pay, retrospectively and for the traveller.
+  - title: GDPR Articles 5 and 9 — data minimisation and special category data
+    kind: standard
+    note: >
+      Passport, visa and accessibility data sit in travel systems that retain indefinitely by default
+      because nobody has asked them not to.
+  - title: Duty of care in travel — the "know where your people are" test
+    kind: practitioner
+    note: >
+      The one-question version. An organisation that cannot answer it in under an hour does not have
+      a travel risk programme, whatever its policy says.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of fifteen patterns are executable today, and one of them is genuinely valuable rather than
+    a proxy: trp.reason_meeting_cancelled joins meeting.status to a live booking, which is the case
+    that costs real money and that nothing currently connects. The ranked Layer 1/2 ask is:
+    (1) trip.booked_at with trip.depart_at, giving lead_time_days — the most cost-elastic number in
+    travel administration and mostly a measure of approval throughput; (2) trip.visa_state, the
+    long-lead dependency that actually cancels trips; (3) approval.requested_at, which exposes
+    approval-after-booking and is shared with approval and escalation; (4) trip.itinerary_source plus
+    a trip_departed observation, without which traveller_locatable — the duty-of-care question — can
+    never be answered; (5) derived.days_by_jurisdiction_12m for accumulating tax presence, which is a
+    property of the sequence and owned by nobody. Scoped to travel_booking deliberately: the fare
+    mechanics, ticket-credit lifecycle and destination risk model are meaningless outside it, and the
+    coordination half of a journey belongs to admin.obj.core.itinerary rather than here.

@@ -1,21 +1,28 @@
-← [Native Capabilities](05-Native-Capabilities.md) · [Folder map](README.md)
+[Domain Compiler](07-Domain-Compiler.md) · [Overview](00-Overview.md) · [Folder map](README.md)
 
----
+# Remaining gaps
 
-# Gaps
+The Layer 3 boundary is implemented and locally verified. It is not yet honest to call the entire
+production path activated.
 
----
-
-## §6 · Gaps
-
-| # | Gap | Detail |
+| Priority | Gap | Exact completion condition |
 |---|---|---|
-| 1 | **Only two domains ship** | `sales` and `general`. Support, admin/finance, legal, engineering are all "a manifest away" — but nobody has written the manifest. The coverage model already declares `support` and `admin` requirements with no pack behind them. |
-| 2 | **Capabilities are shadow-only** | `BUILTIN_CAPABILITIES = (DEAL_COOLING_V1,)` and the package explicitly does not self-register. The legacy pack path is still the live one, so the 17-unit reasoning DAG is built and not in production. |
-| 3 | **`golden_cases: 0`** | The expertise API reports zero golden cases per pack — *"not tracked in the engine yet — honest zero."* There is no regression corpus proving a pack edit did not break its own rules. |
-| 4 | **Packs are Python literals** | They *are* data, but data that requires a repo commit to change. The registry stores `jsonb`, so a database- or file-loaded pack needs no engine change — it simply has not been built. |
-| 5 | **Display metadata lives outside the manifest** | `_MATURITY` and `_DISPLAY` are hardcoded in `api/expertise_routes.py`. Two more hand-maintained lists keyed by pack id — the exact drift shape Layer 1's source registry was built to end. |
-| 6 | **`_DEAL_REASON_CODES` duplicated** | Verified byte-identical to the sales pack's `signal_vocab`, hand-copied into `api/intelligence_routes.py`. A second copy of pack data outside the pack. |
-| 7 | **Behavioral brain is thinly consumed** | `user_models` is fully specified and governed, but how much of it actually reaches rendering and channel choice is a Layer 5/6 question, not settled here. |
+| P0 | Live Layer 2 handoff | The active situation engine publishes `BusinessSituationObject` plus `SituationContextSlice` with the common envelope and no Layer 3 graph reads are needed. |
+| P0 | Live Layer 4 handoff | The active reasoner accepts only `ExpertisePackage` for this path, preserves package/snapshot ids in its outputs, and does not read domain authoring files itself. |
+| P0 | PostgreSQL proof | Migration `0048` is applied in an integration environment; tenant isolation, query plans, idempotent retries, update rejection, and concurrent publication are tested against real PostgreSQL. |
+| P1 | Corpus runtime maturity | Admin gains routable situations; incomplete capability stubs are completed or intentionally retired; the current validator warning backlog is reduced with no invented signals. |
+| P1 | Signal vocabulary alignment | The 15 authored situation trigger types that no Layer 2 pack emits yet are either implemented upstream or removed through domain review. |
+| P1 | Domain golden scenarios | Each production situation has positive, negative, missing-context, visibility, optional-knowledge, and replay goldens—not only compiler unit fixtures. |
+| P1 | Typed brain selectors | Layer 6 publishes first-class capability/entity/object selectors instead of relying partly on compatible `subject_key` token matching. |
+| P2 | Cache and invalidation | Add a non-authoritative cache keyed by BSO hash + brain snapshot, with DB/Git sources remaining replay truth. |
+| P2 | Legacy retirement | Remove the Python `sales/general` effective-config path only after traffic parity, replay parity, and rollback rehearsal. |
+| P2 | Operational telemetry | Add latency, route-expansion, missing-optional, excluded-visibility, stale-registry, publish-conflict, and package-size SLOs. |
 
----
+## What is not a Layer 3 task
+
+- inventing or qualifying business situations belongs to Layer 2;
+- recommending, scoring, planning, or deciding belongs to Layer 4 and above;
+- learning from outcomes and publishing new brain versions belongs to Layer 6;
+- domain authorship remains a human-reviewed Authoring Engine workflow.
+
+Crossing those boundaries to make a demo appear complete would weaken determinism and provenance.

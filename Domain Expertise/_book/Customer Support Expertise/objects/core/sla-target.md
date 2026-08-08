@@ -27,7 +27,7 @@ Also called: `SLA Clock`, `Response Target`, `Resolution Target`, `Service Level
 | `calendar_type` | value | enum | yes | 24/7 versus 9-to-5 is a multiple-of-three difference in real elapsed time on the same stated number. A ticket raised at 16:55 on a Friday against a four-hour business-hours clock is not due until Monday morning, and the customer will not experience that as four hours no matter what the contract says.  |  |
 | `timezone` | value | string |  | Whose working day. The customer's, not ours — and getting this backwards is a silent, systematic, always-in-our-favour error. |  |
 | `target_minutes` | value | integer |  | The promise duration inherited from Entitlement. Held here as well so a target survives an entitlement being edited mid-ticket. |  |
-| `started_at` | value | timestamp |  | The started at. |  |
+| `started_at` | value | timestamp |  | When this specific clock began — which is the submission for a first-response target and, for a resolution target, whichever start event the policy names. Distinct from the ticket's creation timestamp, and conflating the two is how teams report SLA performance they never achieved. |  |
 | `target_at` | value | timestamp |  | The deadline itself. Both source paths are planned, not live — nothing in the pipeline emits a target timestamp today. | `sla.target_first_response_at`, `sla.target_resolution_at` |
 | `stopped_at` | value | timestamp |  | When the clock stopped, met or breached. Distinct from resolved_at on the ticket; a first-response clock stops long before anything is resolved. |  |
 | `warning_threshold_pct` | value | integer |  | Share of target_minutes consumed before this clock is treated as at risk. Kept per-clock rather than global because 75% of a four-hour clock is an hour of warning and 75% of a five-day clock is a day and a bit — the same percentage buys wildly different amounts of rescue.  |  |
@@ -35,7 +35,7 @@ Also called: `SLA Clock`, `Response Target`, `Resolution Target`, `Service Level
 | `remaining_minutes` | value | integer |  | May be negative. A negative value is a breach and should be kept negative rather than clamped to zero — the depth is the difference between an apology and a credit. |  |
 | `breach_depth_minutes` | value | integer |  | How far past target. Ninety seconds late and nine days late are the same red tile on every dashboard on the market and should not be. |  |
 | `pause_reason` | value | enum |  | `waiting_on_customer` is the legitimate and the gamed one simultaneously — there is no version of this object that removes the ambiguity, only versions that record enough to argue about it later. `waiting_on_third_party` deserves its own value because the customer did not choose our upstream vendor and stopping their clock for it is a position, not a fact.  |  |
-| `pause_started_at` | value | timestamp |  | The pause started at. |  |
+| `pause_started_at` | value | timestamp |  | When the clock most recently stopped counting, normally on entry to waiting-on-customer. Null while running. This single field is the most contested number in support: it is correct behaviour and the most abused mechanism available, because one clarifying question asked at the right moment buys a working day. |  |
 | `paused_total_minutes` | value | integer |  | The number every SLA dispute is actually about. Present it beside elapsed_minutes always; presenting elapsed alone is how a green metric hides a two-week wait. |  |
 | `pause_count` | value | integer |  | Four short pauses are a different story from one long one. A high count on a first_response clock is close to proof of question-laddering — asking one question at a time so each answer restarts the pause.  |  |
 | `pause_is_disputable` | value | boolean |  | Set when the pause began suspiciously close to a customer message or to the deadline. Not an accusation and must never be surfaced to the customer; it exists so QA and the account review can see the shape without anyone having to read four hundred tickets.  |  |
@@ -49,7 +49,7 @@ Also called: `SLA Clock`, `Response Target`, `Resolution Target`, `Service Level
 | `breach_acknowledged` | value | boolean |  | Whether anybody internally registered the breach. A breach nobody noticed is worse than one that fired an alarm, and this boolean is the difference. |  |
 | `breach_notified_at` | value | timestamp |  | When the customer was told — by us, before they told us. The gap between stopped_at and this is the part they actually judge. |  |
 | `credit_exposure` | value | money |  | Service credits owed if this breach stands. Null means unknown, never zero — the same trap as an unknown approval limit. |  |
-| `ticket_ref` | reference | ref |  | The ticket this clock runs on. Many targets, one ticket. | customer_support.obj.core.ticket |
+| `ticket_ref` | reference | ref |  | The ticket this clock is timing. A target with no ticket is a policy, not a target — the policy lives on Entitlement and only becomes an SLA Target when it is bound to a specific piece of work at a specific instant. | customer_support.obj.core.ticket |
 | `entitlement_ref` | reference | ref |  | The contract that says this clock exists at all. A target with a null entitlement_ref is an internal target and is_contractual must be false. | customer_support.obj.core.entitlement |
 | `coverage_window_ref` | reference | ref |  | Required when calendar_type is coverage_window or business_hours. Without it the deadline is arithmetic on a calendar nobody agreed to. | customer_support.obj.core.coverage_window |
 
@@ -58,13 +58,13 @@ Also called: `SLA Clock`, `Response Target`, `Resolution Target`, `Service Level
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| measures | `customer_support.obj.core.ticket` | one |  |  | — | One clock, one ticket — but a ticket carries several clocks. The direction matters: the target measures the ticket, the ticket does not own the target, because merging two tickets must merge their work and NOT their clocks.  |
-| requires | `customer_support.obj.core.entitlement` | one |  |  | — | The clock's authority. Entitlement says a four-hour first response exists; this object is the four hours, on this ticket, starting now. |
-| governed_by | `customer_support.obj.core.coverage_window` | zero_or_one |  |  | — | Which hours count. Zero only when calendar_type is calendar_hours — a 24/7 clock genuinely has no window, and every other clock that has none is misconfigured. |
-| escalates_to | `customer_support.obj.core.escalation` | zero_or_many |  |  | — | Approaching breach is the most legitimate escalation trigger there is, because it is the one an engineer cannot argue with. It is also the one most often fired too late to help.  |
-| references | `customer_support.obj.core.commitment` | zero_or_many |  |  | — | Agent promises made inside the clock's life. When a commitment is tighter than the SLA — it usually is — the commitment is the real deadline regardless of what the contract says.  |
-| influences | `customer_support.obj.core.churn_risk` | zero_or_one |  |  | — | A single breach influences little. A pattern of them on one account is among the clearest support-side churn predictors there is, which is why this edge exists on the target and not on the ticket. |
-| attaches_to | `customer_support.obj.core.queue` | zero_or_one |  |  | — | The queue is where breach risk becomes a staffing problem instead of a ticket problem, and where it is fixable a day earlier. |
+| measures | `customer_support.obj.core.ticket` | one | 9000 bp | 9500 bp | — | One clock, one ticket — but a ticket carries several clocks. The direction matters: the target measures the ticket, the ticket does not own the target, because merging two tickets must merge their work and NOT their clocks. The clock has no meaning apart from the thing it is timing; this is the defining edge. |
+| requires | `customer_support.obj.core.entitlement` | one | 8800 bp | 7000 bp | — | The clock's authority. Entitlement says a four-hour first response exists; this object is the four hours, on this ticket, starting now. The target is DERIVED from entitlement rather than stored beside it. Confidence sits well below weight because the lookup is skipped far more often than anyone admits. |
+| governed_by | `customer_support.obj.core.coverage_window` | zero_or_one | 8000 bp | 5500 bp | — | Which hours count. Zero only when calendar_type is calendar_hours — a 24/7 clock genuinely has no window, and every other clock that has none is misconfigured. The calendar is what turns a duration into a timestamp. A business-hours and a calendar-hours target produce wildly different due times from identical inputs, and this edge is the difference. |
+| escalates_to | `customer_support.obj.core.escalation` | zero_or_many | 6000 bp | 6000 bp | — | Approaching breach is the most legitimate escalation trigger there is, because it is the one an engineer cannot argue with. It is also the one most often fired too late to help. Fires on approach rather than on breach. An escalation raised after the clock expired is a report, not a save. |
+| references | `customer_support.obj.core.commitment` | zero_or_many | 4500 bp | 3000 bp | — | Agent promises made inside the clock's life. When a commitment is tighter than the SLA — it usually is — the commitment is the real deadline regardless of what the contract says. A human promise made alongside the contractual clock. Weak edge, high consequence — customers remember this one and not the SLA. |
+| influences | `customer_support.obj.core.churn_risk` | zero_or_one | 3500 bp | 3000 bp | — | A single breach influences little. A pattern of them on one account is among the clearest support-side churn predictors there is, which is why this edge exists on the target and not on the ticket. One breach rarely moves an account. A pattern of them does, and that inference belongs to Churn Risk. |
+| attaches_to | `customer_support.obj.core.queue` | zero_or_one | 5000 bp | 8000 bp | — | The queue is where breach risk becomes a staffing problem instead of a ticket problem, and where it is fixable a day earlier. Where the ticket is waiting decides whether anyone will see the target before it expires. |
 
 
 ## States
@@ -123,6 +123,13 @@ Initial `new`
 | coverage_reality | 1000 bp | context | `calendar_type`, `coverage_window_ref`, `timezone` |
 
 
+## Preconditions
+
+- **`sla.entitlement_resolved`** Entitlement must be resolved before a target can be computed at all. _(unmet → block)_
+- **`sla.calendar_bound`** A coverage window must be bound before a duration can become a timestamp. _(unmet → block)_
+- **`sla.start_event_observed`** The policy's start event must have been observed, not assumed. _(unmet → degrade)_
+
+
 ## Constraints
 
 - **`sla.cannot_exceed_entitlement`** A contractual target cannot be looser than the entitlement it derives from. Tighter is allowed and is an internal choice; looser is a breach of contract dressed as configuration.
@@ -148,6 +155,40 @@ Initial `new`
 
 - **`sla.target_must_derive_from_entitlement`** A target with is_contractual = true and a null entitlement_ref is invalid. We cannot owe a contractual response under a contract we cannot name.
 - **`sla.credit_exposure_null_is_not_zero`** A null credit_exposure means the commercial consequence is unknown and must never be reported as no exposure. Same trap as an unverified approval limit, same cost.
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **While a major incident is attached, individual first-response and resolution targets are suspended in favour of the incident's own clock and broadcast.** — Every target breaches at once and none of them means anything. Continuing to work them individually is the most expensive error available during an outage. _(overrides sla.breach_must_be_acknowledged)_
+- **An out-of-entitlement customer may be given an in-entitlement clock when the fault is one we caused.** — Hiding behind the contract for a defect we shipped costs more than the service does. This is a deliberate commercial exception and should be recorded as one rather than done quietly.
+- **The clock must not stay paused when the clarifying question was one we could have answered ourselves.** — This is the abuse case the pause mechanism invites. A question asked to stop the clock is indistinguishable in the data from a necessary one, which is exactly why the fast-pause review rule exists. _(overrides sla.pause_requires_a_reason)_
+- **A met target with a furious customer is treated as a measurement failure, not a success.** — The clock is a proxy for the experience and this is the case where the proxy has come apart from the thing it proxies. Reporting it green teaches the organisation to optimise the proxy.
+- **An ITIL service request is judged against a fulfilment target, not against a restoration target.** — Nothing is broken, so 'time to restore service' is undefined. Applying an incident clock to a password reset makes every request look trivial.
+
+
+## Best practices
+
+- **State which calendar a target runs on before quoting the number.** — Four hours means two entirely different deadlines under business hours and calendar hours, and nearly every SLA dispute in support traces back to that ambiguity rather than to the duration.
+- **Keep first-response and resolution as separate clocks with separate stop events.** — First response stops on the first public human comment; resolution stops on transition to resolved. They are different questions and a single field can only answer one of them.
+- **Treat the actionable moment as the approach, not the expiry.** — The work of avoiding a breach happens hours earlier, when nothing about the ticket looks different yet. A breach alert is a post-mortem notification wearing an alarm's clothing.
+- **Require a reason string on every pause, and review the fastest pauses rather than the longest.** — A long pause is usually a genuinely unresponsive customer. A pause entered minutes after assignment is usually the clock being managed.
+
+
+## Anti-patterns
+
+- **Asking a question the agent could answer, purely to move the ticket into waiting-on-customer.** — tempting because It is invisible, it is instantly effective, and under a breach-linked incentive it is the only lever an agent actually controls. Instead: Review time-to-first-pause, and exclude pauses shorter than a plausible reading of the ticket.
+- **Starting the first-response clock when an agent opens the ticket rather than when the customer submitted it.** — tempting because It feels fairer to the agent, and it is what several tools display by default. Instead: Start at submission, always, and measure queue time separately so the two problems stay distinguishable.
+- **Letting an automated acknowledgement satisfy the first-response target.** — tempting because It is technically a response and it makes the hardest metric in support go green for free. Instead: Stop the clock only on a human public comment.
+- **Alerting on breach and not on approach.** — tempting because Breach is a clean, unambiguous, easily-queried event; approach requires a threshold somebody has to choose and defend. Instead: Alert on projected breach given current queue state, and let Layer 4 own the threshold.
+
+
+## Dependencies
+
+- `customer_support.obj.core.entitlement` — derived_from (hard)
+- `customer_support.obj.core.coverage_window` — requires (hard)
+- `customer_support.obj.core.ticket` — requires (hard)
+- `customer_support.obj.core.incident` — invalidated_by (hard)
+- `customer_support.obj.core.escalation` — blocks (soft)
 
 
 ## Inputs
@@ -223,6 +264,14 @@ Initial `new`
 - **breach_depth_median** (minutes) — Median minutes past target. Distinguishes a queue that is slightly late from one that is losing tickets.
 
 
+## References
+
+- **SLA calendars, pause conditions and stop events** · practitioner
+- **SLA response time versus resolution time** · practitioner
+- **ITIL 4 — incident versus service request** · standard
+- **First contact resolution benchmarks** · research
+
+
 ## Examples
 
 - **Enterprise sev-1, one-hour first response, 24/7** — calendar_hours, is_contractual true, real credit exposure. The clock everybody watches and the one least likely to breach, because it is the only one anybody staffs for.
@@ -235,7 +284,7 @@ Initial `new`
 
 ## Metadata
 
-owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **partial**
+owner **Customer Support** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
 > Seven of fifteen patterns are executable, which is high for this domain and needs the justification given in the header: elapsed-time predicates (hours_since / days_since) plus thread.ball_in_court are the one clock-shaped primitive the substrate has, and this object is a clock. Every executable pattern here is a proxy and each note names the direction in which its proxy is weak — mostly in the direction that flatters us, which is the bias worth stating.

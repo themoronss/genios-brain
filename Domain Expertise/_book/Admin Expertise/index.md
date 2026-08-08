@@ -6,19 +6,21 @@
 
 > The administrative function of an organisation: holding it to its own commitments, moving decisions through the people entitled to make them, keeping the records that prove what happened, meeting the statutory and contractual obligations it is bound by, and running the people, money, supplier, facility and travel logistics that let everyone else do their job.
 
-`57` capabilities · `20` objects · `0` knowledge artifacts · `0` situations
+`57` capabilities · `23` objects · `0` knowledge artifacts · `0` situations
 
 
-## Core objects (18)
+## Core objects (20)
 
 Shared — loaded by more than one capability.
 
+- [Access Right](objects/core/access-right.md)
 - [Action Item](objects/core/action-item.md)
 - [Approval](objects/core/approval.md)
 - [Approver](objects/core/approver.md)
 - [Asset](objects/core/asset.md)
 - [Budget Line](objects/core/budget-line.md)
 - [Commitment](objects/core/commitment.md)
+- [Compliance Obligation](objects/core/compliance-obligation.md)
 - [Contract](objects/core/contract.md)
 - [Deadline](objects/core/deadline.md)
 - [Document](objects/core/document.md)
@@ -33,11 +35,12 @@ Shared — loaded by more than one capability.
 - [Vendor](objects/core/vendor.md)
 
 
-## Scoped objects (2)
+## Scoped objects (3)
 
 Loaded by exactly one capability.
 
 - [Filing](objects/statutory-filing/filing.md)
+- [Leave Request](objects/attendance-and-leave/leave-request.md)
 - [Time Block](objects/calendar-management/time-block.md)
 
 

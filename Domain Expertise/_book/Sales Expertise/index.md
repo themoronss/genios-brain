@@ -6,7 +6,7 @@
 
 > The revenue-generating motion: finding a market, reaching the people in it, establishing whether a real purchase is possible, proving value, agreeing commercial terms, closing, and growing the account afterwards — plus the operations and management disciplines that keep the motion measurable.
 
-`46` capabilities · `28` objects · `50` knowledge artifacts · `6` situations
+`46` capabilities · `28` objects · `55` knowledge artifacts · `6` situations
 
 
 ## Core objects (24)
@@ -49,18 +49,20 @@ Loaded by exactly one capability.
 - [Market Map](objects/market-research/market-map.md)
 
 
-## Mental models (10)
+## Mental models (12)
 
 - [A market is a repeated buying behaviour around a shared job. A list of…](mental-models/market-research/markets-are-behaviours.md)
 - [An ICP is a classifier and every classifier has two error types. Narro…](mental-models/icp-definition/profile-is-a-classifier.md)
 - [Category maturity chooses the sales motion; the motion cannot choose t…](mental-models/market-research/maturity-sets-the-motion.md)
 - [Every market has three competitors: the named vendor, the internal bui…](mental-models/market-research/three-competitors.md)
 - [Fit is a property of the pairing, not of the account. Half the profile…](mental-models/icp-definition/fit-is-a-joint-property.md)
+- [MEDDICC](mental-models/core/meddicc.md)
 - [Qualification is subtraction. The value is in what leaves the pipeline](mental-models/lead-qualification/qualification-is-subtraction-the-value-is.md)
 - [The profile is a bet about the next year, evidenced by the last two](mental-models/icp-definition/past-evidence-future-bet.md)
 - [The profile is the ruler; a fit assessment is one reading taken with i…](mental-models/icp-definition/the-ruler-and-the-reading.md)
 - [The purpose is not certainty. It is knowing how wrong the map can be w…](mental-models/market-research/research-is-bet-sizing.md)
 - [Three independent gates — money, authority, urgency. Failing any one i…](mental-models/lead-qualification/three-independent-gates-money-authority-urgency.md)
+- [Value Pyramid](mental-models/core/value-pyramid.md)
 
 
 ## Decision frameworks (6)
@@ -73,7 +75,7 @@ Loaded by exactly one capability.
 - [Win–loss–churn cohort comparison — three cohorts, dimensions ranked by…](decision-frameworks/icp-definition/tri-cohort.md)
 
 
-## Playbooks (13)
+## Playbooks (14)
 
 - [BANT — budget, authority, need, timing. Older, thinner, still the fast…](playbooks/lead-qualification/bant-budget-authority-need-timing-older.md)
 - [Build the profile from three cohorts, not one: won-and-retained, lost,…](playbooks/icp-definition/tri-cohort-analysis.md)
@@ -82,6 +84,7 @@ Loaded by exactly one capability.
 - [For every load-bearing claim, write the observation that would overtur…](playbooks/market-research/write-the-falsifier-first.md)
 - [Interview people who recently switched — reconstruct the weeks before …](playbooks/market-research/switch-interview.md)
 - [MEDDICC — metrics, economic buyer, decision criteria, decision process…](playbooks/lead-qualification/meddicc-metrics-economic-buyer-decision-criteria.md)
+- [Mutual Action Plan](playbooks/core/mutual-action-plan.md)
 - [Publish the disqualifier list before publishing the profile](playbooks/icp-definition/negative-list-first.md)
 - [Recompute against the most recent closed business each quarter and rai…](playbooks/icp-definition/drift-review-on-a-cadence.md)
 - [Reduce the profile to a checklist an SDR can run from a domain name an…](playbooks/icp-definition/checkable-from-a-domain-name.md)
@@ -90,12 +93,13 @@ Loaded by exactly one capability.
 - [Tear down the incumbent's public pricing, packaging, contract length a…](playbooks/market-research/incumbent-teardown.md)
 
 
-## Heuristics (21)
+## Heuristics (22)
 
 - [A contested category is cheaper to sell into than an empty one](heuristics/market-research/crowded-beats-empty.md)
 - [A date with no compelling event behind it is a preference, and prefere…](heuristics/lead-qualification/a-date-with-no-compelling-event.md)
 - [A disqualified account is frequently somebody else's ideal customer — …](heuristics/icp-definition/disqualified-is-not-worthless.md)
 - [A finding without a date and a decay rate should be treated as unknown…](heuristics/market-research/undated-findings-are-liabilities.md)
+- [A price objection implies a budget](heuristics/core/price-objection-implies-budget.md)
 - [A price objection is evidence a budget exists. Buyers with no money di…](heuristics/lead-qualification/a-price-objection-is-evidence-a.md)
 - [A segment is defined by whose budget line pays, not by industry code o…](heuristics/market-research/budget-owner-defines-the-segment.md)
 - [A segment that argues loudly about price has a budget line. A segment …](heuristics/market-research/haggling-proves-a-budget.md)
@@ -113,6 +117,11 @@ Loaded by exactly one capability.
 - [Two slips are not a timing problem. Something else is untrue — usually…](heuristics/lead-qualification/two-slips-are-not-a-timing.md)
 - [Work anti-fit before fit](heuristics/icp-definition/anti-fit-pays-first.md)
 - [`Unknown` budget fails closed. Treating unknown as present is the larg…](heuristics/lead-qualification/unknown-budget-fails-closed-treating-unknown.md)
+
+
+## Rules (1)
+
+- [No proposal without an identified decision maker](rules/core/no-proposal-without-decision-maker.md)
 
 
 ## Capabilities (46)

@@ -181,20 +181,15 @@ core_objects:
 # reference to an id that appears nowhere is an ERROR. Regenerate with:
 #   python "Domain Expertise/_tools/plan.py"
 planned_objects:
-  - {id: admin.obj.attendance_and_leave.leave_request, scope: attendance_and_leave, referenced_by: 1}
-  - {id: admin.obj.core.access_right, scope: core, referenced_by: 9}
   - {id: admin.obj.core.admin_risk, scope: core, referenced_by: 1}
-  - {id: admin.obj.core.audit_evidence, scope: core, referenced_by: 8}
-  - {id: admin.obj.core.compliance_obligation, scope: core, referenced_by: 23}
-  - {id: admin.obj.core.deadline, scope: core, referenced_by: 23}
-  - {id: admin.obj.core.delegate, scope: core, referenced_by: 4}
+  - {id: admin.obj.core.audit_evidence, scope: core, referenced_by: 11}
+  - {id: admin.obj.core.delegate, scope: core, referenced_by: 5}
   - {id: admin.obj.core.facility, scope: core, referenced_by: 2}
+  - {id: admin.obj.core.itinerary, scope: core, referenced_by: 1}
   - {id: admin.obj.core.purchase_order, scope: core, referenced_by: 2}
   - {id: admin.obj.core.record_series, scope: core, referenced_by: 2}
   - {id: admin.obj.core.service_level, scope: core, referenced_by: 5}
   - {id: admin.obj.core.stakeholder, scope: core, referenced_by: 8}
-  - {id: admin.obj.event_coordination.event, scope: event_coordination, referenced_by: 1}
-  - {id: admin.obj.travel_booking.trip, scope: travel_booking, referenced_by: 2}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Glossary — terms that mean something specific HERE and are routinely confused

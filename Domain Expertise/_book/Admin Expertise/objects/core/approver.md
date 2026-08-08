@@ -2,104 +2,136 @@
 
 # Approver
 
-`admin.obj.core.approver` · v1.0.0 · **draft** · scope **core**
+`admin.obj.core.approver` · v2.0.0 · **draft** · scope **core**
 
-> A person holding delegated authority to approve a defined class of decision, usually up to a defined limit, for a defined period. Authority here is conferred and documented — it comes from a delegation-of-authority matrix, a board resolution, a bank mandate or a policy, not from seniority and not from who owns the problem. That is the structural difference from a Sales decision maker: their authority is inferred from behaviour, this one's is written down somewhere nobody has read since it was issued. The expensive questions about an approver are therefore not "can they sign" but "are they here", "who covers them", "is their authority still in date", and "is anyone else able to do this at all".
-
-
-Also called: `Authoriser`, `Signatory`, `Sign-off Holder`, `Delegated Authority Holder`, `Approving Officer`
+> A person holding delegated authority to approve a defined class of decision, usually up to a defined limit, for a defined period. Authority here is conferred and documented — it comes from a delegation-of-authority matrix, a board resolution, a bank mandate or a policy, not from seniority and not from owning the problem. It is also revocable, expirable and, crucially, unexercisable while its holder is unavailable, which is the state most approval delay is actually in.
 
 
-## Attributes (39)
+**The discriminator.** Authority that can be exercised today, by this person or a recorded delegate. A holder with perfect authority who is on leave with no delegate is not an approver for the next fortnight; they are a stoppage. The Sales Decision Maker is discovered from behaviour, this one is conferred by an instrument — so the expensive questions are never "can they sign" but "are they here", "who covers them", "is the instrument still in date", and "can anyone else do this at all".
+
+
+Also called: `Authoriser`, `Signatory`, `Sign-off Holder`, `Delegated Authority Holder`, `Approving Officer`, `Budget Holder`, `Authorised Signatory`
+
+
+### Questions this object answers
+
+- Is this person entitled to decide this item, at this value, in this class?
+- Can they decide it today, or is the authority sitting in an empty chair?
+- Who is the effective approver right now — the holder, or an in-date delegate?
+- If they are unreachable, who is the next rung, and does that rung actually hold the scope?
+- Is this authority a single point of failure, and has anyone said so before the day it stops?
+- Does the paper authority match the system entitlement, in both directions?
+- Is this approver a control, or a rubber stamp with a queue?
+
+
+### What it is NOT responsible for
+
+- NOT the decision. The item, its clock, its stuck_reason and its evidence belong to admin.obj.core.approval.
+- NOT the person as an employee. Contract, reporting line, leave and leaver date belong to admin.obj.core.employee_record.
+- NOT the delegate. The covering person and the delegation instrument are admin.obj.core.delegate.
+- NOT the entitlement. The right to press approve in a given system is admin.obj.core.access_right, and it drifts from this object in both directions.
+- NOT a Sales Decision Maker. That object solves discovery; this one solves availability, and the two need almost opposite evidence.
+
+
+## Attributes (45)
 
 | Attribute | Type | Data | Req | Purpose | Source / contains |
 |---|---|---|---|---|---|
-| `conferred_authority` | composite |  |  | What this person may approve, up to what value, under what instrument, until when. | `authority_scope`, `approval_limit`, `authority_source`, `authority_reference`, `effective_from`, `effective_to` |
+| `conferred_authority` | composite |  |  | What this person may approve, up to what value, under what instrument, until when. | `authority_scope`, `approval_limit`, `authority_source`, `authority_reference`, `effective_from`, `effective_to`, `authority_is_current`, `is_sole_holder` |
 | `delegation` | composite |  |  | Who exercises the authority when the holder cannot. The half of this object that decides whether an absence costs an hour or a fortnight.  | `delegate_ref`, `delegation_state`, `delegation_from`, `delegation_until`, `delegation_is_recorded`, `sub_delegation_permitted` |
-| `availability` | composite |  |  | Whether the authority can actually be exercised today. | `availability_state`, `unavailable_until`, `timezone`, `working_pattern`, `typical_decision_hours` |
-| `control_position` | composite |  |  | The approver's place in the control design — four-eyes partner, escalation rung, conflicts. | `requires_second_approver`, `four_eyes_partner_ref`, `escalates_to_ref`, `segregation_conflicts`, `is_sole_holder` |
-| `behaviour` | composite |  |  | What this person does with an approval when it lands, as opposed to what the matrix says they may do. | `decision_style`, `information_demanded`, `rejection_rate`, `open_approval_count`, `preferred_channel` |
+| `availability` | composite |  |  | Whether the authority can actually be exercised today, and if not, when. | `availability_state`, `unavailable_until`, `timezone`, `working_pattern`, `typical_decision_hours`, `next_decision_window`, `is_routable_now` |
+| `control_position` | composite |  |  | This approver's place in the control design — four-eyes partner, escalation rung, conflicts. | `requires_second_approver`, `four_eyes_partner_ref`, `escalates_to_ref`, `reports_to_ref`, `segregation_conflicts` |
+| `behaviour` | composite |  |  | What this person does with an approval when it lands, as opposed to what the matrix says they may do. | `decision_style`, `information_demanded`, `rejection_rate`, `open_approval_count`, `preferred_channel`, `reroute_in_rate` |
 | `observed_engagement` | composite |  |  | The only part of this object with a live Layer 2 source today. | `last_engaged_at`, `engagement_trend`, `ball_in_court` |
-| `system_position` | composite |  |  | The gap between authority on paper and the ability to press the button. | `employee_ref`, `system_entitlements` |
-| `authority_scope` | value | list | yes | The classes of decision this person may approve — spend, contract, access, leave, payroll, disposal. Scope is more load-bearing than limit and is recorded far less often: a finance director with a large limit for spend may hold no authority at all over access grants, and routing an access request to them buys a fortnight of politeness and no decision. |  |
-| `approval_limit` | value | money |  | Maximum value approvable unaided, for the classes in authority_scope. Null means unknown, never unlimited — the same rule as the Sales object and broken more often here, because an administrator who cannot find the limit assumes the senior person has one. |  |
-| `authority_source` | value | enum |  | `custom_practice` — they have always signed these — is the most common source in practice and the least defensible under examination. It is also the one that silently survives a reorganisation: the person keeps signing, the role that justified it no longer exists. |  |
-| `authority_reference` | value | string |  | The matrix row, resolution date or mandate clause. Turns "I think she can approve that" into something an auditor accepts. |  |
-| `effective_from` | value | timestamp |  | The effective_from of this object. |  |
-| `effective_to` | value | timestamp |  | Authority expires. DOA matrices are commonly re-issued annually and adoption is partial, so at any moment a fraction of an organisation is approving under a superseded version. Nothing anywhere alerts on this, and every approval granted past effective_to is technically void. |  |
-| `is_sole_holder` | value | boolean |  | No one else holds this authority class at this limit. The single most useful boolean in the object and it exists in no system: sole holder plus any absence equals a full stop, and it is only ever discovered on the day it happens. |  |
-| `requires_second_approver` | value | boolean |  | Four-eyes. Set by the control design, not by the value. |  |
-| `four_eyes_partner_ref` | reference | ref |  | Self-referential. Worth naming explicitly because the second pair of eyes is usually whoever is nearest, and "whoever is nearest" is how both signatures end up belonging to the same reporting line — which satisfies the form and defeats the control. | admin.obj.core.approver |
-| `escalates_to_ref` | reference | ref |  | Self-referential — the next rung. Populating this is what turns an approver population into a usable escalation ladder. | admin.obj.core.approver |
-| `segregation_conflicts` | value | list |  | Duty pairs this person holds that policy says should be split — raises the purchase order and approves the invoice, administers the HR system and approves its access. In a small organisation these are unavoidable and the correct response is a documented compensating control, not a pretence that the conflict does not exist. |  |
-| `delegate_ref` | reference | ref |  | The person exercising this authority during an absence or a standing arrangement. | admin.obj.core.delegate |
-| `delegation_state` | value | enum |  | `undocumented` is the value that matters. An approver who told their assistant to "just approve anything under five thousand" has delegated; the system does not know it, the assistant is exercising authority they do not hold, and the discovery event is an audit. |  |
-| `delegation_from` | value | timestamp |  | The delegation_from of this object. |  |
-| `delegation_until` | value | timestamp |  | An open-ended temporary delegation is a permanent one that nobody decided to make. |  |
-| `delegation_is_recorded` | value | boolean |  | The delegation_is_recorded of this object. |  |
-| `sub_delegation_permitted` | value | boolean |  | Whether the delegate may delegate onward. Almost always no, almost never checked, and the second hop is where authority chains become untraceable. |  |
-| `availability_state` | value | enum |  | `unknown` is the default and the problem. Approvals are routed to people whose availability nobody checked, then chased for a week, then escalated — a sequence that would have collapsed to one re-route if the first fact had been visible. |  |
-| `unavailable_until` | value | timestamp |  | The unavailable_until of this object. |  |
-| `timezone` | value | string |  | A same-day approval across an eight-hour offset is a two-day approval. Nothing models this and every global coordinator works around it by hand. |  |
-| `working_pattern` | value | string |  | Part-time and compressed-hours approvers are a systematic, predictable source of delay that no queue models. A Tuesday-Thursday approver has a structural three-day weekend for approval purposes and is measured against a five-day norm. |  |
-| `typical_decision_hours` | value | duration |  | This person's own normal, per approval type. The baseline against which stuck is defined, and it does not exist anywhere yet. |  |
-| `open_approval_count` | value | integer |  | Current queue depth. Load and absence produce identical symptoms and need opposite remedies — one wants a delegate, the other wants fewer approvals routed here at all. |  |
-| `rejection_rate` | value | number |  | Read the zero, not the high value. An approver who has never rejected anything is not a careful custodian, they are a rubber stamp, and every hour their queue costs the organisation buys no control whatsoever. |  |
-| `decision_style` | value | enum |  | `batching` is the most common and the least accommodated: an approver who clears their queue every Friday morning is not slow, and chasing them on Wednesday is pure noise. Knowing this changes when to send, not how hard to push. |  |
-| `information_demanded` | value | list |  | What this person always asks for before deciding — the quote comparison, the budget line, the prior year's figure. Sending it unprompted removes an entire round trip. |  |
-| `preferred_channel` | value | enum |  | The preferred_channel of this object. |  |
-| `employee_ref` | reference | ref |  | The employee_ref of this object. | admin.obj.core.employee_record |
-| `system_entitlements` | value | list |  | The approval rights this person actually holds in each system. Authority on paper and the ability to click approve in the ERP drift apart at every joiner-mover-leaver event, in both directions: new approvers who cannot approve, and leavers who still can. |  |
-| `last_engaged_at` | value | timestamp |  | The last_engaged_at of this object. | `thread.last_inbound` |
-| `engagement_trend` | value | number |  | Engine-computed. A collapsing trend on an approver is more often absence than disengagement, and the two need entirely different responses. | `derived.engagement` |
-| `ball_in_court` | value | enum |  | The ball_in_court of this object. | `thread.ball_in_court` |
+| `system_position` | composite |  |  | The gap between authority on paper and the ability to press the button. | `employee_ref`, `system_entitlements`, `entitlement_matches_authority` |
+| `authority_scope` | value | list | yes | The classes of decision this person may approve at all. |  |
+| `approval_limit` | value | money |  | Maximum value approvable unaided within the scope classes. |  |
+| `authority_source` | value | enum |  | The instrument the authority comes from. |  |
+| `authority_reference` | value | string |  | The citation — matrix row, resolution date, mandate clause. |  |
+| `effective_from` | value | timestamp |  | When this authority began. |  |
+| `effective_to` | value | timestamp |  | When this authority ends. Authority expires and nothing alerts on it. |  |
+| `authority_is_current` | derived | boolean |  | Whether the instrument is in date right now. | `effective_from`, `effective_to`, `authority_source` |
+| `is_sole_holder` | derived | boolean |  | Whether anyone else holds this authority class at this limit. | `authority_scope`, `approval_limit`, `escalates_to_ref` |
+| `delegate_ref` | reference | ref |  | The person exercising this authority during an absence or standing arrangement. | admin.obj.core.delegate |
+| `delegation_state` | value | enum |  | What kind of cover exists, if any. |  |
+| `delegation_from` | value | timestamp |  | When the cover starts. |  |
+| `delegation_until` | value | timestamp |  | When the cover ends. |  |
+| `delegation_is_recorded` | value | boolean |  | Whether the delegation exists as an instrument rather than as an understanding. |  |
+| `sub_delegation_permitted` | value | boolean |  | Whether the delegate may delegate onward. |  |
+| `availability_state` | value | enum |  | Whether the authority can be exercised today. |  |
+| `unavailable_until` | value | timestamp |  | When they are back. |  |
+| `timezone` | value | string |  | Where the working day actually falls. |  |
+| `working_pattern` | value | string |  | Which days this person works. |  |
+| `typical_decision_hours` | derived | duration |  | This person's own normal decision time, per approval class. | `last_engaged_at`, `decision_style`, `open_approval_count` |
+| `next_decision_window` | derived | timestamp |  | The next moment this approver realistically decides anything. | `working_pattern`, `decision_style`, `timezone`, `unavailable_until` |
+| `is_routable_now` | derived | boolean |  | Whether sending here today produces a decision or a wait. | `availability_state`, `delegate_ref`, `delegation_state`, `authority_is_current`, `entitlement_matches_authority` |
+| `requires_second_approver` | value | boolean |  | Whether a decision by this person alone is sufficient. |  |
+| `four_eyes_partner_ref` | reference | ref |  | The second pair of eyes. | admin.obj.core.approver |
+| `escalates_to_ref` | reference | ref |  | The next rung. | admin.obj.core.approver |
+| `reports_to_ref` | reference | ref |  | The reporting line, needed to test four-eyes independence. | admin.obj.core.employee_record |
+| `segregation_conflicts` | value | list |  | Duty pairs this person holds that policy says should be split. |  |
+| `decision_style` | value | enum |  | How this person behaves when an approval lands. |  |
+| `information_demanded` | value | list |  | What this person always asks for before deciding. |  |
+| `rejection_rate` | value | number |  | How often this approver actually refuses anything. |  |
+| `open_approval_count` | value | integer |  | Current queue depth with this person. |  |
+| `preferred_channel` | value | enum |  | Where this person actually reads approval requests. |  |
+| `reroute_in_rate` | value | number |  | Share of approvals arriving here that turn out to belong elsewhere. |  |
+| `last_engaged_at` | value | timestamp |  | Last two-way contact on any live thread. | `thread.last_inbound` |
+| `engagement_trend` | derived | number |  | Direction of two-way volume, which distinguishes going quiet from being busy here. | `derived.engagement` |
+| `ball_in_court` | value | enum |  | Whether a decision is with them right now. | `thread.ball_in_court` |
+| `employee_ref` | reference | ref |  | The employment record behind the authority. | admin.obj.core.employee_record |
+| `system_entitlements` | value | list |  | The approval rights this person actually holds in each system. |  |
+| `entitlement_matches_authority` | derived | boolean |  | Whether the system rights and the paper authority agree. | `system_entitlements`, `authority_scope`, `approval_limit`, `authority_is_current` |
 
 
 ## Relationships
 
 | Verb | Target | Card. | Weight | Conf. | When | Notes |
 |---|---|---|---|---|---|---|
-| approves | `admin.obj.core.approval` | zero_or_many |  |  | — |  |
-| delegates_to | `admin.obj.core.delegate` | zero_or_one |  |  | — | Valid only while recorded and in date. An unrecorded delegation is not a lighter version of this relationship; it is a different and worse thing. |
-| escalates_to | `admin.obj.core.approver` | zero_or_one |  |  | — | Self-referential. The rung above. Without it there is no ladder, only a list of people. |
-| works_with | `admin.obj.core.approver` | zero_or_many |  |  | — | The four-eyes partner. Must not share a reporting line with this approver or the second pair of eyes belongs to the first. |
-| governed_by | `admin.obj.core.policy` | zero_or_many |  |  | — | The DOA matrix or financial regulations that confer and bound the authority. |
-| belongs_to | `admin.obj.core.employee_record` | zero_or_one |  |  | — | The join that makes leaver-still-approving detectable. Nobody currently makes it. |
-| requires | `admin.obj.core.access_right` | zero_or_many |  |  | — | The entitlement that lets them exercise the authority in the system. Authority is granted by policy and revoked by policy; the access is granted by IT and revoked by nobody.  |
-| covers | `admin.obj.core.budget_line` | zero_or_many |  |  | — | The budget this person's spend authority operates against. A limit without a budget line is a number with nothing behind it. |
-| gates | `admin.obj.core.deadline` | zero_or_many |  |  | — | Their availability, not our urgency, sets the achievable date. The same truth as the Sales object, arrived at for a different reason. |
-| blocks | `admin.obj.core.request` | zero_or_many |  |  | — |  |
+| approves | `admin.obj.core.approval` | zero_or_many | 2200 bp | 8500 bp | — | The reason the object exists. Every edge here is a clock somewhere else, running against somebody who cannot see this person's calendar. |
+| governed_by | `admin.obj.core.policy` | zero_or_many | 1600 bp | 7500 bp | — | The DOA matrix, scheme of delegation or financial regulations that confer and bound the authority. Without this edge, authority_source falls to custom_practice and the object is recording a habit rather than an authority.  |
+| delegates_to | `admin.obj.core.delegate` | zero_or_one | 1400 bp | 5500 bp | `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 5}` | Valid only while recorded and in date. An unrecorded delegation is not a lighter version of this edge; it is a different and worse thing, and it is what most organisations actually run on.  |
+| escalates_to | `admin.obj.core.approver` | zero_or_one | 1200 bp | 6500 bp | — | Self-referential — the rung above. Without it there is no ladder, only a list of people. |
+| belongs_to | `admin.obj.core.employee_record` | zero_or_one | 1000 bp | 7000 bp | — | The join that makes leaver-still-approving detectable. Nobody currently makes it, which is exactly why the orphaned-approver finding is discovered by an auditor rather than by a system.  |
+| works_with | `admin.obj.core.approver` | zero_or_many | 800 bp | 5000 bp | — | The four-eyes partner. Must not share a reporting line with this approver, or the second pair of eyes belongs to the first and the control has never once disagreed with itself.  |
+| requires | `admin.obj.core.access_right` | zero_or_many | 700 bp | 6000 bp | — | The entitlement that lets them exercise the authority inside the system. Authority is granted by policy and revoked by policy; the access is granted by IT and revoked by nobody.  |
+| requires | `admin.obj.core.escalation` | zero_or_many | 400 bp | 5000 bp | — | The exit path when this approver cannot be reached. An escalation to a rung that does not hold the scope is not an escalation, only a longer wait. |
+| covers | `admin.obj.core.budget_line` | zero_or_many | 500 bp | 6000 bp | — | The budget their spend authority operates against. A limit with no budget line behind it is a number, not an authority. |
+| gates | `admin.obj.core.deadline` | zero_or_many | 400 bp | 5500 bp | — | Their availability, not our urgency, sets the achievable date. The same truth as the Sales object, arrived at for an entirely different reason. |
+| blocks | `admin.obj.core.request` | zero_or_many | 300 bp | 6000 bp | — | What is waiting on this person across the whole organisation. Aggregated, it is the queue-depth figure that distinguishes an overloaded approver from an absent one. |
+| governed_by | `admin.obj.core.compliance_obligation` | zero_or_many | 400 bp | 5000 bp | — | Where a regulator names the individual — money laundering reporting officer, data protection officer, company secretary, statutory director. These authorities cannot be re-routed at all, which makes escalation useless as a remedy and succession the only real control.  |
+| reports_to | `admin.obj.core.employee_record` | zero_or_one | 300 bp | 6500 bp | — | Needed to test four-eyes independence. Independence is a property of the org chart and it is checked against the approval form, which is why it always passes. |
 
 
 ## States
 
-Initial `unknown`
+Initial `unknown` · terminal `revoked`, `inactive`
 
 | State | Means | Entered when | Implies |
 |---|---|---|---|
-| `unknown` | No authority record found. The honest default, and the state most approvers are in from the system's point of view even where a matrix exists on a shared drive. | — |  |
+| `unknown` | No authority record found. The honest default, and the state most approvers are in from the system's point of view even where a matrix exists on a shared drive. | — | Do not route on assumption. Find the instrument first. |
 | `identified` | A candidate holder named, from routing history or from being told. | — |  |
-| `verified` | Authority confirmed against an instrument — matrix row, resolution, mandate. Not confirmed by the person saying so. | — |  |
-| `active` | Verified, in date, available, and deciding. | `thread.ball_in_court = them` |  |
-| `on_hold` | Temporarily unavailable with a recorded delegate in place. Operationally fine; the queue does not notice. | — |  |
-| `at_risk` | Unavailable or unresponsive with no delegate. This is the single-point-of-failure state and the reason the object exists. Nothing in any deployed system computes it.  | `edge_count <= 1` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 5}` |  |
-| `expired` | Authority past effective_to. Still routed to, still deciding, and every decision voidable. | — |  |
-| `revoked` | Authority withdrawn — a role change, a control finding, a suspension. Revocation of the paper authority almost never triggers revocation of the system entitlement. | — |  |
-| `inactive` | Left the organisation or the role. The state where orphaned approval entitlements are found. | — |  |
+| `verified` | Authority confirmed against an instrument — matrix row, resolution, mandate. Not confirmed by the person saying so. | — | Decisions taken here are defensible. Nothing before this state is. |
+| `active` | Verified, in date, available, and deciding. | `thread.ball_in_court = them` | Route freely within scope and limit. |
+| `on_hold` | Temporarily unavailable with a recorded delegate in place. Operationally fine; the queue does not notice and should not. | — | Route to the delegate rather than the holder. An absence with cover is not a delay. |
+| `at_risk` | Unavailable or unresponsive with no delegate. The single-point-of-failure state and the reason this object exists. Nothing in any deployed system computes it.  | `thread.ball_in_court = them` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 5}` | A business-continuity item, not a chasing item. Reminders here are wasted and slightly insulting. |
+| `expired` | Authority past effective_to. Still routed to, still deciding, and every decision voidable. | — | Stop routing and renew the instrument. Ratify anything already decided in the gap. |
+| `revoked` | Authority withdrawn — a role change, a control finding, a suspension. | — | Revocation of the paper authority almost never triggers revocation of the system entitlement, so check both. |
+| `inactive` | Left the organisation or the role. The state where orphaned approval entitlements are found, usually by an auditor. | — |  |
 
 
-## Inference patterns — 5 executable, 7 blocked
+## Inference patterns — 5 executable, 11 blocked
 
 
 ### Executable against the pipeline today
 
 | Pattern | Kind | Reads | Yields | Statement | False positive |
 |---|---|---|---|---|---|
-| `apr.approved_budget_is_spend_authority` | deterministic | `has_obs: budget_approved` | 8600 bp → `authority_source` | This person approved budget in their own thread — they hold spend authority at least at this value. |  |
-| `apr.sole_route_to_the_decision` | heuristic | `edge_count <= 1` AND `thread.ball_in_court = them` | 7000 bp → `is_sole_holder` | Exactly one person stands between this work and its decision — the operational definition of a single point of failure. |  |
-| `apr.silent_far_past_own_cadence` | heuristic | `thread.ball_in_court = them` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 5}` | 6500 bp → `availability_state` | No response for three times this person's own normal reply interval — more often absence than refusal. |  |
+| `apr.approved_budget_is_spend_authority` | deterministic | `has_obs: budget_approved` | 8600 bp → `authority_source` | This person approved budget in their own thread — they hold spend authority at least at this value. | They may have been relaying an approval taken above them. The relay and the decision are indistinguishable in an email and have different holders, which matters at the moment somebody asks who authorised it.  |
+| `apr.sole_route_to_the_decision` | heuristic | `edge_count <= 1` AND `thread.ball_in_court = them` | 7000 bp → `is_sole_holder` | Exactly one person stands between this work and its decision — the operational definition of a single point of failure. | A single edge may reflect a thin thread rather than a thin authority pool. The approval may be perfectly well covered by three other holders, none of whom happen to be on this conversation.  |
+| `apr.silent_far_past_own_cadence` | heuristic | `thread.ball_in_court = them` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 5}` | 6500 bp → `availability_state` | No response for three times this person's own normal reply interval — more often absence than refusal. | A batching approver on a fortnightly governance cycle trips this reliably and is not absent at all. Suppressed by the exception apr.batching_is_not_unavailability once a rhythm is known.  |
+| `apr.quiet_across_every_thread` | heuristic | `derived.engagement <= 0.5` AND `days_since(thread.last_inbound) >= {'baseline': 'reply_cadence', 'mult': 3, 'floor': 5}` | 6200 bp | Two-way volume with this person has collapsed everywhere at once, not just on this approval. | A genuinely busy fortnight — year end, a conference, a project crunch — looks identical to leave from the outside. |
 | `apr.holds_the_contract_gate` | heuristic | `has_obs: legal_review` AND `thread.ball_in_court = them` | 7200 bp → `authority_scope` | Legal review sits with this person — they hold contract approval authority whatever their title says. |  |
-| `apr.engagement_collapse_without_departure` | heuristic | `derived.engagement <= 0.5` AND `edge_count >= 2` | 6000 bp → `decision_style` | Two-way volume with this approver has halved while they remain on live threads — load or absence, not disengagement. |  |
 
 
 ### Blocked — needs a signal the pipeline does not emit
@@ -107,139 +139,272 @@ Initial `unknown`
 | Pattern | Kind | Needs | Would yield | Statement |
 |---|---|---|---|---|
 | `apr.doa_matrix_row` | deterministic | `approval.approver` (fact_path), `approval.threshold_value` (fact_path) | 10000 bp | A delegation-of-authority matrix records this person's scope and limit. |
+| `apr.named_in_a_resolution_or_mandate` | deterministic | `approval.approver` (fact_path) | 10000 bp | A board resolution or bank mandate names this person as an authorised signatory. |
 | `apr.authority_expiry_recorded` | deterministic | `approver.effective_to` (fact_path) | 9800 bp | The instrument conferring this authority has an end date that has passed. |
-| `apr.leaver_still_holds_the_entitlement` | deterministic | `leaver_confirmed` (obs_kind), `access.last_used_at` (fact_path) | 9500 bp | This approver has left and their approval entitlement in the system is still live. |
+| `apr.leaver_still_holds_the_entitlement` | deterministic | `leaver_confirmed` (obs_kind), `employee.end_at` (fact_path), `access.last_used_at` (fact_path) | 9500 bp | This approver has left and their approval entitlement in the system is still live. |
 | `apr.out_of_office_with_no_delegate` | heuristic | `approver.unavailable_until` (fact_path), `approval_delegated` (obs_kind) | 9000 bp | The approver's calendar shows an absence and no delegation is recorded against them. |
 | `apr.undocumented_delegation_in_operation` | heuristic | `approval_granted` (obs_kind), `approval.approver` (fact_path) | 8200 bp | Decisions are being made in this approver's name by somebody else, with no recorded delegation. |
+| `apr.authority_without_the_entitlement` | heuristic | `access.granted_at` (fact_path), `joiner_confirmed` (obs_kind) | 8800 bp | This person holds the authority on paper and cannot exercise it in the system. |
+| `apr.four_eyes_partner_reports_to_holder` | heuristic | `approval.approver` (fact_path), `derived.reporting_distance` (derived) | 8500 bp | The nominated second approver reports to the first, so the control is a formality. |
 | `apr.rubber_stamp` | heuristic | `approval_rejected` (obs_kind), `derived.approval_rejection_rate` (derived) | 7500 bp | This approver has a material approval volume and has never rejected anything. |
-| `apr.authority_without_the_entitlement` | heuristic | `access.granted_at` (fact_path) | 8800 bp | This person holds the authority on paper and cannot exercise it in the system. |
+| `apr.batching_rhythm_is_not_absence` | heuristic | `approval_turnaround` (baseline), `derived.approval_latency` (derived) | 8000 bp | This approver clears their queue on a regular rhythm — the gaps are structure, not silence. |
+| `apr.overloaded_not_absent` | heuristic | `approval.state` (fact_path) | 7000 bp | Queue depth with this person has grown while their response behaviour is unchanged — load, not absence. |
 
 
 ## Decision factors
 
 | Factor | Weight | Direction | Reads |
 |---|---|---|---|
-| authority_validity | 2500 bp | increases | `authority_scope`, `approval_limit`, `authority_source`, `effective_to` |
-| availability | 2000 bp | increases | `availability_state`, `unavailable_until`, `timezone`, `working_pattern` |
+| authority_validity | 2500 bp | increases | `authority_scope`, `approval_limit`, `authority_source`, `authority_is_current`, `effective_to` |
+| availability | 2000 bp | increases | `availability_state`, `unavailable_until`, `timezone`, `working_pattern`, `is_routable_now` |
 | delegation_coverage | 1500 bp | increases | `delegate_ref`, `delegation_state`, `delegation_until`, `delegation_is_recorded` |
 | single_point_of_failure | 1500 bp | decreases | `is_sole_holder`, `delegate_ref`, `escalates_to_ref` |
-| decision_latency_history | 1200 bp | context | `typical_decision_hours`, `decision_style`, `engagement_trend` |
+| decision_latency_history | 1200 bp | context | `typical_decision_hours`, `decision_style`, `engagement_trend`, `next_decision_window` |
 | control_integrity | 800 bp | context | `requires_second_approver`, `four_eyes_partner_ref`, `segregation_conflicts`, `rejection_rate` |
-| queue_load | 500 bp | decreases | `open_approval_count`, `last_engaged_at` |
+| queue_load | 500 bp | decreases | `open_approval_count`, `last_engaged_at`, `reroute_in_rate` |
+
+
+## Preconditions
+
+- **`apr.identity_is_a_person`** The approver resolves to a named individual, not a role, a team inbox or a job title. _(unmet → Block. A shared mailbox cannot hold authority and cannot be absent, so every downstream availability and continuity computation on this object silently returns nothing useful. Resolve the name before routing anything.
+)_
+- **`apr.instrument_located`** The instrument conferring the authority has been located and cited. _(unmet → Degrade to authority_source = custom_practice and say so explicitly in anything Layer 4 produces. Do not silently promote observed behaviour to conferred authority — the whole point of the distinction is that one is defensible and the other is a habit.
+)_
+- **`apr.scope_and_limit_both_known`** Both the classes of decision and the value ceiling are known, not just one of them. _(unmet → Block the routing decision on whichever is missing. Scope missing is worse than limit missing and is treated as the lesser problem everywhere, because value is a number and scope is a list nobody wrote down.
+)_
+- **`apr.availability_checked_before_routing`** availability_state is resolved to something other than unknown before an approval is sent here. _(unmet → Degrade, and route anyway — but attach the uncertainty so the chase schedule does not assume presence. The sequence that wastes the most administrative time in existence is route, chase for a week, escalate, discover they were on leave the whole time.
+)_
+- **`apr.four_eyes_partner_independent`** Where a second approver is required, the partner's reporting line is known and does not run through this approver. _(unmet → Block the four-eyes claim, not the approval. An unverifiable independence claim is worse than an acknowledged single approval, because it is recorded as a control and relied upon as one.
+)_
+- **`apr.entitlement_join_available`** The system entitlements for this approver can be read and compared with the paper authority. _(unmet → Degrade. Assume the paper authority and flag that it is unverified in the system. Expect both failure modes — the mover who cannot approve and the leaver who still can — to stay invisible until somebody hits them.
+)_
 
 
 ## Constraints
 
 - **`apr.cannot_approve_above_limit`** Cannot decide an item whose value exceeds approval_limit.
-- **`apr.cannot_approve_outside_scope`** Cannot decide a class of item outside authority_scope,however senior.
-- **`apr.cannot_approve_own_item`** Cannot approve anything they raised or benefit from.
-- **`apr.cannot_act_past_effective_to`** Cannot exercise authority after effective_to; theinstrument must be renewed first.
-- **`apr.delegate_bound_by_same_limits`** A delegate inherits the holder's scope and limitand never exceeds them.
-- **`apr.no_sub_delegation`** A delegate may not delegate onward unless sub_delegation_permittedis true.
+- **`apr.cannot_approve_outside_scope`** Cannot decide a class of item outside authority_scope, however senior.
+- **`apr.cannot_approve_own_item`** Cannot approve anything they raised or personally benefit from — their own expense claim, their own leave, their own purchase order.
+- **`apr.cannot_act_past_effective_to`** Cannot exercise authority after effective_to; the instrument must be renewed first.
+- **`apr.delegate_bound_by_same_limits`** A delegate inherits the holder's scope and limit and never exceeds them.
+- **`apr.no_sub_delegation`** A delegate may not delegate onward unless sub_delegation_permitted is explicitly true on the original holder.
 - **`apr.four_eyes_independence`** The second approver must not report to the first.
-- **`apr.batching_window_is_soft`** Sending outside a batching approver's window is permittedbut should be expected to wait. _(soft)_
+- **`apr.statutory_role_cannot_be_delegated`** Authority conferred on a named individual by statute or regulation cannot be delegated to anyone.
+- **`apr.batching_window_is_soft`** Sending outside a batching approver's window is permitted but should be expected to wait. _(soft)_
 
 
 ## Business rules
 
 - **`apr.unknown_limit_is_not_unlimited`** A null approval_limit must be treated as unknown, never as sufficient. Routing to a senior person because their limit could not be found is how an unauthorised approval gets made in good faith.
-- **`apr.self_approval_prohibited`** An approver may not approve anything they raised or personally benefit from — their own expense claim, their own leave, their own purchase order.
+
+- **`apr.self_approval_prohibited`** An approver may not approve anything they raised or personally benefit from.
 - **`apr.four_eyes_distinct_reporting_line`** Where requires_second_approver is true, the partner must not report to this approver. Two signatures inside one reporting line satisfy the form and defeat the control.
-- **`apr.authority_expired_is_void`** Approvals granted after effective_to are void and must be re-obtained under the current instrument. This is the failure nobody notices because the person is still there and still senior.
-- **`apr.sole_holder_absence_is_a_stoppage`** An approver who is is_sole_holder and whose availability_state is anything other than available, with delegation_state = none, must be raised as a business-continuity item on day one — not chased on day five.
+- **`apr.authority_expired_is_void`** Approvals granted after effective_to are void and must be re-obtained under the current instrument. The failure nobody notices, because the person is still there and still senior.
+
+- **`apr.sole_holder_absence_is_a_stoppage`** An approver who is a sole holder and whose availability_state is anything other than available, with delegation_state = none, must be raised as a business-continuity item on day one — not chased on day five.
 
 - **`apr.delegation_must_be_recorded_and_bounded`** A delegation with delegation_is_recorded false, or with no delegation_until, is not a delegation. It is an unrecorded transfer of authority and every decision made under it is challengeable.
+
 - **`apr.no_sub_delegation_by_default`** A delegate may not delegate onward unless sub_delegation_permitted is explicitly true on the original holder.
-- **`apr.leaver_retains_no_authority`** Authority and system entitlement must both be revoked at the leaving date. Revoking the first without the second is the textbook orphaned-access finding and it is the default outcome everywhere.
+- **`apr.leaver_retains_no_authority`** Authority and system entitlement must both be revoked at the leaving date. Revoking the first without the second is the textbook orphaned-access finding, and it is the default outcome almost everywhere.
+
+- **`apr.route_within_scope_before_seniority`** An approval must be routed on scope and limit, never on seniority. Where scope is unknown, resolve it rather than escalating — an approval sitting with someone too senior to decide it ages exactly like one sitting with the right person.
+
 - **`apr.zero_rejection_rate_is_a_finding`** An approver with a material volume and a zero rejection rate should be reviewed. A control that has never fired has not been tested and cannot be relied on.
 - **`apr.segregation_conflict_needs_compensating_control`** Where segregation_conflicts is non-empty, a named compensating control must exist. In small organisations the conflict is unavoidable; the absence of the compensating control is not.
+
+
+
+## Exceptions — where the rules above are legitimately wrong
+
+- **In a genuine emergency an unrecorded delegation may operate, provided it is ratified in writing within a stated window.** — The alternative is a controls framework that stops the organisation during exactly the events it was written for, and a framework that stops the organisation gets ignored permanently rather than temporarily. The ratification window is the whole mechanism — it converts an undocumented delegation into a late-documented one.
+ _(overrides apr.delegation_must_be_recorded_and_bounded)_
+- **Where statute or a regulator names the individual, neither delegation nor escalation is available and the approval simply waits.** — A statutory director's signature, a money laundering reporting officer's decision, a company secretary's certification. Every remedy this object normally offers is unavailable, which is precisely why these authorities need succession planning rather than delegation planning. It is the distinction most systems miss, because from the outside the absence looks identical to any other.
+ _(overrides apr.sole_holder_absence_is_a_stoppage, apr.emergency_verbal_delegation)_
+- **An interim postholder exercises the substantive holder's authority for the duration of the arrangement, as of right rather than by delegation.** — The role moved, not the authority, so this is not a delegation and does not expire when one would. Recording it as a delegation produces a spurious lapse alert every few weeks; recording it as nothing produces an approver the system does not believe in. It deserves its own instrument and rarely gets one.
+
+- **In a small organisation two genuinely independent approvers do not exist, and the requirement is met by a documented compensating control instead.** — In a nine-person company everybody reports to the founder. The conflict is arithmetic, not negligence. What is negligent is the absence of the compensating control — a monthly independent review of everything above a threshold — and the pretence that the four-eyes box was ticked honestly.
+ _(overrides apr.four_eyes_distinct_reporting_line, apr.four_eyes_independence)_
+- **A leaver may retain approval authority through a defined handover window, with a named successor and a hard end date.** — Cutting a departing finance director's authority on their last morning strands every open approval they held, and the successor cannot decide items they have never seen. A bounded handover is better governance than a clean break followed by a fortnight of workarounds — but only if the end date is real, which is the part that fails.
+ _(overrides apr.leaver_retains_no_authority)_
+- **An approver with a known decision rhythm is available; the gaps between their windows are structure, not absence.** — The most reliable approvers in most organisations are batchers, and the availability patterns on this object will classify every one of them as unknown once a week. Getting this wrong is how an assistant loses the trust of exactly the people whose time it was built to protect.
+ _(overrides apr.silent_far_past_own_cadence, apr.sole_holder_absence_is_a_stoppage)_
+- **In a very small organisation one person legitimately holds every authority class at every value, and the scope model degenerates.** — Scope-based routing has nothing to route with, and seniority is — exceptionally — the correct heuristic. Worth naming because the object's whole argument is that seniority is not authority, and there is precisely one case where they coincide. It is also the case where the object adds least, and it should say so rather than manufacture structure.
+ _(overrides apr.route_within_scope_before_seniority, apr.cannot_approve_outside_scope)_
+
+
+## Best practices
+
+- **Ensure at least two in-date holders exist for every approval class and value band.** — Sole holders are not discovered by risk registers; they are discovered by absences. Two holders costs one policy amendment and removes an entire class of stoppage permanently, which is a better return than any amount of chasing.
+
+- **Create the time-bounded delegation at the moment the absence is booked, not when the queue stops.** — Absence is the most predictable event in the calendar and the least prepared for. Recorded in advance it is a re-route; arranged afterwards it is verbal, undocumented, and exercised by somebody who does not hold the authority.
+
+- **Ask each holder to confirm their own scope, limit and current delegate on a fixed cadence.** — The same instrument as access recertification, applied to authority instead of to systems. It costs the holder ninety seconds, and it catches expired instruments, stale delegations and scope that quietly grew — none of which any system currently surfaces.
+
+- **Treat revocation as two acts and complete both — the authority and the entitlement.** — Joiner-mover-leaver reliably handles the paper and reliably forgets the system, which is why orphaned approval entitlements are the most common finding in any access review. Least privilege is not a configuration, it is a leaver process that finishes.
+
+- **Verify four-eyes independence against the org chart, not against the approval form.** — Counting two names is trivial and meaningless. The partner is usually whoever is nearest, and nearest usually means the same reporting line — so the control has never once disagreed with itself and nobody has noticed, because the form was complete every time.
+
+- **Record what each approver asks for before deciding, and send it unprompted.** — Missing information is one of the largest causes of a stalled approval and it costs a full round trip every time. Three prior approvals are enough to learn it, no system records it, so every coordinator relearns it individually and takes it with them when they leave.
+
+- **Schedule sends into a batching approver's known window rather than chasing across it.** — A Friday-morning batcher decides everything in front of them on Friday morning. Arriving on Thursday afternoon beats three reminders across the week, costs nothing, and preserves the channel for the approvals that genuinely are urgent.
+
+- **Resolve availability before sending, not after the second chase.** — Route, chase for a week, escalate, discover they were on leave — that sequence wastes more administrative time than any other single failure, and every step of it looks diligent. One calendar check at the front removes all of it.
+
+- **When the DOA matrix is re-issued, track who is operating under which version.** — Re-issue is treated as a publication event and it is an adoption event. Partial adoption means part of the organisation is approving under superseded limits, every one of those decisions is technically void, and nothing anywhere alerts on it.
+
+
+
+## Anti-patterns
+
+- **An approver who has never rejected anything and is still treated as a control.** — tempting because They are senior, agreeable and busy, and rejecting things creates work and friction. Nobody measures rejection rate per approver, so there is no moment at which anyone notices.
+ Instead: Measure rejection rate per approver over a full period. A sustained zero on material volume means convert the step to notification or change the holder.
+- **Routing upward because the limit could not be found.** — tempting because The matrix is a spreadsheet nobody can locate, the deadline is Thursday, and the most senior name available feels like the safe choice. It is presented, sincerely, as caution.
+ Instead: Resolve scope and limit first, even where it costs an hour. Unknown is not the same as unlimited, and treating it as such is how an unauthorised approval gets made in good faith.
+- **'Just approve anything under five thousand while I'm away', said once, recorded nowhere.** — tempting because It is the fastest possible fix, the assistant is trusted completely, and formalising it requires a form nobody knows exists. It also works, which is why it persists.
+ Instead: A one-line recorded delegation with an end date. Same person, same trust, same speed, and it survives examination.
+- **A delegation with a start date and no end date.** — tempting because The return date was uncertain when it was set up, and nobody revisits a thing that is working. Removing it later feels like an accusation.
+ Instead: Always set delegation_until, even generously. An extension is a two-second act; an unbounded delegation is a governance change made by omission.
+- **Naming the nearest colleague as the second approver, who happens to report to the first.** — tempting because Proximity. The second pair of eyes needs to be somebody who will actually look, and the person who will actually look is usually in the same team.
+ Instead: Test the partner against the reporting line and accept a slower partner outside it. Where independence is genuinely impossible, say so and document a compensating control.
+- **An authority held by exactly one person, discovered on the day they go on leave.** — tempting because Nothing computes it. Continuity registers list systems and suppliers, not signing authorities, and the holder has no reason to raise it — it has never been a problem, because they have always been there.
+ Instead: Compute authority_coverage per class and band. It is one query against a matrix nobody has ingested, which is exactly the point.
+- **Removing someone from the DOA matrix and leaving their ERP approval role live.** — tempting because Two owners, two systems, one process that only knows about the first. HR closes the record, IT was never told, and the matrix owner assumes IT was.
+ Instead: One leaver checklist that closes both, with the entitlement revocation evidenced rather than assumed.
+- **Measuring a three-day-a-week approver against a five-day norm and calling them slow.** — tempting because Working patterns are HR data, approval metrics are workflow data, and nothing joins them. The number looks objective, so nobody questions it.
+ Instead: Normalise decision time to working days for that pattern before comparing anything.
+- **Reminding a Friday-morning approver on Tuesday, Wednesday and Thursday.** — tempting because The chase schedule is uniform because it was configured once, and their queue looks stale every midweek, which reads as risk.
+ Instead: Learn the rhythm and schedule into the window. Send timing is the highest-return, lowest-effort change available on a mature queue.
+- **Publishing a new DOA matrix and assuming everyone is now operating under it.** — tempting because Re-issue is treated as a document-control task — version bumped, PDF circulated, task closed. Adoption belongs to nobody.
+ Instead: Track adoption per holder with an attestation, and treat unattested holders as operating under the previous version until they confirm.
+
+
+## Dependencies
+
+- `admin.obj.core.policy` — requires (hard)
+- `admin.obj.core.employee_record` — requires (hard)
+- `admin.obj.core.access_right` — enriches (hard)
+- `admin.obj.core.delegate` — enriches (soft)
+- `admin.obj.core.approval` — blocks (hard)
+- `admin.obj.core.escalation` — enriches (soft)
+- `admin.obj.core.budget_line` — enriches (soft)
+- `admin.obj.attendance_and_leave.leave_request` — derived_from (soft)
+- `admin.obj.core.compliance_obligation` — requires (soft)
+- `admin.obj.core.employee_record` — invalidated_by (hard)
 
 
 ## Inputs
 
 - **email** — who actually decides, and how long they take
-- **email** — whether the decision is with them right now
+- **email** — whether a decision is with them right now
 - **derived** — two-way volume trajectory
 - **document** — the DOA matrix, financial regulations, scheme of delegation
 - **register** — board resolutions and bank mandates naming signatories
-- **hris** — leave, secondment, leaver dates, working pattern
+- **hris** — role, reporting line, leave, secondment, leaver dates, working pattern
 - **calendar** — absence, currently discarded because it arrives as an all-day event
-- **erp** — workflow approver roles and limits as configured, which differ from the matrixmore often than not
-- **access_log** — whether the approval entitlement is still being used, and by whom
-- **attestation** — periodic confirmation by the holder that their scope and delegate arecurrent
+- **erp** — workflow approver roles and limits as configured, which differ from the matrix more often than not
+- **access_log** — whether the approval entitlement is still live and who is using it
+- **signed_form** — a delegation instrument covering a named absence period
+- **attestation** — periodic confirmation by the holder that their scope and delegate are current
 
 
 ## Outputs
 
-- **`authority_confidence_bp`** How sure we are this person may decidethis item at this value. → L4.reasoning_unit, L4.decision_maker
-- **`routable_now`** Whether routing here today produces a decision ora wait. → L4.decision_maker, L5.execution_planning
-- **`effective_approver`** The holder or their in-date delegate, resolved.The answer to the only question the coordinator is actually asking. → L5.execution_planning
-- **`escalation_ladder`** Ordered chain from this approver upward, builtfrom escalates_to_ref. → L5.execution_planning
-- **`continuity_risk`** Sole holder, unavailable, no delegate. A business-continuityitem, not a chasing item. → L4.reasoning_unit, L6.learning_unit
-- **`contact_plan`** Channel, timezone and batching window — when to send,not how hard to push. → L5.communication_planning, L5.2.channel_planner
-- **`control_exception`** Segregation conflict, non-independent four-eyespartner, or expired authority still in use. → L4.reasoning_unit, L6.learning_unit
+- **`authority_confidence_bp`** How sure we are this person may decide this item, at this value, in this class. → L4.reasoning_unit, L4.decision_maker
+- **`routable_now`** Whether routing here today produces a decision or a wait. The question the coordinator is actually asking. → L4.decision_maker, L5.execution_planning
+- **`effective_approver`** The holder or their in-date delegate, resolved to one name. → L5.execution_planning
+- **`escalation_ladder`** Ordered chain upward from escalates_to_ref, with scope checked at each rung — a rung that does not hold the scope is not a rung. → L5.execution_planning
+- **`continuity_risk`** Sole holder, unavailable, no delegate. A business-continuity item, not a chasing item. → L4.reasoning_unit, L6.learning_unit
+- **`contact_plan`** Channel, timezone and decision window — when to send, not how hard to push. → L5.communication_planning, L5.2.channel_planner
+- **`control_exception`** Segregation conflict, non-independent four-eyes partner, expired authority still in use, or orphaned entitlement. → L4.reasoning_unit, L6.learning_unit
+- **`prefill_pack`** What this approver always asks for, sent unprompted. Removes a full round trip on an approval that was never contentious. → L5.communication_planning
 
 
 ## Events
 
 - **`apr.authority_verified`** Authority Verified
-- **`apr.became_unavailable`** Approver Became Unavailable
+- **`apr.became_unavailable`** Approver Became Unavailable — invalidates is_routable_now, next_decision_window
 - **`apr.single_point_detected`** Single Point of Failure Detected
 - **`apr.delegation_started`** Delegation Started
-- **`apr.delegation_lapsed`** Delegation Lapsed
-- **`apr.authority_expired`** Authority Expired
-- **`apr.authority_revoked`** Authority Revoked
+- **`apr.delegation_lapsed`** Delegation Lapsed — invalidates delegation_state, is_routable_now
+- **`apr.authority_expired`** Authority Expired — invalidates authority_is_current, is_routable_now
+- **`apr.authority_revoked`** Authority Revoked — invalidates authority_scope, approval_limit, system_entitlements
 - **`apr.went_quiet`** Approver Went Quiet
+- **`apr.control_conflict_detected`** Control Conflict Detected
 
 
 ## Actions
 
-- **Verify authority against the instrument** (human) — Confirmscope, limit and effective dates from the matrix or resolution, not from the person. The five-minute check that prevents a void approval.
-- **Record a time-bounded delegation** (human) — Convertsan absence from a stoppage into a re-route. Must carry an end date; an open-ended temporary delegation is a permanent one nobody decided to make.
+- **Verify authority against the instrument** (human) — Confirm scope, limit and effective dates from the matrix or resolution, not from the person. The five-minute check that prevents a void approval.
+- **Record a time-bounded delegation** (human) — Converts an absence from a stoppage into a re-route. Must carry an end date — an open-ended temporary delegation is a permanent one nobody decided to make.
 - **Route to the in-date delegate** (agent) — Only where delegation_is_recorded is true. Exercising an unrecorded delegation is the control failure, not the workaround.
-- **Appoint a second authority holder** (human) — Thestructural fix for is_sole_holder. Costs one policy amendment and removes an entire class of stoppage.
-- **Send inside their decision window** (agent) — Fordecision_style = batching. Changes when, not how loudly — chasing a Friday batcher on Wednesday is pure noise.
-- **Send what they always ask for** (agent) — Removesa full round trip. information_demanded is learnable from three prior approvals and nobody records it.
-- **Revoke the system entitlement** (system) — Must accompanyevery revocation and every leaver. The half of revocation that is routinely forgotten.
-- **Request periodic scope attestation** (agent) — The holderconfirms their own scope, limit and delegate. Catches expired authority and stale delegations without an audit.
+- **Appoint a second authority holder** (human) — The structural fix for a sole holder. Costs one policy amendment and removes an entire class of stoppage permanently.
+- **Send inside their decision window** (agent) — For decision_style = batching. Changes when, not how loudly — chasing a Friday batcher on Wednesday is noise and trains them to filter the channel.
+- **Send what they always ask for** (agent) — Removes a full round trip. information_demanded is learnable from three prior approvals and is recorded by nobody.
+- **Revoke the system entitlement** (system) — Must accompany every revocation and every leaver. The half of revocation that is routinely forgotten, and the half an auditor checks.
+- **Request periodic scope attestation** (agent) — The holder confirms their own scope, limit and delegate. Catches expired authority and stale delegations without an audit, and takes them ninety seconds.
+- **Reassign the four-eyes partner outside the reporting line** (human) — Restores an independence the control claimed and never had. Usually resisted, because the nearest colleague is the convenient one.
+- **Name a successor for a non-delegable authority** (human) — The only available control where statute names the individual. Delegation and escalation are both unavailable, so the alternative to succession planning is a gap.
 
 
 ## Evidence
 
-- **register** · 10000 bp — A board resolution or bank mandate naming thesignatory. The strongest instrument there is and the narrowest in scope.
-- **document** · 9000 bp — The DOA matrix. Authoritative when in date; thein-date part is what nobody checks.
-- **erp** · 8500 bp — The approver role as configured in the workflow. Whatactually happens, which is not always what the matrix says.
-- **signed_form** · 8500 bp — A signed delegation instrument for the absenceperiod.
-- **hris** · 8000 bp — Role, reporting line, leave and leaver dates. Thejoin that makes continuity risk computable.
-- **attestation** · 7000 bp — The holder confirming their own scope. Goodenough to act on, not good enough to rely on alone.
-- **email** · 6000 bp — Behavioural evidence — they have decided things ofthis kind before and nobody objected. This is authority by precedent, honestly labelled.
-- **access_log** · 5500 bp — The entitlement is live and in use. Proves capability,says nothing about legitimacy.
-- **derived** · 3500 bp — Inferred from routing shape and silence. Corroboratingonly.
+- **register** · 10000 bp — A board resolution or bank mandate naming the signatory. The strongest instrument there is and the narrowest in scope.
+- **regulator** · 9500 bp — A filed appointment — director, company secretary, named regulatory officer. Public, durable, and the one authority that cannot be delegated.
+- **signed_form** · 9500 bp — A signed delegation instrument for a named absence period. What separates a re-route from a control failure.
+- **document** · 9000 bp — The DOA matrix. Authoritative while in date, and the in-date part is exactly what nobody checks.
+- **erp** · 8500 bp — The approver role as configured in the workflow. What actually happens, which is not always what the matrix says.
+- **hris** · 8000 bp — Role, reporting line, leave and leaver dates. The join that makes continuity risk and four-eyes independence computable at all.
+- **attestation** · 7000 bp — The holder confirming their own scope and delegate. Good enough to act on, not good enough to rely on alone.
+- **email** · 6000 bp — Behavioural evidence — they have decided things of this kind before and nobody objected. Authority by precedent, honestly labelled.
+- **access_log** · 5500 bp — The entitlement is live and in use. Proves capability, says nothing whatsoever about legitimacy.
+- **derived** · 3500 bp — Inferred from routing shape and silence. Corroborating only.
 
 
 ## Metrics
 
-- **authority_coverage** (percent) — Share of approval types with at least twoin-date holders. The continuity number, and usually a shock the first time it is computed.
-- **delegation_coverage** (percent) — Share of absences with a recorded, in-datedelegate. The most improvable number in the object.
-- **median_decision_hours** (hours) — By approver and approval type. The baselinethat turns pending into stuck.
-- **first_time_right_route** (percent) — Share of approvals sent to a holder whowas actually entitled to decide them.
+- **authority_coverage** (percent) — Share of approval classes with at least two in-date holders. The continuity number, and usually a shock the first time it is computed.
+- **delegation_coverage** (percent) — Share of absences with a recorded, in-date delegate. The most improvable number on the object.
+- **median_decision_hours** (hours) — By approver and approval class. The baseline that turns pending into stuck.
+- **first_time_right_route** (percent) — Share of approvals sent to a holder who was actually entitled to decide them.
 - **rejection_rate** (percent) — Target band. Read the zero, not the high value.
-- **expired_authority_in_use** (count) — Decisions taken under a lapsed instrument.Should be zero and is never measured.
-- **orphaned_entitlements** (count) — Live approval rights held by leavers or byrevoked holders.
+- **expired_authority_in_use** (count) — Decisions taken under a lapsed instrument. Should be zero and is never measured.
+- **orphaned_entitlements** (count) — Live approval rights held by leavers or by revoked holders. The standard audit finding, computable in one join nobody makes.
+- **undocumented_delegation_rate** (percent) — Share of decisions granted by someone other than the named holder with no recorded delegation.
+- **attestation_currency** (days) — Age of the most recent scope-and-delegate confirmation. Access recertification, applied to authority rather than to systems.
+
+
+## References
+
+- **Delegation of Authority matrix** · framework
+- **Scheme of delegation** · practitioner
+- **Four-eyes principle (maker-checker)** · framework
+- **Segregation of duties** · framework
+- **Joiner-Mover-Leaver (JML)** · framework
+- **Least privilege and periodic access recertification** · framework
+- **ISO/IEC 27001 Annex A — access control and privileged access management** · standard
+- **Authorised signatory list and bank mandate** · practitioner
+- **ISO 22301 — business continuity, key person dependency** · standard
+- **RACI** · framework
 
 
 ## Examples
 
-- **Finance Director, £250k spend limit, sole holder above £50k** — is_sole_holder true.Two weeks in August with no recorded delegate stops every capital item in the organisation, and the continuity register does not mention it.
-- **Executive assistant approving under a verbal instruction** — delegation_state = undocumented.Operationally invaluable, evidentially indefensible, and universal.
-- **Cost-centre manager on a Tuesday-Thursday pattern** — Structurally has a three-day weekendfor approvals and is measured against a five-day norm. Not slow; wrongly benchmarked.
-- **Newly promoted head of department named in April's matrix** — Authority on paper forsix weeks with no ERP approval role. Everyone routes to their predecessor, which quietly recreates an undocumented delegation.
-- **Departed regional director whose ERP approval role is still active** — availability_state= departed, entitlement live. The textbook orphaned-access finding and the reason apr.leaver_still_holds_the_entitlement is the highest-value pattern here.
-- **Group CEO named as four-eyes partner to their own CFO** — Satisfies the form. The CFOreports to them, so the second pair of eyes belongs to the first, and the control has never once disagreed.
+- **Finance Director, large spend limit, sole holder above the mid-band** _(typical)_ — is_sole_holder true. Two weeks in August with no recorded delegate stops every capital item in the organisation, and the continuity register does not mention it once.
+- **Executive assistant approving under a verbal instruction** _(typical)_ — delegation_state = undocumented. Operationally invaluable, evidentially indefensible, and close to universal. The fix is one recorded line, not a change of behaviour.
+- **Cost-centre manager on a Tuesday-to-Thursday pattern** _(misclassification)_ — Structurally has a three-day weekend for approval purposes and is measured against a five-day norm. Not slow; wrongly benchmarked, and it takes a performance conversation to find out.
+- **Newly promoted head of department named in April's matrix** _(edge)_ — Authority on paper for six weeks with no ERP approval role. Everyone routes to their predecessor, which quietly recreates an undocumented delegation. Two failures, one cause.
+- **Departed regional director whose ERP approval role is still active** _(counterexample)_ — availability_state = departed, entitlement live. The textbook orphaned-access finding and the reason apr.leaver_still_holds_the_entitlement is the highest-value pattern on this object.
+- **Group CEO named as four-eyes partner to their own CFO** _(counterexample)_ — Satisfies the form. The CFO reports to them, so the second pair of eyes belongs to the first, and the control has never once disagreed with itself.
+- **Money laundering reporting officer on three weeks' leave** _(edge)_ — Cannot delegate, cannot escalate, cannot be covered. Every remedy this object offers is unavailable and the only control is a named deputy appointed in advance.
+- **Founder of a nine-person company approving their own expense claim** _(edge)_ — Segregation is arithmetically impossible. The conflict is not the finding; the absence of a monthly independent review is.
+- **Head of procurement who has approved 1,400 items and rejected none** _(misclassification)_ — Reads as a highly efficient approver on every dashboard. Reads as a postbox on the only measure that matters.
 
 ## Metadata
 
-owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional**
+owner **Admin** · updated 2026-08-08 · review **unreviewed** · confidence **provisional** · completeness **complete**
 
 
-> Deliberately not a rewrite of sales.obj.core.decision_maker. The Sales object solves discovery — nobody knows who can sign. This one solves availability — everybody knows who can sign and the authority is unexercisable, because the holder is away, their delegation was verbal, or their instrument expired in April. Four of eleven patterns run today and all four are structural rather than semantic (edge_count, ball_in_court, reply_cadence, derived.engagement), which is the honest ceiling until a DOA matrix is ingested. The two highest-value backlog items are approver.unavailable_until — the calendar connector already fetches the events and discards all-day absences — and the pairing of leaver_confirmed with access.last_used_at, which turns the standard orphaned-approver audit finding into an automatic one.
+> Rewritten from the 18-section shape onto the 23-section schema, and deliberately still not a rewrite of sales.obj.core.decision_maker. The Sales object solves discovery — nobody knows who can sign. This one solves availability — everybody knows who can sign and the authority is unexercisable, because the holder is away, their delegation was verbal, or their instrument expired in April.
+Five of fifteen patterns run today and all five are structural rather than semantic (edge_count, ball_in_court, reply_cadence, derived.engagement), which is the honest ceiling until a DOA matrix is ingested. The two highest-value backlog items are approver.unavailable_until — the calendar connector already fetches the events and discards all-day absences — and the pairing of leaver_confirmed with access.last_used_at, which turns the standard orphaned-approver audit finding into an automatic one.
+The exception apr.statutory_authority_cannot_be_delegated is the line most likely to be missed by anything built from policy documents: where a regulator names the individual, delegation and escalation are both unavailable, so succession planning is the only control — and an absence that looks identical to any other is not.
