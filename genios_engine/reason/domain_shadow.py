@@ -25,6 +25,7 @@ from genios_engine.context.situation_bso import (
     build_context_slice,
     gather_evidence_and_signals,
 )
+from genios_engine.contracts.reasoning import ExecutionMode
 from genios_engine.packs.compiler import DomainCompiler, PostgresRuntimeBrains
 from genios_engine.packs.compiler.errors import (
     NoExpertiseRoute,
@@ -34,6 +35,8 @@ from genios_engine.packs.compiler.errors import (
 )
 from genios_engine.packs.domain_wiring import expert_catalog
 from genios_engine.platform.ids import new_id
+from genios_engine.reason.adapters.expertise import expertise_capability_manifest
+from genios_engine.reason.adapters.native import reason_native_capability
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +103,23 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 package = compiler.compile(bso, context_slice)
                 counts["compiled"] += 1
                 counts["capabilities_total"] += len(package.capabilities)
+                # L3 -> L4 weld: adapt the package into a CapabilityManifest and reason over it.
+                # SHADOW mode + live_delivery_enabled=False on the manifest -> a decision is
+                # produced and measured but never delivered or persisted as a signal.
+                try:
+                    manifest = expertise_capability_manifest(
+                        package, root_entity_type=ctx.node_type)
+                    execution = reason_native_capability(
+                        org_id=org_id, context=ctx, capability=manifest, evaluation_time=eval_time,
+                        graph_version=graph_version, config_snapshot_id=None,
+                        mode=ExecutionMode.SHADOW)
+                    counts["reasoned"] += 1
+                    if execution.decision is not None:
+                        counts["decided"] += 1
+                except Exception:
+                    counts["reason_error"] += 1
+                    logger.exception("domain-compiler shadow: reasoning for %s failed",
+                                     row["situation_id"])
             except NoExpertiseRoute:
                 counts["no_route"] += 1
             except SituationContextIncomplete:
