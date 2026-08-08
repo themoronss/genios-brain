@@ -35,13 +35,15 @@ Import rule: this module sits in ``contracts/`` and may import nothing above ``p
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from enum import Enum
 from types import MappingProxyType
 from typing import Any
 
-from genios_engine.contracts.execution import ChannelClass
+import hashlib
+
+from genios_engine.contracts.execution import AudienceClass, ChannelClass
 from genios_engine.contracts.validators import (
     freeze_mapping,
     require_aware,
@@ -49,8 +51,15 @@ from genios_engine.contracts.validators import (
     require_enum,
     require_identifier,
 )
+from genios_engine.platform.canonical import canonical_dumps
 
 DELIVERY_VERSION = "delivery.v1"
+
+#: Layer 5.2's one output projection — the materialised delivery, distinct from the v1 admission
+#: verdict above. v1 answers "may this travel now?"; v2 *is* the delivery: a durable, fenced,
+#: deduped row with its own lifecycle, route ladder and priority. The two versions coexist because
+#: the gate (v1) still runs inside the orchestrator that builds the object (v2).
+DELIVERY_RESULT_VERSION = "delivery-result.v2"
 
 #: The three urgency names, weakest first.  This orders them; it does not *assign* them —
 #: ``deliver/bands.py`` cuts a band from a score using the pack's own thresholds, and those
@@ -265,5 +274,239 @@ class DeliveryDecision:
         return binding[0]
 
 
-__all__ = ["BAND_ORDER", "DELIVERY_VERSION", "INTRUSIVE_CHANNEL_CLASSES", "DeliveryCandidate",
-           "DeliveryDecision", "DeliveryVerdict"]
+# =======================================================================================
+# Layer 5.2 control plane — the v2 DeliveryObject and its vocabulary.
+# =======================================================================================
+
+
+class DeliveryPriority(str, Enum):
+    """Five business-priority classes the scheduler orders due work by (section 5.6 of the spec).
+
+    This is *scheduling* priority, distinct from ``band`` (which is loudness) and from
+    ``interrupt`` (which is Layer 5's attention judgement). Ordered weakest-first by
+    ``_PRIORITY_RANK`` so the scheduler can compare without a second table.
+    """
+
+    BACKGROUND = "background"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+_PRIORITY_RANK: Mapping[str, int] = MappingProxyType({
+    DeliveryPriority.BACKGROUND.value: 0,
+    DeliveryPriority.LOW.value: 1,
+    DeliveryPriority.MEDIUM.value: 2,
+    DeliveryPriority.HIGH.value: 3,
+    DeliveryPriority.CRITICAL.value: 4,
+})
+
+
+def priority_from_band(band: str, interrupt: bool) -> DeliveryPriority:
+    """Map (loudness, attention) → scheduling class deterministically. No model, no config drift.
+
+    ``critical`` + an attention request is the only thing that earns CRITICAL scheduling; a
+    critical card nobody asked to be interrupted for is still HIGH. ``standard`` band splits on
+    interrupt so a routine nudge does not starve behind batch work forever.
+    """
+    if band not in BAND_ORDER:
+        raise ValueError(f"band must be one of {BAND_ORDER}, got {band!r}")
+    if band == "critical":
+        return DeliveryPriority.CRITICAL if interrupt else DeliveryPriority.HIGH
+    if band == "high":
+        return DeliveryPriority.HIGH if interrupt else DeliveryPriority.MEDIUM
+    return DeliveryPriority.LOW if interrupt else DeliveryPriority.BACKGROUND
+
+
+class DeliveryFormat(str, Enum):
+    """The concrete shape the Channel Planner renders — never chosen by a model (routing law)."""
+
+    INLINE_SUGGESTION = "inline_suggestion"
+    CARD = "card"
+    CHAT_MESSAGE = "chat_message"        # Slack / Teams
+    WEBHOOK_PAYLOAD = "webhook_payload"
+    AGENT_ENVELOPE = "agent_envelope"
+    REST_RESOURCE = "rest_resource"
+
+
+class DeliveryLifecycle(str, Enum):
+    """Public engagement lifecycle, separate from raw transport state (section 5.2).
+
+    Transport ``failed`` is one terminal; ``suppressed`` (policy said never) and ``cancelled``
+    (the subject died before send) are distinct terminals with different meanings and different
+    fixes — collapsing them makes "why did nothing arrive?" unanswerable from the row.
+    """
+
+    QUEUED = "queued"
+    DEFERRED = "deferred"
+    DELIVERED = "delivered"
+    VIEWED = "viewed"
+    IGNORED = "ignored"
+    ACCEPTED = "accepted"
+    EXECUTED = "executed"
+    FAILED = "failed"
+    SUPPRESSED = "suppressed"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+
+
+#: queued → deferred → delivered → viewed → ignored ; delivered → accepted → executed | failed ;
+#: most live states may expire where legal. suppressed/cancelled/expired/executed/failed/ignored
+#: are terminal. The Tracker (Phase 4) enforces this; the vocabulary lives here so the migration's
+#: CHECK constraints and the tracker share one source of truth.
+ALLOWED_DELIVERY_TRANSITIONS: MappingProxyType = MappingProxyType({
+    DeliveryLifecycle.QUEUED:    (DeliveryLifecycle.DEFERRED, DeliveryLifecycle.DELIVERED,
+                                  DeliveryLifecycle.SUPPRESSED, DeliveryLifecycle.CANCELLED,
+                                  DeliveryLifecycle.FAILED, DeliveryLifecycle.EXPIRED),
+    DeliveryLifecycle.DEFERRED:  (DeliveryLifecycle.DELIVERED, DeliveryLifecycle.SUPPRESSED,
+                                  DeliveryLifecycle.CANCELLED, DeliveryLifecycle.FAILED,
+                                  DeliveryLifecycle.EXPIRED),
+    DeliveryLifecycle.DELIVERED: (DeliveryLifecycle.VIEWED, DeliveryLifecycle.ACCEPTED,
+                                  DeliveryLifecycle.IGNORED, DeliveryLifecycle.EXPIRED,
+                                  DeliveryLifecycle.FAILED),
+    DeliveryLifecycle.VIEWED:    (DeliveryLifecycle.ACCEPTED, DeliveryLifecycle.IGNORED,
+                                  DeliveryLifecycle.EXPIRED),
+    DeliveryLifecycle.ACCEPTED:  (DeliveryLifecycle.EXECUTED, DeliveryLifecycle.FAILED,
+                                  DeliveryLifecycle.EXPIRED),
+    DeliveryLifecycle.EXECUTED:  (),
+    DeliveryLifecycle.IGNORED:   (),
+    DeliveryLifecycle.FAILED:    (),
+    DeliveryLifecycle.SUPPRESSED: (),
+    DeliveryLifecycle.CANCELLED: (),
+    DeliveryLifecycle.EXPIRED:   (),
+})
+
+TERMINAL_DELIVERY_STATES: frozenset[DeliveryLifecycle] = frozenset({
+    DeliveryLifecycle.EXECUTED, DeliveryLifecycle.IGNORED, DeliveryLifecycle.FAILED,
+    DeliveryLifecycle.SUPPRESSED, DeliveryLifecycle.CANCELLED, DeliveryLifecycle.EXPIRED})
+
+
+def delivery_can_transition(current: DeliveryLifecycle, target: DeliveryLifecycle) -> bool:
+    return target in ALLOWED_DELIVERY_TRANSITIONS.get(current, ())
+
+
+@dataclass(frozen=True, slots=True)
+class DeliveryObject:
+    """One materialised delivery — Layer 5.2's single output (section 5.8).
+
+    It is the durable spine: one logical row per insight, carrying the execution lineage it was
+    authorised by, the audience/recipient/destination it resolved to, the concrete channel/format
+    the planner chose, its scheduling priority and daily budget, the dedupe key that makes ten
+    destinations one delivery, and the route ladder a fallback advances along. It is frozen and
+    content-addressed on the fields that define *what this delivery is* — never the routing cursor
+    or the clock, so a fallback or a retry is the same delivery, not a new one.
+    """
+
+    org_id: str
+    delivery_id: str                     # the logical delivery identity (one per insight)
+    execution_id: str                    # Layer 5 lineage — the only thing that authorises a send
+    execution_hash: str                  # the exact persisted ExecutionObject hash
+    audience: AudienceClass
+    channel: str                         # concrete adapter: slack | teams | webhook | api | ...
+    channel_class: ChannelClass
+    fmt: DeliveryFormat
+    priority: DeliveryPriority
+    band: str
+    dedupe_key: str
+    route_ladder: tuple[str, ...]        # primary → fallback channels, in order
+    recipient: str | None = None         # seat/agent id; None = org-wide surface
+    destination: str | None = None       # registered destination id, if any
+    route_cursor: int = 0                # which rung of route_ladder is live (not part of identity)
+    retry_generation: int = 0            # bumped only by a definite-non-delivery replay
+    daily_budget: int | None = None      # snapshotted attention ceiling for the recipient/day
+    source: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
+    authority_expires_at: datetime | None = None
+    schema_version: str = DELIVERY_RESULT_VERSION
+
+    def __post_init__(self) -> None:
+        s = object.__setattr__
+        s(self, "org_id", require_identifier(self.org_id, "org id"))
+        s(self, "delivery_id", require_identifier(self.delivery_id, "delivery id"))
+        s(self, "execution_id", require_identifier(self.execution_id, "execution id"))
+        s(self, "execution_hash", require_identifier(self.execution_hash, "execution hash"))
+        s(self, "audience", require_enum(self.audience, AudienceClass, "audience"))
+        s(self, "channel", require_identifier(self.channel, "channel"))
+        s(self, "channel_class", require_enum(self.channel_class, ChannelClass, "channel class"))
+        s(self, "fmt", require_enum(self.fmt, DeliveryFormat, "format"))
+        s(self, "priority", require_enum(self.priority, DeliveryPriority, "priority"))
+        band = require_identifier(self.band, "band")
+        if band not in BAND_ORDER:
+            raise ValueError(f"band must be one of {BAND_ORDER}, got {band!r}")
+        s(self, "band", band)
+        s(self, "dedupe_key", require_identifier(self.dedupe_key, "dedupe key"))
+        ladder = tuple(self.route_ladder)
+        if not ladder:
+            raise ValueError("a delivery with no route ladder cannot be delivered")
+        if any(not isinstance(rung, str) or not rung for rung in ladder):
+            raise ValueError("every route-ladder rung must be a non-empty channel name")
+        s(self, "route_ladder", ladder)
+        if self.channel != ladder[0] and self.channel not in ladder:
+            raise ValueError("the live channel must be a rung of its own route ladder")
+        if self.recipient is not None:
+            s(self, "recipient", require_identifier(self.recipient, "recipient"))
+        if self.destination is not None:
+            s(self, "destination", require_identifier(self.destination, "destination"))
+        for name in ("route_cursor", "retry_generation"):
+            val = getattr(self, name)
+            if not isinstance(val, int) or isinstance(val, bool) or val < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        if self.route_cursor >= len(ladder):
+            raise ValueError("route_cursor points past the end of the ladder")
+        if self.daily_budget is not None:
+            if not isinstance(self.daily_budget, int) or isinstance(self.daily_budget, bool) \
+                    or self.daily_budget < 0:
+                raise ValueError("daily_budget must be a non-negative integer or None")
+        if self.authority_expires_at is not None:
+            s(self, "authority_expires_at",
+              require_aware(self.authority_expires_at, "authority_expires_at"))
+        s(self, "source", freeze_mapping(self.source))
+        s(self, "schema_version", require_identifier(self.schema_version, "schema version"))
+
+    @property
+    def priority_rank(self) -> int:
+        return _PRIORITY_RANK[self.priority.value]
+
+    @property
+    def live_channel(self) -> str:
+        """The channel actually being tried right now — the ladder rung under the cursor."""
+        return self.route_ladder[self.route_cursor]
+
+    @property
+    def identity(self) -> Mapping[str, Any]:
+        """The fields that define *what this delivery is* — excludes cursor, retry and clocks.
+
+        Advancing the route ladder or replaying must not mint a new delivery for the deduper or
+        the learner to chase separately, so those live-state fields are deliberately out.
+        """
+        return MappingProxyType({
+            "schema_version": self.schema_version, "org_id": self.org_id,
+            "delivery_id": self.delivery_id, "execution_id": self.execution_id,
+            "execution_hash": self.execution_hash, "audience": self.audience.value,
+            "recipient": self.recipient, "destination": self.destination,
+            "channel_class": self.channel_class.value, "band": self.band,
+            "dedupe_key": self.dedupe_key, "route_ladder": list(self.route_ladder)})
+
+    def semantic_hash(self) -> str:
+        """Content address over ``identity`` — stable across fallback and retry."""
+        return hashlib.sha256(canonical_dumps(dict(self.identity)).encode()).hexdigest()
+
+    def advanced(self) -> "DeliveryObject":
+        """The same delivery, moved to the next route rung. Raises if the ladder is exhausted."""
+        if self.route_cursor + 1 >= len(self.route_ladder):
+            raise ValueError("route ladder exhausted — no further fallback")
+        nxt = self.route_ladder[self.route_cursor + 1]
+        return replace(self, route_cursor=self.route_cursor + 1, channel=nxt)
+
+    def to_semantic_dict(self) -> dict[str, Any]:
+        return {**dict(self.identity), "fmt": self.fmt.value, "priority": self.priority.value,
+                "channel": self.channel, "route_cursor": self.route_cursor,
+                "retry_generation": self.retry_generation, "daily_budget": self.daily_budget,
+                "authority_expires_at": self.authority_expires_at, "source": dict(self.source)}
+
+
+__all__ = ["ALLOWED_DELIVERY_TRANSITIONS", "BAND_ORDER", "DELIVERY_RESULT_VERSION",
+           "DELIVERY_VERSION", "INTRUSIVE_CHANNEL_CLASSES", "TERMINAL_DELIVERY_STATES",
+           "DeliveryCandidate", "DeliveryDecision", "DeliveryFormat", "DeliveryLifecycle",
+           "DeliveryObject", "DeliveryPriority", "DeliveryVerdict", "delivery_can_transition",
+           "priority_from_band"]
