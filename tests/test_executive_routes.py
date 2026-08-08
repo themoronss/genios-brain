@@ -136,6 +136,19 @@ def test_ticking_a_step_is_recorded_and_is_idempotent(api):
     assert db.executions[0]["state"] == "pending"
 
 
+def test_out_of_order_completion_is_refused(api):
+    """Unit 2.5 end-to-end: the plan is a1(prepare) -> a2(draft, dep a1) -> a3(review, dep a2).
+
+    Ticking a2 before its prerequisite a1 records an approval that was skipped, so the route
+    refuses (409). Once a1 is done, a2 is allowed. The refusal is a real state, not a boolean.
+    """
+    client, db, execution = api
+    base = f"/v1/executive/commitments/{execution.execution_id}/actions"
+    assert client.post(f"{base}/a2/complete").status_code == 409     # a1 not done yet
+    assert client.post(f"{base}/a1/complete").json()["recorded"] is True
+    assert client.post(f"{base}/a2/complete").json()["recorded"] is True  # prerequisite met
+
+
 def test_dismissal_is_written_as_an_event_for_the_guard_to_act_on(api):
     client, db, execution = api
     response = client.post(f"/v1/executive/commitments/{execution.execution_id}/dismiss",

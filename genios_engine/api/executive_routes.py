@@ -166,7 +166,21 @@ def complete_action(execution_id: str, action_id: str,
     """
     _require_db()
     from genios_engine.executive import execution_store as store
+    from genios_engine.executive.coordination import dependencies_met
     with _graph.engine.begin() as c:
+        loaded = store.load(c, org_id=ctx.org_id, execution_id=execution_id)
+        if loaded is None:
+            raise HTTPException(404, "no open commitment with that id")
+        execution, _ = loaded
+        # Unit 2.5 — dependency-gated completion. A step whose prerequisites have not happened
+        # cannot be ticked: doing so records a history that never occurred (the plan said
+        # "draft, then send"; ticking "send" first claims an approval that was skipped). Only
+        # gate a KNOWN action with UNMET deps — an already-completed or unknown id falls through
+        # to the store, which is idempotent and returns recorded=false rather than a 409.
+        known = {a.action_id for a in execution.actions}
+        if action_id in known and not dependencies_met(
+                action_id, execution.actions, store.action_completions(c, ctx.org_id, execution_id)):
+            raise HTTPException(409, "action blocked: complete its prerequisite step(s) first")
         done = store.complete_action(c, org_id=ctx.org_id, execution_id=execution_id,
                                      action_id=action_id, at=_now(),
                                      actor=ctx.actor_id or "human")
