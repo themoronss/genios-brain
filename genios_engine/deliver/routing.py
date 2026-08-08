@@ -54,8 +54,8 @@ def _dedupe_preserving_order(channels: Sequence[str]) -> tuple[str, ...]:
 
 def build_route_ladder(*, audience: AudienceClass, band: str, interrupt: bool,
                        available_channels: Sequence[str], agent_route: str | None = None,
-                       restricted: bool = False,
-                       recipient_authorized: bool = True) -> tuple[str, ...]:
+                       restricted: bool = False, recipient_authorized: bool = True,
+                       push_allowed: bool = True) -> tuple[str, ...]:
     """The primary→fallback ladder one logical delivery walks. Enforces the seven routing laws.
 
     - ``audience`` AGENT → only a signed agent push / API inbox (law 2); human audiences never
@@ -64,6 +64,8 @@ def build_route_ladder(*, audience: AudienceClass, band: str, interrupt: bool,
       there is no lawful route and we fail closed (law 7) rather than fall back to an admin.
     - High/critical prefer an available push channel, then the pull surface (law 3); medium/low/
       background land only on the durable pull surface (law 4).
+    - ``push_allowed`` carries the presence verdict: False (focus/busy) removes the interruption
+      but not the delivery — even a critical item then lands on the pull surface (law 4/section 3).
     - ``available_channels`` is the recipient's configured/authenticated set; unknown channels are
       dropped rather than invented.
     """
@@ -81,7 +83,10 @@ def build_route_ladder(*, audience: AudienceClass, band: str, interrupt: bool,
         raise NoRouteError("restricted evidence has no visibility-authorised recipient")
 
     priority = priority_from_band(band, interrupt)
-    intrusive = priority in (DeliveryPriority.CRITICAL, DeliveryPriority.HIGH)
+    # A push requires all three: the sender asked to interrupt, the recipient is interruptible now,
+    # and the work is loud enough. Any one false → the durable pull surface.
+    intrusive = (interrupt and push_allowed
+                 and priority in (DeliveryPriority.CRITICAL, DeliveryPriority.HIGH))
 
     if intrusive:
         # Law 3: prefer a push channel the recipient actually has, then always the durable floor.
