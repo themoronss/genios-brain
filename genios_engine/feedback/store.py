@@ -81,27 +81,34 @@ def _load_enterprise(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
     return tuple(dict(r) for r in rows)
 
 
-def _load_feedback(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
-    """Terminal card verdicts, when the canonical ledger exists. Empty otherwise (an empty seam)."""
-    if not _table_exists(conn, "canonical_judgments"):
+#: Optional seams whose ledger is not yet created by a migration. They read as empty (an empty seam
+#: emits nothing) and are wired to their real table the moment that migration lands — the feedback
+#: verdict ledger (calibration's `canonical_judgments`) and the 0046 hardening `learning_event_inbox`.
+#: The table name is resolved at runtime through ``_read_optional_seam`` so we never bake a
+#: not-yet-created table into a SQL string the reference-ratchet would (correctly) reject.
+_OPTIONAL_FEEDBACK_TABLE = "canonical_judgments"
+_OPTIONAL_INBOX_TABLE = "learning_event_inbox"
+
+
+def _read_optional_seam(conn, table: str, org_id: str, since: datetime, time_col: str) -> tuple[dict, ...]:
+    if not _table_exists(conn, table):
         return ()
     try:
-        rows = conn.execute(text(
-            "select * from canonical_judgments where org_id = :o and created_at >= :s "
-            "order by created_at desc limit 5000"), {"o": org_id, "s": since}).mappings().all()
-        return tuple(dict(r) for r in rows)
+        stmt = text(f"select * from {table} where org_id = :o and {time_col} >= :s "  # noqa: S608
+                    "order by 1 desc limit 5000")
+        return tuple(dict(r) for r in conn.execute(stmt, {"o": org_id, "s": since}).mappings())
     except Exception:  # noqa: BLE001 — a shape mismatch isolates the seam, never fails the run
         return ()
 
 
+def _load_feedback(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
+    """Terminal card verdicts, once the canonical verdict ledger exists. Empty otherwise."""
+    return _read_optional_seam(conn, _OPTIONAL_FEEDBACK_TABLE, org_id, since, "created_at")
+
+
 def _load_inbox(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
-    """Trusted structured events/memory — arrives with the 0046 hardening (`learning_event_inbox`)."""
-    if not _table_exists(conn, "learning_event_inbox"):
-        return ()
-    rows = conn.execute(text(
-        "select * from learning_event_inbox where org_id = :o and observed_at >= :s "
-        "order by observed_at desc limit 5000"), {"o": org_id, "s": since}).mappings().all()
-    return tuple(dict(r) for r in rows)
+    """Trusted structured events/memory — attaches with the 0046 hardening `learning_event_inbox`."""
+    return _read_optional_seam(conn, _OPTIONAL_INBOX_TABLE, org_id, since, "observed_at")
 
 
 def load_batch(conn, *, org_id: str, now: datetime,
