@@ -8,6 +8,7 @@ orchestrator runs.
 """
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from datetime import datetime
 from typing import Callable
@@ -25,6 +26,21 @@ from genios_engine.feedback.store import LearningBatch
 # The only positive outcome label; everything else is neutral or negative (Part 2 / Unit 1-2).
 _SUCCESS = "succeeded"
 _NEUTRAL = {"completed_unproven", "expired_in_progress"}
+
+
+_UNSAFE = re.compile(r"[^A-Za-z0-9_.:@/-]")
+
+
+def _subject(*parts: str) -> str:
+    """A valid structured subject key from source-supplied parts.
+
+    Source ids (a capability, a play, a channel) come from other layers and may carry characters
+    the identifier contract forbids. Sanitising here isolates a malformed value into a well-formed
+    key rather than crashing the whole run — the spec's "isolate, do not fail the run" rule.
+    """
+    cleaned = [_UNSAFE.sub("_", str(p)) or "unknown" for p in parts]
+    key = ":".join(cleaned)
+    return key if key[:1].isalnum() else f"x:{key}"
 
 
 def _org_visibility() -> Visibility:
@@ -89,7 +105,7 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
         graded = c["succeeded"] + c["failed"]           # neutral does not inflate confidence
         out.append(LearningObject(
             org_id=batch.org_id, unit="outcome_analysis", target=LearningTarget.METRICS,
-            subject=f"{cap}:{play}",
+            subject=_subject(cap, play),
             proposed_value={"observations": c["n"], "succeeded": c["succeeded"],
                             "neutral_unproven": c["neutral"], "failed": c["failed"],
                             "reminders": c["reminders"], "escalations": c["escalations"],
@@ -125,7 +141,7 @@ def unit_pattern_learning(batch: LearningBatch, policy: LearningPolicy,
             continue                                    # not yet a pattern
         out.append(LearningObject(
             org_id=batch.org_id, unit="pattern_learning", target=LearningTarget.ORGANIZATION,
-            subject=f"pattern:{obj_type}:{kind}",
+            subject=_subject("pattern", obj_type, kind),
             proposed_value={"object_type": obj_type, "kind": kind, "occurrences": g["n"]},
             evidence=LearningEvidence(
                 observations=g["n"], independent_refs=len(g["sources"]),
@@ -180,7 +196,7 @@ def unit_recommendation_learning(batch: LearningBatch, policy: LearningPolicy,
         efficacy_bp = max(0, _bp(c["succeeded"], c["n"]) - per_outcome_attention_bp // 4)
         out.append(LearningObject(
             org_id=batch.org_id, unit="recommendation_learning", target=LearningTarget.ADAPTIVE,
-            subject=f"play:{play}",
+            subject=_subject("play", play),
             proposed_value={"play": play, "success_rate_bp": _bp(c["succeeded"], c["n"]),
                             "attention_per_outcome_bp": per_outcome_attention_bp,
                             "efficacy_bp": efficacy_bp},
@@ -215,7 +231,7 @@ def unit_performance_optimization(batch: LearningBatch, policy: LearningPolicy,
     for channel, c in by_channel.items():
         out.append(LearningObject(
             org_id=batch.org_id, unit="performance_optimization", target=LearningTarget.METRICS,
-            subject=f"channel:{channel}",
+            subject=_subject("channel", channel),
             proposed_value={"channel": channel, "deliveries": c["n"], "delivered": c["delivered"],
                             "pre_delivery_failures": c["pre_delivery_fail"],
                             "avg_attempts_bp": _bp(c["attempts"], c["n"]),
@@ -251,7 +267,7 @@ def unit_knowledge_evolution(batch: LearningBatch, policy: LearningPolicy,
             continue
         out.append(LearningObject(
             org_id=batch.org_id, unit="knowledge_evolution",
-            target=LearningTarget.KNOWLEDGE_SUGGESTION, subject=f"play:{play}",
+            target=LearningTarget.KNOWLEDGE_SUGGESTION, subject=_subject("play", play),
             proposed_value={"play": play, "failure_rate_bp": fail_bp, "observations": c["n"],
                             "suggestion": "review this play — sustained poor outcomes"},
             evidence=LearningEvidence(

@@ -307,6 +307,19 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         calibration = {"orgs": len(orgs), "pack_runs": runs,
                        "already_ran": already_ran}
         _log.info("calibration pass complete: %d org(s), %d applied pack-run(s)", len(orgs), runs)
+    # L6 LEARNING — the Atlas Learning & Evolution pass. Weekly per tenant, enforced by a
+    # PostgreSQL tenant/week claim (not process memory), so it is safe to call every heartbeat:
+    # a completed week is a no-op. Learns from OUTCOMES (execution_outcomes + delivery facts),
+    # records immutable proposals, and publishes only validated + governed state. In-process (no
+    # new Celery/Upstash task).
+    learning = None
+    if _graph is not None:
+        try:
+            from genios_engine.feedback.orchestrator import run_learning_sweep
+            learning = run_learning_sweep(_graph.engine, now=now)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("learning sweep failed")
+            learning = {"error": True}
     # L2 GRAPH MAINTENANCE — entity lifecycle + a health measurement, per org.
     #
     # Here rather than in the L2 drain because both are O(graph), not O(event): running
@@ -338,7 +351,8 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
             "executive": executive, "distribution": distribution,
-            "calibration": calibration, "graph_maintenance": graph_maintenance}
+            "calibration": calibration, "learning": learning,
+            "graph_maintenance": graph_maintenance}
 
 
 def _executive_orgs() -> list[str]:
