@@ -37,7 +37,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
-from genios_engine.contracts.delivery import BAND_ORDER, DeliveryCandidate
+from genios_engine.contracts.delivery import BAND_ORDER, DeliveryCandidate, DeliveryLifecycle
 from genios_engine.deliver.gate import (
     WILDCARD,
     PgDeliveryContext,
@@ -329,6 +329,156 @@ def held_messages(org_id: str, org: str = Depends(_org),
     return {"held": held,
             "deferred": sum(1 for item in held if item["status"] == "queued"),
             "suppressed": sum(1 for item in held if item["status"] == "suppressed")}
+
+
+# =======================================================================================
+# Layer 5.2 control-plane surface (v2 DeliveryObject / lifecycle / analytics / capabilities).
+# Every read is org-scoped in SQL before LIMIT so a hidden row cannot distort a count or a page.
+# =======================================================================================
+
+_RESULT_COLS = ("delivery_id, execution_id, recipient, audience, channel, channel_class, fmt, "
+                "priority, band, lifecycle, status, route_ladder, route_cursor, retry_generation, "
+                "created_at, delivered_at, viewed_at, accepted_at, executed_at, ignored_at")
+
+
+@router.get("/api/org/{org_id}/delivery/results")
+def list_results(org_id: str, org: str = Depends(_org),
+                 lifecycle: str | None = Query(None), limit: int = Query(50, le=200)) -> dict:
+    _require_db()
+    where = "org_id = :o and delivery_id is not null"
+    params: dict[str, Any] = {"o": org, "l": limit}
+    if lifecycle is not None:
+        where += " and lifecycle = :lc"
+        params["lc"] = lifecycle
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(f"select {_RESULT_COLS} from delivery_outbox where {where} "
+                              "order by created_at desc limit :l"), params).mappings().all()
+    return {"count": len(rows), "results": [_result_row(r) for r in rows]}
+
+
+@router.get("/api/org/{org_id}/delivery/results/{delivery_id}")
+def get_result(org_id: str, delivery_id: str, org: str = Depends(_org)) -> dict:
+    _require_db()
+    with _graph.engine.connect() as c:
+        row = c.execute(text(f"select {_RESULT_COLS} from delivery_outbox "
+                             "where org_id = :o and delivery_id = :d"),
+                        {"o": org, "d": delivery_id}).mappings().first()
+        if row is None:
+            raise HTTPException(404, "no such delivery")
+        events = c.execute(text("select kind, occurred_at, actor from delivery_events "
+                                "where org_id = :o and delivery_id = :d order by occurred_at"),
+                           {"o": org, "d": delivery_id}).mappings().all()
+    return {**_result_row(row), "events": [dict(e) for e in events]}
+
+
+@router.get("/api/org/{org_id}/delivery/results/{delivery_id}/attempts")
+def get_attempts(org_id: str, delivery_id: str, org: str = Depends(_org)) -> dict:
+    _require_db()
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select channel, retry_generation, attempt_no, outcome, provider_status, "
+            "started_at, settled_at from delivery_attempts "
+            "where org_id = :o and delivery_id = :d order by started_at"),
+            {"o": org, "d": delivery_id}).mappings().all()
+    return {"delivery_id": delivery_id, "attempts": [dict(r) for r in rows]}
+
+
+class ReceiptBody(BaseModel):
+    lifecycle: str = Field(..., description="viewed | ignored | accepted | executed | delivered")
+    idempotency_key: str | None = None
+
+
+@router.post("/api/org/{org_id}/delivery/results/{delivery_id}/events")
+def record_receipt(org_id: str, delivery_id: str, body: ReceiptBody,
+                   org: str = Depends(_org)) -> dict:
+    """Record an engagement receipt. Idempotent by ``idempotency_key``; chronology-validated."""
+    _require_db()
+    from genios_engine.deliver.tracker import (ChronologyError, IllegalTransition,
+                                               record_transition)
+    try:
+        target = DeliveryLifecycle(body.lifecycle)
+    except ValueError:
+        raise HTTPException(422, f"unknown lifecycle {body.lifecycle!r}")
+    now = datetime.now(timezone.utc)
+    try:
+        with _graph.engine.begin() as c:
+            moved = record_transition(c, org_id=org, delivery_id=delivery_id, target=target,
+                                      at=now, now=now, actor="client",
+                                      idempotency_key=body.idempotency_key)
+    except IllegalTransition as exc:
+        raise HTTPException(409, str(exc))
+    except ChronologyError as exc:
+        raise HTTPException(422, str(exc))
+    return {"recorded": moved, "delivery_id": delivery_id, "lifecycle": body.lifecycle}
+
+
+@router.get("/api/org/{org_id}/delivery/inbox")
+def inbox(org_id: str, org: str = Depends(_org), limit: int = Query(50, le=200)) -> dict:
+    """The durable pull surface — open deliveries a client polls for."""
+    _require_db()
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(
+            f"select {_RESULT_COLS} from delivery_outbox where org_id = :o "
+            "and delivery_id is not null and lifecycle in ('queued','deferred','delivered','viewed') "
+            "order by priority, created_at limit :l"), {"o": org, "l": limit}).mappings().all()
+    return {"count": len(rows), "inbox": [_result_row(r) for r in rows]}
+
+
+@router.get("/api/org/{org_id}/delivery/dead-letters")
+def dead_letters(org_id: str, org: str = Depends(_org)) -> dict:
+    """Terminal transport failures + unresolved materialization failures — nothing invisible."""
+    _require_db()
+    with _graph.engine.connect() as c:
+        failed = c.execute(text(
+            "select delivery_id, execution_id, channel, last_error, created_at "
+            "from delivery_outbox where org_id = :o and (status = 'failed' or lifecycle = 'failed') "
+            "order by created_at desc limit 100"), {"o": org}).mappings().all()
+        matfail = c.execute(text(
+            "select id, execution_id, reason_code, created_at from delivery_materialization_failures "
+            "where org_id = :o and resolved_at is null order by created_at desc limit 100"),
+            {"o": org}).mappings().all()
+    return {"terminal_failures": [dict(r) for r in failed],
+            "materialization_failures": [dict(r) for r in matfail]}
+
+
+@router.get("/api/org/{org_id}/delivery/analytics")
+def analytics(org_id: str, org: str = Depends(_org), days: int = Query(7, le=90)) -> dict:
+    _require_db()
+    from datetime import timedelta
+    from genios_engine.deliver.analytics import delivery_analytics, recipient_fatigue
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    with _graph.engine.connect() as c:
+        report = delivery_analytics(c, org_id=org, since=since)
+        report["fatigue"] = recipient_fatigue(c, org_id=org, since=since)
+    return report
+
+
+@router.get("/api/org/{org_id}/delivery/capabilities")
+def capabilities(org_id: str, org: str = Depends(_org)) -> dict:
+    """Fail-closed capability truth per unit: engine_ready / operational / integration_required."""
+    _require_db()
+    from genios_engine.deliver.units import capability_report
+    with _graph.engine.connect() as c:
+        configured = {r[0] for r in c.execute(text(
+            "select channel from org_channels where org_id = :o and active"), {"o": org})}
+        credentialed = {r[0] for r in c.execute(text(
+            "select channel from org_channels where org_id = :o and active "
+            "and secret_ciphertext is not null"), {"o": org})}
+    return {"units": capability_report(configured_channels=configured,
+                                       credentialed_channels=credentialed)}
+
+
+def _result_row(row: dict[str, Any]) -> dict[str, Any]:
+    import json
+    ladder = row.get("route_ladder")
+    if isinstance(ladder, str):
+        try:
+            ladder = json.loads(ladder)
+        except Exception:  # noqa: BLE001
+            ladder = None
+    out = {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in dict(row).items()}
+    out["route_ladder"] = ladder
+    return out
 
 
 __all__ = ["router"]
