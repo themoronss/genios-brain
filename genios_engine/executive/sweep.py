@@ -69,7 +69,11 @@ _log = get_logger("genios.executive.sweep")
 #: lifting is the shared predicate — this query adds only "and no live commitment exists yet",
 #: which is what makes the pass idempotent without a separate bookkeeping table.
 _PLANNABLE_SIGNALS = (
-    "select s.signal_id, s.subject_node_id, s.node_type, rr.run_id, rr.capability_id, "
+    # signals has no node_type column; the subject's type is read from the current graph node.
+    "select s.signal_id, s.subject_node_id, "
+    "(select gn.node_type from graph_nodes gn where gn.org_id=s.org_id "
+    "and gn.node_id=s.subject_node_id and gn.valid_to is null limit 1) as node_type, "
+    "rr.run_id, rr.capability_id, "
     "rr.capability_version, rr.config_snapshot_id, rr.context_snapshot_id, "
     "ro.decision_hash, ro.decision_core, ro.confidence_bp as decision_confidence_bp, "
     "ro.missing_data, selected_rc.candidate_id, selected_rc.play_id, selected_rc.play_version, "
@@ -111,6 +115,11 @@ def _json_field(value: Any) -> Any:
     return json.loads(value) if isinstance(value, str) else value
 
 
+def _evidence_id(item: Any) -> Any:
+    """An evidence_ref is a bare id string; older/authority-payload rows may wrap it in a dict."""
+    return item.get("evidence_id") if isinstance(item, Mapping) else item
+
+
 def _decision_core(row: Mapping[str, Any]) -> dict[str, Any]:
     core = _json_field(row["decision_core"]) or {}
     return core if isinstance(core, Mapping) else {}
@@ -146,7 +155,8 @@ def _node_facts(conn, org_id: str, node_id: str) -> tuple[dict[str, Any], dict[s
         "and valid_to is null"), {"o": org_id, "n": node_id}).fetchall()
     facts = {item.field: item.value for item in rows}
     node = conn.execute(text(
-        "select attrs from graph_nodes where org_id=:o and node_id=:n and valid_to is null"),
+        "select attributes as attrs from graph_nodes "
+        "where org_id=:o and node_id=:n and valid_to is null"),
         {"o": org_id, "n": node_id}).mappings().first()
     attrs = _json_field((node or {}).get("attrs")) or {}
     return facts, (attrs if isinstance(attrs, Mapping) else {})
@@ -196,8 +206,8 @@ def plan_commitments(engine, org_id: str, *, eval_time: datetime | None = None,
                 outcome_window_days=core.get("outcome_window_days"),
                 uncertainty=tuple(_json_field(row["missing_data"]) or ()),
                 evidence_ids=tuple(sorted(
-                    str(item.get("evidence_id")) for item in
-                    (_json_field(row["evidence_refs"]) or []) if item.get("evidence_id"))),
+                    str(_evidence_id(item)) for item in
+                    (_json_field(row["evidence_refs"]) or []) if _evidence_id(item))),
                 subject_ref=row["subject_node_id"], subject_type=row["node_type"])
             if not interpretation.actionable:
                 _bump(counts, interpretation.reason_code)

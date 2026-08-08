@@ -189,7 +189,7 @@ class FakeDB:
             ("select 1 from signals s", self._authority),
             ("select kind, max(occurred_at)", self._observed),
             ("select 1 from graph_nodes", self._node_exists),
-            ("select attrs from graph_nodes", self._node_attrs),
+            ("attributes as attrs from graph_nodes", self._node_attrs),
             ("select field, value from graph_facts", self._node_facts),
             ("select value from graph_facts", self._subject_status),
             ("select channel from org_channels", self._active_channels),
