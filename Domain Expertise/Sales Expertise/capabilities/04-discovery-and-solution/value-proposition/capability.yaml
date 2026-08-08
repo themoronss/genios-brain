@@ -1,0 +1,27 @@
+identity:
+  id: sales.discovery_and_solution.value_proposition
+  name: Value Proposition
+  domain: sales
+  subdomain: discovery_and_solution
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Articulating value against the buyer's own metrics, with the status quo as the real
+  competitor. Most deals are lost to inaction, not to a rival.
+
+question: "Why is this worth more than doing nothing?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

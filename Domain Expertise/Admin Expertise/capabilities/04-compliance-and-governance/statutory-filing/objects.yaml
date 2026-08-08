@@ -1,0 +1,24 @@
+# Load-set for admin.compliance_and_governance.statutory_filing — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/statutory-filing/      loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.compliance_and_governance.statutory_filing
+
+core:
+  required:
+    - admin.obj.core.compliance_obligation
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.document
+    - admin.obj.core.approval
+
+scoped:
+  required:
+    - admin.obj.statutory_filing.filing
+  optional: []

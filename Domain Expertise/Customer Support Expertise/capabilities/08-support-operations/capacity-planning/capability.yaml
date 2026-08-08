@@ -1,0 +1,41 @@
+# Stub. Identity, purpose and load-set only — see queue-management in this subdomain for the
+# shape a promoted capability takes.
+
+identity:
+  id: customer_support.support_operations.capacity_planning
+  name: Capacity Planning
+  domain: customer_support
+  subdomain: support_operations
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Sizing the team against demand that is bursty, seasonal and partly self-inflicted. A plan
+  built on average volume guarantees being underwater during peaks and idle between them, so the
+  plan is built against the shape of arrivals and the variance around it, and it has to absorb
+  the lag between deciding to hire and having someone genuinely productive — long enough in
+  support that the demand which justified the hire has usually changed by the time they arrive.
+  The lever most plans ignore sits on the other side of the equation entirely: deflection,
+  routing accuracy and product fixes move demand, and they move it faster than recruitment ever
+  will.
+
+question: "Will we have enough of the right people on shift when the work actually arrives?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following the queue-management capability in this
+    subdomain. Promote this one before support-analytics: a capacity conversation is the point
+    at which support numbers get read by people outside support, and the characteristic failures
+    are worth encoding first — planning to the period total instead of the interval, counting
+    headcount rather than productive presence net of leave, training and meetings, and treating
+    attrition as an exception rather than a standing input. Also worth encoding is the political
+    reality that a capacity plan is usually the only budget artefact support owns, which is why
+    it tends to be written to be approvable rather than to be right.

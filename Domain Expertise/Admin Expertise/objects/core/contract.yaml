@@ -1,0 +1,1674 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CONTRACT — a live instrument, not a signed PDF.
+#
+# The PDF is evidence. The contract is the set of obligations it puts on us, the
+# window in which we may still leave, and the date that window shuts. The real
+# decision date is expiry MINUS the notice period, which is why a register of
+# end dates is a register of dates that have already passed.
+#
+# Six of sixteen patterns are executable today. All six sit on the negotiation,
+# not on the instrument: the pipeline can watch us argue about paper and can read
+# nothing off the paper itself. The ten that cannot fire share one root cause and
+# say so.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.contract
+  name: Contract
+  domain: admin
+  scope: core
+  owner_capability: admin.contract_and_vendor.contract_administration
+  subdomain: contract_and_vendor
+  version: 2.0.0
+  status: draft
+  aliases:
+    - Agreement
+    - MSA
+    - Master Services Agreement
+    - Order Form
+    - Statement of Work
+    - Terms of Engagement
+    - Call-off
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A binding commitment between us and a counterparty, held as an obligation set with a
+    clock on it rather than as a file in a folder. Three facts about a contract are
+    load-bearing and none of them are on the front page: what it obliges US to do and by
+    when, how much notice we must give to leave, and whether it renews itself if we say
+    nothing. Everything the administrative function does with a contract after signature —
+    diarising, briefing, benchmarking, exiting — is scheduled backwards from expiry minus
+    the notice period. By the time the expiry date appears in anyone's diary the decision
+    has already been taken, by default, in favour of the counterparty.
+  discriminator: >
+    The executed document is EVIDENCE of the contract; the contract is the obligation set
+    and the exit window. If what you are holding cannot tell you the last day we may walk
+    away and what we owe before then, you are holding a Document, not a Contract.
+  answers:
+    - "What is the last date on which we can still decide not to renew this, and who has to decide by then?"
+    - "What does this contract oblige US to do, when is the next one due, and is any of it already late?"
+    - "If we say nothing, what happens — and what does the silence cost, in money and in months?"
+    - "Could we enforce this today? Can we produce a fully executed counterpart within a day?"
+    - "Is this spend under paper at all, or is the invoice the only agreement we have?"
+    - "Who may sign this value, and did the person who signed it hold that authority?"
+    - "Has the price risen since signature, and did anybody approve the rise or merely pay it?"
+  not:
+    - "NOT the executed PDF. admin.obj.core.document owns version, classification, retention and where the file lives."
+    - "NOT the counterparty. admin.obj.core.vendor owns diligence state, bank details, concentration and substitutability."
+    - "NOT the money. admin.obj.core.invoice owns what was billed; admin.obj.core.budget_line owns whether we could afford to commit it."
+    - "NOT the statutory duties that exist whether or not anyone signed anything — admin.obj.core.compliance_obligation owns those. A contract creates obligations; it does not create law."
+    - "NOT the service targets and credits — admin.obj.core.service_level owns those, and the credits nobody claims."
+    - "NOT the authority to sign. admin.obj.core.approval owns the route and the threshold; this object owns only whether the route was followed."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ---- Instrument ----------------------------------------------------------------------
+  - name: instrument
+    purpose: What kind of paper this is, whose it is, and what it hangs off.
+    type: composite
+    contains: [contract_type, counterparty_ref, document_ref, amendment_of_ref, variation_count, signed_copy_held]
+
+  - name: contract_type
+    purpose: Determines what else must exist for this instrument to mean anything.
+    type: value
+    data_type: enum
+    allowed_values: [msa, order_form, sow, nda, dpa, saas_subscription, licence, services, lease, framework, call_off, amendment, purchase_terms, letter_of_intent]
+    required: true
+    validation: must be one of allowed_values
+    sensitivity: internal
+    description: >
+      An order form without its MSA is unenforceable administration: the commercials are
+      visible and the terms governing them are not. letter_of_intent is in the list because
+      work starts under one far more often than anyone admits, and an LOI with no expiry
+      becomes the operative agreement by default.
+
+  - name: counterparty_ref
+    purpose: The other side, held as an object so exposure can be summed across instruments.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.vendor
+    required: true
+    sensitivity: internal
+    description: >
+      Never a free-text name. A name changes on a rebrand or an acquisition; an obligation
+      does not, and a register keyed on the name loses the thread the day the letterhead
+      changes.
+
+  - name: document_ref
+    purpose: The executed counterpart on file. Evidence of the contract, not the contract.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    sensitivity: confidential
+
+  - name: amendment_of_ref
+    purpose: The parent instrument this one varies.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.contract
+    description: >
+      Self-referential. An amendment inherits the parent's notice period unless it expressly
+      restates the term, and diarising the renewal from the amendment date is the single most
+      common way a business loses an exit it had paid for.
+
+  - name: variation_count
+    purpose: How many amendments, side letters and order forms hang off this instrument.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    description: >
+      Above three, nobody in the business can state the terms from memory and the register
+      becomes the only source of truth — which is the moment the register's accuracy stops
+      being an administrative nicety.
+
+  - name: signed_copy_held
+    purpose: Whether we could produce a fully executed counterpart today.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      In most registers older than three years this is false for a meaningful share of live
+      contracts, and it is discovered during a dispute rather than during a review. The gap is
+      cheap to close in the week of signature and nearly impossible to close in year four.
+
+  # ---- Term and exit -------------------------------------------------------------------
+  - name: term_and_exit
+    purpose: The fields that decide whether this contract is managed or merely stored.
+    type: composite
+    contains: [start_at, end_at, term_months, auto_renew, renewal_term_months, notice_period_days, notice_deadline_at, days_to_notice_deadline, is_evergreen, termination_for_convenience]
+
+  - name: start_at
+    purpose: When obligations began running, which is often before signature.
+    type: value
+    data_type: timestamp
+    description: >
+      Back-dated effective dates are normal and they matter: the notice deadline computes off
+      the term, so a contract effective from the first of the month but signed on the twentieth
+      has already consumed three weeks of its first term.
+
+  - name: end_at
+    purpose: Contractual expiry.
+    type: value
+    data_type: timestamp
+    description: >
+      Almost never the date that matters. It is the date everyone diarises, which is exactly
+      why the renewal is discovered in the month it becomes irreversible.
+
+  - name: term_months
+    purpose: Committed length of the initial term.
+    type: value
+    data_type: integer
+    unit: months
+    validation: ">= 0"
+
+  - name: auto_renew
+    purpose: Whether silence continues the agreement.
+    type: value
+    data_type: boolean
+    required: true
+    sensitivity: internal
+    description: >
+      The single highest-leverage boolean in the administrative function. True means silence is
+      a decision to continue; false means silence is a decision to stop. Null is NOT "probably
+      false" — an unread auto-renewal clause must be treated as true until somebody has
+      actually read it, because the asymmetry of being wrong runs entirely one way.
+
+  - name: renewal_term_months
+    purpose: How long we are committed for if we miss the window.
+    type: value
+    data_type: integer
+    unit: months
+    description: >
+      A twelve-month auto-renewal turns a missed diary entry into a year of spend. Recording
+      the flag without the term records that something bad can happen without recording how bad.
+
+  - name: notice_period_days
+    purpose: Days of notice we must give to terminate or to prevent renewal.
+    type: value
+    data_type: integer
+    unit: days
+    required: true
+    validation: ">= 0"
+    description: >
+      Ninety is common; one hundred and eighty is not rare; six months on a facilities or
+      outsourcing agreement is routine. Whatever the number, it moves the real decision date a
+      full quarter or more before the date anyone expects it.
+
+  - name: notice_deadline_at
+    purpose: The last day a decision not to renew can still be given effect.
+    type: derived
+    data_type: timestamp
+    derived_from: [end_at, notice_period_days]
+    sensitivity: internal
+    description: >
+      end_at minus notice_period_days. The field this object exists to surface. Diary entries,
+      renewal briefs, benchmarking exercises and exit plans are all scheduled backwards from
+      here, not from expiry. A register that holds end_at and not this is recording the date the
+      outcome is confirmed rather than the date it is decided.
+
+  - name: days_to_notice_deadline
+    purpose: Time remaining to act, as a number Layer 4 can compare against the work required.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [notice_deadline_at]
+    description: >
+      Negative is not "late" — it is "already renewed and nobody has noticed yet". The two
+      readings demand completely different actions and Layer 4 must be able to tell them apart
+      without a further lookup.
+
+  - name: is_evergreen
+    purpose: Rolling with no end date, terminable only on notice.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      The hardest kind to manage, precisely because nothing in the instrument ever prompts a
+      review. An evergreen contract with no diarised review date is a standing payment nobody
+      has re-decided since the day it was signed, and the price on it has usually moved.
+
+  - name: termination_for_convenience
+    purpose: Whether we may exit without cause, at any time.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Where false, the renewal window is the only exit, which makes notice_deadline_at absolute
+      rather than merely important. Where true, the notice deadline is a convenience and the
+      register should stop shouting about it.
+
+  # ---- Service of notice ---------------------------------------------------------------
+  - name: service_of_notice
+    purpose: >
+      The clause nobody reads until the week they need it. Notice served by the wrong method to
+      the wrong address is not served, and the contract renews.
+    type: composite
+    contains: [notice_recipient, notice_method, notice_served_at, notice_proof_held]
+
+  - name: notice_recipient
+    purpose: The contractually named addressee and address for service.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      Not our day-to-day contact. Notice given to the account manager who has handled us for six
+      years, rather than to the registered office named in the clause, has more than once been
+      held not to have been served at all — and the renewal ran.
+
+  - name: notice_method
+    purpose: The contractually valid method of service.
+    type: value
+    data_type: enum
+    allowed_values: [email, registered_post, recorded_delivery, courier, portal, in_person, any]
+    description: >
+      Where this is registered_post, an emailed termination is a courtesy and not a notice. The
+      field exists so that Layer 5.2 cannot default to the cheapest channel on the one message
+      where the channel is the substance.
+
+  - name: notice_served_at
+    purpose: When we actually served, as opposed to when we decided to.
+    type: value
+    data_type: timestamp
+    description: >
+      The decision and the service are different events and the gap between them is where
+      terminations are lost. A decision recorded in a meeting minute is not notice.
+
+  - name: notice_proof_held
+    purpose: Whether we can demonstrate delivery.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Absent proof of delivery we cannot demonstrate the contract ended, and we will be invoiced
+      as though it did not. The counterparty's incentive to have not received it is exactly the
+      size of the renewal term.
+
+  # ---- Obligations on us ---------------------------------------------------------------
+  - name: obligations
+    purpose: What we promised. The half of the contract that is never abstracted.
+    type: composite
+    contains: [obligations_on_us, next_obligation_due_at, next_obligation_action, obligation_breach_open, data_processing_in_scope]
+
+  - name: obligations_on_us
+    purpose: The abstracted list of duties this contract places on our side.
+    type: value
+    data_type: list
+    sensitivity: internal
+    description: >
+      Reporting, minimum volumes, insurance levels we must maintain, audit rights we must
+      honour, notification windows after a security incident, exclusivity, non-solicit. This
+      list is empty in most registers, which is functionally an assertion that the contract only
+      obliges the other side.
+
+  - name: next_obligation_due_at
+    purpose: The nearest tracked obligation arising under this contract.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    description: >
+      Live today only where an administrator abstracted the obligation and logged it as a
+      commitment. The pipeline can see a promise made in an email; it cannot see a promise made
+      in clause 14.3.
+
+  - name: next_obligation_action
+    purpose: What the next obligation actually requires us to do.
+    type: value
+    data_type: string
+    source_paths: [commitment.action]
+
+  - name: obligation_breach_open
+    purpose: An obligation on US is past due and unremedied.
+    type: derived
+    data_type: boolean
+    derived_from: [next_obligation_due_at]
+    sensitivity: confidential
+    description: >
+      Distinct from the counterparty failing us, and far more dangerous, because nobody is
+      complaining. Counterparty failure arrives as a complaint from the business; our own breach
+      arrives as a claim, two years later, in a dispute we started.
+
+  - name: data_processing_in_scope
+    purpose: Whether personal data flows to the counterparty under this instrument.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      Where true, an executed DPA and an Article 30 entry are conditions of the contract being
+      lawful, not attachments to chase afterwards. The commercial contract is routinely signed
+      weeks before anyone asks whether data moves, by which point it already is.
+
+  # ---- Commercial ----------------------------------------------------------------------
+  - name: commercial
+    purpose: Money, and the clauses that change it without anyone deciding to.
+    type: composite
+    contains: [contract_value, currency, uplift_cap_bp, price_review_basis, payment_terms_days, budget_line_ref, liability_cap, silence_cost]
+
+  - name: contract_value
+    purpose: Total committed value over the term.
+    type: value
+    data_type: money
+    sensitivity: confidential
+    description: Null means unknown, never zero. An unknown value cannot be routed to the right approver.
+
+  - name: currency
+    purpose: The currency of commitment, which is not always the currency of budget.
+    type: value
+    data_type: string
+    description: >
+      A multi-year commitment in a foreign currency is an unhedged position that nobody in the
+      administrative function believes they own.
+
+  - name: uplift_cap_bp
+    purpose: Maximum annual price increase the instrument permits, in basis points.
+    type: value
+    data_type: integer
+    validation: "0 <= uplift_cap_bp <= 10000"
+    sensitivity: confidential
+    description: >
+      Where a contract permits index-linked uplift and nobody tracks the cap, the increase is
+      discovered on an invoice and approved by being paid. An uncapped review clause is a blank
+      cheque with an annual expiry date.
+
+  - name: price_review_basis
+    purpose: The mechanism by which the price moves without a negotiation.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: 'e.g. "CPI + 3%, capped at 5%", "annual list price", "RPI, uncapped". The clause that raises spend without a decision being taken.'
+
+  - name: payment_terms_days
+    purpose: Days from invoice to payment as agreed, which is the number the ledger should enforce.
+    type: value
+    data_type: integer
+    unit: days
+
+  - name: budget_line_ref
+    purpose: Where the committed spend lands.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+    description: >
+      A contract signed against no budget line is a commitment the budget holder learns about
+      from the invoice. Commitment accounting exists precisely so that signature, not payment,
+      consumes the budget.
+
+  - name: liability_cap
+    purpose: The ceiling on what we could recover if this goes wrong.
+    type: value
+    data_type: money
+    sensitivity: confidential
+    description: >
+      Worth holding in the register rather than the file, because it is the number that decides
+      whether a contract is worth escalating. A cap of one month's fees on a system that runs
+      payroll is a risk decision somebody took by not reading.
+
+  - name: silence_cost
+    purpose: What doing nothing costs, expressed as money over the renewal term.
+    type: derived
+    data_type: money
+    derived_from: [auto_renew, renewal_term_months, contract_value]
+    sensitivity: confidential
+    description: >
+      The renewal term at current value, conditioned on the auto-renew flag. The only way to
+      make a renewal window compete for attention against things that are shouting: this one is
+      silent, and it has a price.
+
+  # ---- Governance ----------------------------------------------------------------------
+  - name: governance
+    purpose: Who owns it internally, who reviewed it, who signed it, and how exposed we are.
+    type: composite
+    contains: [business_owner_ref, governing_law, risk_tier, legal_review_open, countersigned, signed_at, signatory_us, signatory_them, renewal_decision_recorded_at]
+
+  - name: business_owner_ref
+    purpose: The named person who will decide the renewal.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    description: >
+      An auto-renewing contract with no named owner has already decided its own renewal.
+      "Procurement" is not an owner; procurement will renew it on the strength of the fact that
+      it was renewed last year.
+
+  - name: governing_law
+    purpose: Which law and which courts, which decides whether enforcement is realistic.
+    type: value
+    data_type: string
+    description: >
+      A cap of fifty thousand under a jurisdiction three flights away is an unenforceable cap.
+      Worth a register field because it changes the answer to "should we escalate this".
+
+  - name: risk_tier
+    purpose: How much attention this instrument earns.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, critical]
+    default: moderate
+    description: >
+      Set from criticality of the service and switching cost, NOT from value. A cheap contract
+      for a system that cannot be switched is a high-risk contract, and every register that
+      sorts by value reviews the wrong ones.
+
+  - name: legal_review_open
+    purpose: Whether legal is currently holding the paper.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      One of the very few governance facts with a live Layer 2 source today, via the
+      legal_review observation. It arrives with no SLA attached to it, which is why contracts sit
+      in legal for weeks that appear in no cycle-time number.
+
+  - name: countersigned
+    purpose: Whether both sides have executed.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Until then there is a negotiation, not a contract, and any work performed is at risk on
+      terms nobody has agreed. The most common administrative fiction is a project running
+      against a draft.
+
+  - name: signed_at
+    purpose: The date obligations attached to us.
+    type: value
+    data_type: timestamp
+
+  - name: signatory_us
+    purpose: Who signed on our side, checked against the delegation-of-authority matrix.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      A contract signed above the signatory's limit is valid against us and unauthorised inside
+      us — the worst of both. The counterparty relies on ostensible authority and the auditor
+      relies on the matrix, and only one of those two is our problem to fix.
+
+  - name: signatory_them
+    purpose: Who signed on their side, and whether they could.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: renewal_decision_recorded_at
+    purpose: When a human actually decided renew or exit, as distinct from when it happened.
+    type: value
+    data_type: timestamp
+    description: >
+      The field that separates a managed renewal from a default one. If this is null on the day
+      after notice_deadline_at, the contract renewed itself and Layer 6 should learn that as a
+      miss rather than as a decision.
+
+  # ---- Negotiation ---------------------------------------------------------------------
+  - name: negotiation
+    purpose: Observed movement on the paper. The only group with live sources today.
+    type: composite
+    contains: [last_counterparty_movement_at, ball_in_court]
+
+  - name: last_counterparty_movement_at
+    purpose: When the other side last moved the paper.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: ball_in_court
+    purpose: Who is holding the draft right now.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      `nobody` is the dangerous value and the common one: redlines exchanged, no owner named,
+      and a start date approaching regardless. Contract cycle time splits cleanly into our delay
+      and theirs only once this is tracked, and the split is almost always the reverse of what
+      the business believes.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [disposed]
+  values:
+    - name: draft
+      description: Paper requested or in circulation. The object exists here, months before signature.
+      entered_when: [{has_obs: contract_requested}]
+      implies: No obligations yet, but a procurement, diligence and budget workload has already started.
+    - name: pending_approval
+      description: With legal, or with an approver, or both. Our internal queue does not pause the counterparty's start date.
+      entered_when: [{has_obs: legal_review}]
+      implies: Cycle time is accruing against us and is currently unmeasured.
+    - name: active
+      description: Countersigned and in force.
+      implies: Obligations on us are running whether or not anyone abstracted them.
+    - name: at_risk
+      description: >
+        Inside the notice window with no renewal decision recorded, or an obligation on us
+        approaching due, or the counterparty failing. The only state in which action still
+        changes the outcome.
+      entered_when: [{path: derived.engagement, op: "<=", value: 0.5}]
+      implies: There is still a decision to make. After notice_deadline_at there is not.
+    - name: overdue
+      description: An obligation under this contract is past due and unremedied.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+      implies: We are the party in default. Nobody will tell us until it is worth money to them.
+    - name: expired
+      description: Term ended and not renewed.
+      implies: Verify the counterparty has stopped billing. Expiry does not cancel a standing order.
+    - name: cancelled
+      description: Terminated before term.
+      implies: Requires proof of service of notice, or it is a claim rather than a termination.
+    - name: superseded
+      description: Replaced by a successor instrument.
+      implies: The predecessor's survival clauses may still bind us. Replaced is not discharged.
+    - name: retained
+      description: Closed and held for its retention period, set by contract type and jurisdiction.
+      implies: Still discoverable, still disclosable, still evidence.
+    - name: disposed
+      description: Retention period elapsed and the record destroyed under the schedule.
+      implies: We can no longer prove what we agreed. That is the correct outcome, once, on purpose.
+  transitions:
+    - {from: draft, to: pending_approval, when: [{has_obs: legal_review}], trigger: routed_to_legal_or_approver}
+    - {from: pending_approval, to: active, trigger: countersigned}
+    - {from: pending_approval, to: cancelled, trigger: abandoned_before_signature, reversible: false}
+    - {from: active, to: at_risk, trigger: notice_window_opened_or_performance_failing, reversible: true}
+    - {from: active, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: overdue, to: active, trigger: obligation_remedied, reversible: true}
+    - {from: at_risk, to: active, trigger: renewal_decided_and_recorded}
+    - {from: at_risk, to: expired, trigger: term_ended_without_renewal}
+    - {from: at_risk, to: cancelled, trigger: notice_served_and_proved}
+    - {from: active, to: superseded, trigger: successor_executed}
+    - {from: expired, to: retained}
+    - {from: cancelled, to: retained}
+    - {from: superseded, to: retained}
+    - {from: retained, to: disposed, trigger: retention_period_elapsed, reversible: false}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: admin.obj.core.vendor
+    direction: outbound
+    cardinality: one
+    weight_bp: 2000
+    confidence_bp: 9000
+    priority: 1
+    evidence: [contract, erp, register]
+    description: >
+      The counterparty. One vendor commonly holds several contracts on unrelated dates; the
+      exposure is the sum and almost nobody sums it, which is how a supplier becomes
+      systemically critical one order form at a time.
+
+  - type: produces
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: many
+    weight_bp: 1800
+    confidence_bp: 9500
+    priority: 2
+    description: >
+      At minimum two: the notice deadline and the expiry. Registers holding only the second have
+      already lost the first. Lead time on the notice deadline should scale with value and
+      switching cost, not be a fixed thirty days for everything.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 8500
+    priority: 3
+    description: >
+      Both at execution and at renewal. Renewal approval is the one routinely skipped, on the
+      reasoning that the spend already exists — which is precisely the reasoning that means no
+      spend is ever re-decided.
+
+  - type: produces
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 7000
+    priority: 4
+    evidence: [contract, document]
+    description: >
+      Every duty the contract places on us — reporting, insurance maintenance, breach
+      notification windows, audit cooperation. Unabstracted they are invisible until breached,
+      and the breach is discovered by the counterparty rather than by us.
+
+  - type: assigned_to
+    target: admin.obj.core.stakeholder
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 6500
+    priority: 5
+    description: >
+      The business owner who will answer the renewal question. Missing on the majority of
+      inherited registers, and it is the missing edge that turns a renewal decision into a
+      renewal event.
+
+  - type: produces
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 6000
+    priority: 6
+    conditions: [{exists: commitment.due_at}]
+    evidence: [email, manual_entry]
+    description: >
+      The abstracted obligation, logged as a tracked commitment so that it acquires an owner and
+      a due date. This edge is the only reason any part of clause 14 is visible to the pipeline
+      today, and it exists only where an administrator did the abstraction by hand.
+
+  - type: references
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 9000
+    priority: 7
+    evidence: [document, signed_form]
+    description: Executed counterpart, amendments, order forms, schedules, the DPA. Evidence, held separately from the obligations it evidences.
+
+  - type: gates
+    target: admin.obj.core.invoice
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 7000
+    priority: 8
+    evidence: [erp]
+    description: >
+      The third leg of the three-way match. An invoice with no contract behind it is spend
+      outside governance whatever the purchase order says, and the price on an invoice can only
+      be checked against a contract somebody has read.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 8000
+    priority: 9
+    description: Procurement policy, the delegation-of-authority matrix that decides who may sign this value, and the retention schedule that decides how long the record survives.
+
+  - type: renews
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 7500
+    priority: 10
+    description: >
+      Self-referential — the successor instrument. An unbroken renewal chain is how a three-year
+      relationship becomes a fifteen-year one without a single re-decision, and the chain is only
+      visible if each link is recorded.
+
+  - type: covers
+    target: admin.obj.core.service_level
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 6500
+    priority: 11
+    description: The SLAs and the service credits. Credits nobody claims are a discount we chose not to take, and they expire on a clock in the same clause.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 12
+    description: Commitment accounting — the budget is consumed at signature, not at payment. Where this edge is missing, the budget holder discovers the commitment when the first invoice lands.
+
+  - type: supersedes
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 7500
+    priority: 13
+    description: Self-referential — what this instrument replaced, and therefore whose survival clauses may still be running underneath it.
+
+# ── 6 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# Conditions in a `when` are ANDed. There is no `or` — the mirror case is authored as its own
+# pattern, because the mirror case demands a different action and usually a different owner.
+inference_patterns:
+
+  deterministic:
+
+    - id: ct.paper_requested
+      statement: "Someone asked for paper — a contract object exists from that moment, not from signature."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 8500, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        contract_requested fires on inbound sales paper too, so it will occasionally create a
+        contract object where we are the seller rather than the buyer. Cheap to be wrong about
+        and expensive to miss, which is why it sits at 8500 rather than lower.
+      note: >
+        The most useful thing the shipped substrate does for Admin. A contract request is months
+        of administrative work — diligence, approvals, DPA, budget line, signature authority —
+        beginning, and it is observable today.
+
+    - id: ct.legal_is_holding_the_paper
+      statement: "Paper was requested and legal review has opened on the same thread."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 9000, attribute: legal_review_open, value: true}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        legal_review can be raised on a document that is not this contract — a DPA, a
+        subprocessor list, a policy question in the same thread. The flag is right about the
+        state of the thread and occasionally wrong about which instrument.
+      note: >
+        The second-most administratively informative observation in the pack. It arrives with no
+        SLA attached to it, which is exactly why contracts sit in legal for weeks that appear in
+        no cycle-time number.
+
+    - id: ct.obligation_on_us_overdue
+      statement: "A tracked obligation arising under this contract is past its due date."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8000, attribute: obligation_breach_open, value: true}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        An obligation satisfied out of band — the report was sent, the certificate was provided —
+        still reads overdue until something closes the commitment. This is the largest single
+        source of a wrong nudge in this domain, and the correct response is to make closing cheap
+        rather than to weaken the pattern.
+      note: >
+        Only fires where an administrator abstracted the obligation into a commitment, so it
+        measures diligence as much as breach. That is a real limitation and not a reason to drop
+        it: the contracts with abstracted obligations are precisely the ones worth watching, and
+        the ones without are covered by ct.obligation_load_never_abstracted.
+
+    - id: ct.executed_copy_exists
+      statement: "Both sides have signed and an executed counterpart is on file."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: countersigned, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: contract_countersigned, owner_layer: L2,
+           note: "L2 emits contract_requested and never contract_countersigned. The exact moment obligations attach to us — the one event that changes our legal position — is unobserved, so the register learns of it whenever somebody remembers to update it. Cheapest high-value line in this object's backlog."}
+        - {kind: obs_kind, name: document_signed, owner_layer: L1,
+           note: "Every e-signature platform emits a completion webhook per envelope, with signer identity and timestamp. No connector consumes it."}
+
+    - id: ct.term_and_notice_are_known
+      statement: "Expiry and notice period have been read from the instrument, so a notice deadline can be computed."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: notice_deadline_at, value: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.end_at, owner_layer: L1,
+           note: "No connector reads a contract register or CLM. The most consequential administrative date in the business — the last day we can walk away — does not exist in the pipeline in any form."}
+        - {kind: fact_path, name: contract.notice_period_days, owner_layer: L1,
+           note: "Extractable from the termination clause with document-level extraction. Today it lives only in the PDF, and therefore only in the memory of whoever last read it."}
+
+    - id: ct.auto_renewal_declared
+      statement: "The instrument states that it renews unless notice is given."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: auto_renew, value: true}
+      requires_signals:
+        - {kind: fact_path, name: contract.auto_renew, owner_layer: L1,
+           note: "Until this exists every contract must be assumed auto-renewing, which is the correct default and an expensive one — it puts a diary entry and a brief on instruments that never needed either."}
+
+    - id: ct.notice_served_and_proved
+      statement: "Notice has been served by the contractual method and delivery can be evidenced."
+      status: needs_signal
+      yields: {confidence_bp: 9700, attribute: notice_proof_held, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: notice_served, owner_layer: L2,
+           note: "Absence of service is the trigger for the renewal alarm, so the signal must exist for its absence to mean anything. Today an unserved notice and a served-but-unrecorded notice are indistinguishable, and only one of them costs a renewal term of spend."}
+
+  heuristic:
+
+    - id: ct.paper_sitting_with_the_counterparty
+      statement: "Paper is out and the ball is with them — the delay is theirs, so chase rather than redraft."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 8000, attribute: ball_in_court, value: them}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Ball-in-court is computed from the thread, and a thread can be silent because the
+        conversation moved to a call or to a portal. Reads as their delay when the paper is in
+        fact sitting in a shared drive nobody owns.
+
+    - id: ct.execution_stalled_on_our_side
+      statement: "Paper is out, the ball is with us, and we have been sitting on it well past our own reply pace."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 7}}
+      yields: {confidence_bp: 7500, attribute: null, corroborates: [ct.paper_requested]}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Fires on a contract deliberately parked — a deal that went quiet for a commercial reason,
+        or paper held pending a budget decision. Parked and stalled look identical from outside
+        and only the owner can tell them apart, which is the argument for asking rather than
+        escalating.
+      note: >
+        Written as its own pattern rather than an `or` against the counterparty case because the
+        action differs completely: this one is an internal nudge to a named person, the other is
+        an external chase. Baseline-relative rather than fixed, because three days of silence in
+        a fast-moving thread means more than three weeks in a slow one.
+
+    - id: ct.negotiation_gone_cold
+      statement: "Two-way movement on a live contract negotiation has halved against the prior fortnight."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {path: derived.engagement, op: "<=", value: 0.5}
+      yields: {confidence_bp: 7000, attribute: null, corroborates: [ct.execution_stalled_on_our_side]}
+      evidence_fields: [derived.engagement, thread.last_inbound]
+      false_positive: >
+        Engagement collapses at signature too, and correctly — the negotiation is over. Without
+        contract_countersigned the engine cannot distinguish "abandoned" from "finished", which
+        is a second and quieter cost of that missing observation.
+      note: >
+        Declared as corroborating rather than independent of the stall pattern: both read the
+        same thread. Rule 11 means these two together must not raise confidence the way two
+        genuinely independent sources would.
+
+    - id: ct.default_renewal_imminent
+      statement: "The notice window is closing on an auto-renewing contract and no notice has been served."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.notice_period_days, owner_layer: L1}
+        - {kind: fact_path, name: contract.end_at, owner_layer: L1}
+        - {kind: obs_kind, name: notice_served, owner_layer: L2,
+           note: "The trigger is an absence, so the signal has to exist for its absence to be meaningful."}
+      note: >
+        The single highest-value pattern in this object and it cannot fire. Everything the
+        contract-administration capability is for happens in the fortnight this would open.
+
+    - id: ct.price_uplift_applied_without_a_decision
+      statement: "An invoice under this contract exceeds the prior period by an indexed uplift nobody approved."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: invoice.amount, owner_layer: L1}
+        - {kind: fact_path, name: contract.price_uplift_index, owner_layer: L1,
+           note: "New backlog line. Indexed uplift is the most common form of value leakage in a managed estate precisely because it arrives as a slightly larger invoice and is approved by being paid."}
+
+    - id: ct.spend_without_paper
+      statement: "Invoices are arriving from a counterparty with no active contract behind them."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.counterparty, owner_layer: L1}
+        - {kind: fact_path, name: invoice.po_ref, owner_layer: L1,
+           note: "The three-way match is a Layer 2 join across invoice, purchase order and contract. None of the three is projected, so maverick spend is found in the annual audit rather than in the month it starts."}
+
+    - id: ct.obligation_load_never_abstracted
+      statement: "A live contract has no obligations recorded against it — which almost always means they were never read, not that there are none."
+      status: needs_signal
+      yields: {confidence_bp: 6000, attribute: null}
+      requires_signals:
+        - {kind: derived, name: derived.obligation_pressure, owner_layer: L2,
+           note: "Requires clause-level extraction of duties owed by us. Deliberately weak at 6000 — the absence of a record is evidence about our administration, not about the contract."}
+
+    - id: ct.amendment_chain_obscures_the_terms
+      statement: "Enough variations hang off this instrument that no single document states the operative terms."
+      status: needs_signal
+      yields: {confidence_bp: 6500, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.end_at, owner_layer: L1,
+           note: "Needs the term as restated by the LATEST instrument in the chain, not the first. Without it, a register with four amendments shows four end dates and no way to tell which one governs."}
+        - {kind: obs_kind, name: document_superseded, owner_layer: L2}
+
+    - id: ct.evergreen_never_re_decided
+      statement: "A rolling contract with no end date has run for years with no recorded review or benchmark."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.end_at, owner_layer: L1,
+           note: "Its ABSENCE is the trigger, so the field must exist before the absence is distinguishable from an unread register."}
+        - {kind: fact_path, name: contract.notice_period_days, owner_layer: L1,
+           note: "On an evergreen the notice period is the entire exit mechanism; there is no expiry to fall back on."}
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "paper requested, redlines exchanged, who moved last", path: thread.last_inbound,
+     fills: [last_counterparty_movement_at], reliability_bp: 7000}
+  - {source: email, signal: "which side is holding the draft", path: thread.ball_in_court,
+     fills: [ball_in_court], reliability_bp: 6500}
+  - {source: derived, signal: "abstracted obligations logged as commitments", path: commitment.due_at,
+     fills: [next_obligation_due_at, next_obligation_action, obligation_breach_open], reliability_bp: 6000,
+     description: "Only as complete as the abstraction. Measures our administration as much as the contract."}
+  - {source: contract, signal: "term, notice period, auto-renewal, liability cap, service clauses", reliability_bp: 10000,
+     fills: [end_at, notice_period_days, auto_renew, renewal_term_months, liability_cap, notice_recipient, notice_method],
+     description: "The authoritative source and the one with no connector. Everything above is inference around a document nobody machine-reads."}
+  - {source: document, signal: "executed counterpart, amendments, order forms, schedules", reliability_bp: 8500,
+     fills: [document_ref, signed_copy_held, variation_count]}
+  - {source: signed_form, signal: "e-signature completion certificate with signer identity and timestamp", reliability_bp: 9500,
+     fills: [countersigned, signed_at, signatory_us, signatory_them]}
+  - {source: erp, signal: "committed spend, payment terms, invoices matched to the instrument", reliability_bp: 8000,
+     fills: [contract_value, payment_terms_days, budget_line_ref]}
+  - {source: register, signal: "the contract register itself — dates, owners, renewal decisions", reliability_bp: 7000,
+     fills: [end_at, business_owner_ref, renewal_decision_recorded_at, risk_tier]}
+  - {source: portal, signal: "the counterparty's own contract portal", reliability_bp: 5000,
+     description: "Their record of our terms, which is not the same thing as ours and is never wrong in our favour."}
+  - {source: manual_entry, signal: "notice deadline diarised by an administrator who actually read the clause", reliability_bp: 6000,
+     fills: [notice_deadline_at, obligations_on_us]}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: notice_deadline_at, type: timestamp, derived_from: [end_at, notice_period_days],
+     description: "The date a renewal decision must exist by. Everything else schedules backwards from this.",
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: days_to_notice_deadline, type: integer, derived_from: [notice_deadline_at],
+     description: "Urgency as a number. Negative means the contract has already renewed and nobody has noticed.",
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: silence_cost, type: money, derived_from: [auto_renew, renewal_term_months, contract_value],
+     description: "What doing nothing costs. The only way a silent item competes for attention against noisy ones.",
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: obligation_register, type: list, derived_from: [obligations_on_us, next_obligation_due_at],
+     description: "Duties on us with due dates, structured for scheduling rather than for reading.",
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: renewal_brief, type: string, derived_from: [contract_value, price_review_basis, counterparty_ref, risk_tier],
+     description: "Spend, performance, alternatives and switching cost, assembled BEFORE the window opens. A brief produced inside the window is an argument for renewing.",
+     consumed_by: [L5.communication_planning]}
+  - {name: notice_service_instruction, type: string, derived_from: [notice_method, notice_recipient],
+     description: "Contractually valid method and addressee. The channel planner must not default to email where the clause says registered post.",
+     consumed_by: ["L5.2.channel_planner"]}
+  - {name: contract_coverage_flag, type: boolean, derived_from: [countersigned, counterparty_ref],
+     description: "Whether spend with this counterparty is under paper at all.",
+     consumed_by: [L4.decision_maker]}
+  - {name: enforceability_gap, type: boolean, derived_from: [signed_copy_held, countersigned, document_ref],
+     description: "True where no executed counterpart can be produced. A contract we cannot produce is a contract we do not have.",
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: signature_authority_check, type: boolean, derived_from: [signatory_us, contract_value],
+     description: "Whether the signatory held delegated authority for this value.",
+     consumed_by: [L4.decision_maker, L6.learning_unit]}
+
+# ── 9 · Preconditions — gates on whether we can meaningfully ask ─────────────────────────
+preconditions:
+
+  - id: ct.counterparty_resolved
+    statement: The other side is resolved to a vendor record, not to a name in an email signature.
+    requires: [admin.obj.core.vendor]
+    when: [{has_obs: contract_requested}]
+    if_unmet: >
+      Degrade, do not block. Create the contract object against an unresolved counterparty and
+      raise vendor onboarding as the dependency — refusing to record the contract until
+      procurement catches up is how contracts get negotiated entirely outside the register.
+
+  - id: ct.term_has_been_read
+    statement: end_at and notice_period_days come from the instrument, not from an assumption or last year's register row.
+    requires: [end_at, notice_period_days]
+    if_unmet: >
+      Block any statement about the renewal window and say why. An invented notice deadline is
+      worse than none: it produces a confident diary entry on the wrong date and stops anyone
+      looking again.
+
+  - id: ct.auto_renew_default_applied
+    statement: Where the auto-renewal clause has not been read, the contract is treated as auto-renewing.
+    requires: [auto_renew]
+    if_unmet: >
+      Degrade to the pessimistic default and flag it as an assumption rather than a fact. The
+      asymmetry runs one way — a needless diary entry costs an hour, a missed window costs a
+      renewal term.
+
+  - id: ct.named_owner_exists
+    statement: A named human owns the renewal decision — not a function, not a mailbox.
+    requires: [admin.obj.core.stakeholder, business_owner_ref]
+    if_unmet: >
+      Route to the head of the consuming function to name one. Do not route to procurement:
+      procurement will renew it on the strength of the fact that it was renewed last year.
+
+  - id: ct.executed_counterpart_locatable
+    statement: A fully executed counterpart can be produced, or its absence is recorded as a known gap.
+    requires: [admin.obj.core.document, signed_copy_held]
+    if_unmet: >
+      Degrade. Continue to administer the contract but mark enforceability_gap true, so the gap
+      surfaces in a renewal negotiation rather than in a dispute.
+
+  - id: ct.budget_line_identified
+    statement: Committed spend has a budget line to consume, resolved before signature rather than at the first invoice.
+    requires: [admin.obj.core.budget_line]
+    if_unmet: "Block execution above the policy threshold. Commitment accounting only works if the commitment is recorded at commitment."
+
+  - id: ct.dpa_precedes_data_flow
+    statement: Where personal data will flow, an executed DPA and an Article 30 entry exist before the first transfer.
+    requires: [admin.obj.core.compliance_obligation, data_processing_in_scope]
+    if_unmet: "Block the data flow, not the contract. The two are separable, and treating them as one is why the DPA is signed six months late."
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - id: ct.exit_only_within_window
+    statement: Where termination_for_convenience is false, the only exit is notice served before notice_deadline_at.
+    hard: true
+    why: After that date there is no decision left to take, only a renewal to absorb. This is the constraint the whole object is built around.
+
+  - id: ct.service_method_binds
+    statement: Notice must be served by notice_method to notice_recipient. No other method constitutes service, however reasonable it looks.
+    hard: true
+    why: The counterparty's incentive to not have received it is exactly the size of the renewal term.
+
+  - id: ct.signature_authority
+    statement: The signatory must hold delegated authority for contract_value under the delegation-of-authority matrix.
+    hard: true
+    why: A contract signed above the limit binds us externally and is unauthorised internally. Only the second half is fixable, and only before the auditor finds it.
+
+  - id: ct.dpa_precedes_processing
+    statement: Where data_processing_in_scope is true, personal data must not flow before an executed DPA exists.
+    hard: true
+    why: GDPR Article 28 makes the written terms a condition of lawful processing, not a document to chase afterwards.
+
+  - id: ct.amendment_authority
+    statement: An amendment requires the same authority level as the instrument it varies.
+    hard: true
+    why: Otherwise a multi-million commitment is extended by three years on a one-page side letter signed by whoever was in the room.
+
+  - id: ct.survival_clauses_outlive_term
+    statement: Confidentiality, audit, data-deletion and indemnity obligations commonly survive expiry.
+    hard: false
+    why: An archived contract is not a discharged one, and the retention schedule must run from the end of the survival period rather than from expiry.
+
+  - id: ct.no_work_before_countersignature
+    statement: Work performed before countersignature is performed on terms nobody has agreed.
+    hard: false
+    why: >
+      Soft because the business will do it anyway under commercial pressure. Recording it as a
+      knowing exposure with a ratification date is achievable; forbidding it is not, and a
+      constraint that is routinely broken teaches people to ignore the register.
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: ct.notice_deadline_is_the_real_deadline
+    statement: >
+      A renewal decision must be recorded on or before end_at minus notice_period_days. Any
+      diary entry, brief or review scheduled against end_at instead is scheduled against the
+      wrong date.
+    then: schedule_renewal_decision_at_notice_deadline
+    severity: blocking
+    why: This is the rule the object exists to enforce. Everything else here is support for it.
+
+  - id: ct.unknown_auto_renew_treated_as_true
+    statement: A null auto_renew is treated as true until the clause has been read and the read is recorded.
+    then: assume_auto_renew
+    severity: blocking
+    why: Optimism about a field nobody has checked is how a register acquires contracts it cannot exit.
+
+  - id: ct.auto_renew_requires_named_owner
+    statement: An auto-renewing contract with no business_owner_ref cannot be recorded as complete.
+    then: block_register_completion
+    severity: blocking
+    why: Nobody is on the hook for a decision that makes itself, so the decision does not get made.
+
+  - id: ct.no_executed_copy_no_active_state
+    statement: A contract cannot be recorded active while countersigned is false or signed_copy_held is false.
+    then: block_active_state
+    severity: blocking
+    why: An active state on an unexecuted instrument makes the register report coverage it does not have.
+
+  - id: ct.notice_must_use_the_contractual_method
+    statement: Service by a method other than notice_method, or to an address other than notice_recipient, does not count as served.
+    when: [{has_obs: contract_requested}]
+    then: reject_notice_service
+    severity: blocking
+
+  - id: ct.legal_review_before_countersignature
+    statement: Above the policy threshold, countersignature with no recorded legal review is a control failure regardless of how routine the paper looked.
+    when: [{no_obs: legal_review}]
+    then: flag_unreviewed_execution
+    severity: warning
+    why: The routine-looking paper is where the unusual clause hides, because nobody negotiates the boring ones.
+
+  - id: ct.amendment_does_not_reset_notice
+    statement: An amendment does not restart the notice clock unless it expressly restates the term.
+    then: inherit_parent_notice_period
+    severity: warning
+    why: Diarising the renewal from the amendment date is the most common single cause of a missed window.
+
+  - id: ct.evergreen_needs_a_diarised_review
+    statement: A contract with is_evergreen true and no scheduled review date will never be reviewed again.
+    then: require_periodic_review_date
+    severity: warning
+    why: Nothing in the instrument will ever prompt anyone. The prompt has to be manufactured or it does not exist.
+
+  - id: ct.renewal_without_a_recorded_decision_is_a_miss
+    statement: >
+      Where renewal_decision_recorded_at is null on the day after notice_deadline_at, the
+      renewal is logged as a default, not as a decision.
+    then: log_default_renewal
+    severity: advisory
+    why: >
+      Layer 6 learns nothing from renewals recorded as decisions. Counting defaults honestly is
+      the only way the notice-window hit rate means anything, and it is the number that makes
+      the case for the whole capability.
+
+  - id: ct.order_form_requires_its_framework
+    statement: An order form, call-off or SOW recorded without a parent MSA or framework is incomplete, not merely unlinked.
+    then: flag_missing_parent_instrument
+    severity: warning
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4, never a decision ─────────────────
+decision_factors:
+
+  - name: notice_window_proximity
+    weight_bp: 2500
+    direction: increases
+    description: Days remaining to notice_deadline_at, not to end_at. The most time-sensitive input this object produces and the only one that goes irreversible on a specific date.
+    reads: [notice_deadline_at, days_to_notice_deadline, notice_period_days]
+
+  - name: auto_renewal_exposure
+    weight_bp: 2000
+    direction: increases
+    description: What silence costs — the renewal term at current value, conditioned on the auto-renew flag. Makes a silent item argue for attention against noisy ones.
+    reads: [auto_renew, renewal_term_months, contract_value, silence_cost]
+
+  - name: obligation_load_on_us
+    weight_bp: 1500
+    direction: context
+    description: How much this contract asks of us, how much of it is abstracted, and whether any of it is already late.
+    reads: [obligations_on_us, obligation_breach_open, next_obligation_due_at]
+
+  - name: value_at_stake
+    weight_bp: 1300
+    direction: context
+    description: Committed value plus uncontrolled uplift exposure. Context and not urgency — a small contract for a critical service outranks a large one for a commodity.
+    reads: [contract_value, uplift_cap_bp, price_review_basis, liability_cap]
+
+  - name: switching_cost
+    weight_bp: 1000
+    direction: decreases
+    description: Lowers the case for exit even where the commercials argue for it. Where termination_for_convenience is false, this is the entire argument.
+    reads: [risk_tier, termination_for_convenience, contract_type]
+
+  - name: counterparty_performance
+    weight_bp: 900
+    direction: decreases
+    description: How the other side has actually behaved. Read from the vendor rather than asserted here, because performance is a property of the relationship and not of the paper.
+    reads: [counterparty_ref, risk_tier]
+
+  - name: evidence_completeness
+    weight_bp: 500
+    direction: context
+    description: Whether we could enforce this if we had to. A contract we cannot produce is a contract we do not have, and that changes how hard we should push.
+    reads: [signed_copy_held, countersigned, document_ref, notice_proof_held]
+
+  - name: ownership_clarity
+    weight_bp: 300
+    direction: increases
+    description: Whether a named human will answer the renewal question. Small weight, large failure mode — everything else is moot if there is nobody to route it to.
+    reads: [business_owner_ref, renewal_decision_recorded_at]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: contract, strength_bp: 10000, decays: false, independent_of: [erp, email, derived],
+     description: "The executed instrument. Nothing outranks it and nothing substitutes for it in a dispute."}
+  - {source: signed_form, strength_bp: 9500, decays: false, independent_of: [email, register],
+     description: "E-signature completion certificate with audit trail. Proves who signed, when, and from where."}
+  - {source: register, strength_bp: 7500, decays: true, independent_of: [erp],
+     description: "The contract register. Authoritative for dates only to the extent somebody read the clause — treat it as a claim ABOUT the contract, not as the contract."}
+  - {source: erp, strength_bp: 7000, decays: false, independent_of: [contract, email],
+     description: "Committed spend and payment history. Proves the relationship is live even where the paper cannot be found, which is a surprisingly common configuration."}
+  - {source: document, strength_bp: 7000, decays: false,
+     description: "Amendments, order forms, schedules, the DPA. Each is a contract fragment and the operative terms are the union of them."}
+  - {source: email, strength_bp: 5500, decays: true,
+     description: "Agreement in correspondence. It can bind us — which is the risk, not the value. An email accepting revised terms is a variation whether or not anyone filed it."}
+  - {source: portal, strength_bp: 5000, decays: true,
+     description: "The counterparty's contract portal. Their record of our terms; convenient, and never wrong in our favour."}
+  - {source: manual_entry, strength_bp: 4000, decays: true,
+     description: "An administrator's abstraction. Only as good as the read, and it is never re-read after the person who made it leaves."}
+  - {source: derived, strength_bp: 3000, decays: true,
+     description: "Inferred from thread movement and spend behaviour. Corroborating only, never sole grounds for a statement about the terms."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: notice_window_hit_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of renewals decided before notice_deadline_at. The one number that says whether contract administration is running at all.",
+     calibrates: [ct.default_renewal_imminent, ct.notice_deadline_is_the_real_deadline]}
+  - {name: default_renewal_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of renewals that happened because nobody acted. Report alongside its value, not as a count — three defaults can be worth more than thirty decisions.",
+     calibrates: [ct.renewal_without_a_recorded_decision_is_a_miss]}
+  - {name: renewal_decision_lead_time, unit: days, direction: higher_is_better, owner_layer: L6,
+     description: "Days between the recorded decision and the notice deadline. Negative values are not late decisions; they are non-decisions."}
+  - {name: executed_copy_completeness, unit: percent, direction: higher_is_better, owner_layer: L3,
+     description: "Share of active contracts whose executed counterpart can be produced within one working day.",
+     calibrates: [ct.executed_copy_exists]}
+  - {name: obligation_capture_rate, unit: percent, direction: higher_is_better, owner_layer: L3,
+     description: "Share of active contracts with obligations abstracted. Usually the lowest number in this list, and the cheapest to move.",
+     calibrates: [ct.obligation_load_never_abstracted]}
+  - {name: contract_cycle_time, unit: days, direction: lower_is_better, owner_layer: L2,
+     description: "Request to countersignature. Splits cleanly into our delay and theirs once ball_in_court is tracked, and the split is usually the reverse of the story the business tells.",
+     calibrates: [ct.execution_stalled_on_our_side, ct.paper_sitting_with_the_counterparty]}
+  - {name: uncontracted_spend_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Spend with counterparties holding no active contract.",
+     calibrates: [ct.spend_without_paper]}
+  - {name: unapproved_uplift_value, unit: money, direction: lower_is_better, owner_layer: L6,
+     description: "Price increases absorbed without a recorded approval. The quietest line item in any budget.",
+     calibrates: [ct.price_uplift_applied_without_a_decision]}
+  - {name: legal_review_dwell_time, unit: days, direction: lower_is_better, owner_layer: L2,
+     description: "Days paper spends in legal review. Unmeasured in most organisations because the observation exists and nothing counts it.",
+     calibrates: [ct.legal_is_holding_the_paper]}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: ct.paper_requested, name: Contract Requested, severity: notable,
+     emitted_when: [{has_obs: contract_requested}], payload: [counterparty_ref, contract_type]}
+  - {id: ct.legal_review_opened, name: Legal Review Opened, severity: info,
+     emitted_when: [{has_obs: legal_review}], payload: [contract_type, contract_value]}
+  - {id: ct.executed, name: Contract Executed, severity: critical,
+     payload: [signed_at, signatory_us, signatory_them, notice_deadline_at],
+     description: "The moment obligations attach to us. Not observable today, which is why the register lags execution by weeks and the obligations by longer."}
+  - {id: ct.notice_window_opened, name: Notice Window Opened, severity: critical,
+     payload: [notice_deadline_at, auto_renew, renewal_term_months, silence_cost, business_owner_ref],
+     description: "The event this whole object exists to emit. Everything upstream is scaffolding for getting this one out on time, to a named person, with the brief already written."}
+  - {id: ct.auto_renewed_by_default, name: Auto-Renewed By Default, severity: critical,
+     payload: [renewal_term_months, contract_value, business_owner_ref],
+     invalidates: [renewal_decision_recorded_at],
+     description: "The only event here produced by doing nothing, and the most expensive. It should be raised as a failure every time it occurs — Layer 6 learns nothing from defaults recorded as decisions."}
+  - {id: ct.notice_served, name: Notice Served, severity: critical,
+     payload: [notice_served_at, notice_method, notice_recipient, notice_proof_held]}
+  - {id: ct.obligation_breached, name: Obligation On Us Breached, severity: critical,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [next_obligation_action, next_obligation_due_at]}
+  - {id: ct.terms_varied, name: Terms Varied By Amendment, severity: notable,
+     payload: [amendment_of_ref, variation_count, end_at, notice_period_days],
+     invalidates: [notice_deadline_at, contract_value, obligations_on_us],
+     description: "The most under-appreciated invalidation in the register. A variation can silently move the notice deadline, and every diary entry computed from the old terms is now wrong."}
+  - {id: ct.counterparty_changed, name: Counterparty Changed By Novation Or Acquisition, severity: critical,
+     payload: [counterparty_ref, notice_recipient, signatory_them],
+     invalidates: [notice_recipient, counterparty_ref, signatory_them],
+     description: "Obligations move with the novation; the address for service does not update itself, and notice served to the old registered office is not served."}
+  - {id: ct.expired, name: Contract Expired, severity: notable,
+     payload: [end_at, counterparty_ref],
+     description: "Check that billing stopped. Expiry ends the agreement; it does not cancel a standing order or a card mandate."}
+
+# ── 16 · Actions — naming one here does not authorise it ─────────────────────────────────
+actions:
+  - {id: ct.abstract_obligations, name: Abstract the obligations on us, actor: human, cost: moderate, reversible: true,
+     effect: "Read the contract once, at execution, and record what we owe and when. The cheapest hour in contract administration and the one nobody has."}
+  - {id: ct.diarise_notice_deadline, name: Diarise the notice deadline, actor: system, cost: trivial, reversible: true,
+     effect: "Create a deadline at end_at minus notice_period_days, with lead time scaled to value and switching cost rather than a fixed thirty days."}
+  - {id: ct.request_legal_review, name: Route to legal review, actor: human, cost: low, reversible: true,
+     preconditions: [{no_obs: legal_review}]}
+  - {id: ct.chase_counterparty, name: Chase the counterparty for the draft, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{has_obs: contract_requested}, {path: thread.ball_in_court, op: "=", value: them}]}
+  - {id: ct.nudge_internal_holder, name: Nudge the internal holder of the paper, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{has_obs: contract_requested}, {path: thread.ball_in_court, op: "=", value: us}],
+     effect: "To a named person, not the function mailbox. Contract delay is overwhelmingly internal and almost never attributed internally."}
+  - {id: ct.confirm_countersignature, name: Confirm countersignature and file the executed copy, actor: human, cost: low, reversible: false,
+     effect: "Closes the enforceability gap in the week both sides still care. Nearly impossible to close in year four."}
+  - {id: ct.assemble_renewal_brief, name: Assemble the renewal brief, actor: agent, cost: moderate, reversible: true,
+     effect: "Spend, performance, alternatives, switching cost — before the window opens. A brief produced inside the window is an argument for renewing."}
+  - {id: ct.serve_notice, name: Serve notice of termination, actor: human, cost: moderate, reversible: false,
+     effect: "By the contractual method, to the contractual address, with proof of delivery retained. Irreversible, which is why it stays a human action."}
+  - {id: ct.serve_protective_notice, name: Serve protective notice to preserve optionality, actor: human, cost: moderate, reversible: true,
+     effect: "Terminate to prevent auto-renewal while continuing to negotiate. Converts a deadline into an option, at the cost of a conversation the business will not enjoy."}
+  - {id: ct.renegotiate, name: Open renegotiation, actor: human, cost: high, reversible: true,
+     effect: "Leverage exists only inside the notice window. Outside it we are asking rather than negotiating, and the counterparty knows the date as well as we do."}
+  - {id: ct.verify_signature_authority, name: Verify the signatory held authority, actor: system, cost: trivial, reversible: true,
+     effect: "Check signatory_us against the delegation-of-authority matrix for contract_value. Cheap, automatable, and almost never done."}
+
+# ── 17 · Dependencies — facts about the compile, not about the world ─────────────────────
+dependencies:
+  - {target: admin.obj.core.vendor, kind: requires, strength: hard,
+     description: "Without a resolved counterparty the contract cannot be aggregated into exposure, and concentration is invisible one instrument at a time."}
+  - {target: admin.obj.core.stakeholder, kind: requires, strength: hard,
+     description: "Without a named owner there is nobody for the notice-window event to reach, and the event becomes a report rather than a decision."}
+  - {target: admin.obj.core.deadline, kind: requires, strength: hard,
+     description: "The notice deadline has to exist as a first-class dated object, or it is a field nobody queries."}
+  - {target: admin.obj.core.approval, kind: requires, strength: hard,
+     description: "Execution and renewal both need a route and a threshold. Without them signature authority cannot be checked at all."}
+  - {target: admin.obj.core.document, kind: derived_from, strength: soft,
+     description: "The executed counterpart is where every term in this object actually comes from. Soft because the contract can be administered from an abstraction while the file is being located."}
+  - {target: admin.obj.core.policy, kind: requires, strength: soft,
+     description: "The delegation-of-authority matrix and the retention schedule live in policy; this object reads both and owns neither."}
+  - {target: admin.obj.core.budget_line, kind: enriches, strength: soft,
+     description: "Commitment accounting. Without it the contract is still valid and the budget is still wrong."}
+  - {target: admin.obj.core.invoice, kind: enriches, strength: soft,
+     description: "Price checking and the three-way match. The contract is the only artefact that says what the invoice should have said."}
+  - {target: admin.obj.core.service_level, kind: enriches, strength: soft,
+     description: "Performance and credits. Absent it, counterparty_performance is an opinion."}
+  - {target: admin.obj.core.compliance_obligation, kind: enriches, strength: soft,
+     description: "Contractual duties on us become trackable obligations only once abstracted."}
+  - {target: admin.obj.core.commitment, kind: enriches, strength: soft,
+     description: "The only live route by which a clause becomes something the pipeline can see."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: ct.evergreen_has_no_notice_deadline
+    statement: An evergreen contract has no expiry, so notice_deadline_at cannot be computed and the renewal rule does not apply to it.
+    overrides: [ct.notice_deadline_is_the_real_deadline]
+    why: >
+      The correct substitute is a diarised periodic review, set from criticality, plus a standing
+      note of the notice period so the exit can be exercised at any time. Applying the expiry
+      rule to an evergreen produces a null and then silence, which is how these contracts run
+      for a decade — the control does not fail loudly, it simply never engages.
+    frequency: common
+
+  - id: ct.amendment_restates_the_term
+    statement: Where an amendment expressly restates the term or the notice period, it DOES reset the clock and the parent's dates are superseded.
+    overrides: [ct.amendment_does_not_reset_notice]
+    why: >
+      The general rule exists because most variations are silent on term. The exception matters
+      because the ones that are not silent are usually the extensions, which are exactly the
+      instruments whose dates people are trying to work out.
+    frequency: occasional
+
+  - id: ct.call_off_inherits_the_framework
+    statement: A call-off under a framework inherits the framework's notice and termination provisions, not its own apparent term.
+    overrides: [ct.notice_deadline_is_the_real_deadline, ct.order_form_requires_its_framework]
+    why: >
+      The call-off's end date looks like the operative date and is not. Administering call-offs
+      as standalone contracts produces a register with dozens of small correct-looking rows and
+      one real exit date nobody has recorded.
+    frequency: occasional
+
+  - id: ct.written_waiver_of_the_service_clause
+    statement: Where the counterparty accepts service by another method in writing, that acceptance is itself a variation and email notice is then valid.
+    overrides: [ct.notice_must_use_the_contractual_method, ct.service_method_binds]
+    why: >
+      Refusing to accept a written waiver is over-application of a good rule. The discipline is
+      that the waiver must be filed with the notice — an unfiled waiver is indistinguishable from
+      an improperly served notice a year later, when the person who agreed it has left.
+    frequency: rare
+
+  - id: ct.work_before_signature_with_ratification
+    statement: Work may begin before countersignature under a written letter of intent with a hard expiry and a named ratification date.
+    overrides: [ct.no_work_before_countersignature, ct.no_executed_copy_no_active_state]
+    when: [{has_obs: contract_requested}]
+    why: >
+      A control that cannot bend under commercial pressure gets bypassed permanently rather than
+      temporarily. The expiry on the LOI is what keeps the exception an exception; an LOI with no
+      expiry quietly becomes the operative agreement, on terms drafted in an afternoon.
+    frequency: occasional
+
+  - id: ct.regulated_or_utility_terms_are_not_negotiable
+    statement: For utilities, regulated services and most large-platform SaaS the terms are dictated, and legal review is a record rather than a control.
+    overrides: [ct.legal_review_before_countersignature]
+    why: >
+      Routing a standard cloud order form through a full review consumes the legal capacity that
+      the one genuinely negotiable contract that quarter needed. The right response is to record
+      the accepted position and its risk, not to pretend a negotiation happened.
+    frequency: common
+
+  - id: ct.survival_after_expiry
+    statement: Expiry does not discharge confidentiality, audit, data-deletion or indemnity obligations, so an expired contract may still generate live obligations on us.
+    overrides: [ct.notice_deadline_is_the_real_deadline]
+    why: >
+      Retention and obligation tracking must run from the end of the survival period, not from
+      expiry. Archiving on the expiry date is how a data-deletion obligation is missed by a
+      business that believed the relationship was over.
+    frequency: common
+
+  - id: ct.intra_group_agreement
+    statement: Intra-group agreements need term and transfer-pricing rigour but not counterparty diligence or exit planning.
+    overrides: [ct.auto_renew_requires_named_owner]
+    why: >
+      Applying the third-party model to a group entity produces theatre. Applying no model at all
+      produces a transfer-pricing finding, which is the failure mode that actually occurs.
+    frequency: occasional
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: ct.abstract_at_execution
+    statement: Abstract the contract once, in the week of signature — obligations on us, notice period, notice method, uplift basis, liability cap.
+    why: >
+      It is the only week in the life of the contract when somebody who understands it is
+      available and motivated. Every later attempt is archaeology performed by somebody who was
+      not there, usually under time pressure created by the very deadline they missed.
+    applies_when: Every instrument above the register threshold, with no exemption for routine paper.
+
+  - id: ct.diarise_backwards_from_notice
+    statement: Schedule the renewal work backwards from notice_deadline_at, with a lead time scaled to value and switching cost.
+    why: >
+      A fixed thirty-day reminder is right for nothing. A large outsourcing contract with a
+      six-month notice period needs the brief starting nine months before expiry; a small
+      software subscription needs a week. One lead time for both means the big one is always late
+      and the small one is always noise.
+    applies_when: Any contract with auto_renew true or termination_for_convenience false.
+
+  - id: ct.brief_before_the_window_opens
+    statement: Produce the renewal brief before the window opens, not inside it.
+    why: >
+      A brief written inside the window is an argument for renewing, because by then there is no
+      time to do anything else and everybody in the room knows it. The brief is only a decision
+      document while the alternative is still achievable.
+    applies_when: risk_tier high or critical, or contract_value above the procurement threshold.
+
+  - id: ct.serve_protective_notice_where_the_decision_is_open
+    statement: Where the renewal decision is genuinely undecided at the deadline, serve protective notice and carry on negotiating.
+    why: >
+      It converts a deadline into an option at the price of one awkward conversation. Most
+      counterparties expect it on large agreements; the ones who react badly are telling you
+      something useful about the relationship. The alternative is renewing by default and calling
+      it a decision.
+    applies_when: Notice deadline within two weeks, no recorded decision, termination_for_convenience false.
+    evidence: Standard practice in facilities, outsourcing and insurance renewals.
+
+  - id: ct.name_the_owner_at_signature
+    statement: Record a named business owner as a condition of the register entry being complete, at signature and not at renewal.
+    why: >
+      The person who negotiated it is identifiable on the day it is signed and untraceable three
+      years later. Naming the owner late means naming whoever currently holds the budget code,
+      who has no idea what was agreed.
+    applies_when: Always.
+
+  - id: ct.register_sorted_by_notice_deadline
+    statement: Hold and present the register ordered by notice_deadline_at, not alphabetically and not by value.
+    why: >
+      Sort order is the cheapest control in contract administration. A register sorted by supplier
+      name is a list; sorted by the next irreversible date it is a work queue, and the work it
+      queues is the work that actually expires.
+    applies_when: Any register above roughly thirty live instruments.
+
+  - id: ct.check_signature_authority_at_execution
+    statement: Check the signatory against the delegation-of-authority matrix at execution, automatically, on every instrument.
+    why: >
+      It is a numeric comparison against a table the organisation already maintains, and it is
+      almost universally done retrospectively by an auditor instead. Done at signature it is a
+      question; done at audit it is a finding.
+    applies_when: Always, and cheapest to automate where value and signatory are both structured.
+
+  - id: ct.file_the_dpa_in_the_same_envelope
+    statement: Execute the DPA in the same signature envelope as the commercial contract where data is in scope.
+    why: >
+      Split into a separate workflow it goes to the back of a queue that has no deadline, while
+      the data starts flowing on the commercial start date. Same envelope, same day, one chase
+      instead of nine.
+    applies_when: data_processing_in_scope true.
+
+  - id: ct.record_the_default_renewals_honestly
+    statement: Count renewals that happened by silence separately from renewals that were decided, and report both by value.
+    why: >
+      A function that reports "98% of contracts renewed successfully" is reporting that it did
+      not act. The uncomfortable number is the one that funds the capability.
+    applies_when: Any periodic reporting on contract administration.
+
+# ── 20 · Anti-Patterns — the specific mistake, not the general virtue ────────────────────
+anti_patterns:
+
+  - id: ct.expiry_date_register
+    statement: A contract register that stores end dates and not notice deadlines.
+    why_it_happens: >
+      The expiry date is on the front page of the contract and the notice period is in clause 21.
+      Whoever built the register captured what was easy to capture, and every row looks populated.
+    cost: "Every renewal decision arrives after the last date it could have been taken. The register reports full coverage while providing none."
+    instead: "Compute and store notice_deadline_at at entry, make it a required field, and sort the register by it."
+    detectable_by: [ct.term_and_notice_are_known, notice_window_hit_rate]
+
+  - id: ct.renewal_by_invoice
+    statement: The renewal is discovered when an invoice arrives showing a new contract period.
+    why_it_happens: >
+      Nobody owns the contract, the spend is already in the budget from last year, and the invoice
+      is within tolerance so it passes the three-way match without a human reading it.
+    cost: "A full renewal term of committed spend, at a price nobody benchmarked, on terms nobody re-read."
+    instead: "Emit the notice-window event to a named owner with the silence cost attached, and require a recorded decision either way."
+    detectable_by: [ct.default_renewal_imminent, default_renewal_rate]
+
+  - id: ct.thirty_days_for_everything
+    statement: One fixed reminder lead time applied to every contract regardless of notice period, value or switching cost.
+    why_it_happens: >
+      It is a single configuration line, it is defensible in a policy document, and it means
+      nobody has to think about individual contracts.
+    cost: "The contracts that needed six months' run-up get thirty days. The ones that needed a week generate ten months of ignored reminders, which trains everyone to ignore all of them."
+    instead: "Scale lead time from notice_period_days, contract_value and switching cost. Three tiers is enough."
+    detectable_by: [renewal_decision_lead_time]
+
+  - id: ct.obligations_only_on_them
+    statement: Abstracting only what the counterparty owes us and none of what we owe them.
+    why_it_happens: >
+      The abstraction is usually done by whoever will manage the supplier's performance, and their
+      job is what the supplier does. Nobody's job is what we do.
+    cost: "Our own breaches are discovered by the counterparty, at the moment it becomes worth money to them — typically during a renewal negotiation or an exit dispute."
+    instead: "Abstract both sides, and log the obligations on us as owned commitments with due dates."
+    detectable_by: [ct.obligation_load_never_abstracted, obligation_capture_rate]
+
+  - id: ct.amendment_resets_the_clock
+    statement: Diarising the renewal from the date of the latest amendment rather than from the term the amendment governs.
+    why_it_happens: >
+      The amendment is the most recent document in the folder and it has a date on it. The
+      reasoning is superficially sound and the error is invisible until the window has passed.
+    cost: "The window is missed by the length of the original term. The register looks maintained right up to the day it fails."
+    instead: "Inherit the parent's dates unless the amendment expressly restates the term, and record which instrument each date came from."
+    detectable_by: [ct.amendment_chain_obscures_the_terms]
+
+  - id: ct.email_termination_where_post_was_required
+    statement: Serving notice by email because that is how we always talk to them, where the clause requires registered post.
+    why_it_happens: >
+      Emailing the account manager we have dealt with for six years feels more real than posting a
+      letter to a registered office nobody has ever visited. It also gets an immediate
+      acknowledgement, which feels like proof.
+    cost: "Not served. The renewal runs, the invoice arrives, and the file says cancelled. A full renewal term, and a dispute we will lose."
+    instead: "Serve by the contractual method to the contractual address with proof of delivery, and separately email the human as a courtesy."
+    detectable_by: [ct.notice_served_and_proved]
+
+  - id: ct.legal_review_as_an_unmeasured_queue
+    statement: Routing contracts to legal review with no service level and no visibility of dwell time.
+    why_it_happens: >
+      Legal is a scarce internal function and nobody wants to be the person who put an SLA on the
+      general counsel. Cycle time is then reported as a supplier problem.
+    cost: "Weeks per contract, invisible in every cycle-time report, and a business that learns to route around legal entirely for anything urgent."
+    instead: "Count dwell time from the legal_review observation. Publishing the number is usually sufficient; it is almost always smaller than legal fears and larger than the business assumes."
+    detectable_by: [ct.legal_is_holding_the_paper, legal_review_dwell_time]
+
+  - id: ct.order_form_without_the_msa
+    statement: Recording the order form as the contract because it is the document with the price on it.
+    why_it_happens: >
+      The order form is what came back signed and what procurement needed for the purchase order.
+      The MSA was agreed two years earlier by people who have left.
+    cost: "The commercials are visible and the terms governing them are not. Liability caps, notice periods and data terms all live in a document the register does not point at."
+    instead: "Make the parent instrument a required link on any call-off, order form or SOW, and refuse to mark the entry complete without it."
+    detectable_by: [ct.order_form_requires_its_framework]
+
+  - id: ct.signing_above_authority_by_convenience
+    statement: The contract is signed by whoever was available and senior-looking rather than by the person the matrix names.
+    why_it_happens: >
+      The counterparty wants it back by Friday, the named signatory is on leave, and the
+      alternative is a delay the business will blame on administration.
+    cost: "Binding externally, unauthorised internally, and a control finding that arrives with the contract already three years into its term."
+    instead: "Maintain a delegation matrix with named deputies, and automate the value check at execution rather than at audit."
+    detectable_by: [signature_authority_check]
+
+  - id: ct.archive_on_expiry
+    statement: Closing and archiving the contract on its expiry date, treating expiry as discharge.
+    why_it_happens: >
+      Expiry is the visible end of the relationship, the budget line closes, and the folder moves
+      to the archive. Survival clauses are in the boilerplate nobody reads twice.
+    cost: "Confidentiality, audit and data-deletion obligations continue against a business that believes it is finished, and the record is disposed of before the survival period ends."
+    instead: "Set retention from the end of the survival period, and keep surviving obligations on the live obligation register after the contract state moves to retained."
+    detectable_by: [ct.survival_after_expiry]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "36-month SaaS subscription, 90 days' notice, auto_renew true", kind: typical,
+     note: "Expiry in March means the decision date is December, in the quarter nobody is looking and half the owners are on leave. The archetype this object was built for."}
+  - {label: "Evergreen cleaning contract signed in 2019, RPI-linked, uncapped", kind: typical,
+     note: "No end date, no owner, no benchmark. Never re-decided; the annual cost has risen by a third without a single approval, one invoice at a time."}
+  - {label: "Six-month notice on a facilities outsourcing agreement", kind: edge,
+     note: "The renewal brief has to start nine months before expiry. Any register on a fixed thirty-day reminder has already lost this one before the reminder fires."}
+  - {label: "Order form on file, MSA agreed in 2021 by people who have left", kind: misclassification,
+     note: "Recorded in the register as the contract. It is not: it is the price list. The liability cap and the notice period sit in a document nothing points at."}
+  - {label: "Amendment extending term by 12 months, silent on notice", kind: edge,
+     note: "Notice period unchanged from the parent. Diarising from the amendment date loses the window by the length of the original term."}
+  - {label: "Letter of intent, no expiry, work started, MSA never signed", kind: edge,
+     note: "Eighteen months of delivery on two pages drafted in an afternoon. The LOI is now the operative agreement and nobody decided that."}
+  - {label: "Terminated by email where the clause required registered post", kind: counterexample,
+     note: "Not served. The renewal ran, the invoice arrived, and the file said cancelled. Two records of the same contract, both confident, one wrong."}
+  - {label: "Invoice from a supplier with no contract in the register", kind: misclassification,
+     note: "Usually read as a missing register entry. It is more often maverick spend: the agreement is the purchase order and the terms are whatever was printed on the back of their invoice."}
+  - {label: "NDA signed at first contact three years ago, still in force", kind: edge,
+     note: "Perpetual confidentiality obligation, no commercial relationship, no owner, no review. Harmless until we hire from them or they are acquired by a competitor."}
+  - {label: "DPA required, never executed, personal data flowing since the start date", kind: counterexample,
+     note: "A finding at the next audit and a notification obligation if the processor is breached. The commercial contract was signed on time; the one that made the processing lawful was not."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Contract lifecycle management (CLM)", kind: framework,
+     note: "Request, negotiate, execute, obligate, renew, exit. This object is deliberately weighted to the last three stages, which is where administrative value sits and where most tooling stops."}
+  - {title: "World Commerce & Contracting (formerly IACCM) — contract management maturity and value-leakage research", kind: research,
+     note: "Source of the widely cited finding that a material share of contract value is lost after signature, in administration rather than in negotiation."}
+  - {title: "Contract abstraction and obligation management", kind: practitioner,
+     note: "The discipline of reducing an instrument to its dated duties. The highest-return hour in contract administration and the one least often budgeted."}
+  - {title: "Delegation of Authority matrix", kind: framework,
+     note: "The standard instrument for expressing signature thresholds by role and value. Read by this object at execution; owned by policy."}
+  - {title: "CIPS contract management cycle", kind: framework, author: "Chartered Institute of Procurement & Supply",
+     note: "Post-award contract management as a discipline distinct from sourcing. That distinction is why this object exists separately from the vendor object."}
+  - {title: "Three-way match — invoice, purchase order, goods receipt", kind: framework,
+     note: "The contract is the fourth leg nobody counts: it is the only artefact that says what the price should have been."}
+  - {title: "Commitment accounting", kind: framework,
+     note: "Budget is consumed at signature rather than at payment. The reason budget_line_ref belongs on the contract and not only on the invoice."}
+  - {title: "GDPR Article 28 — processor obligations and the data processing agreement", kind: standard,
+     note: "Makes written terms a condition of lawful processing. Drives data_processing_in_scope and the DPA precondition."}
+  - {title: "GDPR Article 30 — records of processing activities", kind: standard,
+     note: "A contract that puts personal data in a processor's hands creates an Article 30 entry, whether or not anyone makes one."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "Retention schedules and disposition. The basis for separate retained and disposed states rather than a single archived one."}
+  - {title: "ISO 44001 — Collaborative business relationship management systems", kind: standard,
+     note: "Exit strategy as a required element of the relationship rather than an afterthought. Underpins the exit-plan expectation on critical contracts."}
+  - {title: "Companies Act 2006, s.44 — execution of documents by a company", kind: standard,
+     note: "Why signatory identity and authority are register fields rather than filing details. Named here as the UK instance; an equivalent exists in every jurisdiction."}
+  - {title: "Survival clauses and post-termination obligations", kind: practitioner,
+     note: "The reason retention runs from the end of the survival period rather than from expiry."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Rewritten onto the 23-section schema. Six of sixteen patterns are executable and all six
+    read the negotiation rather than the instrument: contract_requested, legal_review,
+    thread.ball_in_court, thread.last_inbound, derived.engagement and commitment.due_at. The
+    ten that cannot fire share one root cause — nothing in Layer 1 reads a contract register or
+    a CLM, so end_at, notice_period_days and auto_renew, the three fields that decide every
+    renewal in the business, are invisible to the pipeline.
+
+    Ranked backlog this object generates. (1) contract.end_at and contract.notice_period_days
+    (L1) — without them notice_deadline_at cannot be computed and the object's central
+    deliverable does not exist. (2) contract_countersigned (L2) — the cheapest line here; the
+    pack already observes the request and drops the execution, which is the exact moment
+    obligations attach to us. (3) notice_served (L2) — an absence can only be a trigger if the
+    presence is observable. (4) contract.auto_renew (L1) — until it exists every contract must be
+    treated as auto-renewing, which is correct and expensive.
+
+    The honest reading of this file is that the contract-administration capability cannot yet do
+    its main job and can already do the second-order one: measuring where paper sits and who is
+    holding it up. That is worth shipping while the register connector is built.

@@ -1,0 +1,1639 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# REFERENCE OBJECT for the Admin brain — the atom of the domain.
+#
+# Admin's unit of work is an OBLIGATION, not an opportunity, and this is the smallest one:
+# somebody said they would do a thing, for somebody, by a date. Everything else in this
+# library is a commitment with paperwork attached — an approval is a commitment with an
+# authority behind it, a filing is a commitment with a regulator behind it, an action item is
+# a commitment with minutes behind it.
+#
+# It is also, by luck rather than design, the best-served object in the roster.
+# `commitment.action` and `commitment.due_at` are typed facts today and days_since works on
+# both, so five of the fifteen patterns below fire now. The ten that do not are pointed for
+# one reason: the engine can see WHAT was promised and WHEN, and never WHO owns it or whether
+# it was done. An administrator's entire job sits in those two blanks.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.commitment
+  name: Commitment
+  domain: admin
+  scope: core
+  subdomain: executive_support
+  owner_capability: admin.executive_support.commitment_tracking
+  version: 2.0.0
+  status: draft
+  aliases: ["Promise", "Undertaking", "Owed Item", "Open Loop", "Follow-up"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A promise made by a named person to a named recipient, to do a specific thing by a
+    specific date. Three parts, and the object is only real when all three are present: an
+    action with no owner is a wish, an action with no date is a sentiment, and an action with
+    no recipient is a note to self that nobody will ever chase. Most of an administrator's
+    working day is spent reconstructing the two parts the systems did not record.
+  discriminator: >
+    A commitment is a promise this organisation CHOSE to make and can, in principle,
+    renegotiate with the person it was made to. A compliance_obligation's date was imposed
+    from outside and no party to it can move it. The same overdue row therefore deserves two
+    opposite moves — ask for more time, or stop asking and deliver — and getting that
+    backwards is the most expensive routine error in administration.
+  answers:
+    - "What did we promise, to whom, and by when?"
+    - "Is this late, or is it merely quiet? Different conditions, different moves."
+    - "Is this date ours to move, or does something outside the room hold it?"
+    - "Whose lateness is this — the owner's, or the approval queue's?"
+    - "Is the reminder still carrying information, or has it become noise that should be an escalation?"
+    - "When this was marked done, did anything actually prove it?"
+    - "Which of this owner's open promises will not land, before they are missed?"
+  not:
+    - "NOT a task. A task is work someone scheduled for themselves; a commitment is owed to another party and cannot be silently dropped."
+    - "NOT a compliance_obligation — that object owns externally-imposed, non-negotiable dates."
+    - "NOT an approval. Waiting for a signature is admin.obj.core.approval; the commitment sits behind it and is not the owner's lateness while it does."
+    - "NOT a request. The intake ask lives on admin.obj.core.request; this object is the promise made in answer to it."
+    - "NOT a deadline. A bare date with no promiser is admin.obj.core.deadline."
+    - "Does not own the minute, the forum or the witnessed record — that is admin.obj.core.action_item."
+
+# ── 3 · Attributes — structure and data in one list ──────────────────────────────────────
+attributes:
+
+  # ---- The promise -----------------------------------------------------------------------
+  - name: promise
+    purpose: What was actually said, where, and in whose words. The wording is the only defence against a later argument about scope.
+    type: composite
+    contains: [action, verbatim_quote, made_at, origin, source_request_ref, is_specific, is_conditional, condition_text, confirmed_back_at]
+
+  - name: action
+    purpose: The thing promised, in the promiser's own verb.
+    type: value
+    data_type: string
+    required: true
+    source_paths: [commitment.action]
+    sensitivity: internal
+    validation: "must be non-empty and contain a verb"
+    description: >
+      Live today. Keep the promiser's own verb — "send", "confirm", "sign", "return" — because
+      rewriting it into house style is how "I'll sign it Friday" becomes "progress contract"
+      and stops being chaseable. A commitment nobody can picture being completed cannot be
+      closed by anyone except its author.
+
+  - name: verbatim_quote
+    purpose: The sentence that created the commitment, unedited.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      The only thing that settles a six-weeks-later argument about whether the promise was to
+      send the draft or to send the signed version. Confidential rather than internal because
+      the quote carries the speaker's exact words and tone, which a paraphrase does not.
+
+  - name: made_at
+    purpose: When the promise was made, not when somebody logged it.
+    type: value
+    data_type: timestamp
+    description: >
+      The gap between this and the capture timestamp is the real measure of a tracking system.
+      Anything not captured within a day is generally not captured at all.
+
+  - name: origin
+    purpose: Where the promise was made, which determines what evidence exists for it.
+    type: value
+    data_type: enum
+    allowed_values: [email, meeting, chat, call, corridor, document, request_intake, inferred]
+    default: email
+    sensitivity: internal
+    description: >
+      `corridor` is not a joke and is the most dangerous value in the list. An executive's
+      verbal yes in a doorway binds the organisation and exists in no system at all until an
+      assistant writes it down. `inferred` must stay separate from all of them: a commitment
+      the machine believes it heard has not been agreed by anybody.
+
+  - name: source_request_ref
+    purpose: The intake request this promise answers, where there was one.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.request
+    description: Turns a service queue into a set of named obligations rather than a pile of tickets.
+
+  - name: is_specific
+    purpose: Whether a third party could tell from the wording alone that it had been done.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      "Circle back" fails this test. "Send Priya the signed MSA" passes it. Non-specific
+      commitments are not slow — they are unclosable, because no observable event discharges
+      them.
+
+  - name: is_conditional
+    purpose: Whether the promise depends on something outside the owner's control happening first.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      "We'll return the keys once the contractor finishes" is not a dated commitment, and
+      recording it as one guarantees a false overdue and a wasted chase. Conditional promises
+      need the condition watched, not the date.
+
+  - name: condition_text
+    purpose: The precondition in words, so it can be watched instead of the date.
+    type: value
+    data_type: string
+
+  - name: confirmed_back_at
+    purpose: When the promise was restated in writing to the person who made it.
+    type: value
+    data_type: timestamp
+    description: >
+      One line back — action, date, recipient — converts a memory into a record and gives the
+      owner the chance to correct scope while correction is still free. The highest-yield four
+      seconds in the whole domain, and almost nobody spends them.
+
+  # ---- Parties ---------------------------------------------------------------------------
+  - name: parties
+    purpose: Who owes it and who is owed. The two fields the substrate cannot see, and the two an administrator spends the day reconstructing.
+    type: composite
+    contains: [owner_ref, recipient_ref, owner_side, delegated_to_ref, chased_by_ref, recipient_standing]
+
+  - name: owner_ref
+    purpose: The one person accountable for discharge.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    required: true
+    sensitivity: internal
+    validation: "must resolve to exactly one natural person"
+    description: >
+      Exactly one. Two owners is zero owners, and a team name is zero owners with extra steps.
+      The most reliable way to guarantee a commitment is never delivered is to assign it to a
+      department, and every register in existence is full of them.
+
+  - name: recipient_ref
+    purpose: Who is owed, and therefore who can agree to move the date.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    sensitivity: internal
+    description: >
+      A commitment to the board and a commitment to a colleague have identical shape and
+      completely different renegotiation cost. Without the recipient every overdue item gets
+      the same treatment, which means the important ones get the treatment the trivial ones
+      deserve.
+
+  - name: owner_side
+    purpose: Whether we owe this or they do.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, joint, unassigned]
+    default: unassigned
+    source_paths: [thread.ball_in_court]
+    description: >
+      Derivable from ball_in_court today at moderate confidence only, because ball_in_court
+      describes a thread and a single thread routinely carries two commitments pointing in
+      opposite directions — ours to send the schedule, theirs to countersign it.
+
+  - name: delegated_to_ref
+    purpose: Who is doing the work, as distinct from who answers for it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.delegate
+    description: >
+      Delegation moves the doing and never the accountability. Keeping this separate from
+      owner_ref is what stops a chase landing on a desk that cannot escalate and a report
+      landing on a desk that did not do the work.
+
+  - name: chased_by_ref
+    purpose: Who is actually pursuing it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    description: >
+      Usually the administrator, almost never the recipient, and recorded nowhere. It matters
+      because chase credibility is personal: the fourth reminder from the same name is
+      ignorable in a way the first from a new one is not.
+
+  - name: recipient_standing
+    purpose: What kind of counterparty is owed, which sets the cost of asking for time.
+    type: value
+    data_type: enum
+    allowed_values: [internal_peer, internal_senior, board, customer, supplier, auditor, regulator]
+    sensitivity: internal
+    description: >
+      A regulator, a board and a colleague are three different conversations about an identical
+      slip. This is the field that decides chase tone, and Layer 5.2 has nothing else to read.
+
+  # ---- Timing ----------------------------------------------------------------------------
+  - name: timing
+    purpose: The agreed date and its history. A date that has moved three times is not a late commitment; it is a forecasting failure.
+    type: composite
+    contains: [due_at, is_dated, date_provenance, original_due_at, revision_count, last_revised_at, days_overdue, working_days_to_due]
+
+  - name: due_at
+    purpose: The date somebody agreed to out loud.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    description: >
+      A date an administrator invented for queue hygiene is not a due date. It slips without
+      anyone noticing, because nobody promised it — see date_provenance, which exists purely to
+      stop the two being confused in a report.
+
+  - name: is_dated
+    purpose: Whether a real date exists at all.
+    type: derived
+    data_type: boolean
+    derived_from: [due_at]
+    source_paths: [commitment.due_at]
+    description: >
+      Kept as its own field because an undated commitment satisfies every tracker hygiene
+      check, appears in every status report as in-progress, and cannot go late. It is the
+      preferred habitat of promises nobody intends to keep.
+
+  - name: date_provenance
+    purpose: Who put the date there, which decides whether it can be moved and by whom.
+    type: value
+    data_type: enum
+    allowed_values: [agreed_explicitly, agreed_by_implication, inferred_by_administrator, imposed_externally]
+    default: agreed_by_implication
+    description: >
+      `inferred_by_administrator` is the honest label for most dates in most registers.
+      Presenting one as agreed is how a chase gets met with "I never said Friday", after which
+      that owner discounts every future chase from that source.
+
+  - name: original_due_at
+    purpose: The first date agreed, preserved forever.
+    type: value
+    data_type: timestamp
+    description: >
+      Overwriting this is how an organisation loses the ability to see that nothing was ever
+      delivered on its first date. Every green delivery dashboard that has ever surprised a
+      board was measuring against a date that had been moved to make it green.
+
+  - name: revision_count
+    purpose: How many times the date has moved.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    description: >
+      The single most predictive field on this object. A first slip is a diary problem; a third
+      slip means the commitment is wrong, the owner is wrong, or the thing is not going to
+      happen. Rescheduling a fourth time is the default response and the wrong one.
+
+  - name: last_revised_at
+    purpose: When the date last moved, so the shape of the slipping is visible rather than only the total.
+    type: value
+    data_type: timestamp
+
+  - name: days_overdue
+    purpose: Lateness against the agreed date, as opposed to age of neglect.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [due_at, original_due_at]
+    source_paths: [commitment.due_at]
+    description: >
+      Most queues sort by last-touched, which is age of neglect. The two numbers diverge
+      exactly on the items that matter — the recently-fussed-over commitment that is three
+      weeks late looks fresh, and is the one about to cause the incident.
+
+  - name: working_days_to_due
+    purpose: Time remaining measured the way the work is actually done.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [due_at]
+    description: >
+      Calendar days mislead across a bank holiday weekend, a year end or a shutdown. A
+      three-day margin over Christmas is not a margin.
+
+  # ---- Standing --------------------------------------------------------------------------
+  - name: standing
+    purpose: Where this sits right now, and whether the delay belongs to the owner at all.
+    type: composite
+    contains: [state, criticality, blocked_by_ref, block_reason, reminder_count, last_chased_at, owner_acknowledged]
+
+  - name: state
+    purpose: The lifecycle position, including the two states most trackers collapse.
+    type: value
+    data_type: enum
+    allowed_values: [draft, open, in_progress, pending_approval, on_hold, overdue, escalated, closed, cancelled, superseded]
+    required: true
+    default: draft
+    description: >
+      `pending_approval` and `on_hold` are deliberately separate. In the first the clock is
+      running against a named person who owes an answer; in the second it is genuinely stopped
+      by agreement. Collapsing them into "blocked" is why approval queues are the largest
+      source of invisible administrative delay in every organisation that has one.
+
+  - name: criticality
+    purpose: Consequence of missing it, not effort to do it.
+    type: value
+    data_type: enum
+    allowed_values: [routine, material, critical]
+    default: routine
+    description: Most commitment queues are sorted by effort, which is a sorting of the owner's convenience.
+
+  - name: blocked_by_ref
+    purpose: The approval this is waiting behind.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+    description: >
+      A commitment sitting behind somebody else's signature is not a delivery failure by its
+      owner. Chasing the owner for it destroys the credibility of every future chase, and
+      teaches a delivery culture that making promises is unsafe.
+
+  - name: block_reason
+    purpose: What is actually in the way, in words, when it is not an approval.
+    type: value
+    data_type: string
+
+  - name: reminder_count
+    purpose: Chases sent against this commitment.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    description: >
+      Past roughly the third with no movement, the reminder has stopped being information and
+      become noise. The correct move switches from reminding to escalating, reassigning or
+      killing the commitment — and the default move is to send a fourth reminder.
+
+  - name: last_chased_at
+    purpose: When the last chase went out, so cadence can be bounded.
+    type: value
+    data_type: timestamp
+
+  - name: owner_acknowledged
+    purpose: Whether the owner has confirmed they hold this.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      An unacknowledged commitment is an allocation, not a promise. It is the state of every
+      item assigned to someone who was not in the room, and they are entirely correct to feel
+      that way about it.
+
+  # ---- Governance ------------------------------------------------------------------------
+  - name: governance
+    purpose: What stands behind the promise, and who is allowed to see it.
+    type: composite
+    contains: [is_obligation_backed, obligation_ref, negotiability, confidentiality]
+
+  - name: is_obligation_backed
+    purpose: Whether an external obligation stands behind the promise.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      The most consequential boolean on this object. When it is true the recipient cannot grant
+      an extension even if they want to, and every "can we push this a week?" conversation is
+      theatre that costs a week.
+
+  - name: obligation_ref
+    purpose: The statutory or contractual obligation the promise discharges.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.compliance_obligation
+
+  - name: negotiability
+    purpose: Whether the date can be moved, and by whom.
+    type: derived
+    data_type: enum
+    allowed_values: [owner_may_move, recipient_must_agree, authority_only, immovable]
+    derived_from: [is_obligation_backed, recipient_standing, date_provenance]
+    description: >
+      The field that decides between chasing and renegotiating, and the reason this object
+      exists as something other than a task list. Layer 4 must never propose an extension on an
+      `immovable` commitment; the option is eliminated, not downgraded.
+
+  - name: confidentiality
+    purpose: Whether this commitment may appear in general reporting at all.
+    type: value
+    data_type: enum
+    allowed_values: [open, internal, restricted, reserved]
+    default: internal
+    sensitivity: confidential
+    description: >
+      `reserved` covers board reserved business, HR matters and privileged legal work — items
+      that exist, bind someone, and must not appear in any digest, tracker or automated
+      reminder however overdue they get. Surfacing one is a governance incident, not a
+      preference, and Rule 10 means this attribute can never widen the audience of its source.
+
+  # ---- Discharge -------------------------------------------------------------------------
+  - name: discharge
+    purpose: How it ended and what proves it. In a governed context, done-and-undocumented did not happen.
+    type: composite
+    contains: [closed_at, closure_quality, closure_evidence_ref, closed_by_ref, first_date_kept, discharge_lag_days]
+
+  - name: closed_at
+    purpose: When discharge actually occurred, not when the row was tidied.
+    type: value
+    data_type: timestamp
+
+  - name: closure_quality
+    purpose: What kind of proof stands behind the closure.
+    type: value
+    data_type: enum
+    allowed_values: [evidenced, asserted, assumed, none]
+    default: none
+    description: >
+      `assumed` means nobody chased it and somebody tidied the queue. It is the most common
+      value in every commitment tracker that has been running longer than a year, and it is
+      indistinguishable from `evidenced` in any report that counts closures. Counting closures
+      without this field is counting nothing.
+
+  - name: closure_evidence_ref
+    purpose: The artefact that proves discharge.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: >
+      The sent file, the signed form, the portal receipt. In an assurance context this artefact
+      is the deliverable and the action was only the means of producing it.
+
+  - name: closed_by_ref
+    purpose: Who marked it done.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    description: Rarely the owner, which is itself a signal worth reading.
+
+  - name: first_date_kept
+    purpose: Whether it was discharged by the date first agreed.
+    type: derived
+    data_type: boolean
+    derived_from: [closed_at, original_due_at]
+    description: The only honest delivery measure. Everything else is measured against a date that was moved.
+
+  - name: discharge_lag_days
+    purpose: Gap between the work being done and the record saying so.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [closed_at, last_activity_at]
+    description: >
+      The window in which the system nags people about work they finished last week. Nothing
+      switches a chase system off faster, and the lag is a property of the recording rather
+      than of the delivery.
+
+  # ---- Observed --------------------------------------------------------------------------
+  - name: observed
+    purpose: What the pipeline can see without being told. Thin, and honestly labelled.
+    type: composite
+    contains: [last_activity_at, ball_in_court, engagement_trend, silence_days]
+
+  - name: last_activity_at
+    purpose: Last two-way movement on the thread carrying this commitment.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: ball_in_court
+    purpose: Who the thread is waiting on.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      Thread-scoped, not promise-scoped. The nearest available proxy for ownership and a poor
+      one, which is why every pattern reading it is capped.
+
+  - name: engagement_trend
+    purpose: Whether the conversation around this promise is thickening or thinning.
+    type: derived
+    data_type: number
+    derived_from: [derived.engagement]
+    source_paths: [derived.engagement]
+    description: >
+      Engine-computed two-way volume against the prior fortnight. Falling volume around an open
+      commitment is the shape of a promise being quietly abandoned by both sides — the
+      recipient stops asking at almost exactly the moment the owner stops intending.
+
+  - name: silence_days
+    purpose: How long the thread has been quiet, measured against this counterpart's own rhythm.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [last_activity_at]
+    source_paths: [thread.last_inbound]
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [closed, cancelled, superseded]
+  values:
+    - name: draft
+      description: >
+        Agreed with no date. Reads as progress in every status meeting and behaves as nothing.
+        It cannot go late because it was never due.
+      entered_when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+      implies: "Un-chaseable. One question converts it into a real obligation and nobody asks it."
+    - name: open
+      description: Owned, dated, not yet started. The only healthy resting state.
+      entered_when:
+        - {exists: commitment.action}
+        - {exists: commitment.due_at}
+      implies: "Chaseable, forecastable, and safe to leave alone until the margin narrows."
+    - name: in_progress
+      description: Work has visibly begun.
+      implies: "A chase here is an insult; a chase on an untouched item is a service. The distinction is worth the extra state."
+    - name: pending_approval
+      description: Waiting on a named person's signature. The clock is running and it is not running against the owner.
+      implies: "Lateness must be attributed to the approval, not to the owner, in every report."
+    - name: on_hold
+      description: Deliberately paused with the recipient's agreement. The clock is genuinely stopped.
+      implies: "Rare, and frequently claimed. Verify the recipient agreed before believing it."
+    - name: overdue
+      description: Past the agreed date and not discharged.
+      entered_when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      implies: "The move depends entirely on negotiability. Chasing an immovable one and renegotiating a movable one are both correct; the reverse of each is not."
+    - name: escalated
+      description: Handed upward because reminding stopped working.
+      implies: "Relationship capital has been spent. It cannot be spent twice on the same item."
+    - name: closed
+      description: Discharged. Read closure_quality before believing it.
+      implies: "Only evidenced closures count in an assurance context. The rest are queue hygiene."
+    - name: cancelled
+      description: Deliberately dropped, with the recipient told.
+      implies: "A legitimate and healthy outcome, almost never recorded as one, because cancelling feels like failing."
+    - name: superseded
+      description: Replaced by a newer promise covering the same ground.
+      implies: "The obligation survived; the wording did not. Distinct from cancelled, and Layer 6 learns opposite lessons from the two."
+  transitions:
+    - {from: draft, to: open, when: [{exists: commitment.due_at}], trigger: date_agreed, reversible: false}
+    - {from: draft, to: cancelled, trigger: dropped_before_dating, reversible: false}
+    - {from: open, to: in_progress, trigger: work_started, reversible: true}
+    - {from: open, to: pending_approval, trigger: approval_requested, reversible: true}
+    - {from: open, to: on_hold, trigger: paused_by_agreement, reversible: true}
+    - {from: open, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: in_progress, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: pending_approval, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: pending_approval, to: in_progress, trigger: approval_granted, reversible: false}
+    - {from: on_hold, to: open, trigger: resumed, reversible: true}
+    - {from: overdue, to: escalated, trigger: reminders_exhausted, reversible: false}
+    - {from: overdue, to: open, trigger: date_revised, reversible: false}
+    - {from: overdue, to: closed, reversible: false}
+    - {from: escalated, to: closed, reversible: false}
+    - {from: escalated, to: cancelled, trigger: dropped_at_escalation, reversible: false}
+    - {from: in_progress, to: closed, reversible: false}
+    - {from: open, to: closed, reversible: false}
+    - {from: open, to: cancelled, reversible: false}
+    - {from: open, to: superseded, trigger: replaced_by_newer_promise, reversible: false}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: assigned_to
+    target: admin.obj.core.stakeholder
+    direction: outbound
+    cardinality: one
+    weight_bp: 2200
+    confidence_bp: 5000
+    priority: 1
+    evidence: [email, meeting_transcript, document]
+    description: >
+      The defining edge, and the one the substrate cannot currently establish — hence the low
+      confidence against a high weight. An unowned commitment is a wish that has been minuted.
+      Every chase, every escalation and every reliability baseline hangs off this edge; without
+      it the brain can tell you a promise is late and not who is late.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1300
+    confidence_bp: 6500
+    priority: 2
+    evidence: [email, erp, portal]
+    description: >
+      What must be signed before this can be discharged. Populated late if ever, which is why
+      so many commitments go overdue on their last day — the owner discovered the approval step
+      on the morning it was due.
+
+  - type: governed_by
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 7000
+    priority: 3
+    evidence: [contract, regulator, document]
+    description: >
+      When an external date stands behind the promise, the commitment inherits it and loses the
+      right to renegotiate it. This edge is the difference between "can we move it?" being a
+      reasonable question and being a compliance conversation.
+
+  - type: evidences
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1100
+    confidence_bp: 6000
+    priority: 4
+    evidence: [regulator, portal, signed_form]
+    description: >
+      When the promise is how the organisation discharges an external obligation, closing it
+      closes something much larger, and the evidence requirement changes from "somebody said
+      so" to "produce the receipt for an auditor in three years".
+
+  - type: references
+    target: admin.obj.core.action_item
+    direction: bidirectional
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 8000
+    priority: 5
+    conditions: [{exists: meeting.start_at}]
+    evidence: [document, meeting_transcript]
+    description: >
+      An action item IS a commitment — the same obligation, made in a meeting, inheriting that
+      meeting's record. Everything true here is true there; that object adds only what the
+      minute adds. The reverse does not hold: most commitments are made in corridors and
+      inboxes and have no record at all.
+
+  - type: produces
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 7500
+    priority: 6
+    evidence: [document, erp]
+    description: >
+      The closure evidence. Following this edge is the only way to distinguish an evidenced
+      closure from an assumed one, which is the difference between a compliance record and a
+      tidy queue.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 5500
+    priority: 7
+    conditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    evidence: [email, register]
+    description: Where it goes when reminding has stopped working. Should fire on the second slip; fires on the fifth.
+
+  - type: attaches_to
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 700
+    confidence_bp: 7000
+    priority: 8
+    conditions: [{exists: meeting.start_at}]
+    evidence: [calendar, meeting_transcript]
+    description: The meeting it was made in, when there was one. The presence of this edge is most of what promotes this object to an action_item.
+
+  - type: delegates_to
+    target: admin.obj.core.delegate
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 6000
+    priority: 9
+    evidence: [email, manual_entry]
+    description: >
+      The doing moves; the accountability does not. Both facts have to be representable, or the
+      chase goes to the person who cannot escalate and the report goes to the person who did
+      not do the work.
+
+  - type: belongs_to
+    target: admin.obj.core.request
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 7000
+    priority: 10
+    evidence: [portal, email]
+    description: The intake request this promise answers.
+
+  - type: blocks
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 4000
+    priority: 11
+    evidence: [manual_entry, email]
+    description: >
+      Self-referential. Commitments chain, and the last one in the chain takes the blame for
+      the first one's slip. Without this edge an administrator spends the week chasing the
+      visible late item instead of the invisible one holding it up.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 4500
+    priority: 12
+    evidence: [erp, register]
+    description: >
+      Where discharging the promise spends money, the spend is committed the moment the promise
+      is made and not when the invoice arrives. Purchase-order commitment accounting exists for
+      exactly this gap.
+
+# ── 6 · Inference Patterns ⭐ — how this object is discovered when nobody states it ───────
+#
+# ANDed within a pattern; express OR as two patterns, because that is exactly how the engine
+# works. Five fire today. This is the best-served object in the Admin roster and it is still
+# blind to the two fields that define it.
+inference_patterns:
+
+  deterministic:
+
+    - id: cmt.dated_promise
+      statement: "An action and an agreed date are both present on this node."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {exists: commitment.due_at}
+      yields: {confidence_bp: 9500, attribute: state, value: open}
+      evidence_fields: [commitment.action, commitment.due_at]
+      false_positive: >
+        The substrate cannot say whose promise it is, so a supplier's commitment to us and ours
+        to them are indistinguishable here. The pattern is right that a commitment exists and
+        may be entirely wrong about which direction it points.
+
+    - id: cmt.undated_promise
+      statement: "Something was agreed and no date was attached to it."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+      yields: {confidence_bp: 9200, attribute: state, value: draft}
+      evidence_fields: [commitment.action]
+      false_positive: >
+        A date stated in words the extractor did not parse — "end of the month", "before the
+        board" — reads as undated. That case wants a clarifying question rather than a hygiene
+        flag, and the two are indistinguishable from here.
+      note: >
+        The "as soon as I can" state. It passes every tracker check, appears in every status
+        report as active, and has a zero per cent chance of being reported late. Capturing it
+        as a distinct state rather than as a missing field is the difference between a register
+        and a comfort blanket.
+
+    - id: cmt.past_due
+      statement: "The agreed date has passed and nothing has discharged the promise."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 9400, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        A commitment satisfied out of band still reads overdue until something closes it, and
+        nothing can close it — see cmt.discharge_recorded. This is the single largest source of
+        a wrong nudge in the domain: the system confidently chases work finished last week, the
+        owner mentions it to one colleague, and the chase channel is dead within a month.
+
+    - id: cmt.owner_is_named
+      statement: "The promise records who owns it."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: owner_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: commitment.owner, owner_layer: L2,
+           note: "The extractor emits the action and the date and drops the subject of the sentence. Every executable pattern above therefore assumes the promise is ours, which is the exact failure this object exists to prevent — roughly half of a real administrator's register is other people's promises to the organisation. Highest-value gap in the Admin brain by a distance."}
+
+    - id: cmt.recipient_is_named
+      statement: "The promise records who it was made to."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: recipient_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: commitment.recipient, owner_layer: L2,
+           note: "Without the recipient the negotiability of the date is unknowable, so every overdue item gets an identical treatment. A slip owed to the audit committee and a slip owed to a colleague are not the same row and must not produce the same message."}
+
+    - id: cmt.discharge_recorded
+      statement: "The promise was kept and something in the record says so."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: closed}
+      requires_signals:
+        - {kind: fact_path, name: commitment.state, owner_layer: L2,
+           note: "The planned state field. followup_sent covers outbound email only; a call made, a form signed in a portal, a file dropped in a shared drive, or anything at all the counterparty did is invisible."}
+        - {kind: obs_kind, name: handover_completed, owner_layer: L2,
+           note: "The one closure event administrators already write down in words — 'handed over to Priya, done' — and which no pack extracts."}
+
+    - id: cmt.promise_restates_an_obligation
+      statement: "The date promised is not the owner's to give — it comes from a statute, a notice period or a contract."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: is_obligation_backed, value: true}
+      requires_signals:
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "Requires an obligation register connector — a statutory calendar, a filing portal, or the contract's own dates. Until it exists the engine cannot distinguish the most negotiable commitment in the queue from the least, and treats both as movable."}
+        - {kind: fact_path, name: obligation.authority, owner_layer: L1,
+           note: "Who set the date. Determines whether an extension is even conceptually available, which is a different question from whether one would be granted."}
+
+  heuristic:
+
+    - id: cmt.we_owe_this_one
+      statement: "There is an open action and the ball is on our side of the thread."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 7200, attribute: owner_side, value: us}
+      evidence_fields: [thread.ball_in_court, commitment.action]
+      false_positive: >
+        A single thread routinely carries two commitments pointing in opposite directions —
+        ours to send the schedule, theirs to countersign it. ball_in_court describes the thread
+        and is attributed here to the promise, which is a genuine category error made
+        deliberately because nothing better exists.
+
+    - id: cmt.quiet_since_the_promise
+      statement: "An open commitment sits on a thread that has been silent well past this counterpart's own reply rhythm."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 5}}
+      yields: {confidence_bp: 7000, attribute: null, corroborates: [cmt.past_due]}
+      evidence_fields: [thread.last_inbound, commitment.action]
+      false_positive: >
+        Work moved to a channel the pipeline cannot see — a call, a portal, a corridor. Silence
+        on email is evidence of drift and is routinely evidence of nothing at all.
+      note: >
+        Measured against their normal, not against a fixed SLA. A daily correspondent going
+        quiet for four days around an open promise is abandonment; a fortnightly one is
+        Tuesday. It corroborates cmt.past_due because thread silence and a passed date are
+        genuinely independent observations — one reads the calendar, the other reads behaviour
+        — which is what Rule 11 requires before confidence may rise.
+
+    - id: cmt.blocked_on_a_signature
+      statement: "The commitment is not late because of its owner — it is sitting behind an approval nobody has given."
+      status: needs_signal
+      yields: {confidence_bp: 8600, attribute: state, value: pending_approval}
+      requires_signals:
+        - {kind: obs_kind, name: approval_requested, owner_layer: L2,
+           note: "An approval ask is a distinct speech act from a promise and the extractor collapses them. Without it a stuck approval is reported as an owner who is not delivering — wrong, and corrosive in a way that outlasts the commitment."}
+        - {kind: fact_path, name: approval.state, owner_layer: L2,
+           note: "Needed to tell pending from stuck. Same row, different move: one wants a reminder, the other wants a different approver."}
+
+    - id: cmt.chronic_owner
+      statement: "This owner's promises have historically not landed on their first date, so this date should be discounted before it is missed rather than after."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: null, corroborates: [cmt.past_due]}
+      requires_signals:
+        - {kind: baseline, name: commitment_delivery_rate, owner_layer: L2,
+           note: "A per-person learned baseline of promises kept by the first agreed date. Cheap once commitment.owner exists, and it converts the register from a list of dates into a forecast. Today every owner is modelled as equally reliable, which no administrator has ever believed."}
+        - {kind: fact_path, name: commitment.owner, owner_layer: L2}
+
+    - id: cmt.owner_is_saturated
+      statement: "The owner is carrying more simultaneously-due commitments than anyone discharges, so this one will be triaged out regardless of its own merits."
+      status: needs_signal
+      yields: {confidence_bp: 7800, attribute: state, value: on_hold}
+      requires_signals:
+        - {kind: derived, name: derived.obligation_pressure, owner_layer: L2,
+           note: "Count and proximity of open obligations per owner. commitment.action resolves to a single latest value, so the substrate cannot express a SET of open commitments at all — the defining administrative insight, that a person holding fourteen due items effectively holds none, is unexpressible."}
+
+    - id: cmt.date_moved_again
+      statement: "The date has been revised at least twice, which means the commitment, the owner or the plan is wrong and a third date will not fix any of them."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: revision_count, value: null}
+      requires_signals:
+        - {kind: fact_path, name: commitment.previous_due_at, owner_layer: L2,
+           note: "commitment.due_at resolves to the latest value only, so the pipeline overwrites the very history that predicts the outcome. Retaining the prior value on revision is a small change at L2 and yields the single most predictive administrative field there is."}
+
+    - id: cmt.closed_without_evidence
+      statement: "A critical commitment was marked done and no artefact was ever attached to it."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: closure_quality, value: assumed}
+      requires_signals:
+        - {kind: fact_path, name: commitment.state, owner_layer: L2}
+        - {kind: obs_kind, name: evidence_provided, owner_layer: L2,
+           note: "The absence of an evidence event against a closure is what separates a compliance record from a tidy queue. Every register that has run for a year is mostly assumed closures, and no report distinguishes them."}
+
+    - id: cmt.promise_to_a_departing_party
+      statement: "The person owed this, or the person who owes it, has left — so delivering it exactly as agreed may satisfy nobody."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: state, value: superseded}
+      requires_signals:
+        - {kind: obs_kind, name: leaver_confirmed, owner_layer: L2,
+           note: "Joiner-mover-leaver events are visible in HRIS and never reach the commitment register. The correct move is to ask the successor whether they still want it; the default move is to deliver a report to a mailbox nobody reads. This is also the only pattern that would catch an unowned promise before the audit does."}
+        - {kind: fact_path, name: commitment.recipient, owner_layer: L2}
+
+# ── 7 · Inputs — where this object gets filled from ──────────────────────────────────────
+inputs:
+  - {source: email, signal: "promises made in a thread", path: commitment.action, fills: [action, verbatim_quote, made_at], reliability_bp: 8500,
+     description: "The workhorse. Precision is good on the verb and poor on the date, because dates are the part people leave vague on purpose."}
+  - {source: email, signal: "agreed dates", path: commitment.due_at, fills: [due_at, is_dated], reliability_bp: 8000}
+  - {source: email, signal: "who is waiting on whom", path: thread.ball_in_court, fills: [ball_in_court, owner_side], reliability_bp: 6000}
+  - {source: email, signal: "silence around an open promise", path: thread.last_inbound, fills: [last_activity_at, silence_days], reliability_bp: 7000}
+  - {source: derived, signal: "two-way volume around the commitment", path: derived.engagement, fills: [engagement_trend], reliability_bp: 5000}
+  - {source: calendar, signal: "the meeting the promise was made in", path: meeting.start_at, fills: [origin, made_at], reliability_bp: 6500}
+  - {source: meeting_transcript, signal: "verbal undertakings, and who deferred to whom", fills: [verbatim_quote, owner_ref, is_specific], reliability_bp: 8000,
+     description: "The richest source and the least connected. Everything an administrator does by hand after a meeting exists because this is not wired in."}
+  - {source: document, signal: "circulated minutes and their action columns", fills: [action, owner_ref, due_at, origin], reliability_bp: 9000}
+  - {source: slack, signal: "the corridor promise, written down once and never again", fills: [action, made_at], reliability_bp: 6000}
+  - {source: manual_entry, signal: "what the assistant heard in the doorway", fills: [action, owner_ref, recipient_ref, due_at], reliability_bp: 6500,
+     description: "Low provenance and high accuracy — the reverse of the usual trade, and the reason a good assistant outperforms any tracker."}
+  - {source: erp, signal: "workflow tasks and their completion timestamps", fills: [closed_at, closure_quality], reliability_bp: 9000,
+     description: "Would supply the missing discharge signal for anything transactional. Nothing else proves a promise was kept rather than intended."}
+  - {source: portal, signal: "submission receipts against an obligation-backed promise", fills: [closure_evidence_ref, closure_quality], reliability_bp: 9500}
+  - {source: register, signal: "a maintained commitment or action register", fills: [state, revision_count, original_due_at], reliability_bp: 8800}
+
+# ── 8 · Outputs — what this object can tell the rest of the stack ────────────────────────
+outputs:
+  - {name: commitment_state, type: string, derived_from: [state, days_overdue, is_dated],
+     description: "Where this promise actually stands, including the undated state most trackers hide inside 'in progress'.",
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: delivery_risk_bp, type: integer, derived_from: [revision_count, working_days_to_due, engagement_trend],
+     description: "Likelihood this is not discharged by its current date, given revisions, owner load and thread behaviour.",
+     consumed_by: [L4.reasoning_unit]}
+  - {name: negotiability, type: string, derived_from: [is_obligation_backed, recipient_standing, date_provenance],
+     description: "Whether the date can be moved and by whom. The output that must eliminate options rather than score them.",
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: lateness_attribution, type: string, derived_from: [state, blocked_by_ref],
+     description: "Whether this delay belongs to the owner or to an approval queue. Getting it wrong teaches a delivery culture that promises are unsafe to make.",
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: chase_or_escalate, type: string, derived_from: [reminder_count, revision_count, criticality],
+     description: "Which move is left. Past the third reminder with no movement, reminding is not one of them.",
+     consumed_by: [L5.execution_planning]}
+  - {name: chase_tone, type: string, derived_from: [recipient_standing, reminder_count, confidentiality],
+     description: "How hard to push and through which channel, given who is owed and how many chases have already gone.",
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: closure_evidence_gap, type: boolean, derived_from: [closure_quality, criticality],
+     description: "True when a critical commitment is closed with nothing attached. The compliance number hiding inside the productivity number.",
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: owner_reliability_input, type: integer, derived_from: [first_date_kept, revision_count],
+     description: "Kept-by-first-date outcome, fed back so the delivery baseline learns per person rather than per queue.",
+     consumed_by: [L6.learning_unit]}
+  - {name: suppression_flag, type: boolean, derived_from: [confidentiality],
+     description: "True when this commitment must never appear in a digest or automated reminder, regardless of state.",
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+
+# ── 9 · Preconditions — what must be true before this object can be acted on ─────────────
+preconditions:
+
+  - id: cmt.owner_resolved
+    statement: "The promise resolves to exactly one named natural person, not to a function, a team or a shared mailbox."
+    requires: [admin.obj.core.stakeholder, owner_ref]
+    when: [{exists: commitment.action}]
+    if_unmet: >
+      Degrade, do not block: hold it as an unowned promise, raise a capture gap, and ask the
+      forum or the sender who owns it. Never chase a department — the chase is absorbed and the
+      register learns nothing.
+
+  - id: cmt.date_is_agreed_not_assumed
+    statement: "A due date is present AND its provenance is recorded, so a chase can honestly say whether the date was agreed or inferred."
+    requires: [due_at, date_provenance]
+    when: [{exists: commitment.due_at}]
+    if_unmet: >
+      Degrade to an explicit ask for a date before any chase goes out. Presenting an
+      administrator's date as agreed produces "I never said Friday", after which every future
+      chase from that source is discounted.
+
+  - id: cmt.negotiability_known
+    statement: "Whether the date is ours to move is established before any option involving more time is generated."
+    requires: [admin.obj.core.compliance_obligation, is_obligation_backed]
+    if_unmet: >
+      Block the renegotiate action and allow the chase. Asking a regulator for an extension
+      that does not exist is not a neutral move; it tells them we do not understand our own
+      obligations.
+
+  - id: cmt.recipient_standing_known
+    statement: "The counterparty type is known before chase tone or cadence is chosen."
+    requires: [recipient_ref, recipient_standing]
+    if_unmet: "Degrade to the most conservative tone and the lowest cadence. Under-chasing a colleague costs a day; over-chasing a regulator costs a relationship."
+
+  - id: cmt.confidentiality_classified
+    statement: "The commitment carries a confidentiality classification before it may enter any digest, tracker or automated reminder."
+    requires: [confidentiality]
+    if_unmet: "Block from all general reporting and route to the owner privately. Rule 10 — an attribute may never widen the audience of the evidence it came from."
+
+  - id: cmt.block_ownership_resolved
+    statement: "Before lateness is attributed to anyone, it is established whether the item is sitting behind an approval."
+    requires: [admin.obj.core.approval, blocked_by_ref, state]
+    if_unmet: "Report as blocked-unknown rather than as owner lateness. An owner blamed once for the organisation's own queue stops volunteering dates."
+
+  - id: cmt.conditional_resolved
+    statement: "A conditional promise has its condition tracked as the trigger, rather than being given a date it was never given."
+    requires: [is_conditional, condition_text]
+    if_unmet: "Do not treat as dated. Watch the condition; a false overdue on a conditional item is the fastest way to have a chase system ignored."
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: cmt.single_owner, hard: true,
+     statement: "Exactly one person owns a commitment. Shared ownership is not representable and must not be simulated with a group name.",
+     why: "Two owners is zero owners. Every organisation learns this and every new tracker re-enables it."}
+  - {id: cmt.no_date_without_agreement, hard: true,
+     statement: "A due date may only be set by the owner or agreed with the recipient. A date entered for queue hygiene must be marked inferred and never presented as agreed.",
+     why: "The credibility of the whole register rests on it. One fabricated date, discovered, discredits a hundred real ones."}
+  - {id: cmt.obligation_backed_immovable, hard: true, when: [{exists: commitment.due_at}],
+     statement: "Where is_obligation_backed is true, no party to the commitment may move the date.",
+     why: "Neither the owner nor the recipient holds the date, so their agreement is irrelevant to it."}
+  - {id: cmt.no_silent_closure, hard: true,
+     statement: "A commitment may not be closed by the tracking system on age alone. Something has to say it was done.",
+     why: "Auto-closing on age produces a register that is always clean and never true, which is worse than no register at all."}
+  - {id: cmt.confidential_never_aggregated, hard: true,
+     statement: "A commitment made in a confidential forum must not surface in general reporting, however overdue, and must not be counted in aggregates that could reveal it.",
+     why: "A count of one in a board-reserved category identifies the item as surely as naming it."}
+  - {id: cmt.no_escalation_without_a_prior_chase, hard: true,
+     statement: "Escalation requires at least one recorded chase to the owner first.",
+     why: "Going over someone's head without asking them is the most reliable way to lose their cooperation permanently."}
+  - {id: cmt.evidence_survives_the_owner, hard: true,
+     statement: "Closure evidence must be stored where it outlives the owner's mailbox and account.",
+     why: "Evidence held in a leaver's inbox is evidence the organisation does not have, and it discovers this during the audit."}
+  - {id: cmt.chase_frequency, hard: false,
+     statement: "Reminder cadence is bounded by the recipient's standing and the channel. Chasing a regulator daily is not diligence."}
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: cmt.one_named_owner
+    statement: "A commitment must have exactly one owner who is a person. A team, a function or a shared mailbox is rejected at capture."
+    then: reject_unowned_commitment
+    severity: blocking
+    why: "Assigning to a department is the most reliable way to guarantee non-delivery, and it looks like assignment in every report."
+
+  - id: cmt.undated_is_reported_as_undated
+    statement: >
+      A commitment with no due date is never reported as on-track. It is reported as undated,
+      in its own column, and counted. Rolling undated items into "in progress" is the single
+      most common way a register lies to the person reading it.
+    when:
+      - {exists: commitment.action}
+      - {absent: commitment.due_at}
+    then: report_as_undated
+    severity: warning
+
+  - id: cmt.obligation_backed_dates_are_not_negotiable
+    statement: "When is_obligation_backed is true, due_at may not be revised by agreement between owner and recipient."
+    then: block_date_revision
+    severity: blocking
+    why: "Neither party holds the date. A revision here is not a plan change; it is a breach being recorded as a plan change."
+
+  - id: cmt.second_slip_escalates
+    statement: >
+      Rescheduling is the default response to an overdue commitment, and after the first slip
+      it is the wrong one. A second revision means the commitment, the owner or the plan is
+      wrong; escalate or renegotiate scope, do not move the date again.
+    when:
+      - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+    then: escalate_rather_than_reschedule
+    severity: warning
+
+  - id: cmt.critical_closure_needs_evidence
+    statement: "A commitment with criticality = critical may not enter closed with closure_quality of assumed or none. Somebody must attach the artefact."
+    then: block_unevidenced_closure
+    severity: blocking
+
+  - id: cmt.delegation_does_not_move_accountability
+    statement: "Setting delegated_to_ref never changes owner_ref. The chase may follow the delegate; the report follows the owner."
+    severity: advisory
+
+  - id: cmt.blocked_on_approval_is_not_the_owners_lateness
+    statement: "While state = pending_approval the owner must not appear in owner-lateness reporting. The delay belongs to the approver."
+    severity: warning
+    why: "Reporting it against the owner is how a delivery culture learns that making promises is unsafe, after which nobody gives a date."
+
+  - id: cmt.reserved_never_reminded
+    statement: "A commitment with confidentiality = reserved or restricted is excluded from every digest, tracker and automated reminder."
+    then: suppress_from_general_reporting
+    severity: blocking
+
+  - id: cmt.original_date_is_immutable
+    statement: "original_due_at is written once and never updated. A revision writes due_at and increments revision_count."
+    then: preserve_original_due_at
+    severity: blocking
+    why: "It is the only field standing between a delivery report and a work of fiction."
+
+  - id: cmt.conditional_is_not_dated
+    statement: "A commitment with is_conditional = true and an unresolved condition may not be reported as overdue on date alone."
+    when:
+      - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+    then: suppress_overdue_pending_condition
+    severity: warning
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4. Weights sum to 10000. ────────────
+decision_factors:
+
+  - name: lateness_against_the_agreed_date
+    weight_bp: 2000
+    direction: increases
+    description: >
+      Days past due_at, not days since anyone last looked at it. Age of neglect and age of
+      lateness are different numbers and most queues sort by the wrong one, which is why the
+      recently-fussed-over item that is three weeks late always looks fresh.
+    reads: [days_overdue, due_at, state]
+
+  - name: negotiability_of_the_date
+    weight_bp: 1700
+    direction: context
+    description: >
+      Not a severity multiplier — a mode switch. An obligation-backed commitment cannot be
+      renegotiated, so every option involving more time is eliminated rather than downgraded.
+    reads: [is_obligation_backed, negotiability, obligation_ref, date_provenance]
+
+  - name: criticality
+    weight_bp: 1400
+    direction: increases
+    description: Consequence of the miss, not the effort of the work.
+    reads: [criticality, recipient_standing]
+
+  - name: date_revision_history
+    weight_bp: 1200
+    direction: decreases
+    description: Each revision lowers confidence in the next date. A commitment on its third date should be forecast as unlikely, not as due.
+    reads: [revision_count, original_due_at, last_revised_at, first_date_kept]
+
+  - name: recipient_standing
+    weight_bp: 1100
+    direction: context
+    description: Who is owed determines the cost of asking for more time. A regulator, a board and a colleague are three different conversations about an identical slip.
+    reads: [recipient_ref, recipient_standing, owner_side]
+
+  - name: closure_evidence_quality
+    weight_bp: 900
+    direction: increases
+    description: An evidenced closure and an assumed one are the same row in every report and completely different facts. In an assurance context only the first one happened.
+    reads: [closure_quality, closure_evidence_ref]
+
+  - name: owner_load
+    weight_bp: 900
+    direction: decreases
+    description: >
+      Adding a chase to somebody holding fourteen overdue items does not produce delivery; it
+      produces triage by whoever shouted last, which is the mechanism by which important
+      commitments lose to loud ones.
+    reads: [owner_ref, delegated_to_ref, reminder_count]
+
+  - name: blocked_elsewhere
+    weight_bp: 800
+    direction: decreases
+    description: Where the item sits behind an approval, pressure on the owner is not merely ineffective — it is the organisation invoicing a person for its own queue.
+    reads: [state, blocked_by_ref, block_reason]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: signed_form, strength_bp: 10000, decays: false, independent_of: [email, slack, derived],
+     description: "A signature against the undertaking. Nothing outranks it and almost nothing produces it."}
+  - {source: portal, strength_bp: 9500, decays: false, independent_of: [email, manual_entry, derived],
+     description: "A submission receipt from the receiving system. Proves discharge rather than intent, which is the distinction the whole object turns on."}
+  - {source: register, strength_bp: 9200, decays: true, independent_of: [email, derived],
+     description: "A maintained commitment or action register. Where a secretariat keeps one it outranks everything except a signature — and it is usually a spreadsheet on one laptop."}
+  - {source: document, strength_bp: 9000, decays: false, independent_of: [erp, portal, derived],
+     description: "Circulated minutes with an action column. Dated, attributed, agreed by the silence of everyone who received them. NOT independent of email when the minutes were emailed."}
+  - {source: erp, strength_bp: 8800, decays: false, independent_of: [email, meeting_transcript, slack, manual_entry],
+     description: "A workflow task with a completion stamp. The only routinely-available source that proves the thing was done rather than promised."}
+  - {source: email, strength_bp: 8500, decays: true, independent_of: [erp, portal, register],
+     description: "The promise in the promiser's own words in a thread. The workhorse, and it decays — a promise made four months ago in a thread nobody has reopened is a fact about the past."}
+  - {source: meeting_transcript, strength_bp: 8000, decays: false, independent_of: [erp, email],
+     description: "Verbal undertaking captured verbatim. Strong on wording, weak on the date, because dates are the part people mumble."}
+  - {source: attestation, strength_bp: 6500, decays: true, independent_of: [erp, portal],
+     description: "The owner's own statement that it is done. Better than nothing and structurally optimistic; it is the source that produces closure_quality = asserted."}
+  - {source: manual_entry, strength_bp: 6500, decays: true, independent_of: [erp, email, slack],
+     description: "The assistant's note of a corridor undertaking. Low provenance and high accuracy — the reverse of the usual trade."}
+  - {source: slack, strength_bp: 6000, decays: true, independent_of: [erp, register],
+     description: "Real and never revisited. A promise made in a channel is forgotten by everyone including the promiser, usually within the day."}
+  - {source: derived, strength_bp: 4000, decays: true, independent_of: [erp, portal, signed_form],
+     description: "Inferred from thread shape. Corroborating only; never sole grounds for telling someone they are late."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: first_date_delivery_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share discharged by their ORIGINAL date. The only honest delivery number; everything else is measured against a date that was moved to make it green.",
+     calibrates: [cmt.chronic_owner, cmt.date_moved_again]}
+  - {name: undated_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of open commitments with no date. Rises silently and is the leading indicator of a register becoming decorative.",
+     calibrates: [cmt.undated_promise]}
+  - {name: average_revision_count, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "How many times the average promise moves. Two is a culture, not an accident.",
+     calibrates: [cmt.second_slip_escalates]}
+  - {name: capture_lag, unit: hours, direction: lower_is_better, owner_layer: L2,
+     description: "Promise made to promise recorded. Anything uncaptured within a day is generally uncaptured forever.",
+     calibrates: [cmt.dated_promise, cmt.undated_promise]}
+  - {name: evidenced_closure_share, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Closures with an artefact attached, over all closures. In an assurance model this is the compliance number, and it is usually a third of what the closure count implies.",
+     calibrates: [cmt.closed_without_evidence, cmt.critical_closure_needs_evidence]}
+  - {name: chase_to_delivery_ratio, unit: count, direction: lower_is_better, owner_layer: L5,
+     description: "Reminders sent per commitment delivered. Rising means the reminder has stopped carrying information and started training people to filter the sender.",
+     calibrates: [cmt.quiet_since_the_promise]}
+  - {name: blocked_time_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of open commitment time spent in pending_approval. Usually the largest single component of cycle time and almost never reported.",
+     calibrates: [cmt.blocked_on_a_signature]}
+  - {name: false_overdue_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Chases sent on commitments already discharged. The number that decides whether the system is trusted, and it is unmeasurable until a discharge signal exists.",
+     calibrates: [cmt.past_due, cmt.discharge_recorded]}
+  - {name: cancellation_share, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Commitments explicitly cancelled, over all closed. A register that has never cancelled anything is not being managed; it is accumulating. Zero is a failure, not a triumph.",
+     calibrates: [cmt.owner_is_saturated]}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: cmt.captured, name: Commitment Captured, severity: info, payload: [action, origin, made_at, owner_ref],
+     emitted_when: [{exists: commitment.action}]}
+  - {id: cmt.dated, name: Commitment Dated, severity: info, payload: [due_at, original_due_at, date_provenance],
+     emitted_when: [{exists: commitment.due_at}]}
+  - {id: cmt.confirmed_back, name: Promise Confirmed In Writing, severity: info, payload: [confirmed_back_at, action, due_at],
+     description: "Converts a memory into a record and gives the owner the chance to correct scope while correction is still free."}
+  - {id: cmt.went_overdue, name: Commitment Went Overdue, severity: notable, payload: [days_overdue, owner_ref, revision_count, negotiability],
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+  - {id: cmt.date_revised, name: Due Date Revised, severity: notable, payload: [original_due_at, due_at, revision_count],
+     invalidates: [delivery_risk_bp, working_days_to_due],
+     description: "The event worth counting above all others. An organisation that never emits it is not delivering on time; it is not recording the first date."}
+  - {id: cmt.blocked, name: Commitment Blocked, severity: notable, payload: [blocked_by_ref, block_reason],
+     invalidates: [days_overdue],
+     description: "Moves the delay off the owner and onto the approver. Emitting it late is how a delivery culture learns that making promises is unsafe."}
+  - {id: cmt.escalated, name: Commitment Escalated, severity: notable, payload: [reminder_count, revision_count, criticality]}
+  - {id: cmt.closed, name: Commitment Closed, severity: info, payload: [closed_at, closure_quality, closure_evidence_ref, first_date_kept]}
+  - {id: cmt.owner_departed, name: Owner Left The Organisation, severity: critical, payload: [owner_ref, state, days_overdue],
+     invalidates: [owner_ref, owner_acknowledged, delivery_risk_bp],
+     description: "Every commitment held by a leaver is unowned from the moment they go, and the handover checklist covers laptops and access far more reliably than it covers promises."}
+  - {id: cmt.abandoned, name: Commitment Abandoned, severity: critical, payload: [days_overdue, reminder_count, criticality],
+     description: "Quietly stopped being chased without being cancelled. The most common ending and the one no system records, because nothing happens when nothing happens."}
+
+# ── 16 · Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ─
+actions:
+  - {id: cmt.capture, name: Capture the promise, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{exists: commitment.action}],
+     effect: "Write it down with owner, recipient and date at the moment it is made. Everything downstream is cheaper because of this and nothing downstream can repair its absence."}
+  - {id: cmt.confirm_back, name: Confirm it in writing to the owner, actor: agent, cost: trivial, reversible: true,
+     effect: "One line restating action and date. Four seconds, and it converts a memory into a record while scope corrections are still free."}
+  - {id: cmt.request_a_date, name: Ask for a date, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{exists: commitment.action}, {absent: commitment.due_at}],
+     effect: "The highest-yield administrative act there is. An undated promise costs one question to date and is otherwise permanently un-chaseable."}
+  - {id: cmt.remind, name: Send a reminder, actor: agent, cost: low, reversible: false,
+     preconditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     effect: "Works about twice. Past the third with no movement it is noise, and it trains the owner to filter the channel it arrives on."}
+  - {id: cmt.unblock, name: Chase the approval instead of the owner, actor: agent, cost: low, reversible: true,
+     effect: "Redirects the pressure to where the delay actually is. Doing this reliably is most of what separates a useful chase system from an irritating one."}
+  - {id: cmt.renegotiate, name: Renegotiate the date with the recipient, actor: human, cost: moderate, reversible: false,
+     effect: "Available only when negotiability is not immovable. Asking early is cheap; asking on the due date is a different conversation and asking after it is an apology."}
+  - {id: cmt.reassign, name: Move it to a different owner, actor: human, cost: moderate, reversible: true,
+     effect: "The correct response to a second slip far more often than a third date is. It is also the response nobody proposes, because it reads as a judgement on a colleague."}
+  - {id: cmt.escalate, name: Escalate to the owner's manager, actor: human, cost: high, reversible: false,
+     effect: "Costs relationship capital and can only be spent once per item, so it must be spent on criticality and never on age."}
+  - {id: cmt.cancel, name: Cancel it explicitly, actor: human, cost: low, reversible: false,
+     effect: "Tell the recipient it is not happening. A queue that has never cancelled anything is not being managed; it is accumulating."}
+  - {id: cmt.attach_evidence, name: Attach closure evidence, actor: agent, cost: low, reversible: true,
+     effect: "Turns assumed into evidenced. In an assurance context this artefact is the deliverable and the action was only the means of producing it."}
+  - {id: cmt.reassign_on_leaver, name: Reassign every commitment held by a leaver, actor: system, cost: moderate, reversible: true,
+     effect: "Runs at notice, not at the leaving date. Joiner-mover-leaver handles accounts and laptops well and promises not at all."}
+
+# ── 17 · Dependencies — what this object needs to be resolvable ──────────────────────────
+dependencies:
+  - {target: admin.obj.core.stakeholder, kind: requires, strength: hard,
+     description: "Without a resolvable owner and recipient this object cannot usefully leave draft. Chasing, tone and negotiability all read from here."}
+  - {target: admin.obj.core.approval, kind: blocks, strength: hard,
+     description: "An unresolved approval blocks discharge and relocates the lateness. Reasoning about owner performance without resolving this produces a confident and defamatory answer."}
+  - {target: admin.obj.core.compliance_obligation, kind: enriches, strength: hard,
+     description: "Determines negotiability. Without it every date looks movable, which is the single most expensive default in the domain."}
+  - {target: admin.obj.core.deadline, kind: requires, strength: soft,
+     description: "Supplies the governing date where the promise restates one somebody else set."}
+  - {target: admin.obj.core.document, kind: requires, strength: soft,
+     description: "Closure evidence lives here. Without it every closure is asserted and the compliance number is unavailable."}
+  - {target: admin.obj.core.meeting, kind: enriches, strength: soft,
+     description: "Supplies provenance and witnesses for promises made in a room, and is what promotes this object to an action_item."}
+  - {target: admin.obj.core.request, kind: enriches, strength: soft,
+     description: "Links the promise back to the ask it answers, which is how a service queue becomes a set of named obligations."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "Carries the item once reminding has stopped working, and records that the relationship capital has been spent."}
+  - {target: admin.obj.core.employee_record, kind: invalidated_by, strength: hard,
+     description: "A leaver or mover event voids owner_ref, owner_acknowledged and every forecast built on this person's delivery history. The one dependency that destroys prior confidence rather than supplying it."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: cmt.formal_extension_mechanism
+    statement: "An obligation-backed date IS movable where the authority operates a published extension mechanism and the application is made before the original date."
+    overrides: [cmt.obligation_backed_dates_are_not_negotiable, cmt.obligation_backed_immovable]
+    why: >
+      Companies House and most tax authorities grant filing extensions on application. Treating
+      every statutory date as absolutely immovable makes the brain refuse the one legitimate
+      move available — and the application window closes on the original date, so the refusal
+      costs the extension it was protecting.
+    frequency: occasional
+
+  - id: cmt.incident_suspension
+    statement: "During a declared major incident, routine commitments are suspended by the fact of the incident and must not be chased."
+    overrides: [cmt.second_slip_escalates, cmt.past_due]
+    why: >
+      Nobody cancels them and nobody needs to. A chase system that keeps nagging about expense
+      policy sign-off while the building is flooded gets switched off during the incident and
+      never switched back on.
+    frequency: rare
+
+  - id: cmt.reserved_business_never_surfaces
+    statement: "A commitment made in a board reserved session, an HR matter or a privileged legal workstream never appears in general reporting, at any level of aggregation, however overdue."
+    overrides: [cmt.undated_is_reported_as_undated, cmt.second_slip_escalates]
+    why: >
+      A count of one in a reserved category identifies the item as surely as naming it. The
+      confidentiality classification is not a preference, and breaching it is a governance
+      incident that outlives whatever the commitment was about.
+    frequency: occasional
+
+  - id: cmt.recipient_no_longer_wants_it
+    statement: "Where the recipient has left, changed role, or the underlying need has gone, the correct move is to confirm with the successor rather than to deliver."
+    overrides: [cmt.past_due]
+    when:
+      - {fn: days_since, path: commitment.due_at, op: ">", value: 30}
+    why: >
+      Long-overdue commitments are frequently overdue because nobody wants them any more, and
+      nobody will say so. Delivering a report to a mailbox nobody reads satisfies the register
+      and nothing else. One question retires more stale items than any amount of chasing.
+    frequency: common
+
+  - id: cmt.owner_on_protected_leave
+    statement: "An owner on statutory, medical or bereavement leave is not chased, not escalated over, and not counted in reliability baselines for that period."
+    overrides: [cmt.second_slip_escalates, cmt.chronic_owner]
+    why: >
+      Automated chase systems are indifferent to circumstance and will send the fourth reminder
+      to someone on compassionate leave. That single message does more damage to adoption than
+      any number of missed nudges, and it is entirely preventable.
+    frequency: occasional
+
+  - id: cmt.block_is_ours
+    statement: "Where the block sits inside our own approval chain, the escalation goes to the approver's manager and never to the owner's."
+    overrides: [cmt.no_escalation_without_a_prior_chase, cmt.second_slip_escalates]
+    why: >
+      Escalating to the owner's manager for a delay the organisation caused is the organisation
+      invoicing a person for its own queue. It is also the fastest way to teach a team never to
+      accept a dated commitment again.
+    frequency: common
+
+  - id: cmt.verbal_commitment_binds_before_it_is_recorded
+    statement: "A verbal commitment given by an executive in a governance forum binds immediately and is enforceable before it is recorded anywhere."
+    overrides: [cmt.no_date_without_agreement]
+    why: >
+      The record follows the promise; it does not create it. An assistant writing down a
+      corridor yes is documenting an existing obligation rather than inventing one, and
+      treating the undocumented state as "not yet real" is how the most consequential promises
+      in an organisation go untracked.
+    frequency: common
+
+  - id: cmt.year_end_freeze
+    statement: "During a financial year end, close or audit period, spend-bearing commitments may be deliberately held rather than discharged."
+    overrides: [cmt.second_slip_escalates]
+    when:
+      - {has_obs: budget_freeze}
+    why: >
+      Holding the commitment is the correct accounting behaviour, not a delivery failure, and
+      it is invisible to anyone reading only the date. Chasing through a freeze marks the
+      chaser as someone who does not understand the calendar the organisation actually runs on.
+    frequency: occasional
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: cmt.ask_for_the_date_at_capture
+    statement: "Never let a promise be recorded undated. Ask for the date in the same breath the promise is made."
+    why: >
+      It costs one question at the moment everyone is present and willing, and it is unaskable
+      three weeks later without implying distrust. Undated is the only state from which a
+      commitment can never go late, which is precisely why it is chosen.
+    applies_when: "Always, and most of all when the promiser is senior and the room is moving on."
+
+  - id: cmt.confirm_back_same_day
+    statement: "Restate every commitment in writing to its owner the same day, in their words, with the date."
+    why: >
+      Converts memory into record while correction is still free. It also surfaces scope
+      disagreements immediately rather than on the due date, which is the only time they can be
+      resolved without someone conceding.
+    applies_when: "Any commitment made verbally — meeting, call, or corridor."
+    evidence: "Flores' conversation-for-action model: the promise is not complete until requester and performer agree the conditions of satisfaction."
+
+  - id: cmt.preserve_the_first_date
+    statement: "Write original_due_at once, never overwrite it, and report against it."
+    why: >
+      Every delivery dashboard that has ever surprised a board was measuring against a date that
+      had been moved to make it green. The first date is the only one anyone actually promised.
+    applies_when: "Always. It costs one immutable column."
+
+  - id: cmt.escalate_on_the_second_slip
+    statement: "Treat the second date revision as the escalation trigger, not the fifth."
+    why: >
+      A first slip is a diary problem. A second means the commitment, the owner or the plan is
+      wrong, and none of those is fixed by a third date. PRINCE2 formalises this as tolerance:
+      when the forecast leaves tolerance you raise an exception rather than replan quietly.
+    applies_when: "Any commitment with a recorded revision history."
+
+  - id: cmt.separate_the_chase_from_the_report
+    statement: "Chase the delegate; report against the owner. Never merge the two."
+    why: >
+      Delegation moves the doing and not the accountability. Merging them sends the chase to
+      someone who cannot escalate and the report to someone who did not do the work, and both
+      halves fail quietly.
+    applies_when: "Whenever delegated_to_ref is set."
+
+  - id: cmt.route_the_pressure_to_the_block
+    statement: "When a commitment sits behind an approval, chase the approver and tell the owner you have."
+    why: >
+      It puts pressure where the delay is and — more valuable — it visibly demonstrates that the
+      system knows the difference. One correctly-routed chase buys more cooperation than ten
+      polite ones sent to the wrong person.
+    applies_when: "state = pending_approval, or blocked_by_ref is set."
+
+  - id: cmt.cancel_out_loud
+    statement: "Cancel commitments explicitly, with the recipient told, rather than letting them decay."
+    why: >
+      Abandonment is the most common ending and the only one that teaches nothing. An explicit
+      cancellation is a decision Layer 6 can learn from and the recipient can plan around;
+      silence is a decision too, made by nobody, discovered late.
+    applies_when: "Third carry, third revision, or any item nobody has touched in a quarter."
+
+  - id: cmt.evidence_at_closure_not_at_audit
+    statement: "Attach the artefact at the moment of closure, not when someone asks for it."
+    why: >
+      Reconstructing evidence months later costs ten times as much and frequently fails, because
+      the file was in a leaver's mailbox. In a governed context done-and-undocumented did not
+      happen, and it did not happen at exactly the moment it matters most.
+    applies_when: "criticality of material or above, and everything obligation-backed."
+
+  - id: cmt.classify_before_you_broadcast
+    statement: "Classify confidentiality at capture, before the item can enter any digest."
+    why: >
+      Suppression added later has already failed once. The reserved item that appeared in a
+      weekly summary cannot be recalled, and the cost lands on the person who least chose it.
+    applies_when: "Anything originating in board, HR, legal or partner forums."
+
+  - id: cmt.run_an_undated_review
+    statement: "Review the undated column weekly and either date it or kill it."
+    why: >
+      Undated share rises silently and is the leading indicator of a register becoming
+      decorative. Nothing else in the queue degrades without any event occurring at all.
+    applies_when: "Any register carrying more than about thirty open items."
+
+# ── 20 · Anti-Patterns — the failure an administrator actually sees ──────────────────────
+anti_patterns:
+
+  - id: cmt.the_rolling_due_date
+    statement: "The date is moved every time it is about to be missed, so nothing is ever late and nothing is ever delivered."
+    why_it_happens: >
+      Moving a date is a two-second edit that makes a red row green, and the alternative is a
+      conversation. Every individual move is defensible; the pattern is only visible in an
+      aggregate nobody keeps.
+    cost: "The register becomes a work of fiction and the board finds out at the worst possible moment. Forecasting dies first, then trust in the register, then the register."
+    instead: "Write original_due_at once, count revisions, and make the second revision an escalation rather than an edit."
+    detectable_by: [average_revision_count, first_date_delivery_rate, cmt.date_moved_again]
+
+  - id: cmt.the_department_owner
+    statement: "The commitment is assigned to Finance, to IT, or to 'the team'."
+    why_it_happens: >
+      Nobody in the room wants to name a colleague, and the function genuinely is responsible.
+      It feels like the polite and accurate answer, and it is unfalsifiable at the moment it is
+      written.
+    cost: "Guaranteed non-delivery with no attributable failure. It will be read out unchanged at the next four meetings and closed by exhaustion."
+    instead: "Name one person, in the room, before the item is recorded. If nobody will accept it, that is the finding."
+    detectable_by: [cmt.one_named_owner, cmt.owner_is_named]
+
+  - id: cmt.closure_by_tidy_up
+    statement: "Old items are marked complete during a queue clean-up because nobody has mentioned them recently."
+    why_it_happens: >
+      A clean register looks like a managed register, quarter end creates pressure to show
+      closure, and no individual item is obviously wrong to close.
+    cost: "The closure count becomes meaningless and, in an assurance context, the organisation asserts things it cannot evidence. Auditors find this every time and it costs more than the original failure."
+    instead: "Require closure_quality on every closure and report evidenced separately from asserted and assumed. An honest 40% beats a fictional 95%."
+    detectable_by: [evidenced_closure_share, cmt.closed_without_evidence]
+
+  - id: cmt.chase_by_volume
+    statement: "The fourth, fifth and sixth reminder go out on schedule because the workflow says so."
+    why_it_happens: >
+      Reminding is automatable and escalating is not. The system is measured on chases sent, the
+      owner is measured on nothing, and no single reminder feels unreasonable.
+    cost: "The channel is filtered. Once an owner has learned to ignore the sender, the first genuinely urgent message is ignored too, and there is no way to earn it back."
+    instead: "Cap reminders at three, then force a different move: escalate, reassign, renegotiate or cancel."
+    detectable_by: [chase_to_delivery_ratio, cmt.second_slip_escalates]
+
+  - id: cmt.the_undated_comfort_blanket
+    statement: "A third of the register has no date and the register reports itself as healthy."
+    why_it_happens: >
+      Undated items cannot go red, so they never appear in an exception report, so nobody looks
+      at them. The tracker's own hygiene checks pass, which is read as evidence there is no
+      problem.
+    cost: "The largest category of quiet failure in the domain. These items are neither delivered nor cancelled; they persist until an audit or a departure exposes them."
+    instead: "Report undated as its own column with its own count, and review it weekly."
+    detectable_by: [undated_share, cmt.undated_promise]
+
+  - id: cmt.blaming_the_owner_for_the_queue
+    statement: "An item stuck behind an unsigned approval is reported as the owner's lateness."
+    why_it_happens: >
+      The tracker records one date and one name. Nothing in it distinguishes 'not done' from
+      'cannot be done yet', and the owner's name is the one on the row.
+    cost: "The owner learns that accepting a dated commitment is unsafe, and next time gives a padded date or none. The organisation's forecasting degrades permanently to protect individuals from its own queue."
+    instead: "Model pending_approval as a distinct state, attribute the lateness to the approval, and chase the approver."
+    detectable_by: [blocked_time_share, cmt.blocked_on_a_signature]
+
+  - id: cmt.the_register_that_never_cancels
+    statement: "The commitment register has grown every month for two years and has never explicitly cancelled anything."
+    why_it_happens: >
+      Cancelling feels like admitting failure and requires telling the recipient. Carrying the
+      item forward costs nothing visible and postpones the conversation indefinitely.
+    cost: "Signal-to-noise collapses. Every real item competes with a hundred dead ones, and the register is eventually replaced by a private spreadsheet — which then becomes the real register, owned by one person."
+    instead: "Put cancellation on the agenda as the default option at the third carry or third revision. The forum usually takes it, and nobody ever proposes it."
+    detectable_by: [cancellation_share, cmt.owner_is_saturated]
+
+  - id: cmt.the_assistant_is_the_system
+    statement: "The only reliable record of what the organisation has promised lives in one person's notebook or inbox."
+    why_it_happens: >
+      A good administrator is faster and more accurate than any tool, so the tool is never
+      adopted, so the administrator remains the only route. Everyone is rationally better off
+      until the day they are not there.
+    cost: "Total single-point failure. Their leave, departure or illness erases the organisation's memory of what it owes, and nobody discovers this until the first thing is missed."
+    instead: "Capture into a shared register even when the notebook is faster, and measure capture lag rather than register beauty."
+    detectable_by: [capture_lag, cmt.owner_is_named]
+
+  - id: cmt.asking_a_regulator_for_time
+    statement: "An extension is requested on a date nobody involved has the authority to move."
+    why_it_happens: >
+      The item looks identical to every other overdue row. Negotiation is the reflex for a
+      commitment, and the reflex fires before anyone checks what stands behind the date.
+    cost: "Beyond the wasted days, it advertises that we do not understand our own obligations — which is the thing a supervisory relationship is actually assessing."
+    instead: "Resolve negotiability before generating any option involving more time, and eliminate rather than downgrade the ones that involve it."
+    detectable_by: [cmt.promise_restates_an_obligation, cmt.negotiability_known]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - label: "\"I'll get you the signed MSA by Friday\" — a supplier, in an email thread"
+    kind: typical
+    note: >
+      Owner external, recipient us, date soft. The substrate sees the action and the date and
+      will silently assume the promise is ours — the exact inversion cmt.owner_is_named exists
+      to fix.
+    attributes: {owner_side: them, is_specific: true, date_provenance: agreed_explicitly}
+  - label: "CFO promises the audit committee a remediation plan by the next sitting"
+    kind: typical
+    note: >
+      The committee's calendar holds the date, not the CFO. Criticality critical, closure must
+      be evidenced, and "can we push it?" is a governance conversation rather than a scheduling
+      one.
+    attributes: {is_obligation_backed: true, criticality: critical, recipient_standing: board, negotiability: authority_only}
+  - label: "\"Yes, I'll approve it\" said in a doorway"
+    kind: edge
+    note: "origin = corridor. Binding on the organisation from the moment it is said and existing in no system at all until an assistant writes it down."
+    attributes: {origin: corridor, closure_quality: none}
+  - label: "\"We'll circle back on that\""
+    kind: counterexample
+    note: >
+      is_specific false, is_dated false. Passes every tracker hygiene check, has never once been
+      delivered, and is the single most common row in any commitment register. It is not a
+      commitment, and recording it as one is what makes the register untrustworthy.
+  - label: "\"Facilities will return the keys once the contractor finishes\""
+    kind: misclassification
+    note: "Conditional on a third party. Not a dated commitment until the condition resolves; giving it a date guarantees a false overdue and a wasted chase."
+    attributes: {is_conditional: true, is_dated: false}
+  - label: "Statutory accounts filed with the registrar by the filing date"
+    kind: misclassification
+    note: >
+      Looks like a commitment, is a compliance_obligation. Nobody in the organisation agreed to
+      the date and nobody can move it by agreement. Modelling it here produces a polite request
+      for an extension to a body that does not take them by email.
+  - label: "An action carried from a weekly meeting for the eleventh time"
+    kind: edge
+    note: >
+      revision_count 10. Nobody is going to do it. Cancellation is the correct move and the one
+      nobody proposes, because proposing it means saying out loud that ten months of tracking
+      achieved nothing.
+  - label: "Expense policy sign-off chased on day three of a major incident"
+    kind: counterexample
+    note: "Technically overdue, actually suspended. The chase is correct by the rules and wrong in every other respect, and it is the message that gets the whole system turned off."
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Conversations for Action — the request / promise / performance / satisfaction cycle", kind: framework, author: "Fernando Flores",
+     note: "The speech-act model this object is built on. A commitment is incomplete until requester and performer agree the conditions of satisfaction, which is exactly what is_specific and closure_quality encode."}
+  - {title: "Getting Things Done", kind: book, author: "David Allen",
+     note: "Open loops. An unrecorded commitment consumes attention in proportion to its uncertainty rather than its size, which is why capture lag matters more than register design."}
+  - {title: "RACI responsibility assignment", kind: framework,
+     note: "The Accountable role is singular by construction. Every 'Finance to confirm' commitment is a RACI violation restated as an action."}
+  - {title: "PRINCE2 — tolerance and exception reporting", kind: methodology,
+     note: "The formal version of escalate-on-the-second-slip: when the forecast leaves tolerance you raise an exception rather than quietly replan."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "Governs what makes a record authoritative, which is the difference between an evidenced closure and an asserted one."}
+  - {title: "Delegation of Authority matrix", kind: framework,
+     note: "The standard instrument for expressing who may approve what, and therefore for resolving whether a commitment is blocked or merely late."}
+  - {title: "Purchase-order commitment accounting", kind: framework,
+     note: "Spend is committed at the promise and recognised at the invoice. The reason allocated_to exists on this object rather than only on invoice."}
+  - {title: "Chartered Governance Institute — action registers and matters arising", kind: practitioner,
+     note: "Company secretarial practice for carrying, closing and evidencing undertakings between sittings. The source of the carry-count discipline inherited by action_item."}
+  - {title: "Joiner–mover–leaver process", kind: framework,
+     note: "Handles accounts, assets and access reliably and commitments not at all. cmt.owner_departed exists to close that gap."}
+  - {title: "GDPR Art. 30 — records of processing activities", kind: standard,
+     note: "A commitment register naming individuals and their performance is itself a processing activity, which is why sensitivity and confidentiality are structural fields here rather than presentation ones."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Reference object for the Admin brain, rewritten onto the 23-section schema. Five of fifteen
+    patterns fire against the pipeline as it stands, which makes this the best-served object in
+    the domain and still leaves it blind to the two fields that define it. commitment.owner is
+    the standout ask: without it every executable pattern here silently assumes the promise is
+    ours, and roughly half of a real administrator's register is other people's promises to the
+    organisation. commitment.state is second — without a discharge signal cmt.past_due will
+    confidently nag people about work they completed last week, which is how chase systems get
+    switched off. commitment.previous_due_at is third and cheapest: the pipeline currently
+    overwrites the single most predictive administrative field in existence.

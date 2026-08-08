@@ -1,0 +1,47 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.ticket_triage.entitlement_first
+  name: Entitlement first
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Entitlement-first triage — establish what was contractually promised before deciding what
+    to do about it.
+
+
+    It makes the priority decision defensible as a promise being kept rather than as a preference being
+    exercised, which is the difference between a queue that can be reviewed and a queue that can only
+    be defended.'
+criteria:
+- name: Entitlement first
+  description: Entitlement-first triage — establish what was contractually promised before deciding
+    what to do about it.
+  reads: &id001
+  - customer_support.obj.core.entitlement
+how_to_apply:
+- Entitlement-first triage — establish what was contractually promised before deciding what to do about
+  it.
+- It makes the priority decision defensible as a promise being kept rather than as a preference being
+  exercised, which is the difference between a queue that can be reviewed and a queue that can only
+  be defended.
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

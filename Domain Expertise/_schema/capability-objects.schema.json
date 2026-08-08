@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/capability-objects.schema.json",
+  "title": "Capability object manifest — objects.yaml",
+  "description": "REFERENCES ONLY. This file names object ids and never inlines an object. It sits beside capability.yaml so the load-set is readable without opening the capability, and so a change to what a capability loads is a one-file diff.\n\nThe core/scoped split is the point of the file. CORE objects are used by more than one capability and live in objects/core/. SCOPED objects are used by exactly one and live in objects/<capability>/. validate.py enforces the rule in both directions: a scoped object referenced by two capabilities is an error telling you to promote it to core, and a core object referenced by one is a warning telling you it may want demoting. Without that enforcement the distinction becomes a folder convention nobody maintains.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capability", "core", "scoped"],
+
+  "properties": {
+
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+      "description": "The capability this manifest belongs to. Must match the sibling capability.yaml."
+    },
+
+    "core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "description": "Shared objects from objects/core/. Authored once, referenced by many capabilities.",
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/core_ref" },
+          "description": "A missing one blocks the compile."
+        },
+        "optional": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/core_ref" },
+          "description": "Absence lowers confidence rather than blocking — Layer 3 strategy S8. A situation the compiler cannot fully feed should still produce advice at a lower confidence, not withhold it."
+        }
+      }
+    },
+
+    "scoped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "description": "Objects specific to this capability, from objects/<capability>/.",
+      "properties": {
+        "required": { "type": "array", "items": { "$ref": "#/$defs/scoped_ref" } },
+        "optional": { "type": "array", "items": { "$ref": "#/$defs/scoped_ref" } }
+      }
+    },
+
+    "never_load": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Objects a situation must not pull in even if another capability in the same compile requires them."
+    },
+
+    "load_order": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional explicit order when one object's inference depends on another already being resolved — e.g. Budget before Qualification Score. Absent means order is irrelevant."
+    },
+
+    "notes": { "type": "string" }
+  },
+
+  "$defs": {
+    "core_ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.obj\\.core\\.[a-z0-9_]+$"
+    },
+    "scoped_ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.obj\\.[a-z0-9_]+\\.[a-z0-9_]+$"
+    }
+  }
+}

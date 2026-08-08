@@ -1,0 +1,31 @@
+# Load-set for customer_support.intake_and_triage.intent_classification — REFERENCES ONLY, never
+# an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.intake_and_triage.intent_classification
+
+core:
+  # Only two, and Ticket is deliberately not among them. Classification reads what was said and
+  # assigns what it means; it operates on the Conversation and produces an Intent. Requiring the
+  # Ticket would bind classification to work that has already been accepted, when the highest
+  # value case is classifying a contact that never became a ticket at all.
+  required:
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.intent
+
+  # Ticket when one exists, because prior tickets from the same requester change the reading of
+  # an ambiguous message. Knowledge article because a label with no reachable answer behind it is
+  # the definition of a content gap and should be visible at the moment of classification.
+  # Product area because it disambiguates labels that collide across surfaces.
+  optional:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.product_area
+
+scoped:
+  # The taxonomy itself is tempting to model here and belongs in the pack manifest, not as a
+  # scoped object — it is configuration with numbers in it, which is Layer 4's territory.
+  required: []
+  optional: []

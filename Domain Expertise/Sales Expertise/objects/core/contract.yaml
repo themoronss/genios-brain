@@ -1,0 +1,677 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Contract — core object.
+#
+# The organising idea: a contract is not a document, it is a list of obligations with
+# owners and dates, plus a record of every standard term we gave away to get a signature.
+# Both halves outlive the deal, the rep and usually the buying contact. Modelling the PDF
+# and treating the obligations as an appendix is how renewal teams inherit surprises.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.contract
+  scope: core
+  name: Contract
+  domain: sales
+  subdomain: closing
+  owner_capability: sales.closing.contract_management
+  version: 1.0.0
+  status: draft
+  aliases: ["Agreement", "MSA", "Order Form", "Paper", "Executed Agreement"]
+purpose:
+  statement: >
+    The executed agreement and everything it commits both sides to. The discriminator against
+    a Proposal is enforceability and direction: a proposal is an argument we make, a contract
+    is a set of promises we must keep and can be held to. Non-standard clauses agreed to win a
+    deal are a liability that outlives the rep who agreed them — renegotiated from that new
+    baseline at every renewal, inherited by a delivery team that was not in the room, and
+    discovered by finance in the quarter they bite. That is why obligations and non-standard
+    terms are first-class properties here and not a footnote on the document record.
+attributes:
+  - name: parties_and_execution
+    purpose: Who signed, on what authority, and when. The provenance half.
+    type: composite
+    contains:
+      - counterparty_ref
+      - signatory_ref
+      - our_signatory
+      - executed_at
+      - document_ref
+      - contract_type
+  - name: commercial_terms
+    purpose: The money and how it moves. Cash timing is a concession reps give away for free.
+    type: composite
+    contains:
+      - total_contract_value
+      - annual_value
+      - currency
+      - discount_bp
+      - payment_terms_days
+      - billing_frequency
+  - name: term_and_renewal
+    purpose: >
+      The dates that decide whether this revenue recurs. The one that matters is not the end
+      date but the last day to give notice.
+    type: composite
+    contains:
+      - start_date
+      - end_date
+      - term_months
+      - auto_renews
+      - renewal_notice_days
+      - termination_for_convenience
+  - name: obligations
+    purpose: >
+      What we promised to do, by when, and who owns it. First-class because an unmet
+      obligation is the most reliable predictor of a lost renewal, and nobody reads the PDF.
+    type: composite
+    contains:
+      - obligations
+      - sla_commitments
+      - delivery_milestones
+  - name: risk_and_non_standard_terms
+    purpose: Everything conceded away from the template, and what it exposes us to.
+    type: composite
+    contains:
+      - nonstandard_clauses
+      - liability_cap
+      - indemnities
+      - governing_law
+      - security_addendum_required
+  - name: lifecycle
+    purpose: Where the paper is in the process, and how long it has been there.
+    type: composite
+    contains:
+      - contract_state
+      - redline_rounds
+      - legal_review_started_at
+  - name: contract_state
+    purpose: '`awaiting_signature` and `executed` are separate because the gap between them is where quarters
+      are lost. A contract sitting unsigned on a desk is not a won deal, however confidently the forecast
+      says otherwise.'
+    type: value
+    data_type: enum
+    allowed_values: [none, requested, drafting, in_legal_review, redlining, awaiting_signature,
+        executed, active, expiring, renewed, terminated, lapsed]
+    required: true
+    description: >
+      `awaiting_signature` and `executed` are separate because the gap between them is where
+      quarters are lost. A contract sitting unsigned on a desk is not a won deal, however
+      confidently the forecast says otherwise.
+  - name: contract_type
+    purpose: An amendment inherits every term of its parent, including the concessions. Treating an
+      amendment as a fresh contract is how a one-off discount becomes permanent.
+    type: value
+    data_type: enum
+    allowed_values: [msa, order_form, sow, subscription, pilot, amendment, nda, dpa, reseller, unknown]
+    description: >
+      An amendment inherits every term of its parent, including the concessions. Treating an
+      amendment as a fresh contract is how a one-off discount becomes permanent.
+  - name: counterparty_ref
+    purpose: The legal entity, which is frequently not the operating company we sold to.
+      Parent-versus-subsidiary is a real close-stage delay and it surfaces at redline.
+    type: reference
+    ref: sales.obj.core.account
+    data_type: ref
+    description: The legal entity, which is frequently not the operating company we sold to.
+      Parent-versus-subsidiary is a real close-stage delay and it surfaces at redline.
+  - name: signatory_ref
+    purpose: Who signed for them. Must be checked against approval_limit rather than assumed from
+      title — a signature from someone without authority is worth less than no signature, because it
+      looks like a close and is not one.
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+    description: >
+      Who signed for them. Must be checked against approval_limit rather than assumed from
+      title — a signature from someone without authority is worth less than no signature,
+      because it looks like a close and is not one.
+  - name: our_signatory
+    purpose: The our_signatory of this object.
+    type: value
+    data_type: string
+  - name: executed_at
+    purpose: The moment the deal is real. The pipeline currently cannot see it.
+    type: value
+    data_type: timestamp
+    description: The moment the deal is real. The pipeline currently cannot see it.
+  - name: document_ref
+    purpose: Pointer to the stored executed file. Without it every clause question becomes an email
+      hunt.
+    type: value
+    data_type: string
+    description: Pointer to the stored executed file. Without it every clause question becomes an
+      email hunt.
+  - name: total_contract_value
+    purpose: Full committed value over the term. Diverges from deal.value more often than anyone
+      expects, because the last redline round moves it.
+    type: value
+    data_type: money
+    source_paths: [deal.value]
+    description: Full committed value over the term. Diverges from deal.value more often than anyone
+      expects, because the last redline round moves it.
+  - name: annual_value
+    purpose: The figure the business is actually run on. A three-year deal at a flat price is not
+      three times as good as an annual one.
+    type: value
+    data_type: money
+    description: The figure the business is actually run on. A three-year deal at a flat price is not
+      three times as good as an annual one.
+  - name: currency
+    purpose: The currency of this object.
+    type: value
+    data_type: string
+  - name: discount_bp
+    purpose: Against list, in basis points. The permanent record of what we gave up. Renewals begin
+      from this number, never from list, which is why a quarter-end concession is a multi-year cost.
+    type: value
+    data_type: integer
+    description: >
+      Against list, in basis points. The permanent record of what we gave up. Renewals begin
+      from this number, never from list, which is why a quarter-end concession is a
+      multi-year cost.
+  - name: payment_terms_days
+    purpose: Net terms. Moving from 30 to 90 is a real discount that shows up in no discount field.
+    type: value
+    data_type: integer
+    unit: days
+    description: Net terms. Moving from 30 to 90 is a real discount that shows up in no discount
+      field.
+  - name: billing_frequency
+    purpose: The billing_frequency of this object.
+    type: value
+    data_type: enum
+    allowed_values: [monthly, quarterly, annual, upfront, milestone]
+  - name: start_date
+    purpose: The start_date of this object.
+    type: value
+    data_type: timestamp
+  - name: end_date
+    purpose: The renewal clock. Absent from the substrate, which is the mechanical reason churn is
+      discovered late rather than the cultural one usually blamed.
+    type: value
+    data_type: timestamp
+    description: The renewal clock. Absent from the substrate, which is the mechanical reason churn is
+      discovered late rather than the cultural one usually blamed.
+  - name: term_months
+    purpose: The term_months of this object.
+    type: value
+    data_type: integer
+    unit: months
+  - name: auto_renews
+    purpose: The auto_renews of this object.
+    type: value
+    data_type: boolean
+  - name: renewal_notice_days
+    purpose: Notice period before end_date. On an auto-renewing contract this is the date that decides
+      the outcome, typically 30 to 90 days before the end, and it is the date nobody diaries. Miss it
+      in our favour and a customer renews unhappily; miss it in theirs and we learn at the deadline.
+    type: value
+    data_type: integer
+    unit: days
+    description: >
+      Notice period before end_date. On an auto-renewing contract this is the date that
+      decides the outcome, typically 30 to 90 days before the end, and it is the date nobody
+      diaries. Miss it in our favour and a customer renews unhappily; miss it in theirs and
+      we learn at the deadline.
+  - name: termination_for_convenience
+    purpose: A convenience-termination right converts an annual contract into a monthly one for
+      forecasting purposes. Frequently conceded late in a negotiation as a "small" comfort clause by
+      someone who is not carrying next year's number.
+    type: value
+    data_type: boolean
+    description: >
+      A convenience-termination right converts an annual contract into a monthly one for
+      forecasting purposes. Frequently conceded late in a negotiation as a "small" comfort
+      clause by someone who is not carrying next year's number.
+  - name: obligations
+    purpose: Each entry is a commitment with an owner and a due date — implementation dates, named
+      resources, integrations promised, reports delivered. Modelled as a list rather than prose so
+      Layer 5 can turn each into a Next Action instead of leaving them in a PDF.
+    type: value
+    data_type: list
+    description: >
+      Each entry is a commitment with an owner and a due date — implementation dates, named
+      resources, integrations promised, reports delivered. Modelled as a list rather than
+      prose so Layer 5 can turn each into a Next Action instead of leaving them in a PDF.
+  - name: sla_commitments
+    purpose: The sla_commitments of this object.
+    type: value
+    data_type: list
+  - name: delivery_milestones
+    purpose: The delivery_milestones of this object.
+    type: value
+    data_type: list
+  - name: nonstandard_clauses
+    purpose: Every clause outside the template, with who approved it and why. The most valuable list
+      on this object and the one most often left empty. A concession nobody recorded is a concession
+      nobody can decline next time.
+    type: value
+    data_type: list
+    description: >
+      Every clause outside the template, with who approved it and why. The most valuable
+      list on this object and the one most often left empty. A concession nobody recorded is
+      a concession nobody can decline next time.
+  - name: liability_cap
+    purpose: The liability_cap of this object.
+    type: value
+    data_type: money
+  - name: indemnities
+    purpose: The indemnities of this object.
+    type: value
+    data_type: list
+  - name: governing_law
+    purpose: The governing_law of this object.
+    type: value
+    data_type: string
+  - name: security_addendum_required
+    purpose: The security_addendum_required of this object.
+    type: value
+    data_type: boolean
+  - name: redline_rounds
+    purpose: Round count, not elapsed time. Past three, the disagreement is usually commercial wearing
+      legal clothing and needs the economic buyer, not another lawyer.
+    type: value
+    data_type: integer
+    description: >
+      Round count, not elapsed time. Past three, the disagreement is usually commercial
+      wearing legal clothing and needs the economic buyer, not another lawyer.
+  - name: legal_review_started_at
+    purpose: Best available proxy today. Approximate, and the approximation is why redline stalls are
+      caught late.
+    type: value
+    data_type: timestamp
+    source_paths: [deal.last_inbound]
+    description: Best available proxy today. Approximate, and the approximation is why redline stalls
+      are caught late.
+states:
+  initial: none
+  values:
+    - {name: none, description: "No paper in play. Verbal agreement lives here, whatever the forecast\
+        says."}
+    - {name: requested, description: "They have asked for the contract. A costlier act than saying yes\
+        and worth more than one.", entered_when: [has_obs: contract_requested]}
+    - {name: drafting, description: "Being prepared on our side."}
+    - {name: in_legal_review, description: "With their counsel. Lawyers do not review documents nobody\
+        intends to sign.", entered_when: [has_obs: legal_review]}
+    - {name: redlining, description: "Comments returned and being negotiated. Where concessions happen\
+        quietly."}
+    - {name: awaiting_signature, description: "Terms agreed, paper unsigned. The most over-forecast state\
+        in sales."}
+    - {name: executed, description: "Signed by both parties."}
+    - {name: active, description: "In force and being delivered against."}
+    - {name: expiring, description: "Inside the renewal notice window."}
+    - {name: terminated, description: "Ended early."}
+    - {name: lapsed, description: "Ran to end_date without renewal. Almost always a notice date that nobody\
+        diarised."}
+  transitions:
+    - {from: none, to: requested, when: [has_obs: contract_requested]}
+    - {from: requested, to: drafting}
+    - {from: drafting, to: in_legal_review, when: [has_obs: legal_review]}
+    - {from: in_legal_review, to: redlining}
+    - {from: redlining, to: in_legal_review}
+    - {from: redlining, to: awaiting_signature}
+    - {from: in_legal_review, to: awaiting_signature}
+    - {from: awaiting_signature, to: executed}
+    - {from: executed, to: active}
+    - {from: active, to: expiring}
+    - {from: expiring, to: lapsed}
+    - {from: active, to: terminated}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - {type: supersedes, target: sales.obj.core.proposal, cardinality: zero_or_one, description: "The contract\
+      supersedes the proposal completely. Anything promised in the deck and absent from the paper does not
+      exist, which is a surprise to exactly one side."}
+  - {type: belongs_to, target: sales.obj.core.account, cardinality: one}
+  - {type: attaches_to, target: sales.obj.core.deal, cardinality: one}
+  - {type: requires, target: sales.obj.core.decision_maker, cardinality: one, description: "A signatory\
+      whose approval_limit covers the value. Unverified authority makes the signature decorative."}
+  - {type: produces, target: sales.obj.core.next_action, cardinality: zero_or_many, description: "Every\
+      obligation becomes a next action with an owner and a date, or it becomes a renewal problem."}
+  - {type: gates, target: sales.obj.core.timeline, cardinality: zero_or_one, description: "Their paper\
+      process, not our quarter, sets the achievable signature date."}
+  - {type: references, target: sales.obj.core.pricing, cardinality: zero_or_one}
+  - {type: influences, target: sales.obj.core.risk, cardinality: zero_or_many, description: "Non-standard\
+      clauses are risk objects with a start date and no expiry."}
+  - {type: precedes, target: sales.obj.core.contract, cardinality: zero_or_one, description: "Self-referential\
+      — the renewal or amendment that follows, inheriting every term of this one."}
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: ct.requested
+      statement: "They asked for the contract."
+      status: executable
+      when: [has_obs: contract_requested]
+      yields: {confidence_bp: 9500, attribute: contract_state, value: requested}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        People without intent ask for pricing; they do not ask for paper. Requesting a
+        contract is a costlier signal than a verbal yes because it starts work on their side.
+
+    - id: ct.in_legal_review
+      statement: "Contract requested and legal review has begun."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 9200, attribute: contract_state, value: in_legal_review}
+      note: Legal review is an expense their organisation has chosen to incur. It outranks any amount
+        of stated enthusiasm.
+
+    - id: ct.executed
+      statement: "Both parties signed."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: contract_state, value: executed}
+      requires_signals:
+        - {kind: obs_kind, name: contract_signed, owner_layer: L2, note: "L2 emits contract_requested and\
+            never contract_signed. The single most important state change in the entire revenue motion is
+            invisible to the engine, which is why every downstream clock — renewal, obligation, onboarding
+            — has to be started by hand."}
+        - {kind: fact_path, name: contract.executed_at, owner_layer: L1}
+
+    - id: ct.nonstandard_clause_agreed
+      statement: "A clause outside the standard template was accepted during redlining."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: nonstandard_clauses, value: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.clause.nonstandard, owner_layer: L1, note: "Structured clause\
+            extraction from the redlined document — clause type, deviation from template, who approved. Without
+            it the nonstandard_clauses list is populated by whoever remembers to type it, which in practice
+            is nobody, and this object's central thesis is unserved."}
+        - {kind: obs_kind, name: clause_conceded, owner_layer: L2}
+
+    - id: ct.signatory_authority_mismatch
+      statement: "The person signing has a lower approval limit than the contract value."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.approval_limit, owner_layer: L1, note: "Deal value is known\
+            and signing authority is not, so the one arithmetic check that would catch an unenforceable signature
+            cannot run."}
+
+    - id: ct.renewal_notice_window_open
+      statement: "Today is inside the notice window before the term ends."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: contract_state, value: expiring}
+      requires_signals:
+        - {kind: fact_path, name: contract.end_date, owner_layer: L1, note: "No contract dates reach the\
+            engine at all, so the renewal clock cannot start. This is the mechanical cause of late-discovered
+            churn — not a customer-success failure, a missing field."}
+        - {kind: fact_path, name: contract.renewal_notice_days, owner_layer: L1}
+
+  heuristic:
+
+    - id: ct.redline_stall
+      statement: "Legal review is open and nothing has come back for a fortnight."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {fn: days_since, path: deal.last_inbound, op: ">=", value: 14}
+      yields: {confidence_bp: 7200, attribute: contract_state, value: redlining}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        Silence in legal is not the same as silence in sales. Counsel work in queues, so a
+        fortnight may be routine — but a fortnight with no acknowledgement usually means the
+        document is not in a queue at all, because someone internal has not sent it on.
+
+    - id: ct.commercial_reopened_in_legal
+      statement: "Discount pressure arriving after the document reached legal."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {has_obs: discount_pressure}
+      yields: {confidence_bp: 7500, attribute: null}
+      note: >
+        A price ask at paper stage is a procurement play, not a budget problem — it arrives
+        late precisely because lateness is the leverage. Discounting here rewards the tactic
+        and costs the renewal baseline. Trading term length or payment terms does not.
+
+    - id: ct.verbal_yes_without_paper
+      statement: "A verbal yes with no contract requested — agreement without a paper process."
+      status: executable
+      when:
+        - {has_obs: verbal_yes}
+        - {no_obs: contract_requested}
+      yields: {confidence_bp: 7000, attribute: contract_state, value: none}
+      note: >
+        The most over-forecast condition in sales. Either they cannot start paper because the
+        approval is not real, or nobody has told us what their paper process is. Both are
+        recoverable and neither is a won deal.
+
+    - id: ct.security_addendum_likely
+      statement: "Contract requested with a security review running in parallel."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 8000, attribute: security_addendum_required, value: true}
+      note: >
+        A security review that starts alongside paper almost always ends in a DPA or security
+        addendum with remediation commitments attached. Those commitments are obligations, and
+        agreeing them after countersignature means agreeing them with no leverage left.
+
+    - id: ct.loss_risk_in_paper
+      statement: "Legal review open and loss language appearing in the thread."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {has_obs: closed_lost_mention}
+      yields: {confidence_bp: 7500, attribute: null}
+      evidence_fields: [derived.sentiment]
+      note: >
+        A deal lost at paper stage is rarely lost on the paper. It is lost on something
+        decided weeks earlier that only surfaced when the terms made it concrete.
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: contract, signal: "executed terms, signature block, dates, clause text"}
+  - {source: document, signal: "redlines and tracked changes — where concessions are actually visible"}
+  - {source: email, signal: "contract requests, legal review threads, redline exchanges", path: thread.last_inbound}
+  - {source: email, signal: late-stage discount asks and procurement involvement}
+  - {source: crm, signal: "close date, stage, deal value", path: deal.value}
+  - {source: derived, signal: negotiation sentiment through redlining, path: derived.sentiment}
+  - {source: meeting_transcript, signal: "what was promised verbally that never reached the paper"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: execution_confidence_bp, type: integer, description: "Likelihood this reaches signature, and\
+      roughly when.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: forecast_eligibility, type: boolean, description: "Whether this deal may sit in the committed\
+      forecast. False before executed_at, always.", consumed_by: [L4.decision_maker]}
+  - {name: obligation_schedule, type: list, description: "Obligations with owners and dates, ready to\
+      become Next Actions.", consumed_by: [L5.execution_planning]}
+  - {name: renewal_notice_at, type: timestamp, description: "Last day to give or receive notice. The date\
+      the renewal outcome actually turns on.", consumed_by: [L5.execution_planning]}
+  - {name: nonstandard_exposure, type: list, description: "Clauses conceded away from template, for portfolio\
+      review.", consumed_by: [L6.learning_unit]}
+  - {name: blocking_review_state, type: string, description: "Which review — legal, security, procurement\
+      — is currently the constraint.", consumed_by: [L4.reasoning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: ct.signature_requires_authority, statement: "Cannot execute with a signatory whose approval limit\
+      is below total_contract_value.", hard: true}
+  - {id: ct.no_forecast_before_execution, statement: "Nothing before executed_at may enter the committed\
+      forecast.", hard: true}
+  - {id: ct.template_deviation_needs_approval, statement: "No clause outside the template may be agreed\
+      without a named approver.", hard: true}
+  - {id: ct.amendment_inherits_parent, statement: "An amendment inherits every term of its parent contract,\
+      including prior concessions.", hard: true}
+  - {id: ct.notice_window_is_immovable, statement: "The renewal notice date cannot be extended unilaterally.\
+      Missing it decides the outcome without a conversation.", hard: true}
+  - {id: ct.verbal_terms_do_not_survive, statement: "Anything promised verbally and absent from the executed\
+      document is unenforceable in both directions.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: ct.signatory_must_have_authority
+    statement: The counterparty signatory's approval_limit must cover total_contract_value, verified
+      from an independent source. A signature from someone who cannot bind the company is worse than
+      none because it stops the search for someone who can.
+    then: block_countersignature
+    severity: blocking
+
+  - id: ct.nonstandard_clause_requires_named_approval
+    statement: Any clause outside the template requires a named approver recorded against the deal
+      before agreement. Not a verbal nod and not a Slack reaction — the person who agreed it must be
+      findable three years later when it is renegotiated.
+    then: require_clause_approval
+    severity: blocking
+
+  - id: ct.no_countersign_during_open_security_review
+    statement: Do not countersign while a security review is open. The remediation commitments that
+      come out of it become obligations, and obligations agreed after signature are agreed with no
+      leverage.
+    when: [has_obs: security_review_started]
+    then: hold_countersignature
+    severity: blocking
+
+  - id: ct.renewal_notice_must_be_diarised
+    statement: On execution, renewal_notice_days before end_date must become a dated Next Action with
+      an owner. An auto-renewing contract with no diarised notice date is an outcome decided by
+      whoever remembers first.
+    then: create_renewal_notice_action
+    severity: warning
+
+  - id: ct.verbal_yes_is_not_a_contract
+    statement: A verbal yes may not move a deal into the committed forecast. Nothing before
+      executed_at is revenue.
+    when: [has_obs: verbal_yes]
+    severity: warning
+
+  - id: ct.obligations_become_actions
+    statement: Every obligation must exist as a Next Action with an owner and a date within one
+      working day of execution, or it will be discovered at the renewal conversation by the customer.
+    severity: warning
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - {name: execution_certainty, weight_bp: 2500, direction: increases, reads: [contract_state, executed_at,
+      signatory_ref], description: "Distance from signature, weighted by whether a person with authority
+      is the one holding the pen."}
+  - {name: legal_friction, weight_bp: 2000, direction: decreases, reads: [redline_rounds, legal_review_started_at,
+      governing_law], description: "Rounds, not days. Three rounds means the argument is commercial and
+      the wrong people are having it."}
+  - {name: commercial_quality, weight_bp: 2000, direction: context, reads: [discount_bp, payment_terms_days,
+      annual_value, billing_frequency]}
+  - {name: obligation_load, weight_bp: 1500, direction: decreases, reads: [obligations, sla_commitments,
+      delivery_milestones], description: "What we must do to keep the revenue. A deal won on promises nobody
+      costed is a churn event with a delay."}
+  - {name: renewal_exposure, weight_bp: 1500, direction: context, reads: [auto_renews, renewal_notice_days,
+      termination_for_convenience, end_date]}
+  - {name: non_standard_exposure, weight_bp: 500, direction: decreases, reads: [nonstandard_clauses, liability_cap,
+      indemnities], description: "Small weight on this deal and a large one on the portfolio. The cost lands
+      in a quarter nobody attributes to this signature."}
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# Seven of eleven fire. The blocked four share one cause: Layer 2 instruments the START of the
+# paper process well — contract_requested, legal_review, security_review_started — and is
+# entirely blind after signature. The engine can watch a contract be negotiated and can never
+# see it exist.
+evidence:
+  - {source: contract, strength_bp: 10000, description: "The executed document. Nothing outranks it, including\
+      everyone's memory of what was agreed."}
+  - {source: document, strength_bp: 9000, description: "Redlines and tracked changes. The only honest\
+      record of who conceded what and when."}
+  - {source: email, strength_bp: 7500, description: "Contract request, legal threads, agreement in writing\
+      short of signature."}
+  - {source: crm, strength_bp: 6500, description: "Stage, value and close date. Reliably optimistic near\
+      quarter end."}
+  - {source: meeting_transcript, strength_bp: 6000, description: "Verbal commitments. Useful for spotting\
+      what never made it into the paper."}
+  - {source: derived, strength_bp: 4000, description: "Sentiment and silence through redlining. Corroborating\
+      only."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: request_to_signature_days, unit: days, description: "Contract requested to executed. The most\
+      compressible segment of the cycle and the least measured.", owner_layer: L6}
+  - {name: redline_rounds_per_deal, unit: count, description: "Rounds by segment. Rising rounds usually\
+      means the template is behind the market.", owner_layer: L6}
+  - {name: nonstandard_clause_rate, unit: percent, description: "Share of contracts deviating from template.\
+      A portfolio risk number, not a deal one.", owner_layer: L6}
+  - {name: obligation_completion_rate, unit: percent, description: "Contractual obligations met on time.\
+      The strongest leading indicator of renewal there is.", owner_layer: L6}
+  - {name: notice_window_hit_rate, unit: percent, description: "Renewal notice dates actioned before the\
+      deadline. Unmeasurable today.", owner_layer: L6}
+  - {name: signature_slip_rate, unit: percent, description: "Deals forecast to close that sat in awaiting_signature\
+      past the quarter.", owner_layer: L4}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: ct.requested, name: Contract Requested, emitted_when: [has_obs: contract_requested],
+      payload: [total_contract_value, contract_type]}
+  - {id: ct.legal_opened, name: Legal Review Opened, emitted_when: [has_obs: legal_review], payload: [
+      legal_review_started_at]}
+  - {id: ct.redline_stalled, name: Redline Stalled, emitted_when: [has_obs: legal_review, {fn:
+          days_since, path: deal.last_inbound, op: ">=", value: 14}], payload: [redline_rounds,
+        legal_review_started_at]}
+  - {id: ct.executed, name: Contract Executed, payload: [executed_at, total_contract_value, signatory_ref],
+    description: "The event the pipeline cannot currently emit, and the one that ought to start the obligation
+      clock, the renewal clock and onboarding in a single pass."}
+  - {id: ct.clause_conceded, name: Non-standard Clause Conceded, payload: [clause_type, approver, deviation],
+    description: "Worth emitting even when the deal is won. Especially then — a concession recorded only
+      in a won deal's paperwork is a concession nobody learns from."}
+  - {id: ct.renewal_window_open, name: Renewal Notice Window Open, payload: [end_date, renewal_notice_days]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: ct.send_paper, name: Send the contract, actor: human, preconditions: [has_obs: contract_requested]}
+  - {id: ct.verify_signatory, name: Verify signing authority, actor: human, effect: "Check approval_limit\
+      against total_contract_value from an independent source. Cheap, skipped constantly, and the cause
+      of the ugliest late-stage restarts."}
+  - {id: ct.ask_paper_process, name: Ask for their paper process, actor: human, effect: "Who reviews,\
+      in what order, how long each step takes. The question that converts a close date from a hope into
+      a schedule."}
+  - {id: ct.escalate_redline, name: Escalate a stalled redline commercially, actor: human, preconditions: [
+      has_obs: legal_review, {fn: days_since, path: deal.last_inbound, op: ">=", value: 14}], effect: "Past
+      three rounds the disagreement is commercial. Send the economic buyer, not another lawyer."}
+  - {id: ct.trade_not_discount, name: Trade term for price, actor: human, preconditions: [has_obs: discount_pressure],
+    effect: "Concede term length, payment timing or reference rights before price. Only price resets the
+      renewal baseline permanently."}
+  - {id: ct.record_concession, name: Record a non-standard clause and its approver, actor: human, effect: "Takes
+      a minute now and is the only reason anyone can decline the same ask in three years."}
+  - {id: ct.schedule_obligations, name: Turn obligations into dated actions, actor: agent, effect: "On\
+      execution. The single highest-leverage automation on this object."}
+  - {id: ct.diarise_notice, name: Diarise the renewal notice date, actor: system}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Standard order form under an existing MSA", note: "Days, not weeks. The MSA already absorbed\
+      every argument, which is the entire reason land-and-expand motions close faster."}
+  - {label: "First contract with an enterprise, full legal review", note: "Six to twelve weeks and three\
+      redline rounds. Predictable, and predictably left out of the close date."}
+  - {label: "Uncapped liability conceded to close a quarter", note: "Signed on a Friday by someone who\
+      left within the year. Renegotiated at every renewal from that baseline. The clearest case of a term
+      outliving the rep who agreed it."}
+  - {label: "Auto-renewing contract, 60-day notice, undiarised", note: "The classic misclassification\
+      — reported as a happy renewal right up to the week the customer gives notice with two days to spare."}
+  - {label: "Signed by a director with a limit below the value", note: "Reads as a closed deal and is\
+      a restart. Looks worse than never having sent it, because the search for a real approver stopped."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Seven of eleven patterns are executable; four are blocked, and they share one cause —
+    Layer 2 instruments the START of the paper process well (contract_requested,
+    legal_review, security_review_started) and is entirely blind after signature. The single
+    highest-value gap is structured clause extraction (contract.clause.nonstandard plus a
+    clause_conceded observation): without it the nonstandard_clauses list is filled in by
+    whoever remembers, which is nobody, and this object's central thesis — that concessions
+    outlive the people who make them — is unserved. A close second is contract_signed, which
+    decision-maker.yaml also asks for: the most important state change in the whole revenue
+    motion is invisible to the engine, so the obligation, renewal and onboarding clocks all
+    have to be started by hand.

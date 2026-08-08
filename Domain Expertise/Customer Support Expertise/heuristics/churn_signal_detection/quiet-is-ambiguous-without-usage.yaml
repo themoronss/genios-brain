@@ -1,0 +1,38 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.churn_signal_detection.quiet_is_ambiguous_without_usage
+  name: Quiet is ambiguous without usage
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Support alone cannot distinguish a customer who no longer needs us from one who no longer
+    wants us.
+heuristic:
+  statement: Support alone cannot distinguish a customer who no longer needs us from one who no longer
+    wants us.
+  why: Both produce the same silence in the queue. Only product usage separates them, and where support
+    cannot see usage, the honest output is a request for that evidence rather than a confident read
+    of the silence.
+  reads:
+  - customer_support.obj.core.customer_account
+  - customer_support.obj.core.churn_risk
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

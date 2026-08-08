@@ -1,0 +1,47 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.queue_management.find_the_cause_before_the_capacity
+  name: Find the cause before the capacity
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'When volume spikes, spend the first stretch of the response on why it rose, not on absorbing
+    it.
+
+
+    Support volume rarely rises because the world changed; it rises because we changed something — a
+    release, a pricing email, a broken form, a status page nobody updated. Fixed at the cause it costs
+    one action; absorbed in the queue it costs every ticket.'
+when_to_use:
+  situations:
+  - Arrival rate departs sharply from its own recent shape rather than drifting.
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: When volume spikes, spend the first stretch of the response on why it rose, not on absorbing
+    it.
+  actor: human
+  description: Support volume rarely rises because the world changed; it rises because we changed something
+    — a release, a pricing email, a broken form, a status page nobody updated. Fixed at the cause it
+    costs one action; absorbed in the queue it costs every ticket.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

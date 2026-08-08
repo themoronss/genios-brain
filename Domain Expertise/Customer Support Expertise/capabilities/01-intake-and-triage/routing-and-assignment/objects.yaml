@@ -1,0 +1,31 @@
+# Load-set for customer_support.intake_and_triage.routing_and_assignment — REFERENCES ONLY,
+# never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.intake_and_triage.routing_and_assignment
+
+core:
+  # The two decisions and the thing being decided about: the Ticket to place, the Queue that can
+  # finish it, and the Support agent who will actually hold it. All three are required because
+  # routing to a queue without ever reaching a named human is the characteristic failure of this
+  # capability, and a load-set that made the agent optional would encode that failure.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.support_agent
+
+  # Entitlement because named-contact and premium coverage override the ordinary routing rule.
+  # Product area because it is the routing hypothesis. Escalation because an active escalation
+  # has a named owner already and routing must not quietly take the ticket away from them.
+  optional:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.escalation
+
+scoped:
+  # Routing rules themselves are configuration with numbers in them — capacity ceilings, skill
+  # weights, round-robin state. That is Layer 4, not a scoped Layer 3 object.
+  required: []
+  optional: []

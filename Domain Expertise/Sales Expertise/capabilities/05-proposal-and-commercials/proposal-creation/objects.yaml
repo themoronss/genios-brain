@@ -1,0 +1,25 @@
+# Load-set for sales.proposal_and_commercials.proposal_creation — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/proposal-creation/      loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.proposal_and_commercials.proposal_creation
+
+core:
+  required:
+    - sales.obj.core.pricing
+    - sales.obj.core.proposal
+  optional:
+    - sales.obj.core.budget
+    - sales.obj.core.business_need
+    - sales.obj.core.decision_maker
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

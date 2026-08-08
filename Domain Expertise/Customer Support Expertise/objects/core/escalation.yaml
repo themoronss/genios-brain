@@ -1,0 +1,1665 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ESCALATION — customer_support.obj.core.escalation
+#
+# The load-bearing distinction in this file is in the first sentence of the description and
+# nowhere else: a transfer of ownership WITH A NAMED RECEIVER. Everything else on the object
+# is bookkeeping around that one test. Support tooling almost universally models escalation as
+# a flag on a ticket — a boolean, or a priority bump — and a flag has no receiver, which is why
+# escalated queues in most organisations are where tickets go to be visible rather than owned.
+#
+# There is no escalation signal in the substrate. Zero observation kinds, zero fact paths.
+# Four patterns below are executable and every one of them is a PRECURSOR pattern — it reads
+# the antechamber (a broken promise, an unanswered objection, a thread that is growing people)
+# rather than the escalation itself. That is honest and it is also the more valuable half:
+# by the time `escalation_requested` fires, the credibility is already spent.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# MIGRATED to the 23-section object schema: description -> purpose.statement,
+# components + properties -> attributes, relationships[].verb -> .type,
+# yields.property -> yields.attribute. Prose carried across unchanged.
+
+identity:
+  id: customer_support.obj.core.escalation
+  scope: core
+  name: Escalation
+  domain: customer_support
+  subdomain: escalation_and_incident
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  version: 1.0.0
+  status: draft
+  aliases:
+  - Manager Escalation
+  - Tier Escalation
+  - Executive Escalation
+  - Raise
+purpose:
+  statement: 'A transfer of ownership, upward or sideways, with a reason and a NAMED RECEIVER. The named
+    receiver is the whole definition: without one this is a complaint that has been logged loudly, and
+    treating it as an escalation is how a queue reports an escalation rate it has not earned. Escalation
+    is not a synonym for urgent, not a synonym for angry, and not a priority bump — all three can be true
+    without a single unit of ownership moving. Customer-initiated and internally-triggered escalations
+    are different animals requiring opposite responses. The first is a relationship event: something was
+    promised, the promise broke, and the customer has stopped believing the current owner can fix it —
+    the repair is mostly social and the technical work is secondary. The second is a process event: the
+    current owner has correctly determined the problem exceeds their reach, and the repair is entirely
+    logistical. Running a relationship event as a process event produces a technically flawless handoff
+    to a customer who is already gone. The timing is unforgiving in both directions. Escalating early
+    costs credibility — the receiver learns that this owner escalates rather than works, and the next
+    one gets a slower answer. Escalating late costs the account. The window between those is short and
+    nothing marks it, which is why `window_state` is a first-class property rather than a derived afterthought.
+    The characteristic failure is escalating the ticket without escalating the CONTEXT: the receiver opens
+    a case with a subject line and a severity, asks the customer what is going on, and the customer explains
+    the same problem for the third time to a more senior person. That is worse than no escalation, because
+    it converts seniority into evidence that nobody here is listening. And an escalation that bounces
+    back down is worse still — it tells the customer that the escalation path itself does not work, and
+    there is no second one.'
+attributes:
+- name: origin_and_reason
+  purpose: 'Who started it and why. `origin` is the most consequential field on the object because it
+    selects between two incompatible response playbooks, not between two labels.
+
+    '
+  type: composite
+  contains:
+  - origin
+  - reason
+  - reason_note
+  - is_repeat_escalation
+- name: ownership_transfer
+  purpose: 'The actual mechanics of the handoff. If nothing in this component is populated, no ownership
+    moved and this object should not exist.
+
+    '
+  type: composite
+  contains:
+  - direction
+  - level
+  - receiver_named
+  - receiving_owner_ref
+  - previous_owner_ref
+  - receiver_accepted_at
+  - bounce_count
+- name: context_handoff
+  purpose: 'What travelled with the ownership. Modelled separately from the transfer on purpose — they
+    are routinely done independently, and the gap between them is the defining failure of this object.
+
+    '
+  type: composite
+  contains:
+  - context_handed_over
+  - context_package
+  - diagnosis_repeats
+  - handoff_note
+- name: stakes
+  purpose: What is actually at risk, as distinct from how loud the request was.
+  type: composite
+  contains:
+  - severity_perceived
+  - severity_assessed
+  - churn_linked
+  - executive_visible
+  - entitlement_ref
+- name: timing
+  purpose: 'The clock of the transfer itself: requested, acknowledged, context transferred, resolved.
+    Escalations have their own timeline, separate from the ticket''s, and the gap between requested and
+    acknowledged is where the customer decides whether escalating achieved anything.'
+  type: composite
+  contains:
+  - requested_at
+  - window_state
+  - acknowledged_to_customer_at
+  - time_to_accept_hours
+  - de_escalated_at
+- name: observed_signals
+  purpose: 'The only component with live Layer 2 sources today. Everything here is generic relationship
+    telemetry pressed into support service — read the notes on the patterns.
+
+    '
+  type: composite
+  contains:
+  - ball_in_court
+  - last_customer_contact_at
+  - sentiment_at_request
+  - attached_party_count
+- name: outcome
+  purpose: How the transfer ended — resolved by the receiver, returned to the original owner, superseded
+    by an incident, or abandoned. A returned escalation is worse than one never raised, because the customer
+    now knows the ladder does not work.
+  type: composite
+  contains:
+  - outcome
+  - closed_at
+  - credibility_cost
+- name: origin
+  purpose: 'The discriminator. customer_initiated is a relationship event — trust in the current owner
+    has failed and the repair is social before it is technical. agent_initiated and system_triggered are
+    process events — the work exceeded the owner''s reach or a clock fired, and the repair is logistical.
+    Collapsing these into a single "escalated" flag is the most common modelling error in this domain
+    and it destroys the only piece of information that changes what you do next. `unknown` is a real and
+    frequent state: a manager request made on a phone call and never written down.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - customer_initiated
+  - agent_initiated
+  - manager_initiated
+  - system_triggered
+  - account_team_initiated
+  - unknown
+  required: true
+- name: reason
+  purpose: 'The stated reason for the transfer. Required because an escalation without a reason is an
+    escalation the receiver cannot triage — they inherit the ticket and the search for why it was sent.
+    `wrong_owner` and `capacity` are deliberately included: they are the honest reasons for a large share
+    of sideways transfers and they are almost never recorded, because recording them looks like an admission.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - unresolved_duration
+  - repeat_contact
+  - sla_risk
+  - technical_depth
+  - wrong_owner
+  - relationship_damage
+  - commercial_risk
+  - policy_exception
+  - capacity
+  required: true
+- name: reason_note
+  purpose: 'Free text. Present because the enum above will be wrong roughly one time in five and a forced-choice
+    field with no escape hatch produces confident garbage.
+
+    '
+  type: value
+  data_type: string
+- name: is_repeat_escalation
+  purpose: 'Whether this customer or this issue has been escalated before. A second escalation is categorically
+    different from a first — the first tests the process, the second tests whether the process exists.
+
+    '
+  type: value
+  data_type: boolean
+- name: direction
+  purpose: 'upward = a tier or a manager. sideways = another team at the same level, typically engineering.
+    outward = a vendor, partner or reseller who owns part of the stack. `outward` is the one most systems
+    cannot express, and it is the one where context is lost most reliably, because the receiver is outside
+    our tooling entirely.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - upward
+  - sideways
+  - outward
+- name: level
+  purpose: 'Tier reached. Kept as an integer rather than an enum because tier ladders differ per organisation
+    and hard-coding L1/L2/L3 makes this object untranslatable.
+
+    '
+  type: value
+  data_type: integer
+- name: receiver_named
+  purpose: 'THE test. False means this is a complaint, an alert, or a priority bump — anything but an
+    escalation. Required and modelled separately from receiving_owner_ref so that a populated-but-unresolvable
+    reference (a team alias, a rota, "the escalations queue") can be recorded as false rather than laundered
+    into true. A queue is not a person and cannot accept ownership.
+
+    '
+  type: value
+  data_type: boolean
+  required: true
+- name: receiving_owner_ref
+  purpose: The named human who now owns the outcome. Null while receiver_named is false.
+  type: reference
+  ref: customer_support.obj.core.escalation_owner
+  data_type: ref
+- name: previous_owner_ref
+  purpose: 'Who held it before. Retained after transfer on purpose — they hold the context that did not
+    travel, and they are the cheapest way to recover it.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.support_agent
+  data_type: ref
+- name: receiver_accepted_at
+  purpose: 'When the receiver actually took it, which is not when it was sent. The gap between requested_at
+    and this is the interval in which the customer believes nothing is happening, and it is usually the
+    interval that gets the second escalation.
+
+    '
+  type: value
+  data_type: timestamp
+- name: bounce_count
+  purpose: 'How many times this has been sent back down or refused. Non-zero is a strong negative signal
+    about the escalation path itself, not about the ticket. One bounce is worse than never having escalated:
+    the customer has now been told the escalation route does not work, and there is no second route to
+    offer them.
+
+    '
+  type: value
+  data_type: integer
+- name: context_handed_over
+  purpose: 'Whether the receiver got the diagnosis, not just the ticket. Deliberately a separate boolean
+    from the transfer itself because the two are done independently in practice and collapsing them hides
+    the domain''s characteristic failure behind a green tick.
+
+    '
+  type: value
+  data_type: boolean
+- name: context_package
+  purpose: 'What actually travelled — reproduction steps, what has been ruled out, what the customer has
+    already been told, what was promised and by whom. The fourth item is the one most often missing and
+    the most expensive: a receiver who does not know what was promised will contradict it within a day.
+
+    '
+  type: value
+  data_type: list
+- name: diagnosis_repeats
+  purpose: 'How many times the customer has been asked to explain the problem from the start. The single
+    most useful number on this object for predicting a churn conversation, and the one no ticketing system
+    records. Two is tolerable; three means the customer is now managing us.
+
+    '
+  type: value
+  data_type: integer
+- name: handoff_note
+  purpose: The narrative the receiver reads first. If it does not exist, context_handed_over is false
+    regardless of what is attached.
+  type: value
+  data_type: string
+- name: severity_perceived
+  purpose: 'The customer''s read. Kept separate from severity_assessed because they diverge routinely
+    and both are legitimate — a cosmetic bug on a screen a customer demos to their own board is critical
+    to them and low to us, and the escalation is real either way.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - low
+  - moderate
+  - high
+  - critical
+- name: severity_assessed
+  purpose: 'Our read. Where this is materially below severity_perceived, the escalation is a communication
+    problem wearing a technical costume, and staffing it with engineers makes it worse.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - low
+  - moderate
+  - high
+  - critical
+- name: churn_linked
+  purpose: Whether this escalation is attached to a live renewal or retention risk. Changes who must be
+    told, not what must be fixed.
+  type: value
+  data_type: boolean
+- name: executive_visible
+  purpose: 'Whether someone above the working level on either side is now watching. Once true it does
+    not go back to false, and the reporting obligation it creates outlives the ticket.
+
+    '
+  type: value
+  data_type: boolean
+- name: entitlement_ref
+  purpose: 'Bounds what may be promised during the escalation. The most common way an escalation makes
+    things permanently worse is a senior person promising something outside entitlement in order to calm
+    the room.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.entitlement
+  data_type: ref
+- name: requested_at
+  purpose: When the transfer was asked for, by the customer or by a rule. Measured from the request rather
+    than from acknowledgement, because the wait that damages the relationship starts the moment the customer
+    asks for someone else.
+  type: value
+  data_type: timestamp
+- name: window_state
+  purpose: 'Where we are against the short unmarked window. A first-class property rather than a derivation
+    because the window is the actual expertise of this object and burying it in a score makes it unarguable.
+    too_early costs the escalating agent credibility with the receiver; missed costs the account. Nobody
+    agrees on where the boundaries are, which is exactly why it should be written down and reviewed.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - too_early
+  - in_window
+  - late
+  - missed
+- name: acknowledged_to_customer_at
+  purpose: 'When we told the customer their escalation was received and by whom. Separate from receiver_accepted_at,
+    and far more urgent: the customer cannot see acceptance and can see silence. An internally perfect
+    escalation nobody mentioned to the customer reads identically to being ignored.
+
+    '
+  type: value
+  data_type: timestamp
+- name: time_to_accept_hours
+  purpose: requested_at to receiver_accepted_at. The metric an escalation process is actually judged on
+    internally.
+  type: value
+  data_type: duration
+  unit: hours
+- name: de_escalated_at
+  purpose: 'When ownership returned to the normal path with the customer''s agreement. Distinct from resolution
+    and from a bounce — de-escalation is a mutual decision, a bounce is a unilateral one.
+
+    '
+  type: value
+  data_type: timestamp
+- name: ball_in_court
+  purpose: 'Live today. `us` during an open escalation is the highest-value state on this object: it means
+    a customer who has already told us the normal path failed is now waiting again.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - us
+  - them
+  - nobody
+  source_paths:
+  - thread.ball_in_court
+- name: last_customer_contact_at
+  purpose: Live today. Thread-scoped, so it under-reports any escalation being run over phone or chat.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - thread.last_inbound
+- name: sentiment_at_request
+  purpose: 'Live today, and weak. Engine-computed as an observation balance over a sales-shaped vocabulary
+    — it can see `objection` and `timeline_slip` and cannot see angry language, a cancellation threat
+    or a refund demand. Corroborating only.
+
+    '
+  type: value
+  data_type: number
+  source_paths:
+  - derived.sentiment
+- name: attached_party_count
+  purpose: 'How many people are now attached. Escalations grow the graph and that growth is one of the
+    few genuinely observable escalation signatures available today via edge_count. The source path named
+    here does not exist yet; edge_count is the live proxy and it counts graph degree, which includes bystanders
+    who were merely CC''d.
+
+    '
+  type: value
+  data_type: integer
+  source_paths:
+  - derived.escalation_pressure
+- name: outcome
+  purpose: How the transfer ended — resolved by the receiver, returned to the original owner, superseded
+    by an incident, or abandoned. A returned escalation is worse than one never raised, because the customer
+    now knows the ladder does not work.
+  type: value
+  data_type: enum
+  allowed_values:
+  - pending
+  - resolved_by_receiver
+  - de_escalated
+  - bounced_back
+  - absorbed_into_incident
+  - withdrawn
+  - account_lost
+- name: closed_at
+  purpose: When the escalation ended, which is frequently well before the underlying ticket does. Closing
+    the escalation while leaving the ticket open is normal and healthy; the reverse means ownership was
+    never really transferred.
+  type: value
+  data_type: timestamp
+- name: credibility_cost
+  purpose: 'Judgemental and deliberately retained. Escalations have a cost that survives the ticket being
+    closed — with the customer when the path visibly failed, and with the receiver when it should never
+    have been sent. A support org that never records this optimises escalation volume down to zero by
+    making escalation socially expensive, which is the same outcome as not having a process.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - none
+  - minor
+  - significant
+  - severe
+states:
+  initial: new
+  values:
+  - name: new
+    description: 'Requested, no receiver named. Legitimately an escalation REQUEST and not yet an escalation.
+      A request that sits here is the state that generates the second, louder one.
+
+      '
+  - name: open
+    description: Receiver named, not yet accepted. The customer cannot see the difference between this
+      and `new`, and internally it is enormous.
+  - name: in_progress
+    description: Accepted and owned, and the next move is ours. Ownership has genuinely moved.
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - name: waiting_on_customer
+    description: 'Blocked on the customer. Materially different from dormant — the relationship clock
+      is still running here even when the SLA clock is paused, and an escalated customer who is waited
+      on twice escalates a third time.
+
+      '
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+  - name: waiting_on_engineering
+    description: Sideways transfer accepted, work queued outside support. Where escalations go quiet without
+      going away.
+  - name: at_risk
+    description: 'Stalled, bounced, or the customer has gone negative while we hold the ball. The state
+      that should be loudest and is usually invisible.
+
+      '
+    entered_when:
+    - path: derived.sentiment
+      op: <
+      value: 0
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - name: resolved
+    description: The underlying problem stopped. Not the same as the relationship being repaired.
+  - name: closed
+    description: Resolved AND acknowledged by the customer, or de-escalated by agreement.
+  - name: reopened
+    description: 'Came back. A reopened escalation is a materially worse event than a reopened ticket
+      and should never inherit the original''s priority — it should exceed it.
+
+      '
+  transitions:
+  - from: new
+    to: open
+  - from: open
+    to: in_progress
+  - from: in_progress
+    to: waiting_on_customer
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+  - from: waiting_on_customer
+    to: in_progress
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - from: in_progress
+    to: waiting_on_engineering
+  - from: waiting_on_engineering
+    to: in_progress
+  - from: in_progress
+    to: at_risk
+    when:
+    - path: derived.sentiment
+      op: <
+      value: 0
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - from: open
+    to: at_risk
+    when:
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value: 2
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - from: at_risk
+    to: in_progress
+  - from: at_risk
+    to: new
+  - from: in_progress
+    to: resolved
+  - from: resolved
+    to: closed
+  - from: closed
+    to: reopened
+  - from: reopened
+    to: in_progress
+relationships:
+- target: customer_support.obj.core.escalation_owner
+  cardinality: one
+  description: Cardinality is `one`, not `zero_or_one`, and that is the definition enforced structurally.
+    Zero named receivers is not an escalation with a missing field — it is a different object. The named
+    receiver. This edge is what makes the object an escalation at all — without it the record is a complaint
+    with a workflow attached.
+  type: escalates_to
+  weight_bp: 9200
+  confidence_bp: 6500
+  priority: 1
+  direction: outbound
+- target: customer_support.obj.core.ticket
+  cardinality: one
+  description: An escalation is always about something. Attaching to an account rather than a ticket is
+    how escalations become permanent. What is being escalated. Almost always present and almost never
+    the interesting part.
+  type: attaches_to
+  weight_bp: 8800
+  confidence_bp: 9500
+  priority: 2
+  direction: outbound
+- target: customer_support.obj.core.support_agent
+  cardinality: zero_or_one
+  description: The previous owner. Kept attached after the transfer — they are the fastest recovery route
+    when context did not travel. Who held it before. Whether context travelled with ownership is the difference
+    between an escalation and a restart.
+  type: assigned_to
+  weight_bp: 7000
+  confidence_bp: 8500
+  priority: 4
+  direction: outbound
+- target: customer_support.obj.core.issue
+  cardinality: zero_or_one
+  description: Populated for process-event escalations, usually empty for relationship-event ones. When
+    forty escalations point at one issue, the escalation process is not the problem. Escalations cluster
+    on issues. When several point at one, the escalation path is not the problem and no amount of ownership
+    transfer will fix it.
+  type: caused_by
+  weight_bp: 6000
+  confidence_bp: 4500
+  priority: 7
+  direction: outbound
+- target: customer_support.obj.core.incident
+  cardinality: zero_or_one
+  description: When enough escalations share a cause it stops being escalation management and becomes
+    incident management. Recognising that boundary late is the standard failure of a major incident's
+    first hour. Several escalations converging is one of the earliest reliable signals that an incident
+    should be declared.
+  type: merges_into
+  weight_bp: 5000
+  confidence_bp: 4000
+  priority: 10
+  direction: outbound
+- target: customer_support.obj.core.customer_sentiment
+  cardinality: zero_or_one
+  description: Reads sentiment, never sets it. Sentiment is evidence for an escalation, not a consequence
+    of one. Distinguishes the customer-initiated escalation, which is a relationship event, from the internally-triggered
+    one, which is a process event. They need opposite responses.
+  type: references
+  weight_bp: 6500
+  confidence_bp: 4000
+  priority: 5
+  direction: outbound
+- target: customer_support.obj.core.churn_risk
+  cardinality: zero_or_one
+  description: A bounced escalation moves churn risk more than the original fault did. The customer can
+    forgive a defect; they read a failed escalation path as who we are. An unresolved escalation inside
+    the renewal window is the highest-signal combination available in this domain.
+  type: influences
+  weight_bp: 6000
+  confidence_bp: 4000
+  priority: 8
+  direction: outbound
+- target: customer_support.obj.core.commitment
+  cardinality: zero_or_many
+  description: Escalations generate promises, usually more senior and less checked than routine ones.
+    Every commitment created here should be bounded by entitlement_ref before it is spoken. Escalations
+    generate promises at a higher rate than any other event in support, and capture them at a lower rate.
+  type: produces
+  weight_bp: 4500
+  confidence_bp: 3000
+  priority: 11
+  direction: outbound
+- target: customer_support.obj.core.entitlement
+  cardinality: zero_or_one
+  description: Bounds what may be offered to settle it. Checked, never assumed. Bounds what the receiver
+    may promise. The classic escalation failure is a senior person committing to something the contract
+    does not cover in order to end the call.
+  type: requires
+  weight_bp: 6500
+  confidence_bp: 6000
+  priority: 6
+  direction: outbound
+- target: customer_support.obj.core.sla_target
+  cardinality: zero_or_one
+  description: An escalation frequently has its own clock, distinct from the ticket's. Reusing the ticket's
+    SLA target for the escalation is how an escalation runs "in SLA" for a week. Frequently the trigger,
+    and a poor one on its own — a breach is a fact about a clock, not evidence that a transfer of ownership
+    will help.
+  type: measures
+  weight_bp: 5500
+  confidence_bp: 6000
+  priority: 9
+  direction: outbound
+- target: customer_support.obj.core.customer_account
+  cardinality: one
+  type: belongs_to
+  weight_bp: 7500
+  confidence_bp: 7000
+  priority: 3
+  direction: outbound
+  description: Escalations are read at account level far more than at ticket level. A second escalation
+    from the same account in a quarter means something a second escalation across two accounts does not.
+inference_patterns:
+  deterministic:
+  - id: esc.broken_promise_unanswered
+    statement: A commitment's due date has passed and we still owe the customer the next message.
+    status: executable
+    when:
+    - fn: days_since
+      path: commitment.due_at
+      op: '>'
+      value: 0
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 7000
+      value: in_window
+      attribute: window_state
+    evidence_fields:
+    - commitment.due_at
+    - commitment.action
+    - thread.ball_in_court
+    note: 'Deterministic because it is a clock and a direction, not a judgement — nothing here is being
+      estimated. It is placed in `deterministic` for that reason even though what it yields (that the
+      escalation window has OPENED) is an interpretation the reviewer may want to argue with. 7000 rather
+      than higher because a broken commitment with the ball on us is the reliable precondition for an
+      escalation, not the escalation: plenty are recovered by a single honest message and never become
+      one. The property it sets is window_state and not origin, because at this moment nobody has escalated
+      anything.
+
+      '
+  - id: esc.customer_asked_for_a_manager
+    statement: The customer explicitly asked for a manager, a supervisor, or someone else.
+    status: needs_signal
+    yields:
+      confidence_bp: 9500
+      value: customer_initiated
+      attribute: origin
+    requires_signals:
+    - kind: obs_kind
+      name: escalation_requested
+      owner_layer: L2
+      note: 'The single highest-value missing signal for this object and probably for the domain. The
+        phrasing is stereotyped across every language and channel support runs on — ''can I speak to'',
+        ''who is your manager'', ''escalate this'' — so extraction is unusually tractable. Not 10000 even
+        when it lands: customers say it rhetorically and withdraw it in the next message.'
+  - id: esc.receiver_accepted_ownership
+    statement: A named person accepted ownership of the escalation.
+    status: needs_signal
+    yields:
+      confidence_bp: 10000
+      value: true
+      attribute: receiver_named
+    requires_signals:
+    - kind: obs_kind
+      name: escalation_accepted
+      owner_layer: L2
+      note: 'The only signal that can distinguish an escalation from a complaint, which makes it the one
+        that decides whether escalation rate means anything. 10000 is justified here and almost nowhere
+        else: acceptance is an act, not an inference.'
+    - kind: fact_path
+      name: ticket.assignee
+      owner_layer: L1
+      note: Needed to resolve WHO accepted. An acceptance with no resolvable person is a queue accepting,
+        which is the failure receiver_named exists to catch.
+  - id: esc.clock_breach_triggered_it
+    statement: An SLA clock breached, which fires an internally-triggered escalation.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      value: system_triggered
+      attribute: origin
+    requires_signals:
+    - kind: obs_kind
+      name: sla_breach
+      owner_layer: L2
+    - kind: fact_path
+      name: sla.clock_state
+      owner_layer: L1
+      note: The clock STATE is as load-bearing as the breach — a breach recorded while the clock was paused
+        on the customer is not our failure, and auto-escalating it burns receiver credibility on a false
+        positive. Without clock_state this pattern would be actively harmful, which is why both signals
+        are required rather than one.
+  - id: esc.absorbed_into_a_declared_incident
+    statement: An incident was declared covering this cause, so the escalation is no longer separately
+      owned.
+    status: needs_signal
+    yields:
+      confidence_bp: 8500
+      value: absorbed_into_incident
+      attribute: outcome
+    requires_signals:
+    - kind: obs_kind
+      name: incident_declared
+      owner_layer: L2
+      note: 8500 and not higher because absorption is a judgement about shared cause, and escalations
+        get folded into incidents that do not actually explain them — which then leaves the customer with
+        no owner at all once the incident closes. The absorption must be reversible.
+  heuristic:
+  - id: esc.objection_unanswered_past_this_customer_cadence
+    statement: The customer raised an objection, we owe the reply, and we have been silent for longer
+      than this customer's own reply rhythm.
+    status: executable
+    when:
+    - has_obs: objection
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value:
+        baseline: reply_cadence
+        mult: 2
+        floor: 3
+    yields:
+      confidence_bp: 6500
+      value: late
+      attribute: window_state
+    evidence_fields:
+    - thread.last_inbound
+    - thread.ball_in_court
+    note: 'The best precursor the substrate can express, and the reason is the baseline rather than the
+      objection: silence only means something relative to what this customer is used to. Three days on
+      a customer who normally hears back in four hours is a different event from three days on a monthly
+      check-in, and a fixed threshold gets one of the two wrong always. Floor of 3 days stops a cold-start
+      baseline firing this on everyone. 6500 and not higher because `objection` is a sales-shaped observation
+      kind — it catches "this isn''t good enough" and misses "this is the third time", which is the phrasing
+      that actually precedes a support escalation.
+
+      '
+  - id: esc.sentiment_turned_while_we_hold_the_ball
+    statement: Observed sentiment has gone negative and the next move is ours.
+    status: executable
+    when:
+    - path: derived.sentiment
+      op: <
+      value: 0
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 5000
+      attribute: null
+    evidence_fields:
+    - derived.sentiment
+    - thread.ball_in_court
+    note: 'Deliberately 5000 — genuinely a coin flip, and it is authored anyway because the pairing is
+      what carries it. Negative sentiment alone is noise; negative sentiment while the customer is WAITING
+      is the condition under which a person decides the normal path is not working. The confidence is
+      capped low because derived.sentiment is an observation balance computed over a vocabulary with no
+      support-native kinds in it: no angry language, no cancellation threat, no refund demand. It is measuring
+      the wrong thing accurately. Treat as corroboration for a stronger pattern, never as sole grounds
+      for notifying a manager.
+
+      '
+  - id: esc.the_thread_is_acquiring_people
+    statement: The thread has grown to working-group size while sentiment is negative — an escalation
+      is forming whether or not anyone has named it.
+    status: executable
+    when:
+    - fn: edge_count
+      op: '>='
+      value: 5
+    - path: derived.sentiment
+      op: <
+      value: 0
+    yields:
+      confidence_bp: 4800
+      attribute: null
+    evidence_fields:
+    - derived.sentiment
+    note: 'Escalations grow the graph, and that growth is observable today — it is one of very few support-relevant
+      structural facts the engine can see without a support pack. The confidence is low for a specific
+      reason worth arguing with: edge_count is graph DEGREE, so it counts anyone CC''d, an account manager
+      added for visibility, and a distribution list equally with people actually working the problem.
+      Threshold 5 rather than 3 is an attempt to clear routine CC noise and it will still misfire on organisations
+      that copy widely by culture. If a support pack ever emits attached-party roles this becomes one
+      of the strongest patterns on the object; today it is a nudge.
+
+      '
+  - id: esc.silence_after_a_slipped_timeline
+    statement: A timeline slipped and the customer has not heard from us since.
+    status: executable
+    when:
+    - has_obs: timeline_slip
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value: 2
+    yields:
+      confidence_bp: 5800
+      value: in_window
+      attribute: window_state
+    evidence_fields:
+    - thread.last_inbound
+    note: 'A separate pattern rather than an OR branch of the objection one, because the engine ANDs and
+      because the two are different events: an objection is a stated complaint, a slipped timeline is
+      a broken expectation the customer may not have complained about yet. The second is the one that
+      escalates without warning. Fixed at 2 days rather than the baseline used above, on the judgement
+      that a slipped date starts its own clock independent of the customer''s normal correspondence rhythm
+      — that is arguable and a reviewer may well prefer the baseline here too.
+
+      '
+  - id: esc.the_diagnosis_restarted
+    statement: The customer has been asked to explain the problem from the beginning after ownership moved.
+    status: needs_signal
+    yields:
+      confidence_bp: 7500
+      value: null
+      attribute: diagnosis_repeats
+    requires_signals:
+    - kind: obs_kind
+      name: agent_reassigned
+      owner_layer: L2
+      note: Marks the ownership change. On its own it says nothing about context.
+    - kind: obs_kind
+      name: reproduction_confirmed
+      owner_layer: L2
+      note: A second reproduction request after a reassignment is the machine-visible fingerprint of context
+        that did not travel — the characteristic failure of this object, and currently invisible.
+    - kind: derived
+      name: derived.contact_frequency
+      owner_layer: L2
+      note: Needed to separate a genuine re-diagnosis from routine follow-up. Without it this pattern
+        flags every reassignment and gets muted within a week.
+  - id: esc.it_bounced_back_down
+    statement: The escalation was accepted and then returned to the original owner.
+    status: needs_signal
+    yields:
+      confidence_bp: 8800
+      value: bounced_back
+      attribute: outcome
+    requires_signals:
+    - kind: obs_kind
+      name: escalation_accepted
+      owner_layer: L2
+    - kind: obs_kind
+      name: agent_reassigned
+      owner_layer: L2
+      note: Acceptance followed by reassignment back to the prior owner. Worth 8800 rather than lower
+        because the sequence is unambiguous once both kinds exist — and worth authoring ahead of the signal
+        because a bounce is the worst outcome this object has and today it is completely unobservable.
+        Nobody logs a bounce; it happens in a hallway.
+  - id: esc.the_customer_threatened_to_leave
+    statement: Cancellation or refund language appeared — this is a relationship event regardless of what
+      the ticket says.
+    status: needs_signal
+    yields:
+      confidence_bp: 8000
+      value: customer_initiated
+      attribute: origin
+    requires_signals:
+    - kind: obs_kind
+      name: cancellation_threat
+      owner_layer: L2
+      note: closed_lost_mention exists in the substrate today and is the near neighbour, but it is scoped
+        to a deal and means the opposite thing — a prospect declining to buy, not a customer leaving.
+        Binding this to it would produce an escalation brain that fires on lost deals, which is precisely
+        the false-coverage failure the domain header warns about.
+    - kind: obs_kind
+      name: angry_language
+      owner_layer: L2
+      note: Separate from the threat and separately useful. Anger without a threat is a de-escalation
+        problem; a threat without anger is a commercial one, and they get opposite responses.
+  - id: esc.high_value_account_is_waiting
+    statement: A large or renewing account is waiting on us with an unresolved issue — the escalation
+      window is shorter here than the standard one.
+    status: needs_signal
+    yields:
+      confidence_bp: 6000
+      value: late
+      attribute: window_state
+    requires_signals:
+    - kind: fact_path
+      name: account.arr
+      owner_layer: L1
+    - kind: fact_path
+      name: account.renewal_at
+      owner_layer: L1
+      note: Proximity to renewal compresses the window far more than revenue size does. A modest account
+        six weeks from renewal deserves an earlier escalation than a large one eleven months out, and
+        any implementation that reads only ARR will get that backwards.
+    note: 'Held at 6000 even once the signals land. Escalating on account value is legitimate and it is
+      also the mechanism by which small customers systematically get worse service, so this pattern should
+      inform the window and never on its own justify a transfer.
+
+      '
+  - id: esc.repeat_contact_on_the_same_problem
+    statement: The customer has come back about the same thing more than once.
+    status: needs_signal
+    yields:
+      confidence_bp: 7200
+      value: true
+      attribute: is_repeat_escalation
+    requires_signals:
+    - kind: fact_path
+      name: ticket.reopen_count
+      owner_layer: L1
+      note: The cheapest strong escalation predictor in support, and it needs no NLP — it is a counter.
+        Its absence is why this brain currently cannot tell a first contact from a fourth.
+    - kind: baseline
+      name: contact_rate_per_account
+      owner_layer: L2
+      note: Three contacts in a week is normal for a heavy integrator and alarming for a quiet one. Without
+        the per-account baseline this fires on the customers who use the product most, which is the exact
+        inverse of the intent.
+inputs:
+- source: email
+  signal: who owes the next message
+  path: thread.ball_in_court
+  description: The most useful live input on the object. `us` on an already-escalated thread is the state
+    that produces the second escalation.
+- source: email
+  signal: last message received from the customer
+  path: thread.last_inbound
+- source: derived
+  signal: observation balance as a sentiment proxy
+  path: derived.sentiment
+  description: Live but measuring a sales vocabulary. Corroborating only.
+- source: derived
+  signal: number of parties attached to the thread
+  description: Available today as edge_count, which is graph degree and therefore counts bystanders alongside
+    participants.
+- source: email
+  signal: overdue promises on the thread
+  path: commitment.due_at
+- source: ticket
+  signal: assignee changes, reopen count, escalation flags
+  description: The system of record for this object, and entirely unprojected — no ticket fact path exists
+    today.
+- source: phone
+  signal: the manager request, which is where it most often happens
+  description: Structurally invisible. Most customer-initiated escalations are spoken, and the ones that
+    reach a written channel are already the second attempt.
+- source: chat
+  signal: escalation language in live conversation
+- source: crm
+  signal: account value, renewal date, named relationship owner
+- source: survey
+  signal: a detractor score arriving mid-ticket, which is an escalation nobody filed
+- source: manual_entry
+  signal: the reason and the context package, which no system infers
+outputs:
+- name: escalation_confidence_bp
+  type: integer
+  description: How sure we are an escalation is forming or has formed. Precursor-weighted today, since
+    nothing observes the act itself.
+  consumed_by:
+  - L4.reasoning_unit
+  - L4.decision_maker
+- name: receiver_gap
+  type: boolean
+  description: True when a transfer was requested and no named human has accepted. The single most actionable
+    output on the object.
+  consumed_by:
+  - L4.decision_maker
+  - L5.execution_planning
+- name: context_package
+  type: list
+  description: What must travel with the ownership. Emitted so the handoff can be assembled rather than
+    remembered.
+  consumed_by:
+  - L5.execution_planning
+- name: customer_acknowledgement_due
+  type: boolean
+  description: True when the customer has not been told their escalation was received. Independent of
+    internal progress and usually more urgent.
+  consumed_by:
+  - L5.communication_planning
+- name: window_position
+  type: string
+  description: too_early / in_window / late / missed. Consumed as a timing constraint, not a score.
+  consumed_by:
+  - L4.reasoning_unit
+- name: bounce_risk_bp
+  type: integer
+  description: Likelihood the receiver returns it. Reads context completeness and reason — a `wrong_owner`
+    transfer with no context bounces almost by definition.
+  consumed_by:
+  - L4.reasoning_unit
+- name: notification_urgency
+  type: string
+  description: How fast and by what channel the customer and the receiver must each be reached. They are
+    rarely the same answer.
+  consumed_by:
+  - L5.2.channel_planner
+- name: escalation_outcome_label
+  type: string
+  description: Resolved / de-escalated / bounced / absorbed. Separated for Layer 6 because the four teach
+    different lessons.
+  consumed_by:
+  - L6.learning_unit
+preconditions:
+- id: esc.named_receiver_exists
+  statement: A named receiving owner must exist before an escalation can be created.
+  requires:
+  - customer_support.obj.core.escalation_owner
+  if_unmet: block
+- id: esc.ticket_actually_stuck
+  statement: The underlying work must genuinely be blocked or exhausted, not merely unfinished.
+  requires:
+  - customer_support.obj.core.ticket
+  if_unmet: degrade
+- id: esc.entitlement_known
+  statement: Entitlement must be known before the receiver is put in a position to promise anything.
+  requires:
+  - customer_support.obj.core.entitlement
+  if_unmet: degrade
+constraints:
+- id: esc.no_escalation_without_named_receiver
+  statement: An escalation cannot exist without a named human receiver. A queue, a rota or a distribution
+    list is not a receiver — none of them can accept ownership.
+  hard: true
+- id: esc.context_travels_with_ownership
+  statement: Ownership cannot transfer without the diagnosis, the history, and what was already promised.
+  hard: true
+- id: esc.one_owner_at_a_time
+  statement: Exactly one party owns the outcome at any moment. Two owners is zero owners, and it is the
+    normal state of a swarm that was never given a lead.
+  hard: true
+- id: esc.cannot_promise_beyond_entitlement
+  statement: Nothing may be offered during an escalation that exceeds entitlement_ref, however senior
+    the person offering it.
+  hard: true
+- id: esc.customer_must_not_learn_from_silence
+  statement: The customer must be told an escalation is underway. Internal acceptance is invisible to
+    them and silence is indistinguishable from being ignored.
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  hard: true
+- id: esc.bounce_is_not_a_customer_communication
+  statement: A bounce must never be communicated to the customer as a routine reassignment. They will
+    read it correctly either way; the only question is whether we said it first.
+  hard: false
+- id: esc.escalation_does_not_reset_the_clock
+  statement: Transferring ownership does not pause or restart the ticket's SLA. An escalation that resets
+    its own clock is a queue-health illusion.
+  hard: true
+business_rules:
+- id: esc.named_receiver_required
+  statement: 'An escalation with receiver_named false must not be recorded, reported or counted as an
+    escalation. It is a complaint. Counting it inflates escalation rate, deflates time-to-acceptance,
+    and hides the requests nobody picked up — which are the only ones that matter.
+
+    '
+  then: reclassify_as_complaint
+  severity: blocking
+- id: esc.context_must_travel_with_ownership
+  statement: 'Ownership must not transfer while context_handed_over is false. The receiver inherits the
+    customer''s patience along with the ticket, and restarting the diagnosis spends it.
+
+    '
+  then: block_transfer_until_context_packaged
+  severity: blocking
+- id: esc.customer_must_be_told
+  statement: 'A customer-initiated escalation must be acknowledged to the customer before the internal
+    transfer completes. Acceptance is invisible to them; silence is not.
+
+    '
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  then: require_customer_acknowledgement
+  severity: blocking
+- id: esc.bounce_requires_review
+  statement: 'An escalation returned to the previous owner must be reviewed by a human before the customer
+    is told anything. A bounce is a failure of the escalation process and is almost never a fact about
+    the ticket.
+
+    '
+  then: require_human_review_before_reply
+  severity: blocking
+- id: esc.no_promise_beyond_entitlement
+  statement: 'No commitment made during an escalation may exceed entitlement_ref. Senior people settle
+    rooms by promising things, and an out-of-entitlement promise made under pressure becomes the next
+    escalation.
+
+    '
+  then: bound_commitment_by_entitlement
+  severity: blocking
+- id: esc.escalation_is_not_a_priority_bump
+  statement: 'Raising priority or severity without naming a receiver must not be recorded as an escalation.
+    Priority is what we work on first; escalation is who owns it. Every ticketing product on the market
+    conflates these and it is why escalation data is worthless.
+
+    '
+  severity: warning
+- id: esc.thread_growth_is_reportable
+  statement: 'When the number of parties attached to the thread crosses a working-group size, the situation
+    should be reviewed for incident status regardless of whether anyone declared one. Escalations grow
+    the graph before anyone names what is happening.
+
+    '
+  when:
+  - fn: edge_count
+    op: '>='
+    value: 6
+  then: flag_for_incident_review
+  severity: warning
+- id: esc.repeat_escalation_outranks_severity
+  statement: 'A second escalation on the same account or issue must be handled above its assessed severity.
+    The first escalation tested the fault; the second tests whether we have a process, and losing that
+    test is not recoverable at the working level.
+
+    '
+  severity: advisory
+decision_factors:
+- name: origin_class
+  weight_bp: 2000
+  direction: context
+  description: 'Not a magnitude — a switch between two playbooks. Weighted highest and marked `context`
+    deliberately: a customer_initiated escalation does not score higher than an agent_initiated one, it
+    scores differently, and a reasoning unit that averages them produces the technically correct handoff
+    to a customer who has already left.
+
+    '
+  reads:
+  - origin
+  - reason
+  - is_repeat_escalation
+- name: ownership_actually_moved
+  weight_bp: 2000
+  direction: increases
+  description: 'Named AND accepted. Named-but-unaccepted is the state that produces second escalations,
+    and it scores much closer to zero than to half. Rule 11 — acceptance must come from an independent
+    signal, not from the sender marking it sent.
+
+    '
+  reads:
+  - receiver_named
+  - receiving_owner_ref
+  - receiver_accepted_at
+  - time_to_accept_hours
+- name: context_completeness
+  weight_bp: 1500
+  direction: increases
+  description: 'The receiver''s readiness to not restart the diagnosis. diagnosis_repeats is the falsifiable
+    half of this factor and the only one a customer experiences.
+
+    '
+  reads:
+  - context_handed_over
+  - context_package
+  - diagnosis_repeats
+  - handoff_note
+- name: relationship_damage
+  weight_bp: 1500
+  direction: decreases
+  description: 'How much trust has already been spent. bounce_count belongs here rather than in an operational
+    factor because a bounce is something the customer feels, not something the queue absorbs.
+
+    '
+  reads:
+  - bounce_count
+  - sentiment_at_request
+  - credibility_cost
+  - severity_perceived
+- name: window_position
+  weight_bp: 1200
+  direction: context
+  description: 'Both tails are bad and they are bad in different currencies — too_early spends the escalating
+    agent''s credibility, missed spends the account. Any weighting that treats this as a single axis will
+    systematically recommend escalating too early, because early errors are invisible and late ones are
+    not.
+
+    '
+  reads:
+  - window_state
+  - requested_at
+  - acknowledged_to_customer_at
+  - ball_in_court
+- name: account_stakes
+  weight_bp: 1000
+  direction: context
+  description: 'Why this escalation matters beyond the ticket. Marked `context` and not `increases` because
+    a low-stakes escalation handled badly still teaches the customer that the path does not work — stakes
+    change who is told, not whether it is done properly.
+
+    '
+  reads:
+  - churn_linked
+  - executive_visible
+  - entitlement_ref
+  - severity_assessed
+- name: graph_sprawl
+  weight_bp: 800
+  direction: decreases
+  description: 'How many people are now attached. Every additional party lengthens the escalation and
+    raises the chance of contradictory statements reaching the customer. Weighted lowest of the seven
+    because the live proxy — graph degree — is noisy enough to mislead if it carried more.
+
+    '
+  reads:
+  - attached_party_count
+  - last_customer_contact_at
+evidence:
+- source: ticket
+  strength_bp: 9500
+  description: An assignee change with a recorded reason and an acceptance timestamp. The closest thing
+    to proof this object has — and it is unavailable today, which is the whole story of this file.
+- source: email
+  strength_bp: 8000
+  description: 'The customer asking in writing, or a receiver accepting in writing. Strong, and systematically
+    biased toward second escalations: the first one usually happened on a call.'
+- source: chat
+  strength_bp: 7500
+  description: Live escalation language. High strength, short retention, rarely searched.
+- source: phone
+  strength_bp: 7000
+  description: Where most customer-initiated escalations actually occur. Worth 7000 when captured and
+    near zero in practice, because it is captured through a human writing it down afterwards.
+- source: meeting_transcript
+  strength_bp: 7000
+  description: An escalation raised in a QBR or a review call. Usually the highest-stakes kind and the
+    least likely to be in the ticket.
+- source: crm
+  strength_bp: 6000
+  description: Account team records of a raised concern. Frequently the first place an executive escalation
+    is visible.
+- source: survey
+  strength_bp: 5500
+  description: A detractor response mid-ticket. An escalation the customer filed with a scale instead
+    of a sentence.
+- source: manual_entry
+  strength_bp: 5000
+  description: An agent logging it. Honest but self-reported, and agents under-report escalations they
+    expect to be judged on.
+- source: derived
+  strength_bp: 3500
+  description: Inferred from sentiment, silence and thread growth. Every executable pattern on this object
+    lands here. Corroborating only — never sole grounds for telling a manager a customer is escalating.
+metrics:
+- name: escalation_rate
+  unit: percent
+  description: Share of tickets escalated. Uninterpretable unless receiver_named gates the count — otherwise
+    it measures how freely people use a flag.
+  owner_layer: L6
+- name: time_to_named_receiver
+  unit: hours
+  description: Request to a named human. Distinct from time to acceptance, and the one the customer feels.
+  owner_layer: L6
+- name: time_to_acceptance
+  unit: hours
+  description: Request to ownership genuinely moving. The internal health measure of the escalation path.
+  owner_layer: L6
+- name: bounce_back_rate
+  unit: percent
+  description: Share returned to the previous owner. The best single indicator that the escalation process
+    is decorative.
+  owner_layer: L6
+- name: context_completeness_at_handoff
+  unit: percent
+  description: Share of transfers where the receiver did not have to re-diagnose. Requires diagnosis_repeats,
+    which nothing records today.
+  owner_layer: L6
+- name: repeat_escalation_rate
+  unit: percent
+  description: Second escalations on the same account or issue. Measures whether the first one worked,
+    which escalation_rate cannot.
+  owner_layer: L6
+- name: de_escalation_rate
+  unit: percent
+  description: Share returned to the normal path by agreement. Must be reported separately from bounces
+    or it flatters the exact failure it should expose.
+  owner_layer: L6
+- name: post_escalation_retention
+  unit: percent
+  description: Whether accounts that escalated stayed. The only metric here that measures the point of
+    the exercise.
+  owner_layer: L6
+- name: customer_wait_after_escalation
+  unit: hours
+  description: Time with ball_in_court on us after a transfer. Computable today from live facts, unlike
+    everything above it.
+  owner_layer: L2
+events:
+- id: esc.requested
+  name: Escalation Requested
+  payload:
+  - origin
+  - reason
+  - requested_at
+  - severity_perceived
+  description: Fires on the request, not on the transfer. The interval between this and esc.accepted is
+    the interval the customer experiences as nothing happening.
+- id: esc.receiver_named
+  name: Receiver Named
+  payload:
+  - receiving_owner_ref
+  - direction
+  - level
+  description: The moment this stops being a complaint and becomes an escalation.
+- id: esc.accepted
+  name: Escalation Accepted
+  payload:
+  - receiving_owner_ref
+  - receiver_accepted_at
+  - time_to_accept_hours
+- id: esc.context_gap_detected
+  name: Context Did Not Travel
+  payload:
+  - context_handed_over
+  - diagnosis_repeats
+  - previous_owner_ref
+  description: The characteristic failure of this object, emitted as its own event so it can be caught
+    in the hours where it is still cheap — before the customer explains the problem a third time.
+- id: esc.customer_waiting_again
+  name: Customer Waiting On Us Again
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  - fn: days_since
+    path: thread.last_inbound
+    op: '>='
+    value: 2
+  payload:
+  - last_customer_contact_at
+  - ball_in_court
+  description: Executable today. An escalated customer left waiting is the reliable precondition for the
+    second escalation, which is the one that reaches an executive.
+- id: esc.window_opened
+  name: Escalation Window Opened
+  emitted_when:
+  - fn: days_since
+    path: commitment.due_at
+    op: '>'
+    value: 0
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  payload:
+  - window_state
+  - requested_at
+  description: A broken promise nobody has answered for. Emitted to prompt a decision, not to make one
+    — escalating on this alone is how agents lose credibility with receivers.
+- id: esc.bounced_back
+  name: Escalation Bounced Back
+  payload:
+  - bounce_count
+  - previous_owner_ref
+  - receiving_owner_ref
+  description: The worst event this object has. Worse than never escalating, because the customer now
+    knows the path does not work and there is no second path to offer them.
+- id: esc.de_escalated
+  name: De-escalated By Agreement
+  payload:
+  - de_escalated_at
+  - outcome
+  description: Distinct from a bounce, and the distinction is consent. Layer 6 must never learn from the
+    two together.
+- id: esc.thread_growing
+  name: Parties Attaching To Thread
+  emitted_when:
+  - fn: edge_count
+    op: '>='
+    value: 6
+  payload:
+  - attached_party_count
+  description: Executable today via graph degree. Noisy, and still the earliest structural warning available
+    without a support pack.
+actions:
+- id: esc.name_a_receiver
+  name: Name a receiving owner
+  actor: human
+  effect: Converts a complaint into an escalation. Everything else on this object is downstream of it,
+    and it costs one decision.
+- id: esc.package_the_context
+  name: Assemble the context package
+  actor: agent
+  effect: Reproduction steps, what is ruled out, what the customer has already been told, and what was
+    promised and by whom. The last of the four is the one most often missing and the most expensive to
+    omit.
+  description: Genuinely well suited to an agent — it is retrieval and summarisation over a thread, and
+    it is the step humans skip under time pressure precisely because it is tedious.
+- id: esc.acknowledge_to_customer
+  name: Tell the customer it has been escalated
+  actor: human
+  preconditions:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  effect: Names who now owns it and by when they will make contact. A named person and a time; anything
+    vaguer reads as a holding message and provokes the next escalation.
+- id: esc.hold_the_line
+  name: Do not escalate yet
+  actor: human
+  effect: 'The correct move in the too_early window: answer directly, keep ownership, and set a checkpoint.
+    Escalating here teaches the receiver that this owner escalates rather than works, and the next escalation
+    from them is slower.'
+  description: Listed as an action deliberately. A decision not to escalate is a decision, and if it is
+    not recordable the system can only ever recommend escalating.
+- id: esc.escalate_now
+  name: Transfer ownership
+  actor: human
+  preconditions:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  effect: Move ownership with the context attached. Should be blocked while context_handed_over is false
+    — see esc.context_must_travel_with_ownership.
+- id: esc.rehearse_the_receiver
+  name: Brief the receiver before they contact the customer
+  actor: human
+  effect: Five minutes with the previous owner prevents the receiver contradicting a promise made before
+    they arrived. The cheapest defence against the bounce, and almost never done.
+- id: esc.de_escalate
+  name: Return ownership by agreement
+  actor: human
+  effect: Requires the customer's agreement, explicitly. Returning ownership without it is a bounce wearing
+    the wrong label, and it will be recorded as a success.
+- id: esc.merge_into_incident
+  name: Fold into a declared incident
+  actor: system
+  effect: 'Correct when several escalations share a cause. Reversible on purpose: an escalation absorbed
+    into an incident that does not actually explain it ends up with no owner at all once the incident
+    closes.'
+- id: esc.notify_account_owner
+  name: Tell whoever owns the relationship
+  actor: system
+  effect: Not the same as escalating. The account owner needs to know before the customer tells them,
+    and being told by the customer is the thing that turns a support escalation into a commercial one.
+dependencies:
+- target: customer_support.obj.core.escalation_owner
+  kind: requires
+  strength: hard
+  description: No receiver, no escalation. This is the object's defining dependency.
+- target: customer_support.obj.core.ticket
+  kind: requires
+  strength: hard
+  description: An escalation always escalates something.
+- target: customer_support.obj.core.entitlement
+  kind: requires
+  strength: soft
+  description: Bounds the receiver's authority to make it stop.
+- target: customer_support.obj.core.incident
+  kind: invalidated_by
+  strength: hard
+  description: When several escalations turn out to share one cause, they should collapse into an incident
+    and stop being managed individually.
+- target: customer_support.obj.core.churn_risk
+  kind: enriches
+  strength: soft
+  description: Feeds the strongest churn combination there is when unresolved near renewal.
+exceptions:
+- id: esc.refuse_the_escalation
+  statement: An escalation may be legitimately refused when the ticket is simply not finished yet.
+  overrides:
+  - esc.named_receiver_required
+  why: Escalating unfinished work moves the queue rather than the problem, and it teaches the organisation
+    that escalation is a way to skip diagnosis. Refusing needs to be a visible, explainable move rather
+    than a silent non-response.
+  frequency: common
+- id: esc.account_team_not_engineer
+  statement: When the trigger is relationship damage rather than technical difficulty, the correct receiver
+    is the account owner and not a senior engineer.
+  why: Customer-initiated escalations are relationship events. Routing one to deeper technical expertise
+    answers a question nobody asked and usually adds a day.
+  frequency: common
+- id: esc.chronic_escalator
+  statement: An account that escalates routinely has destroyed the signal, and its escalations are read
+    on severity rather than on the fact of escalation.
+  why: The mechanism assumes escalation is costly to the customer. Where it is not, treating each one
+    as high-signal starves every other account of attention — and the real finding is usually a mis-set
+    expectation at sale.
+  frequency: occasional
+- id: esc.preemptive_escalation
+  statement: A team may escalate before the customer asks, when the outcome is already known to be unacceptable.
+  why: Waiting for the customer to demand a manager converts a recoverable situation into a relationship
+    event. The best escalations are the ones the customer never had to request.
+  frequency: occasional
+- id: esc.executive_sponsor_bypass
+  statement: An executive-to-executive escalation may bypass the ladder entirely.
+  why: It is a commercial conversation wearing a support ticket's clothing. Forcing it through tiers wastes
+    everyone's time and the tiers cannot resolve what it is actually about.
+  frequency: rare
+best_practices:
+- id: esc.transfer_the_context_not_the_ticket
+  statement: Hand over a written statement of what was tried, what was ruled out, and what the customer
+    has already been told.
+  why: The characteristic failure is escalating the ticket without the context, so the receiver restarts
+    a diagnosis the customer has already sat through twice. That repetition, not the delay, is what customers
+    describe as the worst part.
+- id: esc.tell_the_customer_it_happened
+  statement: Tell the customer the escalation occurred and name what changes because of it.
+  why: A silent escalation gets no relationship credit at all. The customer experiences the same wait
+    and concludes that asking for a manager achieved nothing, which is the opposite of the intended effect.
+- id: esc.escalate_before_the_customer_asks
+  statement: Raise it on the trajectory, not on the complaint.
+  why: Escalating early costs credibility; escalating late costs the account. The window between is short
+    and unmarked, and the only cheap way to stay inside it is to watch the trajectory rather than wait
+    for the demand.
+- id: esc.close_the_loop_with_the_original_owner
+  statement: Return the outcome to the agent who escalated.
+  why: Otherwise escalation is a place tickets disappear into, agents stop learning what they could have
+    done, and the same escalation recurs.
+anti_patterns:
+- id: esc.escalation_as_priority_bump
+  statement: Using escalation to move a ticket up the queue rather than to transfer ownership.
+  why_it_happens: It works, it is faster than arguing about priority, and the two mechanisms look identical
+    from the agent's side of the screen.
+  cost: It destroys the meaning of the escalation record — every escalation now needs interpreting — and
+    it hides a real priority problem that would otherwise be visible and fixable.
+  instead: Fix priority through triage; reserve escalation for genuine transfers of ownership.
+  detectable_by:
+  - esc.escalation_is_not_a_priority_bump
+- id: esc.escalate_without_context
+  statement: Reassigning the ticket to a senior owner with no handover note.
+  why_it_happens: The history is 'all there in the ticket', and writing the summary takes longer than
+    the reassignment.
+  cost: The receiver re-runs the diagnosis, the customer repeats themselves, and the escalation adds a
+    day rather than removing one. The customer's memory of it is the repetition.
+  instead: Require what-was-tried, what-was-ruled-out and what-the-customer-was-told before the transfer
+    commits.
+  detectable_by:
+  - context_transferred
+- id: esc.escalation_ping_pong
+  statement: Escalating up and then bouncing the ticket back down when the receiver disagrees.
+  why_it_happens: Each hop is individually defensible — the receiver genuinely believes it belongs elsewhere.
+  cost: 'A bounced escalation is worse than one never raised: the customer has now been told it was escalated
+    and has watched it come back. Trust in the ladder does not recover quickly.'
+  instead: Treat a bounce as a reviewable event and fix the routing rule that produced it.
+  detectable_by:
+  - esc.bounce_requires_review
+  - outcome
+- id: esc.promise_beyond_entitlement_to_end_the_call
+  statement: A senior receiver committing to something the contract does not cover, to make the escalation
+    stop.
+  why_it_happens: It ends the immediate pain, the receiver has the authority, and nobody in the room is
+    measured on the precedent.
+  cost: It creates an expectation the renewal conversation has to unwind, and it teaches the account that
+    escalation is how commercial terms get renegotiated.
+  instead: Check entitlement before the transfer commits, and route genuinely commercial asks to the account
+    team.
+  detectable_by:
+  - esc.no_promise_beyond_entitlement
+examples:
+- label: Customer asks for a manager on a call, third contact on the same bug
+  note: 'origin customer_initiated, reason repeat_contact. A relationship event: the technical fix is
+    necessary and will not settle it. If it is handled as a routing problem the manager arrives, asks
+    what happened, and confirms the customer''s suspicion that nobody has been listening.'
+- label: Agent hands a database corruption case to engineering
+  note: 'origin agent_initiated, direction sideways, reason technical_depth. A process event and the healthiest
+    kind — correctly recognising the limit of your reach is what tiering is for. Fails only on context:
+    engineering restarts the diagnosis unless the package travels.'
+- label: Escalated to a tier-2 owner who returns it two days later saying it is a config question
+  note: outcome bounced_back, bounce_count 1. Worse than never escalating. The customer waited two days
+    to be handed back to the person they had already given up on, and the escalation path has now been
+    discredited in front of them.
+- label: An SLA clock breaches overnight and an auto-escalation fires into an empty rota
+  note: origin system_triggered, receiver_named false. Not an escalation. It is an alert, and counting
+    it makes the escalation dashboard report a functioning process at exactly the moment there is nobody
+    on the other end.
+- label: Customer emails the CEO after two weeks of no update
+  note: origin customer_initiated, executive_visible true, credibility_cost severe. The window was missed
+    a long way back — probably at the first broken commitment. Everything from here is damage control
+    and the reporting obligation outlives the ticket.
+- label: Agent escalates within twenty minutes of first contact because the customer sounded annoyed
+  note: window_state too_early. The receiver learns this agent escalates rather than works, and the next
+    one — which will be real — gets a slower answer. The cost is invisible, deferred, and paid by a different
+    customer.
+- label: Nine escalations in an afternoon, all pointing at the same failed deploy
+  note: Should be merged into an incident, and the merge is almost always recognised late. Nine separately
+    owned escalations produce nine slightly different stories reaching nine customers.
+references:
+- title: ITIL 4 — escalation as functional and hierarchic transfer
+  kind: standard
+  note: ITSM distinguishes functional escalation (more expertise) from hierarchic escalation (more authority).
+    This object's trigger-source and reason-category attributes carry that split, because routing a relationship
+    event to deeper technical expertise is the most common escalation error.
+- title: Google SRE — incident command and ownership
+  kind: framework
+  note: 'The named-receiver rule is borrowed directly from incident command: an incident without a commander
+    drifts, and an escalation without a named receiver is the same failure at smaller scale.'
+- title: First contact resolution benchmarks
+  kind: research
+  url: https://www.geckoboard.com/best-practice/kpi-examples/first-contact-resolution-rate/
+  note: FCR of about 70-79% is good, and it tracks retention more closely than any other operational metric.
+    An escalation is by definition a failure of first contact resolution, which is why escalation rate
+    is read alongside FCR rather than on its own.
+- title: The Effortless Experience — effort predicts loyalty
+  kind: book
+  note: Customer effort predicts retention more reliably than delight does. Having to ask for a manager
+    is one of the highest-effort acts available to a customer, which is the argument behind escalating
+    on trajectory rather than on demand.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: 'Twelve inference patterns: four executable, eight needs_signal. Every executable one is a PRECURSOR
+    pattern reading generic relationship telemetry — a broken commitment nobody answered for, an objection
+    left past this customer''s own reply cadence, sentiment turning while we hold the ball, a thread quietly
+    acquiring people. None of them observe an escalation, because nothing in the substrate can. That is
+    the correct trade: the precursors fire while the situation is still cheap to fix, and by the time
+    an escalation is declared the credibility is already spent. The two highest-value Layer 2 asks this
+    object generates are `escalation_requested` and `escalation_accepted`. The first is unusually tractable
+    — the phrasing is stereotyped in every language support runs in. The second is the more important
+    of the pair: without it there is no machine-checkable difference between an escalation and a complaint,
+    and escalation rate remains a number that measures how freely people click a button. `ticket.reopen_count`
+    is the cheapest strong predictor in the domain and needs no language model at all; it is a counter,
+    and its absence is why this brain cannot currently tell a first contact from a fourth.
+
+    '
+  completeness: complete

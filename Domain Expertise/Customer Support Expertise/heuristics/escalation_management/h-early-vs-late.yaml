@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.escalation_and_incident.escalation_management — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.escalation_management.h_early_vs_late
+  name: H early vs late
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Escalating early costs credibility; escalating late costs the account. If you genuinely
+    cannot tell which side of the line you are on, you are already late.
+heuristic:
+  statement: Escalating early costs credibility; escalating late costs the account. If you genuinely
+    cannot tell which side of the line you are on, you are already late.
+  why: The two costs are not felt symmetrically. Looking premature is immediate, personal and lands
+    on the agent; losing the account is delayed, diffuse and lands on someone else. Untrained judgement
+    therefore drifts late in a way that feels like prudence, and the tie breaker exists to correct a
+    known bias rather than to describe a real balance point.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

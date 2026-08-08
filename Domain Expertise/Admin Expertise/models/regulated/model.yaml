@@ -1,0 +1,40 @@
+# Regulated — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.regulated
+  name: Regulated
+  kind: model
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  An organisation operating under a supervisory regime, where administrative records are
+  evidence and a procedure that was followed but not documented did not happen. Retention,
+  attestation and audit trail stop being hygiene and become the product.
+
+characteristics:
+  typical_cycle_days: 6
+  committee_size: "3-5 approvers with named accountable owners"
+  decision_style: "evidence-first; the record is written before the work is considered complete"
+  primary_channels: [portal, email, scheduled_review]
+
+capabilities:
+  emphasises:
+    - admin.compliance_and_governance.audit_support
+    - admin.compliance_and_governance.policy_administration
+    - admin.records_and_documentation.retention_and_archival
+    - admin.records_and_documentation.document_control
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

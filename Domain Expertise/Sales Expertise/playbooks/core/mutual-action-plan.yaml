@@ -1,0 +1,278 @@
+# Mutual Action Plan — the buyer's paper process, dated backwards from their event
+#
+# MEDDICC's "Paper Process" is a question. A MAP is the answer written down, with owners, and
+# co-signed. The distinction that makes this artifact worth having: a MAP is not a project plan
+# the seller keeps. It is a test of whether the buyer will commit process, and the test result
+# is legible on day one — the buyer either edits the document or they do not.
+#
+# A seller-maintained MAP is a forecast in a table. It has the same predictive value as the
+# seller's opinion, which is what it is, and it will be defended in deal review as evidence.
+
+identity:
+  id: sales.pb.core.mutual_action_plan
+  name: Mutual Action Plan
+  kind: playbook
+  domain: sales
+  scope: core
+  version: 1.0.0
+  status: draft
+  aliases: [MAP, close plan, joint execution plan, go-live plan, success plan]
+
+purpose:
+  statement: >-
+    Build a dated, jointly owned path from today to a signed contract and a live customer,
+    working backwards from the buyer's own compelling event through the buyer's own paper
+    process — and treat the buyer's willingness to co-own it as the qualification signal it is.
+  answers:
+    - "What has to happen, in what order, for this to be signed by the date the buyer needs?"
+    - "Who on the buyer's side owns each step, by name?"
+    - "Is the buyer's stated close date arithmetic or a preference?"
+    - "Which step slipped, and what did that slip tell us about the deal?"
+  not:
+    - "A project plan for implementation. That starts after signature and has different owners."
+    - "A pressure instrument. A MAP used to chase a buyer stops being mutual and starts being a
+       seller's chase log with a nicer name."
+    - "A forecast. Forecast category is Layer 4 arithmetic; the MAP is the evidence it reads."
+
+when_to_use:
+  situations:
+    - sales.sit.enterprise_deal
+  conditions:
+    # Commercials have been discussed, so the remaining constraint is process, not persuasion.
+    - {path: deal.status, op: "=", value: open}
+    - {has_obs: pricing_discussed}
+  signals:
+    - "The buyer has named a date they need to be live by, and given a reason for it."
+    - "More than one function is now involved — security, legal, procurement or finance."
+    - "The deal has a value that justifies a formal buying process on the buyer's side."
+    - "You cannot answer 'what happens next week' without guessing."
+  do_not_use_when:
+    - "Cycles under roughly thirty days with a single signer — the plan costs more than it saves
+       and signals a bureaucracy the buyer did not ask for."
+    - "Self-serve and product-led motions before a spend threshold is crossed; there is no paper
+       process to map because there is no paper."
+    - "Discovery is not finished. A MAP built before the business need is agreed schedules a
+       purchase nobody has decided to make."
+
+steps:
+
+  - order: 1
+    name: Establish the compelling event and the consequence of missing it
+    description: >-
+      A date without a consequence is a preference, and preferences move. Ask what breaks, who
+      notices, and what it costs if the date passes. If nobody can name the consequence, the
+      deal has no clock and the MAP will be a fiction with due dates on it.
+    actor: human
+    objects_read: [sales.obj.core.timeline, sales.obj.core.business_need, sales.obj.core.deal]
+    produces: "A dated event with a named business consequence, in the buyer's words."
+    done_when: >-
+      The buyer has stated in writing a dated consequence of not being live by X — a contract
+      expiry, an audit, a season, a funding round, a headcount plan.
+    typical_duration_days: 3
+
+  - order: 2
+    name: Walk the buyer's paper process backwards, using the buyer's own durations
+    description: >-
+      Ask how the last purchase of this size actually went, not how procurement is documented
+      to work. Security review, legal redlines, procurement onboarding, finance approval and
+      signature each have a real elapsed time at this company and it is almost never the one
+      published. Your average cycle time is irrelevant here; theirs is the constraint.
+    actor: human
+    objects_read: [sales.obj.core.contract, sales.obj.core.buying_committee, sales.obj.core.company]
+    produces: "An ordered stage list with buyer-supplied durations."
+    done_when: >-
+      Every stage between today and signature has a duration the buyer supplied, and the sum
+      either fits inside the compelling event or visibly does not.
+    typical_duration_days: 5
+
+  - order: 3
+    name: Draft it in a document the buyer can edit
+    description: >-
+      Never a PDF, never a slide. The format is the test: a shared editable document invites
+      co-ownership, and a locked one guarantees the plan stays yours. What you are measuring
+      is whether the buyer will put their name in a cell.
+    actor: human
+    produces: "A shared, editable plan with both columns visible."
+    done_when: "The link is shared with edit rights and the champion has opened it."
+    typical_duration_days: 1
+
+  - order: 4
+    name: Name a person against every buyer-side row
+    description: >-
+      "Procurement" is not an owner. "Legal" is not an owner. A department cannot be chased,
+      cannot slip, and cannot be escalated to. The moment a row carries a human name, the plan
+      becomes falsifiable and the champion's real access becomes visible — a champion who
+      cannot name the security reviewer does not have the reach they claimed.
+    actor: human
+    objects_read: [sales.obj.core.stakeholder, sales.obj.core.champion, sales.obj.core.decision_maker]
+    produces: "Named owners on both sides of every step."
+    done_when: "Every buyer-side row carries an individual's name, not a function."
+    typical_duration_days: 3
+
+  - order: 5
+    name: Walk the plan live with the champion and the economic buyer
+    description: >-
+      Sending it is not agreeing it. Read the dates out loud on a call and stop after each one.
+      Silence at a date is a disagreement you have not heard yet. The economic buyer's presence
+      matters because the dates commit their organisation's time, not the champion's alone.
+    actor: human
+    objects_read: [sales.obj.core.decision_maker, sales.obj.core.champion]
+    produces: "Verbal acceptance of the dated path from the person who pays."
+    done_when: >-
+      The economic buyer has accepted the dates on a call, with the champion present to hear
+      it — which is what makes the commitment hold after you leave the room.
+    typical_duration_days: 7
+
+  - order: 6
+    name: Instrument every step as a dated commitment
+    description: >-
+      A step with no due date in a system is a step nobody is reminded about. Each row becomes
+      a commitment with an owner and a due date so that a slip surfaces on the day it happens
+      rather than at the next call.
+    actor: system
+    objects_read: [sales.obj.core.next_action]
+    produces: "One tracked commitment per step."
+    done_when: "Every step exists as a commitment with a due date and an owner."
+    typical_duration_days: 1
+
+  - order: 7
+    name: Review at every touchpoint and treat each slip as evidence
+    description: >-
+      A slipped step is not an administrative problem to be re-typed. It is the buyer telling
+      you something about priority, authority or internal opposition, and the useful question
+      is never "can we move the date" but "what stopped this". Re-baselining without asking is
+      how a deal slips four times and is still forecast as committed.
+    actor: human
+    objects_read: [sales.obj.core.risk, sales.obj.core.deal]
+    produces: "A cause recorded against each slipped step."
+    done_when: "Each slipped step carries a stated cause and a re-baselined date."
+
+  - order: 8
+    name: On the second slip, re-baseline formally and change the forecast
+    description: >-
+      One slip is a schedule. Two slips against the same plan means something you were told is
+      not true — usually the authority, occasionally the budget, sometimes the need. Rebuild
+      the plan from step one rather than shifting every date right, and move the deal out of
+      the committed category on the evidence rather than on the next call's optimism.
+    actor: human
+    objects_read: [sales.obj.core.deal, sales.obj.core.opportunity, sales.obj.core.risk]
+    produces: "A re-baselined plan and a changed forecast category with a logged reason."
+    done_when: "The forecast category has changed and the change carries a written cause."
+    skip_when: "Only one step has slipped and its cause is externally verifiable."
+
+outcomes:
+  - "A close date that is arithmetic — the sum of real durations — rather than a preference."
+  - "Slippage that is visible on the day it happens instead of at the end of the quarter."
+  - "An early, cheap read on whether the champion has the access they claimed."
+  - "A forecast whose committed category survives inspection."
+
+objects_used:
+  - sales.obj.core.deal
+  - sales.obj.core.opportunity
+  - sales.obj.core.timeline
+  - sales.obj.core.champion
+  - sales.obj.core.decision_maker
+  - sales.obj.core.stakeholder
+  - sales.obj.core.buying_committee
+  - sales.obj.core.business_need
+  - sales.obj.core.contract
+  - sales.obj.core.proposal
+  - sales.obj.core.next_action
+  - sales.obj.core.risk
+  - sales.obj.core.company
+
+limits:
+  - "A MAP measures willingness to commit process. It cannot manufacture urgency that does not
+     exist — a buyer with no compelling event will co-sign a beautiful plan and miss every date
+     on it without discomfort."
+  - "It does not survive a champion change. The dates were built on one person's knowledge of
+     their own organisation; when they leave, the plan is a document about a company you no
+     longer understand and it needs rebuilding, not reassigning."
+  - "Below roughly thirty days of cycle time the overhead exceeds the benefit. The instrument
+     was built for multi-function enterprise procurement and applying it to a two-call deal
+     makes an easy purchase feel like an implementation."
+  - "It tells you nothing about whether you will win, only about whether a purchase will happen
+     on a date. A perfectly executed MAP is entirely compatible with the competitor signing."
+
+failure_modes:
+  - "The seller maintains it alone. It then measures the seller's diligence rather than the
+     buyer's intent, and it will be produced in deal review as evidence of commitment it does
+     not contain."
+  - "Dates set backwards from the seller's quarter end rather than the buyer's event. Buyers
+     read this immediately, and it converts a joint plan into a visible attempt to compress
+     their process for your compensation."
+  - "Treating a buyer's refusal to co-own the plan as an administrative snag. It is the single
+     cleanest disqualification signal the instrument produces, and reading it as friction
+     rather than as information is the most expensive mistake in this file."
+  - "Sending it as a PDF or a slide, which guarantees it stays the seller's document."
+  - "Filling the buyer's column yourself because they were slow. You have now removed the only
+     measurement the artifact exists to take."
+  - "Extending dates silently. Each silent extension teaches the buyer that your dates are
+     soft, and by the third one the plan has no force left."
+
+variants:
+  - applies_to: sales.model.plg
+    change: >-
+      Replaced by an activation and expansion plan keyed to usage milestones rather than to
+      procurement stages, becoming a conventional MAP only when spend crosses the threshold at
+      which finance and security enter.
+    why: >-
+      Before that threshold there is no paper process to map; the buyer's real gating steps are
+      seats activated and a workflow moved into the product.
+  - applies_to: sales.model.government_sales
+    change: >-
+      The paper process is published, statutory, and not negotiable. The MAP becomes a schedule
+      derived from the tender timetable, and the useful seller-side work is entirely in reading
+      the published timetable correctly and in confirming which stages have hard statutory
+      minimums.
+    why: >-
+      Asking a public buyer to co-author a timeline they do not control wastes the meeting;
+      the constraint is external to both parties.
+  - applies_to: sales.model.channel_sales
+    change: >-
+      Three columns, not two — you, the partner, and the end customer — with the partner owning
+      the rows that touch the end customer's paper process.
+    why: >-
+      A two-column plan hides the handover, and the handover is where channel deals stall.
+  - applies_to: sales.offering.service
+    change: >-
+      Statement of work drafting and resource availability become dated rows, and the go-live
+      date depends on the delivery team's calendar as much as on the buyer's signature.
+    why: >-
+      In services a material share of revenue depends on work done after signature, so the
+      constraint often sits on the seller's side of the plan.
+
+metrics:
+  - name: buyer_edit_rate
+    unit: percent
+    description: "Share of active MAPs edited by someone on the buyer's side in the last 14 days."
+    direction: higher_is_better
+  - name: steps_slipped_per_deal
+    unit: count
+    description: "Slipped steps before signature. Two is the threshold at which the story changes."
+    direction: lower_is_better
+  - name: close_date_accuracy
+    unit: days
+    description: "Absolute error between the MAP's derived date and the actual signature date."
+    direction: lower_is_better
+
+references:
+  - {title: "MEDDICC", kind: methodology, author: "Dick Dunkel and Jack Napoli, PTC",
+     note: "The Paper Process dimension is the question this playbook answers in writing."}
+  - {title: "The Qualified Sales Leader", kind: book, author: "John McMahon",
+     note: "The close plan as an inspection instrument rather than a project artifact."}
+  - {title: "Mastering the Complex Sale", kind: book, author: "Jeff Thull",
+     note: "Diagnosis before prescription; a plan built on an unagreed problem schedules nothing."}
+  - {title: "The Challenger Customer", kind: book, author: "Adamson, Dixon, Spenner and Toman",
+     note: "Why buyer-side consensus work, not seller-side chasing, sets the real duration."}
+  - {title: "Command of the Message", kind: framework, author: "Force Management",
+     note: "Required capabilities and metrics feed the case the plan is scheduling."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete

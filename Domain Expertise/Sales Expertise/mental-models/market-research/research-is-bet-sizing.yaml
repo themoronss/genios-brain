@@ -1,0 +1,37 @@
+identity:
+  id: sales.mm.market_research.research_is_bet_sizing
+  name: The purpose is not certainty. It is knowing how wrong the map can be w…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "The purpose is not certainty. It is knowing how wrong the map can be while entry is still\
+    \ the right call.\n Perfect information about a market arrives after the market has moved. Naming\
+    \ the blocking unknowns and the size of the bet they justify turns an unresolvable argument about\
+    \ confidence into a resolvable one about exposure.\n"
+dimensions:
+- name: The purpose is not certainty. It is knowing how wrong the map can be w…
+  asks: 'Perfect information about a market arrives after the market has moved. Naming the blocking
+    unknowns and the size of the bet they justify turns an unresolvable argument about confidence into
+    a resolvable one about exposure.
+
+    '
+how_to_apply:
+- 'Perfect information about a market arrives after the market has moved. Naming the blocking unknowns
+  and the size of the bet they justify turns an unresolvable argument about confidence into a resolvable
+  one about exposure.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

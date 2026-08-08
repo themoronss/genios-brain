@@ -1,0 +1,2179 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# COMMITMENT — the promise a human made in their own words, outside any contract.
+#
+# This is the object with the STRONGEST executable coverage in the Customer Support brain,
+# and it is the only one where that is true. `commitment.due_at` and `commitment.action` are
+# real fact paths in the shipped substrate; `followup_sent` is a real observation kind;
+# `commitment_overdue` is a real Layer 2 situation type that routes today. So while the rest
+# of this domain is writing a specification for a support_v1 pack that does not exist,
+# eleven of the eighteen patterns below fire on day one — including overdue detection, the
+# pre-breach window, and the silent-break detector that is the single most useful thing this
+# brain can currently say about a support ticket.
+#
+# The reason that matters is not coverage for its own sake. It is that the promise a person
+# made is the one the customer narrates afterwards. A queue can meet every contractual clock
+# it owes and still be remembered as having broken its word, because the customer was told
+# "Thursday" by a named human and Thursday came and went in silence. Every SLA dashboard in
+# the industry is blind to exactly that event. This object is not.
+#
+# Three claims run through the whole file and each one is arguable, which is the point:
+#   1. A commitment with no named time is not a commitment. Record it as one that was never
+#      made, and treat the absence as a capture defect rather than as a soft promise.
+#   2. Breaking a promise with notice and breaking it in silence are different events with
+#      different costs, and the gap between them is nearly the entire de-escalation
+#      conversation. Notice is therefore a first-class attribute, not a note.
+#   3. The commitment outranks the SLA emotionally. Where the two disagree about what we owe,
+#      the SLA is what we can be sued over and the commitment is what we will be remembered
+#      for. Layer 4 should be told which is which.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.commitment
+  scope: core
+  name: Commitment
+  domain: customer_support
+  subdomain: entitlement_and_sla
+  owner_capability: customer_support.entitlement_and_sla.commitment_tracking
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Promise
+    - Callback
+    - Personal SLA
+    - Agent Undertaking
+    - Follow-up
+    - Action Item
+
+purpose:
+  statement: >
+    Something a named human promised a named customer, in their own words, outside any
+    contract. "I will check with engineering and come back to you Thursday." It has three
+    parts and needs all three: an ACTION (what will happen), a TIME (when), and an OWNER
+    (who). Strip any one of them and what is left is a reassurance, which is a different and
+    much cheaper thing.
+
+    It is the promise customers actually remember and the one no system tracks. Ticketing
+    products model the contractual clock in exhaustive detail — start, pause, calendar,
+    breach — and model the sentence an agent typed into the reply box not at all. So the
+    organisation optimises the clock it can see, and the customer walks away describing the
+    one it cannot.
+
+    The asymmetry is worth stating plainly, because it drives every weight in this file: a
+    met SLA with a missed callback reads to the customer as a broken promise, every time,
+    and no amount of contractual attainment repairs it. A missed SLA with a kept callback
+    usually does not read as a breach at all — the customer was told, and being told is most
+    of what they wanted. That is not sentimentality. It is that an SLA is something the
+    company owes an account, and a commitment is something a person owed a person.
+  discriminator: >
+    An SLA Target is a contractual clock the company owes and can be audited on; a Commitment
+    is a time one named human said out loud to another named human. Only one of them is
+    remembered as a promise, and it is never the contract.
+  answers:
+    - Did we do the thing we personally said we would do, by the time we said we would?
+    - Is this ticket about to break a promise that no SLA is watching?
+    - Was the break given notice, or did the customer discover it by us going quiet?
+    - Of the several things we said we would do, which one is the customer actually holding us to?
+    - Is a commitment on this ticket the real deadline, tighter than anything contractual?
+    - Does this agent, team or account have a habit of promising times that do not hold?
+  not:
+    - >
+      NOT the contractual clock. customer_support.obj.core.sla_target owns start, pause,
+      calendar and breach. This object has no pause condition at all, deliberately.
+    - >
+      NOT what the customer is owed. customer_support.obj.core.entitlement owns that, and it
+      bounds what may be promised — a bound this object routinely and knowingly exceeds.
+    - >
+      NOT the work. A commitment to file a bug is not the bug_report, and closing the
+      bug_report does not close the commitment; telling the customer does.
+    - >
+      NOT the thread the words were said in. customer_support.obj.core.conversation owns the
+      wording; this object owns the undertaking extracted from it.
+    - >
+      NOT how the customer feels about the break. customer_support.obj.core.customer_sentiment
+      owns that, and it is a consequence of this object rather than part of it.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATTRIBUTES
+#
+# Five composites. `standing` and `consequence` are separate on purpose: what happened to the
+# promise and what it cost are different questions, and organisations that collapse them end
+# up reporting a break rate with no severity attached to it.
+# ─────────────────────────────────────────────────────────────────────────────
+attributes:
+
+  - name: the_promise
+    purpose: >
+      The undertaking itself, as close to the customer's memory of it as we can get. The
+      verbatim wording is here rather than in the conversation because the exact sentence is
+      what gets quoted back at us, and paraphrasing it into "follow up re: escalation" loses
+      the specific word the customer is holding us to.
+    type: composite
+    contains: [promise_ref, action, due_at, due_specificity, wording_verbatim,
+               origin_channel, is_time_named, promise_type]
+
+  - name: parties
+    purpose: >
+      Who promised, who must deliver, and who was promised to. Three roles, frequently three
+      different people, and the customer holds the first one accountable regardless of who
+      the work landed on.
+    type: composite
+    contains: [owner_ref, made_by_ref, made_to_ref, ticket_ref, conversation_ref]
+
+  - name: standing
+    purpose: >
+      Where the promise currently is, and whether the customer was told when it moved.
+      `notice_given` sits here rather than in consequence because it is a fact about our
+      conduct, not about the damage.
+    type: composite
+    contains: [state, notice_given, notice_given_at, renegotiation_count, supersedes_ref,
+               closed_at, outcome]
+
+  - name: consequence
+    purpose: >
+      What the break cost and how it relates to the contractual picture. Exists so that
+      "we broke a promise" and "we broke a promise to an already-escalated enterprise account
+      that had been reset twice" are not the same row in a report.
+    type: composite
+    contains: [hours_past_due, breach_was_silent, trust_cost, is_tighter_than_sla,
+               sla_target_ref, escalation_ref]
+
+  - name: observed
+    purpose: >
+      The live shadow the promise casts on the correspondence. Unlike almost every other
+      object in this domain, this composite is NOT the only populated one — commitment.due_at
+      and commitment.action are genuinely emitted — but it is what turns a due date into a
+      judgement about whether anyone did anything.
+    type: composite
+    contains: [ball_in_court, last_inbound_at, followup_observed, sentiment_score,
+               related_meeting_at]
+
+  # ── the_promise ─────────────────────────────────────────────────────────────
+  - name: promise_ref
+    purpose: Stable handle for this specific undertaking. Several can be live on one ticket at once.
+    type: value
+    data_type: string
+
+  - name: action
+    purpose: >
+      What we said we would do, in verb form. "Come back to you", "check with engineering",
+      "file the bug", "send the credit note". The verb matters: an update promise and a
+      resolution promise fail differently and should never be scored alike.
+    type: value
+    data_type: string
+    required: true
+    source_paths: [commitment.action]
+
+  - name: due_at
+    purpose: >
+      When we said it would happen. The load-bearing field of the entire object. If it is
+      absent there is no commitment to track — see the business rule and the inference
+      pattern that both say so, and the exception that says when they are wrong.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [commitment.due_at]
+    constraints: >
+      Immutable once set. A renegotiation creates a NEW commitment that supersedes this one;
+      it never edits this field. An editable due date makes the promise-keeping rate
+      unfalsifiable, which is exactly why every system that allows the edit reports a good one.
+
+  - name: due_specificity
+    purpose: >
+      How precisely the time was stated. This is where most broken promises are actually
+      manufactured. "By end of week" is said as a Friday-evening commitment and heard as a
+      Friday-morning one; "early next week" is said as Tuesday and heard as Monday. The
+      customer's reading is the one that counts, so vagueness is a risk marker, not a hedge.
+    type: value
+    data_type: enum
+    allowed_values: [exact_time, named_day, named_week, vague, none]
+
+  - name: wording_verbatim
+    purpose: >
+      The sentence as typed or as transcribed. Kept because six weeks later the customer will
+      quote it, and an argument about what was promised is unwinnable and unloseable without
+      it. Summarising it destroys the only artefact that settles the dispute.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: origin_channel
+    purpose: >
+      Where the promise was made, which predicts whether it was recorded at all. Phone and
+      video calls generate the most commitments and leave the least evidence, so a queue whose
+      commitment log is all email is not a well-behaved queue — it is a partially blind one.
+    type: value
+    data_type: enum
+    allowed_values: [email, chat, phone, meeting, portal, in_product, unknown]
+
+  - name: is_time_named
+    purpose: >
+      Whether a time was actually stated. False is the interesting value: it means someone
+      reassured a customer without committing to anything, the customer very likely heard a
+      commitment anyway, and nothing is watching.
+    type: derived
+    derived_from: [due_at, due_specificity]
+    data_type: boolean
+
+  - name: promise_type
+    purpose: >
+      What kind of undertaking it is. `update` is the safe one and the one experts default to
+      — you can always promise to speak, you cannot always promise to fix. `resolution` is the
+      one that breaks, because it depends on a system the promiser does not control.
+    type: value
+    data_type: enum
+    allowed_values: [update, callback, action, resolution, escalation, credit_or_refund, unknown]
+
+  # ── parties ─────────────────────────────────────────────────────────────────
+  - name: owner_ref
+    purpose: >
+      The one named human accountable for delivering it. A commitment owned by a team or a
+      queue is owned by nobody — it is discovered when the customer quotes it back, which is
+      the worst possible way to discover it.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+    required: true
+
+  - name: made_by_ref
+    purpose: >
+      Who said it, which is often not who has to do it. The distinction matters because the
+      customer holds the speaker accountable and the work sits with someone else, so a
+      handoff that does not tell the speaker produces two people each assuming the other has it.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+
+  - name: made_to_ref
+    purpose: >
+      The specific person promised. Not the account — a promise is remembered by an
+      individual, and a promise made to someone who has since left the company is a live
+      commitment with no one waiting on it, which is a different problem and needs a
+      different action.
+    type: reference
+    ref: customer_support.obj.core.requester
+    data_type: ref
+    required: true
+
+  - name: ticket_ref
+    purpose: >
+      The work this promise is about. Optional rather than required: promises are routinely
+      made on a call before a ticket exists, and refusing to record those is how the most
+      dangerous commitments become the untracked ones.
+    type: reference
+    ref: customer_support.obj.core.ticket
+    data_type: ref
+
+  - name: conversation_ref
+    purpose: The thread the words live in. Where wording_verbatim is proven rather than asserted.
+    type: reference
+    ref: customer_support.obj.core.conversation
+    data_type: ref
+
+  # ── standing ────────────────────────────────────────────────────────────────
+  - name: state
+    purpose: >
+      Where the promise stands. `missed` and `abandoned` are separate values because they are
+      separate failures: missed means the due time passed and we eventually engaged,
+      abandoned means nobody ever went back at all. The second is far rarer and far more
+      expensive, and merging them hides it inside a break rate.
+    type: value
+    data_type: enum
+    allowed_values: [open, at_risk, overdue, renegotiated, kept, missed, abandoned, cancelled, unknown]
+    required: true
+
+  - name: notice_given
+    purpose: >
+      Whether we told them before the due time that it would slip. The single highest-leverage
+      boolean in this object. A promise broken with notice is usually absorbed without
+      complaint; the same promise broken in silence produces an escalation, and the delta
+      between those two outcomes is one message that took ninety seconds to send.
+    type: value
+    data_type: boolean
+
+  - name: notice_given_at
+    purpose: >
+      When the warning went out. Its distance BEFORE due_at is the whole quality signal —
+      notice at due_at minus ten minutes is not notice, it is an announcement.
+    type: value
+    data_type: timestamp
+
+  - name: renegotiation_count
+    purpose: >
+      How many times this promise has already been reset. One reset is professional. Two is a
+      pattern the customer has now noticed. Three has stopped being about the issue and
+      started being about whether anything we say means anything.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: supersedes_ref
+    purpose: >
+      The commitment this one replaces. Self-referential and append-only. Chained rather than
+      overwritten so that serial overpromising is visible as a chain instead of vanishing into
+      a single current due date that always looks reasonable.
+    type: reference
+    ref: customer_support.obj.core.commitment
+    data_type: ref
+
+  - name: closed_at
+    purpose: When the loop was actually closed with the customer. Not when the work finished.
+    type: value
+    data_type: timestamp
+
+  - name: outcome
+    purpose: >
+      How it ended. `never_actioned` is deliberately distinct from `delivered_late`: one is a
+      slow queue and the other is a dropped promise, and only the second predicts churn.
+    type: value
+    data_type: enum
+    allowed_values: [delivered, delivered_late, superseded, withdrawn, never_actioned, unknown]
+
+  # ── consequence ─────────────────────────────────────────────────────────────
+  - name: hours_past_due
+    purpose: >
+      Wall clock beyond the promised time. No pause arithmetic, ever — see the constraint. The
+      customer's Thursday does not pause because the ticket was waiting on engineering.
+    type: derived
+    derived_from: [due_at, commitment.due_at]
+    data_type: number
+    unit: hours
+
+  - name: breach_was_silent
+    purpose: >
+      True when the due time passed, nothing went out, and the customer had to notice by
+      themselves. This is the field that separates a service failure from a trust failure, and
+      it is the one an operator should be woken up for.
+    type: derived
+    derived_from: [state, notice_given, followup_observed]
+    data_type: boolean
+
+  - name: trust_cost
+    purpose: >
+      Graded rather than boolean, because a first slip on a routine question and a third slip
+      on an already-escalated account are not the same event. Set by Layer 4 from the factors
+      below; recorded here so it can be reviewed against what actually happened.
+    type: value
+    data_type: enum
+    allowed_values: [none, minor, material, severe]
+
+  - name: is_tighter_than_sla
+    purpose: >
+      Whether the human promised sooner than the contract required — which they usually did,
+      because agents promise to relieve the moment in front of them and are not looking at the
+      entitlement. When true, this object holds the real deadline and the SLA is decoration.
+    type: derived
+    derived_from: [due_at, sla_target_ref]
+    data_type: boolean
+
+  - name: sla_target_ref
+    purpose: >
+      The contractual clock running alongside, if any. Held so the "green SLA, broken promise"
+      case is expressible in one place rather than requiring a join nobody performs.
+    type: reference
+    ref: customer_support.obj.core.sla_target
+    data_type: ref
+
+  - name: escalation_ref
+    purpose: >
+      The escalation this promise caused, if it caused one. Broken callbacks are among the most
+      common escalation triggers and are almost never recorded as the cause, because the
+      escalation gets logged against the technical issue instead.
+    type: reference
+    ref: customer_support.obj.core.escalation
+    data_type: ref
+
+  # ── observed ────────────────────────────────────────────────────────────────
+  - name: ball_in_court
+    purpose: >
+      Who is actually blocking, from the thread. On this object it does specific work: an
+      overdue promise with the ball in the customer's court is usually contingent and not
+      broken at all, and firing an overdue alert on it is the fastest way to teach an agent to
+      ignore the alerts.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+
+  - name: last_inbound_at
+    purpose: >
+      The customer's last message. Its silence after a missed promise is not relief — it is
+      usually the sound of them escalating somewhere we cannot see.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: followup_observed
+    purpose: >
+      Whether any outbound was seen on this node. Proves an observation existed, never that
+      the loop was closed: an autoresponder and a real update look identical from here, and a
+      call made instead of an email looks like nothing at all.
+    type: value
+    data_type: boolean
+
+  - name: sentiment_score
+    purpose: >
+      Engine-computed observation balance. Read as direction, not level — it was calibrated on
+      commercial correspondence and reads a coldly furious enterprise admin as roughly neutral.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+
+  - name: related_meeting_at
+    purpose: >
+      A call on this node. The strongest available hint that a verbal commitment exists that
+      nobody wrote down.
+    type: value
+    data_type: timestamp
+    source_paths: [meeting.start_at]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STATES
+#
+# `at_risk`, `overdue`, `open` and `cancelled` come from the recommended set in
+# vocabulary.yaml. `kept`, `missed`, `renegotiated` and `abandoned` do not, and are added
+# because a promise has outcomes a work item does not: `closed` cannot distinguish a promise
+# honoured from a promise quietly dropped, and that distinction is the object's whole reason
+# for existing. Noted in metadata.
+# ─────────────────────────────────────────────────────────────────────────────
+states:
+  initial: open
+  terminal: [kept, missed, abandoned, cancelled]
+  values:
+
+    - name: open
+      description: >
+        Made, recorded, due time in the future. The only state in which the cheap fix — send
+        the update early — is still available.
+      implies: Nothing is wrong yet, and this is the window in which almost all recoverable value sits.
+
+    - name: at_risk
+      description: >
+        Due within hours and the move is still ours. The pre-breach window, and the highest
+        leverage moment in the entire object: a message sent here costs nothing and a message
+        sent four hours later costs an apology.
+      entered_when:
+        - {fn: hours_since, path: commitment.due_at, op: ">=", value: -4}
+        - {fn: hours_since, path: commitment.due_at, op: "<", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      implies: There is still time to renegotiate rather than apologise.
+
+    - name: overdue
+      description: >
+        The promised time has passed. Note this says nothing about whether the customer knows
+        — that is `notice_given`, and the two together are what actually determine the cost.
+      entered_when:
+        - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+      implies: We are late. Whether we are also untrustworthy depends entirely on the next message.
+
+    - name: renegotiated
+      description: >
+        A new time was agreed BEFORE the old one passed. The healthy failure mode, and the
+        thing good support teams do constantly and quietly. Creates a successor commitment;
+        does not edit this one.
+      implies: The promise moved with consent. Cost is close to zero on the first reset and rises steeply.
+
+    - name: kept
+      description: We did the thing, by the time we said, and told them. Terminal and unremarkable, which is the goal.
+
+    - name: missed
+      description: >
+        The due time passed without delivery and without prior notice, and we eventually
+        engaged. The customer now has a story about us.
+      implies: A trust event. Recovery is possible and requires acknowledgement before explanation.
+
+    - name: abandoned
+      description: >
+        Nobody ever went back. Rarer than `missed` and much worse — the customer was left to
+        work out on their own that we were not coming. This is the state that produces
+        cancellations that arrive without warning.
+      implies: The relationship, not the ticket, is now the open item.
+
+    - name: cancelled
+      description: >
+        Withdrawn with the customer's knowledge, usually because the underlying need went
+        away. A legitimate and clean ending, and distinguishable from `abandoned` only by
+        whether anyone said so out loud.
+
+  transitions:
+    - {from: open, to: at_risk}
+    - {from: open, to: renegotiated}
+    - {from: open, to: kept}
+    - {from: open, to: cancelled}
+    - {from: open, to: overdue,
+       when: [{fn: hours_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: at_risk, to: renegotiated, trigger: notice_sent_before_due, reversible: false}
+    - {from: at_risk, to: kept}
+    - {from: at_risk, to: overdue,
+       when: [{fn: hours_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: overdue, to: kept, trigger: delivered_late_with_contact}
+    - {from: overdue, to: renegotiated, trigger: reset_after_due}
+    - {from: overdue, to: missed}
+    - {from: overdue, to: abandoned,
+       when: [{fn: days_since, path: commitment.due_at, op: ">=", value: 3},
+              {no_obs: followup_sent}]}
+    - {from: renegotiated, to: open, trigger: successor_commitment_created}
+    - {from: missed, to: abandoned}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RELATIONSHIPS
+#
+# The two edges worth arguing about are `supersedes` to sla_target and `supersedes` to
+# itself. The first says the promise outranks the contract in the customer's account of what
+# happened; the second says a reset chains rather than overwrites. Both are opinions and both
+# are written down so they can be disagreed with.
+# ─────────────────────────────────────────────────────────────────────────────
+relationships:
+
+  - target: customer_support.obj.core.ticket
+    type: belongs_to
+    cardinality: zero_or_one
+    weight_bp: 2000
+    confidence_bp: 8000
+    direction: outbound
+    priority: 1
+    description: >
+      The work the promise is about. Zero is real and common — the promise made on a call
+      before the ticket was cut is the one most likely to be broken, precisely because it has
+      no record to hang on.
+    evidence: [email, ticket, phone]
+
+  - target: customer_support.obj.core.requester
+    type: issued_to
+    cardinality: one
+    weight_bp: 1800
+    confidence_bp: 9000
+    priority: 2
+    description: >
+      Always exactly one human. A promise to "the account" is a marketing statement; a
+      promise is remembered by the person who was in the conversation, and if that person
+      leaves, the promise does not transfer with the logo.
+    evidence: [email, ticket, meeting_transcript]
+
+  - target: customer_support.obj.core.support_agent
+    type: assigned_to
+    cardinality: one
+    weight_bp: 1700
+    confidence_bp: 7000
+    priority: 3
+    description: >
+      Exactly one accountable person, who may not be the person who said it. Where speaker
+      and owner differ, both need to be carried: the customer will address the speaker and
+      the work sits with the owner, and a handoff that tells neither produces the classic
+      dropped callback.
+    evidence: [ticket, manual_entry]
+
+  - target: customer_support.obj.core.sla_target
+    type: supersedes
+    cardinality: zero_or_one
+    weight_bp: 1500
+    confidence_bp: 6000
+    conditions:
+      - {exists: commitment.due_at}
+    description: >
+      Read as "in the customer's account of events, this outranks that". Not a legal claim —
+      the SLA remains what the contract enforces. But when the commitment is tighter, which it
+      usually is, meeting the SLA does not rescue a missed commitment, and a system that
+      reports only SLA attainment will report a healthy queue that its customers describe as
+      unreliable.
+    evidence: [email, contract]
+
+  - target: customer_support.obj.core.commitment
+    type: supersedes
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 7500
+    description: >
+      Self-referential, append-only. Each renegotiation creates a successor rather than
+      editing the original, so the chain "Wednesday, then Friday, then next week" survives as
+      a chain. Every individual link looks reasonable; only the sequence is diagnostic, and
+      overwriting destroys exactly the sequence.
+
+  - target: customer_support.obj.core.conversation
+    type: references
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 8500
+    description: The thread where the words were said. The proof, when there is an argument about what was promised.
+    evidence: [email, chat, meeting_transcript]
+
+  - target: customer_support.obj.core.escalation
+    type: escalates_to
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 5000
+    description: >
+      A broken callback is one of the most common causes of an escalation and one of the least
+      commonly recorded ones, because escalations get filed against the technical issue that
+      was under discussion rather than against the silence that actually triggered the call
+      to the account manager.
+
+  - target: customer_support.obj.core.customer_sentiment
+    type: influences
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    description: >
+      Directional and fast. Sentiment after a broken promise turns harder and sooner than
+      sentiment after a slow fix, because the second is a capability judgement and the first
+      is a character one.
+
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 4500
+    description: >
+      One broken promise is not churn risk. A pattern of them is a specific and unusually
+      legible one, because it is evidence about how we behave rather than about how our
+      product performs, and customers generalise the former much more readily.
+
+  - target: customer_support.obj.core.incident
+    type: attaches_to
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 6500
+    description: >
+      During a major incident, "we will update you every hour" is one operational commitment
+      and several hundred remembered ones. The incident object is what lets it be answered
+      once; this edge is what stops the per-customer tracker from screaming about it.
+
+  - target: customer_support.obj.core.entitlement
+    type: governed_by
+    cardinality: zero_or_one
+    weight_bp: 300
+    confidence_bp: 4000
+    description: >
+      Bounds what may be promised, and routinely fails to, because the agent making the
+      promise is looking at an upset customer and not at a contract. That gap is not a
+      compliance problem — it is where most goodwill in support is actually created and most
+      overcommitment actually happens, and both live in the same sentence.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INFERENCE PATTERNS
+#
+# Eleven executable, seven needs_signal. The executable eleven are the reason this object
+# exists in its current form: they are built from commitment.due_at, commitment.action,
+# thread.ball_in_court, thread.last_inbound, meeting.start_at, derived.sentiment, the
+# reply_cadence baseline and the followup_sent observation, all of which the pipeline emits
+# today.
+#
+# The arithmetic convention throughout: hours_since a FUTURE timestamp is negative. So
+# `hours_since commitment.due_at > 0` reads "the promised time is behind us", and
+# `>= -4 AND < 0` reads "due within the next four hours". This is the same convention
+# sla-target.yaml uses and it must stay the same in both files or the two objects will
+# disagree about what "overdue" means.
+# ─────────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: commitment.a_named_time_is_what_makes_it_one
+      statement: A due time exists on this node, so a promise with a deadline was made and this object is real.
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+      yields:
+        confidence_bp: 9000
+        attribute: null
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        A date the CUSTOMER named — "we go live on the 14th, we need this before then" —
+        extracted as though we had promised it. The pipeline sees a commitment-shaped
+        timestamp on the thread and cannot tell whose mouth it came out of, so a customer
+        deadline becomes an agent promise and we start alerting on a break that was never ours.
+      note: >
+        The object-asserting pattern, and the one that makes everything below possible.
+        Deliberately 9000 rather than higher because of the false positive above, which is the
+        single most likely way this object gets populated wrongly. Not lower, because when the
+        extraction is right this is close to certain: a due timestamp attached to a support
+        thread is a promise far more often than it is anything else.
+
+    - id: commitment.an_action_with_no_named_time_is_not_a_commitment
+      statement: >
+        Something was undertaken but no time was ever stated — record it as a commitment that
+        was never made, and treat the gap as a capture defect.
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+      yields:
+        confidence_bp: 8800
+        value: false
+        attribute: is_time_named
+      evidence_fields: [commitment.action]
+      false_positive: >
+        The time was named in words the extractor could not resolve into a timestamp —
+        "before the weekend", "after the release" — so a real commitment with a real deadline
+        is filed as a non-commitment. This is the failure that matters most here, because the
+        vaguely-worded promise is also the one most likely to be broken.
+      note: >
+        This is the doctrine of the object in executable form. "I'll come back to you as soon
+        as I know more" is a reassurance: nothing can be late, nothing can be checked, and
+        nothing will be tracked. Recording it as a soft commitment is worse than recording
+        nothing, because it produces a live promise with no due date that sits in a queue
+        forever and quietly degrades the promise-keeping metric. The right handling is to
+        surface it to the agent as an unfinished sentence — "you owe them a date" — which is a
+        prompt they can act on in the same reply, rather than as a tracked obligation nobody
+        can discharge.
+
+    - id: commitment.due_time_has_passed
+      statement: We are past the moment we told this customer we would come back to them.
+      status: executable
+      when:
+        - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+      yields:
+        confidence_bp: 9400
+        value: overdue
+        attribute: state
+        corroborates: [commitment.a_named_time_is_what_makes_it_one]
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        A due time stored in the wrong timezone, or a coarse phrase flattened to midnight —
+        "end of the week" recorded as Friday 00:00 fires this pattern all Friday, on a promise
+        that has until Friday evening to be kept. Cheap arithmetic, expensive credibility:
+        it is the fastest way to teach a team that the overdue alert is noise.
+      note: >
+        Pure arithmetic and the most reliable thing this brain can currently say about a
+        support interaction. 9400 rather than 10000 for the timezone and rounding reasons
+        above, and because the promise may have been discharged on a channel the thread cannot
+        see. It is deliberately NOT conditioned on ball_in_court — see the suspension pattern
+        below, which is the correct place to suppress rather than folding the suppression in
+        here where it would hide the fact that a promise did lapse.
+
+    - id: commitment.due_within_hours_and_still_ours
+      statement: The promised time is inside the next four hours and the move is still ours.
+      status: executable
+      when:
+        - {fn: hours_since, path: commitment.due_at, op: ">=", value: -4}
+        - {fn: hours_since, path: commitment.due_at, op: "<", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields:
+        confidence_bp: 7800
+        value: at_risk
+        attribute: state
+      evidence_fields: [commitment.due_at, thread.ball_in_court]
+      false_positive: >
+        The work is finished and the reply is already drafted, or was sent through a channel
+        the thread does not observe. Fires as a warning on a promise that is about to be kept
+        comfortably, which is a mild annoyance rather than a harm — but it fires on EVERY such
+        promise, so a queue that keeps its word well will see this constantly and start
+        dismissing it.
+      note: >
+        The highest-leverage pattern in the file and the only one that acts before the damage.
+        A message sent inside this window is a renegotiation and costs nothing; the identical
+        message four hours later is an apology and costs an explanation. Four hours is a
+        deliberate guess and should be tuned per queue — it wants to be roughly one working
+        shift, so a follow-the-sun operation needs it shorter and a next-business-day plan
+        needs it much longer. The ball_in_court condition is what keeps the volume survivable:
+        without it this fires on every open promise on the planet twice a day.
+
+    - id: commitment.missed_in_silence
+      statement: >
+        A day past the promised time and no outbound has been observed — the customer has not
+        been told, and is finding out by our absence.
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">=", value: 1}
+        - {no_obs: followup_sent}
+      yields:
+        confidence_bp: 8600
+        value: true
+        attribute: breach_was_silent
+        corroborates: [commitment.due_time_has_passed]
+      evidence_fields: [commitment.due_at, commitment.action, thread.last_inbound]
+      false_positive: >
+        The agent picked up the phone. `no_obs: followup_sent` proves no outbound was
+        OBSERVED, not that none was sent, and a call is invisible here — so the one channel an
+        experienced agent reaches for when a promise is about to break is precisely the one
+        that makes this pattern accuse them of silence.
+      note: >
+        The flagship of the object and the pattern most worth acting on today. It is
+        deliberately independent of every contractual clock: a ticket can be comfortably
+        inside its SLA and still have broken the only promise the customer remembers. The
+        asymmetry in the false positive is accepted on purpose — the cost of chasing a promise
+        that was already kept is a mildly redundant message, and the cost of missing one is
+        the relationship. 8600 rather than higher because of the phone case, which is common
+        enough to be a real discount rather than a caveat.
+
+    - id: commitment.abandoned_past_the_trust_horizon
+      statement: Three days past the promised time with nothing sent at all — nobody is coming back.
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">=", value: 3}
+        - {no_obs: followup_sent}
+      yields:
+        confidence_bp: 9000
+        value: abandoned
+        attribute: state
+        corroborates: [commitment.missed_in_silence]
+      evidence_fields: [commitment.due_at, thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        A commitment that was legitimately cancelled in conversation — the customer said "don't
+        worry about it, we found another way" — and nobody closed the record. The promise is
+        genuinely dead and this reports it as dropped, which is unfair to the agent and
+        harmless to the customer.
+      note: >
+        Higher than the one-day pattern, which is not obvious and is the argument of the file.
+        By day three the event has changed category: it is no longer a late reply, it is
+        evidence about how this organisation behaves, and it is the state that produces
+        cancellations arriving with no warning. Three days rather than two — sla-target.yaml
+        uses two for a contractual clock — because a personal promise absorbs a working day of
+        slippage without becoming a character question, and a contractual one does not.
+        Sitting the two thresholds a day apart is deliberate and should stay deliberate.
+
+    - id: commitment.suspended_because_we_are_waiting_on_them
+      statement: >
+        The promised time has passed but the ball is in the customer's court — the promise was
+        contingent on something they have not sent, and it is not broken.
+      status: executable
+      when:
+        - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields:
+        confidence_bp: 6500
+        value: false
+        attribute: breach_was_silent
+      evidence_fields: [commitment.due_at, thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        The contingency was satisfied and the ball never swung back in the thread's reading —
+        the customer attached the logs to a reply the extractor scored as inbound-only, or
+        sent them to an engineer directly. We then sit on a genuinely broken promise
+        believing we are blocked, which is the most damaging way this pattern can be wrong
+        because it produces confident inaction.
+      note: >
+        The suppressor, and the reason the overdue detector is usable at all. "I'll come back
+        to you Thursday once you send me the logs" is the most common shape of a support
+        commitment, and an alert that treats it as a break on Thursday is wrong most of the
+        time it fires. Only 6500 because ball_in_court reads correspondence alone and is
+        exactly the field a determined customer can make wrong by replying somewhere else.
+        The right handling of this pattern is to SOFTEN the overdue signal rather than to
+        cancel it, and to prompt a chase rather than nothing: a promise waiting on a customer
+        for a week is still our problem, just not our breach.
+
+    - id: commitment.extracted_from_language_that_never_says_promise
+      statement: >
+        The agent stated an undertaking in ordinary conversational English and it should be
+        captured as a tracked commitment.
+      status: needs_signal
+      yields:
+        confidence_bp: 9200
+        attribute: null
+      requires_signals:
+        - kind: obs_kind
+          name: callback_promised
+          owner_layer: L2
+          note: >
+            The highest-value missing signal for this object by a distance. Today
+            commitment.due_at arrives from a generic extractor built for a sales motion, which
+            catches "I'll send the proposal Monday" and is much shakier on the support
+            phrasings — "let me chase that and revert before end of play", "I'll get an answer
+            from the team and ping you Thursday". Nobody says "I commit". The extraction has to
+            recognise an undertaking from verb and tense, and it has to attribute it to the
+            AGENT rather than to the customer, which is the failure named in the false positive
+            on the first pattern above.
+        - kind: fact_path
+          name: commitment.owner
+          owner_layer: L1
+          note: >
+            Without an owner the promise is attached to a thread rather than to a person, so
+            it cannot be routed at handover and cannot be aggregated into a per-agent
+            reliability signal. A commitment owned by a queue is owned by nobody.
+        - kind: fact_path
+          name: commitment.recipient
+          owner_layer: L1
+          note: >
+            Who it was promised to. Needed to detect the case where the promise is still live
+            and the person waiting on it has left the account.
+
+    - id: commitment.declared_state_from_the_system_of_record
+      statement: The ticketing or task system holds the commitment's own recorded state.
+      status: needs_signal
+      yields:
+        confidence_bp: 10000
+        attribute: state
+      requires_signals:
+        - kind: fact_path
+          name: commitment.state
+          owner_layer: L1
+          note: >
+            Would let a declared state be compared against the inferred one, which is the
+            comparison that matters: where an agent has marked a promise kept and the thread
+            shows nothing went out, the disagreement is the finding. Ranked below the
+            extraction signal above because most organisations have no commitment record at
+            all to project — this field is usually a free-text note, which is precisely why
+            promises are the least-tracked obligation in support.
+        - kind: fact_path
+          name: ticket.status
+          owner_layer: L1
+          note: >
+            A commitment on a ticket that closed is a different object from one on a ticket
+            still open, and today the two are indistinguishable — so a promise attached to
+            work that finished keeps generating overdue alerts.
+
+    - id: commitment.renegotiated_before_the_due_time
+      statement: A new time was agreed with the customer before the old one lapsed.
+      status: needs_signal
+      yields:
+        confidence_bp: 8500
+        value: renegotiated
+        attribute: state
+      requires_signals:
+        - kind: obs_kind
+          name: commitment_renegotiated
+          owner_layer: L2
+          note: >
+            Not in planned_substrate and proposed here, because nothing in the planned list
+            covers it and the distinction it draws is the most valuable one in the domain.
+            Today a reset is indistinguishable from a fresh promise: both look like a new
+            commitment.due_at, so a team that renegotiates responsibly and a team that
+            silently slips produce identical traces. Since notice-versus-silence is almost the
+            entire de-escalation conversation, an engine that cannot see the difference cannot
+            coach it, cannot reward it, and will report the careful team and the careless one
+            as equally unreliable.
+        - kind: fact_path
+          name: commitment.state
+          owner_layer: L1
+          note: >
+            Needed to chain the successor to the original. Without it a reset overwrites, the
+            chain disappears, and serial overpromising becomes invisible — each individual due
+            date always looks reasonable.
+
+    - id: commitment.the_person_we_promised_has_gone
+      statement: The commitment is live and the individual it was made to has left the account.
+      status: needs_signal
+      yields:
+        confidence_bp: 7500
+        attribute: null
+      requires_signals:
+        - kind: fact_path
+          name: commitment.recipient
+          owner_layer: L1
+          note: >
+            `champion_change` is already emitted by Layer 2, so half of this pattern exists.
+            The missing half is knowing WHO the promise was made to, without which the
+            departure cannot be matched to the obligation. Worth having because this is a case
+            where the correct action inverts: the promise must be re-made to a new person
+            rather than merely delivered, and delivering it to a dead mailbox looks like
+            compliance while being total silence.
+
+  heuristic:
+
+    - id: commitment.loop_looks_closed_before_the_due_time
+      statement: An outbound was observed and the promised time has not yet passed — this looks kept.
+      status: executable
+      when:
+        - {has_obs: followup_sent}
+        - {fn: hours_since, path: commitment.due_at, op: "<=", value: 0}
+      yields:
+        confidence_bp: 5200
+        value: kept
+        attribute: state
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        The follow-up predates the promise. The predicate grammar has no way to order an
+        observation against a timestamp, so a routine update sent last Tuesday satisfies a
+        promise made this Monday. It will also count an autoresponder, a macro, or a reply
+        about something else entirely on the same thread.
+      note: >
+        The weakest executable pattern here and included anyway, because the alternative is an
+        object that can only ever detect failure. Deliberately capped at 5200: it should
+        soften an alert, never close a commitment, and it must never feed a promise-keeping
+        metric — a kept-rate built on this pattern would be flattering and false. The temporal
+        ordering gap named in the false positive is the cheapest single improvement Layer 2
+        could make to this file, and it needs no new signal, only an ordering the grammar does
+        not currently express.
+
+    - id: commitment.broken_promise_over_souring_sentiment
+      statement: The promised time has passed and the tone of the thread has already turned negative.
+      status: executable
+      when:
+        - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: derived.sentiment, op: "<", value: 0.0}
+      yields:
+        confidence_bp: 7000
+        value: material
+        attribute: trust_cost
+      evidence_fields: [commitment.due_at, derived.sentiment, thread.ball_in_court]
+      false_positive: >
+        The customer is angry about the fault, not about us — a serious outage produces
+        negative sentiment throughout, including from customers who think our handling has
+        been excellent. The overdue half is real; the attribution of the negativity to the
+        broken promise is the guess.
+      note: >
+        The de-escalation trigger, and the pattern most worth routing to a human today. A
+        missed promise on a neutral thread is a hygiene item; a missed promise on a thread
+        that has already soured is where a support issue becomes an account issue, and the
+        recovery move changes from "send the update" to "acknowledge before explaining". 7000
+        rather than higher because derived.sentiment was calibrated on commercial
+        correspondence and systematically under-reads the coldly polite enterprise
+        administrator — who is exactly the person who escalates without warning.
+
+    - id: commitment.customer_stopped_chasing_after_we_went_quiet
+      statement: >
+        The promise lapsed, the move is ours, and the customer has now been silent for far
+        longer than their own established rhythm.
+      status: executable
+      when:
+        - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2, floor: 1}}
+      yields:
+        confidence_bp: 6000
+        value: severe
+        attribute: trust_cost
+      evidence_fields: [commitment.due_at, thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        They are on holiday, or the issue resolved itself and they moved on. A quiet customer
+        is ambiguous by construction, and this pattern picks the pessimistic reading on purpose.
+      note: >
+        The most counter-intuitive pattern in the file and the one an experienced operator
+        will recognise immediately. A customer who chases a broken promise is still engaged
+        with us; a customer who stops chasing has usually not forgiven it, they have escalated
+        internally, opened a ticket with a competitor, or written us off. Silence after a
+        missed promise is a worse signal than complaint after one, and every alerting system
+        built on inbound volume gets this exactly backwards. Uses the reply_cadence baseline
+        rather than a constant because "long" is only meaningful against this customer's own
+        habit — a daily-contact admin going quiet for two days is louder than a quarterly user
+        going quiet for two weeks. days_since rather than hours_since is deliberate:
+        reply_cadence is expressed in days everywhere else it is consumed, and mixing units
+        against an hours comparison would produce a threshold so low the pattern fires on
+        everything while looking entirely reasonable in review. Floor of 1 day because a
+        cold-start baseline resolves to the floor.
+
+    - id: commitment.made_on_a_call_and_never_written_down
+      statement: >
+        A call happened, nothing went out in writing afterwards, and no due time was ever
+        recorded — there is very likely an untracked verbal promise here.
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">=", value: 1}
+        - {no_obs: followup_sent}
+        - {absent: commitment.due_at}
+      yields:
+        confidence_bp: 5500
+        attribute: null
+      evidence_fields: [meeting.start_at, commitment.action]
+      false_positive: >
+        A recurring internal standup or an unrelated calendar entry attached to the same graph
+        node fires this every week, on a node where no customer promise was ever made. It also
+        fires on a call that was genuinely conclusive and needed no follow-up.
+      note: >
+        This is the object's blind-spot detector: it does not find a commitment, it finds the
+        SHAPE of a place where one is probably hiding. Calls generate more promises than any
+        other channel and leave the least evidence, and the classic failure is a promise made
+        verbally, never typed, and quoted back weeks later by a customer who is entirely right
+        about it. Only 5500 because every one of its three conditions is circumstantial. Its
+        proper use is a prompt to the agent — "did you promise them anything on that call?" —
+        which is cheap to answer and impossible to answer later.
+
+    - id: commitment.this_promiser_habitually_overpromises
+      statement: >
+        This agent or team names times they do not hold, at a rate that is a coaching finding
+        rather than a run of bad luck.
+      status: needs_signal
+      yields:
+        confidence_bp: 7000
+        attribute: null
+      requires_signals:
+        - kind: baseline
+          name: commitment_delivery_rate
+          owner_layer: L2
+          note: >
+            Turns individual broken promises into the only support metric that measures
+            character rather than throughput. It is also the metric most likely to be misused,
+            so it needs to be per-promiser AND per-promise-type: an agent who promises
+            resolutions will miss far more than one who promises updates, and ranking them
+            together punishes the braver one. Absent this, every broken promise is read as an
+            isolated incident and the systematic overpromiser is invisible.
+        - kind: fact_path
+          name: commitment.owner
+          owner_layer: L1
+
+    - id: commitment.met_every_clock_and_still_broke_our_word
+      statement: >
+        Every contractual target on this ticket was met and the personal commitment was
+        missed — the customer will describe this as a failure and the dashboard will describe
+        it as a success.
+      status: needs_signal
+      yields:
+        confidence_bp: 8000
+        value: material
+        attribute: trust_cost
+      requires_signals:
+        - kind: fact_path
+          name: sla.clock_state
+          owner_layer: L1
+          note: >
+            The comparison this whole object exists to make, and it is not currently
+            expressible: the commitment side is emitted and the SLA side is not, so the two
+            can never be put beside each other. This is the pattern that would prove the file's
+            central claim to a sceptical executive, and it is the reason SLA attainment reports
+            and customer satisfaction reports disagree in almost every support organisation.
+        - kind: fact_path
+          name: sla.target_resolution_at
+          owner_layer: L1
+        - kind: fact_path
+          name: csat.score
+          owner_layer: L1
+          note: >
+            The falsifier. If green SLAs with broken commitments do NOT score worse than red
+            SLAs with kept ones, the thesis of this object is wrong and the weights below
+            should be rebuilt. Authoring the disconfirming signal alongside the claim is the
+            point.
+
+    - id: commitment.broken_promise_became_a_cancellation_conversation
+      statement: The customer has raised leaving or escalating in the window after a promise lapsed.
+      status: needs_signal
+      yields:
+        confidence_bp: 8200
+        value: severe
+        attribute: trust_cost
+      requires_signals:
+        - kind: obs_kind
+          name: cancellation_threat
+          owner_layer: L2
+          note: >
+            Stated in plain language in threads we already ingest, and extracted by nothing.
+            It is the moment a broken callback stops being a support cost and becomes a revenue
+            one, and it is the single observation most likely to change what an organisation
+            does about promise tracking.
+        - kind: obs_kind
+          name: angry_language
+          owner_layer: L2
+          note: >
+            derived.sentiment is a thread-level balance and reads a formally worded complaint
+            as near-neutral. A discrete observation on the specific message is what allows
+            "this one message changed everything" rather than a slowly drifting average.
+        - kind: derived
+          name: derived.escalation_pressure
+          owner_layer: L2
+
+# ─────────────────────────────────────────────────────────────────────────────
+inputs:
+  - source: email
+    signal: promises made in writing and the time named in them
+    path: commitment.due_at
+    fills: [due_at, is_time_named]
+    reliability_bp: 8000
+  - source: email
+    signal: what was undertaken
+    path: commitment.action
+    fills: [action, promise_type]
+    reliability_bp: 7500
+  - source: email
+    signal: who is waiting on whom
+    path: thread.ball_in_court
+    fills: [ball_in_court]
+    reliability_bp: 7000
+    description: >
+      Load-bearing here in a way it is not elsewhere: it is what separates a contingent
+      promise from a broken one, and getting it wrong inverts the alert.
+  - source: email
+    signal: the customer's last message
+    path: thread.last_inbound
+    fills: [last_inbound_at]
+    reliability_bp: 8500
+  - source: calendar
+    signal: calls on this thread, as a proxy for verbal promises
+    path: meeting.start_at
+    fills: [related_meeting_at]
+    reliability_bp: 4000
+    description: Proves a call was scheduled. Proves nothing about what was said on it.
+  - source: derived
+    signal: observation balance across the thread
+    path: derived.sentiment
+    fills: [sentiment_score]
+    reliability_bp: 4000
+  - source: phone
+    signal: what was actually promised on the call
+    reliability_bp: 2000
+    description: >
+      The channel that generates the most commitments and the least evidence. Not ingested at
+      all, which means the promises most likely to be broken are also the ones least likely to
+      be recorded — the two failures compound rather than cancel.
+  - source: meeting_transcript
+    signal: verbatim undertakings made verbally
+    reliability_bp: 9000
+    description: >
+      The only source that can settle an argument about what was said on a call. Where
+      transcription exists, commitment extraction from it is the cheapest large win available
+      to this domain.
+  - source: chat
+    signal: promises made in a widget session that no ticket recorded
+    reliability_bp: 6000
+  - source: ticket
+    signal: recorded follow-up tasks, due dates and owners
+    description: >
+      Where a commitment ought to live and usually does not — most ticketing systems have an
+      SLA field and no commitment field, so the promise ends up as free text in a note.
+
+outputs:
+  - name: promise_state
+    type: string
+    description: open | at_risk | overdue | renegotiated | kept | missed | abandoned. The one-word answer to "did we do what we said".
+    derived_from: [state, due_at, followup_observed]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: silent_break_flag
+    type: boolean
+    description: >
+      True when the time passed, nothing went out, and the customer has not been told. The
+      highest-priority boolean this brain currently produces, and the one worth interrupting a
+      human for.
+    derived_from: [breach_was_silent, notice_given]
+    consumed_by: [L4.decision_maker, L5.communication_planning]
+  - name: hours_past_due
+    type: number
+    description: Wall clock beyond the promised time, unpaused. The number the customer is counting.
+    derived_from: [due_at]
+    consumed_by: [L4.reasoning_unit]
+  - name: renegotiation_window_open
+    type: boolean
+    description: >
+      True while the due time is still ahead. The window in which a reset costs nothing, and
+      the only output here that supports a cheap action rather than an expensive one.
+    derived_from: [due_at, state]
+    consumed_by: [L5.execution_planning, L5.communication_planning]
+  - name: next_customer_message
+    type: string
+    description: >
+      What must be said next and by when, given what was already promised and whether the
+      customer has been told. Where a commitment and an SLA disagree, this leads with the
+      commitment.
+    consumed_by: ["L5.2.channel_planner", L5.communication_planning]
+  - name: trust_debt_bp
+    type: integer
+    description: >
+      Accumulated cost of broken promises on this relationship, in basis points. Distinct from
+      sentiment: sentiment recovers on a good interaction, trust debt does not clear until a
+      promise is kept.
+    derived_from: [trust_cost, renegotiation_count, breach_was_silent]
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+  - name: promiser_reliability_signal
+    type: number
+    description: Per-agent kept-versus-named rate, for coaching. Never for ranking without promise_type held constant.
+    derived_from: [state, outcome, owner_ref]
+    consumed_by: [L6.learning_unit]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PRECONDITIONS — what must be true before this object can be resolved at all.
+# Distinct from constraints: a precondition gates whether we can ask, a constraint bounds the
+# answer. `degrade` and `block` are different answers and choosing between them is the whole
+# of the S8 question.
+# ─────────────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: commitment.requires_a_named_time
+    statement: >
+      A commitment cannot be resolved without a stated time. Without one there is nothing to
+      be early or late against and every downstream pattern is undefined.
+    requires: [due_at]
+    when:
+      - {absent: commitment.due_at}
+    if_unmet: >
+      degrade — do NOT block and do NOT invent a default. Record it as a commitment that was
+      never made, surface the missing date to the agent as an unfinished sentence they can
+      close in the same reply, and keep it out of the promise-keeping denominator. Blocking
+      would drop the record entirely and lose the capture gap, which is the actual finding.
+
+  - id: commitment.requires_a_named_owner
+    statement: One accountable human. A promise assigned to a team is a promise assigned to nobody.
+    requires: [owner_ref, customer_support.obj.core.support_agent]
+    if_unmet: >
+      block — refuse to open the commitment. This is the one precondition worth blocking on,
+      because an unowned promise fails silently and is discovered only when the customer
+      quotes it back, at which point nothing can be recovered.
+
+  - id: commitment.requires_a_named_recipient
+    statement: A promise is made to a person, not to a logo. The recipient is who remembers it.
+    requires: [made_to_ref, customer_support.obj.core.requester]
+    if_unmet: >
+      degrade — fall back to the ticket requester, and mark the attribution as inferred.
+      Wrong-person attribution is recoverable; no attribution means the promise cannot be
+      re-made when the recipient leaves.
+
+  - id: commitment.requires_an_observable_thread
+    statement: >
+      Every executable pattern here reads the correspondence. On a node with no ingested
+      thread, the object degrades to whatever the due date alone can say.
+    requires: [conversation_ref]
+    if_unmet: >
+      degrade — keep the arithmetic patterns (overdue, at-risk) and suppress every pattern
+      that reads followup_sent or ball_in_court, rather than reporting confident silence.
+      Reporting "nothing was sent" on a thread we cannot see is the worst available answer.
+
+constraints:
+
+  - id: commitment.exactly_one_owner
+    statement: One named human owns a commitment at any moment. Reassignment transfers it; it never shares it.
+    hard: true
+    why: Two owners is zero owners, and the promise is discovered by the customer rather than by us.
+
+  - id: commitment.due_at_is_immutable
+    statement: >
+      The stated time cannot be edited. A new time is a new commitment that supersedes this one.
+    hard: true
+    why: >
+      An editable due date makes the promise-keeping rate unfalsifiable. Every system that
+      permits the edit reports an excellent one, and the report is worthless.
+
+  - id: commitment.has_no_pause_condition
+    statement: >
+      A commitment cannot be paused, for any reason, including out-of-hours, awaiting-customer
+      and awaiting-engineering.
+    hard: true
+    why: >
+      The most important line in this file. An SLA clock pauses because the contract says so
+      and the customer's memory does not pause with it. Thursday was Thursday. Inheriting the
+      SLA's pause semantics — which is what happens whenever a commitment is implemented as an
+      SLA field, and it usually is — makes a broken promise disappear from the record at
+      exactly the moment it is being formed.
+
+  - id: commitment.cannot_be_closed_by_an_automated_message
+    statement: An autoresponder, a macro or a status-page update does not close a commitment.
+    hard: true
+    why: >
+      The promise was personal and specific; a template answers neither. Allowing it produces
+      a perfect kept-rate over a customer who experienced nothing.
+
+  - id: commitment.notice_must_precede_the_due_time
+    statement: >
+      Notice given after the due time is an apology, not notice, and must not set
+      notice_given.
+    hard: true
+    why: >
+      Collapsing the two erases the distinction the whole object turns on and makes every
+      break look handled.
+
+  - id: commitment.may_not_be_promised_beyond_entitlement
+    statement: A commitment should not undertake more than the entitlement covers.
+    hard: false
+    why: >
+      Soft on purpose. Agents exceed entitlement constantly and it is frequently the right
+      call — a small unearned promise is how goodwill is manufactured. Enforcing it hard would
+      block the best judgement on the floor; leaving it unrecorded is how systematic
+      overcommitment goes unnoticed. Flag, do not block.
+
+business_rules:
+
+  - id: commitment.no_named_time_no_commitment
+    statement: >
+      An undertaking with no stated time is not opened as a commitment. It is recorded as one
+      that was never made, and the missing date is surfaced to the agent.
+    when:
+      - {exists: commitment.action}
+      - {absent: commitment.due_at}
+    then: record_as_uncommitted_and_prompt_for_a_date
+    severity: blocking
+    why: >
+      A live promise with no due date can never be late, never be checked and never be
+      discharged. It degrades the metric it sits in and gives false comfort that the promise
+      is being tracked.
+
+  - id: commitment.silence_past_due_is_a_break
+    statement: >
+      A commitment whose time has passed with nothing observed outbound is a broken promise
+      regardless of SLA state, and must be flagged as such.
+    when:
+      - {fn: days_since, path: commitment.due_at, op: ">=", value: 1}
+      - {no_obs: followup_sent}
+    then: flag_silent_break
+    severity: warning
+    why: >
+      Customers forgive slow far more readily than they forgive silence after a specific date
+      was named. Warning rather than blocking because the observation can be wrong — the reply
+      may have gone by phone — and a blocking rule on an uncertain observation gets disabled
+      within a fortnight.
+
+  - id: commitment.renegotiate_before_not_after
+    statement: >
+      While the due time is still ahead and the move is ours, a reset or a holding update is
+      required rather than optional.
+    when:
+      - {fn: hours_since, path: commitment.due_at, op: ">=", value: -4}
+      - {fn: hours_since, path: commitment.due_at, op: "<", value: 0}
+      - {path: thread.ball_in_court, op: "=", value: us}
+    then: require_notice_or_reset
+    severity: warning
+    why: >
+      This is the whole of de-escalation compressed into one rule. The identical information —
+      "it is going to take longer" — is received as professionalism before the due time and as
+      an excuse after it, and the cost difference between those two receptions is larger than
+      anything else support controls at zero marginal cost.
+
+  - id: commitment.the_clock_does_not_pause
+    statement: No pause, exclusion or business-calendar adjustment may be applied to a commitment.
+    then: reject_pause
+    severity: blocking
+    why: >
+      The customer's Thursday does not observe our business calendar, our holidays or our
+      engineering backlog.
+
+  - id: commitment.owner_is_a_person
+    statement: A commitment may not be owned by a queue, a team, an alias or a shift.
+    then: reject_non_human_owner
+    severity: blocking
+
+  - id: commitment.an_autoresponder_does_not_close_the_loop
+    statement: >
+      A commitment may not be moved to kept by an automated, templated or bulk message. Closing
+      it requires a message that addresses what was specifically promised.
+    then: reject_automated_closure
+    severity: blocking
+
+  - id: commitment.lead_with_the_promise_not_the_clock
+    statement: >
+      When a met SLA and a missed commitment are both true, customer-facing communication must
+      lead with the missed commitment. Opening with contractual attainment reads as an excuse
+      and converts a recoverable slip into an escalation.
+    severity: advisory
+    why: >
+      The customer's account of what happened is organised around what a person told them, not
+      around what the contract said. Answering the wrong one is how technically correct
+      responses make things worse.
+
+decision_factors:
+  # Sums to exactly 10000. The top two together carry nearly half the weight on purpose:
+  # how late, and whether they were told. Everything else modulates those two.
+
+  - name: time_past_the_promised_moment
+    weight_bp: 2400
+    direction: increases
+    description: >
+      Unpaused wall clock beyond due_at. Ranked first because it is the only factor that is
+      both fully observable today and unarguable — the time either passed or it did not.
+    reads: [due_at, hours_past_due, state]
+
+  - name: whether_they_were_told
+    weight_bp: 2200
+    direction: increases
+    description: >
+      Notice before the due time versus discovery by silence. Nearly co-equal with lateness
+      and, unlike lateness, entirely within our control at zero cost. A support organisation
+      that improved only this factor would look dramatically more reliable without getting one
+      bit faster.
+    reads: [notice_given, notice_given_at, breach_was_silent, followup_observed]
+
+  - name: how_specifically_it_was_promised
+    weight_bp: 1400
+    direction: context
+    description: >
+      An exact time is held to the minute; "end of week" is held to whatever the customer
+      assumed, which is always earlier than we meant. Vagueness does not reduce exposure, it
+      transfers the definition of the deadline to the other party.
+    reads: [due_specificity, wording_verbatim, promise_type, is_time_named]
+
+  - name: how_often_this_has_already_been_reset
+    weight_bp: 1200
+    direction: increases
+    description: >
+      The chain, not the current link. Each reset in isolation is defensible; the third one is
+      the customer concluding that our dates are decoration, and that conclusion does not
+      reverse when the work finally lands.
+    reads: [renegotiation_count, supersedes_ref, outcome]
+
+  - name: who_it_was_promised_to_and_by
+    weight_bp: 1200
+    direction: context
+    description: >
+      A promise from a named engineer to a named admin who has been with us three years is a
+      different obligation from one made by a rotating first-line queue to a new signup — and
+      a promise to someone who has since left needs re-making rather than delivering.
+    reads: [made_to_ref, made_by_ref, owner_ref]
+
+  - name: how_the_customer_has_reacted_so_far
+    weight_bp: 1000
+    direction: increases
+    description: >
+      Direction over level, and silence weighted as loudly as complaint. A customer who stops
+      chasing a broken promise is usually further gone than one who is still shouting about it.
+    reads: [sentiment_score, last_inbound_at, escalation_ref]
+
+  - name: whether_we_are_genuinely_the_blocker
+    weight_bp: 600
+    direction: decreases
+    description: >
+      The only factor here that reduces the score. A promise contingent on something the
+      customer has not sent is suspended, not broken — and the alert that cannot tell the
+      difference is the one that gets muted, taking every real break with it.
+    reads: [ball_in_court, last_inbound_at]
+
+evidence:
+  - source: email
+    strength_bp: 9000
+    decays: false
+    independent_of: [manual_entry, derived, ticket]
+    description: >
+      The promise in the agent's own typed words, timestamped. The best evidence this domain
+      has for anything, and unusually here it is also the primary record rather than a proxy —
+      for a written commitment, the email IS the commitment.
+  - source: meeting_transcript
+    strength_bp: 8500
+    decays: false
+    independent_of: [manual_entry, email]
+    description: >
+      The only thing that can settle what was actually said on a call. Rare, and where it
+      exists it converts the domain's weakest evidence channel into its second strongest.
+  - source: ticket
+    strength_bp: 8000
+    decays: false
+    description: >
+      A recorded follow-up task with a due date and an owner. Strong when it exists, and it
+      usually does not — most systems have an SLA field and no commitment field, so the
+      promise degrades to a free-text note.
+  - source: chat
+    strength_bp: 7000
+    decays: false
+    description: >
+      Verbatim and timestamped, but sessions end abruptly and the promise is frequently in the
+      last message before the customer closed the window.
+  - source: phone
+    strength_bp: 4500
+    decays: true
+    description: >
+      Where most commitments are made and almost none survive. What was promised exists only
+      in whatever the agent typed afterwards, written by the person the record will be used
+      to judge.
+  - source: manual_entry
+    strength_bp: 4000
+    decays: true
+    description: >
+      The agent's own note. Honest, unverifiable, and systematically kinder to the writer than
+      a transcript would be — not from dishonesty but because people remember hedging they did
+      not actually say out loud.
+  - source: derived
+    strength_bp: 3500
+    decays: true
+    description: >
+      Inferred from conversation shape — followups observed, ball in court, tone. Corroborating
+      only. It can establish that nothing was SEEN to be sent, never that nothing was sent.
+  - source: calendar
+    strength_bp: 2500
+    decays: true
+    description: >
+      Proves a call was scheduled. Does not prove it happened, that it was about this, or that
+      anything was promised on it. Included because on the phone channel it is frequently the
+      only trace there is.
+
+metrics:
+  - name: promise_keep_rate
+    unit: percent
+    description: >
+      Share of commitments delivered by the time named. Only honest when the denominator
+      includes promises with no due date recorded — a queue that stops naming times will score
+      perfectly otherwise.
+    direction: higher_is_better
+    owner_layer: L6
+    calibrates: [commitment.due_time_has_passed, commitment.loop_looks_closed_before_the_due_time]
+  - name: silent_break_share
+    unit: percent
+    description: >
+      Of the promises that broke, the share where nothing went out before the customer noticed.
+      The most diagnostic number in this file and the one most support organisations have never
+      computed, because it requires knowing the promise existed.
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [commitment.missed_in_silence, commitment.abandoned_past_the_trust_horizon]
+  - name: notice_lead_time
+    unit: hours
+    description: >
+      How far BEFORE the due time a slip was communicated. Negative values are not notice and
+      should be reported separately rather than averaged in, which is how this metric is
+      usually ruined.
+    direction: higher_is_better
+    owner_layer: L6
+  - name: renegotiations_per_commitment
+    unit: count
+    description: >
+      Resets per promise. A team improving its keep-rate while this climbs is not getting more
+      reliable, it is moving the goalposts more skilfully.
+    direction: lower_is_better
+    owner_layer: L6
+  - name: unrecorded_commitment_rate
+    unit: percent
+    description: >
+      Promises discovered only because the customer quoted them back at us. Impossible to
+      measure directly and worth estimating anyway, because it is the true size of the gap this
+      object exists to close.
+    direction: lower_is_better
+    owner_layer: L6
+  - name: time_to_close_the_loop
+    unit: hours
+    description: From the due time to the message that actually addressed what was promised. Not to when the work finished.
+    direction: lower_is_better
+    owner_layer: L2
+  - name: commitments_per_ticket
+    unit: count
+    description: >
+      How many promises a ticket accumulates. Rising counts usually mean the first promise was
+      not kept, so this reads as a rework metric rather than an engagement one.
+    direction: target_band
+    owner_layer: L2
+
+events:
+  - id: commitment.made
+    name: Commitment Made
+    payload: [action, due_at, owner_ref, made_to_ref, due_specificity]
+    severity: info
+    description: >
+      No executable trigger today — this fires from extraction, and extraction of support
+      phrasing is the domain's top signal ask. Everything downstream is currently detecting a
+      promise only after its due date has already been projected.
+
+  - id: commitment.due_soon
+    name: Commitment Due Soon
+    emitted_when:
+      - {fn: hours_since, path: commitment.due_at, op: ">=", value: -4}
+      - {fn: hours_since, path: commitment.due_at, op: "<", value: 0}
+      - {path: thread.ball_in_court, op: "=", value: us}
+    payload: [due_at, action, owner_ref, ball_in_court]
+    severity: notable
+    description: >
+      The cheap event. Everything after this point costs an apology, so this is the one worth
+      delivering to a human synchronously rather than in a digest.
+
+  - id: commitment.overdue
+    name: Commitment Overdue
+    emitted_when:
+      - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+    payload: [due_at, hours_past_due, action, owner_ref]
+    severity: notable
+    invalidates: [is_tighter_than_sla]
+    description: >
+      Routes today through the L2 situation type `commitment_overdue`, which is one of the
+      very few real bindings this domain has.
+
+  - id: commitment.missed_silently
+    name: Promise Broken Without Notice
+    emitted_when:
+      - {fn: days_since, path: commitment.due_at, op: ">=", value: 1}
+      - {no_obs: followup_sent}
+    payload: [due_at, action, made_to_ref, owner_ref, breach_was_silent]
+    severity: critical
+    description: >
+      The most damaging uncaught event in customer support and the one this object was built
+      for. A missed SLA is a contractual matter someone will argue about at a QBR; a named day
+      that passed in silence is a personal one, and it is what the customer tells other people.
+
+  - id: commitment.abandoned
+    name: Promise Abandoned
+    emitted_when:
+      - {fn: days_since, path: commitment.due_at, op: ">=", value: 3}
+      - {no_obs: followup_sent}
+    payload: [due_at, action, made_to_ref, owner_ref, trust_cost]
+    severity: critical
+    invalidates: [trust_cost, promise_keep_rate]
+    description: >
+      Escalate to a human owner, not to a queue. By this point the open item is the
+      relationship rather than the ticket, and routing it back into the queue that dropped it
+      is how it gets dropped twice.
+
+  - id: commitment.renegotiated
+    name: Commitment Reset With Notice
+    payload: [supersedes_ref, due_at, notice_given_at, renegotiation_count]
+    severity: info
+    description: >
+      The healthy failure. Worth emitting explicitly so that responsible teams are visible as
+      responsible rather than merely as teams with more commitments per ticket.
+
+  - id: commitment.kept
+    name: Commitment Kept
+    payload: [closed_at, outcome, owner_ref]
+    severity: info
+
+actions:
+  - id: commitment.record
+    name: Record the promise the moment it is made
+    actor: agent
+    cost: trivial
+    reversible: true
+    effect: >
+      Captures action, time, owner and recipient. The whole discipline in one step: an
+      unrecorded commitment is an unmade one right up until the customer quotes it back.
+
+  - id: commitment.confirm_in_writing
+    name: Repeat it back in writing with the date
+    actor: agent
+    cost: trivial
+    reversible: false
+    effect: >
+      Converts a verbal promise into evidence and forces the vagueness out — writing "Thursday"
+      makes an agent notice they meant "probably Thursday", which is the moment to say so.
+
+  - id: commitment.send_holding_update
+    name: Send an update on the due date even with no news
+    actor: agent
+    preconditions:
+      - {fn: hours_since, path: commitment.due_at, op: ">=", value: -4}
+      - {fn: hours_since, path: commitment.due_at, op: "<", value: 0}
+    cost: trivial
+    reversible: false
+    effect: >
+      The single most underused move in support. Agents suppress it because an update
+      containing no answer feels like wasting the customer's time; the customer reads its
+      absence as having been forgotten, which is far worse than being told there is no news.
+
+  - id: commitment.renegotiate_before_due
+    name: Agree a new time before the old one lapses
+    actor: agent
+    preconditions:
+      - {fn: hours_since, path: commitment.due_at, op: "<", value: 0}
+      - {path: thread.ball_in_court, op: "=", value: us}
+    cost: low
+    reversible: false
+    effect: >
+      Creates a successor commitment and preserves the chain. Nearly free on the first use and
+      steeply more expensive on the third, which is exactly why the count is tracked.
+
+  - id: commitment.acknowledge_the_break
+    name: Acknowledge the missed promise before explaining it
+    actor: agent
+    preconditions:
+      - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
+      - {no_obs: followup_sent}
+    cost: low
+    reversible: false
+    effect: >
+      Order matters more than content. Acknowledgement first, then cause, then the new date.
+      Leading with the reason — even a completely legitimate one — is heard as a defence and
+      makes the second promise less credible than the first.
+
+  - id: commitment.chase_the_contingency
+    name: Chase what the promise was waiting on
+    actor: agent
+    preconditions:
+      - {path: thread.ball_in_court, op: "=", value: them}
+      - {fn: days_since, path: thread.last_inbound, op: ">=",
+         value: {baseline: reply_cadence, mult: 2, floor: 2}}
+    cost: trivial
+    reversible: true
+    effect: >
+      A promise blocked on the customer is not our breach, but it is still our problem. Left
+      alone it becomes a promise everyone has forgotten and the customer remembers.
+
+  - id: commitment.transfer_ownership
+    name: Hand the promise over at end of shift
+    actor: human
+    cost: low
+    reversible: true
+    effect: >
+      Moves the owner and keeps the speaker on the record. The unhanded-over promise at shift
+      end is the classic origin of a dropped callback in a follow-the-sun operation, and it
+      fails silently because everyone assumes it went with the ticket.
+
+  - id: commitment.cancel_with_notice
+    name: Withdraw the promise explicitly
+    actor: agent
+    cost: low
+    reversible: false
+    effect: >
+      A clean ending. The only thing that distinguishes cancelled from abandoned is that
+      somebody said so out loud, and from the customer's side that distinction is total.
+
+dependencies:
+  - target: customer_support.obj.core.requester
+    kind: requires
+    strength: hard
+    description: A promise with no named recipient cannot be reasoned about — there is nobody whose memory it lives in.
+  - target: customer_support.obj.core.support_agent
+    kind: requires
+    strength: hard
+    description: Without an owner the commitment cannot be routed, handed over, or aggregated into a reliability signal.
+  - target: customer_support.obj.core.conversation
+    kind: derived_from
+    strength: soft
+    description: The wording, and every executable pattern that reads followup_sent or ball_in_court, comes from here.
+  - target: customer_support.obj.core.ticket
+    kind: enriches
+    strength: soft
+    description: >
+      Supplies what the promise is about. Soft on purpose: promises made before a ticket
+      exists are the ones most likely to break, and requiring a ticket would exclude exactly them.
+  - target: customer_support.obj.core.sla_target
+    kind: enriches
+    strength: soft
+    description: >
+      Needed only to answer whether the commitment is tighter than the contract. Absent it,
+      this object still works — it simply cannot tell you that the dashboard is green.
+  - target: customer_support.obj.core.entitlement
+    kind: enriches
+    strength: soft
+    description: Bounds what should have been promised. Used for review after the fact far more often than for prevention before it.
+  - target: customer_support.obj.core.escalation
+    kind: invalidated_by
+    strength: soft
+    description: >
+      Once an escalation is live, the original commitment is superseded by whatever the
+      escalation owner has now promised. Continuing to track the old one produces two
+      competing promises and a customer receiving contradictory dates.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXCEPTIONS — where the rules above are legitimately wrong.
+#
+# These are what an experienced operator carries and no playbook records, and they are the
+# reason a naive promise-tracker feels stupid within a week: it is confidently wrong about
+# the cases below, an agent overrides it three times, and after that they ignore it entirely.
+# ─────────────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: commitment.contingent_on_the_customer
+    statement: >
+      "Thursday, once you send me the logs." The clock never started, so Thursday passing is
+      not a break — it is a chase.
+    overrides: [commitment.due_time_has_passed, commitment.missed_in_silence,
+                commitment.silence_past_due_is_a_break]
+    when:
+      - {path: thread.ball_in_court, op: "=", value: them}
+    why: >
+      By far the most common shape of a support promise and by far the most common false
+      accusation an overdue detector makes. Suppress the breach, keep the obligation: the
+      right output is "chase them", not "nothing to do".
+    frequency: common
+
+  - id: commitment.answered_on_a_channel_we_cannot_see
+    statement: >
+      The agent called instead of writing. Every silence-based pattern reports a broken
+      promise on a promise that was kept, by an agent who chose the better channel.
+    overrides: [commitment.missed_in_silence, commitment.abandoned_past_the_trust_horizon]
+    why: >
+      Phone and chat are not ingested, so the response most appropriate to a slipping promise
+      is also the one most invisible to the detector. Worth living with — an unnecessary
+      "did you get back to them?" is cheap — but it must be stated, because a team that
+      handles promises well by phone will see the most false alerts and lose faith fastest.
+    frequency: common
+
+  - id: commitment.customer_released_us
+    statement: >
+      "No rush, next week is fine." The due date is dead by agreement and every pattern here
+      is still counting against it.
+    overrides: [commitment.due_time_has_passed, commitment.abandoned_past_the_trust_horizon]
+    why: >
+      Release is stated in ordinary language in the thread and extracted by nothing. It is the
+      mirror of `commitment_renegotiated` — a reset initiated by the customer rather than by
+      us — and it is why an agent's first instinct on seeing an overdue alert is often "yes, I
+      know, they told me not to worry".
+    frequency: occasional
+
+  - id: commitment.the_update_is_the_promise
+    statement: >
+      "I don't have a date for the fix and I won't invent one — I'll update you Friday
+      regardless." This has no resolution time and IS a commitment, because the update has a time.
+    overrides: [commitment.an_action_with_no_named_time_is_not_a_commitment,
+                commitment.no_named_time_no_commitment]
+    why: >
+      The single best move in the entire discipline, and the doctrine of this object reads it
+      as a non-commitment if applied carelessly. Promise the speaking, never the fixing: the
+      agent controls one and not the other. The rule survives, correctly read — the promise
+      being tracked is the update, and the update has a named time.
+    frequency: occasional
+
+  - id: commitment.major_incident_blanket_promise
+    statement: >
+      "Hourly updates until resolved", said once to four hundred customers. One operational
+      commitment, four hundred remembered ones.
+    overrides: [commitment.missed_in_silence, commitment.abandoned_past_the_trust_horizon]
+    why: >
+      Per-customer promise tracking during a major incident generates hundreds of identical
+      critical alerts and drowns the incident it is supposed to be helping with. Track it once
+      against the incident and fan out the status. The exception ends the moment the incident
+      does — the individual follow-ups afterwards are real individual commitments and are
+      routinely the part that gets dropped.
+    frequency: rare
+
+  - id: commitment.the_letter_beats_the_customer
+    statement: >
+      A promise due at 23:00 in the customer's timezone, kept at 23:00. Technically on time,
+      experienced as nothing at all, and the reply is read the next morning anyway.
+    overrides: [commitment.due_time_has_passed]
+    why: >
+      Meeting the arithmetic while missing the working day is a way of being precisely and
+      uselessly correct. If the promise cannot be kept inside the recipient's working hours,
+      it is better renegotiated to the next morning than technically satisfied overnight —
+      and a system that scores only the timestamp will actively teach the wrong behaviour.
+    frequency: occasional
+
+best_practices:
+
+  - id: commitment.promise_the_update_never_the_outcome
+    statement: Commit to when you will speak, not to when it will be fixed.
+    why: >
+      You control one and not the other. An update promise is nearly always keepable, which
+      means keeping it is nearly free, which means trust compounds instead of eroding.
+    applies_when: Any time the resolution depends on a team or system the promiser does not control.
+
+  - id: commitment.name_a_time_you_can_beat
+    statement: Name the time you are confident of, not the time you hope for, then deliver early.
+    why: >
+      Optimistic dates are made to relieve the discomfort of the current conversation and are
+      paid for by a worse future one. Early delivery on a conservative date reads as
+      competence; on-time delivery on an optimistic one reads as normal.
+    applies_when: Every commitment. The pressure to do the opposite is highest on the calls where it matters most.
+
+  - id: commitment.close_the_loop_on_the_date_even_with_no_news
+    statement: Send the update when you said you would, especially when you have nothing to report.
+    why: >
+      Agents skip this believing an empty update wastes the customer's time. The customer
+      reads the silence as being forgotten. "No news yet, still with engineering, next update
+      Thursday" costs ninety seconds and preserves everything.
+    evidence: Silent breaks are what customers escalate about; late-but-communicated ones mostly are not.
+
+  - id: commitment.renegotiate_before_the_due_time
+    statement: Move the date before it passes. Never after.
+    why: >
+      The identical sentence is professionalism at T-4 hours and an excuse at T+1 hour. This
+      is the largest behaviour change available to a support organisation at zero marginal cost.
+    applies_when: The moment it becomes more likely than not that the date will slip.
+
+  - id: commitment.write_it_back_in_their_words
+    statement: >
+      Confirm the promise in writing using the customer's own phrasing and an explicit date,
+      not a relative one.
+    why: >
+      "By Thursday 5pm your time" cannot be misremembered; "early next week" is remembered as
+      Monday morning by them and meant as Tuesday evening by us. Writing it also forces the
+      promiser to notice their own hedging.
+
+  - id: commitment.one_human_owns_it_across_the_handover
+    statement: Hand the promise over by name at shift end, separately from handing over the ticket.
+    why: >
+      Everyone assumes the promise travels with the ticket and it does not — the ticket has a
+      queue and the promise had a person. This is the dominant origin of dropped callbacks in
+      follow-the-sun and swarming operations.
+
+  - id: commitment.treat_the_customers_memory_as_the_record
+    statement: >
+      When a customer quotes a promise we have no record of, assume it was made and act on it.
+    why: >
+      Our record is systematically incomplete in exactly the direction that flatters us —
+      phone and call promises are the ones missing. Arguing costs the relationship and wins
+      nothing; the dispute is also the cheapest available detector of the capture gap.
+
+anti_patterns:
+
+  - id: commitment.date_given_to_end_the_conversation
+    statement: Naming a date on a difficult call purely to make the call stop being difficult.
+    why_it_happens: >
+      It works instantly. The customer calms down the moment a specific day is named, the call
+      ends well, and the entire cost lands on a future self who has no idea it is coming.
+    cost: >
+      Converts a manageable delay into a trust breach. The relief is borrowed at a very poor
+      rate — the customer is now anchored on a date nobody has any basis for.
+    instead: >
+      Name a time for the UPDATE rather than for the outcome, and say plainly that you do not
+      yet have a date for the fix. It de-escalates almost as well and it is keepable.
+    detectable_by: [commitment.missed_in_silence, renegotiations_per_commitment, promise_keep_rate]
+
+  - id: commitment.waiting_for_news_before_updating
+    statement: Letting the promised time pass because there is still nothing to report.
+    why_it_happens: >
+      Sending an update with no answer feels like admitting failure and wasting the customer's
+      time, and agents are trained to be useful. Silence feels neutral. It is not — it is the
+      most negative signal available.
+    cost: >
+      The customer's interpretation of silence is "forgotten", never "still working". This
+      single habit produces most of the silent breaks in a queue.
+    instead: Send the empty update on the date, with the next date attached.
+    detectable_by: [commitment.missed_in_silence, silent_break_share, notice_lead_time]
+
+  - id: commitment.apologising_instead_of_pre_warning
+    statement: Resetting the date after it has passed rather than before.
+    why_it_happens: >
+      Hope. Right up until the deadline there is a plausible chance the answer arrives, and
+      pre-warning feels like giving up on it a few hours early.
+    cost: >
+      The difference between "late" and "broke their word", which is a category change and not
+      a degree change. Post-due resets also compound: the second one is met with visible disbelief.
+    instead: Warn at the point the slip becomes more likely than not, which is almost always hours earlier than it feels.
+    detectable_by: [commitment.due_within_hours_and_still_ours, notice_lead_time]
+
+  - id: commitment.assigned_to_a_team
+    statement: Recording the promise against a queue, a rota or a shared alias rather than a person.
+    why_it_happens: >
+      The promiser goes off shift and handing it to the team genuinely feels more robust than
+      leaving it with someone who is asleep. It reads as coverage.
+    cost: >
+      Nobody owns it, so nobody checks it, and it surfaces when the customer quotes it back.
+      A promise in a shared queue has the same expected outcome as a promise nobody recorded.
+    instead: Name the receiving human at handover and tell the customer who now has it.
+    detectable_by: [commitment.declared_state_from_the_system_of_record, unrecorded_commitment_rate]
+
+  - id: commitment.implemented_as_an_sla_field
+    statement: >
+      Storing the promise in the ticketing system's SLA machinery because that is the only
+      date field with a clock behind it.
+    why_it_happens: >
+      Entirely reasonable engineering. The SLA subsystem already has due dates, reminders and
+      breach reporting; building a second clock looks like duplication.
+    cost: >
+      The promise silently inherits the SLA's pause semantics. The clock stops for out-of-hours
+      and for awaiting-customer, so a promise made on Friday afternoon quietly becomes due
+      Monday, the breach vanishes from the record at the exact moment it is being formed, and
+      the customer's Thursday never moved at all.
+    instead: >
+      A separate object with no pause condition. That is the whole architectural argument for
+      this file existing.
+    detectable_by: [commitment.the_clock_does_not_pause, commitment.met_every_clock_and_still_broke_our_word]
+
+  - id: commitment.closed_by_a_macro
+    statement: Counting any outbound message as having closed the loop.
+    why_it_happens: >
+      The observation fires and the metric moves. From an instrumentation point of view an
+      autoresponder, a bulk incident notice and a real personal update are indistinguishable.
+    cost: >
+      A perfect promise-keeping rate over customers who experienced nothing. This is the
+      failure mode that makes the whole metric worthless, and it is invisible from inside the
+      dashboard.
+    instead: >
+      Require the closing message to reference the specific undertaking. Where that cannot be
+      enforced, report the keep-rate beside the reopen and detractor rates so the divergence shows.
+    detectable_by: [commitment.loop_looks_closed_before_the_due_time, promise_keep_rate]
+
+examples:
+
+  - label: "I will check with engineering and come back to you Thursday."
+    kind: typical
+    note: >
+      The canonical commitment and the reason this object exists. Action, time and owner all
+      present, nothing contractual anywhere near it, and no SLA field in any ticketing system
+      on the market is watching it.
+
+  - label: "I'll come back to you as soon as I know more."
+    kind: misclassification
+    note: >
+      Not a commitment — no time was named. Recording it as a soft one produces a promise that
+      can never be late and never be discharged. The correct handling is to surface it to the
+      agent as an unfinished sentence, in time for them to finish it in the same reply.
+
+  - label: "No date for the fix yet, but I'll update you Friday either way."
+    kind: edge
+    note: >
+      Reads as a non-commitment to a careless application of the rule and is in fact the best
+      move in the discipline. The promise is the update, and the update has a time. See the
+      exception.
+
+  - label: Four-hour SLA met, Thursday callback missed.
+    kind: counterexample
+    note: >
+      Every contractual clock green, one broken promise, and the customer describes the whole
+      experience as us not getting back to them. The disagreement between the SLA report and
+      the CSAT report is not a measurement error; it is this.
+
+  - label: Thursday arrived with no news, so nothing was sent.
+    kind: typical
+    note: >
+      How most commitments actually die. Not neglect and not malice — an agent deciding an
+      update containing no answer was not worth the customer's time.
+
+  - label: '"Thursday, once you send me the logs." The logs never came.'
+    kind: misclassification
+    note: >
+      The overdue detector's standing false accusation. Suppressed by the ball_in_court
+      pattern, which is why that pattern exists and why it is only worth 6500.
+
+  - label: Wednesday, then Friday, then next week.
+    kind: edge
+    note: >
+      Each reset defensible in isolation and every one delivered with notice. The sequence is
+      the finding, and it is only visible because renegotiation chains instead of overwriting.
+
+  - label: Promised on a call, never written down, quoted back six weeks later.
+    kind: edge
+    note: >
+      The customer is right and we have no record. Treat their memory as the record; the
+      dispute is also the cheapest measurement of how large the capture gap really is.
+
+  - label: A live promise made to an admin who left the company a month ago.
+    kind: edge
+    note: >
+      Delivering it now is indistinguishable from silence — the message lands in a dead
+      mailbox and the compliance metric turns green. The promise has to be re-made to a new
+      person, which is a different action entirely.
+
+references:
+  - title: The Effortless Experience
+    kind: book
+    author: Dixon, Toman & DeLisi
+    note: >
+      The finding that reliability and low effort predict loyalty far better than delight
+      does. A broken callback is pure added effort — the customer has to chase — which is why
+      it damages more than a slow but communicated resolution.
+
+  - title: Service recovery and the cost of silence
+    kind: research
+    note: >
+      The body of work behind the claim that acknowledgement timing matters more than
+      compensation size. Cited for direction, not magnitude — this file deliberately asserts
+      no numbers it cannot show.
+
+  - title: "ITIL 4 — Service Level Management"
+    kind: standard
+    note: >
+      Defines the contractual clock in exhaustive detail and has essentially nothing to say
+      about the personal undertaking. Cited as the gap rather than as the source: the industry
+      standard for service management does not model the promise customers actually remember,
+      which is why every tool built on it has an SLA field and no commitment field.
+
+  - title: Commitment Tracking capability (customer_support.entitlement_and_sla.commitment_tracking)
+    kind: internal
+    note: >
+      The owning capability. Its stated working rule — an unrecorded commitment is an unmade
+      one — is the doctrine this object implements, and its situation
+      customer_support.sit.promised_followup_overdue is the one place this brain reaches the
+      customer today.
+
+  - title: Support floor practice — the callback ledger
+    kind: practitioner
+    note: >
+      The habit, common on well-run support floors and absent from every tool, of keeping a
+      personal list of promised callbacks separate from the ticket queue. That the best
+      operators maintain a manual shadow system is the strongest available evidence that the
+      software does not model this.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    The most executable object in the Customer Support brain, and the only one where that
+    claim is comfortable. Eleven of eighteen patterns fire against the substrate as it stands:
+    commitment.due_at and commitment.action are real fact paths, followup_sent is a real
+    observation kind, reply_cadence is a real baseline, and commitment_overdue is a real Layer
+    2 situation type that routes today through
+    customer_support.sit.promised_followup_overdue. Everywhere else in this domain the honest
+    answer is "no support pack exists"; here the honest answer is that the promise-keeping
+    motion is genuinely instrumented, largely by accident, because a commitment extractor was
+    built for a sales pipeline and promises turn out to be domain-neutral.
+
+    The three patterns worth acting on first are, in order:
+    commitment.missed_in_silence (a day past a named time with nothing observed outbound —
+    the flagship, and the single most useful alert this brain can currently raise);
+    commitment.due_within_hours_and_still_ours (the pre-breach window, where the fix is free);
+    and commitment.customer_stopped_chasing_after_we_went_quiet (silence after a broken
+    promise read as escalation rather than as acceptance, which is the reading most alerting
+    systems get backwards).
+
+    The seven needs_signal patterns are ranked by what they unlock. `callback_promised` is
+    first: today's due dates come from an extractor tuned to sales phrasing, so support
+    wordings — "revert before end of play", "ping you Thursday" — are caught unevenly and,
+    worse, a date the CUSTOMER named can be attributed to us. `commitment_renegotiated` is
+    second and is proposed here rather than taken from planned_substrate, because nothing in
+    that list covers it and the notice-versus-silence distinction is close to the entire value
+    of this object: without it, a team that resets responsibly and a team that slips silently
+    produce identical traces. `commitment.owner` is third, because a promise attached to a
+    thread rather than to a person cannot survive a shift handover.
+
+    Two deliberate divergences from the rest of the library, both flagged rather than hidden.
+    (1) The state values `kept`, `missed`, `renegotiated` and `abandoned` are not in
+    vocabulary.yaml open.object_states. `closed` cannot distinguish a promise honoured from a
+    promise quietly dropped, and that distinction is the object. (2) The abandonment threshold
+    is three days where sla-target.yaml uses two for a contractual clock; a personal promise
+    absorbs one working day of slippage without becoming a character question and a
+    contractual one does not. The gap is intentional and should stay intentional.
+
+    The arithmetic convention — hours_since a future timestamp is negative, so `> 0` means
+    overdue and `>= -4 AND < 0` means due within four hours — is shared with sla-target.yaml
+    and must not diverge, or the two objects will silently disagree about what overdue means.

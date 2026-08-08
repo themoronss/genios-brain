@@ -1,0 +1,155 @@
+# Situation — Queue Overloaded.
+#
+# The only situation in this domain whose subject is the team rather than a customer. Everything
+# unusual about the file follows from that: there is no requester, no sentiment, no thread, and
+# the scope field is deliberately absent because the enum has no member that is true here.
+#
+# The observable that matters is AGE, not SIZE. A queue count is a stock and the problem is
+# always a flow, and a count is additionally the one measure that cherry-picking improves —
+# agents take the quick, well-written, easily-closed tickets, the count falls, average handle
+# time falls, and the customers who have waited longest keep waiting. The oldest open item is the
+# number that cannot be gamed by working the queue badly, which is why the load-set requires
+# Backlog and not merely Queue.
+
+identity:
+  id: customer_support.sit.queue_overloaded
+  name: Queue Overloaded
+  domain: customer_support
+  owner_capability: customer_support.support_operations.queue_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  A queue is taking in more than it is getting through, and has been for long enough that the
+  oldest end of it has stopped being served at all. Not a busy morning — a rate mismatch that has
+  persisted, which is a different thing with different remedies. The characteristic shape is a
+  queue that looks acceptable by count and terrible by age distribution: the middle of the queue
+  moves, the tail calcifies, and every incentive an individual agent has points away from the
+  tail. The situation is about the team's ability to absorb what arrives, so the useful questions
+  are what changed on the arrival side, what is deliberately not being served while this is true,
+  and who has been forgotten — never simply how many are open.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: queue_overloaded
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        Must mean: for a named queue, arrivals are exceeding closures and the backlog's age
+        distribution has degraded — expressed as a comparison of two rates plus the shape of the
+        wait, never as a count. It must be emitted per queue, with an owner attached, because a
+        queue with no named owner is not a queue and an alert nobody owns is a dashboard. It
+        should carry the arrival-side attribution where Layer 2 can compute it (a release, a
+        campaign, a broken page, an incident), because the count tells a manager to hire and the
+        composition usually tells them to fix something that will land this week.
+        What would emit it: derived.backlog_age and ticket.queue from planned_substrate, against
+        the ticket_volume baseline so that "overloaded" is relative to this queue's own normal
+        rather than to a constant. The band itself is Layer 4 arithmetic and must not be baked
+        into the type; what Layer 2 owes is the rates and the distribution.
+        Why unanswered_email is not good enough: it is wrong in both dimensions at once. It is
+        per-thread, so counting instances gives you a number of conversations rather than a
+        volume of work — and forty simple password resets and forty escalated integration faults
+        produce the same number. And it counts SIZE, when the entire finding here is AGE: a
+        shrinking pile of steadily older tickets reads as improvement under any count-based
+        signal and is the precise opposite of it. Today the queue's condition is visible only in
+        a reporting tool a human has to open, which means it is discovered on the day someone
+        looks rather than on the day it turned.
+    - type: ticket_aging
+      owner_layer: L2
+      nearest_today: commitment_overdue
+      note: >
+        Must mean: an individual open item has waited materially longer than comparable work in
+        its queue, with time-since-last-customer-contact carried separately from time-since-open
+        — an old ticket that is being actively worked and an old ticket nobody has touched are
+        completely different findings that share an age. It must also distinguish waiting on the
+        customer from waiting on us, because collapsing those is how a queue reports health it
+        does not have.
+        What would emit it: Layer 2 over ticket.created_at, ticket.status and derived.backlog_age
+        relative to the resolution_time baseline for the queue.
+        Why commitment_overdue is not good enough, and this is the sharp one: commitment_overdue
+        requires a promise to exist before it can fire. The aging tickets that actually matter are
+        precisely the ones nobody promised anything about — no owner, no next step, no committed
+        date, which is exactly why they aged. Nobody committed, so nothing is overdue, so the
+        oldest item in the queue is invisible to the only elapsed-time signal the pipeline has.
+        The tickets that generate commitment_overdue are the well-managed ones.
+
+  # No scope. The enum offers person, deal, meeting and account, and the subject of this
+  # situation is a queue owned by a team. Picking `account` because it is the least wrong would
+  # be the same compromise this domain refuses everywhere else, and it would silently narrow the
+  # situation to one customer's work — which is the reading that lets a backlog age.
+
+also_serves:
+  - customer_support.support_operations.workload_balancing
+  - customer_support.support_operations.capacity_planning
+  - customer_support.support_management.team_health
+
+objects:
+  load:
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.backlog
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.support_agent
+  optional:
+    # sla_target gives the queue a contractual order that competes with its operational one —
+    # genuinely useful and genuinely not required, because a queue with no entitled work in it is
+    # still overloaded. capacity_plan and coverage_window turn "the service rate is too low" into
+    # a statement about a rota that somebody can change this week.
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.capacity_plan
+    - customer_support.obj.core.coverage_window
+  never_load:
+    # Requester drops the altitude to one human, and that substitution is how backlogs are
+    # allowed to age: reasoning about the customer in front of you is always more legible and
+    # more satisfying than reasoning about the tail of a distribution, so the system will do it
+    # given any excuse. The excuse is not provided here.
+    - customer_support.obj.core.requester
+    # Same reason one level along. Per-customer sentiment during an overload will preferentially
+    # surface the loudest, and the loudest are systematically not the longest-waiting — the
+    # people at the oldest end of a queue have usually stopped writing in.
+    - customer_support.obj.core.customer_sentiment
+    # Entitlement here would be read as permission to triage by who is paying most, which is a
+    # legitimate policy but is a deliberate degradation decision made by a named person, not an
+    # inference this situation should make quietly on its own.
+    - customer_support.obj.core.entitlement
+
+priority_bp: 7200
+typical_duration_days: 10
+
+signals_of_progress:
+  - ticket_resolved
+  - ticket_closed
+  - agent_reassigned
+  - first_response_sent
+
+signals_of_decay:
+  - ticket_created
+  - ticket_reopened
+  - sla_breach
+  - escalation_requested
+  - angry_language
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Every string in signals_of_progress and signals_of_decay is a support-native obs kind from
+    planned_substrate; none is emitted today, and none is schema-validated, so the file loads
+    without being able to run. This situation is further from executable than any other in the
+    domain — both of its objects, Queue and Backlog, are planned rather than authored, and its
+    core measure, derived.backlog_age, is a planned fact path.
+    agent_reassigned appears under progress here and under decay in escalation-requested.yaml.
+    That is not an inconsistency: moving people onto a drowning queue is the correct response at
+    this altitude, and moving a single escalated customer between owners is the failure at that
+    one. It is a good illustration of why obs kinds cannot be scored globally and have to be read
+    inside a situation.
+    ticket_closed sits under progress and should be read with suspicion by any reviewer. Bulk
+    closure of aged tickets is the most common cosmetic response to this exact situation: it
+    removes the symptom, keeps the demand, and returns within a fortnight as reopens and repeat
+    contacts. ticket_reopened is in the decay list partly as the counterweight to it, and the
+    pair should be read together or not at all.

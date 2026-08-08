@@ -1,0 +1,22 @@
+# Load-set for sales.revenue_operations.sales_operations — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/sales-operations/       loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.revenue_operations.sales_operations
+
+core:
+  required:
+    - sales.obj.core.deal
+  optional:
+    - sales.obj.core.account
+    - sales.obj.core.next_action
+
+scoped:
+  required: []
+  optional: []

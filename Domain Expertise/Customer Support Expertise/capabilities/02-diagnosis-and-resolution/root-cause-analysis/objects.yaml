@@ -1,0 +1,50 @@
+# Load-set for customer_support.diagnosis_and_resolution.root_cause_analysis
+# REFERENCES ONLY — never an inline object.
+#
+# core   -> objects/core/                   loaded by more than one capability
+# scoped -> objects/root_cause_analysis/    loaded by this capability alone (none — see below)
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8). An agent
+#            mid-investigation should get advice at lower confidence, not silence.
+
+capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+
+core:
+  # Issue and root_cause and nothing else. This is the one capability in the subdomain whose
+  # subject is the FAULT rather than the contact, so the ticket is demoted to optional below —
+  # that will read as a mistake and is not one. A ticket is one customer's report of an issue;
+  # analysis that requires a ticket to proceed is analysis that will be redone for every report.
+  required:
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.root_cause
+  # incident and bug_report are the two directions the analysis escapes into — upward into a
+  # declared incident when blast radius is wide, sideways into engineering when the cause is in
+  # code. Neither is present in the ordinary case, and requiring either would make routine RCA
+  # uncompilable. ticket sits here because it is evidence about the issue rather than the
+  # subject of the work: valuable, frequently plural, and never the thing being explained.
+  optional:
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.bug_report
+    - customer_support.obj.core.ticket
+
+scoped:
+  # Nothing is scoped here on purpose. Every object this capability reasons over is read by
+  # neighbours — diagnostics reads root_cause, engineering_handoff reads bug_report,
+  # postmortem reads incident and root_cause — so a scoped object would be promoted to core by
+  # the reference graph on its first real use anyway.
+  required: []
+  optional: []
+
+# Order matters in exactly one place: the issue must resolve before root_cause, because a
+# root_cause with no issue attached is an assertion about nothing and its blast radius — the
+# thing that decides whether it is worth analysing at all — is a property of the issue.
+load_order:
+  - customer_support.obj.core.issue
+  - customer_support.obj.core.root_cause
+
+notes: >
+  root_cause and bug_report are planned objects, not yet authored — the reference is a tracked
+  warning and plan.py registers it. That is the correct state: root_cause is the object this
+  capability exists to produce, and authoring it before the analysis discipline was written down
+  would have produced a schema instead of a concept.

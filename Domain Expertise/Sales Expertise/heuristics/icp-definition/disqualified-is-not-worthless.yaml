@@ -1,0 +1,36 @@
+identity:
+  id: sales.heu.icp_definition.disqualified_is_not_worthless
+  name: A disqualified account is frequently somebody else's ideal customer — …
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "A disqualified account is frequently somebody else's ideal customer — route it, do not\
+    \ merely drop it.\n Referral relationships are built out of the accounts you correctly refuse, and\
+    \ they cost nothing because you were not going to win them. Treating disqualification as deletion\
+    \ throws away the only asset a rejected account still has.\n"
+heuristic:
+  statement: 'A disqualified account is frequently somebody else''s ideal customer — route it, do not
+    merely drop it.
+
+    '
+  why: 'Referral relationships are built out of the accounts you correctly refuse, and they cost nothing
+    because you were not going to win them. Treating disqualification as deletion throws away the only
+    asset a rejected account still has.
+
+    '
+  reads:
+  - effect
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

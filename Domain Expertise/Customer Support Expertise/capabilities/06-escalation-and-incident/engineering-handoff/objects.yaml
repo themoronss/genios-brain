@@ -1,0 +1,26 @@
+# Load-set for customer_support.escalation_and_incident.engineering_handoff —
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.escalation_and_incident.engineering_handoff
+
+core:
+  # All three are required because the handoff is precisely the join between them: the bug_report
+  # is what engineering receives, the issue is the defect that outlives this ticket, and the
+  # ticket is the customer who is still waiting. Drop the ticket and you get the characteristic
+  # failure of this capability — a well-formed bug filed on behalf of a customer nobody owns.
+  required:
+    - customer_support.obj.core.bug_report
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.ticket
+  # root_cause when diagnosis got that far — it changes the report from a description into a
+  # proposal. product_area for routing to a team rather than a backlog. commitment for whatever
+  # was promised to the customer about the fix, which is what most often gets made in support's
+  # voice and paid in engineering's schedule.
+  optional:
+    - customer_support.obj.core.root_cause
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.commitment
+
+scoped:
+  required: []
+  optional: []

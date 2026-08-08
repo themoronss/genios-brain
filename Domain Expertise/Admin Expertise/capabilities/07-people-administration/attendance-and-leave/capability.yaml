@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.people_administration.attendance_and_leave
+  name: Attendance & Leave
+  domain: admin
+  subdomain: people_administration
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Administering absence: leave requests and approvals, entitlement and accrual, sickness
+  recording, statutory categories and the coverage implications of each. Leave administration
+  is deceptively legal — most categories carry statutory rules that a generic approval
+  workflow will quietly get wrong.
+
+question: "Who is off, on what basis, with what entitlement left?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

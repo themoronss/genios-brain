@@ -1,0 +1,37 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.escalation_and_incident.escalation_management — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.escalation_management.h_entitlement_before_route
+  name: H entitlement before route
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Check what the account is actually owed before choosing the route. Entitlement bounds what
+    may be promised on the way up as well as on the way in.
+heuristic:
+  statement: Check what the account is actually owed before choosing the route. Entitlement bounds what
+    may be promised on the way up as well as on the way in.
+  why: Escalation is where over-promising happens, because the escalating agent is trying to restore
+    confidence and the receiver has not yet read the contract. A commitment made during an escalation
+    is the hardest one to walk back.
+  reads:
+  - customer_support.obj.core.entitlement
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

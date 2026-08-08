@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.facilities_and_assets.asset_register
+  name: Asset Register
+  domain: admin
+  subdomain: facilities_and_assets
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Maintaining an accurate register of physical and digital assets with custody, location,
+  condition, value and lifecycle state. A register that is not reconciled is a list, and a
+  list is what organisations discover during an insurance claim or an audit.
+
+question: "What do we own, where is it, and who is holding it?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

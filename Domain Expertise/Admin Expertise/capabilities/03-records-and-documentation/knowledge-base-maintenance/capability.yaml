@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.records_and_documentation.knowledge_base_maintenance
+  name: Knowledge Base Maintenance
+  domain: admin
+  subdomain: records_and_documentation
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Keeping internal documentation alive: ownership per article, review cadence, de-duplication,
+  and retirement of guidance that has quietly become wrong. A knowledge base nobody prunes is
+  more dangerous than none, because it is trusted.
+
+question: "Is the written answer to this question still correct?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

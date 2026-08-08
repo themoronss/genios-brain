@@ -1,0 +1,25 @@
+# Load-set for admin.finance_administration.budget_tracking — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/budget-tracking/       loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.finance_administration.budget_tracking
+
+core:
+  required:
+    - admin.obj.core.budget_line
+    - admin.obj.core.expense
+  optional:
+    - admin.obj.core.invoice
+    - admin.obj.core.approval
+    - admin.obj.core.policy
+    - admin.obj.core.vendor
+
+scoped:
+  required: []
+  optional: []

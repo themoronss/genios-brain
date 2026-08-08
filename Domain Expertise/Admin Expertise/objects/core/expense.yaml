@@ -1,0 +1,1469 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# admin.obj.core.expense — a claim by an employee that the organisation owes them money
+# they have already spent.
+#
+# The object most often BUILT as a fraud-detection problem and most often EXPERIENCED as a
+# policy-comprehension problem. The obligation is not in question here — the card was charged,
+# the taxi was taken, the money is gone. Only eligibility is in question, and eligibility is
+# decided by a policy the claimant read once at induction and the approver has never read at
+# all. That asymmetry is the whole object.
+#
+# The correct output of a disputed claim is usually a CLARIFICATION, not an enforcement. A
+# process designed for the small dishonest fraction taxes the large honest one and produces
+# exactly the late, batched, thinly evidenced claims it was built to prevent.
+#
+# Five of thirteen patterns run today, and every one of them reads the argument about the
+# claim rather than the claim, because nothing in this stack can see an amount or a receipt.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.expense
+  name: Expense Claim
+  domain: admin
+  scope: core
+  subdomain: finance_administration
+  owner_capability: admin.finance_administration.expense_management
+  version: 2.0.0
+  status: draft
+  aliases: ["Reimbursement Request", "Out-of-Pocket Claim", "T&E Item", "Expense Report Line", "Employee Claim"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    Money an employee has already spent on the organisation's behalf, and the request to have it
+    back. It carries the spend as it actually happened, the business reason asserted for it, the
+    policy clause that decides whether it is claimable and up to what, the evidence that proves
+    it, and the settlement route that gets the money back to a person rather than to a supplier.
+    Its most valuable output is not the reimbursement decision. It is the count of claims that
+    were genuinely unaddressed by the policy, because that number is a drafting backlog and every
+    other number here is a symptom of it.
+  discriminator: >
+    Eligibility, not obligation. With an invoice the open question is whether we owe it at all;
+    with an expense the money left an employee's own account and the only question is whether the
+    organisation's rules say it comes back. If the answer turns on a receipt reconciling to an
+    order, it is an invoice. If it turns on a clause reconciling to a circumstance, it is an
+    expense.
+  answers:
+    - "Is this claimable under the policy that was in force when the money was spent — and which clause says so?"
+    - "Is it genuinely ineligible, or is it unaddressed by the policy? Those are different findings with different owners."
+    - "What evidence is missing, and is chasing it worth more than the claim?"
+    - "Who can legitimately approve this — somebody who would know whether the trip happened, or somebody who can only check the arithmetic?"
+    - "How much is actually payable after limits, splits, exchange treatment and tax?"
+    - "Which clauses are generating most of the friction, and should therefore be rewritten rather than re-argued?"
+  not:
+    - "NOT a supplier demand. admin.obj.core.invoice owns money asserted by an external party where the obligation itself is in question."
+    - "NOT the policy. admin.obj.core.policy owns the clauses, their versions and their review cycle. This object reads them and reports where they fail."
+    - "NOT the pre-approval. admin.obj.core.approval owns permission, including the permission that had to exist BEFORE the spend."
+    - "NOT the trip. admin.obj.travel_booking.trip owns the itinerary; where a claim belongs to a booked trip, most eligibility questions answer themselves from it."
+    - "NOT payroll. The reimbursement cycle and its immovable cut-off belong to the payroll system; this object only has to respect them."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ---- The spend ----------------------------------------------------------------------
+  - name: the_spend
+    purpose: What was bought, when, where, in what currency and on whose money. The facts that are not in dispute.
+    type: composite
+    contains: [merchant, category, incurred_at, amount, currency, exchange_rate_bp, payment_method, card_transaction_ref]
+
+  - name: merchant
+    purpose: The counterparty, as the card feed or the receipt records it.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      Frequently an acquirer's string rather than a name anybody recognises, and half of all
+      "unclear claim" queries are really merchant-string queries. Marked confidential rather than
+      internal on purpose: a pharmacy, a clinic or a place of worship in this field is
+      special-category personal data arriving through an expense form, and the routing has to
+      respect that even though nobody designed it to carry it.
+
+  - name: category
+    purpose: The class of spend, which selects the clause, the tax treatment and the approver.
+    type: value
+    data_type: enum
+    allowed_values: [travel, accommodation, subsistence, client_entertainment, staff_entertainment, mileage, subscription, equipment, training, professional_fees, other]
+    required: true
+    sensitivity: internal
+    description: >
+      Category is not clerical. `other` is the value that should trigger a question and is instead
+      the value that lets a claim through unexamined — a rising `other` rate is the cheapest
+      available evidence that the policy's category list no longer matches how people work.
+
+  - name: incurred_at
+    purpose: When the money actually left the claimant's account.
+    type: value
+    data_type: timestamp
+    required: true
+    sensitivity: internal
+    description: The claim window runs from here, not from submission, and the policy version in force is the one that was live on this date.
+
+  - name: amount
+    purpose: What is being claimed, before limits are applied.
+    type: value
+    data_type: money
+    required: true
+    validation: ">= 0"
+    sensitivity: confidential
+
+  - name: currency
+    purpose: The currency the spend actually occurred in.
+    type: value
+    data_type: string
+    validation: "ISO 4217 three-letter code"
+    sensitivity: internal
+
+  - name: exchange_rate_bp
+    purpose: The rate applied on conversion, and implicitly the date it was taken from.
+    type: value
+    data_type: integer
+    unit: basis_points
+    sensitivity: internal
+    description: >
+      A policy reimbursing at month-end rate while the employee paid at card rate systematically
+      underpays travellers by a percent or two. They notice, and they resent it long before finance
+      does — this is one of the few places where a defensible accounting choice reads as a small
+      theft to the person it happens to.
+
+  - name: payment_method
+    purpose: Whose money went out, which determines whether this is a reimbursement or a reconciliation.
+    type: value
+    data_type: enum
+    allowed_values: [corporate_card, personal_card, cash, direct_billed, personal_bank_transfer, unknown]
+    default: unknown
+    sensitivity: internal
+    description: >
+      The most under-used field on the object. A corporate-card claim is a reconciliation, not a
+      reimbursement — the money has already left the organisation and the only open questions are
+      coding and evidence. Running both through the same approval flow is why corporate-card
+      programmes drown, and why they are the largest silent exposure in this domain.
+
+  - name: card_transaction_ref
+    purpose: The link to the card feed.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: Where present, the spend is independently corroborated before anybody looks at a receipt. It is the only evidence on this object the claimant cannot author.
+
+  # ---- The claim ----------------------------------------------------------------------
+  - name: the_claim
+    purpose: The employee's assertion about that spend and the business reason for it.
+    type: composite
+    contains: [claimant_ref, business_purpose, attendees, project_ref, submitted_at, claim_period, claim_age_days]
+
+  - name: claimant_ref
+    purpose: The person owed the money.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    required: true
+    sensitivity: confidential
+
+  - name: business_purpose
+    purpose: Why the organisation should bear this cost.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      "Client meeting" is not a business purpose. Who, why and to what end is. This is the field
+      auditors read first and the field claimants complete last, in a hurry, six weeks later —
+      which is why the field's quality is really a measure of submission lag.
+
+  - name: attendees
+    purpose: Who was present, for entertainment claims.
+    type: value
+    data_type: list
+    sensitivity: confidential
+    description: >
+      Decides the tax treatment: staff and client entertainment are taxed differently and a mixed
+      table is a split. Missing attendees is the most common cause of a claim being entirely
+      correct and still unpayable, and it also feeds the hospitality register that anti-bribery
+      controls depend on.
+
+  - name: project_ref
+    purpose: The line or engagement the cost is recharged to.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+    sensitivity: internal
+    description: An unrecharged billable expense is revenue thrown away by an administrative omission, and nobody is measured on it.
+
+  - name: submitted_at
+    purpose: When the claim reached us.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    sensitivity: internal
+    description: The gap from incurred_at is the single most predictive number on the object — it forecasts evidence quality, period accuracy and query rate better than anything else here.
+
+  - name: claim_period
+    purpose: The accounting period this claim posts to.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: A claim arriving after its period has closed is an accounting problem regardless of how eligible it is.
+
+  - name: claim_age_days
+    purpose: How long the money sat with the employee before they asked for it back.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [incurred_at, submitted_at]
+    sensitivity: internal
+    description: >
+      Ageing correlates with poor evidence far more strongly than with dishonesty. Both
+      correlations are real; only the first is worth automating on, and conflating them is how a
+      control becomes an accusation.
+
+  # ---- Policy eligibility -------------------------------------------------------------
+  - name: policy_eligibility
+    purpose: >
+      Whether the spend is claimable and up to what. The section that decides most outcomes and
+      the section least often written clearly enough to decide anything.
+    type: composite
+    contains: [policy_ref, eligibility, policy_clause, limit_applied, over_limit_amount, reimbursable_amount, pre_approval_ref, policy_ambiguity_flag]
+
+  - name: policy_ref
+    purpose: The version of the policy in force when the money was spent.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.policy
+    required: true
+    sensitivity: internal
+    description: Not the version in force when it is reviewed. Retrospective policy application is the fastest way to lose a workforce's goodwill, and it is a breach of the organisation's own governance rather than a tightening of it.
+
+  - name: eligibility
+    purpose: Whether, and to what extent, the organisation owes this back.
+    type: value
+    data_type: enum
+    allowed_values: [eligible, ineligible, partially_eligible, requires_pre_approval, ambiguous]
+    required: true
+    default: ambiguous
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      `ambiguous` earns its place and is the default on purpose. Most disputed claims are not
+      ineligible, they are unaddressed by the policy, and collapsing that into `ineligible` blames
+      the claimant for a drafting gap. A high ambiguous rate is a policy defect report and it is
+      the most useful thing this object produces.
+
+  - name: policy_clause
+    purpose: The specific clause relied on to approve, reduce or refuse.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: An approval or a rejection without one is an opinion, and an opinion cannot be appealed, audited or learned from.
+
+  - name: limit_applied
+    purpose: The cap for this category, grade and location.
+    type: value
+    data_type: money
+    sensitivity: internal
+    description: Caps differ by city more often than policies admit and less often than hotel prices require, which is why the overage queue clusters in three cities.
+
+  - name: over_limit_amount
+    purpose: The excess above the cap, held separately from the amount claimed.
+    type: derived
+    data_type: money
+    derived_from: [amount, limit_applied]
+    sensitivity: confidential
+    description: >
+      Separated deliberately, because the correct handling of a modest overage is partial
+      reimbursement with a note to the policy owner, not rejection. Refusing a whole claim over a
+      twelve-pound excess is the behaviour that teaches people to stop claiming and start
+      resenting.
+
+  - name: reimbursable_amount
+    purpose: What is actually payable once limits, splits and exchange treatment are applied.
+    type: derived
+    data_type: money
+    derived_from: [amount, limit_applied, over_limit_amount, exchange_rate_bp]
+    sensitivity: confidential
+
+  - name: pre_approval_ref
+    purpose: Permission obtained before the money was spent, where policy required it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+    sensitivity: internal
+    description: >
+      Its absence after the fact is the hardest conversation in expense administration, because
+      the money is already gone and refusing it punishes an individual for a process failure that
+      is usually organisational.
+
+  - name: policy_ambiguity_flag
+    purpose: Marks a claim where two competent reviewers could reasonably reach opposite conclusions.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Feeds the policy backlog rather than the claim decision. It is the only flag on this object whose value compounds.
+
+  # ---- Evidence -----------------------------------------------------------------------
+  - name: evidence_pack
+    purpose: What proves it. In a governed context, the correct claim without a receipt did not happen.
+    type: composite
+    contains: [receipt_present, receipt_quality, receipt_ref, tax_receipt_valid, missing_evidence_reason, evidence_completeness_bp]
+
+  - name: receipt_present
+    purpose: Whether any documentary evidence is attached at all.
+    type: value
+    data_type: boolean
+    required: true
+    default: false
+    sensitivity: internal
+
+  - name: receipt_quality
+    purpose: What the attached evidence actually proves, as distinct from whether it exists.
+    type: value
+    data_type: enum
+    allowed_values: [itemised, summary_only, card_slip_only, illegible, missing, self_declared]
+    default: missing
+    sensitivity: internal
+    description: >
+      A card slip proves payment, never purchase, and for subsistence that distinction is the
+      difference between a meal and a bar bill. Systems accepting any image as "receipt present"
+      have a control that reports one hundred per cent compliance and detects nothing.
+
+  - name: receipt_ref
+    purpose: The stored document.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    sensitivity: confidential
+
+  - name: tax_receipt_valid
+    purpose: Whether the document meets the statutory format for tax recovery.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Frequently false on exactly the claims that are otherwise perfect, and it is a tax finding rather than a reason to refuse the claimant.
+
+  - name: missing_evidence_reason
+    purpose: A declared, named reason for a gap.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: Far better than a silent gap. Any single one is unremarkable; the count per claimant per period is a real signal, and it is the only anomaly measure on this object that does not require a fraud model.
+
+  - name: evidence_completeness_bp
+    purpose: How much of what this claim needs is actually present.
+    type: derived
+    data_type: integer
+    unit: basis_points
+    derived_from: [receipt_present, receipt_quality, business_purpose, attendees, card_transaction_ref]
+    sensitivity: internal
+    description: Computed rather than judged, so that one request can list everything missing instead of three requests listing one thing each.
+
+  # ---- Review and approval ------------------------------------------------------------
+  - name: review_and_approval
+    purpose: Who checked it, who authorised it, and whether those were the right two people.
+    type: composite
+    contains: [approval_ref, approver_ref, reviewed_at, approver_is_line_manager, query_raised_at, ball_in_court, last_correspondence_at]
+
+  - name: approval_ref
+    purpose: The approval record and the limit it was given under.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+    sensitivity: internal
+
+  - name: approver_ref
+    purpose: The person who authorised it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+    sensitivity: internal
+
+  - name: reviewed_at
+    purpose: When the decision was taken.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: approver_is_line_manager
+    purpose: Whether the approver is in a position to know whether the thing being claimed for happened.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      The control that matters more than the limit. A line manager knows whether the trip
+      happened; a finance reviewer only knows whether the receipt is legible. An approver who
+      cannot know is a rubber stamp with an audit trail attached.
+
+  - name: query_raised_at
+    purpose: When we asked the claimant for something.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: ball_in_court
+    purpose: Who owes the next move.
+    type: value
+    data_type: enum
+    allowed_values: [us, claimant, approver, payroll, nobody]
+    source_paths: [thread.ball_in_court]
+    sensitivity: internal
+    description: >
+      Live today. `claimant` for weeks is the normal resting state of a queried claim, and it is
+      the reason expense ageing statistics flatter finance — the clock runs and the record says it
+      is not our fault.
+
+  - name: last_correspondence_at
+    purpose: When anything last moved on this claim.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    sensitivity: internal
+
+  # ---- Settlement ---------------------------------------------------------------------
+  - name: settlement
+    purpose: Getting the money back to a person, and getting the cost onto the right line.
+    type: composite
+    contains: [budget_line_ref, cost_centre, reimbursed_at, payroll_cycle_ref, tax_treatment]
+
+  - name: budget_line_ref
+    purpose: The line the cost lands on.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+    sensitivity: internal
+    description: Reimbursements land here with no commitment behind them, which is why travel is the category most often over budget without anybody having overspent.
+
+  - name: cost_centre
+    purpose: The unit carrying the cost.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: reimbursed_at
+    purpose: When the money reached the claimant.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: The only date the claimant cares about, and the one the process is least often designed around.
+
+  - name: payroll_cycle_ref
+    purpose: The payroll run this settles in.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      Reimbursement through payroll is bounded by a cut-off nobody can move. A claim approved the
+      day after cut-off waits a full month, and the claimant experiences that as a decision rather
+      than as a calendar.
+
+  - name: tax_treatment
+    purpose: Whether reimbursing this creates a taxable benefit.
+    type: value
+    data_type: enum
+    allowed_values: [non_taxable, taxable_benefit, partially_taxable, requires_dispensation, unknown]
+    default: unknown
+    sensitivity: confidential
+
+  # ---- Integrity signals --------------------------------------------------------------
+  - name: integrity_signals
+    purpose: The attributes that exist only because a small fraction of claims are not honest. Weighted below evidence on purpose.
+    type: composite
+    contains: [duplicate_candidate_of, split_claim_candidate, out_of_pattern_flag]
+
+  - name: duplicate_candidate_of
+    purpose: A prior claim this one may repeat.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.expense
+    sensitivity: internal
+    description: Self-referential. Genuine duplicates are overwhelmingly a personal card and a corporate card claiming the same meal — an honest mistake, caught cheaply by a fingerprint and expensively by an investigation.
+
+  - name: split_claim_candidate
+    purpose: Whether this claim appears to have been divided to sit under a threshold.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Occasionally deliberate. Usually the claimant doing exactly what the form encouraged, and treating it as the former is how a control loses its credibility with the people it depends on.
+
+  - name: out_of_pattern_flag
+    purpose: Departure from this claimant's own history or their peer group's.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: A reason to look, never a finding. Recorded as confidential because a pattern flag against a named individual is exactly the kind of derived assertion that should not widen its own audience.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [closed, cancelled, archived]
+  values:
+    - name: draft
+      description: >
+        Money spent, claim not raised. The state holding more value than any other and invisible
+        to every dashboard, because nothing has been created yet to count.
+      implies: The organisation has an unrecognised liability and the employee has an interest-free loan outstanding against it.
+    - name: submitted
+      description: Raised by the claimant with whatever evidence they had to hand.
+      entered_when: [{exists: thread.last_inbound}]
+    - name: triaged
+      description: Category, policy version and limit resolved. Not yet judged.
+    - name: in_progress
+      description: Under review, or waiting on the claimant for evidence.
+    - name: on_hold
+      description: Queried. The ball is with the claimant.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+      implies: The ageing clock is running and the record says it is not our fault, which is true and unhelpful.
+    - name: pending_approval
+      description: Eligible and evidenced, awaiting the person who can actually know.
+    - name: approved
+      description: Authorised. Not yet paid — the payroll cut-off sits between the two.
+    - name: rejected
+      description: >
+        Refused with a clause cited. A rejection without a clause is the single most reliable
+        generator of an escalation, and of a claimant who never submits on time again.
+    - name: escalated
+      description: Eligibility disputed above the line manager, or routed to the policy owner as an ambiguity.
+    - name: closed
+      description: Reimbursed and reconciled.
+    - name: cancelled
+      description: Withdrawn by the claimant, usually after seeing the evidence requirement.
+      implies: A withdrawal rate above a few per cent is a process verdict, not a claimant verdict.
+    - name: archived
+      description: Retention clock running. Expense records are sampled years later, because they are small, personal and easy to test.
+  transitions:
+    - {from: draft, to: submitted, trigger: claim_raised}
+    - {from: submitted, to: triaged, trigger: category_and_policy_bound}
+    - {from: triaged, to: in_progress}
+    - {from: in_progress, to: on_hold, when: [{path: thread.ball_in_court, op: "=", value: them}], reversible: true}
+    - {from: on_hold, to: in_progress, trigger: evidence_supplied, reversible: true}
+    - {from: on_hold, to: cancelled, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 30}]}
+    - {from: in_progress, to: pending_approval, trigger: eligible_and_evidenced}
+    - {from: in_progress, to: escalated, trigger: ambiguity_detected}
+    - {from: pending_approval, to: approved, trigger: authority_recorded}
+    - {from: pending_approval, to: rejected, trigger: clause_cited}
+    - {from: rejected, to: escalated, trigger: appealed, reversible: true}
+    - {from: escalated, to: pending_approval, trigger: policy_ruling_given}
+    - {from: escalated, to: rejected, trigger: policy_ruling_given}
+    - {from: approved, to: closed, trigger: reimbursed}
+    - {from: closed, to: archived, trigger: retention_period_started}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: one
+    weight_bp: 2000
+    confidence_bp: 9800
+    priority: 1
+    evidence: [hris, portal]
+    description: The claimant. An expense with no employment relationship behind it is a supplier invoice wearing a disguise, and should be routed as one.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: one
+    weight_bp: 2000
+    confidence_bp: 9000
+    priority: 2
+    evidence: [register, document]
+    description: >
+      The version in force at incurred_at, not at review. Most expense disputes are version
+      disputes wearing an eligibility costume, and the edge is only useful if it carries the
+      version.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 3
+    evidence: [erp, email, portal]
+    description: >
+      Pre-approval before the spend where policy demands it, and claim approval after. Two
+      different approvals, and a system modelling only the second cannot enforce the first — which
+      is why "you should have got pre-approval" is always said retrospectively.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: one
+    weight_bp: 1200
+    confidence_bp: 8000
+    priority: 4
+    evidence: [erp, hris]
+    description: Reimbursements land on lines with no commitment behind them. The money went in January and the line finds out in March.
+
+  - type: attaches_to
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 9000
+    priority: 5
+    evidence: [document, portal]
+    description: Receipts, itineraries, attendee lists. The evidence pack is the claim; the form is a summary of it.
+
+  - type: assigned_to
+    target: admin.obj.core.approver
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 7500
+    priority: 6
+    conditions: [{path: expense.state, op: "=", value: pending_approval}]
+    evidence: [hris, erp]
+    description: >
+      Ideally the line manager. Where the routing sends it to finance instead, the control degrades
+      from "did this happen" to "is the receipt legible" without anybody deciding to weaken it.
+
+  - type: references
+    target: admin.obj.travel_booking.trip
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 7000
+    priority: 7
+    evidence: [portal, calendar]
+    description: Where the claim belongs to a booked trip, most eligibility questions answer themselves from the itinerary and never reach a human.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 6000
+    priority: 8
+    evidence: [email]
+    description: For disputed eligibility. Escalating a forty-pound claim costs more than paying it, and that fact is worth stating in the policy rather than rediscovering per claim.
+
+  - type: produces
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 8500
+    priority: 9
+    evidence: [document, erp]
+    description: Sampled by auditors more often than any other administrative artefact, because it is small, personal and easy to test.
+
+# ── 6 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# Five executable, eight not. Every executable one reads the correspondence or the calendar
+# around the claim, because the pipeline can see an argument about a receipt and cannot see the
+# receipt, the merchant or the amount.
+inference_patterns:
+
+  deterministic:
+
+    - id: exp.evidence_promised_and_overdue
+      statement: "The claimant committed to supplying missing evidence and the date has passed."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8600, attribute: receipt_present, value: false}
+      evidence_fields: [commitment.action, commitment.due_at]
+      false_positive: >
+        The receipt may have been supplied through the expense portal rather than by reply, in
+        which case the promise is kept and only the thread does not know. Chasing then reads as
+        not having looked, which is the fastest way to lose a claimant's cooperation.
+      note: >
+        "I'll dig the receipt out tonight" is the most frequently broken promise in the whole
+        administrative function, and one of the very few genuinely administrative things this
+        pipeline can see today.
+
+    - id: exp.cover_withdrawn_on_the_coded_line
+      statement: "A budget freeze has been observed on the line this claim codes to."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 7800, attribute: eligibility, value: ambiguous}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        The freeze may relate to a different line in the same cost centre, in which case a
+        perfectly ordinary claim is routed to an escalation the claimant never hears the end of.
+      note: >
+        A freeze does not make a claim ineligible. The employee spent the money under the rules
+        that applied at the time and is owed it. What it makes is the CODING a question for
+        someone above the line manager — so the honest yield is `ambiguous`, and the action is to
+        ask, not to refuse.
+
+    - id: exp.claim_for_a_cancelled_engagement
+      statement: "The meeting or event this claim relates to was cancelled."
+      status: executable
+      when:
+        - {path: meeting.status, op: "=", value: cancelled}
+        - {exists: meeting.start_at}
+      yields: {confidence_bp: 7200, attribute: eligibility, value: ambiguous}
+      evidence_fields: [meeting.status, meeting.start_at]
+      false_positive: >
+        A cancelled placeholder in a calendar is not a cancelled engagement, and the two are
+        indistinguishable here. Firing this on a rescheduled internal meeting turns a routine
+        claim into a question about whether the trip happened.
+      note: >
+        Non-refundable travel for a cancelled meeting is fully eligible and looks exactly like a
+        claim for a trip that never happened. The two are indistinguishable without the
+        cancellation record, which is precisely why the yield is `ambiguous` and the action is
+        "ask", not "refuse".
+
+    - id: exp.receipt_missing_above_threshold
+      statement: "The amount is above the de-minimis threshold and no itemised receipt is attached."
+      status: needs_signal
+      yields: {confidence_bp: 9600, attribute: receipt_quality, value: missing}
+      requires_signals:
+        - {kind: fact_path, name: expense.amount, owner_layer: L1,
+           note: "No expense-system connector exists. The amount — the field every threshold in every expense policy turns on — is not projected into a typed fact anywhere in the stack."}
+        - {kind: fact_path, name: expense.receipt_present, owner_layer: L1,
+           note: "Receipt presence is trivially available in every expense tool ever built and reachable by nothing here."}
+
+    - id: exp.claim_outside_the_submission_window
+      statement: "Submitted after the policy's claim window has closed."
+      status: needs_signal
+      yields: {confidence_bp: 9400, attribute: claim_age_days, value: null}
+      requires_signals:
+        - {kind: fact_path, name: expense.incurred_at, owner_layer: L1,
+           note: "The spend date, distinct from the submission date, which is the only one correspondence can approximate. Approximating incurrence from an email timestamp gets the window wrong by exactly the amount that matters."}
+        - {kind: fact_path, name: policy.claim_window_days, owner_layer: L1,
+           note: "Policy thresholds live in a PDF. Until the policy is machine-readable, every limit in this object is enforced by a human remembering it, inconsistently, under time pressure."}
+
+    - id: exp.pre_approval_absent_for_restricted_category
+      statement: "A category requiring permission before the spend was spent without it."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: eligibility, value: requires_pre_approval}
+      requires_signals:
+        - {kind: fact_path, name: approval.requested_at, owner_layer: L1,
+           note: "Needed to prove the approval predates the spend. An approval record without a timestamp cannot distinguish pre-approval from retrospective cover, which is the entire point of the control."}
+        - {kind: obs_kind, name: approval_granted, owner_layer: L2}
+
+    - id: exp.approver_cannot_have_known
+      statement: "The approver is neither the claimant's line manager nor anyone present at the event being claimed for."
+      status: needs_signal
+      yields: {confidence_bp: 8400, attribute: approver_is_line_manager, value: false}
+      requires_signals:
+        - {kind: fact_path, name: employee.start_at, owner_layer: L1}
+        - {kind: derived, name: derived.reporting_line, owner_layer: L2,
+           note: "The reporting line exists in every HR system and nowhere in this stack. Without it, approval routing degrades silently from 'somebody who would know' to 'somebody with a licence', and the resulting control checks arithmetic rather than truth."}
+
+  heuristic:
+
+    - id: exp.query_open_and_claimant_silent
+      statement: "We asked the claimant for something and they have gone quiet well beyond their own reply rhythm."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 5}}
+      yields: {confidence_bp: 7400, attribute: ball_in_court, value: claimant}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Leave, sickness and secondment all look like silence, and chasing somebody on long-term
+        sick for a taxi receipt is the sort of thing that gets repeated at an employment tribunal.
+        The baseline cannot see an out-of-office.
+      note: >
+        Claims parked on the claimant are why expense ageing statistics flatter finance. Usually
+        the claimant has privately decided the receipt is not worth the forty pounds — that is a
+        process verdict worth counting, not a claim to leave open forever.
+
+    - id: exp.claim_arrives_long_after_the_engagement
+      statement: "The engagement this claim relates to happened well over a month ago and the correspondence is only starting now."
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">=", value: 45}
+        - {exists: thread.last_inbound}
+      yields: {confidence_bp: 6600, attribute: claim_age_days, value: null,
+               corroborates: [exp.claim_outside_the_submission_window]}
+      evidence_fields: [meeting.start_at, thread.last_inbound]
+      false_positive: >
+        A long-running thread about a recent claim that happens to reference an old meeting fires
+        this. It is weak on purpose and should never on its own reduce a claim's standing —
+        ageing predicts evidence quality, not honesty.
+      note: >
+        Worth surfacing because the useful response is upstream, not downstream: a claim arriving
+        six weeks late is a symptom of a submission process people avoid, and chasing this one
+        claim does nothing about the next fifty.
+
+    - id: exp.duplicate_across_payment_methods
+      statement: "The same meal claimed once on a corporate card and once on a personal card."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: duplicate_candidate_of, value: null}
+      requires_signals:
+        - {kind: fact_path, name: expense.merchant, owner_layer: L1}
+        - {kind: derived, name: derived.claim_fingerprint, owner_layer: L2,
+           note: "Merchant, date and amount hashed per claimant. The overwhelming majority of genuine duplicates are this exact honest mistake, and catching them cheaply is worth more than any fraud model — and costs a fraction of one."}
+
+    - id: exp.card_transaction_never_claimed
+      statement: "A corporate-card transaction has no claim against it after the reconciliation period has closed."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: card.transaction_at, owner_layer: L1,
+           note: "Requires a card feed. This inverts every control in the object — the money is already gone and the missing artefact is the EXPLANATION, not the payment. Unreconciled card spend is the largest silent exposure in expense administration and nothing here can see a single transaction."}
+
+    - id: exp.split_below_the_approval_threshold
+      statement: "Two or more claims from the same person, close in time, each sitting just under a limit."
+      status: needs_signal
+      yields: {confidence_bp: 6500, attribute: split_claim_candidate, value: true}
+      requires_signals:
+        - {kind: fact_path, name: expense.amount, owner_layer: L1}
+        - {kind: fact_path, name: approval.threshold_value, owner_layer: L1,
+           note: "Deliberately weak at 6500 even once available. Splitting is far more often the claimant doing what the form encouraged — one line per receipt — than an attempt to evade a limit, and treating it as the latter is how a control loses the goodwill it runs on."}
+
+    - id: exp.policy_clause_does_not_cover_this
+      statement: "No clause in the governing policy addresses this category and circumstance."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: policy_ambiguity_flag, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.policy_clause_coverage, owner_layer: L2,
+           note: "Requires the policy parsed into addressable clauses. The highest-leverage signal in the whole object: it converts a recurring per-claim argument into a one-off amendment, and it is the only ask here whose value compounds rather than repeats."}
+
+    - id: exp.unsubmitted_at_period_end
+      statement: "Spend is known to have happened and no claim has been raised as the period closes."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: expense.state, owner_layer: L1}
+        - {kind: fact_path, name: card.transaction_at, owner_layer: L1,
+           note: "The draft state — money spent, claim not raised — is invisible to every dashboard because nothing has been created yet to count. It is also the single largest source of surprise at period end, and it is entirely predictable."}
+
+    - id: exp.special_category_merchant_in_the_approval_route
+      statement: "The merchant string indicates health, religious or trade-union context, and the claim is routed to a line manager who does not need to see it."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: merchant, value: null}
+      requires_signals:
+        - {kind: fact_path, name: expense.merchant, owner_layer: L1}
+        - {kind: derived, name: derived.merchant_category_sensitivity, owner_layer: L2,
+           note: "A merchant-category classifier flagging spend that reveals special-category personal data under GDPR Article 9. Nobody designs an expense form to carry health data, and every expense form does. The routing default — send everything to the line manager — is the leak."}
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "claim submission, queries and chasing", path: thread.last_inbound,
+     fills: [submitted_at, last_correspondence_at], reliability_bp: 6000}
+  - {source: email, signal: "who owes the next move on a queried claim", path: thread.ball_in_court,
+     fills: [ball_in_court], reliability_bp: 6500}
+  - {source: derived, signal: "promises to supply missing evidence", path: commitment.action,
+     fills: [missing_evidence_reason], reliability_bp: 5500}
+  - {source: derived, signal: "when that evidence was due", path: commitment.due_at,
+     fills: [receipt_present], reliability_bp: 6000}
+  - {source: calendar, signal: "whether the meeting or trip actually happened", path: meeting.status,
+     fills: [business_purpose, eligibility], reliability_bp: 7000}
+  - {source: erp, signal: "expense system records — amounts, categories, receipt flags, card feed",
+     fills: [amount, category, receipt_present, card_transaction_ref], reliability_bp: 9600,
+     description: "No connector. Every policy threshold in this object is unreachable as a result."}
+  - {source: document, signal: "receipt images, OCR'd merchant and line items",
+     fills: [merchant, receipt_quality, tax_receipt_valid], reliability_bp: 8500}
+  - {source: register, signal: "policy register — limits, eligible categories, claim window, pre-approval rules",
+     fills: [policy_ref, limit_applied, policy_clause], reliability_bp: 8500}
+  - {source: payroll, signal: "reimbursement cycle, cut-off dates, taxable benefit treatment",
+     fills: [payroll_cycle_ref, reimbursed_at, tax_treatment], reliability_bp: 9000}
+  - {source: hris, signal: "grade, line manager, cost centre",
+     fills: [claimant_ref, approver_is_line_manager, cost_centre], reliability_bp: 9000}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: eligibility_verdict, type: string, derived_from: [eligibility, policy_clause, policy_ref],
+     description: "eligible | partial | ineligible | ambiguous, always with the clause relied on. A verdict without a clause is not an output, it is an assertion.", consumed_by: [L4.decision_maker, L4.reasoning_unit]}
+  - {name: evidence_gap_list, type: list, derived_from: [evidence_completeness_bp, receipt_quality, attendees, business_purpose],
+     description: "Exactly what is missing, itemised. One request for three things beats three requests for one.", consumed_by: [L5.execution_planning, L5.communication_planning]}
+  - {name: reimbursement_amount, type: money, derived_from: [reimbursable_amount, over_limit_amount, exchange_rate_bp],
+     description: "What is actually payable after limits, splits and exchange treatment.", consumed_by: [L4.decision_maker]}
+  - {name: policy_defect_report, type: object, derived_from: [policy_ambiguity_flag, policy_clause, category],
+     description: "Ambiguous claims grouped by clause. The most valuable thing this object produces and the thing nobody ever asks it for.", consumed_by: [L6.learning_unit]}
+  - {name: claimant_message, type: string, derived_from: [eligibility, policy_clause, evidence_completeness_bp],
+     description: "The query or the rejection, phrased so the claimant submits on time next month rather than stops submitting.", consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: tax_treatment_flag, type: string, derived_from: [tax_treatment, attendees, category],
+     description: "Taxable benefit exposure arising from this claim.", consumed_by: [L4.reasoning_unit]}
+  - {name: accrual_candidate, type: boolean, derived_from: [incurred_at, claim_period, submitted_at],
+     description: "Incurred in the period, unclaimed at close. The draft-state liability nothing counts.", consumed_by: [L4.reasoning_unit]}
+  - {name: sensitive_routing_flag, type: boolean, derived_from: [merchant, receipt_ref],
+     description: "True where the evidence discloses special-category data and the default approval route would expose it.", consumed_by: [L4.decision_maker, "L5.2.channel_planner"]}
+
+# ── 9 · Preconditions ────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: exp.policy_version_resolved_at_incurrence
+    statement: "The policy version in force on incurred_at is identified before eligibility is judged."
+    requires: [admin.obj.core.policy, policy_ref, incurred_at]
+    if_unmet: >
+      BLOCK the eligibility decision, not the claim. Judging against the current version is a
+      breach of the organisation's own governance dressed up as diligence, and it is indefensible
+      the moment the claimant notices.
+
+  - id: exp.claimant_is_an_employee
+    statement: "The claimant resolves to a live or recently-live employment record."
+    requires: [admin.obj.core.employee_record, claimant_ref]
+    if_unmet: "BLOCK and reroute. A claim from a contractor or a third party is a supplier invoice wearing a disguise, and paying it through expenses bypasses every payables control at once."
+
+  - id: exp.category_and_limit_bound
+    statement: "Category, grade and location resolve to a specific cap before any overage conversation begins."
+    requires: [category, limit_applied, admin.obj.core.policy]
+    if_unmet: "DEGRADE. Review without a cap and record eligibility as ambiguous rather than inventing a limit, because an invented limit becomes precedent the moment it is cited once."
+
+  - id: exp.approver_can_actually_know
+    statement: "The routed approver is in a position to know whether the thing being claimed for happened."
+    requires: [approver_ref, approver_is_line_manager]
+    when: [{path: expense.state, op: "=", value: pending_approval}]
+    if_unmet: >
+      DEGRADE, and say so. Approval by someone who cannot know is a rubber stamp with an audit
+      trail — it is worse than no approval, because it manufactures assurance nobody has.
+
+  - id: exp.settlement_route_exists
+    statement: "A payroll cycle with an open cut-off, or an alternative payment route, exists for the approved amount."
+    requires: [payroll_cycle_ref]
+    if_unmet: "DEGRADE and tell the claimant the date. A month's delay explained as a calendar is tolerable; the same delay unexplained is experienced as a decision."
+
+  - id: exp.sensitive_evidence_routed_appropriately
+    statement: "Where the evidence discloses special-category personal data, the approval route is checked before the document is shared."
+    requires: [receipt_ref, merchant]
+    if_unmet: >
+      BLOCK the default routing. A health, religious or trade-union merchant on a receipt reaching
+      a line manager is an Article 9 disclosure nobody decided to make, and it cannot be undone
+      once seen.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: exp.no_self_approval, statement: "A claimant cannot approve their own claim, directly or through a delegation they configured themselves.", hard: true,
+     why: "The delegation loophole is the one that survives every policy rewrite, because it looks like an administrative convenience."}
+  - {id: exp.policy_version_binds, statement: "Cannot be judged against a policy version published after incurred_at.", hard: true}
+  - {id: exp.payroll_cut_off, statement: "Cannot be reimbursed in a cycle whose cut-off has passed. An external, non-negotiable deadline.", hard: true}
+  - {id: exp.tax_receipt_for_recovery, statement: "Tax cannot be recovered without a document meeting the statutory format, however genuine the spend.", hard: true}
+  - {id: exp.entertainment_needs_attendees, statement: "Entertainment cannot be settled without a named attendee list, because the tax treatment and the hospitality register both depend on who was at the table.", hard: true}
+  - {id: exp.no_retrospective_pre_approval, statement: "A pre-approval cannot be dated before the request that created it. Backdating destroys the only control the category has.", hard: true,
+     why: "Once backdating is possible, the pre-approval requirement becomes a paperwork step performed after the fact, which is exactly what it was designed to prevent."}
+  - {id: exp.special_category_minimisation, statement: "Cannot retain more of a receipt than the decision required, where the document discloses special-category data.",
+     hard: true, why: "Data minimisation. An expense archive is one of the least-governed personal data stores in most organisations and one of the longest-retained."}
+  - {id: exp.window_is_discretionary, statement: "A claim outside the submission window may still be paid; refusing it is a named person's decision, not a validation rule.", hard: false,
+     why: "It remains a debt the organisation incurred. Refusing it is a policy choice with an employment-relations cost, and it should be taken by somebody who can be asked why."}
+
+# ── 11 · Business Rules ──────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: exp.policy_version_at_incurrence
+    statement: "Eligibility is judged against the policy in force when the money was spent."
+    then: bind_policy_version
+    severity: blocking
+    why: "Applying a later version retrospectively is a breach of the organisation's own governance, not a tightening of control."
+
+  - id: exp.no_self_approval
+    statement: "A claimant cannot approve their own claim, including through a delegation they configured."
+    then: reject_approver
+    severity: blocking
+
+  - id: exp.pre_approval_required_categories
+    statement: "Categories flagged as requiring pre-approval must carry a pre_approval_ref dated before incurred_at."
+    then: require_pre_approval
+    severity: blocking
+    why: "Retrospective pre-approval is a contradiction. Record it as an exception with a named approver rather than backdating it."
+
+  - id: exp.receipt_required_above_de_minimis
+    statement: "A claim above the de-minimis threshold requires an itemised receipt, not a card slip."
+    then: require_itemised_receipt
+    severity: blocking
+    why: "A card slip proves payment and never purchase. For subsistence that distinction is the entire control."
+
+  - id: exp.entertainment_needs_attendees
+    statement: "Entertainment claims require a named attendee list."
+    then: require_attendees
+    severity: blocking
+
+  - id: exp.rejection_must_cite_a_clause
+    statement: >
+      A rejection must name policy_clause. A rejection without one cannot be appealed, cannot be
+      learned from, and reliably converts an honest claimant into a late one.
+    then: require_clause_on_rejection
+    severity: warning
+
+  - id: exp.ambiguous_is_not_ineligible
+    statement: >
+      Where two competent reviewers could reasonably differ, eligibility is `ambiguous` and the
+      claim is escalated for a policy ruling rather than refused. The output is an amendment, not
+      a decision against an individual.
+    then: route_to_policy_owner
+    severity: warning
+    rule_ref: exp.ambiguity_is_a_drafting_defect
+
+  - id: exp.overage_is_reduced_not_refused
+    statement: "A claim exceeding a cap by a modest margin is reimbursed to the cap with the excess recorded, unless policy explicitly says otherwise."
+    when: [{path: expense.state, op: "=", value: pending_approval}]
+    then: partial_approve_and_note
+    severity: warning
+    why: "Refusing a whole claim for a small overage recovers a few pounds and costs a claimant's future compliance, which is worth considerably more."
+
+  - id: exp.claim_window_is_a_policy_not_a_law
+    statement: "A claim outside the submission window is still a debt the organisation incurred."
+    severity: advisory
+
+  - id: exp.corporate_card_is_reconciliation
+    statement: "Corporate-card spend has already left the organisation and must not be routed through a reimbursement approval queue."
+    severity: advisory
+    why: "It creates an approval queue for money nobody can get back, and it hides the only thing that matters — the transactions with no explanation attached at all."
+
+# ── 12 · Decision Factors ────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: policy_eligibility
+    weight_bp: 2500
+    direction: increases
+    description: Clause-level eligibility under the version in force at incurrence. Everything else is secondary to this, and most systems weight it third.
+    reads: [eligibility, policy_clause, policy_ref, category]
+
+  - name: evidence_completeness
+    weight_bp: 2000
+    direction: increases
+    description: Itemised receipt, business purpose, attendees where required. Independent corroboration from a card feed counts for more than any of them, because the claimant cannot author it.
+    reads: [receipt_present, receipt_quality, business_purpose, attendees, card_transaction_ref, evidence_completeness_bp]
+
+  - name: limit_headroom
+    weight_bp: 1500
+    direction: context
+    description: >
+      Context, not decreases. Over-limit by a small margin in an expensive city is a policy that
+      has not been updated, and the correct output is partial reimbursement plus a note to the
+      policy owner.
+    reads: [limit_applied, over_limit_amount, amount]
+
+  - name: claim_age
+    weight_bp: 1200
+    direction: decreases
+    description: Age degrades evidence and period accuracy far more than it indicates dishonesty. Both effects are real; only the first is worth automating on.
+    reads: [claim_age_days, incurred_at, submitted_at, claim_period]
+
+  - name: approver_independence
+    weight_bp: 1200
+    direction: increases
+    description: A line manager who can know whether the trip happened is worth more than a finance reviewer who can only check the arithmetic.
+    reads: [approver_is_line_manager, approver_ref, approval_ref]
+
+  - name: pattern_anomaly
+    weight_bp: 1000
+    direction: decreases
+    description: Duplicates, splits and departures from the claimant's own history. A reason to look, never a finding, and weighted deliberately below evidence for exactly that reason.
+    reads: [duplicate_candidate_of, split_claim_candidate, out_of_pattern_flag]
+
+  - name: claimant_history
+    weight_bp: 600
+    direction: context
+    description: >
+      A claimant with two hundred clean claims should not be queried on a missing taxi receipt.
+      Weighted low on purpose — history is grounds to spend less scrutiny, never grounds to spend
+      none.
+    reads: [claimant_ref, missing_evidence_reason]
+
+# ── 13 · Evidence ────────────────────────────────────────────────────────────────────────
+evidence:
+  - {source: erp, strength_bp: 9600, decays: false, independent_of: [document, email, derived],
+     description: "A card-feed transaction matched to the claim. Independent, contemporaneous, and unfalsifiable by the claimant — the only evidence here they did not author."}
+  - {source: document, strength_bp: 9000, decays: false, independent_of: [hris, register],
+     description: "An itemised receipt. The gold standard, and the artefact most often quietly replaced by a card slip."}
+  - {source: register, strength_bp: 8500, decays: true, independent_of: [document, erp, email],
+     description: "The policy register and the clause relied on. Evidence of the RULE rather than of the spend, and half of every decision here is about the rule."}
+  - {source: signed_form, strength_bp: 8000, decays: false, independent_of: [document, erp],
+     description: "A declared missing-evidence statement with a name against it. Weaker than a receipt, far stronger than a silent gap."}
+  - {source: hris, strength_bp: 7500, decays: true, independent_of: [document, email],
+     description: "Grade, line manager and cost centre. Decides who may approve, which is a control rather than a lookup."}
+  - {source: calendar, strength_bp: 7000, decays: false, independent_of: [document, erp],
+     description: "The meeting existed and the traveller was in it. Corroborates business purpose better than any prose the claimant can write."}
+  - {source: payroll, strength_bp: 7000, decays: false, independent_of: [document, email],
+     description: "Settlement and taxable-benefit treatment. Definitive on what was actually paid and when."}
+  - {source: email, strength_bp: 5000, decays: true, independent_of: [erp, document, register],
+     description: "The claimant's explanation. Necessary for narrative, insufficient alone for anything above de minimis."}
+  - {source: derived, strength_bp: 3500, decays: true,
+     description: "Fingerprints, pattern flags, split detection. A reason to look, never a finding, and never a reason to tell a claimant anything."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: submission_lag_days, unit: days, direction: lower_is_better, owner_layer: L6,
+     calibrates: [exp.claim_arrives_long_after_the_engagement, exp.claim_outside_the_submission_window],
+     description: "incurred_at to submitted_at. Predicts evidence quality and period accuracy better than any other number here."}
+  - {name: first_pass_approval_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Approved with no query raised. Low rates are almost always a policy-clarity problem wearing a compliance costume."}
+  - {name: query_rate_by_clause, unit: percent, direction: lower_is_better, owner_layer: L6,
+     calibrates: [exp.policy_clause_does_not_cover_this],
+     description: "Queries grouped by the clause invoked. Names the three clauses causing most of the friction — and it is always about three."}
+  - {name: ambiguity_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     calibrates: [exp.policy_clause_does_not_cover_this],
+     description: "Share resolved as ambiguous. A policy defect rate, not a claimant behaviour rate, and it should be reported to the policy owner rather than to finance."}
+  - {name: reimbursement_cycle_days, unit: days, direction: lower_is_better, owner_layer: L6,
+     description: "Submission to money in the account. The number employees actually judge the whole function on."}
+  - {name: unreconciled_card_spend, unit: currency, direction: lower_is_better, owner_layer: L2,
+     calibrates: [exp.card_transaction_never_claimed],
+     description: "Corporate-card value with no claim against it. The largest silent exposure in this domain and the least reported."}
+  - {name: cost_to_process_claim, unit: currency, direction: lower_is_better, owner_layer: L6,
+     description: "Fully loaded administrative cost per claim. Frequently exceeds the median claim value, which should change the policy and almost never does."}
+  - {name: appeal_overturn_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of rejections reversed on appeal. A high rate means the rejections were opinions; a zero rate usually means nobody dares appeal."}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: exp.submitted, name: Claim Submitted, severity: info,
+     emitted_when: [{exists: thread.last_inbound}],
+     payload: [claimant_ref, amount, category, claim_age_days]}
+  - {id: exp.queried, name: Evidence Queried, severity: info,
+     payload: [missing_evidence_reason, query_raised_at, evidence_completeness_bp]}
+  - {id: exp.evidence_overdue, name: Promised Evidence Not Supplied, severity: notable,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [claimant_ref, missing_evidence_reason]}
+  - {id: exp.claimant_gone_quiet, name: Claimant Silent on a Query, severity: notable,
+     emitted_when: [{path: thread.ball_in_court, op: "=", value: them},
+                    {fn: days_since, path: thread.last_inbound, op: ">=", value: 14}],
+     payload: [amount, query_raised_at],
+     description: "Usually means the claimant has privately written the money off. That is a process verdict and should be counted rather than left ageing."}
+  - {id: exp.ambiguity_detected, name: Policy Ambiguity Detected, severity: notable,
+     payload: [category, policy_clause, policy_ref],
+     description: "The event that should route to the policy owner rather than to the claimant. It almost never does."}
+  - {id: exp.cover_withdrawn, name: Budget Cover Withdrawn, severity: notable,
+     emitted_when: [{has_obs: budget_freeze}],
+     payload: [budget_line_ref, amount],
+     invalidates: [budget_line_ref],
+     description: "The coding is now a question above the line manager. The claim itself remains owed."}
+  - {id: exp.sensitive_evidence_detected, name: Special-Category Evidence Detected, severity: critical,
+     payload: [merchant, receipt_ref, claimant_ref],
+     invalidates: [approver_ref],
+     description: "The default approval route must be re-decided before the document moves. An Article 9 disclosure cannot be withdrawn once made."}
+  - {id: exp.approved, name: Claim Approved, severity: info,
+     payload: [approver_ref, reviewed_at, reimbursable_amount]}
+  - {id: exp.rejected, name: Claim Rejected, severity: notable,
+     payload: [policy_clause, approver_ref],
+     description: "Carries the clause in the payload deliberately. A rejection event without one is not auditable and not appealable."}
+  - {id: exp.reimbursed, name: Claim Reimbursed, severity: info,
+     payload: [reimbursed_at, payroll_cycle_ref, reimbursable_amount]}
+
+# ── 16 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: exp.triage, name: Categorise and bind the policy version, actor: agent, cost: trivial, reversible: true,
+     effect: "Sets category, policy_ref and limit_applied. Determines who reviews it and under which rule."}
+  - {id: exp.request_evidence, name: Request everything missing in one message, actor: agent, cost: low, reversible: true,
+     preconditions: [{path: thread.ball_in_court, op: "=", value: us}],
+     effect: "One message listing all gaps. Serial single-item requests are the main reason claims age past their own value."}
+  - {id: exp.chase_claimant, name: Chase a silent claimant, actor: agent, cost: low, reversible: true,
+     preconditions: [{path: thread.ball_in_court, op: "=", value: them},
+                     {fn: days_since, path: thread.last_inbound, op: ">=", value: 7}],
+     effect: "Check for leave before sending. Chasing someone on long-term sick for a taxi receipt is the archetypal own goal."}
+  - {id: exp.partial_approve, name: Approve to the limit and note the excess, actor: human, cost: low, reversible: false,
+     effect: "The correct handling of a modest overage. Rejecting a whole claim for a small excess reliably produces a claimant who stops claiming."}
+  - {id: exp.route_to_policy_owner, name: Escalate an ambiguity to the policy owner, actor: agent, cost: low, reversible: true,
+     effect: "Converts a recurring per-claim argument into a one-off amendment. The only action in this object whose value compounds."}
+  - {id: exp.reject_with_clause, name: Reject citing the clause, actor: human, cost: moderate, reversible: true,
+     effect: "A rejection without a clause cannot be appealed and cannot be learned from."}
+  - {id: exp.reconcile_card, name: Reconcile a corporate-card transaction, actor: system, cost: trivial, reversible: true,
+     effect: "Not a reimbursement. The money has gone; only the coding and the evidence remain outstanding."}
+  - {id: exp.release_to_payroll, name: Release to the payroll cycle, actor: system, cost: trivial, reversible: false,
+     effect: "Bounded by a cut-off nobody can move. Missing it by a day costs a month, and the claimant reads that as a decision."}
+  - {id: exp.reroute_sensitive_claim, name: Reroute a claim disclosing special-category data, actor: human, cost: low, reversible: false,
+     effect: "Sends the evidence to a reviewer with a lawful need to see it, and gives the line manager the decision without the document."}
+  - {id: exp.sample_post_payment, name: Sample approved claims after payment, actor: agent, cost: moderate, reversible: true,
+     effect: "Where the cost to process exceeds the median claim, pay within limits and test afterwards. Cheaper, faster, and it finds more than pre-approval does."}
+
+# ── 17 · Dependencies ────────────────────────────────────────────────────────────────────
+dependencies:
+  - {target: admin.obj.core.policy, kind: requires, strength: hard,
+     description: "No policy version, no eligibility decision. The object cannot leave `triaged` without one, and inventing a rule to proceed creates precedent on first citation."}
+  - {target: admin.obj.core.employee_record, kind: requires, strength: hard,
+     description: "Establishes that this is a reimbursement at all, and supplies the grade and reporting line that decide the cap and the approver."}
+  - {target: admin.obj.core.approval, kind: requires, strength: hard,
+     description: "Both the pre-approval that had to exist before the spend and the claim approval after it. A system modelling only the second cannot enforce the first."}
+  - {target: admin.obj.core.document, kind: requires, strength: soft,
+     description: "Evidence. Soft because a declared missing-evidence reason below de minimis is a legitimate substitute, and treating it as hard is what pushes claims into the draft state forever."}
+  - {target: admin.obj.core.budget_line, kind: enriches, strength: soft,
+     description: "Supplies the coding target and whether cover still exists. Its absence delays settlement; it does not change eligibility."}
+  - {target: admin.obj.travel_booking.trip, kind: enriches, strength: soft,
+     description: "Where a booked trip exists, the itinerary answers most eligibility questions before a human sees them."}
+  - {target: admin.obj.core.policy, kind: invalidated_by, strength: hard,
+     description: "A policy amendment invalidates every prior ambiguity ruling made under the superseded clause — which is the point of raising them."}
+  - {target: admin.obj.core.audit_evidence, kind: enriches, strength: soft,
+     description: "The approved claim with its receipts. The most-sampled administrative artefact there is, because it is small, personal and easy to test."}
+
+# ── 18 · Exceptions ──────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: exp.non_refundable_spend_for_a_cancelled_engagement
+    statement: "Non-refundable travel or accommodation for an engagement the other side cancelled remains fully eligible."
+    overrides: [exp.claim_for_a_cancelled_engagement]
+    when: [{path: meeting.status, op: "=", value: cancelled}]
+    why: >
+      The employee committed the money correctly under the rules that applied. Refusing it makes
+      every future traveller book late and expensively to protect themselves, which costs
+      considerably more than the claims refused.
+    frequency: occasional
+
+  - id: exp.reasonable_adjustment_exceeds_the_cap_by_design
+    statement: "Travel or accommodation forming a disability-related reasonable adjustment is not bound by the standard cap and is not queried at line-manager level."
+    overrides: [exp.overage_is_reduced_not_refused, exp.receipt_required_above_de_minimis]
+    why: >
+      The cap assumes an equivalent journey is available at the capped price, and for some
+      colleagues it is not. Querying it through the ordinary route also forces a disclosure of
+      health information the claimant never agreed to make. Both the cap and the routing are wrong
+      here, and the second is the more damaging.
+    frequency: occasional
+
+  - id: exp.de_minimis_claim_not_worth_querying
+    statement: "A small claim from a claimant with a long clean history is paid without querying missing evidence."
+    overrides: [exp.receipt_required_above_de_minimis]
+    why: >
+      A control that spends five pounds of administrative time to protect eleven pounds is
+      destroying value while reporting compliance. The threshold should be set from cost_to_process
+      rather than from a round number somebody liked.
+    frequency: common
+
+  - id: exp.window_waived_for_leave_or_absence
+    statement: "The submission window is waived where the claimant was on sickness absence, parental leave or secondment for the period in question."
+    overrides: [exp.claim_window_is_a_policy_not_a_law]
+    why: >
+      The window exists to keep periods accurate, not to penalise an absence the organisation
+      itself authorised. Enforcing it here is indefensible in front of anybody, and it is enforced
+      surprisingly often because the rule is applied by a system and the absence is known to a
+      different one.
+    frequency: occasional
+
+  - id: exp.emergency_travel_without_pre_approval
+    statement: "Genuinely urgent travel booked outside working hours may be claimed without pre-approval and ratified afterwards within a fixed window."
+    overrides: [exp.pre_approval_required_categories]
+    why: >
+      Pre-approval assumes an approver is reachable. Where they are not, insisting on it produces
+      either a missed obligation or a quiet lie about the timestamp, and the second is worse.
+      Ratification within a window keeps the exception an exception.
+    frequency: rare
+
+  - id: exp.corporate_card_bypasses_the_reimbursement_queue
+    statement: "Corporate-card spend is reconciled and coded rather than approved for payment."
+    overrides: [exp.overage_is_reduced_not_refused]
+    why: >
+      The money has already left the organisation. An approval queue over it approves nothing that
+      can be withheld, while hiding the only question that matters — which transactions have no
+      explanation attached at all.
+    frequency: common
+
+  - id: exp.mixed_table_splits_for_tax
+    statement: "An entertainment claim with both internal and external attendees splits into staff and client entertainment for tax purposes, even where it was one bill."
+    overrides: [exp.entertainment_needs_attendees]
+    why: >
+      The attendee list stops being a compliance formality and becomes the arithmetic. Treating
+      the whole bill under one heading is the most common expense tax error, and it is usually
+      found years later on a sample of one.
+    frequency: common
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: exp.treat_ambiguity_as_a_drafting_defect
+    statement: "When two competent reviewers could differ, record the claim as ambiguous, pay it or escalate it, and send the clause to the policy owner."
+    why: >
+      The claim is a one-off; the clause recurs. Every ambiguity resolved against an individual
+      resolves nothing and will arrive again next month with a different name on it. This is the
+      only workflow in expense administration whose output compounds.
+    applies_when: "Any claim where the reviewer has to reason from analogy rather than cite a clause."
+    evidence: "ambiguity_rate and query_rate_by_clause, reported to the policy owner rather than to finance."
+
+  - id: exp.ask_for_everything_at_once
+    statement: "Send one message listing every missing item, computed rather than noticed."
+    why: >
+      Serial single-item requests are the main reason claims age past their own value. Each round
+      trip costs days, and by the third the claimant has concluded the money is not worth it —
+      which is a withdrawal the process caused and the statistics record as a saving.
+    applies_when: "Every query, without exception."
+
+  - id: exp.set_de_minimis_from_the_cost_to_process
+    statement: "Set the receipt threshold from the fully loaded cost of processing a claim, and review it annually."
+    why: >
+      Thresholds are almost always set at a round number chosen years ago, and inflation quietly
+      turns them into a control that costs more than it protects. Deriving it from cost_to_process
+      makes the number arguable and keeps it current.
+    applies_when: "Policy review, and whenever cost_to_process_claim exceeds the median claim value."
+
+  - id: exp.bind_the_policy_version_at_incurrence
+    statement: "Resolve and store the policy version in force on the spend date, at triage."
+    why: "Retrospective application is indefensible and it happens by default, because the reviewer opens the current policy. Binding it once at triage removes an entire class of dispute."
+    applies_when: "Every claim, at triage."
+
+  - id: exp.reduce_rather_than_refuse
+    statement: "Reimburse to the cap and record the excess, rather than refusing a claim outright for a modest overage."
+    why: "The organisation recovers the same money either way. One version keeps a claimant who submits on time; the other produces one who batches six weeks of claims in December out of resentment."
+    applies_when: "Any overage under the escalation threshold with a plausible reason attached."
+
+  - id: exp.separate_reconciliation_from_reimbursement
+    statement: "Run corporate-card spend through a reconciliation flow and personal spend through a reimbursement flow."
+    why: >
+      They have opposite risk shapes. In one, the missing artefact is the money; in the other, the
+      missing artefact is the explanation. A single flow optimises for the smaller exposure and
+      leaves the larger one uncounted.
+    applies_when: "Any organisation with a corporate card programme above a handful of cards."
+
+  - id: exp.route_sensitive_evidence_away_from_the_line_manager
+    statement: "Give the line manager the decision and the amount; give the receipt to somebody with a lawful need to see it."
+    why: >
+      Expense receipts routinely disclose health, religion and trade-union membership. Nobody
+      designed the form to carry special-category data and every form does, and the default route
+      — everything to the line manager — turns an administrative convenience into an unlawful
+      disclosure nobody chose.
+    applies_when: "Medical, pharmacy, place-of-worship, union and legal-advice merchants."
+
+  - id: exp.pay_fast_then_sample
+    statement: "Approve within policy limits quickly, and test a risk-weighted sample after payment."
+    why: >
+      Pre-approving everything is the most expensive possible design and it finds less than
+      sampling does, because a reviewer with two hundred claims to clear approves them. Sampling
+      concentrates real scrutiny where it can be applied properly, and it shortens the cycle time
+      employees actually judge the function on.
+    applies_when: "Where cost_to_process_claim approaches or exceeds the median claim value."
+
+  - id: exp.report_the_policy_defect_not_the_claimant
+    statement: "Publish the three clauses generating the most queries each quarter, and fix one."
+    why: "The distribution is always concentrated — it is always about three clauses. Naming them turns an endless per-claim argument into a bounded piece of drafting work with a finish line."
+    applies_when: "Quarterly, alongside the ordinary expense reporting."
+
+# ── 20 · Anti-Patterns ───────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: exp.treat_ambiguity_as_dishonesty
+    statement: "Recording a claim the policy does not address as ineligible, and treating the claimant as having tried it on."
+    why_it_happens: >
+      The eligibility field usually offers only eligible and ineligible, the reviewer has to pick
+      one, and picking ineligible feels like the safe, diligent choice. Nobody has ever been
+      criticised for refusing a claim.
+    cost: >
+      The drafting gap survives untouched and recurs monthly. The claimant learns the process is
+      arbitrary and begins batching, under-claiming or padding — all three of which cost more than
+      the claim would have.
+    instead: "Give the field an `ambiguous` value, route it to the policy owner, and pay or escalate the individual claim on its merits."
+    detectable_by: [ambiguity_rate, appeal_overturn_rate, exp.policy_clause_does_not_cover_this]
+
+  - id: exp.rejection_without_a_clause
+    statement: "Refusing a claim with a reason like 'not policy' or 'not reasonable'."
+    why_it_happens: "Finding the clause takes ten minutes, the reviewer is confident, and the claimant usually accepts it."
+    cost: "The refusal cannot be appealed, audited or learned from. When it is challenged, nobody can reconstruct the basis, and the reversal costs more credibility than the original claim was worth."
+    instead: "Require policy_clause on every rejection as a hard field. If the clause cannot be found, the answer is ambiguous, not ineligible."
+    detectable_by: [appeal_overturn_rate, exp.rejection_must_cite_a_clause]
+
+  - id: exp.serial_evidence_requests
+    statement: "Asking for the receipt, then the business purpose, then the attendee list, in three separate messages."
+    why_it_happens: "Each reviewer touch surfaces the next gap. Nobody computes the full gap list up front because no field holds it."
+    cost: "Days per round trip, and a claimant who abandons on the third. Abandonment is recorded as a withdrawn claim, which looks like a control working."
+    instead: "Compute evidence_completeness_bp at triage and send one message with everything on it."
+    detectable_by: [reimbursement_cycle_days, first_pass_approval_rate]
+
+  - id: exp.refuse_the_whole_claim_for_a_small_overage
+    statement: "Rejecting a hotel claim entirely because it sits twelve pounds above the cap."
+    why_it_happens: "Partial approval is more work, the system frequently makes it awkward, and full rejection feels like consistent enforcement."
+    cost: >
+      The organisation still owes the capped amount, so the money is not saved — only delayed and
+      argued about. What is lost is a claimant's willingness to submit promptly, which is worth
+      more than every overage they will ever file.
+    instead: "Reimburse to the cap, record over_limit_amount, and send the city to the policy owner if it happens three times."
+    detectable_by: [appeal_overturn_rate, submission_lag_days]
+
+  - id: exp.receipt_present_as_a_checkbox
+    statement: "Accepting any attached image as satisfying the receipt requirement."
+    why_it_happens: "It is trivially automatable, it produces a compliance figure of one hundred per cent, and nobody is incentivised to look at what the image actually is."
+    cost: "A control that reports perfect compliance and detects nothing. Card slips prove payment and not purchase, and for subsistence that gap is the whole point of the control."
+    instead: "Capture receipt_quality separately from receipt_present, and report on the quality distribution rather than the presence rate."
+    detectable_by: [first_pass_approval_rate, exp.receipt_missing_above_threshold]
+
+  - id: exp.control_costs_more_than_the_claim
+    statement: "Running full review, approval and evidence chasing on claims worth less than the cost of processing them."
+    why_it_happens: >
+      The policy was written for the largest claims and applied uniformly because uniformity looks
+      fair. Nobody has ever calculated the fully loaded cost of a review, so the comparison is
+      never made.
+    cost: "Direct value destruction, plus the queue congestion that delays the claims where scrutiny would have mattered."
+    instead: "Set the threshold from cost_to_process_claim, auto-approve below it, and sample after payment."
+    detectable_by: [cost_to_process_claim, reimbursement_cycle_days]
+
+  - id: exp.corporate_card_through_the_reimbursement_flow
+    statement: "Routing corporate-card transactions through the same approval queue as out-of-pocket claims."
+    why_it_happens: "One flow is simpler to build and the transactions look identical on the form."
+    cost: >
+      An approval queue over money that has already gone, and — much worse — no visibility at all
+      of the card transactions with no claim raised against them. That silent set is the largest
+      exposure in the domain and this design cannot see it.
+    instead: "Reconcile card spend against transactions and report the unmatched tail, which is the actual control."
+    detectable_by: [unreconciled_card_spend, exp.card_transaction_never_claimed]
+
+  - id: exp.retrospective_policy_application
+    statement: "Judging a claim against the policy version current at review rather than at incurrence."
+    why_it_happens: "The reviewer opens the policy, and the policy system serves the current version. Nobody decides to do this; the tooling does it for them."
+    cost: "Every affected claimant experiences it as the rules being changed after the fact, and they are right. It is a governance breach that arrives disguised as diligence."
+    instead: "Bind policy_ref at triage from incurred_at, and make the version visible on the review screen."
+    detectable_by: [appeal_overturn_rate, exp.policy_version_at_incurrence]
+
+  - id: exp.sensitive_receipt_reaches_the_line_manager
+    statement: "Routing every receipt to the claimant's line manager by default, including medical, pharmacy and place-of-worship documents."
+    why_it_happens: >
+      The line manager is the right approver for almost everything, so the routing rule is
+      universal. The special-category problem is invisible in the design because nobody thinks of
+      an expense form as a health data collection instrument.
+    cost: >
+      An unlawful disclosure that cannot be withdrawn once seen, and a claimant who quietly stops
+      claiming for the adjustment they are entitled to rather than disclose it to their manager
+      again.
+    instead: "Split the decision from the document: the manager approves the amount and the business purpose, and a reviewer with a lawful basis sees the evidence."
+    detectable_by: [exp.special_category_merchant_in_the_approval_route]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Eleven-pound taxi, no receipt, claimant with two hundred clean claims", kind: typical,
+     note: "Below the cost of querying it. A control that queries this is spending five pounds to protect eleven."}
+  - {label: "Hotel forty pounds over the city cap during a conference week", kind: edge,
+     note: "The cap is out of date, not the claimant. Partial approval plus a note to the policy owner."}
+  - {label: "Client dinner, four attendees, two of them ours", kind: edge,
+     note: "A mixed table. It splits for tax treatment, and the claim is unpayable until the names arrive."}
+  - {label: "Non-refundable flight for a meeting the client cancelled", kind: counterexample,
+     note: "Fully eligible, and indistinguishable from a trip that never happened without the cancellation record."}
+  - {label: "The same lunch on the corporate card and a personal card", kind: misclassification,
+     note: "The most common genuine duplicate. An honest mistake, caught cheaply by a fingerprint and expensively by an investigation."}
+  - {label: "Six weeks of claims submitted the day before year end", kind: typical,
+     note: "Ageing, thin evidence, wrong period. The predictable output of a process that made claiming unpleasant."}
+  - {label: "Coworking day pass, category `other`", kind: edge,
+     note: "Genuinely unaddressed by the policy. eligibility = ambiguous, and the right output is an amendment rather than a verdict."}
+  - {label: "Accessible taxi instead of the capped rail fare", kind: misclassification,
+     note: "Flagged as an overage by the system and queried by the manager. It is a reasonable adjustment, and the query itself is the harm."}
+  - {label: "Contractor submitting travel through the expense tool", kind: misclassification,
+     note: "Not an expense at all. It is a supplier invoice, and paying it here bypasses every payables control at once."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Four-eyes principle (maker-checker)", kind: framework,
+     note: "The separation this object depends on: whoever spends does not approve, and the approver must be someone in a position to know."}
+  - {title: "Delegation of Authority matrix", kind: framework,
+     note: "Sets who may approve what value. In expenses the more load-bearing question is not the limit but whether the approver could know the claim is true."}
+  - {title: "Benefits in kind and business expense deductibility rules", kind: standard,
+     note: "The statutory tests that decide tax_treatment. They turn on attendees, business purpose and receipt format, which is why those three fields carry disproportionate weight here."}
+  - {title: "Scale rate and de-minimis subsistence payments", kind: framework,
+     note: "The recognised alternative to receipt-by-receipt reimbursement, and usually cheaper to run than the control it replaces."}
+  - {title: "GDPR Article 9 — special categories of personal data", kind: standard,
+     note: "Health, religion and trade-union membership. Expense receipts disclose all three routinely and no expense system is designed on that assumption."}
+  - {title: "GDPR Article 5(1)(c) — data minimisation", kind: standard,
+     note: "Governs how much of a receipt should be retained after the decision is made, and how long an expense archive may hold it."}
+  - {title: "UK Bribery Act 2010 — hospitality and gifts", kind: standard,
+     note: "Why the attendee list on client entertainment is a control rather than a formality, and why a hospitality register is fed from this object."}
+  - {title: "Benford's Law applied to expense anomaly detection", kind: research,
+     note: "A cheap population-level screen for manufactured figures. Useful across thousands of claims and meaningless against any individual one, which is exactly how it is usually misused."}
+  - {title: "Corporate card programme reconciliation practice", kind: practitioner,
+     note: "Card spend is reconciled, not reimbursed. The controlling metric is the unmatched transaction tail, not the approval queue."}
+  - {title: "Statutory retention periods for payroll and expense records", kind: standard,
+     note: "Expense archives outlive the employment relationship and are among the least-governed personal data stores an organisation holds."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of thirteen patterns are executable, and every one reads the correspondence or the
+    calendar around the claim rather than the claim — there is no expense connector, so
+    `expense.amount`, the field every policy threshold turns on, is unreachable. Three backlog
+    items stand out. `card.transaction_at` inverts the whole object: unreconciled card spend is
+    money already gone with no explanation attached, and it is completely invisible here.
+    `derived.policy_clause_coverage` is the highest-leverage ask in the file, because it converts
+    a recurring per-claim argument into a single amendment. `derived.merchant_category_sensitivity`
+    is the one nobody asks for and everybody needs — expense forms carry Article 9 data by
+    accident and route it to line managers by default. Note the authoring choice throughout:
+    ambiguity yields `ambiguous`, never `ineligible`. Most expense friction is a drafting gap
+    meeting an honest claimant, and blaming the claimant for it loses a workforce's goodwill and
+    the function's own data quality in the same move.

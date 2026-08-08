@@ -1,0 +1,1471 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Action Item — core object.
+#
+# An action item is a COMMITMENT created inside a meeting, inheriting that meeting's record.
+# Everything true of admin.obj.core.commitment is true here; this object adds only what the
+# meeting adds — and what the meeting adds turns out to be most of what matters. A promise
+# made in a corridor exists in one person's memory. The same promise made in a meeting whose
+# minutes were circulated and not objected to is a matter of record, binding on the
+# organisation, and recoverable three years later by an auditor who was not in the room.
+#
+# The corollary is the failure this object exists to name. An action item is born in front of
+# witnesses and dies in private: when the minutes do not go out it does not weaken, it
+# vanishes. Nobody holds the record, so nobody is wrong, so nobody is chased. Four of thirteen
+# patterns below fire; the nine that do not nearly all wait on one signal — the minutes — and
+# the minutes are already being written by hand, every week, in every organisation using this.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.action_item
+  name: Action Item
+  domain: admin
+  scope: core
+  subdomain: meeting_operations
+  owner_capability: admin.meeting_operations.action_item_tracking
+  version: 2.0.0
+  status: draft
+  aliases: ["Action Point", "AP", "Matter Arising", "Minute Action", "Resolution Action", "Follow-up"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A commitment agreed in a meeting and recorded in that meeting's minutes, with an owner, a
+    date and a line reference. It differs from a plain commitment in exactly one respect and
+    the difference is decisive: it has a witnessed record. That record makes it enforceable
+    without anyone's memory being tested, survives the departure of everyone in the room, and
+    — where the minutes were circulated and not challenged — makes it agreed by the whole
+    meeting rather than by the person who happened to say yes.
+  discriminator: >
+    Remove the meeting and the minute and what is left is a plain commitment. The authority of
+    this object comes from the forum and the record, not from the wording of the promise —
+    which is why the same sentence carries a different weight depending on which room it was
+    said in, and why an action item nobody minuted is weaker than an email nobody minuted.
+  answers:
+    - "What did this meeting actually commit the organisation to, and who holds each item?"
+    - "Which items must be read out at the next sitting, and in what order?"
+    - "Has the record gone out yet, and is anything binding on anyone until it does?"
+    - "Was the owner in the room when this was allocated to them — and if not, have they been told?"
+    - "How many sittings has this survived, and at what point is carrying it again dishonest?"
+    - "May this item appear in an automated reminder at all, or is the forum reserved?"
+    - "Was closure reported to the forum that raised it, or only ticked in a tracker?"
+  not:
+    - "NOT a plain commitment — admin.obj.core.commitment owns promises made outside a forum, and every rule there applies here unchanged."
+    - "NOT the meeting. Attendance, agenda and quorum belong to admin.obj.core.meeting; this object is one line of that meeting's output."
+    - "NOT the minutes. The document itself is admin.obj.core.document; this object references it and is not it."
+    - "NOT a decision. A meeting's resolutions are records of what was agreed; an action item is what somebody must now do about it."
+    - "NOT an approval. Sign-off the item waits on is admin.obj.core.approval, and time spent there is not the owner's lateness."
+
+# ── 3 · Attributes — structure and data in one list ──────────────────────────────────────
+attributes:
+
+  # ---- Provenance ------------------------------------------------------------------------
+  - name: provenance
+    purpose: Which meeting made it, and where in the record it sits. This object's entire authority comes from here.
+    type: composite
+    contains: [meeting_ref, meeting_held_at, minute_ref, minute_line, agenda_item_ref, recorded_by_ref, recorded_verbatim]
+
+  - name: meeting_ref
+    purpose: The meeting that created it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.meeting
+    required: true
+    validation: "must resolve to exactly one meeting"
+    description: >
+      Mandatory. An action item without a meeting is a commitment, and should be recorded as
+      one rather than dressed up — inventing a meeting to hold an ordinary promise is how a
+      tracker acquires forums that never sat.
+
+  - name: meeting_held_at
+    purpose: When the sitting took place, which starts the minutes clock.
+    type: value
+    data_type: timestamp
+    source_paths: [meeting.start_at]
+    description: >
+      Live today. Its main administrative use is as the clock start for the record, not for the
+      action — the item's own date is usually later and frequently absent.
+
+  - name: minute_ref
+    purpose: The minutes document that carries this item.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: >
+      The item's whole evidentiary weight sits in one paragraph of a file that, in most
+      organisations, nobody re-reads until there is a dispute — at which point it is the only
+      thing anyone reads.
+
+  - name: minute_line
+    purpose: The formal item reference within the record.
+    type: value
+    data_type: string
+    description: >
+      "AP 7.3", "Minute 24/118". Trivial-looking and load-bearing: it is what lets an item be
+      carried across a year of sittings without being silently reworded into something easier
+      to close. Without it, item five in March and item two in June are provably unrelated.
+
+  - name: agenda_item_ref
+    purpose: The agenda line the item arose under.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: Determines which forum owns it and therefore who is entitled to close it.
+
+  - name: recorded_by_ref
+    purpose: The minute-taker.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    sensitivity: internal
+    description: >
+      The single point of failure for this entire object. When they are absent or overloaded
+      the meeting still happens, the decisions are still made, and none of it survives the
+      week. No other role in an organisation destroys so much value by being merely busy.
+
+  - name: recorded_verbatim
+    purpose: Whether the wording is the owner's or the minute-taker's paraphrase.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Paraphrase is where scope quietly expands and contracts. "Review the policy" and "rewrite
+      the policy" are one word apart in a minute and three weeks apart in reality, and the
+      owner will read whichever one suits them in November.
+
+  # ---- The item --------------------------------------------------------------------------
+  - name: the_item
+    purpose: The commitment itself. Deliberately the same shape as admin.obj.core.commitment, because it is one.
+    type: composite
+    contains: [action, owner_ref, due_at, is_dated, date_source, is_specific, criticality]
+
+  - name: action
+    purpose: The thing agreed, in the owner's own verb.
+    type: value
+    data_type: string
+    required: true
+    source_paths: [commitment.action]
+    sensitivity: internal
+    description: Same field as on commitment, same rule — keep the owner's verb, because the minute-taker's verb is the one nobody agreed to.
+
+  - name: owner_ref
+    purpose: The one person named in the minute.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    required: true
+    sensitivity: internal
+    validation: "must resolve to exactly one natural person"
+    description: >
+      Meetings are the worst offender for assigning to a function. "Finance to confirm" is an
+      action item with no owner, and it will be read out unchanged at the next four sittings
+      before somebody closes it out of embarrassment.
+
+  - name: due_at
+    purpose: The date recorded against the item, where one exists.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    description: >
+      In practice most minuted actions are dated implicitly to the next sitting — a real
+      deadline that nobody writes down and everybody obeys, right up until the one person who
+      was not in the room misses it.
+
+  - name: is_dated
+    purpose: Whether an explicit date exists at all.
+    type: derived
+    data_type: boolean
+    derived_from: [due_at]
+    source_paths: [commitment.due_at]
+    description: >
+      The best single predictor of whether a minuted action is ever done. An undated action
+      point is not a slow commitment; it is a sentence in a document.
+
+  - name: date_source
+    purpose: Where the date came from, since most minuted dates are inherited rather than agreed.
+    type: value
+    data_type: enum
+    allowed_values: [stated_in_the_room, next_sitting_by_convention, inferred_by_secretariat, imposed_externally]
+    default: next_sitting_by_convention
+    description: >
+      Distinguishing "by 30 June, agreed aloud" from "by the next meeting, because that is what
+      we always mean" is what allows a chase to be worded honestly. The second is a real
+      deadline and it is not one the owner personally accepted.
+
+  - name: is_specific
+    purpose: Whether the wording lets a third party tell it was done.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Minutes are unusually prone to failing this, because the room already knew what was
+      meant. Six weeks later the room is four different people and the sentence has to stand on
+      its own.
+
+  - name: criticality
+    purpose: Consequence of the item not being done, as distinct from the effort of doing it.
+    type: value
+    data_type: enum
+    allowed_values: [routine, material, critical]
+    default: routine
+    description: A committee's agenda order reflects the chair's sequence, not the organisation's exposure, and the two diverge most on the items that matter.
+
+  # ---- The room --------------------------------------------------------------------------
+  - name: the_room
+    purpose: Whether the people who mattered were present when it was agreed. The most under-recorded determinant of whether it gets done.
+    type: composite
+    contains: [owner_was_present, chair_sponsored, agreed_by_consensus, objections_recorded]
+
+  - name: owner_was_present
+    purpose: Whether the owner was in the room when it was assigned to them.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      An action item allocated to an absent person is allocated to nobody: they learn about it
+      from a document, they did not agree to it, and they are entirely correct to feel that
+      way. It correlates with non-delivery more strongly than any property of the action itself.
+
+  - name: chair_sponsored
+    purpose: Whether the chair asked for it personally.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Chair-sponsored items get done. Everything else competes on merit, which is a losing
+      position in any meeting. It is the strongest single predictor available and it appears in
+      no action tracker ever built.
+
+  - name: agreed_by_consensus
+    purpose: Whether the meeting agreed, or one person volunteered while everyone else looked at their laptops.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: objections_recorded
+    purpose: Whether anyone dissented on the record.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      Matters at board and committee level, where an unrecorded objection is later
+      indistinguishable from agreement. A director whose concern is not minuted has, as far as
+      the record is concerned, concurred — which is the reason the governance codes require the
+      recording of unresolved concerns.
+
+  # ---- Carry -----------------------------------------------------------------------------
+  - name: carry
+    purpose: How many sittings it has survived without being done. An action item's real age is measured in meetings, not days.
+    type: composite
+    contains: [carried_over_count, first_raised_at, first_raised_meeting_ref, last_reported_at, last_reported_status, is_matter_arising]
+
+  - name: carried_over_count
+    purpose: Number of sittings at which this has been reported and not closed.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    description: >
+      The most diagnostic number on the object. Past about three the item is not slow — it is
+      not going to be done, and reading it out again is the meeting performing tracking rather
+      than doing it.
+
+  - name: first_raised_at
+    purpose: When the item first appeared, preserved so its true age survives rewording.
+    type: value
+    data_type: timestamp
+
+  - name: first_raised_meeting_ref
+    purpose: The sitting that originally raised it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.meeting
+    description: Preserved so an item cannot be laundered into a new one by being reworded at sitting five and presented as fresh business.
+
+  - name: last_reported_at
+    purpose: When the owner last gave the forum an update.
+    type: value
+    data_type: timestamp
+
+  - name: last_reported_status
+    purpose: What the owner told the room the last time it was raised.
+    type: value
+    data_type: enum
+    allowed_values: [not_started, in_progress, blocked, complete, no_update]
+    default: not_started
+    description: >
+      `no_update` is a real and common value and must be recordable. An item reported with no
+      update three sittings running is being managed by attrition, and the forum is complicit
+      in a way it would deny if asked.
+
+  - name: is_matter_arising
+    purpose: Whether it appears under matters arising rather than as new business.
+    type: value
+    data_type: boolean
+    default: false
+    description: A matters-arising section that only ever grows is a committee that has stopped closing things, and it is the whole diagnosis in one number.
+
+  # ---- Record health ---------------------------------------------------------------------
+  - name: record_health
+    purpose: Whether the minute carrying this item actually reached anyone, and whether the organisation has adopted it.
+    type: composite
+    contains: [minutes_circulated_at, minutes_approved_at, circulation_lag_hours, confidentiality]
+
+  - name: minutes_circulated_at
+    purpose: When the record actually reached the attendees.
+    type: value
+    data_type: timestamp
+    description: >
+      Until this is set the action item is hearsay. The gap between meeting_held_at and this
+      field is the window in which most meeting output is lost, and it is entirely invisible to
+      everyone except the person who has not written the minutes.
+
+  - name: minutes_approved_at
+    purpose: When the following sitting formally adopted the minutes.
+    type: value
+    data_type: timestamp
+    description: >
+      At that moment the item stops being one person's account and becomes the organisation's,
+      retrospectively binding everyone who did not object. It is the closest thing an
+      administrative record has to a signature.
+
+  - name: circulation_lag_hours
+    purpose: Sitting to circulation, in hours.
+    type: derived
+    data_type: integer
+    unit: hours
+    derived_from: [meeting_held_at, minutes_circulated_at]
+    description: >
+      The best single health measure of a secretariat. Past about a week the attendees'
+      memories have diverged and the minutes stop being a record and become a proposal, which
+      somebody will argue with.
+
+  - name: confidentiality
+    purpose: Whether this item may appear in general reporting at all.
+    type: value
+    data_type: enum
+    allowed_values: [open, internal, restricted, reserved]
+    default: internal
+    sensitivity: confidential
+    description: >
+      `reserved` covers board reserved business — items that exist, bind someone, and must not
+      appear in any tracker, digest or automated reminder however overdue. The item inherits
+      this from its meeting and may never be less restricted than the forum that made it.
+
+  # ---- Discharge -------------------------------------------------------------------------
+  - name: discharge
+    purpose: How it ended, and in which forum that was confirmed.
+    type: composite
+    contains: [state, closed_at, closure_reported_in_ref, closure_quality, closure_evidence_ref, closed_by_the_forum]
+
+  - name: state
+    purpose: The lifecycle position of the item.
+    type: value
+    data_type: enum
+    allowed_values: [draft, open, in_progress, pending_approval, overdue, escalated, closed, cancelled, superseded]
+    required: true
+    default: draft
+    description: >
+      `draft` here means agreed aloud and not yet in a circulated minute. It is the most
+      fragile state in the domain — the item is real, binding and invisible — and it is the
+      state every action item passes through, usually for longer than anyone believes.
+
+  - name: closed_at
+    purpose: When the item was discharged.
+    type: value
+    data_type: timestamp
+
+  - name: closure_reported_in_ref
+    purpose: The sitting where closure was confirmed to the forum.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.meeting
+    description: >
+      An item closed in the tracker but never reported closed to the room is still open as far
+      as the record is concerned, and the next person to read the minutes will raise it again.
+
+  - name: closure_quality
+    purpose: What kind of proof stands behind the closure.
+    type: value
+    data_type: enum
+    allowed_values: [evidenced, asserted, assumed, none]
+    default: none
+    description: In a governed forum `asserted` means a verbal assurance at a sitting. That is genuinely worth more here than in a plain tracker, because it was given in front of witnesses.
+
+  - name: closure_evidence_ref
+    purpose: The deliverable that discharges the item.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: The paper, the schedule, the signed policy. In a governed forum this artefact is the closure and the action was only the means of producing it.
+
+  - name: closed_by_the_forum
+    purpose: Whether the meeting that raised it actually accepted the closure.
+    type: derived
+    data_type: boolean
+    derived_from: [closure_reported_in_ref, meeting_ref]
+    description: The distinction between an item that is finished and an item that has merely been ticked. Only the first one is closed on the record.
+
+  # ---- Linkage ---------------------------------------------------------------------------
+  - name: linkage
+    purpose: The objects this item is the meeting-side face of.
+    type: composite
+    contains: [commitment_ref, blocked_by_ref, obligation_ref]
+
+  - name: commitment_ref
+    purpose: The underlying promise, of which this object is the minuted form.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.commitment
+    description: >
+      Stated explicitly so a Layer 4 chase policy written for commitments applies here without
+      being rewritten. Nothing on that object is redefined here; this object adds the record.
+
+  - name: blocked_by_ref
+    purpose: Sign-off the item cannot proceed without.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+    description: Frequently the reason an item carries over four times while its owner is blamed at each sitting for a queue they do not control.
+
+  - name: obligation_ref
+    purpose: The external obligation the action discharges, where there is one.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.compliance_obligation
+    description: When the action serves a filing or a notice period, the committee's own timetable is irrelevant to it and "we'll pick it up next quarter" is not available.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [closed, cancelled, superseded]
+  values:
+    - name: draft
+      description: Spoken in the room and not yet in a circulated minute.
+      entered_when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+      implies: "Real, binding and invisible. Nobody holds the record, so nobody is wrong, so nobody is chased."
+    - name: open
+      description: >
+        In the record, owned and dated. Includes items carried forward — carry is a count, not
+        a state, because making it a state lets a committee report carried items as something
+        other than open.
+      entered_when:
+        - {exists: commitment.action}
+        - {exists: commitment.due_at}
+      implies: "Chaseable between sittings and reportable at the next one."
+    - name: in_progress
+      description: The owner has reported movement to the room.
+      implies: "The forum has a status it can rely on. Chasing here costs credibility."
+    - name: pending_approval
+      description: Waiting on a signature the owner does not hold.
+      implies: "Carry-over from this state must not be counted against the owner. It is the forum's own queue."
+    - name: overdue
+      description: Past its date, or past the sitting at which it was to be complete.
+      entered_when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      implies: "It will be read out again. Whether that achieves anything depends entirely on carried_over_count."
+    - name: escalated
+      description: Raised to the chair or to a parent committee.
+      implies: "The forum has admitted it cannot move the item on its own authority."
+    - name: closed
+      description: Reported complete and accepted by the meeting.
+      implies: "Closed on the record, not merely ticked. Check closed_by_the_forum before believing the tracker."
+    - name: cancelled
+      description: The meeting agreed to drop it.
+      implies: "Healthy, rare, and the correct ending for most items on their fourth carry."
+    - name: superseded
+      description: Replaced by a later resolution on the same subject.
+      implies: "The obligation survived; this wording did not. Preserve first_raised_meeting_ref or the age is laundered."
+  transitions:
+    - {from: draft, to: open, when: [{exists: commitment.due_at}], trigger: minutes_circulated, reversible: false}
+    - {from: draft, to: cancelled, trigger: never_minuted_and_dropped, reversible: false}
+    - {from: open, to: in_progress, trigger: reported_to_the_forum, reversible: true}
+    - {from: open, to: pending_approval, trigger: approval_requested, reversible: true}
+    - {from: open, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: in_progress, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: pending_approval, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}], reversible: true}
+    - {from: pending_approval, to: in_progress, trigger: approval_granted, reversible: false}
+    - {from: overdue, to: escalated, trigger: raised_to_the_chair, reversible: false}
+    - {from: overdue, to: open, trigger: carried_to_next_sitting, reversible: true}
+    - {from: overdue, to: closed, reversible: false}
+    - {from: in_progress, to: closed, reversible: false}
+    - {from: escalated, to: closed, reversible: false}
+    - {from: escalated, to: cancelled, trigger: dropped_by_the_forum, reversible: false}
+    - {from: open, to: cancelled, reversible: false}
+    - {from: open, to: superseded, trigger: later_resolution_on_the_same_subject, reversible: false}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: one
+    weight_bp: 2500
+    confidence_bp: 8500
+    priority: 1
+    conditions: [{exists: meeting.start_at}]
+    evidence: [calendar, document, meeting_transcript]
+    description: >
+      The defining edge. This object cannot exist without it — the meeting is not context here,
+      it is the source of authority. The item also inherits the meeting's confidentiality, its
+      attendee list and its minute cycle, none of which a plain commitment has.
+
+  - type: references
+    target: admin.obj.core.commitment
+    direction: bidirectional
+    cardinality: one
+    weight_bp: 2000
+    confidence_bp: 9000
+    priority: 2
+    evidence: [document, email]
+    description: >
+      An action item IS a commitment with a record attached. Every rule on that object applies
+      unchanged and nothing is redefined here. Stated explicitly so a chase policy written for
+      commitments does not have to be written twice.
+
+  - type: assigned_to
+    target: admin.obj.core.stakeholder
+    direction: outbound
+    cardinality: one
+    weight_bp: 1500
+    confidence_bp: 5500
+    priority: 3
+    evidence: [document, meeting_transcript, register]
+    description: One named person in the minute. "Finance to confirm" resolves to nobody and behaves accordingly at each of the next four sittings.
+
+  - type: documents
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1400
+    confidence_bp: 6000
+    priority: 4
+    evidence: [document, register]
+    description: >
+      The minutes. Zero is permitted by the model and is the state in which most action items
+      die — not overruled, not cancelled, simply never written down by the one person who was
+      going to write them down.
+
+  - type: precedes
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1100
+    confidence_bp: 6500
+    priority: 5
+    evidence: [calendar, document]
+    description: >
+      The next sitting, where it will be read out again. This is the real due date of most
+      minuted actions and the one nobody writes in the date column, which is why the work
+      compresses into the three days before the meeting.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 5500
+    priority: 6
+    evidence: [email, erp, portal]
+    description: Sign-off the item cannot proceed without. Frequently the reason an item carries over four times while its owner is blamed for it at each sitting.
+
+  - type: produces
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 800
+    confidence_bp: 7000
+    priority: 7
+    evidence: [document, register]
+    description: What the action was to deliver — the paper, the schedule, the policy. In a governed forum this artefact is the closure and there is no other kind.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 5000
+    priority: 8
+    conditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    evidence: [email, register]
+    description: Usually to the chair, and usually two sittings later than it should have been.
+
+  - type: governed_by
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 6500
+    priority: 9
+    evidence: [contract, regulator, document]
+    description: When the action discharges an external date — a filing, a notice period — the committee's own timetable is irrelevant to it and carrying it over is not available.
+
+  - type: evidences
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 5500
+    priority: 10
+    evidence: [regulator, portal, document]
+    description: >
+      Where a committee action is how the organisation discharges an obligation, the minute is
+      part of the audit trail. Assurance committees exist almost entirely to produce this edge,
+      and almost never record it.
+
+# ── 6 · Inference Patterns ⭐ — how this object is discovered when nobody states it ───────
+#
+# Four fire. What is striking about the nine that do not is that they nearly all wait on one
+# thing — the minutes — and the minutes are already being written by hand every week.
+inference_patterns:
+
+  deterministic:
+
+    - id: ai.action_against_a_meeting_that_happened
+      statement: "A commitment sits on a node whose meeting has already taken place."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: meeting.start_at, op: ">", value: 0}
+      yields: {confidence_bp: 8500, attribute: null}
+      evidence_fields: [commitment.action, meeting.start_at]
+      false_positive: >
+        A commitment made by email on the day after a meeting attaches to the same node and is
+        not a minuted action at all. This is the cleanest discriminator the substrate can offer
+        and it is still a proximity argument rather than a provenance one.
+
+    - id: ai.undated_minute_line
+      statement: "An action agreed in a meeting with no date attached to it."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {absent: commitment.due_at}
+        - {exists: meeting.start_at}
+      yields: {confidence_bp: 9000, attribute: is_dated, value: false}
+      evidence_fields: [commitment.action, meeting.start_at]
+      false_positive: >
+        The room may have said "by the next meeting" — a real and binding date that this
+        pattern cannot see, because it lives in the convention rather than in the sentence.
+      note: >
+        The dominant failure of minute-taking and the cheapest to fix. Everybody in the room
+        knows what "by the next meeting" means, and everybody knowing is not a due date. Six
+        weeks later the room is four different people and nobody knows.
+
+    - id: ai.past_its_date_and_still_open
+      statement: "A minuted action has passed its date without discharge and will be read out again."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {exists: meeting.start_at}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 9200, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, meeting.start_at]
+      false_positive: >
+        Nothing in the substrate can close an item, so this will insist an action is overdue
+        while its owner sits in the sitting holding the finished document. That specific
+        embarrassment is why committees stop trusting automated action trackers, usually
+        permanently.
+
+    - id: ai.minute_line_reference
+      statement: "The item carries a formal minute reference, which makes it a matter of record rather than a note."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: minute_line, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: minutes_circulated, owner_layer: L2,
+           note: "Minutes are the single richest administrative artefact in any organisation — dated, attributed, owner-assigned, and agreed by the silence of everyone who received them — and no connector reads them. Every gap on this object collapses to this one signal."}
+        - {kind: fact_path, name: document.version, owner_layer: L1,
+           note: "Needed to distinguish draft minutes from the circulated version. An action lifted from an uncirculated draft is not yet binding on anyone, and treating it as though it were is how a secretariat loses the room."}
+
+    - id: ai.adopted_at_the_next_sitting
+      statement: "The minutes carrying this item were formally approved at the following meeting, so the item is now the organisation's record rather than the minute-taker's account."
+      status: needs_signal
+      yields: {confidence_bp: 9600, attribute: minutes_approved_at, value: null}
+      requires_signals:
+        - {kind: fact_path, name: document.approved_at, owner_layer: L1,
+           note: "The moment of adoption is the moment an action item becomes independently enforceable. It happens in every governed forum on earth, every month, and is recorded in a file the pipeline cannot see."}
+
+    - id: ai.owner_named_in_the_minute
+      statement: "The minute names a person against the item rather than a function."
+      status: needs_signal
+      yields: {confidence_bp: 9400, attribute: owner_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: commitment.owner, owner_layer: L2,
+           note: "The extractor drops the subject of the sentence, so 'Priya to circulate the paper' and 'Finance to circulate the paper' are the same fact to the engine. The distinction between them is the difference between an item that gets done and one that is read out four times."}
+
+    - id: ai.closed_before_the_next_sitting
+      statement: "The action was discharged and confirmed between sittings, so it should not be read out again."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: closed}
+      requires_signals:
+        - {kind: obs_kind, name: handover_completed, owner_layer: L2,
+           note: "Without any completion signal, ai.past_its_date_and_still_open will insist an item is overdue while the owner holds the finished document. Committees forgive a missed nudge and do not forgive being told, in front of the chair, that they have not done something they have."}
+        - {kind: obs_kind, name: evidence_provided, owner_layer: L2,
+           note: "Distinguishes an item closed against a deliverable from one closed against a verbal assurance. In an assurance forum only the first is closure."}
+
+  heuristic:
+
+    - id: ai.no_record_went_out
+      statement: "The meeting happened, nothing has been sent since, and whatever was agreed in that room is currently held only in people's heads."
+      status: executable
+      when:
+        - {fn: days_since, path: meeting.start_at, op: ">=", value: 3}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 7500, attribute: state, value: draft}
+      evidence_fields: [meeting.start_at]
+      false_positive: >
+        A phone call is a follow-up too, and minutes circulated through a document platform
+        rather than email are invisible here. The pattern detects silence on one channel and
+        infers silence everywhere.
+      note: >
+        followup_sent is a sales-shaped observation being used honestly: it means "something
+        went out after the meeting". Its absence three days on is the best available proxy for
+        minutes that were never circulated, and that is precisely the point at which meeting
+        output starts being lost. This is the highest-value alert this object can currently
+        raise, and it is raised on a borrowed signal.
+
+    - id: ai.owner_was_not_in_the_room
+      statement: "The item was allocated to someone who was not present, so they have been assigned work they did not agree to and will hear about it from a document."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: owner_was_present, value: false}
+      requires_signals:
+        - {kind: fact_path, name: meeting.attendees, owner_layer: L1,
+           note: "Calendar is connected and meeting.start_at is projected, but the attendee roster is discarded at ingestion. This is the cheapest unbuilt signal in the Admin brain: the roster is already inside the payload and is thrown away."}
+        - {kind: fact_path, name: commitment.owner, owner_layer: L2,
+           note: "Without an owner there is nobody to compare the roster against."}
+
+    - id: ai.carried_across_consecutive_sittings
+      statement: "The same action has appeared at three consecutive meetings of the same series without closing, which means it is not slow — it is not going to be done."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: carried_over_count, value: null}
+      requires_signals:
+        - {kind: fact_path, name: meeting.series_id, owner_layer: L1,
+           note: "Recurring meetings arrive as unrelated calendar events, so a weekly committee is thirty separate meetings to the pipeline and carry-over cannot be computed at all. The single most diagnostic administrative number about a forum is therefore unavailable."}
+        - {kind: obs_kind, name: agenda_circulated, owner_layer: L2,
+           note: "An item reappearing on successive agendas is the observable form of carry-over, and agendas are easier to parse than minutes."}
+
+    - id: ai.reported_with_no_update
+      statement: "The owner has reported 'no update' at successive sittings, which is not a status — it is a refusal the forum is accepting."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: last_reported_status, value: no_update}
+      requires_signals:
+        - {kind: fact_path, name: commitment.state, owner_layer: L2,
+           note: "A per-sitting status against an action, distinct from the action's own state. It exists in every action tracker as a column and nowhere in the substrate."}
+
+    - id: ai.reworded_between_sittings
+      statement: "The same obligation has reappeared under softer wording, which resets its apparent age and hides how long the forum has failed to close it."
+      status: needs_signal
+      yields: {confidence_bp: 7800, attribute: first_raised_meeting_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: document.version, owner_layer: L1,
+           note: "Comparing an item across successive minute versions is what catches 'draft the policy' quietly becoming 'consider options for the policy' at sitting four. Nobody does this by hand, and it is the mechanism by which a matters-arising list stays short while achieving nothing."}
+        - {kind: obs_kind, name: document_superseded, owner_layer: L2}
+
+    - id: ai.chair_asked_for_it
+      statement: "The chair requested the action personally, which changes its delivery odds more than its content does."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: chair_sponsored, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: prebrief_delivered, owner_layer: L2,
+           note: "Chair sponsorship is visible in a transcript and in the pre-brief and nowhere in structured data. It is the strongest single predictor of a minuted action being done and it is entirely invisible to every action tracker ever built."}
+
+    - id: ai.forum_never_closes_anything
+      statement: "This forum's actions are raised and carried and almost never closed, so the problem is the meeting rather than any of its items."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: null, corroborates: [ai.carried_across_consecutive_sittings]}
+      requires_signals:
+        - {kind: baseline, name: commitment_delivery_rate, owner_layer: L2,
+           note: "Learned per forum rather than per person. Averaging closure across forums hides the one committee that has closed nothing in a year, and that committee is always the one whose items matter most."}
+        - {kind: fact_path, name: meeting.series_id, owner_layer: L1}
+
+    - id: ai.reserved_forum_item
+      statement: "The item was raised in a session whose business is reserved, so it must never enter any general tracker or reminder."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: confidentiality, value: reserved}
+      requires_signals:
+        - {kind: fact_path, name: document.classification, owner_layer: L1,
+           note: "Board reserved business, HR matters and privileged legal work are classified at the document and forum level and the classification never reaches the action. Every automated action digest ever built has surfaced one of these at least once, and it is a governance incident rather than a bug report."}
+
+    - id: ai.item_blocked_not_neglected
+      statement: "The item has carried repeatedly because it is waiting on an approval, not because its owner has ignored it."
+      status: needs_signal
+      yields: {confidence_bp: 8400, attribute: state, value: pending_approval}
+      requires_signals:
+        - {kind: obs_kind, name: approval_requested, owner_layer: L2}
+        - {kind: fact_path, name: approval.state, owner_layer: L2,
+           note: "Being blamed at three consecutive sittings for a signature somebody else owes is the most reliable way to teach a manager never to accept a minuted action again."}
+
+# ── 7 · Inputs — where this object gets filled from ──────────────────────────────────────
+inputs:
+  - {source: calendar, signal: "the sitting itself", path: meeting.start_at, fills: [meeting_held_at, meeting_ref], reliability_bp: 9000}
+  - {source: calendar, signal: "whether the meeting happened at all", path: meeting.status, fills: [state], reliability_bp: 7500}
+  - {source: email, signal: "the action as agreed", path: commitment.action, fills: [action], reliability_bp: 8000}
+  - {source: email, signal: "the date, where one was given", path: commitment.due_at, fills: [due_at, is_dated], reliability_bp: 7500}
+  - {source: email, signal: "whether anything went out after the sitting", fills: [minutes_circulated_at, circulation_lag_hours], reliability_bp: 6000,
+     description: "A proxy, and the only one available. It cannot tell minutes from a thank-you note."}
+  - {source: document, signal: "circulated minutes, action columns, minute references", fills: [minute_ref, minute_line, action, owner_ref, due_at], reliability_bp: 9500,
+     description: "The primary source for this object and the one nothing is connected to. Every high-value gap here is this connector."}
+  - {source: meeting_transcript, signal: "who volunteered, who was told, who objected", fills: [recorded_verbatim, owner_was_present, chair_sponsored, objections_recorded], reliability_bp: 8500}
+  - {source: register, signal: "a secretariat-maintained action register", fills: [carried_over_count, last_reported_status, first_raised_at, state], reliability_bp: 9000}
+  - {source: manual_entry, signal: "the minute-taker's own tracker", fills: [carried_over_count, last_reported_status], reliability_bp: 7000,
+     description: "Usually a spreadsheet, usually authoritative, usually on one laptop."}
+  - {source: attestation, signal: "the owner's verbal report at the sitting", fills: [last_reported_status, closure_quality], reliability_bp: 6500,
+     description: "Worth more here than in a plain tracker, because it was given in front of witnesses who can contradict it."}
+
+# ── 8 · Outputs — what this object can tell the rest of the stack ────────────────────────
+outputs:
+  - {name: action_state, type: string, derived_from: [state, carried_over_count, is_dated],
+     description: "Standing of the item, including the draft state in which it is real but unrecorded.",
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: carry_pressure_bp, type: integer, derived_from: [carried_over_count, last_reported_status, criticality],
+     description: "How many sittings this has survived, weighted by forum authority. The number that should order the matters-arising list.",
+     consumed_by: [L4.reasoning_unit]}
+  - {name: record_gap, type: boolean, derived_from: [minutes_circulated_at, circulation_lag_hours],
+     description: "True when a meeting has produced actions and no minutes have gone out. The highest-yield alert this object can raise, and it is time-critical rather than important.",
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: next_sitting_agenda, type: list, derived_from: [carried_over_count, state, criticality],
+     description: "Items that must be read out at the next meeting, in carry order rather than agenda order.",
+     consumed_by: [L5.execution_planning]}
+  - {name: owner_notification, type: string, derived_from: [owner_was_present, owner_ref],
+     description: "Who needs telling directly because they were not in the room. Minutes are a record, not a notification.",
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: suppression_flag, type: boolean, derived_from: [confidentiality],
+     description: "True when the item must never appear in a digest or automated reminder, whatever its state.",
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: closure_on_the_record, type: boolean, derived_from: [closed_by_the_forum, closure_reported_in_ref],
+     description: "Whether the forum accepted the closure, as distinct from whether a tracker was ticked.",
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: forum_closure_rate, type: integer, derived_from: [state, carried_over_count],
+     description: "Per-meeting closure performance, fed back for learning. Read per forum; the average is meaningless.",
+     consumed_by: [L6.learning_unit]}
+
+# ── 9 · Preconditions — what must be true before this object can be acted on ─────────────
+preconditions:
+
+  - id: ai.meeting_resolved
+    statement: "The item resolves to exactly one meeting that actually sat."
+    requires: [admin.obj.core.meeting, meeting_ref]
+    when: [{exists: meeting.start_at}]
+    if_unmet: >
+      Block promotion to this object and record it as admin.obj.core.commitment instead.
+      Inventing a meeting to hold an ordinary promise gives a tracker forums that never sat,
+      and those forums then acquire their own carried items.
+
+  - id: ai.record_exists_before_enforcement
+    statement: "Minutes carrying this item have been circulated before the item is enforced against anyone."
+    requires: [minute_ref, minutes_circulated_at]
+    if_unmet: >
+      Degrade to a private nudge to the minute-taker, not a chase to the owner. Until the
+      record exists the item binds nobody, and chasing on an uncirculated draft is how a
+      secretariat loses the authority it needs for everything else.
+
+  - id: ai.owner_is_a_person
+    statement: "The minute names one natural person, not a function or a directorate."
+    requires: [admin.obj.core.stakeholder, owner_ref]
+    if_unmet: "Raise it back to the chair at the point of minuting, not at the next sitting. A functional owner discovered six weeks later has already cost the six weeks."
+
+  - id: ai.absent_owner_notified
+    statement: "Where the owner was not in the room, they have been told directly and separately from the minutes."
+    requires: [owner_was_present]
+    if_unmet: "Do not count the item as live and do not chase it. They did not agree to it, they have not seen it, and the first they will hear of it is an overdue notice."
+
+  - id: ai.confidentiality_inherited
+    statement: "The item's confidentiality has been inherited from its meeting before it may enter any tracker or digest."
+    requires: [confidentiality, admin.obj.core.meeting]
+    if_unmet: "Block from all general reporting. An item may never be less restricted than the forum that made it — Rule 10, and in a governed context also a governance incident."
+
+  - id: ai.series_identified
+    statement: "The meeting is resolved to its series before carry-over is computed or reported."
+    requires: [first_raised_meeting_ref, admin.obj.core.meeting]
+    if_unmet: "Degrade to per-sitting reporting and say so. Reporting a carry count of zero because the series is unknown is worse than reporting nothing, because it reads as good news."
+
+  - id: ai.closure_authority_known
+    statement: "The forum entitled to close the item is identified before any closure is accepted."
+    requires: [meeting_ref, agenda_item_ref]
+    if_unmet: "Hold the item open. A tracker tick by an administrator is not closure, and the next person to read the minutes will raise it again in front of the chair."
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: ai.must_have_a_meeting, hard: true,
+     statement: "An action item without a meeting is not this object. Record it as admin.obj.core.commitment rather than inventing a meeting for it.",
+     why: "Invented forums accumulate their own carried items and nobody can tell which committee is actually failing."}
+  - {id: ai.single_named_owner, hard: true,
+     statement: "Exactly one named person. Functional ownership is rejected at minute-taking.",
+     why: "'Finance to confirm' is unfalsifiable at the moment it is written and undeliverable ever after."}
+  - {id: ai.reserved_stays_reserved, hard: true,
+     statement: "Reserved and restricted items may not appear in general trackers, digests or automated reminders, at any level of aggregation.",
+     why: "A count of one in a reserved category identifies the item as surely as naming it."}
+  - {id: ai.no_silent_rewording, hard: true,
+     statement: "The action text may not be edited after the minutes are adopted. A changed scope is a new item that references the old one.",
+     why: "Rewording is how an item that has failed for a year is presented as fresh business at sitting five."}
+  - {id: ai.closure_needs_the_forum, hard: true,
+     statement: "Only the meeting that raised an item may close it. A tracker tick is not closure.",
+     why: "The record, not the tracker, is what an auditor and the next chair will read."}
+  - {id: ai.age_survives_rewording, hard: true,
+     statement: "first_raised_at and first_raised_meeting_ref are written once and never updated, whatever happens to the wording.",
+     why: "Without them, carry count is a measure of how recently the item was rephrased."}
+  - {id: ai.chase_respects_the_cycle, hard: false,
+     statement: "Chasing between sittings is proportionate to criticality and to the forum's cadence. Weekly reminders on a quarterly committee's items teach people to filter the sender."}
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: ai.owner_must_be_a_person
+    statement: "An action item must name one person. A function, a team or 'the group' is rejected at minute-taking, not at the next sitting."
+    then: reject_functional_owner
+    severity: blocking
+
+  - id: ai.default_date_is_the_next_meeting
+    statement: >
+      An action item with no explicit date inherits the next sitting of its meeting as its due
+      date, marked as inferred. This is what the room already assumes; writing it down is the
+      only thing that makes it chaseable.
+    when:
+      - {exists: commitment.action}
+      - {absent: commitment.due_at}
+    then: infer_due_at_from_next_sitting
+    severity: warning
+
+  - id: ai.minutes_before_the_next_sitting
+    statement: "Minutes must be circulated before the next sitting of the same meeting, or every action in them is unenforceable at the meeting whose job it is to enforce them."
+    then: require_minutes_circulated
+    severity: blocking
+
+  - id: ai.absent_owner_must_be_notified
+    statement: "An action assigned to someone not in the room is not live until they have been told directly and separately from the minutes. Minutes are a record, not a notification."
+    then: require_direct_notification
+    severity: warning
+
+  - id: ai.third_carry_forces_a_decision
+    statement: >
+      On its third carry-over an item must be re-owned, re-scoped or cancelled. It may not be
+      read out unchanged a fourth time. A matters-arising list that only grows is a committee
+      that has stopped closing things and started performing tracking.
+    then: force_reown_rescope_or_cancel
+    severity: warning
+
+  - id: ai.reserved_business_never_leaves_the_room
+    statement: "An item with confidentiality of reserved or restricted must not appear in any general tracker, digest or automated reminder, regardless of how overdue it is."
+    then: suppress_from_general_reporting
+    severity: blocking
+
+  - id: ai.closure_is_reported_to_the_room
+    statement: "Closure is confirmed at the meeting that raised it. An item closed only in a tracker remains open on the record and will be raised again by whoever reads the minutes."
+    severity: advisory
+
+  - id: ai.carry_from_blocked_is_not_the_owners
+    statement: "Carry-over accrued while state = pending_approval is not counted against the owner in any per-person report."
+    severity: warning
+    why: "Being blamed at three consecutive sittings for somebody else's signature is how a forum learns that accepting an action is unsafe."
+
+  - id: ai.age_is_preserved_across_rewording
+    statement: "Editing the action text never resets first_raised_at, first_raised_meeting_ref or carried_over_count."
+    then: preserve_item_age
+    severity: blocking
+
+  - id: ai.no_item_without_a_line_reference
+    statement: "An adopted minute must give each action a line reference. An action without one cannot be carried, matched or closed against the record."
+    then: require_minute_line
+    severity: warning
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4. Weights sum to 10000. ────────────
+decision_factors:
+
+  - name: carry_over_count
+    weight_bp: 2000
+    direction: increases
+    description: >
+      Age measured in sittings rather than days. Two carries is drift; four is a decision the
+      committee is avoiding making, and reading it out a fifth time is the avoidance.
+    reads: [carried_over_count, first_raised_at, last_reported_status, is_matter_arising]
+
+  - name: record_reached_the_people_it_binds
+    weight_bp: 1600
+    direction: increases
+    description: >
+      Circulated minutes, a line reference, and a direct notification to anyone who was not in
+      the room. Without these the item cannot be enforced, only remembered — and memory is
+      exactly what a governed forum exists to replace.
+    reads: [minutes_circulated_at, minutes_approved_at, minute_line, recorded_verbatim, owner_was_present]
+
+  - name: owner_was_in_the_room
+    weight_bp: 1500
+    direction: increases
+    description: Items agreed by their owner in person get done at a completely different rate from items allocated to an empty chair, and no tracker records which is which.
+    reads: [owner_was_present, agreed_by_consensus, owner_ref]
+
+  - name: date_present_and_owned
+    weight_bp: 1300
+    direction: increases
+    description: An explicit date beats an inherited one, and both beat none. date_source is what lets the chase be worded honestly.
+    reads: [is_dated, due_at, date_source]
+
+  - name: forum_authority
+    weight_bp: 1200
+    direction: context
+    description: >
+      A board action and a weekly team action have identical shape and are not remotely the
+      same obligation. The forum, not the wording, sets the cost of missing it — and also sets
+      whether it may be mentioned outside the room at all.
+    reads: [meeting_ref, confidentiality, criticality]
+
+  - name: next_sitting_proximity
+    weight_bp: 1100
+    direction: context
+    description: >
+      The real deadline for most minuted actions. Work compresses into the three days before
+      the sitting, which is useful to know and useless to complain about — plan the chase
+      against the sitting, not against the nominal date.
+    reads: [meeting_held_at, due_at]
+
+  - name: chair_sponsorship
+    weight_bp: 900
+    direction: increases
+    description: The strongest single predictor of delivery inside a committee, and the one no action tracker records.
+    reads: [chair_sponsored, criticality]
+
+  - name: blocked_on_approval
+    weight_bp: 400
+    direction: decreases
+    description: Carry-over accrued behind a signature is the forum's own queue and must not be read as the owner's neglect.
+    reads: [state, blocked_by_ref, last_reported_status]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: document, strength_bp: 9800, decays: false, independent_of: [calendar, derived, attestation],
+     description: "Adopted minutes with a line reference. As close to incontrovertible as administrative evidence gets, and it survives everyone who was in the room."}
+  - {source: register, strength_bp: 8800, decays: true, independent_of: [calendar, meeting_transcript, derived],
+     description: "A formal action register maintained by a secretariat. Where one exists it outranks everything except adopted minutes, and it is usually a spreadsheet on one laptop."}
+  - {source: meeting_transcript, strength_bp: 8500, decays: false, independent_of: [register, calendar, derived],
+     description: "Verbatim capture of the assignment. Stronger than minutes on wording, weaker on authority — nobody adopted it."}
+  - {source: email, strength_bp: 8000, decays: true, independent_of: [register, calendar],
+     description: "Minutes circulated to attendees without objection. Agreement by silence, and it holds up better than people expect."}
+  - {source: manual_entry, strength_bp: 7000, decays: true, independent_of: [calendar, derived],
+     description: "The secretary's own action log. Frequently the most accurate object in the organisation and stored where nobody else can reach it."}
+  - {source: attestation, strength_bp: 6800, decays: true, independent_of: [document, register],
+     description: "The owner's verbal report at the sitting. Worth more here than in a plain tracker, because it was given in front of people who could have contradicted it."}
+  - {source: calendar, strength_bp: 6000, decays: false, independent_of: [document, meeting_transcript, register],
+     description: "Proves the meeting occurred and roughly who was invited. Says nothing whatsoever about what was agreed."}
+  - {source: derived, strength_bp: 3500, decays: true, independent_of: [document, register, calendar],
+     description: "Inferred from meeting and thread shape. Corroborating only, and never grounds for telling a committee it has failed."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: minutes_circulation_lag, unit: hours, direction: lower_is_better, owner_layer: L2,
+     description: "Sitting to circulation. The best single health measure of a secretariat, and the one that most predicts whether actions land at all.",
+     calibrates: [ai.no_record_went_out, ai.minute_line_reference]}
+  - {name: action_closure_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Closed by the next sitting, over raised. Read per forum; averaging across forums hides the one committee that has never closed anything.",
+     calibrates: [ai.forum_never_closes_anything, ai.closed_before_the_next_sitting]}
+  - {name: average_carry_count, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "Mean sittings survived. Creeping above two is the earliest sign a forum has become a status meeting rather than a decision-making one.",
+     calibrates: [ai.carried_across_consecutive_sittings, ai.third_carry_forces_a_decision]}
+  - {name: undated_action_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Actions minuted with no date. Usually about a third, and usually a surprise to the chair.",
+     calibrates: [ai.undated_minute_line]}
+  - {name: absent_owner_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Actions assigned to people who were not in the room. Correlates with non-delivery more strongly than any property of the action itself.",
+     calibrates: [ai.owner_was_not_in_the_room]}
+  - {name: matters_arising_length, unit: count, direction: lower_is_better, owner_layer: L4,
+     description: "Items in the matters-arising section. A list that only ever grows is the whole diagnosis in one number.",
+     calibrates: [ai.reworded_between_sittings]}
+  - {name: on_record_closure_share, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Closures confirmed at the forum, over closures recorded anywhere. The gap between the two is what the next chair will find.",
+     calibrates: [ai.closure_is_reported_to_the_room]}
+  - {name: false_overdue_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Items reported overdue at a sitting that were already complete. One of these in front of a chair costs more trust than twenty correct nudges earn.",
+     calibrates: [ai.past_its_date_and_still_open, ai.closed_before_the_next_sitting]}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: ai.raised, name: Action Raised, severity: info, payload: [action, owner_ref, meeting_ref, due_at],
+     emitted_when: [{exists: commitment.action}, {exists: meeting.start_at}]}
+  - {id: ai.minutes_circulated, name: Minutes Circulated, severity: notable, payload: [minute_ref, minutes_circulated_at, circulation_lag_hours],
+     description: "The moment the item stops being hearsay. The interval between the sitting and this event is the single best measure of a secretariat's health."}
+  - {id: ai.minutes_adopted, name: Minutes Adopted, severity: notable, payload: [minutes_approved_at, minute_line],
+     description: "Adoption converts one person's account into the organisation's record, retrospectively binding everyone who did not object."}
+  - {id: ai.carried_over, name: Action Carried Over, severity: notable, payload: [carried_over_count, last_reported_status],
+     description: "Counting this is how a committee discovers it has been reading the same six lines aloud for a year."}
+  - {id: ai.went_overdue, name: Action Overdue, severity: notable, payload: [due_at, owner_ref, carried_over_count],
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+  - {id: ai.owner_disowned, name: Owner Rejected The Allocation, severity: notable, payload: [owner_ref, owner_was_present],
+     invalidates: [owner_ref, due_at],
+     description: "The absent owner reads the minutes and says they never agreed. Almost always correct, and almost never recorded as anything except a delay."}
+  - {id: ai.escalated_to_chair, name: Escalated to the Chair, severity: notable, payload: [carried_over_count, criticality]}
+  - {id: ai.closed, name: Action Closed, severity: info, payload: [closed_at, closure_reported_in_ref, closure_quality, closed_by_the_forum]}
+  - {id: ai.reworded, name: Action Reworded, severity: critical, payload: [action, minute_line, carried_over_count],
+     invalidates: [is_specific, carried_over_count],
+     description: "Scope changed after adoption. It is the mechanism by which a failing item is laundered into fresh business, and it is invisible unless minute versions are compared."}
+  - {id: ai.lost, name: Action Lost, severity: critical, payload: [meeting_ref, action, owner_ref],
+     description: "Agreed in the room, never minuted, never chased. Emitted by nothing today because nothing can see it — which is exactly what makes it the characteristic failure of meeting operations."}
+
+# ── 16 · Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ─
+actions:
+  - {id: ai.capture_in_room, name: Capture the action as it is agreed, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{exists: commitment.action}],
+     effect: "In the meeting, with owner and date read back aloud. Reading it back is what converts a mumble into a commitment, and it takes four seconds."}
+  - {id: ai.circulate_minutes, name: Circulate the minutes, actor: agent, cost: low, reversible: false,
+     preconditions: [{fn: days_since, path: meeting.start_at, op: ">=", value: 1}],
+     effect: "Within two working days. After a week the attendees' memories have diverged and the minutes stop being a record and become a proposal."}
+  - {id: ai.notify_absent_owner, name: Tell the absent owner directly, actor: agent, cost: trivial, reversible: true,
+     effect: "Separately from the minutes. Nobody reads minutes for a meeting they were not in, and an allocation they have not seen is not an allocation."}
+  - {id: ai.set_a_date, name: Put a date on an undated action, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{exists: commitment.action}, {absent: commitment.due_at}],
+     effect: "Default to the next sitting and say so. An inferred date everybody can see beats a shared assumption nobody wrote down."}
+  - {id: ai.prepare_matters_arising, name: Build the matters-arising list, actor: agent, cost: low, reversible: true,
+     effect: "Ordered by carry count, not by agenda number. The oldest item should be the first embarrassment rather than the last line nobody reaches."}
+  - {id: ai.propose_closure, name: Propose closing a stale item, actor: agent, cost: low, reversible: true,
+     effect: "On the third carry, put cancellation on the agenda as the default option. The forum usually takes it, and nobody ever proposes it."}
+  - {id: ai.reassign_in_the_room, name: Re-own the item at the sitting, actor: human, cost: moderate, reversible: true,
+     effect: "The correct response to a third carry far more often than a fourth reading is, and the only place it can be done without a private conversation first."}
+  - {id: ai.escalate_to_chair, name: Escalate to the chair, actor: human, cost: high, reversible: false,
+     effect: "Chair sponsorship is the only reliable accelerant available inside a committee, and it cannot be requested twice for the same item."}
+  - {id: ai.attach_closure_evidence, name: Attach the deliverable to the item, actor: agent, cost: low, reversible: true,
+     effect: "Closes it against the record rather than against a verbal assurance at the next sitting."}
+  - {id: ai.report_closure_to_the_forum, name: Report the closure to the meeting that raised it, actor: agent, cost: trivial, reversible: false,
+     effect: "Without this the item is closed in the tracker and open on the record, and the next chair will raise it."}
+
+# ── 17 · Dependencies — what this object needs to be resolvable ──────────────────────────
+dependencies:
+  - {target: admin.obj.core.meeting, kind: requires, strength: hard,
+     description: "The source of this object's authority, its confidentiality, its attendee list and its cadence. Without it there is no action item, only a commitment."}
+  - {target: admin.obj.core.commitment, kind: derived_from, strength: hard,
+     description: "This object is a commitment with a record attached. Every rule, state and chase policy there applies here unchanged, and duplicating them would guarantee they diverge."}
+  - {target: admin.obj.core.document, kind: requires, strength: hard,
+     description: "The minutes. Until they exist and have been circulated the item binds nobody, which makes this the only dependency that determines whether the object is enforceable at all."}
+  - {target: admin.obj.core.stakeholder, kind: requires, strength: hard,
+     description: "One named owner and one named minute-taker. The second is as load-bearing as the first and is recorded almost nowhere."}
+  - {target: admin.obj.core.approval, kind: blocks, strength: soft,
+     description: "An unresolved approval blocks discharge and must move the carry-over off the owner in any per-person report."}
+  - {target: admin.obj.core.deadline, kind: enriches, strength: soft,
+     description: "Where the action serves an external date, the committee's own timetable stops being relevant to it."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "Carries the item to the chair or the parent committee once the forum has admitted it cannot move it."}
+  - {target: admin.obj.core.employee_record, kind: invalidated_by, strength: hard,
+     description: "A leaver or mover voids owner_ref, and a departing minute-taker voids the organisation's ability to produce the record at all. Both happen and only the first is ever handed over."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: ai.standing_item_is_not_a_carry
+    statement: "A genuine standing item — risk register review, health and safety report — is not a carried action and must not be counted as one."
+    overrides: [ai.third_carry_forces_a_decision, ai.carried_across_consecutive_sittings]
+    why: >
+      Some things are supposed to appear at every sitting forever. Counting them as carry-over
+      inflates the number that should be diagnostic and trains the chair to ignore it, which
+      destroys the one metric that would otherwise catch a genuinely stuck item.
+    frequency: common
+
+  - id: ai.reserved_session_item
+    statement: "An item raised in a reserved or closed session never enters a tracker, a digest or a reminder, at any level of aggregation, however overdue."
+    overrides: [ai.third_carry_forces_a_decision, ai.default_date_is_the_next_meeting]
+    why: >
+      A count of one in a reserved category identifies the item as surely as naming it. This is
+      the exception that must be applied before any other rule on this object, because every
+      other rule is about making items visible.
+    frequency: occasional
+
+  - id: ai.chair_directed_action_binds_before_minutes
+    statement: "An action the chair directs in the room is live immediately and does not wait for the minutes to be circulated."
+    overrides: [ai.minutes_before_the_next_sitting, ai.record_exists_before_enforcement]
+    why: >
+      The record follows the instruction; it does not create it. Waiting for the minutes on a
+      chair's direct instruction is how a secretariat loses a week and the chair's confidence
+      at the same time.
+    frequency: common
+
+  - id: ai.absent_owner_may_decline
+    statement: "An owner who was not in the room may legitimately refuse the allocation, and the refusal is not non-delivery."
+    overrides: [ai.owner_must_be_a_person, ai.absent_owner_must_be_notified]
+    why: >
+      They did not agree to it. Recording their refusal as a slip is how a forum acquires the
+      habit of allocating work to whoever is not there, which is the single most corrosive
+      practice in meeting operations and also the easiest.
+    frequency: occasional
+
+  - id: ai.external_deadline_overrides_the_cycle
+    statement: "Where the action serves a statutory or contractual date, the committee's meeting cycle is irrelevant and the item may not be carried."
+    overrides: [ai.default_date_is_the_next_meeting]
+    why: >
+      "We'll pick it up next quarter" is a perfectly normal sentence in a committee and a
+      breach if the action was a filing. The forum's timetable feels authoritative inside the
+      room and has no standing at all outside it.
+    frequency: occasional
+
+  - id: ai.meeting_did_not_sit
+    statement: "Where a sitting was cancelled or inquorate, its items neither carry nor go overdue against it."
+    overrides: [ai.past_its_date_and_still_open, ai.third_carry_forces_a_decision]
+    when:
+      - {path: meeting.status, op: "=", value: cancelled}
+    why: >
+      Nothing was decided, so nothing was owed, and an item that has 'carried' through two
+      cancelled sittings has in fact carried once. Counting cancellations as carries makes an
+      absent chair look like a failing owner.
+    frequency: common
+
+  - id: ai.item_cancelled_by_a_superior_forum
+    statement: "A parent board or committee may close or cancel a subordinate forum's item without that forum reporting it."
+    overrides: [ai.closure_needs_the_forum]
+    why: >
+      The closure authority runs upward. A subcommittee cannot refuse to close an item the
+      board has stood down, and the rule that only the raising forum may close would otherwise
+      leave the item open forever with nobody entitled to touch it.
+    frequency: rare
+
+  - id: ai.confidential_owner_substitution
+    statement: "Where naming the owner in the minute would itself disclose reserved information, the item is recorded against a role and the name is held separately by the secretary."
+    overrides: [ai.owner_must_be_a_person, ai.single_named_owner]
+    why: >
+      Occasionally the identity of the person doing the work is the sensitive fact — an
+      investigation, a personnel matter. The correct answer is a named owner in a restricted
+      register rather than a functional owner in an open one, and the two look identical in any
+      report that does not distinguish them.
+    frequency: rare
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: ai.read_it_back_in_the_room
+    statement: "Read every action back aloud — verb, owner, date — before the meeting moves on."
+    why: >
+      It costs four seconds at the only moment when everyone who could contradict it is
+      present. It converts a mumble into a commitment, catches the functional owner
+      immediately, and is the single highest-yield habit in meeting operations.
+    applies_when: "Every forum, every item, without exception."
+    evidence: "Standard company secretarial practice; the reason a good secretary interrupts."
+
+  - id: ai.circulate_within_two_working_days
+    statement: "Get the minutes out within two working days of the sitting."
+    why: >
+      After about a week the attendees' recollections have diverged and the minutes stop being
+      a record and start being a proposal that somebody will argue with. Circulation lag is the
+      best single predictor of whether a forum's actions land.
+    applies_when: "Always, and most urgently for forums that sit infrequently."
+
+  - id: ai.date_everything_to_the_next_sitting
+    statement: "Give every undated action the next sitting as its date, marked as inferred, and say so in the minute."
+    why: >
+      It is what the room already means. Writing it down converts a shared assumption into
+      something chaseable, and marking it inferred keeps the chase honest with the one person
+      who was not there.
+    applies_when: "Any action minuted without an explicit date."
+
+  - id: ai.notify_the_absent_owner_separately
+    statement: "Tell anyone allocated work in their absence directly, not by copying them the minutes."
+    why: >
+      Nobody reads minutes for a meeting they did not attend. A direct message also gives them
+      the chance to decline before the item has aged, which is the cheapest possible moment for
+      that conversation.
+    applies_when: "owner_was_present is false."
+
+  - id: ai.order_matters_arising_by_carry
+    statement: "Order the matters-arising list by carry count, not by agenda number."
+    why: >
+      The oldest item should be the first embarrassment rather than the last line nobody
+      reaches. Agenda order systematically protects the items that have failed longest.
+    applies_when: "Any forum with a matters-arising section."
+
+  - id: ai.propose_cancellation_at_the_third_carry
+    statement: "At the third carry, put cancellation on the agenda as the default option."
+    why: >
+      The forum usually takes it, and nobody ever proposes it — because proposing it means
+      saying out loud that a year of tracking achieved nothing. Making it the default converts
+      an admission into a routine agenda mechanic.
+    applies_when: "carried_over_count >= 3 with no change in last_reported_status."
+
+  - id: ai.close_against_the_deliverable
+    statement: "Close items against an attached artefact, and report the closure to the forum that raised them."
+    why: >
+      A tracker tick is not closure, and a verbal assurance at a sitting is closure only if it
+      is minuted. Doing both is what makes the item recoverable three years later by an auditor
+      who was not there — which is the whole purpose of this object.
+    applies_when: "criticality of material or above, and any item serving an obligation."
+
+  - id: ai.keep_the_minute_line_stable
+    statement: "Carry the original minute reference with the item forever, even as its wording is refined."
+    why: >
+      It is what lets an item be tracked across a year of sittings without being laundered into
+      new business. Trivial to maintain, and impossible to reconstruct once lost.
+    applies_when: "Any forum keeping a formal register."
+
+  - id: ai.brief_the_chair_before_the_sitting
+    statement: "Pre-brief the chair on the two or three items that need their sponsorship, before the meeting rather than during it."
+    why: >
+      Chair sponsorship is the strongest available accelerant and it is allocated in the ten
+      minutes before a meeting, not in it. An administrator who uses that window well moves
+      more items than any reminder system.
+    applies_when: "Committees with a standing agenda and a persistent matters-arising list."
+
+# ── 20 · Anti-Patterns — the failure an administrator actually sees ──────────────────────
+anti_patterns:
+
+  - id: ai.the_functional_owner
+    statement: "\"Finance to confirm the depreciation policy\" is minuted as an action item."
+    why_it_happens: >
+      Nobody in the room wants to name a colleague who is not there to object, and the function
+      genuinely is responsible. It is polite, it is accurate, and it is unfalsifiable at the
+      moment it is written.
+    cost: "It will be read out unchanged at the next four sittings and closed by exhaustion. Nobody failed, because nobody was asked."
+    instead: "Name one person before the meeting moves on. If nobody in the room will accept it, that refusal is the finding and belongs in the minute."
+    detectable_by: [ai.owner_named_in_the_minute, ai.owner_must_be_a_person]
+
+  - id: ai.minutes_that_never_went_out
+    statement: "The meeting happened, the decisions were real, and three weeks later nothing has been circulated."
+    why_it_happens: >
+      Minute-writing is unbudgeted work that lands on the busiest person in the room, and its
+      absence produces no complaint from anybody. Every other task competes with it and wins.
+    cost: "Every action from that sitting is in draft — real, binding and invisible. Nobody holds the record, so nobody is wrong, so nobody is chased. This is how most meeting output is actually lost."
+    instead: "Track circulation lag as a first-class metric and alert on it at 48 hours. It is the highest-yield alert in the whole domain and it is about a document, not an action."
+    detectable_by: [minutes_circulation_lag, ai.no_record_went_out]
+
+  - id: ai.the_growing_matters_arising_list
+    statement: "The matters-arising section has grown every quarter for two years and nothing has ever been cancelled."
+    why_it_happens: >
+      Carrying an item costs one line and thirty seconds. Cancelling it requires somebody to say
+      that a year of tracking achieved nothing, in front of the person who owned it.
+    cost: "The forum has stopped closing things and started performing tracking. Real items compete with dead ones for the same fifteen minutes, and the dead ones usually win because they are shorter."
+    instead: "Propose cancellation as the default at the third carry, and report matters_arising_length to the chair as a number rather than a list."
+    detectable_by: [matters_arising_length, average_carry_count, ai.third_carry_forces_a_decision]
+
+  - id: ai.allocation_to_the_absent
+    statement: "The item is assigned to whoever is not in the room."
+    why_it_happens: >
+      Assigning to an absent colleague meets no resistance, which makes it the path of least
+      friction in any meeting running late. It is also frequently the right person.
+    cost: "They did not agree to it, they will hear about it from a document they do not read, and they are entirely correct to feel that way. It correlates with non-delivery more strongly than any property of the action itself."
+    instead: "Allocate to someone present, or allocate provisionally and notify them directly the same day with an explicit right to decline."
+    detectable_by: [absent_owner_share, ai.owner_was_not_in_the_room]
+
+  - id: ai.laundering_by_rewording
+    statement: "An item that has failed for a year reappears at sitting five under new wording as fresh business."
+    why_it_happens: >
+      Refining an action feels like progress, and the softer version is genuinely easier to
+      close. Nobody is being dishonest; the item is simply retyped by a different secretary.
+    cost: "Carry count resets, the matters-arising list shortens, and the forum congratulates itself. The only thing that changed is the sentence."
+    instead: "Keep first_raised_at, first_raised_meeting_ref and the original minute line immutable. A changed scope is a new item that explicitly references the old one."
+    detectable_by: [ai.reworded_between_sittings, matters_arising_length]
+
+  - id: ai.the_tracker_tick
+    statement: "Items are closed in the action tracker and never reported closed to the forum that raised them."
+    why_it_happens: >
+      The administrator knows it is done and the tracker is theirs to maintain. Reporting it
+      costs a line in a paper nobody is asking for.
+    cost: "On the record the item is still open. The next chair, or the next auditor, reads the minutes and raises it again — and now the register and the record disagree, which is worse than either being wrong."
+    instead: "Report closures to the raising forum and record the sitting in closure_reported_in_ref. Closure is an event in the room, not a state in a spreadsheet."
+    detectable_by: [on_record_closure_share, ai.closure_is_reported_to_the_room]
+
+  - id: ai.the_reminder_that_should_have_been_reserved
+    statement: "An automated action digest includes an item from a board reserved session."
+    why_it_happens: >
+      The tracker inherits nothing from the forum. Confidentiality is a property of the meeting
+      and the item is a row, and no digest was ever built to ask.
+    cost: "A governance incident that outlives whatever the action was about, and it lands on the person who least chose it. It also ends automated reporting for that forum permanently, usually correctly."
+    instead: "Inherit confidentiality from the meeting at capture and suppress before any aggregation, including counts."
+    detectable_by: [ai.reserved_forum_item, ai.reserved_business_never_leaves_the_room]
+
+  - id: ai.blaming_the_owner_for_the_signature
+    statement: "An item carried three times behind an unsigned approval is reported as the owner's failure at each sitting."
+    why_it_happens: >
+      The action register records one owner and one date. Nothing in the matters-arising line
+      distinguishes 'not done' from 'cannot be done yet', and the owner is the name on the row.
+    cost: "The owner learns that accepting a minuted action is unsafe, and starts declining or padding. The forum's whole allocation mechanism degrades to protect people from its own queue."
+    instead: "Model pending_approval as a distinct state, exclude that carry from per-person reporting, and put the approver on the agenda instead."
+    detectable_by: [ai.item_blocked_not_neglected, ai.carry_from_blocked_is_not_the_owners]
+
+  - id: ai.the_secretary_is_the_register
+    statement: "The only complete record of a forum's open actions is a spreadsheet on the secretary's laptop."
+    why_it_happens: >
+      It is faster, more accurate and more current than any shared tool, so the shared tool is
+      never adopted. Everyone is genuinely better off until the week the secretary is away.
+    cost: "The forum's memory has a single point of failure and nobody notices until a sitting runs with no matters arising because nobody could open the file."
+    instead: "Keep the authoritative register somewhere the deputy can reach, even at the cost of it being slightly less good."
+    detectable_by: [ai.minute_line_reference, minutes_circulation_lag]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - label: "\"AP 7.3 — Finance to confirm the depreciation policy by 30 June\""
+    kind: misclassification
+    note: >
+      Dated, referenced, and owned by nobody. It will be read out unchanged at the next four
+      sittings and closed by exhaustion. The date is the part everyone looks at and the owner
+      is the part that decides the outcome.
+    attributes: {is_dated: true, is_specific: true, owner_was_present: false}
+  - label: "Board action assigned to a director who had dialled out before that item"
+    kind: edge
+    note: "owner_was_present false, confidentiality reserved. They will discover it in the minutes and object, correctly, and the objection will be recorded as a delay."
+    attributes: {owner_was_present: false, confidentiality: reserved, criticality: material}
+  - label: "Weekly ops meeting: \"chase the landlord\", no date"
+    kind: typical
+    note: >
+      The room means "by next Tuesday". Nobody writes it down, so it is not chaseable, and it
+      is genuinely not late until somebody declares a date. One line in the minute fixes it
+      permanently.
+    attributes: {is_dated: false, date_source: next_sitting_by_convention, is_specific: false}
+  - label: "An item on its fourth carry, reported 'no update' three sittings running"
+    kind: edge
+    note: "The forum has decided not to do it and has not said so. Cancellation is the honest ending and nobody will propose it, because proposing it means admitting the previous three readings were theatre."
+    attributes: {carried_over_count: 4, last_reported_status: no_update, is_matter_arising: true}
+  - label: "Audit committee action closed in the tracker, never reported to the committee"
+    kind: misclassification
+    note: "closure_quality asserted, closed_by_the_forum false. On the record it is still open, and the next chair will raise it in front of the auditors."
+    attributes: {closure_quality: asserted, closed_by_the_forum: false}
+  - label: "Meeting held, minutes never circulated"
+    kind: counterexample
+    note: >
+      Every action in that room is in state draft — real, binding and invisible. The
+      characteristic failure of meeting operations, and no system emits an event for it because
+      nothing happened.
+    attributes: {state: draft, minutes_circulated_at: null}
+  - label: "\"I'll send you the schedule on Thursday\", said on a call two days after the board meeting"
+    kind: misclassification
+    note: "Attaches to the same node as the board's actions and is not one. It is admin.obj.core.commitment — no forum, no minute, no witnesses, and no right to the authority this object carries."
+  - label: "Risk register review, standing item at every quarterly sitting for six years"
+    kind: counterexample
+    note: "Twenty-four appearances and zero carry-over. Counting it as a carried action inflates the one number on this object that is supposed to be diagnostic."
+    attributes: {is_matter_arising: false, carried_over_count: 0}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Robert's Rules of Order", kind: framework,
+     note: "The parliamentary source of minutes, matters arising, adoption of the previous minutes and the distinction between a resolution and the action it generates."}
+  - {title: "Chartered Governance Institute — minute taking and action registers", kind: practitioner,
+     note: "The professional standard for what a minute must record, how actions are carried between sittings, and why the line reference is not decoration."}
+  - {title: "UK Corporate Governance Code — recording of directors' concerns in the minutes", kind: standard,
+     note: "Where a director's concerns cannot be resolved they are recorded in the minutes. objections_recorded exists on this object because of this provision."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "What makes a record authoritative: fixity, provenance and adoption. The reason minutes_approved_at is modelled separately from minutes_circulated_at."}
+  - {title: "Conversations for Action — the request / promise cycle", kind: framework, author: "Fernando Flores",
+     note: "The promise is incomplete until the performer accepts it. It is the theoretical basis for owner_was_present being the strongest predictor on this object."}
+  - {title: "RACI responsibility assignment", kind: framework,
+     note: "Accountable is singular. Every 'Finance to confirm' minute is a RACI violation written in the passive voice."}
+  - {title: "PRINCE2 — exception reporting to the project board", kind: methodology,
+     note: "The formal treatment of an item that has left tolerance: report an exception to the sponsoring body rather than quietly carry it again."}
+  - {title: "Company secretarial practice — matters arising and the action register", kind: practitioner,
+     note: "The discipline of ordering by age rather than agenda number, and of proposing closure rather than waiting to be asked."}
+  - {title: "GDPR Art. 30 — records of processing activities", kind: standard,
+     note: "An action register naming individuals and recording their performance across sittings is a processing activity in its own right, which is why confidentiality and sensitivity are structural here."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Rewritten onto the 23-section schema. Four of thirteen patterns fire. What is striking
+    about the nine that do not is that they nearly all wait on one thing — the minutes — and
+    the minutes are already being written by hand every week in every organisation that would
+    use this. meeting.attendees is the cheapest ask on the whole object: the roster is already
+    inside the calendar payload and is discarded at ingestion, and it is what stands between
+    the brain and the strongest known predictor of a minuted action never being done.
+    meeting.series_id is second, because without it a weekly committee is thirty unrelated
+    events and carry-over — the diagnostic number for this object — cannot be computed at all.
+    document.classification is third and is a safety ask rather than a value one: until it
+    exists, no automated digest built on this object can be trusted not to surface reserved
+    business.

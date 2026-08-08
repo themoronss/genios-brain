@@ -1,0 +1,26 @@
+# Pharma & Life Sciences — vertical branch node under regulated.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.regulated.pharma_life_sciences
+  name: Pharma & Life Sciences
+  kind: vertical
+  domain: admin
+  parent: admin.model.regulated
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Validated systems and controlled documentation. A document change is a controlled event with
+  its own approval and training obligations.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

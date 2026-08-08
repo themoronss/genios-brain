@@ -1,0 +1,28 @@
+identity:
+  id: sales.qualification.buying_committee_analysis
+  name: Buying Committee Analysis
+  domain: sales
+  subdomain: qualification
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Mapping the set of people whose agreement is jointly necessary, and measuring coverage
+  against it. In most enterprise losses the committee was never wrong about us; it was never
+  fully mapped.
+
+question: "How many seats must agree, and how many have we actually engaged?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

@@ -1,0 +1,33 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.queue_management.burstiness_over_volume
+  name: Burstiness over volume
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Variance, not volume, is what breaks a queue.
+heuristic:
+  statement: Variance, not volume, is what breaks a queue.
+  why: A heavy but predictable load can be staffed. An average load arriving in clumps cannot, and a
+    rota built from the mean is guaranteed to be underwater at exactly the moments the customers are
+    watching.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

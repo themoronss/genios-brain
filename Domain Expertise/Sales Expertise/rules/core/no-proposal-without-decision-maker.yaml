@@ -1,0 +1,194 @@
+# No proposal without a decision maker.
+#
+# The oldest cross-object rule in enterprise selling and the one most often broken under
+# quota pressure, because issuing a proposal FEELS like progress: it produces an artefact,
+# a send timestamp, and a stage change. It produces no buyer.
+#
+# This lives in rules/ rather than inside Proposal because neither object can see the whole
+# condition. Proposal knows it was sent. Decision Maker knows nobody has been named. Written
+# inside either one, each copy could only test half of itself — which is precisely the failure
+# that made this folder exist.
+
+identity:
+  id: sales.rule.core.no_proposal_without_decision_maker
+  name: No proposal without an identified decision maker
+  kind: rule
+  domain: sales
+  scope: core
+  version: 1.0.0
+  status: draft
+  aliases: ["MEDDICC E-gate", "no pricing to a non-buyer", "economic buyer gate"]
+
+purpose:
+  statement: >
+    Withhold a priced proposal until the person who can release the money is named, and either
+    met or booked. A proposal issued below that line is not a sales artefact — it is a free
+    benchmarking document the buyer uses to negotiate with someone else.
+  answers:
+    - "Is this deal allowed to receive a priced proposal yet?"
+    - "Who has to be in the room before a number leaves the building?"
+    - "What does the seller do instead when the economic buyer is not reachable?"
+  not:
+    - "How to write the proposal. That is proposal_creation."
+    - "What price to put in it. That is pricing."
+    - "How to find the decision maker. That is decision_maker_identification; this rule only
+       asserts that the search must finish first."
+
+rule:
+  statement: >
+    A priced proposal is not issued while the economic buyer — the individual who can approve
+    the spend without asking anyone else — is unnamed, or is named but has never been met and
+    has no meeting booked. The gate is the person, not the title, and not the champion's
+    assurance that they will "take it upstairs".
+  spans:
+    - sales.obj.core.proposal
+    - sales.obj.core.decision_maker
+    - sales.obj.core.buying_committee
+    - sales.obj.core.deal
+
+  # What the pipeline can actually see. The engine has no predicate for "a Decision Maker node
+  # exists with authority_level: final_approver" — so the machine half of this rule detects the
+  # SHADOW the violation casts: a proposal has gone out, nobody has been introduced upward, and
+  # the deal graph is too thin to contain an approver. Conditions are ANDed.
+  when:
+    - {has_obs: proposal_sent}
+    - {no_obs: introduction}
+    - {fn: edge_count, op: "<=", value: 3}
+    - {path: deal.status, op: "=", value: open}
+
+  then: >
+    Mark the deal proposal_ungoverned and hold it out of Commit. The next action is not a
+    follow-up on the proposal — following up asks the wrong person to do a thing they cannot
+    do, and every unanswered chase lowers the champion's willingness to escalate. The next
+    action is an escalation request through the champion with a reason the buyer benefits from:
+    a validation session on the business case, not "a quick call to introduce myself".
+  severity: blocking
+  why: >
+    Price is the only irreversible disclosure in a sales cycle. Once a number is in the buyer's
+    inbox it is in the procurement file, the competitor's negotiation, and next year's renewal
+    conversation, and it can never be raised — only defended. Giving it to someone with no
+    authority buys nothing in return, because a non-buyer cannot say yes and therefore cannot
+    trade anything for it. Worse, the proposal ends the discovery: the champion now has a
+    document to circulate, so the seller loses the reason to ask for the meeting that would
+    have identified the approver in the first place.
+  enforced_by: L5_validation
+  exceptions:
+    - "Formal RFP and public tender, where procurement forbids contact with the evaluation
+       panel. The rule downgrades to a warning and the compensating control is a named champion
+       who has personally met the economic buyer and can state the approval route."
+    - "Like-for-like renewal on an existing contract with an unchanged approver — the decision
+       maker is already in the record and does not need re-proving."
+    - "A deliberately unpriced 'proposal': scope, outcomes and a mutual action plan with the
+       commercials withheld. This is the correct move when the buyer demands paper early, and
+       it is not an exception so much as compliance by another route."
+
+objects_used:
+  - sales.obj.core.proposal
+  - sales.obj.core.decision_maker
+  - sales.obj.core.buying_committee
+  - sales.obj.core.deal
+  - sales.obj.core.champion
+  - sales.obj.core.stakeholder
+  - sales.obj.core.pricing
+  - sales.obj.core.next_action
+
+limits:
+  - "edge_count is a proxy for coverage, not for authority. A deal with eleven contacts and no
+     approver among them passes the machine test and fails the rule. L4 must confirm against
+     the Decision Maker object; the predicate only surfaces candidates for that check."
+  - "In organisations that buy by committee consensus — most of European mid-market, most of
+     Japan — there is no single economic buyer to identify, and insisting on one produces a
+     fabricated name in the CRM. There the rule reads: the approval ROUTE is documented and
+     every seat on it is accounted for."
+  - "The rule says nothing about timing beyond ordering. A proposal correctly issued to the
+     right person at the wrong moment — before the pain is quantified — fails for a different
+     reason this rule cannot see."
+
+failure_modes:
+  - "Title substitution. A VP of Operations is recorded as the decision maker because the title
+     sounds senior, the gate opens, and the proposal goes to someone whose signing limit is a
+     tenth of the deal. Authority is a spend limit, not a job title."
+  - "Champion laundering. The champion says 'I'll get it approved', that is logged as approver
+     access, and the rule is satisfied by a sentence in an email. A champion who has never
+     arranged a meeting with the buyer is a preference, not a path."
+  - "Compliance theatre — a fifteen-minute introductory call with the buyer booked purely to
+     clear the gate, with no agenda the buyer values. It satisfies the check and teaches the
+     buyer that the seller wastes their time, which is a more expensive outcome than the delay."
+  - "Applying it to a one-page pricing indication in a transactional deal, where the eight-day
+     cycle makes the gate cost more than the leak it prevents."
+
+variants:
+  - applies_to: sales.model.enterprise_sales
+    change: >
+      Raise the bar from 'met' to 'the economic buyer has stated the business outcome in their
+      own words, in a meeting the seller attended'.
+    why: >
+      At enterprise deal sizes the approver's own articulation of value is the only thing that
+      survives contact with procurement, because procurement's job is to attack the seller's
+      articulation of it.
+  - applies_to: sales.model.smb_sales
+    change: "Collapse to a single test: is the person on the call the owner or the budget holder?"
+    why: >
+      In a company of thirty people the buyer, champion and user are usually the same person,
+      and a multi-step gate adds days to a cycle that is measured in days.
+  - applies_to: sales.model.plg
+    change: >
+      Defer the gate to the expansion boundary. Self-serve and team-tier purchases are made on
+      a company card by the user; the rule engages when a deal crosses into an annual contract
+      or a security review.
+    why: >
+      Product-led motions deliberately sell below the approval line, and the whole strategy is
+      to arrive at the economic buyer with usage already inside the building.
+  - applies_to: sales.model.government_sales
+    change: >
+      Replace 'economic buyer' with 'the funded programme and its contracting officer'. The
+      approver is a budget line and a procurement vehicle, and both are matters of public record.
+    why: >
+      Public bodies separate the person who wants the thing from the person who may buy it by
+      statute. Identifying an enthusiastic official proves nothing about appropriated funds.
+  - applies_to: sales.offering.service
+    change: >
+      Add the delivery sponsor to the gate — the person who will own the outcome after signature
+      and whose team must be freed up for it.
+    why: >
+      In services a large share of revenue depends on work done after signature, so an approver
+      who has not committed the client-side resource has approved a project that cannot start.
+
+metrics:
+  - name: proposals_issued_with_named_approver
+    unit: percent
+    description: "Share of issued proposals where a Decision Maker object with a confirmed
+      approval limit was attached before the send timestamp."
+    direction: higher_is_better
+  - name: proposal_to_close_rate_by_gate_state
+    unit: percent
+    description: "Win rate of gate-compliant versus gate-bypassed proposals. The gap is the
+      argument for the rule; if there is no gap the rule is ceremony in this business."
+    direction: higher_is_better
+  - name: no_decision_loss_share
+    unit: percent
+    description: "Share of losses to no-decision among proposals issued without approver access."
+    direction: lower_is_better
+
+references:
+  - {title: "MEDDICC / MEDDPICC", kind: methodology, author: "Jack Napoli, Dick Dunkel (PTC)",
+     note: "The E is Economic Buyer, and the discipline is that an unmet E caps the deal
+       regardless of how strong the other seven letters are."}
+  - {title: "The Qualified Sales Leader", kind: book, author: "John McMahon",
+     note: "The clearest working account of why reps avoid the economic buyer: fear of losing
+       the champion's goodwill, which is a fear of a smaller loss than the deal."}
+  - {title: "The New Strategic Selling", kind: book, author: "Robert Miller, Stephen Heiman",
+     note: "Separates Economic, User and Technical buying influences. The Economic Buyer is
+       defined by discretionary release of funds, not by seniority."}
+  - {title: "The JOLT Effect", kind: book, author: "Matthew Dixon, Ted McKenna",
+     note: "Quantifies no-decision losses. Proposals issued into an unapproved committee are a
+       principal source of them."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete

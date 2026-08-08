@@ -1,0 +1,734 @@
+# SCOPED to sales.market_and_targeting.market_research.
+#
+# Note what is deliberately NOT here: a `market_segment` object. Segments live as a list
+# property on this map rather than as their own object, because the core/scoped rule is
+# decided by the reference graph and nothing outside this capability loads a segment today.
+# The day tam_sam_som or territory_planning genuinely needs one, it should be promoted
+# straight to objects/core/ — not copied.
+
+identity:
+  id: sales.obj.market_research.market_map
+  scope: capability
+  name: Market Map
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.market_research
+  version: 1.0.0
+  status: draft
+  aliases: ["Market Landscape", "Segment Map", "Category Map"]
+purpose:
+  statement: >
+    The assembled, dated view of one market: the buying populations inside it, who already holds
+    the budget they would spend with us, what those buyers pay and on what terms, how they buy,
+    how much of the category they already understand, and whether the market is worth entering.
+    The discriminator against ICP — the object it is most often confused with — is whose data
+    defines it. An ICP is derived from OUR outcomes and describes accounts that succeed with us;
+    a market map describes buying behaviour that exists whether or not we ever sell into it,
+    including the segments we lose in and the ones we have never touched. A company with no
+    customers can hold a market map and cannot hold an ICP.
+attributes:
+  - name: definition
+    purpose: What market this actually is, and on what basis it was cut.
+    type: composite
+    contains:
+      - market_name
+      - job_to_be_done
+      - segment_basis
+      - segments
+      - geography_scope
+  - name: supply_side
+    purpose: Who holds the budget today. Includes the alternatives that have no website.
+    type: composite
+    contains:
+      - incumbent_set
+      - primary_alternative
+      - category_crowding
+      - switching_cost
+  - name: demand_behaviour
+    purpose: How the population buys. The most predictive component and the least researched.
+    type: composite
+    contains:
+      - buying_process
+      - budget_owner_function
+      - typical_committee_size
+      - typical_cycle_days
+      - purchase_trigger
+  - name: commercial_norms
+    purpose: What the market already pays, and what shape it expects to be charged in.
+    type: composite
+    contains:
+      - prevailing_price_band_low
+      - prevailing_price_band_high
+      - pricing_metric
+      - contract_norm
+      - price_sensitivity
+  - name: maturity
+    purpose: How much the buyer already knows. Decides which motion is affordable.
+    type: composite
+    contains:
+      - category_maturity
+      - analyst_coverage
+  - name: verdict
+    purpose: The decision the map exists to support, and the evidence it rests on.
+    type: composite
+    contains:
+      - entry_recommendation
+      - blocking_unknowns
+      - map_dated_at
+      - review_due_at
+      - observed_deal_count
+  - name: market_name
+    purpose: The market_name of this object.
+    type: value
+    data_type: string
+    required: true
+  - name: job_to_be_done
+    purpose: The recurring job a buyer here hires something to do. The only definition of a market
+      that survives a change in the vendor list — vendors come and go, the job persists, and a map
+      organised around vendors has to be rewritten every time one is acquired.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The recurring job a buyer here hires something to do. The only definition of a market
+      that survives a change in the vendor list — vendors come and go, the job persists, and
+      a map organised around vendors has to be rewritten every time one is acquired.
+  - name: segment_basis
+    purpose: What the segments were actually cut on. Recorded because firmographic is the default —
+      the data is purchasable — and it is the weakest cut available. Declaring the basis makes a lazy
+      segmentation visible instead of implicit.
+    type: value
+    data_type: enum
+    allowed_values: [buying_behaviour, budget_owner, use_case, firmographic, geography, unsegmented]
+    required: true
+    description: >
+      What the segments were actually cut on. Recorded because firmographic is the default —
+      the data is purchasable — and it is the weakest cut available. Declaring the basis makes
+      a lazy segmentation visible instead of implicit.
+  - name: segments
+    purpose: Named buying populations inside this market, each with its own budget owner and process.
+      Held as a list rather than as its own object because nothing outside this capability loads a
+      segment today; see the header note.
+    type: value
+    data_type: list
+    description: >
+      Named buying populations inside this market, each with its own budget owner and process.
+      Held as a list rather than as its own object because nothing outside this capability
+      loads a segment today; see the header note.
+  - name: geography_scope
+    purpose: The geography_scope of this object.
+    type: value
+    data_type: list
+  - name: incumbent_set
+    purpose: Named vendors currently holding budget in this market.
+    type: value
+    data_type: list
+    description: Named vendors currently holding budget in this market.
+  - name: primary_alternative
+    purpose: Where the money goes today if it does not come to us. `status_quo` is the correct answer
+      far more often than it is recorded, and omitting it inflates every reachable-share estimate
+      built on this map in the same direction.
+    type: value
+    data_type: enum
+    allowed_values: [named_vendor, internal_build, outsourced_service, status_quo, unknown]
+    required: true
+    description: >
+      Where the money goes today if it does not come to us. `status_quo` is the correct answer
+      far more often than it is recorded, and omitting it inflates every reachable-share
+      estimate built on this map in the same direction.
+  - name: category_crowding
+    purpose: Read carefully in both directions. Empty is a cost, not an opening — the education of the
+      buyer is unpaid and lands entirely on whoever enters first.
+    type: value
+    data_type: enum
+    allowed_values: [empty, sparse, contested, saturated, unknown]
+    description: >
+      Read carefully in both directions. Empty is a cost, not an opening — the education of the
+      buyer is unpaid and lands entirely on whoever enters first.
+  - name: switching_cost
+    purpose: What the buyer loses by leaving the incumbent — data, process, retraining, one person's
+      accumulated expertise. Sets the size of the advantage required, not the volume of the pitch.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, prohibitive, unknown]
+    description: >
+      What the buyer loses by leaving the incumbent — data, process, retraining, one person's
+      accumulated expertise. Sets the size of the advantage required, not the volume of the
+      pitch.
+  - name: buying_process
+    purpose: The buying_process of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, self_serve, ad_hoc, structured, procurement_led]
+  - name: budget_owner_function
+    purpose: Which function's budget line pays. Two companies with identical firmographics where one
+      buys from IT and one from Operations are two markets sharing a filter.
+    type: value
+    data_type: string
+    description: >
+      Which function's budget line pays. Two companies with identical firmographics where one
+      buys from IT and one from Operations are two markets sharing a filter.
+  - name: typical_committee_size
+    purpose: The typical_committee_size of this object.
+    type: value
+    data_type: integer
+  - name: typical_cycle_days
+    purpose: A cycle several times our current one is not a harder market, it is a different business
+      with different working-capital requirements. This field is where that gets caught.
+    type: value
+    data_type: integer
+    unit: days
+    description: >
+      A cycle several times our current one is not a harder market, it is a different business
+      with different working-capital requirements. This field is where that gets caught.
+  - name: purchase_trigger
+    purpose: What must have happened for a buyer here to be in market at all. The difference between a
+      target list and pipeline.
+    type: value
+    data_type: list
+    description: What must have happened for a buyer here to be in market at all. The difference
+      between a target list and pipeline.
+  - name: prevailing_price_band_low
+    purpose: The prevailing_price_band_low of this object.
+    type: value
+    data_type: money
+  - name: prevailing_price_band_high
+    purpose: The prevailing_price_band_high of this object.
+    type: value
+    data_type: money
+  - name: pricing_metric
+    purpose: What the market is used to being charged BY — seat, usage, transaction, outcome, flat
+      fee. Changing the metric a segment is accustomed to is a harder sale than changing the number,
+      because it forces the buyer to re-forecast their own spend.
+    type: value
+    data_type: string
+    description: >
+      What the market is used to being charged BY — seat, usage, transaction, outcome, flat fee.
+      Changing the metric a segment is accustomed to is a harder sale than changing the number,
+      because it forces the buyer to re-forecast their own spend.
+  - name: contract_norm
+    purpose: Expected term length, payment terms and procurement expectations in this market.
+    type: value
+    data_type: string
+    description: Expected term length, payment terms and procurement expectations in this market.
+  - name: price_sensitivity
+    purpose: The price_sensitivity of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, insensitive, moderate, contested, commoditised]
+  - name: category_maturity
+    purpose: How much the population already knows. Sets what a first conversation must accomplish and
+      therefore the cycle length and cost to serve. Running an education motion into a vendor-aware
+      market wastes the meeting; running a differentiation motion into an unaware one loses it.
+    type: value
+    data_type: enum
+    allowed_values: [unaware, problem_aware, solution_aware, vendor_aware, commoditised]
+    description: >
+      How much the population already knows. Sets what a first conversation must accomplish and
+      therefore the cycle length and cost to serve. Running an education motion into a
+      vendor-aware market wastes the meeting; running a differentiation motion into an unaware
+      one loses it.
+  - name: analyst_coverage
+    purpose: 'Whether the category has analyst coverage. Kept not because coverage indicates quality — it
+      indicates briefing budget — but because its absence is a real cost: buyers in uncovered categories
+      have nothing external to point at when justifying the purchase.'
+    type: value
+    data_type: boolean
+    description: >
+      Whether the category has analyst coverage. Kept not because coverage indicates quality —
+      it indicates briefing budget — but because its absence is a real cost: buyers in
+      uncovered categories have nothing external to point at when justifying the purchase.
+  - name: entry_recommendation
+    purpose: The entry_recommendation of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unassessed, enter, pilot, defer, decline]
+    required: true
+  - name: blocking_unknowns
+    purpose: What is still unknown that would change the verdict. Named explicitly so the bet can be
+      sized against them rather than argued about.
+    type: value
+    data_type: list
+    description: What is still unknown that would change the verdict. Named explicitly so the bet can
+      be sized against them rather than argued about.
+  - name: map_dated_at
+    purpose: When this map was assembled. An undated map is cited as fact indefinitely, which is the
+      characteristic failure of this whole discipline.
+    type: value
+    data_type: timestamp
+    required: true
+    description: When this map was assembled. An undated map is cited as fact indefinitely, which is
+      the characteristic failure of this whole discipline.
+  - name: review_due_at
+    purpose: The review_due_at of this object.
+    type: value
+    data_type: timestamp
+  - name: observed_deal_count
+    purpose: How many live deals in this market the map has actually been checked against. The engine
+      cannot compute this today — there is no cross-account aggregate — which is why the executable
+      patterns below are all single-deal evidence generalised to a population.
+    type: value
+    data_type: integer
+    description: >
+      How many live deals in this market the map has actually been checked against. The engine
+      cannot compute this today — there is no cross-account aggregate — which is why the
+      executable patterns below are all single-deal evidence generalised to a population.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: No map exists. Every segment is a target and none is, which is the state most
+        companies enter a new market in.
+    - name: hypothesis
+      description: Asserted from belief and desk research. Where every map starts and where too many
+        are used from.
+    - name: researched
+      description: Primary evidence collected, findings recorded, not yet reconciled into a verdict.
+    - name: validated
+      description: Load-bearing findings corroborated by independent sources and an entry verdict
+        recorded, including at least one reason not to enter.
+    - name: contradicted
+      description: Field evidence has falsified a load-bearing claim. The map is not wrong everywhere,
+        but it may not be cited until reconciled.
+      entered_when: [has_obs: closed_lost_mention, no_obs: competitor]
+    - name: stale
+      description: Past review_due_at. Indistinguishable from validated to anyone reading a slide,
+        which is exactly the danger.
+    - name: retired
+      description: Superseded by a newer map. Kept, because what we believed and why we were wrong is
+        the only thing that improves the next one.
+  transitions:
+    - {from: unknown, to: hypothesis}
+    - {from: hypothesis, to: researched}
+    - {from: researched, to: validated}
+    - {from: validated, to: contradicted, when: [has_obs: closed_lost_mention, no_obs: competitor]}
+    - {from: contradicted, to: researched}
+    - {from: validated, to: stale}
+    - {from: stale, to: researched}
+    - {from: stale, to: retired}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: requires
+    target: sales.obj.market_research.market_finding
+    cardinality: zero_or_many
+    description: A map is the assembly of dated findings. A map with no findings under it is a
+      narrative.
+
+  - type: references
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+    description: The incumbent set. Status quo and internal build belong here too and have no
+      competitor record to point at.
+
+  - type: references
+    target: sales.obj.core.pricing
+    cardinality: zero_or_one
+    description: Prevailing terms constrain our commercial design. Our cost base does not.
+
+  - type: precedes
+    target: sales.obj.core.icp
+    cardinality: zero_or_one
+    description: >
+      The map is the input to a profile. A profile written without one describes our current
+      customers and calls it a strategy.
+
+  - type: influences
+    target: sales.obj.core.persona
+    cardinality: zero_or_many
+    description: budget_owner_function determines which persona is worth building.
+
+  - type: influences
+    target: sales.obj.core.pain_point
+    cardinality: zero_or_many
+
+  - type: references
+    target: sales.obj.core.company
+    cardinality: zero_or_many
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: mm.procurement_led_market
+      statement: "Both legal and security review started on a deal in this market — the process, not the
+        account, is procurement-led."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 6500, attribute: buying_process, value: procurement_led}
+      evidence_fields: [deal.status]
+      note: >
+        Two independent review gates firing on one deal is more often a property of how the
+        segment buys than of who this particular buyer is — review functions are policy, and
+        policy is shared across a population. Deliberately below the confidence the same
+        predicate carries on an account-level object, because one deal is one observation of a
+        market.
+
+    - id: mm.status_quo_is_the_real_incumbent
+      statement: "A loss discussed with no competitor ever named — the budget stayed where it was."
+      status: executable
+      when:
+        - {has_obs: closed_lost_mention}
+        - {no_obs: competitor}
+      yields: {confidence_bp: 6800, attribute: primary_alternative, value: status_quo}
+      evidence_fields: [deal.status]
+      note: >
+        This one reads backwards to a naive reader, who records "no competitor" as a clean
+        market. Losing without a rival present is the signature of the do-nothing incumbent —
+        the largest holder of budget in most immature categories and the one that appears in no
+        CRM field. It changes the pitch from difference to cost of inaction.
+
+    - id: mm.named_vendor_incumbent
+      statement: "A competitor was named and pricing was discussed — budget in this market already has somewhere
+        to go."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {has_obs: pricing_discussed}
+      yields: {confidence_bp: 6000, attribute: primary_alternative, value: named_vendor}
+      evidence_fields: [deal.value]
+      note: >
+        A mention proves presence, never share. Treating a single competitor mention as market
+        position is the standard error and produces maps that overstate whichever vendor is
+        most talkative.
+
+    - id: mm.prevailing_price_band
+      statement: "The market's list prices set the band our commercial design has to live inside."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: prevailing_price_band_high, value: null}
+      requires_signals:
+        - {kind: fact_path, name: competitor.list_price, owner_layer: L1, note: "Vendor pricing pages are\
+            public, static and unscraped. This is the cheapest market fact in existence and none of it is
+            collected."}
+
+    - id: mm.segment_cut_by_budget_owner
+      statement: "Segments derived from which function's budget line actually pays."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: budget_owner_function, value: null}
+      requires_signals:
+        - {kind: fact_path, name: person.department, owner_layer: L1, note: "Department is present in every\
+            email signature and CRM contact record and is projected into no typed fact. Without it the strongest
+            segmentation basis is unavailable and firmographic segmentation wins by default."}
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+
+    - id: mm.cycle_length_from_history
+      statement: "Typical cycle length computed from closed deals in this market."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: typical_cycle_days, value: null}
+      requires_signals:
+        - {kind: fact_path, name: deal.created_at, owner_layer: L1, note: "The pipeline cannot compute a\
+            single deal's cycle length, let alone a segment's — there is no creation timestamp in the substrate,
+            only last_inbound."}
+        - {kind: derived, name: derived.cycle_days, owner_layer: L2}
+
+    - id: mm.contract_norm_from_signed_paper
+      statement: "Prevailing term length and payment terms read from contracts already signed in this market."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: contract_norm, value: null}
+      requires_signals:
+        - {kind: fact_path, name: contract.term_months, owner_layer: L1}
+        - {kind: obs_kind, name: contract_signed, owner_layer: L2, note: "L2 emits contract_requested and\
+            never contract_signed, so the moment a market's real terms become knowable is the moment the pipeline
+            stops watching."}
+
+  heuristic:
+
+    - id: mm.price_is_contested_here
+      statement: "Price objection and discount pressure together — this market argues about money, which
+        means it has some."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+        - {has_obs: discount_pressure}
+      yields: {confidence_bp: 7000, attribute: price_sensitivity, value: contested}
+      evidence_fields: [deal.value]
+      note: >
+        Haggling is proof of a budget line, not proof of a pricing mistake. The error this
+        guards against is cutting list price after two loud deals in a segment that would have
+        paid — contested is a different property from commoditised, and only the second one
+        justifies a price move.
+
+    - id: mm.ad_hoc_buying_shape
+      statement: "One contact, no legal review — the market buys informally, whatever its company sizes
+        suggest."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {no_obs: legal_review}
+      yields: {confidence_bp: 5500, attribute: buying_process, value: ad_hoc}
+      note: >
+        Weak on purpose: absence of legal review may mean the deal has simply not reached it
+        yet. Worth keeping because it catches the large company that buys small things on a
+        card, which firmographic segmentation places in exactly the wrong segment.
+
+    - id: mm.vendor_aware_category
+      statement: "A competitor named and the conversation already on price — this population knows the category
+        and is comparing inside it."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {has_obs: objection_price}
+      yields: {confidence_bp: 6000, attribute: category_maturity, value: vendor_aware}
+      note: >
+        The useful inversion: a market where buyers arrive already comparing is cheaper to sell
+        into than an empty one, because someone else paid for the education and the budget line
+        already exists. Crowding reads as bad news and is usually the opposite.
+
+    - id: mm.switching_cost_from_migration_talk
+      statement: "Buyers raising data migration, retraining or contract overlap — the incumbent is held
+        in place by cost, not by preference."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: switching_cost, value: high}
+      requires_signals:
+        - {kind: obs_kind, name: migration_concern, owner_layer: L2, note: "The generic `objection` kind\
+            swallows this. Migration anxiety is a market-structure fact — it predicts every displacement cycle
+            in the segment — and it is indistinguishable from a feature complaint today."}
+
+    - id: mm.trigger_driven_purchase
+      statement: "Purchases in this market cluster after a specific external event — funding, a leadership
+        change, an incident, a regulation."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: purchase_trigger, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: account_trigger_event, owner_layer: L1, note: "Requires an external-signal\
+            connector. This is the difference between a target list and a pipeline: without triggers every
+            account in a segment looks equally ready, and almost none of them are."}
+
+    - id: mm.segment_shape_from_population
+      statement: "Cycle length, committee size and win rate computed across all accounts sharing a segment
+        key."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: account.segment, owner_layer: L1, note: "A grouping key on the account.\
+            Nothing else in the substrate can express 'these accounts belong together'."}
+        - {kind: derived, name: derived.segment_aggregate, owner_layer: L2, note: "THE structural gap for\
+            this object. Every predicate is evaluated against one node and its one-hop neighbours, so no authored
+            pattern here can ever be evidenced by more than one deal — while the object's entire subject is
+            a population. This single addition converts the blocked half of this file into the executable
+            half."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "competitor mentions, price objections, discount pressure in live deals",
+      path: thread.last_inbound}
+  - {source: derived, signal: graph shape of deals in this market, path: derived.engagement}
+  - {source: crm, signal: "closed-won, closed-lost and no-decision history by account"}
+  - {source: meeting_transcript, signal: "what buyers say they use today and what it costs them"}
+  - {source: call_recording, signal: "switch interviews and win/loss conversations"}
+  - {source: website, signal: "vendor pricing pages, packaging, contract terms"}
+  - {source: document, signal: "analyst reports and category coverage — vocabulary, not verdicts"}
+  - {source: manual_entry, signal: the map as the organisation currently believes it}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: entry_verdict, type: string, description: "enter | pilot | defer | decline, per segment.",
+      consumed_by: [L4.decision_maker]}
+  - {name: expected_cycle_days, type: integer, description: "Prior for how long a deal here should take.\
+      Bounds Timeline's plausibility check before any deal exists.", consumed_by: [L4.reasoning_unit]}
+  - {name: expected_committee_size, type: integer, description: "How many seats to expect before any are\
+      mapped.", consumed_by: [L4.reasoning_unit]}
+  - {name: prevailing_terms, type: list, description: "Price band, pricing metric and contract norm the\
+      market already accepts.", consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: incumbent_set, type: list, description: "Named vendors plus the alternatives with no website\
+      — internal build and status quo.", consumed_by: [L4.reasoning_unit, L5.communication_planning]}
+  - {name: required_motion, type: string, description: "Education-led or difference-led, derived from\
+      category_maturity. Chooses the shape of first contact.", consumed_by: [L5.communication_planning,
+      "L5.2.channel_planner"]}
+  - {name: blocking_unknowns, type: list, description: "What would change the verdict. Sizes the bet rather\
+      than settling it.", consumed_by: [L4.decision_maker, L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: mm.values_are_tenant_scoped, statement: "Concrete market values live in the Organization Brain.\
+      This object holds the shape only.", hard: true}
+  - {id: mm.no_entry_without_alternative_named, statement: "An entry verdict requires primary_alternative\
+      to be something other than unknown.", hard: true}
+  - {id: mm.stale_map_cannot_gate_investment, statement: "A map past review_due_at may not be the sole\
+      basis for territory, quota or headcount decisions.", hard: true}
+  - {id: mm.one_deal_cannot_validate, statement: "No single account's behaviour may move a map property\
+      to validated.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: mm.no_verdict_without_an_anti_case
+    statement: >
+      A map may not reach validated without at least one recorded reason not to enter. A map
+      that only says yes is a pitch with a bibliography.
+    severity: blocking
+
+  - id: mm.status_quo_must_be_named
+    statement: >
+      primary_alternative may not be left `unknown` when entry_recommendation is enter or
+      pilot. The do-nothing option is a competitor and must be sized before money is committed.
+    severity: blocking
+
+  - id: mm.dates_are_mandatory
+    statement: Every map carries map_dated_at and review_due_at. An undated map never expires and is
+      therefore never re-checked.
+    severity: blocking
+
+  - id: mm.tenant_values_stay_out
+    statement: >
+      This object defines the SHAPE of a market map. A specific market's values are
+      Organization Brain content, learned per tenant. Authoring one company's segment list here
+      would make its answer look like the profession's.
+    severity: blocking
+
+  - id: mm.single_deal_is_not_a_market
+    statement: >
+      No property may be moved to a validated value on evidence from a single account. The
+      engine cannot enforce this today — it has no cross-account aggregate — so it stands as a
+      rule on the human reviewer until one exists.
+    severity: warning
+
+  - id: mm.sizing_requires_a_map
+    statement: TAM/SAM/SOM must not be computed against a map whose segment_basis is `unsegmented`.
+    severity: warning
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: buying_behaviour_clarity
+    weight_bp: 2500
+    direction: increases
+    description: >
+      Weighted highest deliberately. Knowing how a population buys predicts whether we can sell
+      to it better than anything about what the population is, and it is the component most
+      often left at defaults.
+    reads: [buying_process, budget_owner_function, typical_cycle_days, typical_committee_size]
+
+  - name: commercial_headroom
+    weight_bp: 2000
+    direction: increases
+    reads: [prevailing_price_band_low, prevailing_price_band_high, pricing_metric, price_sensitivity]
+
+  - name: incumbent_pressure
+    weight_bp: 2000
+    direction: decreases
+    description: Switching cost, not competitor count, is what makes an incumbent hard. A weak product
+      with the buyer's data in it is a strong incumbent.
+    reads: [incumbent_set, primary_alternative, switching_cost]
+
+  - name: category_readiness
+    weight_bp: 1500
+    direction: context
+    description: Context rather than increases, because crowding cuts both ways — saturated compresses
+      price, empty compresses nothing and costs a year.
+    reads: [category_maturity, category_crowding, analyst_coverage]
+
+  - name: evidence_quality
+    weight_bp: 1500
+    direction: context
+    reads: [map_dated_at, review_due_at, observed_deal_count, blocking_unknowns]
+
+  - name: access_cost
+    weight_bp: 500
+    direction: decreases
+    reads: [geography_scope, purchase_trigger]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# Read the honest caveat first: every predicate the engine dispatches on is evaluated against
+# ONE node and its one-hop neighbours. This object's subject is a population. So each
+# executable pattern below is a single deal's shape being generalised to a market, and the
+# confidences are set low to say so. They are worth having — one observation beats none, and
+# these fire for free on traffic that already exists — but the needs_signal half is where the
+# capability actually lives.
+evidence:
+  - {source: call_recording, strength_bp: 9000, description: "Switch and loss interviews with people who\
+      completed a transaction. The strongest source available and the least used, because it is the only
+      one that costs time."}
+  - {source: crm, strength_bp: 8000, description: "Closed history across won, lost and no-decision. Strong\
+      on outcomes, silent on why — and no-decision is usually missing entirely."}
+  - {source: meeting_transcript, strength_bp: 7000, description: "What buyers say they use today and what\
+      it costs them."}
+  - {source: website, strength_bp: 6500, description: "Vendor pricing and packaging. Current, public,\
+      and a claim rather than a paid price."}
+  - {source: email, strength_bp: 5000, description: "Competitor and price signals from live deals. Cheap,\
+      continuous, and one account at a time."}
+  - {source: document, strength_bp: 3500, description: "Analyst reports. Records briefing budget, not\
+      buyer behaviour. Useful for the vocabulary buyers are being taught."}
+  - {source: manual_entry, strength_bp: 3000, description: "The believed map. A hypothesis, and should\
+      be labelled as one on the slide."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: segment_win_rate_spread, unit: percent, description: "Best segment against worst. If flat,\
+      the segmentation carries no information and the map is decoration.", owner_layer: L6}
+  - {name: cycle_length_forecast_error, unit: percent, description: "Researched cycle against observed.\
+      The best single test of whether the buying process was understood.", owner_layer: L6}
+  - {name: status_quo_loss_share, unit: percent, description: "Share of losses with no competitor named.\
+      Sizes the incumbent that has no website.", owner_layer: L6}
+  - {name: map_staleness, unit: days, description: "Age of the oldest load-bearing claim still cited in\
+      a live decision.", owner_layer: L6}
+  - {name: segments_declined, unit: count, owner_layer: L6}
+  - {name: price_band_accuracy, unit: percent, description: "Researched prevailing band against prices\
+      actually observed in closed deals.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: mm.map_validated, name: Market Map Validated, payload: [market_name, entry_recommendation, blocking_unknowns]}
+  - {id: mm.segment_declined, name: Segment Declined, payload: [segment, reason], description: "The event
+      that pays for the capability. A research function that never emits this is describing markets rather
+      than choosing between them."}
+  - {id: mm.incumbent_shift, name: Incumbent Shift Detected, emitted_when: [has_obs: competitor],
+      payload: [previous_alternative, observed_competitor]}
+  - {id: mm.status_quo_winning, name: Status Quo Winning, emitted_when: [has_obs: closed_lost_mention,
+      no_obs: competitor], payload: [market_name], description: "Losses with no rival named. The most under-recorded
+      finding in sales and the one that changes the pitch most."}
+  - {id: mm.map_stale, name: Market Map Stale, payload: [map_dated_at, review_due_at]}
+  - {id: mm.price_pressure_observed, name: Price Pressure Observed, emitted_when: [has_obs: objection_price,
+      has_obs: discount_pressure], payload: [market_name, price_sensitivity]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: mm.run_switch_interviews, name: Run switch interviews, actor: human, effect: "Reconstruct the\
+      weeks before a completed purchase. The only reliable window onto a buying process from outside it."}
+  - {id: mm.teardown_incumbent, name: Tear down incumbent pricing and packaging, actor: agent, effect: "Public
+      pricing pages, then corrected against what buyers say they actually pay. The gap between the two is
+      itself a finding."}
+  - {id: mm.recut_segments, name: Re-cut segments on buying behaviour, actor: human, effect: "Replaces\
+      a firmographic cut. Usually shrinks the market on paper and improves every downstream forecast."}
+  - {id: mm.record_verdict, name: Record an entry verdict, actor: human}
+  - {id: mm.decline_segment, name: Decline a segment, actor: human, effect: "The cheapest decision available.\
+      A declined segment costs nothing; a segment entered with the wrong motion costs a year of a team."}
+  - {id: mm.schedule_review, name: Schedule the map review, actor: system, effect: "Derived from the fastest\
+      decay rate among its load-bearing findings, not from a fixed calendar."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Behaviourally cut map", note: "Same industry, split into IT-budget and Operations-budget\
+      segments. Different cycle, different committee, different collateral. Two motions, correctly."}
+  - {label: "The classic misclassification", note: "A firmographic filter — Series B SaaS, one hundred\
+      to five hundred staff — presented as a market. It is a list. It cannot tell you who signs, what they
+      pay today, or why anyone would move."}
+  - {label: "Empty category read as opportunity", note: "No competitors found, crowding recorded as empty,\
+      entry recommended. The population does not buy this at all; the education bill arrives a year later
+      as an unexplained cycle length."}
+  - {label: "Status quo incumbent", note: "primary_alternative = status_quo, switching_cost low, category_maturity\
+      problem_aware. Every loss is to nobody, and the pitch has to be cost of inaction rather than difference."}
+  - {label: "Stale map", note: "Validated eighteen months ago, incumbent since acquired and repriced.\
+      Still on the slide, still cited, and now wrong in the direction that flatters the plan."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Thirteen patterns, six executable and seven blocked. Every executable one generalises a
+    single deal's shape to a population, which is honest but weak, and the confidences say so.
+    The single highest-value gap is mm.segment_shape_from_population: a segment key on the
+    account plus a derived aggregate over it. Without a way to say "these accounts belong
+    together", an object whose entire subject is a population is stuck reasoning one deal at a
+    time. Second in value is person.department, which is in every email signature and would
+    make behavioural segmentation possible instead of firmographic segmentation inevitable.

@@ -1,0 +1,171 @@
+# Field Service — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+
+identity:
+  id: customer_support.model.field_service
+  name: Field Service
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Resolution requires a person to be physically present. That single constraint reorganises the
+  whole domain, because it is the only branch where the scarce resource is not attention but
+  location, and where the operating problem is scheduling rather than diagnosis.
+  .
+  Travel dominates everything. The marginal cost of a contact is geography, so a queue is not a
+  list of tickets by urgency but a set of days that have already been quantised into visits, and
+  a visit is unsplittable. Reassignment stops being a click: moving a job between technicians
+  moves two people's routes and usually a customer's appointment. Prioritisation that ignores
+  proximity produces schedules that look correct and cannot be driven. The same severity-one
+  fault three hours away and forty minutes away are different jobs, and no amount of urgency
+  changes that.
+  .
+  Parts are the second constraint and the dominant cost. A technician who arrives without the
+  right component has burned a slot, a journey and the customer's morning, and has created a
+  second appointment — the field-service equivalent of a reopen, and far more expensive. This is
+  why first-time-fix rate, not first-contact resolution, is the metric the branch is actually
+  run on, and why remote triage carries leverage that has no analogue elsewhere: every contact
+  resolved over the phone avoids a cost measured in hundreds, not in minutes of handling time.
+  .
+  Third: the promise is an arrival window, not a response time. The customer took a day off. Being
+  late here is not a slower version of the same failure — it consumed the customer's time rather
+  than ours, and it is remembered as a different kind of broken promise. An SLA clock inherited
+  from a ticketing branch measures the wrong thing entirely; what matters is whether somebody was
+  standing there when they said they would be.
+  .
+  Fourth: the technician is alone with the customer, in their home or on their plant floor,
+  unsupervised, and is the entire company for two hours. There is no transcript. Quality
+  assurance has to be reconstructed from a job record written afterwards, by the person being
+  assessed, frequently offline and hours later — and the record is thin exactly when the visit
+  went badly. Access, safety and permits are preconditions no queue models: a job that cannot be
+  entered, or where nobody is home, or where the site induction expired, is not a slow job, it is
+  a cancelled one.
+  .
+  What an operator carries over wrongly from a remote desk: the belief that you can add capacity
+  to a bad day. You cannot. Vans, certifications and driving hours are fixed weeks in advance,
+  so an unexpected surge does not create a backlog that clears at the weekend — it creates
+  appointments in three weeks' time, and the customer hears that number on the phone today.
+  The second carry-over error is treating dispatch as routing: routing decides who, dispatch
+  decides who and when and with what in the vehicle, and the third term is the one that fails.
+
+characteristics:
+  requester: "a site contact — homeowner, facilities manager, plant supervisor — who must be physically present for the visit and whose availability is a hard constraint on resolution, not a preference"
+  typical_resolution_hours: 48
+  volume_shape: "low volume and very high unit cost, clustered geographically, strongly seasonal and weather-driven; a cold snap or a batch defect produces correlated demand in one region that no rota absorbs"
+  staffing_model: "dispatched field technicians with certifications and parts inventories, sitting behind a remote triage desk whose job is to prevent the visit"
+  coverage: "a service area before it is a service window — geography bounds what is possible, and an emergency call-out tier sits above the normal working day at a different price"
+  automation_level: "low at the point of work and high in scheduling; the automation that matters optimises routes and parts, not answers"
+  primary_channels: [phone, ticket_portal, field_app, email]
+  notes: >
+    The record is written offline and late. Technicians work in basements, lifts, rural sites and
+    plant rooms with no signal, so the job record is completed at the end of the day or the end
+    of the week, and everything downstream — parts reconciliation, warranty claims, quality
+    review, root cause on a recurring fault — inherits that lag. Designing the record for a
+    tired person on a phone at 6pm is not a usability nicety in this branch; it is the difference
+    between having field data and not having it.
+
+capabilities:
+
+  # Coverage here is geographic before it is temporal — the question is not "is anyone on shift"
+  # but "is anyone certified for this within driving distance today", which no default rota
+  # expresses. Capacity is the branch's binding constraint and is fixed weeks out, so it moves
+  # from a planning exercise to the thing that answers the customer's question on the phone.
+  activates:
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    - customer_support.support_operations.capacity_planning
+
+  # Nothing. The seductive deletion is self_service_deflection — you cannot fix a boiler with a
+  # help article — and it is precisely backwards. Deflection is worth more in this branch than
+  # in any other in the tree, because the thing it avoids is a truck roll rather than an email.
+  # A five-minute article that stops one visit in twenty pays for the entire knowledge function.
+  deactivates: []
+
+  emphasises:
+    - customer_support.intake_and_triage.routing_and_assignment
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.customer_communication.proactive_status_updates
+    - customer_support.diagnosis_and_resolution.diagnostics
+    - customer_support.diagnosis_and_resolution.verification_and_closure
+    - customer_support.support_operations.workload_balancing
+    - customer_support.support_operations.cost_to_serve
+    - customer_support.support_management.quality_assurance
+
+objects:
+  extends:
+    - object: customer_support.obj.core.commitment
+      require_properties: [due_at, due_specificity, notice_given, notice_given_at]
+      note: >
+        The arrival window is the promise this branch is judged on, and it is a commitment with
+        an unusual property: it binds the customer's time as well as ours. A four-hour window
+        someone waited in and nobody arrived for is a worse event than a missed callback by a
+        wide margin, and it is the only broken promise in the domain that costs the customer a
+        day's pay. Proactive notification of slippage is worth more than the recovery, because
+        the customer can still salvage the afternoon if told early enough.
+    - object: customer_support.obj.core.sla_target
+      require_properties: [target_at, measured_from, calendar_type, is_contractual]
+      note: >
+        `measured_from` carries the branch's whole disagreement with ticketing. The clock that
+        matters starts when the job was booked and stops when a technician is on site — not at
+        first response, which is trivially met by the triage desk and measures nothing about
+        whether the fault stopped. Importing a response-time SLA into this branch produces
+        excellent numbers and furious customers.
+    - object: customer_support.obj.core.ticket
+      require_properties: [assignee_ref, resolution_type, reopen_count, requester_ref]
+      note: >
+        The assignee is a person with a location, a vehicle and a stock of parts, so assignment
+        constrains what can physically be resolved rather than merely who will attempt it.
+        `reopen_count` reads as revisits, which is the branch's dominant cost line and its
+        cleanest quality signal — a revisit is nearly always a parts or diagnosis failure at the
+        first visit, and almost never a customer misunderstanding.
+    - object: customer_support.obj.core.entitlement
+      require_properties: [coverage_hours, plan, entitled_channels]
+      note: >
+        The canonical entitlement object has no service-area attribute, and in this branch
+        coverage is geographic before it is temporal — a contract that promises next-day
+        attendance means something different at a site four hours from the nearest depot. This
+        is a real gap in the shared object rather than a branch preference, and it is the first
+        thing a field-service tenant will ask for. Until it exists, service area has to live in
+        the coverage_hours prose, where nothing can compute against it.
+    - object: customer_support.obj.core.requester
+      require_properties: [working_hours, timezone, preferred_channel]
+      note: >
+        Availability is a resolution constraint here, not a courtesy. A site contact who cannot
+        be present on Tuesday makes Tuesday's slot unusable no matter how urgent the fault, and
+        reaching them to confirm is on the critical path — an unreachable contact is the most
+        common reason a technician's day loses an hour before it starts.
+
+overrides:
+  capabilities.customer_support.intake_and_triage.routing_and_assignment.routing_key: "proximity_certification_parts"
+  capabilities.customer_support.intake_and_triage.routing_and_assignment.reassignment_cost: "high_reschedules_the_day"
+  capabilities.customer_support.entitlement_and_sla.sla_management.clock_measures: "arrival_window"
+  capabilities.customer_support.diagnosis_and_resolution.resolution_delivery.primary_metric: "first_time_fix"
+  capabilities.customer_support.diagnosis_and_resolution.verification_and_closure.verified_on_site: true
+  capabilities.customer_support.support_operations.capacity_planning.unit: "technician_days"
+  capabilities.customer_support.support_management.quality_assurance.evidence_source: "site_visit_record"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    This is the branch furthest from the shipped substrate. Nothing in Layer 1 or 2 emits a
+    location, a route, a parts inventory or an appointment, so almost every reading this model
+    depends on is pending — with one exception worth noting, which is that the arrival window is
+    a commitment with a due_at and an action, and commitment_overdue therefore genuinely fires
+    on the branch's single most important promise. That is the one real hook available today.

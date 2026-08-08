@@ -1,0 +1,40 @@
+identity:
+  id: sales.heu.icp_definition.behaviour_beats_firmographics
+  name: How an account buys predicts the outcome better than what the account …
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "How an account buys predicts the outcome better than what the account is.\n Committee\
+    \ size, whether procurement runs the process, whether anyone there has bought in this category before\
+    \ — these separate won from lost more sharply than industry or headcount, and they are the dimensions\
+    \ nobody writes down because they cannot be bought from an enrichment vendor. An eighty-person company\
+    \ that runs secu"
+heuristic:
+  statement: 'How an account buys predicts the outcome better than what the account is.
+
+    '
+  why: 'Committee size, whether procurement runs the process, whether anyone there has bought in this
+    category before — these separate won from lost more sharply than industry or headcount, and they
+    are the dimensions nobody writes down because they cannot be bought from an enrichment vendor. An
+    eighty-person company that runs security review is an enterprise buyer; a five-thousand-person company
+    buying on a card is not.
+
+    '
+  reads:
+  - buying_maturity
+  - typical_committee_size
+  - decision_style
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

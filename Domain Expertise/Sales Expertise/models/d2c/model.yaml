@@ -1,0 +1,39 @@
+# D2C — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.d2c
+  name: D2C
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Direct to consumer, bypassing any intermediary. Distinct from B2C generally because owning
+  the channel changes the economics and makes retention a sales capability.
+
+characteristics:
+  buyer: "the end consumer, with no reseller in between"
+  typical_cycle_days: 1
+  committee_size: "1"
+
+capabilities:
+  deactivates:
+    - sales.qualification.buying_committee_analysis
+    - sales.closing.procurement
+  emphasises:
+    - sales.post_sale_and_growth.renewal
+    - sales.post_sale_and_growth.churn_prevention
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

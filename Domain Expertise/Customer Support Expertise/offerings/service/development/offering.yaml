@@ -1,0 +1,107 @@
+# Development — offering type under customer_support.offering.service.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is type -> family ->
+# canonical.
+
+identity:
+  id: customer_support.offering.service.development
+  name: Development
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.service
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Custom software built for one client. This is the type where support most closely resembles
+  product support and is most dangerously not it: there is a real artefact, real defects and
+  real reproduction steps, so every product-support instinct feels applicable — but the install
+  base is one, so nothing aggregates and no fix is ever reusable. An organisation that runs this
+  like product support builds an issue tracker, a knowledge base and a deflection programme, and
+  every one of them serves a population of a single customer.
+  The defining dispute is warranty versus enhancement. A client reporting that the software does
+  not do what they need is making a claim that is simultaneously technical and contractual, and
+  the answer turns on the specification rather than on the code. Unlike professional services,
+  where the boundary is about scope of work, here it is about scope of the BUILD, and the
+  evidence is a document written months earlier by people who have moved on. Support is the
+  function that discovers the specification was ambiguous.
+  The second fact is the warranty cliff. Development engagements almost always carry a defined
+  warranty period, after which defect fixes become billable. Nothing about the software or the
+  client's experience changes on that date — only the invoice does — and it is the most
+  contentious moment in the type because the client experiences an identical bug being treated
+  two different ways.
+  A third: the people who can fix anything are the people who built it, and they have been
+  reassigned. Support capacity here is not a queue, it is the availability of a specific small
+  number of engineers whose time is committed elsewhere.
+
+characteristics:
+  delivery: "software written for one client, deployed into their environment or ours, owned by them"
+  pricing_shape: "fixed fee or time and materials against a specification, with a bounded warranty period and billable support thereafter"
+  margin_profile: "set at estimation and eroded by warranty work; unbilled defect fixing after handover is the standard way a profitable build becomes a loss"
+  post_sale_load: "concentrated in the warranty window and dependent entirely on build quality — a well-specified build has almost none and a poorly-specified one never stops"
+  support_load: "low volume, high specificity, non-delegable. Every ticket needs someone who knows this codebase, and there are few of them"
+  resolution_locus: "our code, written for exactly one customer. It looks like a product fix and behaves like bespoke labour, because it helps precisely one account"
+  notes: >
+    The test that resolves most disputes is whether the behaviour contradicts the specification
+    or merely disappoints the client. The first is warranty, the second is an enhancement, and
+    the fact that the specification is usually ambiguous is the real finding.
+
+capabilities:
+  deactivates:
+    # An install base of one has no recurring question and no population to deflect.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+    # Aggregate defect analysis needs an aggregate. There is one customer.
+    - customer_support.voice_of_customer.product_feedback_routing
+  emphasises:
+    # The dispute is contractual and is settled by reproduction against a specification.
+    - customer_support.diagnosis_and_resolution.issue_reproduction
+    - customer_support.diagnosis_and_resolution.root_cause_analysis
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # The warranty cliff has to be visible before it arrives, not explained afterwards.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.entitlement_and_sla.commitment_tracking
+    # Fixes require the original engineers, who are on another project.
+    - customer_support.escalation_and_incident.engineering_handoff
+    - customer_support.support_operations.capacity_planning
+    - customer_support.diagnosis_and_resolution.workaround_management
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, expires_at, coverage_hours]
+      note: >
+        The warranty period is the entitlement, and its expiry is the most contentious date in
+        the engagement: the same defect is free on one side of it and billable on the other,
+        while nothing the client can observe has changed. Modelling the expiry as a first-class
+        fact is what lets the conversation happen before the invoice rather than after it.
+    - object: customer_support.obj.core.issue
+      require_properties: [product_area_ref]
+      note: >
+        Issues here have exactly one affected customer by construction, so the object earns its
+        place for a different reason than in the product tree: it is the record of what the
+        software actually does versus what the specification said, which is the evidence base for
+        every warranty argument.
+    - object: customer_support.obj.core.ticket
+      require_properties: [resolution_type, customer_account_ref]
+      note: >
+        resolution_type is where warranty-versus-enhancement is recorded, and it is the number
+        that should feed the next estimate. A development practice that cannot report what
+        fraction of its warranty work was specification ambiguity will keep pricing builds as
+        though it were zero.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    This type is the strongest argument for the offering tree existing at all. It has every
+    surface feature of product support — a codebase, defects, reproductions, releases — and none
+    of the economics, and an organisation that classifies on surface features rather than on
+    resolution_locus will get it wrong in exactly the expensive direction. If the same build is
+    later resold to further clients it stops being this type and becomes a product, and the
+    support model should change with it rather than after it.

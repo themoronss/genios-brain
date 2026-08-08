@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs.
+
+identity:
+  id: admin.contract_and_vendor.vendor_onboarding
+  name: Vendor Onboarding
+  domain: admin
+  subdomain: contract_and_vendor
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Taking a chosen supplier from selection to operational: due diligence, security and data-
+  protection review, banking and tax details, contract execution, and system setup. Onboarding
+  is a gate, not a form — the checks exist to be capable of failing, and one that has never
+  rejected a vendor is not running.
+
+question: "Is this supplier cleared, contracted and set up to be paid?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

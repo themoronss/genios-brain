@@ -1,0 +1,35 @@
+identity:
+  id: sales.heu.market_research.undated_findings_are_liabilities
+  name: A finding without a date and a decay rate should be treated as unknown…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "A finding without a date and a decay rate should be treated as unknown, not as true.\n\
+    \ Pricing and incumbent claims rot within quarters while job-to-be-done claims hold for years; applying\
+    \ one shelf life to both means the fast-rotting claims are quietly wrong long before anyone re-checks.\
+    \ Undated research does not announce its own expiry — it just keeps getting cited.\n"
+heuristic:
+  statement: 'A finding without a date and a decay rate should be treated as unknown, not as true.
+
+    '
+  why: 'Pricing and incumbent claims rot within quarters while job-to-be-done claims hold for years;
+    applying one shelf life to both means the fast-rotting claims are quietly wrong long before anyone
+    re-checks. Undated research does not announce its own expiry — it just keeps getting cited.
+
+    '
+  reads:
+  - sales.obj.market_research.market_finding
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

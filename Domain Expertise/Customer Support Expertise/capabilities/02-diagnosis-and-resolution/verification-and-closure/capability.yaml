@@ -1,0 +1,46 @@
+# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
+#
+# This capability exists separately from resolution_delivery on purpose. Delivering an answer
+# and confirming it worked are done by the same person minutes apart, which is exactly why
+# collapsing them is tempting and exactly why it must not happen: closure without confirmation
+# is the largest single source of reopens, and a system with one capability here cannot see it.
+
+identity:
+  id: customer_support.diagnosis_and_resolution.verification_and_closure
+  name: Verification & Closure
+  domain: customer_support
+  subdomain: diagnosis_and_resolution
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Confirming with the person who reported it that the problem has actually stopped, and only
+  then closing. Silence is not agreement — an unanswered "is this resolved?" leaves a ticket
+  unverified rather than verified by default, and auto-closing on silence is the cheapest way
+  ever invented to convert an unmeasured failure into a clean metric. A reopen costs far more
+  than the original contact because it arrives with the customer's patience already spent and
+  their belief that anyone is tracking their problem already damaged, so the whole value of this
+  capability is spending a small confirmation to avoid a large one.
+
+question: "Is it actually fixed for the person who reported it, and do they say so?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
+    handoffs, following the sibling root-cause-analysis/capability.yaml, and by authoring the
+    situation this capability owns — situations/ticket-reopened.yaml,
+    customer_support.sit.ticket_reopened, which binds to the pending L2 type ticket_reopened and
+    routes nothing until a support pack emits it. The heuristics worth writing first concern
+    what verification is worth chasing: a confirmation request on a trivial answer costs the
+    customer more than it buys, while closing an intermittent fault on one quiet week is how a
+    reopen becomes an escalation. Also write down the reopen taxonomy — never fixed, fixed then
+    regressed, fixed but a second problem, and fixed but the customer disagrees that it should
+    have been the fix — because they carry opposite lessons for Layer 6 and are recorded as one
+    field in every ticketing product on the market.

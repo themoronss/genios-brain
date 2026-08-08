@@ -1,0 +1,39 @@
+# STUB — identity, purpose and load-set only. See metadata.notes for how to promote it.
+#
+# Owns support-call-no-recap.yaml, which binds to the real Layer 2 type meeting_no_followup.
+
+identity:
+  id: customer_support.customer_communication.proactive_status_updates
+  name: Proactive Status Updates
+  domain: customer_support
+  subdomain: customer_communication
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Speaking before being asked, on a rhythm the customer was told to expect. An update carrying no
+  progress is still an update and is nearly always worth sending: the alternative is the customer
+  inventing a reason for the silence, and their version is reliably worse than ours. The whole
+  discipline is holding the promised cadence on the days there is nothing good to say, because
+  those are the only days it proves anything — and because the update that is skipped is the one
+  the customer notices.
+
+question: "When did we last tell this customer where they stand, and when did we say we would tell them again?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following the shape of
+    capabilities/03-customer-communication/de-escalation/capability.yaml. Capture first: the rule
+    that cadence is agreed rather than assumed, the practice of writing updates the requester can
+    forward to their own stakeholders unedited, and the failure mode where a team pauses updates
+    during an incident precisely when demand for them peaks. Also author the support-call-no-recap
+    situation here — it binds to the real Layer 2 type meeting_no_followup and routes today, which
+    makes it the natural first executable surface for this capability.

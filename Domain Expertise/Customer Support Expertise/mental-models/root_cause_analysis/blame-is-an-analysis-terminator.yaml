@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.root_cause_analysis.blame_is_an_analysis_terminator
+  name: Blame is an analysis terminator
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Blame is not a wrong answer so much as a stopping condition disguised as an answer.
+
+
+    It closes the investigation while satisfying everyone''s need for the story to have finished, and
+    it makes the next investigation harder because the people who saw what happened now have a reason
+    not to say so.'
+dimensions:
+- name: Blame is an analysis terminator
+  asks: Blame is not a wrong answer so much as a stopping condition disguised as an answer.
+how_to_apply:
+- Blame is not a wrong answer so much as a stopping condition disguised as an answer.
+- It closes the investigation while satisfying everyone's need for the story to have finished, and it
+  makes the next investigation harder because the people who saw what happened now have a reason not
+  to say so.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

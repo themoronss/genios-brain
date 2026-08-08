@@ -1,0 +1,42 @@
+# In-House — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.in_house
+  name: In-House
+  kind: model
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A permanent internal team administering its own organisation. The default: context is deep,
+  procedure is often tacit, and capacity is the binding constraint.
+
+characteristics:
+  typical_cycle_days: 2
+  requester: "colleagues, by name and by favour"
+  committee_size: "1-2 approvers"
+  decision_style: "relationship-led, judgement applied case by case"
+  volume_shape: "lumpy and interrupt-driven"
+  staffing_model: "generalists who each hold several capabilities"
+  coverage: "office hours, single time zone"
+  automation_level: "low — most steps are manual and undocumented"
+  primary_channels: [email, in_person, chat]
+
+capabilities:
+  emphasises:
+    - admin.executive_support.gatekeeping
+    - admin.executive_support.delegation_and_task_routing
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

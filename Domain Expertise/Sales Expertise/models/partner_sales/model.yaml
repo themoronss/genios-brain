@@ -1,0 +1,34 @@
+# Partner Sales — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.partner_sales
+  name: Partner Sales
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Co-selling with an aligned organisation into a shared customer. Two vendors, one buyer, and
+  an attribution problem that outlasts the deal.
+
+characteristics:
+  buyer: "a shared end customer, reached jointly"
+
+capabilities:
+  emphasises:
+    - sales.sales_management.relationship_management
+    - sales.qualification.stakeholder_mapping
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

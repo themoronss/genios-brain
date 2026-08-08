@@ -1,0 +1,1552 @@
+identity:
+  id: admin.obj.event_coordination.event
+  scope: capability
+  name: Event
+  domain: admin
+  subdomain: travel_and_events
+  owner_capability: admin.travel_and_events.event_coordination
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Offsite
+    - Conference
+    - Company Gathering
+    - Function
+    - Hosted Event
+
+purpose:
+  statement: >
+    A gathering the organisation is putting on, and the stack of commitments underneath it: a venue
+    contract with an attrition clause, a supplier set with staged cancellation penalties, a deposit
+    schedule, a final-numbers deadline that sets the bill, an attendee list that is personal data,
+    and a set of safety and licensing obligations that attach the moment people walk in. Events are
+    the most contractual thing an administrative function buys and the least contractually managed,
+    because everybody involved is thinking about the day rather than about the terms that were
+    signed nine months before it.
+  discriminator: >
+    The CONTRACTUAL COMMITMENT, not the gathering. If the event were cancelled this afternoon, what
+    would the organisation still owe? That figure — deposits, attrition, staged cancellation, the
+    signed room block — is the object. The agenda, the run sheet and the guest list are
+    implementations that can be rewritten to the last hour without changing what is owed.
+  answers:
+    - What have we committed to, to whom, and what does cancelling cost today?
+    - How many people are we contractually obliged to pay for, regardless of how many come?
+    - When is the final-numbers deadline, and what happens on the far side of it?
+    - Are we licensed, insured, assessed and accessible for what we are about to do?
+    - Who is coming, what do we hold about them, and how long may we hold it?
+  not:
+    - >
+      NOT a meeting. `admin.obj.core.meeting` is a coordination artefact with attendees and a record.
+      An event is a purchase with a contract and a cancellation ladder. The two share a date and
+      almost nothing else, and treating an offsite as a large meeting is how a five-figure commitment
+      gets made without anybody applying procurement to it.
+    - >
+      NOT a trip. `admin.obj.travel_booking.trip` is one person's journey to something. Many trips
+      may attach to one event, and the event's economics are entirely separate from any of them.
+    - >
+      NOT a project. It has a fixed, immovable date and a contractual tail rather than a scope and a
+      backlog. The date does not slip, which inverts almost every planning instinct people bring to it.
+    - >
+      NOT the venue contract. `admin.obj.core.contract` is one instrument among several. The event is
+      the thing that binds the venue, the caterer, the AV supplier, the insurance and the licences
+      into one commitment with one cancellation position.
+
+attributes:
+
+  - name: definition
+    purpose: What is being held, why, and at what scale.
+    type: composite
+    contains: [event_type, business_purpose, audience, expected_attendees, confirmed_attendees,
+               contracted_minimum, format]
+
+  - name: schedule
+    purpose: The dates, and the ones that cannot move.
+    type: composite
+    contains: [start_at, end_at, duration_days, final_numbers_due_at, load_in_at,
+               meeting_ref, date_is_fixed]
+
+  - name: venue_and_suppliers
+    purpose: Who is providing what, and under which agreement.
+    type: composite
+    contains: [venue_ref, venue_contract_ref, supplier_refs, capacity, capacity_headroom,
+               exclusivity_clause]
+
+  - name: commercial
+    purpose: What it costs and what is already owed.
+    type: composite
+    contains: [budget_line_ref, budget_approved_amount, committed_cost, deposits_paid,
+               attrition_threshold, attrition_exposure, cancellation_stage,
+               cancellation_cost_today, forecast_final_cost, currency]
+
+  - name: obligations
+    purpose: What the organisation must have in place before anybody walks in.
+    type: composite
+    contains: [risk_assessment_done, insurance_confirmed, licences_required, licences_held,
+               accessibility_reviewed, first_aid_arranged, safeguarding_required]
+
+  - name: attendee_data
+    purpose: What is held about the people coming, and for how long.
+    type: composite
+    contains: [attendee_list_held, dietary_data_held, accessibility_data_held,
+               attendee_data_retention_until, photography_consent_basis]
+
+  - name: contingency
+    purpose: What happens when something fails, which on an immovable date is the whole discipline.
+    type: composite
+    contains: [force_majeure_clause, contingency_plan_documented, single_points_of_failure,
+               weather_dependent, backup_supplier_identified]
+
+  - name: closure
+    purpose: The half that happens after everybody has gone home.
+    type: composite
+    contains: [state, actual_attendees, actual_cost, variance_to_budget, reconciled_at,
+               feedback_captured, emissions_kg]
+
+  - name: event_type
+    purpose: The class of gathering, which sets the obligations.
+    type: value
+    data_type: enum
+    allowed_values: [internal_offsite, all_hands, conference, client_hospitality, training,
+                     recruitment_fair, board_or_agm, celebration, external_sponsored, other]
+    required: true
+    description: >
+      `client_hospitality` and `board_or_agm` carry obligations the others do not — anti-bribery
+      thresholds on one, statutory notice and quorum on the other. A single event workflow that
+      ignores type will get both wrong.
+
+  - name: business_purpose
+    purpose: Why this is happening, in the requester's words.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The field that has to survive the question asked six months later when the budget is under
+      pressure. "Team offsite" is a category; "reset the operating model with the whole leadership in
+      one room" is a purpose.
+
+  - name: audience
+    purpose: Who the event is for.
+    type: value
+    data_type: enum
+    allowed_values: [internal, external, mixed, public]
+    default: internal
+    description: >
+      Flips the obligation set. External and public audiences bring licensing, public liability,
+      accessibility duties and consent requirements that an internal gathering does not.
+
+  - name: expected_attendees
+    purpose: The planning number.
+    type: value
+    data_type: integer
+
+  - name: confirmed_attendees
+    purpose: Those who have actually accepted.
+    type: value
+    data_type: integer
+
+  - name: contracted_minimum
+    purpose: The number the organisation is contractually obliged to pay for.
+    type: value
+    data_type: integer
+    description: >
+      The most consequential number on the object and the one least often known by the people making
+      invitation decisions. It is agreed at signature, when the attendee count is a guess, and it is
+      what the final bill is calculated against.
+
+  - name: format
+    purpose: Physical, virtual or both.
+    type: value
+    data_type: enum
+    allowed_values: [in_person, virtual, hybrid]
+    default: in_person
+    description: >
+      Hybrid is not a blend of the two obligation sets; it is the union of them plus an AV
+      dependency, and it is routinely budgeted as if it were the cheaper of the two.
+
+  - name: start_at
+    purpose: When it begins.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [meeting.start_at]
+
+  - name: end_at
+    purpose: When it ends.
+    type: value
+    data_type: timestamp
+
+  - name: duration_days
+    purpose: Length.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [start_at, end_at]
+
+  - name: final_numbers_due_at
+    purpose: The deadline after which the headcount is billable whatever happens.
+    type: value
+    data_type: timestamp
+    description: >
+      Typically several working days before the event and treated as an administrative formality. It
+      is the moment the cost stops being an estimate, and it is missed more often than any other
+      date on this object.
+
+  - name: load_in_at
+    purpose: When access to the space begins.
+    type: value
+    data_type: timestamp
+
+  - name: meeting_ref
+    purpose: The meeting record the event anchors to, where one exists.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.meeting
+    description: >
+      The join that makes an event visible to a system that can otherwise only see calendars. It is
+      also how a postponement becomes detectable rather than being communicated by email.
+
+  - name: date_is_fixed
+    purpose: Whether the date can move at all.
+    type: value
+    data_type: boolean
+    default: true
+    description: >
+      True for almost every event, and the single fact that makes event administration different
+      from project administration. Slippage is not available, so every failure must be absorbed by
+      contingency rather than by time.
+
+  - name: venue_ref
+    purpose: The venue supplier.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.vendor
+
+  - name: venue_contract_ref
+    purpose: The signed agreement with the venue.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.contract
+
+  - name: supplier_refs
+    purpose: Everyone else providing something — catering, AV, transport, production, security.
+    type: reference
+    data_type: list
+    ref: admin.obj.core.vendor
+
+  - name: capacity
+    purpose: The maximum the space may lawfully hold.
+    type: value
+    data_type: integer
+    description: >
+      A licensing and fire-safety limit, not a comfort figure. Exceeding it is an offence in most
+      jurisdictions and invalidates the insurance at the same moment.
+
+  - name: capacity_headroom
+    purpose: Margin between confirmed attendance and lawful capacity.
+    type: derived
+    data_type: integer
+    derived_from: [capacity, confirmed_attendees, expected_attendees]
+
+  - name: exclusivity_clause
+    purpose: Whether the organisation has sole use, and what that obliged it to spend.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: budget_line_ref
+    purpose: What it is charged to.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+
+  - name: budget_approved_amount
+    purpose: The amount authorised.
+    type: value
+    data_type: money
+
+  - name: committed_cost
+    purpose: Total contracted so far, whether invoiced or not.
+    type: value
+    data_type: money
+    description: >
+      Almost all of it is committed at signature, months before any invoice arrives. An event budget
+      that tracks invoices rather than commitments reports near-zero spend right up to the month it
+      reports all of it.
+
+  - name: deposits_paid
+    purpose: What has already left the organisation.
+    type: value
+    data_type: money
+
+  - name: attrition_threshold
+    purpose: The percentage of the contracted block below which penalties apply.
+    type: value
+    data_type: number
+    unit: percent
+    description: >
+      The clause that costs money quietly. Falling below the threshold means paying for rooms and
+      covers nobody used, and it is negotiable at signature and immovable afterwards.
+
+  - name: attrition_exposure
+    purpose: What under-attendance would cost at today's numbers.
+    type: derived
+    data_type: money
+    derived_from: [contracted_minimum, confirmed_attendees, attrition_threshold, committed_cost]
+    description: >
+      The number that should be in front of anyone deciding whether to reduce the invitation list.
+      It usually is not, so lists are cut to save a cost that has already been incurred.
+
+  - name: cancellation_stage
+    purpose: Which rung of the cancellation ladder the event is currently on.
+    type: derived
+    data_type: enum
+    allowed_values: [free, deposit_only, partial, substantial, full]
+    default: free
+    derived_from: [start_at, venue_contract_ref, deposits_paid]
+    description: >
+      Cancellation cost rises in steps, not linearly, and the steps are in the contract. Knowing
+      which rung you are on — and when the next one lands — is the difference between a decision and
+      a discovery.
+
+  - name: cancellation_cost_today
+    purpose: What stopping now would cost.
+    type: derived
+    data_type: money
+    derived_from: [cancellation_stage, committed_cost, deposits_paid, attrition_exposure]
+
+  - name: forecast_final_cost
+    purpose: Expected total at current numbers.
+    type: derived
+    data_type: money
+    derived_from: [committed_cost, confirmed_attendees, contracted_minimum, attrition_exposure]
+
+  - name: currency
+    purpose: Currency of the commitments.
+    type: value
+    data_type: string
+
+  - name: risk_assessment_done
+    purpose: Whether a documented assessment exists.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: insurance_confirmed
+    purpose: Whether cover is in force for this event, this audience and this activity.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Standard cover frequently excludes exactly what makes an event an event — public attendance,
+      alcohol, physical activities, external speakers. The exclusion is discovered at claim.
+
+  - name: licences_required
+    purpose: What permissions the activity needs.
+    type: value
+    data_type: list
+    description: >
+      Alcohol, live or recorded music, food service, temporary structures, late hours. Usually the
+      venue's responsibility and never confirmed to be.
+
+  - name: licences_held
+    purpose: Which of those are actually in place.
+    type: value
+    data_type: list
+
+  - name: accessibility_reviewed
+    purpose: Whether the venue and programme were checked for reasonable adjustments.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      A legal duty in most jurisdictions and an administrative afterthought in most events. It is
+      also unfixable on the day, which is what makes the timing of the check the whole control.
+
+  - name: first_aid_arranged
+    purpose: Whether medical provision is in place proportionate to size and activity.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: safeguarding_required
+    purpose: Whether under-18s or vulnerable adults will attend.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Family days and school-outreach events attract a wholly separate obligation set that no
+      standard event process contains.
+
+  - name: attendee_list_held
+    purpose: Whether personal data on attendees is being held.
+    type: value
+    data_type: boolean
+    default: true
+    sensitivity: confidential
+
+  - name: dietary_data_held
+    purpose: Whether dietary requirements are held.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      Routinely treated as catering logistics. Dietary requirements can reveal religion or health,
+      which makes them special-category personal data under GDPR Article 9 — collected on an open
+      form, emailed to a caterer, and retained forever.
+
+  - name: accessibility_data_held
+    purpose: Whether accessibility requirements are held.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+
+  - name: attendee_data_retention_until
+    purpose: When attendee personal data must be destroyed.
+    type: value
+    data_type: timestamp
+    description: >
+      Almost never set. The list survives in a shared drive and a caterer's inbox indefinitely, which
+      is a retention breach with no incident to make it visible.
+
+  - name: photography_consent_basis
+    purpose: The basis on which photographs or recordings may be used.
+    type: value
+    data_type: enum
+    allowed_values: [explicit_consent, legitimate_interest, not_applicable, unknown]
+    default: unknown
+
+  - name: force_majeure_clause
+    purpose: Whether the contract allocates the risk of an event nobody controls.
+    type: value
+    data_type: boolean
+    description: >
+      Boilerplate until 2020 and a negotiated term since. Its absence means the organisation carries
+      the entire risk of a cancellation neither party caused.
+
+  - name: contingency_plan_documented
+    purpose: Whether failure of a critical supplier has a written answer.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: single_points_of_failure
+    purpose: The dependencies with no alternative.
+    type: value
+    data_type: list
+    description: >
+      On a fixed date, a single point of failure is not a risk to be monitored — it is a decision to
+      accept a specific failure mode, and it should be recorded as one.
+
+  - name: weather_dependent
+    purpose: Whether any element depends on the weather.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: backup_supplier_identified
+    purpose: Whether a substitute exists for the critical supplier.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: state
+    purpose: Where the event is.
+    type: value
+    data_type: enum
+    allowed_values: [draft, pending_approval, approved, contracted, on_hold, in_progress,
+                     completed, cancelled, overdue]
+    default: draft
+
+  - name: actual_attendees
+    purpose: How many actually came.
+    type: value
+    data_type: integer
+
+  - name: actual_cost
+    purpose: Final settled cost.
+    type: value
+    data_type: money
+
+  - name: variance_to_budget
+    purpose: Difference between what was approved and what was spent.
+    type: derived
+    data_type: money
+    derived_from: [budget_approved_amount, actual_cost]
+
+  - name: reconciled_at
+    purpose: When the event was financially closed.
+    type: value
+    data_type: timestamp
+
+  - name: feedback_captured
+    purpose: Whether anybody asked whether it achieved its purpose.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      The step that would make the next one better and the first thing dropped once everybody has
+      gone home.
+
+  - name: emissions_kg
+    purpose: Reportable emissions, including attendee travel.
+    type: derived
+    data_type: number
+    unit: kg_co2e
+    derived_from: [actual_attendees, duration_days, format]
+
+states:
+  initial: draft
+  terminal: [completed, cancelled]
+  values:
+    - name: draft
+      description: Being scoped. The only state in which cancellation is free.
+    - name: pending_approval
+      description: With an approver, while venue availability decays.
+      implies: Delay here costs option value rather than money, and the cost is invisible.
+    - name: approved
+      description: Authorised, not yet contracted. The correct order and the narrow window in which terms can still be negotiated.
+    - name: contracted
+      description: Signed. Deposits due, attrition threshold fixed, cancellation ladder now running.
+      implies: >
+        The organisation owes money whatever happens next, and the amount grows on a schedule nobody
+        is watching.
+    - name: on_hold
+      description: Paused without being cancelled. Rarely free, because the ladder keeps climbing.
+    - name: in_progress
+      description: Load-in has begun or the event is running.
+      implies: Safety, licensing and insurance obligations are live and cannot now be remedied.
+    - name: completed
+      description: Held, settled and reconciled. All three, not just the first.
+    - name: cancelled
+      description: Called off. The cancellation cost crystallises at whatever rung was reached.
+    - name: overdue
+      description: >
+        Past the final-numbers deadline with numbers unconfirmed, past load-in with obligations
+        outstanding, or held and unreconciled.
+      implies: Either the bill is now fixed on a guess, or an obligation is unmet while people are in the room.
+  transitions:
+    - {from: draft, to: pending_approval}
+    - {from: pending_approval, to: approved}
+    - {from: pending_approval, to: cancelled}
+    - {from: approved, to: contracted}
+    - {from: approved, to: cancelled}
+    - {from: contracted, to: on_hold}
+    - {from: contracted, to: in_progress}
+    - {from: contracted, to: cancelled}
+    - {from: contracted, to: overdue}
+    - {from: on_hold, to: contracted}
+    - {from: on_hold, to: cancelled}
+    - {from: overdue, to: in_progress}
+    - {from: in_progress, to: completed}
+    - {from: in_progress, to: overdue}
+    - {from: overdue, to: completed}
+
+relationships:
+
+  - type: requires
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 2400
+    confidence_bp: 8500
+    priority: 1
+    conditions:
+      - {has_obs: contract_requested}
+    evidence: [contract, portal, erp]
+    description: >
+      The venue agreement and every supplier agreement. This is the edge the object exists for —
+      attrition threshold, cancellation ladder, force majeure and final-numbers deadline all live
+      here and nowhere else.
+
+  - type: references
+    target: admin.obj.core.vendor
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 2
+    evidence: [erp, portal]
+    description: >
+      Venue, caterer, AV, transport, production, security. Concentration matters — one supplier
+      providing four of those is a single point of failure with a contract attached.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 3
+    conditions:
+      - {no_obs: budget_freeze}
+    evidence: [erp, portal]
+    description: >
+      Where the committed cost lands. The condition is deliberate: a spend freeze arriving after
+      signature does not release the commitment, and that collision is worth surfacing.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1400
+    confidence_bp: 8000
+    priority: 4
+    conditions:
+      - {path: thread.ball_in_court, op: "=", value: them}
+    evidence: [portal, email]
+    description: >
+      Authorisation, which must precede signature. After signature the approver is being asked to
+      ratify a commitment they cannot decline without cost.
+
+  - type: references
+    target: admin.obj.core.meeting
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 7000
+    priority: 5
+    conditions:
+      - {path: meeting.status, op: "=", value: confirmed}
+    evidence: [calendar]
+    description: >
+      The calendar anchor. It is the only place a postponement currently becomes visible to a system
+      rather than to an inbox.
+
+  - type: governed_by
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 900
+    confidence_bp: 8500
+    priority: 6
+    evidence: [regulator, document]
+    description: Licensing, fire capacity, accessibility duties, safeguarding, food safety.
+
+  - type: produces
+    target: admin.obj.core.invoice
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 7500
+    priority: 7
+    evidence: [erp]
+    description: >
+      Deposits, staged payments and the final settlement. Arriving months apart, which is why event
+      spend looks like nothing and then like everything.
+
+  - type: attaches_to
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 300
+    confidence_bp: 7000
+    priority: 8
+    description: Risk assessment, licences, insurance certificate, floor plan, run sheet.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 7500
+    priority: 9
+    description: Hospitality limits, anti-bribery thresholds, alcohol policy, sustainability standards.
+
+inference_patterns:
+
+  deterministic:
+
+    - id: evt.anchor_meeting_cancelled
+      statement: "The calendar anchor for this event is no longer confirmed."
+      status: executable
+      when:
+        - {path: meeting.status, op: "!=", value: confirmed}
+        - {fn: hours_since, path: meeting.start_at, op: "<=", value: 0}
+      yields: {confidence_bp: 8500, attribute: state, value: overdue}
+      evidence_fields: [meeting.status, meeting.start_at]
+      false_positive: >
+        The anchor was moved rather than cancelled, or the calendar entry was tidied up while the
+        event proceeds. Both need a human, and both are worth interrupting for.
+      note: >
+        The only route by which a postponement currently becomes visible to a system. Somebody
+        cancels a calendar hold; the venue contract, the deposits and the cancellation ladder are all
+        untouched and unmentioned.
+
+    - id: evt.venue_paperwork_in_flight
+      statement: "Contract paperwork has been requested for this event."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 8000, attribute: state, value: approved}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        The moment worth catching, because it is the last one at which attrition threshold, force
+        majeure and the cancellation ladder are still negotiable. After signature they are facts.
+
+    - id: evt.contract_with_legal
+      statement: "The event contract is under legal review."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 7500, attribute: state, value: approved}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Useful mainly for what it implies about time: legal review on an event contract runs against
+        an immovable date and a venue holding an option that expires.
+
+    - id: evt.spend_freeze_meets_commitment
+      statement: "A spend freeze has been raised while this event is already contracted."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 8500, attribute: state, value: on_hold}
+      evidence_fields: [thread.last_inbound]
+      false_positive: The freeze may be scoped to a category that does not include this event.
+      note: >
+        The collision worth surfacing loudly. A freeze arriving after signature does not release the
+        commitment — cancelling now costs money the freeze was meant to save, and the only useful
+        response is to present the cancellation ladder rather than to stop spending.
+
+  heuristic:
+
+    - id: evt.approval_stalled_while_option_decays
+      statement: "The proposal has sat with the approver well past their normal reply pace."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2, floor: 3}}
+      yields: {confidence_bp: 7500, attribute: state, value: overdue}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      note: >
+        Venues hold space on options that expire. The cost of delay here is not a fee, it is the
+        loss of the venue — which is invisible until it happens and then unrecoverable.
+
+    - id: evt.supplier_commitment_overdue
+      statement: "Something promised for this event was due and has not landed."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 7500, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: Delivered and never closed. Event promises are closed in a run sheet, not as a typed event.
+      note: >
+        On a fixed date a late deliverable is qualitatively different from a late deliverable
+        anywhere else in administration: there is no schedule to absorb it.
+
+    - id: evt.final_numbers_deadline_approaching
+      statement: "The final-numbers deadline is close and attendance is not confirmed."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: state, value: overdue}
+      requires_signals:
+        - {kind: fact_path, name: event.final_numbers_due_at, owner_layer: L1,
+           note: "The single highest-value signal this object generates. It is the moment the bill stops being an estimate, it sits a few working days before the event, and it is treated as an administrative formality by everybody except the venue."}
+        - {kind: fact_path, name: event.confirmed_attendees, owner_layer: L1}
+
+    - id: evt.attrition_exposure_material
+      statement: "Confirmed attendance has fallen below the contracted minimum."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: attrition_exposure, value: null}
+      requires_signals:
+        - {kind: fact_path, name: event.contracted_minimum, owner_layer: L1}
+        - {kind: fact_path, name: event.confirmed_attendees, owner_layer: L1,
+           note: "The pair that makes attrition visible before it is billed. Without them, invitation lists get cut to save costs that were already incurred at signature."}
+
+    - id: evt.cancellation_ladder_step_imminent
+      statement: "The next cancellation penalty band takes effect shortly."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: cancellation_stage, value: partial}
+      requires_signals:
+        - {kind: fact_path, name: contract.cancellation_schedule, owner_layer: L1,
+           note: "Cancellation cost rises in steps written into the contract. A decision made the day before a step is materially cheaper than the same decision the day after, and nothing currently tells anybody a step is coming."}
+        - {kind: fact_path, name: event.start_at, owner_layer: L1}
+
+    - id: evt.licences_not_confirmed
+      statement: "Required licences are not evidenced as load-in approaches."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: licences_held, value: null}
+      requires_signals:
+        - {kind: fact_path, name: event.licences_required, owner_layer: L1}
+        - {kind: obs_kind, name: licence_evidenced, owner_layer: L2,
+           note: "Usually the venue's responsibility and almost never confirmed to be. The assumption is discovered by an inspector, and the liability does not transfer just because the assumption was reasonable."}
+
+    - id: evt.capacity_exceeded
+      statement: "Confirmed attendance has passed the lawful capacity of the space."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: capacity_headroom, value: 0}
+      requires_signals:
+        - {kind: fact_path, name: event.capacity, owner_layer: L1}
+        - {kind: fact_path, name: event.confirmed_attendees, owner_layer: L1,
+           note: "A fire-safety and licensing limit, not a comfort figure. Exceeding it is an offence in most jurisdictions and voids the insurance at the same instant."}
+
+    - id: evt.attendee_data_past_retention
+      statement: "Attendee personal data is still held after the event's retention date."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: attendee_data_retention_until, value: null}
+      requires_signals:
+        - {kind: fact_path, name: event.attendee_data_retention_until, owner_layer: L1}
+        - {kind: obs_kind, name: retention_review_due, owner_layer: L2,
+           note: "Dietary and accessibility requirements are special-category data collected on an open form and emailed to a caterer. The list survives in a shared drive indefinitely, and it is a retention breach with no incident to make it visible."}
+
+    - id: evt.unreconciled_after_event
+      statement: "The event happened and the final settlement has not been closed."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: state, value: overdue}
+      requires_signals:
+        - {kind: fact_path, name: event.end_at, owner_layer: L1}
+        - {kind: obs_kind, name: final_invoice_received, owner_layer: L2,
+           note: "The final bill arrives weeks later and against a headcount fixed at the final-numbers deadline. Nobody who attended is still looking, so the reconciliation is the step most reliably skipped."}
+
+    - id: evt.single_supplier_concentration
+      statement: "One supplier is providing several critical elements of a fixed-date event."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: single_points_of_failure, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.supplier_role_count_per_event, owner_layer: L2,
+           note: "Convenient at booking and a single point of failure on the day. On an immovable date, concentration is a decision to accept a specific failure mode rather than a risk to monitor."}
+
+inputs:
+  - source: contract
+    signal: attrition threshold, cancellation ladder, force majeure, final-numbers deadline, deposits
+    fills: [attrition_threshold, cancellation_stage, force_majeure_clause, final_numbers_due_at,
+            deposits_paid, contracted_minimum]
+    reliability_bp: 10000
+    description: >
+      The authoritative source for everything that costs money, and a PDF in somebody's inbox. The
+      entire commercial half of this object is locked in a document nothing currently reads.
+  - source: erp
+    signal: committed cost, deposits, invoices, budget coding
+    fills: [committed_cost, deposits_paid, actual_cost, budget_line_ref]
+    reliability_bp: 9000
+  - source: portal
+    signal: registrations, confirmations, dietary and accessibility requirements
+    fills: [confirmed_attendees, dietary_data_held, accessibility_data_held, attendee_list_held]
+    reliability_bp: 8500
+  - source: calendar
+    signal: the anchor hold, and whether it still stands
+    path: meeting.status
+    fills: [meeting_ref, start_at, end_at]
+    reliability_bp: 7000
+  - source: document
+    signal: risk assessment, licences, insurance certificate, floor plan
+    fills: [risk_assessment_done, licences_held, insurance_confirmed, capacity]
+    reliability_bp: 9500
+  - source: regulator
+    signal: licensing requirements, capacity limits, accessibility and safeguarding duties
+    fills: [licences_required, capacity, safeguarding_required]
+    reliability_bp: 9500
+  - source: email
+    signal: the approval and supplier threads
+    path: thread.ball_in_court
+    fills: [state]
+    reliability_bp: 5500
+  - source: derived
+    signal: attrition exposure, cancellation cost today, capacity headroom, concentration, emissions
+    fills: [attrition_exposure, cancellation_cost_today, capacity_headroom, emissions_kg,
+            forecast_final_cost]
+    reliability_bp: 6000
+
+outputs:
+  - name: cancellation_position
+    type: string
+    derived_from: [cancellation_stage, cancellation_cost_today, deposits_paid, force_majeure_clause]
+    description: >
+      What stopping costs today and what the next rung costs. The single most decision-relevant
+      output on the object, and the one that exists only in a contract nobody has read since signature.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: attrition_exposure_amount
+    type: number
+    derived_from: [contracted_minimum, confirmed_attendees, attrition_threshold]
+    description: What under-attendance will cost. Belongs in front of anyone editing the invitation list.
+    consumed_by: [L4.reasoning_unit, L5.execution_planning]
+  - name: readiness_bp
+    type: integer
+    derived_from: [risk_assessment_done, insurance_confirmed, licences_held, accessibility_reviewed,
+                   first_aid_arranged]
+    description: Whether the event may lawfully and safely proceed. Unfixable once load-in has begun.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: hard_deadline_set
+    type: list
+    derived_from: [final_numbers_due_at, load_in_at, start_at]
+    description: The dates that do not move, in order. Feeds Layer 5's planning directly.
+    consumed_by: [L5.execution_planning]
+  - name: personal_data_position
+    type: string
+    derived_from: [attendee_list_held, dietary_data_held, accessibility_data_held,
+                   attendee_data_retention_until]
+    description: What is held, on what basis, and until when.
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+  - name: contingency_gaps
+    type: list
+    derived_from: [single_points_of_failure, backup_supplier_identified, contingency_plan_documented,
+                   weather_dependent]
+    consumed_by: [L4.reasoning_unit, L5.execution_planning]
+  - name: cost_variance
+    type: number
+    derived_from: [budget_approved_amount, forecast_final_cost, actual_cost]
+    consumed_by: [L6.learning_unit]
+
+events:
+  - id: evt.proposed
+    name: Event Proposed
+    severity: info
+    payload: [event_type, business_purpose, start_at, expected_attendees, budget_approved_amount]
+  - id: evt.contracted
+    name: Event Contracted
+    severity: critical
+    payload: [venue_contract_ref, contracted_minimum, attrition_threshold, deposits_paid,
+              final_numbers_due_at]
+    invalidates: [cancellation_stage, cancellation_cost_today]
+    description: >
+      The moment everything commercial becomes fixed. Emitted as critical because it is the last
+      point at which any of these terms could have been changed.
+  - id: evt.cancellation_step_reached
+    name: Cancellation Penalty Increased
+    severity: critical
+    payload: [cancellation_stage, cancellation_cost_today, start_at]
+    description: The ladder climbed a rung. Worth an interruption, because the decision is cheaper before it than after.
+  - id: evt.final_numbers_locked
+    name: Final Numbers Locked
+    severity: critical
+    payload: [confirmed_attendees, contracted_minimum, attrition_exposure]
+    invalidates: [forecast_final_cost]
+  - id: evt.anchor_cancelled
+    name: Anchor Meeting Cancelled
+    emitted_when:
+      - {path: meeting.status, op: "!=", value: confirmed}
+    severity: critical
+    payload: [meeting_ref, cancellation_cost_today, start_at]
+  - id: evt.spend_freeze_collision
+    name: Spend Freeze Against Committed Event
+    emitted_when:
+      - {has_obs: budget_freeze}
+    severity: critical
+    payload: [committed_cost, cancellation_cost_today, deposits_paid]
+  - id: evt.obligation_gap
+    name: Obligation Not Evidenced
+    severity: critical
+    payload: [licences_held, insurance_confirmed, risk_assessment_done, capacity_headroom]
+  - id: evt.completed_unreconciled
+    name: Event Held, Not Reconciled
+    severity: notable
+    payload: [end_at, committed_cost, actual_cost]
+
+actions:
+  - id: evt.propose
+    name: Propose the event
+    actor: human
+    cost: trivial
+    reversible: true
+  - id: evt.negotiate_terms
+    name: Negotiate attrition, cancellation and force majeure
+    actor: human
+    cost: moderate
+    reversible: false
+    effect: >
+      The highest-leverage action available on this object and the shortest window. After signature
+      these terms are facts, and every later decision is made inside them.
+  - id: evt.approve
+    name: Approve the event and its budget
+    actor: human
+    cost: trivial
+    reversible: true
+  - id: evt.contract
+    name: Sign the venue and supplier agreements
+    actor: human
+    cost: moderate
+    reversible: false
+    effect: Commits deposits, fixes the contracted minimum and starts the cancellation ladder.
+  - id: evt.confirm_numbers
+    name: Confirm final numbers
+    actor: human
+    cost: trivial
+    reversible: false
+    effect: >
+      Trivial to perform and irreversible in consequence — it sets the bill. The asymmetry is exactly
+      why it is missed.
+  - id: evt.evidence_obligations
+    name: Collect licences, insurance and the risk assessment
+    actor: human
+    cost: moderate
+    reversible: true
+    effect: Must precede load-in. Nothing here can be remedied once people are in the room.
+  - id: evt.review_accessibility
+    name: Review accessibility and arrange adjustments
+    actor: human
+    cost: moderate
+    reversible: true
+    effect: A legal duty, and unfixable on the day, which makes the timing of the review the whole control.
+  - id: evt.reduce_scope
+    name: Reduce scope against the attrition threshold
+    actor: human
+    cost: low
+    reversible: true
+    effect: >
+      Only saves money above the contracted minimum. Below it, cutting the list saves nothing and
+      costs goodwill.
+  - id: evt.cancel
+    name: Cancel the event
+    actor: human
+    cost: high
+    reversible: false
+    effect: Crystallises the cancellation cost at whichever rung has been reached.
+  - id: evt.invoke_force_majeure
+    name: Invoke force majeure
+    actor: human
+    cost: moderate
+    reversible: false
+    effect: Available only where the clause exists and the circumstance fits. Usually neither is checked until it is needed.
+  - id: evt.reconcile
+    name: Reconcile the final settlement
+    actor: human
+    cost: moderate
+    reversible: true
+  - id: evt.purge_attendee_data
+    name: Destroy attendee personal data at the retention date
+    actor: system
+    cost: trivial
+    reversible: false
+    effect: The step nothing triggers, because the list has no owner once the event is over.
+
+preconditions:
+  - id: evt.approval_before_signature
+    statement: The event and its budget are authorised before any agreement is signed.
+    requires: [approval_ref, budget_approved_amount]
+    if_unmet: >
+      Block signature. After signature the approver can only ratify — declining costs the deposit,
+      and everybody in the conversation knows it.
+  - id: evt.terms_reviewed_before_signature
+    statement: Attrition threshold, cancellation ladder and force majeure are read and recorded before signing.
+    requires: [attrition_threshold, cancellation_stage, force_majeure_clause]
+    if_unmet: >
+      Block. These three terms determine every subsequent decision on the object, and the window in
+      which they can be changed closes at signature.
+  - id: evt.capacity_known_before_invitations
+    statement: The lawful capacity of the space is known before invitations are issued.
+    requires: [capacity]
+    if_unmet: Warn hard. Over-invitation against an unknown capacity is discovered at the door.
+  - id: evt.obligations_before_load_in
+    statement: Licences, insurance and the risk assessment are evidenced before load-in begins.
+    requires: [licences_held, insurance_confirmed, risk_assessment_done]
+    if_unmet: >
+      Block load-in. This is the only precondition here whose failure is measured in harm rather
+      than money.
+  - id: evt.retention_set_at_collection
+    statement: A retention date is set at the moment attendee personal data is first collected.
+    requires: [attendee_data_retention_until]
+    if_unmet: >
+      Default to a short period and record the default. An unset retention date means the list lives
+      forever, in a shared drive and a caterer's inbox.
+  - id: evt.accessibility_reviewed_before_venue_signed
+    statement: Accessibility is assessed before the venue is committed to, not after.
+    requires: [accessibility_reviewed]
+    if_unmet: Warn. Adjustments are cheap when choosing a venue and impossible once one is contracted.
+
+constraints:
+  - id: evt.capacity_is_absolute
+    statement: Attendance may not exceed the lawful capacity of the space.
+    hard: true
+    why: A licensing and fire-safety limit. Exceeding it is an offence and voids the insurance simultaneously.
+  - id: evt.no_load_in_without_insurance
+    statement: Load-in may not begin without confirmed cover for this audience and this activity.
+    hard: true
+    why: >
+      Standard policies frequently exclude exactly what makes an event an event — public attendance,
+      alcohol, external speakers, physical activity. The exclusion surfaces at claim.
+  - id: evt.licence_responsibility_is_explicit
+    statement: Whether the venue or the organisation holds each required licence is recorded, not assumed.
+    hard: true
+    why: The assumption is usually reasonable and occasionally wrong, and liability does not transfer with the assumption.
+  - id: evt.special_category_data_minimised
+    statement: Dietary and accessibility data are collected only where needed, shared only with those who must act, and destroyed on schedule.
+    hard: true
+    why: >
+      GDPR Article 9. Dietary requirements can reveal religion or health, and they are routinely
+      handled as catering logistics on an open spreadsheet.
+  - id: evt.hospitality_within_policy
+    statement: Client hospitality must sit within anti-bribery thresholds and be recorded in the hospitality register.
+    hard: true
+    why: An unrecorded entertainment spend above threshold is a compliance failure regardless of intent.
+  - id: evt.safeguarding_where_minors_attend
+    statement: Events attended by under-18s or vulnerable adults require the applicable safeguarding measures.
+    hard: true
+    why: A wholly separate obligation set that no standard event process contains, and family days walk into it.
+  - id: evt.no_cancellation_decision_without_the_ladder
+    statement: A cancellation or postponement decision may not be taken without the current and next-step costs presented.
+    hard: false
+    why: Otherwise the decision is made against the original budget, which stopped being the relevant number at signature.
+
+business_rules:
+  - id: evt.signature_requires_prior_approval
+    statement: No event agreement may be signed before authorisation is recorded.
+    then: block_signature
+    severity: blocking
+  - id: evt.contracted_minimum_bounds_scope_reduction
+    statement: Reducing attendance below the contracted minimum saves nothing and must be flagged as such.
+    then: flag_no_saving
+    severity: warning
+  - id: evt.final_numbers_is_a_hard_deadline
+    statement: The final-numbers deadline is treated as immovable and escalates on approach.
+    then: escalate_on_approach
+    severity: blocking
+  - id: evt.freeze_does_not_release_commitment
+    statement: A spend freeze raised after signature does not void committed cost; the cancellation ladder applies.
+    when: [{has_obs: budget_freeze}]
+    then: present_cancellation_position
+    severity: blocking
+  - id: evt.anchor_cancelled_reopens_decision
+    statement: If the anchor meeting is cancelled, the event returns to a decision with its cancellation position attached.
+    when: [{path: meeting.status, op: "!=", value: confirmed}]
+    then: reopen_decision
+    severity: blocking
+  - id: evt.obligations_gate_load_in
+    statement: Licences, insurance and the risk assessment gate load-in, not the event start.
+    then: block_load_in
+    severity: blocking
+  - id: evt.attendee_data_has_an_end_date
+    statement: Attendee personal data carries a retention date set at collection.
+    then: require_retention_date
+    severity: blocking
+  - id: evt.reconciliation_closes_the_event
+    statement: An event is not complete until the final settlement is reconciled.
+    then: keep_open
+    severity: warning
+
+decision_factors:
+  - name: contractual_exposure
+    weight_bp: 2600
+    direction: decreases
+    description: >
+      What is already owed and what the next rung costs. Ranked first because it is the only factor
+      that changes on a schedule regardless of anybody's decision, and because every other judgement
+      here is made inside it.
+    reads: [committed_cost, deposits_paid, cancellation_stage, cancellation_cost_today, attrition_exposure]
+  - name: legal_and_safety_readiness
+    weight_bp: 2400
+    direction: increases
+    description: >
+      Licences, insurance, capacity, accessibility, safeguarding. Weighted close to exposure because
+      its failure is the only one on this object measured in harm rather than money, and because
+      none of it can be fixed once load-in has begun.
+    reads: [licences_held, insurance_confirmed, risk_assessment_done, capacity_headroom,
+            accessibility_reviewed, safeguarding_required]
+  - name: purpose_integrity
+    weight_bp: 1800
+    direction: increases
+    description: Whether the reason still holds. An event whose anchor has been cancelled has no purpose left, only a bill.
+    reads: [business_purpose, meeting_ref, event_type, audience]
+  - name: attendance_position
+    weight_bp: 1600
+    direction: context
+    description: >
+      Context rather than increases: too few triggers attrition, too many breaches capacity, and the
+      same field points in opposite directions at each end.
+    reads: [confirmed_attendees, contracted_minimum, capacity, capacity_headroom]
+  - name: delivery_risk
+    weight_bp: 1000
+    direction: decreases
+    description: Concentration, contingency and weather dependence, on a date that cannot move.
+    reads: [single_points_of_failure, backup_supplier_identified, contingency_plan_documented, weather_dependent]
+  - name: data_protection_position
+    weight_bp: 600
+    direction: decreases
+    description: What personal data is held, of what class, and whether it has an end date.
+    reads: [dietary_data_held, accessibility_data_held, attendee_data_retention_until, photography_consent_basis]
+
+evidence:
+  - source: contract
+    strength_bp: 10000
+    independent_of: [portal, erp, derived]
+    decays: false
+    description: >
+      The signed agreement. Definitive for every commercial term on this object and, in most
+      organisations, entirely unread between signature and the argument about the final invoice.
+  - source: regulator
+    strength_bp: 9500
+    independent_of: [contract, portal]
+    decays: false
+    description: Licensing requirements, capacity limits, accessibility and safeguarding duties.
+  - source: document
+    strength_bp: 9500
+    independent_of: [portal, erp]
+    decays: false
+    description: Licences, insurance certificate, risk assessment, approved floor plan.
+  - source: erp
+    strength_bp: 9000
+    independent_of: [portal, calendar]
+    decays: false
+    description: Deposits, staged payments and final settlement.
+  - source: signed_form
+    strength_bp: 9000
+    independent_of: [portal]
+    decays: false
+    description: Risk acceptance, hospitality declarations, photography consent.
+  - source: portal
+    strength_bp: 7500
+    independent_of: [erp, calendar]
+    decays: true
+    description: Registrations and requirements. Strong for who said they were coming and silent on who came.
+  - source: calendar
+    strength_bp: 6500
+    independent_of: [erp, contract]
+    decays: true
+    description: >
+      The anchor hold. Weak as a record and uniquely valuable as a trigger, because it is the only
+      place a postponement currently surfaces at all.
+  - source: email
+    strength_bp: 5500
+    independent_of: [portal, erp]
+    decays: true
+    description: Supplier and approval threads. The whole record in a smaller organisation.
+  - source: derived
+    strength_bp: 4500
+    independent_of: []
+    decays: true
+    description: Attrition exposure, cancellation position, headroom, concentration. Corroborating only.
+
+metrics:
+  - name: attrition_cost_incurred
+    unit: currency
+    direction: lower_is_better
+    owner_layer: L6
+    description: Paid for covers and rooms nobody used. Entirely avoidable at signature and entirely unavoidable afterwards.
+    calibrates: [evt.attrition_exposure_material]
+  - name: final_numbers_accuracy
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Confirmed headcount against actual attendance. The number the bill is calculated on.
+    calibrates: [evt.final_numbers_deadline_approaching]
+  - name: approval_before_signature_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    calibrates: [evt.venue_paperwork_in_flight]
+  - name: obligation_evidence_completeness
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Licences, insurance and risk assessment evidenced before load-in.
+    calibrates: [evt.licences_not_confirmed, evt.capacity_exceeded]
+  - name: cost_variance_to_budget
+    unit: percent
+    direction: target_band
+    owner_layer: L6
+  - name: unreconciled_event_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [evt.unreconciled_after_event]
+  - name: attendee_data_purged_on_time
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    calibrates: [evt.attendee_data_past_retention]
+  - name: purpose_evaluated_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Share of events where anybody asked afterwards whether it achieved what it was for.
+
+dependencies:
+  - target: admin.obj.core.contract
+    kind: requires
+    strength: hard
+    description: >
+      Every commercial term on this object lives in the contract. Without it the cancellation
+      position, the attrition threshold and the final-numbers deadline are all unknown.
+  - target: admin.obj.core.vendor
+    kind: requires
+    strength: hard
+    description: Venue and suppliers. Also where concentration risk becomes visible.
+  - target: admin.obj.core.budget_line
+    kind: requires
+    strength: hard
+    description: Committed cost has nowhere to land, and a freeze has nothing to collide with.
+  - target: admin.obj.core.approval
+    kind: requires
+    strength: hard
+    description: Authorisation, which must precede signature to be worth anything.
+  - target: admin.obj.core.compliance_obligation
+    kind: requires
+    strength: hard
+    description: Licensing, capacity, accessibility and safeguarding. The obligations that gate load-in.
+  - target: admin.obj.core.meeting
+    kind: invalidated_by
+    strength: soft
+    description: >
+      If the anchor is cancelled the purpose is void while the commitment is not. Soft because many
+      events have no calendar anchor at all.
+  - target: admin.obj.core.invoice
+    kind: enriches
+    strength: soft
+    description: Deposits, staged payments and the final settlement, arriving months apart.
+  - target: admin.obj.core.document
+    kind: enriches
+    strength: hard
+    description: Risk assessment, licences and insurance certificate. Hard because load-in is gated on them.
+  - target: admin.obj.core.policy
+    kind: enriches
+    strength: soft
+    description: Hospitality limits, anti-bribery thresholds, sustainability standards.
+
+exceptions:
+  - id: evt.force_majeure_cancellation
+    statement: Where the clause exists and the circumstance fits, cancellation costs may be waived or reduced.
+    overrides: [evt.no_cancellation_decision_without_the_ladder]
+    why: >
+      Boilerplate before 2020 and a negotiated term since. Its existence is checked when it is needed
+      rather than when it is signed, which is the wrong way round by several months.
+    frequency: rare
+  - id: evt.crisis_communication_event
+    statement: An event convened in response to an incident may be contracted before full authorisation, ratified within two working days.
+    overrides: [evt.approval_before_signature]
+    why: >
+      A control that cannot be bypassed during a crisis gets bypassed permanently rather than
+      temporarily. The ratification window keeps it an exception.
+    frequency: rare
+  - id: evt.statutory_meeting_must_proceed
+    statement: A board meeting or AGM required by statute proceeds regardless of cost, notice or attendance economics.
+    overrides: [evt.contracted_minimum_bounds_scope_reduction]
+    why: >
+      It is an obligation with quorum and notice rules, not a discretionary gathering. Applying event
+      cost policy to it produces a breach of company law and a trivial saving.
+    frequency: occasional
+  - id: evt.venue_provided_licences
+    statement: Where the venue contractually holds and evidences the licences, the organisation need not obtain them separately.
+    overrides: [evt.licences_not_confirmed]
+    why: >
+      The common and correct arrangement. The exception exists so the reliance is recorded as a
+      contractual term rather than left as an assumption, because the assumption is what fails.
+    frequency: common
+  - id: evt.small_internal_gathering
+    statement: Below a cost and headcount threshold, the full obligation and contracting set is disproportionate.
+    overrides: [evt.terms_reviewed_before_signature]
+    why: >
+      A team lunch is not a conference. Without an explicit threshold the process is either applied
+      to everything and ignored, or applied to nothing and absent when it matters.
+    frequency: common
+
+best_practices:
+  - id: evt.negotiate_the_three_terms
+    statement: Negotiate attrition threshold, cancellation ladder and force majeure explicitly, before anything else in the contract.
+    why: >
+      They determine every subsequent decision and are the only terms that can still be changed. Rate
+      per head is what gets negotiated and it matters least, because it applies to a number that is
+      already fixed by the minimum.
+  - id: evt.know_the_minimum_before_editing_the_list
+    statement: Put the contracted minimum in front of anyone deciding who to invite.
+    why: >
+      Below the minimum, cutting the list saves nothing and costs goodwill. It is the commonest
+      false economy in event administration and it is a single number away from being avoided.
+  - id: evt.diarise_the_ladder
+    statement: Put every cancellation step into the calendar at signature, with its cost.
+    why: >
+      Decisions are cheaper the day before a step than the day after, and the steps are known nine
+      months in advance. Nothing else on this object offers that much certainty that far ahead.
+  - id: evt.resolve_obligations_before_load_in
+    statement: Treat load-in, not the event start, as the deadline for licences, insurance and the risk assessment.
+    why: >
+      Once construction begins the liability is live and nothing can be remedied. The gap between
+      load-in and start is where most organisations think they still have time.
+  - id: evt.assess_accessibility_at_venue_selection
+    statement: Review accessibility while choosing the venue, not after committing to one.
+    why: >
+      Adjustments are free at selection and impossible after signature. It is a legal duty either
+      way, and only the timing determines whether it can be met.
+  - id: evt.set_the_retention_date_on_the_form
+    statement: Set the destruction date for attendee data at the moment the form is created.
+    why: >
+      After the event the list has no owner, so nothing triggers a purge. The only moment anybody is
+      thinking about the data is when they are asking for it.
+  - id: evt.name_the_single_points_of_failure
+    statement: List the dependencies with no alternative, and record accepting them as a decision.
+    why: >
+      On a fixed date a single point of failure cannot be absorbed by schedule. Naming it converts a
+      hidden risk into an accepted one, which is the only honest position available.
+  - id: evt.close_the_loop_on_purpose
+    statement: Ask afterwards whether the event achieved what it was for, and keep the answer with the cost.
+    why: >
+      Otherwise the same event recurs annually on momentum. Purpose and cost held together is the
+      only thing that makes the next decision better than the last one.
+
+anti_patterns:
+  - id: evt.event_run_as_a_big_meeting
+    statement: Treating an offsite as a large meeting rather than as a procurement with a contract.
+    why_it_happens: >
+      It starts in a calendar and involves colleagues, so it feels like coordination. The five-figure
+      commitment appears halfway through and nobody re-classifies the work.
+    cost: >
+      No contract review, no attrition awareness, no cancellation ladder, and an approval that
+      arrives after signature. Every commercial protection is skipped because nobody realised
+      procurement had begun.
+    instead: >
+      Trigger the contracting path on committed value, not on the word "event", and require the three
+      key terms to be recorded before signature.
+    detectable_by: [approval_before_signature_rate, attrition_cost_incurred]
+  - id: evt.list_cut_below_the_minimum
+    statement: Reducing the invitation list to save money after the contracted minimum has been signed.
+    why_it_happens: >
+      Budget pressure arrives late, the headcount looks like the variable cost, and the minimum is
+      buried in a contract the person cutting the list has never seen.
+    cost: >
+      Zero saving and real damage — people are disinvited, the organisation pays for their covers
+      anyway, and the goodwill loss is permanent while the cost saving was imaginary.
+    instead: Surface the contracted minimum on the invitation screen. One number, one place, at the moment of the decision.
+    detectable_by: [attrition_cost_incurred, evt.attrition_exposure_material]
+  - id: evt.final_numbers_as_a_formality
+    statement: Treating the final-numbers deadline as an administrative confirmation rather than as the moment the bill is set.
+    why_it_happens: >
+      It arrives during the busiest week, it is phrased by the venue as a courtesy request, and its
+      consequence is entirely invisible until the invoice.
+    cost: >
+      The headcount is guessed high to be safe, and the organisation pays for the difference. It is
+      the single most reliable overspend in event administration.
+    instead: >
+      Escalate on approach with the attrition exposure attached, and treat missing it as a breach
+      rather than as lateness.
+    detectable_by: [final_numbers_accuracy, evt.final_numbers_deadline_approaching]
+  - id: evt.licences_assumed_to_be_the_venues
+    statement: Assuming the venue holds every required licence because it usually does.
+    why_it_happens: >
+      It is a reasonable assumption, it is true most of the time, and asking feels like questioning a
+      professional venue's competence.
+    cost: >
+      An unlicensed activity is an offence and voids the insurance. Liability does not transfer just
+      because the assumption was reasonable, and the discovery is made by an inspector.
+    instead: Record licence responsibility as a contractual term per licence, with evidence attached before load-in.
+    detectable_by: [obligation_evidence_completeness, evt.licences_not_confirmed]
+  - id: evt.dietary_data_as_catering_logistics
+    statement: Collecting dietary and accessibility requirements on an open form and emailing the spreadsheet to a caterer.
+    why_it_happens: >
+      It is the fastest way to get the caterer what they need, and nobody thinks of a food preference
+      as health or religious data.
+    cost: >
+      Special-category personal data under Article 9, shared with a third party without a basis,
+      retained indefinitely by both parties. It is a breach with no incident to make it visible,
+      which is why it persists.
+    instead: >
+      Collect only what the caterer must act on, share aggregate counts rather than named lists where
+      possible, and set the destruction date on the form itself.
+    detectable_by: [attendee_data_purged_on_time, evt.attendee_data_past_retention]
+  - id: evt.annual_event_on_momentum
+    statement: Repeating an event every year because it happened last year.
+    why_it_happens: >
+      Nobody evaluated it, the venue offers a rebooking discount, and cancelling something people
+      enjoyed requires an argument nobody wants to have.
+    cost: >
+      A recurring commitment with no live purpose, defended by tradition rather than by value, and
+      re-signed each year at a moment when questioning it would look like a cut.
+    instead: >
+      Capture purpose and outcome together at reconciliation, and require the purpose to be restated
+      before the rebooking option is taken.
+    detectable_by: [purpose_evaluated_rate]
+  - id: evt.freeze_applied_to_committed_spend
+    statement: Responding to a spend freeze by cancelling an already-contracted event.
+    why_it_happens: >
+      A freeze is communicated as a blanket instruction, and cancelling looks like immediate,
+      demonstrable compliance.
+    cost: >
+      Cancellation at a late rung can cost more than proceeding. The organisation pays a penalty to
+      save money it had already spent, and reports it as a saving.
+    instead: >
+      Present the cancellation position against the remaining spend and let the decision be made on
+      the difference. A freeze applies to what is not yet committed.
+    detectable_by: [evt.spend_freeze_meets_commitment]
+
+examples:
+  - label: Two-day leadership offsite for forty, booked nine months ahead
+    kind: typical
+    note: Room block with a contracted minimum of thirty-five, staged cancellation, final numbers due five working days out.
+  - label: Attendance drops to twenty-eight after a reorganisation
+    kind: typical
+    note: >
+      Seven no-shows below the minimum are billed in full. The list was cut in good faith to save
+      money that had been committed at signature.
+  - label: Spend freeze announced two months before a contracted offsite
+    kind: edge
+    note: >
+      Cancelling costs more than proceeding at that rung. Detectable today via the budget_freeze
+      observation, and the correct response is to present the ladder rather than to stop.
+  - label: Family open day with children attending
+    kind: misclassification
+    note: >
+      Processed as an internal event. Safeguarding, first aid ratios and photography consent all
+      apply and none is in the standard workflow.
+  - label: Hybrid all-hands budgeted as an in-person event with a webcast
+    kind: misclassification
+    note: >
+      The obligation and cost sets are the union of both formats plus an AV dependency, not the
+      cheaper of the two.
+  - label: Anchor meeting cancelled six weeks out, venue contract untouched
+    kind: edge
+    note: >
+      Purpose gone, commitment live. Detectable today through meeting.status, and the only current
+      route to catching it.
+  - label: Statutory AGM
+    kind: counterexample
+    note: >
+      Quorum and notice are set by company law. Cost policy does not apply and applying it produces a
+      breach for a trivial saving.
+  - label: Attendee list with dietary requirements, three years old, still in a shared drive
+    kind: edge
+    note: >
+      Special-category data past any defensible retention, held by both the organisation and the
+      caterer, with nothing to trigger a purge.
+
+references:
+  - title: ISO 20121:2024 — Event sustainability management systems
+    kind: standard
+    note: The reference framework for planning, supply chain and legacy in event management.
+  - title: Attrition and cancellation clauses in venue contracting
+    kind: practitioner
+    note: >
+      The commercial mechanics this object is built around — contracted minimum, attrition threshold
+      and the staged cancellation ladder — and the terms that matter far more than rate per head.
+  - title: Force majeure in event contracts, post-2020 practice
+    kind: practitioner
+    note: Boilerplate before, negotiated term since. Its existence should be checked at signature and is checked at cancellation.
+  - title: GDPR Articles 5, 9 and 13 — minimisation, special category data, and information at collection
+    kind: standard
+    note: >
+      Why dietary and accessibility requirements are not catering logistics, and why a retention date
+      belongs on the registration form.
+  - title: Equality Act reasonable adjustments in event provision
+    kind: standard
+    note: The duty behind accessibility_reviewed, and why the timing of the review is the whole control.
+  - title: Licensing and fire-safety capacity requirements for public assembly
+    kind: standard
+    note: The basis for `capacity` as a legal limit rather than a comfort figure, and for its interaction with insurance.
+  - title: Anti-bribery hospitality thresholds and registers
+    kind: standard
+    note: Why client_hospitality is a distinct event_type with an obligation the other types do not carry.
+  - title: GHG Protocol Scope 3 — business travel and employee commuting
+    kind: standard
+    note: Where event emissions are reported, and why attendee travel dominates the figure for an in-person gathering.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Six of fifteen patterns are executable today, which is the highest ratio in the Admin brain — not
+    because events are well served by the substrate, but because they happen to sit on top of four
+    live observation kinds (contract_requested, legal_review, budget_freeze) and a calendar anchor.
+    evt.spend_freeze_meets_commitment is the standout: it catches a genuine, expensive collision
+    between a freeze and an already-committed cost, and it works today. The ranked Layer 1/2 ask is:
+    (1) event.final_numbers_due_at with event.confirmed_attendees, the moment the bill stops being an
+    estimate; (2) event.contracted_minimum, without which invitation lists get cut to save costs that
+    were already incurred; (3) contract.cancellation_schedule, so a decision can be made the day
+    before a step rather than the day after — shared with admin.obj.core.contract; (4) event.capacity,
+    a legal limit currently held only in a floor plan; (5) event.attendee_data_retention_until, the
+    only thing that would ever trigger a purge of special-category data nobody owns. Scoped to
+    event_coordination deliberately: the attrition and cancellation mechanics are meaningless outside
+    it, the person-level journey belongs to admin.obj.travel_booking.trip, and the coordination
+    artefact belongs to admin.obj.core.meeting.

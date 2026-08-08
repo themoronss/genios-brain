@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.finance_administration.receivables_follow_up
+  name: Receivables Follow-up
+  domain: admin
+  subdomain: finance_administration
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Chasing money owed to the organisation with a documented, escalating and unembarrassed
+  sequence. Collection is a relationship activity administered as a process: the record of
+  what was promised and when is what turns a polite reminder into a credible one.
+
+question: "Who owes us, how overdue are they, and what has been said about it?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

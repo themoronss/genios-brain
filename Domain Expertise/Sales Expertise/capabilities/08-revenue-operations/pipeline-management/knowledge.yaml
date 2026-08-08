@@ -1,0 +1,31 @@
+# Knowledge manifest for sales.revenue_operations.pipeline_management — REFERENCES ONLY, the sibling of objects.yaml.
+#
+# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
+#
+#   core   -> <kind>/core/             referenced by more than one capability
+#   scoped -> <kind>/pipeline-management/    referenced by this capability alone
+#
+# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
+# four capabilities must be core, or it becomes four copies that drift.
+
+capability: sales.revenue_operations.pipeline_management
+
+playbooks:
+  core: []
+  scoped: []
+
+heuristics:
+  core: []
+  scoped: []
+
+mental_models:
+  core: []
+  scoped: []
+
+rules:
+  core: []
+  scoped: []
+
+decision_frameworks:
+  core: []
+  scoped: []

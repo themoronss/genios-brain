@@ -1,0 +1,105 @@
+# B2B healthcare support — vertical branch under customer_support.model.b2b.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2b.healthcare
+  name: B2B Healthcare Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2b
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting clinical and care-delivery organisations — hospital IT, clinical software, medical
+  device and health data platforms. The defining fact is that a ticket can sit upstream of
+  patient harm, and that changes three things at once.
+  Severity stops being a function of how many users are affected and becomes a function of
+  clinical risk. One clinician unable to see one allergy record outranks an outage affecting a
+  thousand people in a back-office module, and any triage model trained on user counts will get
+  that inversion wrong every time.
+  Diagnosis runs without the data. Patient information cannot travel into a ticket, a log
+  attachment or a screen share, so the reproduction discipline has to be built from de-identified
+  cases and record identifiers rather than from what the customer can see on their screen. The
+  ordinary "send me the failing record" reflex is not merely discouraged here; it creates a
+  breach out of a support gesture.
+  The fix does not arrive when we ship it. Validated environments, change-control boards and
+  release windows mean a hotfix can exist for months before the customer runs it, so the
+  workaround is not a stopgap — it is the thing the clinician will actually use, and it has to be
+  safe enough to be documented as clinical practice.
+  The error carried in from B2B SaaS is pacing the customer against our release calendar. The
+  error carried in from any consumer vertical is optimising for speed of response, when what a
+  clinical customer needs is an answer that is correct and traceable, delivered inside their
+  change process.
+
+characteristics:
+  requester: "a hospital IT analyst or clinical systems administrator; the affected user is a clinician who is mid-shift and will never open a ticket"
+  typical_resolution_hours: 48
+  volume_shape: "steady and shift-shaped, with concentrated spikes at go-live, upgrade and integration-rollover events that are scheduled months ahead"
+  staffing_model: "tiered with clinical-safety review on defect classification, plus a named implementation contact per site"
+  coverage: "24x7 for anything touching live clinical workflow, business hours for the rest"
+  automation_level: "low — deflection is limited by data restrictions and by a user population that cannot experiment on a live system"
+  notes: >
+    typical_resolution_hours measures time to a safe answer, not time to installed code. The gap
+    between those two is the honest description of this vertical and every metric that hides it
+    is flattering.
+
+capabilities:
+  emphasises:
+    # Clinical risk is the severity axis, and holding severity apart from priority is the whole
+    # job here rather than a nicety.
+    - customer_support.intake_and_triage.priority_and_severity
+    # Reproduction without the data is a genuine craft and the constraint that shapes the queue.
+    - customer_support.diagnosis_and_resolution.issue_reproduction
+    - customer_support.diagnosis_and_resolution.root_cause_analysis
+    # The workaround is the deliverable, because the fix is months from the ward.
+    - customer_support.diagnosis_and_resolution.workaround_management
+    - customer_support.escalation_and_incident.engineering_handoff
+    # A safety-adjacent incident produces obligations that outlive the incident.
+    - customer_support.escalation_and_incident.incident_management
+    - customer_support.escalation_and_incident.postmortem
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [severity, priority, product_area_ref]
+      note: >
+        Severity and priority are both mandatory and both must be set explicitly, because this
+        is the vertical where they invert most often and most expensively. A system that defaults
+        one from the other has silently decided that clinical risk equals user count.
+    - object: customer_support.obj.core.incident
+      require_properties: [is_customer_visible, severity, postmortem_required]
+      note: >
+        Anything that reached a clinical workflow needs a postmortem regardless of how quickly it
+        was mitigated, because the artefact required afterwards is an assessment of whether harm
+        was possible — not a description of the outage. Deciding that at the end, when the
+        pressure is off and the logs have rotated, is how it stops happening.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [audience, verified_against_version]
+      note: >
+        Audience is load-bearing because the same procedure written for an IT administrator and
+        for a clinician are different documents with different risks. A downtime workaround
+        written in admin language and handed to a nurse at 3am is a safety problem wearing a
+        documentation problem's clothes.
+    - object: customer_support.obj.core.escalation
+      require_properties: [severity_assessed, receiving_owner_ref]
+      note: >
+        The assessed severity, not the perceived one, is what routes here — and it must be
+        recorded separately from what the customer claimed, because the two disagreeing is itself
+        the signal that a clinical-safety review is owed.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Named regulatory regimes are deliberately absent — clinical safety and privacy obligations
+    differ by country and by whether the product is a regulated device. What is portable is the
+    structure: risk-based severity, diagnosis without patient data, and a fix the customer
+    installs on their calendar rather than ours.

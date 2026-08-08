@@ -1,0 +1,632 @@
+# SCOPED to sales.market_and_targeting.market_research.
+#
+# This is the unit that expires. A Market Map is an assembly of these; the map is what gets
+# presented and the finding is what gets checked. Separating them is the whole mechanism by
+# which a map can rot in one place without being wrong everywhere.
+
+identity:
+  id: sales.obj.market_research.market_finding
+  scope: capability
+  name: Market Finding
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.market_research
+  version: 1.0.0
+  status: draft
+  aliases: ["Research Finding", "Market Claim", "Evidence Item"]
+purpose:
+  statement: >
+    A single dated, sourced, falsifiable claim about a market — who holds the budget, what the
+    segment already pays, what triggers a purchase — held together with the evidence behind it,
+    the sample it rests on, the observation that would overturn it, and the date it stops being
+    trustworthy. The discriminator against an insight, which is what it is most often confused
+    with: an insight is a claim someone believes and can restate; a finding names its source,
+    its sample and its falsifier, and can therefore be wrong out loud. If nothing could
+    contradict it, it is not a finding however well phrased.
+attributes:
+  - name: claim
+    purpose: What is being asserted, about which population.
+    type: composite
+    contains:
+      - claim_text
+      - claim_type
+      - subject_segment
+      - assessed_confidence_bp
+  - name: provenance
+    purpose: Where it came from and how independent that source is of us.
+    type: composite
+    contains:
+      - source_type
+      - source_independence
+      - sample_size
+      - sample_includes_non_buyers
+      - collected_at
+      - collector
+  - name: falsification
+    purpose: The half that separates research from advocacy.
+    type: composite
+    contains:
+      - falsifier
+      - contradicting_observations
+      - contradiction_count
+      - field_corroborations
+      - status
+  - name: shelf_life
+    purpose: When it stops being true, and what replaced it.
+    type: composite
+    contains:
+      - decay_rate
+      - expires_at
+      - superseded_by
+      - last_field_contact
+  - name: use
+    purpose: What rests on it, which is what decides whether re-checking is worth the time.
+    type: composite
+    contains:
+      - load_bearing
+      - attaches_to_map
+  - name: claim_text
+    purpose: One sentence, stated so that it could be false. "Operations teams in this segment buy
+      from a departmental budget without procurement" is a finding. "There is strong interest in
+      efficiency" is not, because no observation could contradict it.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      One sentence, stated so that it could be false. "Operations teams in this segment buy
+      from a departmental budget without procurement" is a finding. "There is strong interest
+      in efficiency" is not, because no observation could contradict it.
+  - name: claim_type
+    purpose: Also the decay class. Pricing and incumbent claims rot within quarters; a
+      segment_definition or purchase_trigger claim holds for years. Applying one shelf life to all of
+      them is why maps go quietly wrong rather than visibly stale.
+    type: value
+    data_type: enum
+    allowed_values: [segment_definition, budget_owner, incumbent, pricing, willingness_to_pay,
+        buying_process, cycle_length, purchase_trigger, disqualifier]
+    required: true
+    description: >
+      Also the decay class. Pricing and incumbent claims rot within quarters; a
+      segment_definition or purchase_trigger claim holds for years. Applying one shelf life to
+      all of them is why maps go quietly wrong rather than visibly stale.
+  - name: subject_segment
+    purpose: Which population this is about. A claim without a stated population is about everyone and
+      therefore about nobody.
+    type: value
+    data_type: string
+    description: Which population this is about. A claim without a stated population is about everyone
+      and therefore about nobody.
+  - name: assessed_confidence_bp
+    purpose: How strongly this is held, 0-10000. Deterministic from source independence, sample
+      breadth and freshness — never an opinion typed into a field.
+    type: value
+    data_type: integer
+    description: How strongly this is held, 0-10000. Deterministic from source independence, sample
+      breadth and freshness — never an opinion typed into a field.
+  - name: source_type
+    purpose: The source_type of this object.
+    type: value
+    data_type: enum
+    allowed_values: [switch_interview, win_loss_interview, field_observation, closed_deal_history,
+        vendor_pricing_page, public_document, analyst_report, third_party_data, internal_belief]
+  - name: source_independence
+    purpose: 'The most load-bearing field on this object. `our_own_funnel` is the most common value and
+      the least useful one: research sampled from the people who already replied to us confirms the motion
+      we already run, which is precisely what the research was meant to test.'
+    type: value
+    data_type: enum
+    allowed_values: [independent, adjacent, self_reported, our_own_funnel, unknown]
+    required: true
+    description: >
+      The most load-bearing field on this object. `our_own_funnel` is the most common value and
+      the least useful one: research sampled from the people who already replied to us confirms
+      the motion we already run, which is precisely what the research was meant to test.
+  - name: sample_size
+    purpose: Distinct accounts or buyers the claim rests on. One is a story. It may still be the best
+      story available, and should be labelled as one.
+    type: value
+    data_type: integer
+    description: Distinct accounts or buyers the claim rests on. One is a story. It may still be the
+      best story available, and should be labelled as one.
+  - name: sample_includes_non_buyers
+    purpose: Whether losses and never-engaged accounts are in the sample. A sample of customers cannot
+      see why a market says no, and the reasons a market says no are the operationally useful half of
+      any map.
+    type: value
+    data_type: boolean
+    description: >
+      Whether losses and never-engaged accounts are in the sample. A sample of customers cannot
+      see why a market says no, and the reasons a market says no are the operationally useful
+      half of any map.
+  - name: collected_at
+    purpose: The collected_at of this object.
+    type: value
+    data_type: timestamp
+    required: true
+  - name: collector
+    purpose: The collector of this object.
+    type: value
+    data_type: string
+  - name: falsifier
+    purpose: The specific observation that would overturn this claim, written down before going to
+      look for it. Research designed to confirm always confirms; naming the falsifier in advance is
+      the only cheap defence against that, and it makes the later disagreement about evidence rather
+      than about seniority.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The specific observation that would overturn this claim, written down before going to
+      look for it. Research designed to confirm always confirms; naming the falsifier in
+      advance is the only cheap defence against that, and it makes the later disagreement about
+      evidence rather than about seniority.
+  - name: contradicting_observations
+    purpose: Field observations recorded against this claim, kept rather than resolved. The trail is
+      what makes the next map better.
+    type: value
+    data_type: list
+    description: Field observations recorded against this claim, kept rather than resolved. The trail
+      is what makes the next map better.
+  - name: contradiction_count
+    purpose: The contradiction_count of this object.
+    type: value
+    data_type: integer
+  - name: field_corroborations
+    purpose: Times a live deal produced evidence consistent with this claim. Weak individually,
+      meaningful in accumulation — which is exactly the accumulation the engine cannot currently
+      perform.
+    type: value
+    data_type: integer
+    description: Times a live deal produced evidence consistent with this claim. Weak individually,
+      meaningful in accumulation — which is exactly the accumulation the engine cannot currently
+      perform.
+  - name: status
+    purpose: The status of this object.
+    type: value
+    data_type: enum
+    allowed_values: [proposed, evidenced, corroborated, contested, contradicted, expired, superseded]
+    required: true
+  - name: decay_rate
+    purpose: Derived from claim_type. Sets expires_at, and therefore sets when the parent map is due
+      for review.
+    type: value
+    data_type: enum
+    allowed_values: [slow, moderate, fast]
+    description: Derived from claim_type. Sets expires_at, and therefore sets when the parent map is
+      due for review.
+  - name: expires_at
+    purpose: After this date the claim reads as unknown, not as true. The distinction is the entire
+      point of dating research.
+    type: value
+    data_type: timestamp
+    description: After this date the claim reads as unknown, not as true. The distinction is the
+      entire point of dating research.
+  - name: superseded_by
+    purpose: Self-referential. A contradicted finding is superseded, never edited in place.
+    type: reference
+    ref: sales.obj.market_research.market_finding
+    data_type: ref
+    description: Self-referential. A contradicted finding is superseded, never edited in place.
+  - name: last_field_contact
+    purpose: Most recent live contact in the market this claim describes. The only substrate timestamp
+      available to this object, and a poor proxy for the claim's own age — it says when we last
+      touched the market, not when we last tested the claim.
+    type: value
+    data_type: timestamp
+    source_paths: [deal.last_inbound]
+    description: >
+      Most recent live contact in the market this claim describes. The only substrate timestamp
+      available to this object, and a poor proxy for the claim's own age — it says when we last
+      touched the market, not when we last tested the claim.
+  - name: load_bearing
+    purpose: Whether the parent map's entry verdict changes if this claim is false. The only findings
+      worth the cost of re-checking, and the only ones whose expiry should block anything.
+    type: value
+    data_type: boolean
+    required: true
+    description: Whether the parent map's entry verdict changes if this claim is false. The only
+      findings worth the cost of re-checking, and the only ones whose expiry should block anything.
+  - name: attaches_to_map
+    purpose: The attaches_to_map of this object.
+    type: reference
+    ref: sales.obj.market_research.market_map
+    data_type: ref
+states:
+  initial: proposed
+  values:
+    - name: proposed
+      description: Asserted, not yet evidenced. Every internal belief starts here and most are never
+        moved.
+    - name: evidenced
+      description: A source exists and a falsifier is written down.
+    - name: corroborated
+      description: Supported by an independent source or repeated field observation. Unreachable from
+        our own funnel alone.
+    - name: contested
+      description: Field evidence points the other way but is not yet decisive. The most informative
+        state and the one people are keenest to leave.
+      entered_when: [has_obs: timeline_slip]
+    - name: contradicted
+      description: The falsifier fired. The claim is false and the map above it needs reconciling.
+      entered_when: [has_obs: closed_lost_mention]
+    - name: expired
+      description: Past expires_at with no re-check. Reads as unknown, never as true.
+    - name: superseded
+      description: Replaced by a newer finding. Retained with its evidence.
+  transitions:
+    - {from: proposed, to: evidenced}
+    - {from: evidenced, to: corroborated}
+    - {from: evidenced, to: contested, when: [has_obs: objection_price, has_obs: discount_pressure]}
+    - {from: corroborated, to: contested, when: [has_obs: timeline_slip]}
+    - {from: contested, to: corroborated}
+    - {from: contested, to: contradicted, when: [has_obs: closed_lost_mention]}
+    - {from: corroborated, to: expired}
+    - {from: contradicted, to: superseded}
+    - {from: expired, to: superseded}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: attaches_to
+    target: sales.obj.market_research.market_map
+    cardinality: one
+    description: A finding with no map is an anecdote in a folder.
+
+  - type: supersedes
+    target: sales.obj.market_research.market_finding
+    cardinality: zero_or_one
+    description: Self-referential. Keeping the superseded version is how the discipline learns what it
+      is systematically wrong about.
+
+  - type: references
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+
+  - type: references
+    target: sales.obj.core.pricing
+    cardinality: zero_or_one
+
+  - type: influences
+    target: sales.obj.core.icp
+    cardinality: zero_or_one
+    description: A corroborated disqualifier finding belongs in the profile's anti-fit half, which is
+      the half most profiles never get.
+
+  - type: gates
+    target: sales.obj.core.lead
+    cardinality: zero_or_many
+    description: >
+      A disqualifier finding is the cheapest thing in the stack — it removes accounts from the
+      list before anyone works them, at no cost and with no conversation.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: mf.budget_exists_in_this_market
+      statement: "A price objection landed in this market — the population has money and is arguing about
+        how much."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+      yields: {confidence_bp: 6500, attribute: null}
+      evidence_fields: [deal.value]
+      note: >
+        Corroborates any claim asserting a funded budget line here. It reads backwards to a
+        naive reader, who files a price objection as bad news: buyers with no money disengage,
+        they do not haggle. The objection is evidence about the market before it is a problem
+        about the price.
+
+    - id: mf.contradicted_by_a_dead_proposal
+      statement: "A proposal landed in this market and produced three weeks of nothing."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {fn: days_since, path: deal.last_inbound, op: ">=", value: 21}
+      yields: {confidence_bp: 6000, attribute: status, value: contested}
+      evidence_fields: [deal.last_inbound, thread.ball_in_court]
+      note: >
+        Contests any claim asserting urgency or a compelling event in this segment. Silence
+        after paper is the market's most reliable verdict on whether the trigger we wrote down
+        was real, and it is far more informative than a polite decline.
+
+    - id: mf.expired_by_calendar
+      statement: "The claim is past its shelf life and reads as unknown until re-checked."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: status, value: expired}
+      requires_signals:
+        - {kind: fact_path, name: research.finding.collected_at, owner_layer: L1, note: "The finding's own\
+            date is the cheapest input imaginable and there is no store for it. Without collected_at nothing
+            can expire, and research that cannot expire is cited indefinitely — the defining failure of the
+            discipline, unenforceable today."}
+
+    - id: mf.superseded_by_a_newer_claim
+      statement: "A newer finding makes the same claim about the same segment with better evidence."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: status, value: superseded}
+      requires_signals:
+        - {kind: fact_path, name: research.finding.collected_at, owner_layer: L1}
+        - {kind: derived, name: derived.claim_key, owner_layer: L2, note: "Requires normalising claim_type\
+            plus subject_segment into a comparable key. Without it, two findings that contradict each other
+            simply coexist in the same map."}
+
+    - id: mf.sample_size_from_corpus
+      statement: "Sample size counted from the interview and win/loss corpus behind the claim."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: sample_size, value: null}
+      requires_signals:
+        - {kind: fact_path, name: research.interview.account_id, owner_layer: L1, note: "No research corpus\
+            is ingested at all. Interviews live in documents and recordings that Layer 1 never links to an
+            account, so the strongest evidence this object can hold is invisible to every pattern above."}
+
+  heuristic:
+
+    - id: mf.incumbent_claim_corroborated
+      statement: "A competitor was named in a live deal here, consistent with a claim that a named vendor
+        holds this market."
+      status: executable
+      when:
+        - {has_obs: competitor}
+      yields: {confidence_bp: 5500, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Deliberately weak. One mention proves presence and says nothing whatever about share;
+        treating accumulated mentions as market position is how a map ends up describing the
+        most talkative vendor rather than the largest one.
+
+    - id: mf.urgency_claim_weakened
+      statement: "A timeline slipped in this market — the compelling event we recorded behaves like a preference."
+      status: executable
+      when:
+        - {has_obs: timeline_slip}
+      yields: {confidence_bp: 6000, attribute: status, value: contested}
+      note: >
+        A slip is the market answering a question we asked in the research. A claim about
+        purchase_trigger that keeps producing slips is not a timing problem in individual deals;
+        it is a wrong finding, and it should be contested at the map rather than chased at the
+        deal.
+
+    - id: mf.price_led_comparison
+      statement: "Discount pressure alongside a named competitor — buyers here are comparing on price."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {has_obs: competitor}
+      yields: {confidence_bp: 6500, attribute: null}
+      evidence_fields: [deal.value]
+      note: >
+        Corroborates a commoditisation claim and contests a differentiation one. The important
+        part is where it should be actioned: this is a market-structure finding and it should
+        update the pricing claim before anyone updates the discount on the deal in front of them.
+
+    - id: mf.own_funnel_bias_detected
+      statement: "Every source behind this claim came from accounts already in our pipeline."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: source_independence, value: our_own_funnel}
+      requires_signals:
+        - {kind: fact_path, name: research.source.account_origin, owner_layer: L1, note: "The most common\
+            defect in market research is entirely invisible to the pipeline. Knowing whether a source was
+            already in our funnel is a one-bit fact and it decides whether a finding can ever be corroborated."}
+
+    - id: mf.corroborated_across_accounts
+      statement: "The same signal appeared across many independent accounts in this segment, not just this
+        one."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: status, value: corroborated}
+      requires_signals:
+        - {kind: fact_path, name: account.segment, owner_layer: L1, note: "A grouping key on the account.\
+            Nothing in the substrate can express 'these accounts belong together'."}
+        - {kind: derived, name: derived.segment_aggregate, owner_layer: L2, note: "THE structural gap. Every\
+            predicate is evaluated against one node and its one-hop neighbours, so every executable pattern
+            above is worth exactly one account of evidence — while the object's whole purpose is to record
+            claims about a population. A segment key plus an aggregate over it converts single-deal corroboration
+            into real corroboration and unblocks most of the blocked half of this capability."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: call_recording, signal: "switch interviews, win/loss and no-decision conversations"}
+  - {source: meeting_transcript, signal: "what buyers say they use today, who signs, what it costs"}
+  - {source: crm, signal: "closed outcomes across won, lost and no-decision"}
+  - {source: email, signal: "competitor mentions, price objections, discount pressure", path: thread.last_inbound}
+  - {source: derived, signal: elapsed silence after a proposal, path: deal.last_inbound}
+  - {source: website, signal: "vendor pricing and packaging pages"}
+  - {source: document, signal: "analyst and third-party category material"}
+  - {source: manual_entry, signal: "internal belief, recorded as a proposed claim rather than as fact"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: assessed_confidence_bp, type: integer, description: "Deterministic from independence, breadth\
+      and freshness. Never a model output.", consumed_by: [L4.reasoning_unit]}
+  - {name: claim_status, type: string, description: "proposed | evidenced | corroborated | contested |\
+      contradicted | expired | superseded.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: falsifier, type: string, description: "What to watch for in the field. Turns a research artefact\
+      into a standing instruction.", consumed_by: [L5.execution_planning]}
+  - {name: recheck_due, type: boolean, description: "Load-bearing and past expiry. The trigger for re-research.",
+      consumed_by: [L4.decision_maker, L6.learning_unit]}
+  - {name: disqualifier_rule, type: string, description: "A corroborated disqualifier finding, expressed\
+      so lead generation can filter on it before anyone works the account.", consumed_by: [
+        L4.decision_maker]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: mf.no_claim_without_falsifier, statement: "A finding without a falsifier cannot leave proposed.",
+      hard: true}
+  - {id: mf.own_funnel_ceiling, statement: "A finding sourced entirely from our own funnel cannot reach\
+      corroborated.", hard: true}
+  - {id: mf.expired_cannot_gate, statement: "An expired finding may not be the sole basis for an entry,\
+      pricing or territory decision.", hard: true}
+  - {id: mf.no_edit_in_place, statement: "A contradicted finding is superseded, never edited.", hard: true}
+  - {id: mf.single_account_ceiling, statement: "A claim evidenced by one account cannot be marked corroborated.",
+      hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: mf.falsifier_is_mandatory
+    statement: A finding may not leave `proposed` without a falsifier recorded. A claim nothing could
+      contradict is an opinion with a citation.
+    severity: blocking
+
+  - id: mf.own_funnel_cannot_corroborate
+    statement: >
+      source_independence = our_own_funnel caps a finding at `evidenced`. It can never reach
+      corroborated on its own evidence, because a sample drawn from people who already replied
+      to us is a measurement of our current motion rather than of the market.
+    severity: blocking
+
+  - id: mf.expiry_is_mandatory
+    statement: Every finding carries expires_at, derived from decay_rate. A finding that cannot expire
+      is cited forever and re-checked never.
+    severity: blocking
+
+  - id: mf.sample_of_one_is_a_story
+    statement: A finding resting on a single account may not be marked corroborated, however vivid the
+      account.
+    severity: warning
+
+  - id: mf.load_bearing_expiry_blocks_the_map
+    statement: An expired load_bearing finding prevents its parent map from remaining `validated`.
+    severity: warning
+
+  - id: mf.contradiction_is_recorded_not_deleted
+    statement: >
+      A contradicted finding is superseded, never overwritten. What was believed and why it was
+      wrong is the only material that improves the next map, and it is always the first thing
+      deleted in a tidy-up.
+    severity: advisory
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: source_independence
+    weight_bp: 2500
+    direction: increases
+    description: Weighted joint-highest because the characteristic defect of market research is not
+      thin evidence, it is evidence drawn entirely from people already talking to us.
+    reads: [source_type, source_independence]
+
+  - name: sample_breadth
+    weight_bp: 2500
+    direction: increases
+    description: Breadth beats depth here. Six shallow conversations spanning won, lost and
+      never-engaged accounts outrank one long conversation with a happy customer.
+    reads: [sample_size, sample_includes_non_buyers]
+
+  - name: freshness
+    weight_bp: 2000
+    direction: context
+    reads: [collected_at, expires_at, decay_rate]
+
+  - name: field_corroboration
+    weight_bp: 1500
+    direction: increases
+    reads: [field_corroborations, last_field_contact]
+
+  - name: contradiction_pressure
+    weight_bp: 1500
+    direction: decreases
+    reads: [contradiction_count, contradicting_observations]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# The executable half here does one job: it uses live-deal traffic as continuous, free
+# corroboration or contradiction of claims already recorded. That is genuinely how a good
+# operator keeps a map alive. What it cannot do is condition on the finding's OWN attributes —
+# claim_type, collected_at, source_independence are object properties and not fact paths, so
+# no predicate can reach them. Layer 4 must filter on those after the fact, and the
+# needs_signal entries below are what would fix it properly.
+evidence:
+  - {source: call_recording, strength_bp: 9000, description: "A switch or loss interview with someone\
+      who completed a transaction. Behaviour already performed, recalled recently. Nothing available here
+      outranks it."}
+  - {source: crm, strength_bp: 7500, description: "Closed outcomes. Strong evidence of what happened,\
+      silent on why, and usually missing no-decision entirely."}
+  - {source: meeting_transcript, strength_bp: 7000, description: "Stated current spend and current process.\
+      Reliable about facts, unreliable about intentions."}
+  - {source: website, strength_bp: 6000, description: "Published vendor pricing. A claim about price rather\
+      than a paid price."}
+  - {source: email, strength_bp: 5000, description: "Live-deal signals. Continuous and free, and worth\
+      one account each."}
+  - {source: document, strength_bp: 3500, description: "Analyst and third-party material. Measures briefing\
+      spend."}
+  - {source: manual_entry, strength_bp: 2500, description: "Internal belief. Legitimate as a proposed\
+      claim, never as evidence for one."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: falsification_rate, unit: percent, description: "Share of load-bearing findings later contradicted.\
+      Zero means nobody is checking, not that the research was right.", owner_layer: L6}
+  - {name: independent_source_share, unit: percent, description: "Findings with an independent source.\
+      The best single measure of whether research is research.", owner_layer: L6}
+  - {name: non_buyer_sample_share, unit: percent, description: "Findings whose sample includes losses\
+      and never-engaged accounts.", owner_layer: L6}
+  - {name: median_finding_age, unit: days, owner_layer: L6}
+  - {name: expired_load_bearing_count, unit: count, description: "Load-bearing claims past expiry still\
+      being cited. The staleness number that actually matters.", owner_layer: L6}
+  - {name: recheck_turnaround, unit: days, description: "Time from expiry to re-check on load-bearing\
+      claims.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: mf.recorded, name: Finding Recorded, payload: [claim_text, claim_type, source_independence]}
+  - {id: mf.corroborated, name: Finding Corroborated, payload: [claim_text, field_corroborations]}
+  - {id: mf.contested, name: Finding Contested, emitted_when: [has_obs: timeline_slip], payload: [
+        claim_text, contradiction_count]}
+  - {id: mf.contradicted, name: Finding Contradicted, emitted_when: [has_obs: closed_lost_mention],
+      payload: [claim_text, falsifier], description: "Raised for a human. Layer 6 may propose a replacement
+      finding; it may never edit one — Atlas Rule 06."}
+  - {id: mf.expired, name: Finding Expired, payload: [claim_text, expires_at, load_bearing]}
+  - {id: mf.map_at_risk, name: Load-Bearing Claim At Risk, payload: [claim_text, attaches_to_map],
+      description: "Fires when a contested or expired finding is one the entry verdict rests on. The only
+      expiry worth interrupting anyone about."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: mf.record_claim, name: Record a claim with its falsifier, actor: human, effect: "Writing the\
+      falsifier first is what stops the fieldwork from confirming what was already believed."}
+  - {id: mf.seek_independent_source, name: Seek an independent source, actor: human, effect: "The only\
+      route out of `evidenced` for anything sampled from our own funnel."}
+  - {id: mf.interview_a_non_buyer, name: Interview a non-buyer, actor: human, effect: "The highest-yield\
+      and least-performed research action. People who did not buy explain the market; people who did explain
+      us."}
+  - {id: mf.recheck, name: Re-check an expired load-bearing claim, actor: human}
+  - {id: mf.supersede, name: Supersede with a newer finding, actor: human, effect: "Never overwrite. The\
+      superseded version and its evidence are what make the next map better."}
+  - {id: mf.propose_refinement, name: Propose a revised claim, actor: system, effect: "A suggestion for\
+      a person. Layer 6 does not edit authored expertise."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Well-formed finding", note: "\"Operations buys this from a departmental budget without procurement\
+      below fifty thousand.\" Source: nine switch interviews, independent, dated. Falsifier: a procurement-led
+      purchase under that figure."}
+  - {label: "The classic misclassification", note: "\"This market really values integration.\" Presented\
+      as a finding, filed as one, cited in the deck. No source, no sample, no observation could contradict
+      it. It is a belief in the shape of a finding, which is why it survives every review."}
+  - {label: "Own-funnel evidence", note: "Twelve interviews, all with accounts already in pipeline. Genuinely\
+      useful about our motion and worthless about the market — capped at evidenced, and usually the whole
+      research programme."}
+  - {label: "Fast-decay claim held slow", note: "An incumbent pricing claim from two years ago, still\
+      load-bearing, incumbent since repriced twice. Correct when written, quietly wrong ever since, and
+      never re-checked because nothing said it should be."}
+  - {label: "Productive contradiction", note: "A trigger claim contested by four slipped timelines in\
+      a quarter. The map was wrong about why this segment buys, and the deals were being coached as if they
+      were execution problems."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Ten patterns, five executable and five blocked. The executable half uses live-deal traffic
+    as free, continuous corroboration and contradiction of recorded claims, which is genuinely
+    how a good operator keeps a map alive — but each one is worth exactly one account of
+    evidence. Two gaps dominate. First and largest: derived.segment_aggregate over an
+    account.segment key, without which no claim about a population can ever be evidenced as
+    one. Second: research.finding.collected_at — the finding's own date, the cheapest input in
+    the file, absent, and therefore nothing here can ever expire.

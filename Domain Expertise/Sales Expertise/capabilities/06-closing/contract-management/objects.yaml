@@ -1,0 +1,23 @@
+# Load-set for sales.closing.contract_management — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/contract-management/    loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.closing.contract_management
+
+core:
+  required:
+    - sales.obj.core.contract
+  optional:
+    - sales.obj.core.account
+    - sales.obj.core.risk
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

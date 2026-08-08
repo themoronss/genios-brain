@@ -1,0 +1,29 @@
+identity:
+  id: sales.mm.lead_qualification.three_independent_gates_money_authority_urgency
+  name: Three independent gates — money, authority, urgency. Failing any one i…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.lead_qualification
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: Three independent gates — money, authority, urgency. Failing any one is fatal; passing
+    two is not two thirds of a deal.
+dimensions:
+- name: Three independent gates — money, authority, urgency. Failing any one i…
+  asks: Three independent gates — money, authority, urgency. Failing any one is fatal; passing two is
+    not two thirds of a deal.
+how_to_apply:
+- Three independent gates — money, authority, urgency. Failing any one is fatal; passing two is not
+  two thirds of a deal.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.qualification.lead_qualification. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

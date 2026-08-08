@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.compliance_and_governance.licence_and_registration
+  name: Licence & Registration
+  domain: admin
+  subdomain: compliance_and_governance
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Maintaining the register of licences, permits, registrations and certifications the
+  organisation trades under, together with their jurisdictions, conditions and renewal
+  windows. A lapsed licence is usually discovered by a counterparty during due diligence, at
+  the worst possible moment.
+
+question: "Which permissions do we hold, where do they apply, and when do they lapse?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

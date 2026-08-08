@@ -1,0 +1,37 @@
+identity:
+  id: sales.mm.market_research.markets_are_behaviours
+  name: A market is a repeated buying behaviour around a shared job. A list of…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "A market is a repeated buying behaviour around a shared job. A list of companies can approximate\
+    \ one and can never define one.\n Every downstream artefact — profile, size, territory, cadence\
+    \ — inherits the unit of analysis chosen here. Choose \"companies matching a filter\" and the whole\
+    \ chain inherits a unit that cannot explain why two identical-looking accounts behave differently.\n"
+dimensions:
+- name: A market is a repeated buying behaviour around a shared job. A list of…
+  asks: 'Every downstream artefact — profile, size, territory, cadence — inherits the unit of analysis
+    chosen here. Choose "companies matching a filter" and the whole chain inherits a unit that cannot
+    explain why two identical-looking accounts behave differently.
+
+    '
+how_to_apply:
+- 'Every downstream artefact — profile, size, territory, cadence — inherits the unit of analysis chosen
+  here. Choose "companies matching a filter" and the whole chain inherits a unit that cannot explain
+  why two identical-looking accounts behave differently.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

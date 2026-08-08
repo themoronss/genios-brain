@@ -1,0 +1,37 @@
+# Product — offering_family branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is type -> family -> canonical.
+
+identity:
+  id: sales.offering.product
+  name: Product
+  kind: offering_family
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Something built once and sold many times. Value is delivered by the artefact itself, so
+  almost none of the revenue depends on work done after signature.
+
+characteristics:
+  delivery: "the artefact, immediately or on provisioning"
+  pricing_shape: "per seat, per unit, or recurring subscription"
+  margin_profile: "high and scale-independent"
+  post_sale_load: "low — onboarding, then self-service"
+
+capabilities:
+  emphasises:
+    - sales.discovery_and_solution.demo
+    - sales.post_sale_and_growth.upsell
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

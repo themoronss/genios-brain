@@ -1,0 +1,39 @@
+# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
+
+identity:
+  id: customer_support.diagnosis_and_resolution.resolution_delivery
+  name: Resolution Delivery
+  domain: customer_support
+  subdomain: diagnosis_and_resolution
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Turning whatever actually made the problem stop into something the customer receives,
+  understands, and can act on — the change, the steps, the caveats, and what to do if it comes
+  back. The characteristic failure is delivering the engineering truth instead of the customer's
+  answer: a merged change is not a resolution until the version carrying it is running in their
+  environment, and "fixed in the next release" delivered to someone who controls their own
+  upgrade schedule is a task disguised as good news. Delivery also decides what gets reused,
+  because the explanation written here is the first draft of the article that stops the next
+  contact, and it is written while the reasoning is still in someone's head.
+
+question: "Has the fix actually reached this customer, in a form they can use and repeat?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
+    handoffs, following the sibling root-cause-analysis/capability.yaml. Write the resolution
+    taxonomy first — code change, configuration change, data repair, workaround, documentation,
+    refund or credit, and "working as designed" — because they differ in who must act next and
+    in whether the issue closes with the ticket, and a system that records them as one thing
+    cannot report either. Keep the boundary with verification_and_closure sharp: delivery ends
+    when the answer has been sent, not when it has been confirmed, and a promoted file that
+    claims the confirmation has swallowed the capability that exists to prevent reopens.

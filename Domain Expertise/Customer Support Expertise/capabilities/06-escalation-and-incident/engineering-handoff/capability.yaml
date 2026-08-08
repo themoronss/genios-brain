@@ -1,0 +1,39 @@
+identity:
+  id: customer_support.escalation_and_incident.engineering_handoff
+  name: Engineering Handoff
+  domain: customer_support
+  subdomain: escalation_and_incident
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Converting a customer's problem into something an engineering team can act on, and holding the
+  customer relationship while they do. The boundary fails because the two sides optimise
+  different things — support wants this customer unblocked today, engineering wants the defect
+  class understood before touching it — and a handoff that does not translate between those gets
+  politely triaged into a backlog and never seen again. A bug report that cannot be reproduced
+  from its own text is a request for engineering to redo the work support already did, and it
+  will be priced accordingly. The customer's ticket does not close when the bug is filed:
+  ownership stays on the support side, because a filed bug with no support owner is how a
+  customer becomes somebody else's forgotten backlog item.
+
+question: "Is this a defect engineering can actually act on, and who still owns the customer while they do?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
+    unreproducible report, closing the ticket on filing, the report that describes the customer's
+    guess at the cause rather than the observed behaviour, and the silent backlog where nobody
+    tells support the fix shipped), playbooks, heuristics with a why on each, mental_models,
+    decision_frameworks, kpis and handoffs, following escalation-management/capability.yaml in
+    this folder. It owns bug-awaiting-engineering.yaml, which binds under
+    pending_l2_situation_types (bug_awaiting_engineering, workaround_only) — write it in the same
+    pass, and note there that workaround_only is the more valuable of the two signals because it
+    marks customers who are technically resolved and actually still broken.

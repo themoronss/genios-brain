@@ -1,0 +1,39 @@
+# Load-set for customer_support.knowledge_and_deflection.self_service_deflection
+# REFERENCES ONLY — never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/self_service_deflection/ loaded by this capability alone (none: everything
+#           deflection reasons about is shared with authoring, gap analysis and AI deflection,
+#           and a private copy would drift within a release)
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.knowledge_and_deflection.self_service_deflection
+
+core:
+  # Only two things are non-negotiable. Intent, because deflection is decided per question and
+  # a blended judgement is worthless — the same programme should deflect a password reset and
+  # refuse to deflect a billing dispute. Knowledge Article, because a deflection decision with
+  # no answer behind it is an obstruction decision.
+  required:
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.intent
+  # Content Gap turns "this did not deflect" into a named missing answer. Requester is what
+  # separates a first attempt from someone who has now failed twice. Ticket is the evidence of
+  # failure — the contact that arrived anyway — and is optional rather than required because
+  # the whole point is the contacts that never appear.
+  optional:
+    - customer_support.obj.core.content_gap
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.ticket
+
+scoped:
+  required: []
+  optional: []
+
+notes: >
+  Deliberately NOT loaded: sla_target and entitlement. Both invite the reasoning that a
+  cheaper plan should be deflected harder, which is how a deflection programme becomes a
+  service-tier weapon. If entitlement should gate the self-serve experience, that belongs to
+  entitlement_verification, where the decision is visible and arguable, not buried here.

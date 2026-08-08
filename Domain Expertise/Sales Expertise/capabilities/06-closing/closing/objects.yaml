@@ -1,0 +1,24 @@
+# Load-set for sales.closing.closing — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/closing/                loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.closing.closing
+
+core:
+  required:
+    - sales.obj.core.deal
+    - sales.obj.core.decision_maker
+  optional:
+    - sales.obj.core.contract
+    - sales.obj.core.next_action
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

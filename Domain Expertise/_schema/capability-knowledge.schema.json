@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/capability-knowledge.schema.json",
+  "title": "Capability knowledge manifest — knowledge.yaml",
+  "description": "REFERENCES ONLY, the sibling of objects.yaml. Where objects.yaml says which nouns to load, knowledge.yaml says which playbooks, heuristics, mental models, rules and decision frameworks apply.\n\nThe core/scoped split is the same and is enforced the same way: an artifact two capabilities reference must live in <kind>/core/, and validate.py errors if a capability-scoped one is referenced twice. MEDDICC referenced by four capabilities is core; a cold-email deliverability heuristic referenced by one is scoped to cold_email.\n\nThis file exists so that changing what expertise a capability applies is a one-file diff, and so a Layer 6 Playbook Suggestion has something addressable to point at.\n\n  capabilities/<NN-subdomain>/<capability>/knowledge.yaml",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capability"],
+
+  "properties": {
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+      "description": "Must match the sibling capability.yaml."
+    },
+
+    "playbooks":           { "$ref": "#/$defs/refset" },
+    "heuristics":          { "$ref": "#/$defs/refset" },
+    "mental_models":       { "$ref": "#/$defs/refset" },
+    "rules":               { "$ref": "#/$defs/refset" },
+    "decision_frameworks": { "$ref": "#/$defs/refset" },
+
+    "terminology": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Terminology area ids whose vocabulary this capability speaks."
+    },
+
+    "primary_framework": {
+      "type": "string",
+      "description": "The one framework an operator would reach for first here. Named separately because a capability listing five frameworks with no ordering has told a reader nothing."
+    },
+
+    "notes": { "type": "string" }
+  },
+
+  "$defs": {
+    "refset": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "core = shared artifacts from <kind>/core/. scoped = artifacts belonging to this capability alone, in <kind>/<capability>/.",
+      "properties": {
+        "core":   { "type": "array", "items": { "type": "string" } },
+        "scoped": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

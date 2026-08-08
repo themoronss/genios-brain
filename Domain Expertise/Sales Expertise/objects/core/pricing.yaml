@@ -1,0 +1,702 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Pricing — the structure, not the number.
+#
+# The discount conversation gets all the attention and almost none of the money.
+# What is metered, what is committed, and what the renewal uplift is capped at are
+# decided once, usually at 6pm on the last day of a quarter, and then govern the
+# account for years. This object exists to make those choices visible while they are
+# still choices.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.pricing
+  scope: core
+  name: Pricing
+  domain: sales
+  subdomain: proposal_and_commercials
+  owner_capability: sales.proposal_and_commercials.pricing
+  version: 1.0.0
+  status: draft
+  aliases: ["Commercial Terms", "Price Structure", "Quote Structure"]
+purpose:
+  statement: >
+    What we will charge and how the charge is structured — level, packaging, term and discount
+    policy. The discriminator against Proposal is durability: a proposal is one instance of a
+    price offered to one buyer on one day, while pricing is the structure that instance is drawn
+    from and the structure survives it. The structural choices — what is metered, what is
+    committed, whether the renewal uplift is capped — outlast any single negotiation, are worth
+    more than the discount everyone argues about, and are usually made carelessly under a
+    deadline by whoever is still online.
+attributes:
+  - name: level
+    purpose: The number itself. The part buyers discuss and the least consequential over a contract's
+      life.
+    type: composite
+    contains:
+      - list_price
+      - quoted_price
+      - currency
+      - packaging_tier
+      - floor_price
+      - is_below_floor
+  - name: structure
+    purpose: >
+      What is charged for and how. Decides who carries volume risk, and therefore whether a
+      bad quarter for the customer is also a bad quarter for us.
+    type: composite
+    contains:
+      - pricing_model
+      - committed_units
+      - metered_units
+      - minimum_commitment
+      - overage_rate
+  - name: term
+    purpose: Duration, billing rhythm and how the price moves over the term.
+    type: composite
+    contains:
+      - contract_term_months
+      - billing_frequency
+      - payment_terms_days
+      - ramp_schedule
+  - name: discount_policy
+    purpose: What may be given, by whom, and in exchange for what.
+    type: composite
+    contains:
+      - discount_bp
+      - max_approved_discount_bp
+      - approval_required_above_bp
+      - discount_reason
+  - name: renewal_economics
+    purpose: >
+      What this contract does to the next one. Concessions here cost nothing in the quarter
+      they are made, which is exactly why they are made.
+    type: composite
+    contains:
+      - price_increase_cap_bp
+      - auto_renew
+  - name: buyer_position
+    purpose: What we know about their side of the number.
+    type: composite
+    contains:
+      - price_sensitivity
+      - competitor_price_known
+      - pricing_state
+      - pricing_discussed_at
+  - name: pricing_model
+    purpose: The most consequential field here and the one least often revisited. `custom` is not a
+      model, it is the absence of one, and an account priced custom cannot be benchmarked, renewed on
+      policy, or reported on with anyone else.
+    type: value
+    data_type: enum
+    allowed_values: [per_seat, per_usage, tiered, flat_platform_fee, per_transaction, value_based,
+        outcome_based, hybrid, custom]
+    required: true
+    description: >
+      The most consequential field here and the one least often revisited. `custom` is not a
+      model, it is the absence of one, and an account priced custom cannot be benchmarked,
+      renewed on policy, or reported on with anyone else.
+  - name: list_price
+    purpose: The published or internally sanctioned price. Without it, discount_bp is uncomputable and
+      discount discipline is unmeasurable.
+    type: value
+    data_type: money
+    description: The published or internally sanctioned price. Without it, discount_bp is uncomputable
+      and discount discipline is unmeasurable.
+  - name: quoted_price
+    purpose: What we actually put in front of this buyer. deal.value carries it, which is precisely
+      why deal.value must never be read as the buyer's budget — it is our number, unmodified by
+      anything they told us.
+    type: value
+    data_type: money
+    source_paths: [deal.value]
+    description: >
+      What we actually put in front of this buyer. deal.value carries it, which is precisely
+      why deal.value must never be read as the buyer's budget — it is our number, unmodified
+      by anything they told us.
+  - name: currency
+    purpose: The currency of this object.
+    type: value
+    data_type: string
+  - name: packaging_tier
+    purpose: Which bundle. Moving a buyer down a tier is nearly always better than discounting the
+      tier they wanted.
+    type: value
+    data_type: string
+    description: Which bundle. Moving a buyer down a tier is nearly always better than discounting the
+      tier they wanted.
+  - name: floor_price
+    purpose: Below this the deal destroys margin. Distinct from max_approved_discount_bp, which is
+      policy — the floor is arithmetic, and a deal can clear policy and still be below it.
+    type: value
+    data_type: money
+    description: >
+      Below this the deal destroys margin. Distinct from max_approved_discount_bp, which is
+      policy — the floor is arithmetic, and a deal can clear policy and still be below it.
+  - name: is_below_floor
+    purpose: The is_below_floor of this object.
+    type: value
+    data_type: boolean
+  - name: committed_units
+    purpose: What they pay for whether or not they use it. The only revenue that is actually
+      forecastable.
+    type: value
+    data_type: integer
+    description: What they pay for whether or not they use it. The only revenue that is actually
+      forecastable.
+  - name: metered_units
+    purpose: What is charged on consumption. The structural choice that decides who carries volume
+      risk. Fully metered pricing reads as customer-friendly and quietly makes next year's revenue a
+      function of their business rather than ours.
+    type: value
+    data_type: string
+    description: >
+      What is charged on consumption. The structural choice that decides who carries volume
+      risk. Fully metered pricing reads as customer-friendly and quietly makes next year's
+      revenue a function of their business rather than ours.
+  - name: minimum_commitment
+    purpose: The floor under metered revenue. Usage pricing without one transfers all volume risk to
+      us in exchange for nothing.
+    type: value
+    data_type: money
+    description: The floor under metered revenue. Usage pricing without one transfers all volume risk
+      to us in exchange for nothing.
+  - name: overage_rate
+    purpose: The overage_rate of this object.
+    type: value
+    data_type: money
+  - name: contract_term_months
+    purpose: The contract_term_months of this object.
+    type: value
+    data_type: integer
+    unit: months
+  - name: billing_frequency
+    purpose: Annual-upfront against monthly is a working-capital difference worth more than most of
+      the discounts argued over to win it.
+    type: value
+    data_type: enum
+    allowed_values: [monthly, quarterly, annual, upfront, milestone, on_usage]
+    description: Annual-upfront against monthly is a working-capital difference worth more than most
+      of the discounts argued over to win it.
+  - name: payment_terms_days
+    purpose: Net terms. Conceded silently in almost every negotiation because it is handled by finance
+      after the seller has left the room.
+    type: value
+    data_type: integer
+    unit: days
+    description: Net terms. Conceded silently in almost every negotiation because it is handled by
+      finance after the seller has left the room.
+  - name: ramp_schedule
+    purpose: Stepped pricing across the term. Buyers accept a materially larger number when part of it
+      arrives later, and a ramp is usually a cheaper concession than a discount because it preserves
+      the list relationship.
+    type: value
+    data_type: list
+    description: >
+      Stepped pricing across the term. Buyers accept a materially larger number when part of
+      it arrives later, and a ramp is usually a cheaper concession than a discount because it
+      preserves the list relationship.
+  - name: discount_bp
+    purpose: Discount off list, in basis points. 1500 is fifteen per cent.
+    type: value
+    data_type: integer
+    description: Discount off list, in basis points. 1500 is fifteen per cent.
+  - name: max_approved_discount_bp
+    purpose: The standing policy ceiling for this deal shape.
+    type: value
+    data_type: integer
+    description: The standing policy ceiling for this deal shape.
+  - name: approval_required_above_bp
+    purpose: Threshold past which a named approver must sign off. Kept separate from the ceiling
+      because most organisations set the two at different levels and then forget which is which.
+    type: value
+    data_type: integer
+    description: Threshold past which a named approver must sign off. Kept separate from the ceiling
+      because most organisations set the two at different levels and then forget which is which.
+  - name: discount_reason
+    purpose: '`quarter_end` is a real and common value and recording it honestly is the only way Layer 6
+      can prove that the discipline is failing. Coding it as `competitive` is how the problem stays invisible
+      for years.'
+    type: value
+    data_type: enum
+    allowed_values: [volume, multi_year, competitive, strategic_logo, quarter_end, none]
+    description: >
+      `quarter_end` is a real and common value and recording it honestly is the only way Layer
+      6 can prove that the discipline is failing. Coding it as `competitive` is how the problem
+      stays invisible for years.
+  - name: price_increase_cap_bp
+    purpose: Cap on renewal uplift, in basis points. A cap of zero is a multi-year price hold. It
+      costs nothing in the quarter it is granted and is often the single most expensive thing in the
+      contract.
+    type: value
+    data_type: integer
+    description: >
+      Cap on renewal uplift, in basis points. A cap of zero is a multi-year price hold. It
+      costs nothing in the quarter it is granted and is often the single most expensive thing
+      in the contract.
+  - name: auto_renew
+    purpose: The auto_renew of this object.
+    type: value
+    data_type: boolean
+  - name: price_sensitivity
+    purpose: '`blocking` means price is the reason the deal is not moving. `high` means it is a live negotiation.
+      Treating the two the same produces a discount for a problem that was never about the number.'
+    type: value
+    data_type: enum
+    allowed_values: [unknown, low, moderate, high, blocking]
+    description: >
+      `blocking` means price is the reason the deal is not moving. `high` means it is a live
+      negotiation. Treating the two the same produces a discount for a problem that was never
+      about the number.
+  - name: competitor_price_known
+    purpose: Whether we know what they are being quoted elsewhere, as opposed to what the buyer says
+      they are being quoted elsewhere.
+    type: value
+    data_type: boolean
+    description: Whether we know what they are being quoted elsewhere, as opposed to what the buyer
+      says they are being quoted elsewhere.
+  - name: pricing_state
+    purpose: The pricing_state of this object.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, drafted, quoted, under_negotiation, approved, locked, superseded]
+    required: true
+  - name: pricing_discussed_at
+    purpose: The pricing_discussed_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: No commercial conversation has happened. Distinct from drafted — nothing has even
+        been decided internally.
+    - name: drafted
+      description: A structure exists on our side and the buyer has not seen it.
+    - name: quoted
+      description: A number is in front of the buyer.
+      entered_when: [has_obs: pricing_discussed]
+    - name: under_negotiation
+      description: They are pushing back. The state in which every structural concession gets made.
+      entered_when: [has_obs: objection_price]
+    - name: approved
+      description: Both sides accept the number and the structure. Not yet paper.
+      entered_when: [has_obs: verbal_yes]
+    - name: locked
+      description: In the contract, being reviewed. Changes from here are expensive and visible.
+      entered_when: [has_obs: contract_requested]
+    - name: superseded
+      description: Replaced by a newer structure. Kept, because the sequence of what we offered is the
+        record of how the negotiation was run.
+  transitions:
+    - {from: unknown, to: drafted}
+    - {from: drafted, to: quoted, when: [has_obs: pricing_discussed]}
+    - {from: quoted, to: under_negotiation, when: [has_obs: objection_price]}
+    - {from: quoted, to: under_negotiation, when: [has_obs: discount_pressure]}
+    - {from: under_negotiation, to: approved, when: [has_obs: verbal_yes]}
+    - {from: quoted, to: approved, when: [has_obs: verbal_yes]}
+    - {from: approved, to: locked, when: [has_obs: contract_requested]}
+    - {from: under_negotiation, to: superseded}
+    - {from: quoted, to: superseded}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: attaches_to
+    target: sales.obj.core.deal
+    cardinality: one
+    description: One live pricing structure per deal. Two quotes in circulation is how a buyer ends up
+      choosing the terms and we end up honouring them.
+
+  - type: attaches_to
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+    description: A proposal instantiates a pricing structure. The proposal expires; the structure is
+      what gets renewed against.
+
+  - type: requires
+    target: sales.obj.core.budget
+    cardinality: zero_or_one
+    description: A price never checked against the buyer's budget is a quote, not a price. It is also
+      the most common cause of a proposal that receives no reply at all.
+
+  - type: gates
+    target: sales.obj.core.contract
+    cardinality: zero_or_one
+
+  - type: competes_with
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+
+  - type: influences
+    target: sales.obj.core.objection
+    cardinality: zero_or_many
+    description: Most price objections are structure objections wearing a number. "Too expensive"
+      frequently means "I cannot predict this line item".
+
+  - type: references
+    target: sales.obj.core.decision_maker
+    cardinality: zero_or_one
+    description: The buyer-side approver whose limit the quoted price must clear. Their limit, not
+      their enthusiasm, sets the shape of the deal.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: pr.pricing_discussed_sets_quoted
+      statement: "Price has been discussed on this deal."
+      status: executable
+      when:
+        - {has_obs: pricing_discussed}
+      yields: {confidence_bp: 9000, attribute: pricing_state, value: quoted}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Not 10000 — the observation fires on a buyer asking "roughly what does this cost"
+        as readily as on a formal quote, and only one of those has a number attached.
+
+    - id: pr.quoted_price_from_deal_value
+      statement: "The deal carries a value, which is the number we quoted."
+      status: executable
+      when:
+        - {neighbor_fact: deal.value, op: ">", value: 0}
+      yields: {confidence_bp: 8000, attribute: quoted_price}
+      evidence_fields: [deal.value]
+      note: >
+        neighbor_fact rather than path: deal.value lives on the deal node and this object hangs
+        off it. Confidence is capped at 8000 because deal.value is frequently the rep's
+        expected value rather than the figure actually sent.
+
+    - id: pr.contract_requested_locks_price
+      statement: "Paper was requested, so the commercial terms are now fixed."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 8800, attribute: pricing_state, value: locked}
+      note: >
+        Practically useful because it marks the point after which a change is expensive. A
+        discount granted after this moment restarts legal review and costs more in cycle time
+        than it buys in goodwill.
+
+    - id: pr.list_price_from_catalogue
+      statement: "The product catalogue holds a sanctioned list price for this packaging tier."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: list_price}
+      requires_signals:
+        - {kind: fact_path, name: catalogue.list_price, owner_layer: L1, note: "Without list_price, discount_bp\
+            cannot be computed at all, so every discount rule in this file is currently unenforceable and
+            every discount metric is uncomputable. The cheapest high-value connector on this object."}
+
+    - id: pr.approved_discount_ceiling
+      statement: "A standing discount policy exists for this deal shape."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: max_approved_discount_bp}
+      requires_signals:
+        - {kind: fact_path, name: crm.pricing.max_discount, owner_layer: L1, note: "Policy lives in a spreadsheet\
+            in most organisations. Until it is a fact path, approval_risk is judged by whoever is on the call."}
+
+  heuristic:
+
+    - id: pr.price_is_the_blocker
+      statement: "A price objection and sustained discount pressure together."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+        - {has_obs: discount_pressure}
+      yields: {confidence_bp: 8200, attribute: price_sensitivity, value: blocking}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Objection alone is negotiation. Objection plus sustained pressure to move is the deal
+        having stopped on the number, and it is the only state in which a structural change —
+        tier, term, ramp — is genuinely the right answer rather than a reflex.
+
+    - id: pr.priced_above_their_money
+      statement: "A price objection with no budget approval anywhere on the deal."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+        - {no_obs: budget_approved}
+      yields: {confidence_bp: 7000, attribute: price_sensitivity, value: high}
+      note: >
+        Reads backwards to the reflex. This is a sizing problem, not a negotiation — nobody has
+        approved any money at all, so a discount is being offered against a budget that does
+        not exist. The move is to rescope what is bought, not to reprice what was offered.
+
+    - id: pr.competitive_price_pressure
+      statement: "A named competitor and discount pressure at the same time."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {has_obs: discount_pressure}
+      yields: {confidence_bp: 7500, attribute: competitor_price_known, value: true}
+      note: >
+        The buyer has a number from somebody else and is using it. Worth knowing that the
+        number they quote is unverifiable and frequently the competitor's list price rather
+        than their offer.
+
+    - id: pr.silent_acceptance_means_we_left_money
+      statement: "Price discussed, no objection at all, sentiment positive."
+      status: executable
+      when:
+        - {has_obs: pricing_discussed}
+        - {no_obs: objection_price}
+        - {neighbor_fact: derived.sentiment, op: ">", value: 0}
+      yields: {confidence_bp: 6000, attribute: price_sensitivity, value: low}
+      note: >
+        The pattern most likely to be read as good news. A buyer who does not push back at all
+        was usually going to pay more, and the correct Layer 6 reading is lost margin rather
+        than a well-run negotiation. Deliberately weak at 6000 — a buyer with no authority also
+        does not object.
+
+    - id: pr.discount_conceded_without_exchange
+      statement: "We granted a discount and received nothing structural in return."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: discount_reason, value: quarter_end}
+      requires_signals:
+        - {kind: obs_kind, name: discount_granted, owner_layer: L2, note: "The standout gap on this object.\
+            L2 emits discount_pressure — the buyer asking — and never discount_granted, the moment we said
+            yes. The concession itself is invisible, so pr.no_discount_without_exchange cannot fire, discount
+            discipline cannot be measured, and Layer 6 has no way to learn which reps give away margin."}
+
+    - id: pr.quarter_end_pressure
+      statement: "The discount is being discussed in the last two weeks of a fiscal quarter."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: discount_reason, value: quarter_end}
+      requires_signals:
+        - {kind: fact_path, name: calendar.days_to_quarter_end, owner_layer: L1, note: "Quarter-end is the\
+            largest single driver of unnecessary discount in B2B and nothing in the substrate knows what day
+            of the quarter it is. Cheap to emit and it recontextualises every discount pattern above."}
+
+    - id: pr.uncapped_uplift_conceded
+      statement: "A multi-year term was agreed with no cap recorded on renewal uplift."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: price_increase_cap_bp, value: 0}
+      requires_signals:
+        - {kind: fact_path, name: contract.uplift_cap, owner_layer: L1, note: "Contract terms are never\
+            parsed back into facts, so the most durable commercial concession in the deal is the one nothing
+            can see. It surfaces two years later as a renewal that cannot be priced up."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: quotes sent and price pushback, path: thread.last_inbound}
+  - {source: crm, signal: "quoted amount on the deal record", path: deal.value}
+  - {source: derived, signal: negotiation sentiment, path: derived.sentiment}
+  - {source: document, signal: "quote and order form line items, ramp schedules"}
+  - {source: contract, signal: "executed terms, uplift cap, payment terms, minimums"}
+  - {source: meeting_transcript, signal: "stated budget ceilings and competitor numbers"}
+  - {source: manual_entry, signal: "list price and discount policy, while no catalogue connector exists"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: discount_exposure_bp, type: integer, description: "Discount against list, with the policy ceiling\
+      it must clear.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: approval_requirement, type: string, description: "Who must sign off before this number goes\
+      out.", consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: concession_options, type: list, description: "Ranked non-price moves — tier, ramp, term, payment\
+      terms — cheaper than a discount and usually not tried.", consumed_by: [L5.execution_planning]}
+  - {name: renewal_economics, type: string, description: "Uplift cap, auto-renew and minimum. What this\
+      contract does to the next one.", consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: price_position, type: string, description: "Where we sit against the buyer's known budget and\
+      any competitor number.", consumed_by: [L4.reasoning_unit]}
+  - {name: pricing_narrative, type: string, description: "How to frame the number — value, structure,\
+      or comparison.", consumed_by: [L5.communication_planning]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: pr.no_close_below_floor, statement: "A deal cannot close while is_below_floor is true, whatever\
+      discount approval exists.", hard: true}
+  - {id: pr.discount_needs_approver, statement: "discount_bp above approval_required_above_bp requires\
+      a named approver on the record.", hard: true}
+  - {id: pr.one_live_quote, statement: "Only one pricing structure may be in state quoted or under_negotiation\
+      per deal.", hard: true}
+  - {id: pr.quote_within_approver_limit, statement: "quoted_price above the buyer-side approver's limit\
+      requires an escalation path before the quote is sent.", hard: true}
+  - {id: pr.no_retroactive_structure_change, statement: "pricing_model cannot change once state is locked\
+      without restarting legal review.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: pr.no_discount_without_exchange
+    statement: >
+      A discount must be exchanged for something the buyer controls — term length, volume
+      commitment, payment terms, a reference, a case study. An unreciprocated discount does not
+      buy goodwill; it teaches the buyer that the next ask will also work, and there is always
+      a next ask.
+    when: [has_obs: discount_pressure]
+    then: require_reciprocal_concession
+    severity: warning
+
+  - id: pr.discount_above_policy_needs_named_approval
+    statement: A discount above approval_required_above_bp requires a named approver on the record
+      before the number goes to the buyer, not after they accept it.
+    then: require_named_approver
+    severity: blocking
+
+  - id: pr.below_floor_blocks_close
+    statement: is_below_floor true blocks any close action regardless of discount approval. Policy and
+      margin are different tests and clearing one does not clear the other.
+    then: block_close
+    severity: blocking
+
+  - id: pr.multi_year_price_hold_is_an_approval
+    statement: >
+      price_increase_cap_bp = 0 across a term longer than twelve months requires the same
+      approval as a discount of equivalent net present value. It is given away routinely
+      because it costs nothing in the quarter it is granted.
+    then: require_named_approver
+    severity: blocking
+
+  - id: pr.metered_needs_a_minimum
+    statement: A usage-metered structure with no minimum_commitment transfers all volume risk to us
+      and makes the account unforecastable from the day it signs.
+    severity: warning
+
+  - id: pr.quarter_end_reason_must_be_recorded
+    statement: >
+      Where the only reason for a discount is the calendar, discount_reason must be
+      quarter_end. Recording it as competitive is what keeps a systemic discipline problem
+      invisible.
+    severity: advisory
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: margin_integrity
+    weight_bp: 2500
+    direction: context
+    description: Context rather than decreases — a below-floor price on a strategic logo is a
+      decision, and a below-floor price on a routine renewal is a leak. The number alone does not
+      distinguish them.
+    reads: [discount_bp, floor_price, is_below_floor, discount_reason]
+
+  - name: structural_fit
+    weight_bp: 2000
+    direction: increases
+    description: Whether the model matches how the buyer derives value. A mismatch here produces a
+      churn eighteen months later that nobody traces back to this decision.
+    reads: [pricing_model, metered_units, committed_units, minimum_commitment]
+
+  - name: budget_alignment
+    weight_bp: 2000
+    direction: increases
+    reads: [quoted_price, minimum_commitment, billing_frequency]
+
+  - name: term_value
+    weight_bp: 1500
+    direction: increases
+    description: Duration, uplift cap and payment terms. Worth more over three years than the discount
+      fought over in week six.
+    reads: [contract_term_months, price_increase_cap_bp, auto_renew, payment_terms_days]
+
+  - name: competitive_position
+    weight_bp: 1000
+    direction: context
+    reads: [competitor_price_known, price_sensitivity, packaging_tier]
+
+  - name: approval_risk
+    weight_bp: 1000
+    direction: decreases
+    description: Distance between what has been offered and what is sanctioned. A quote that needs
+      approval it has not got is a close date that will slip.
+    reads: [discount_bp, max_approved_discount_bp, approval_required_above_bp]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+evidence:
+  - {source: contract, strength_bp: 10000, description: "Executed terms. The only record of what was actually\
+      agreed, and the only place the uplift cap exists."}
+  - {source: document, strength_bp: 9000, description: "The issued quote or order form. Line-item exact\
+      and dated."}
+  - {source: email, strength_bp: 7500, description: "Numbers written to the buyer, and their reply. Catches\
+      the concessions made outside the formal quote."}
+  - {source: meeting_transcript, strength_bp: 7000, description: "Buyer stating a ceiling or a competitor\
+      number. Frequently a negotiating position rather than a fact."}
+  - {source: crm, strength_bp: 6500, description: "deal.value. Often the rep's expected value rather than\
+      the figure sent."}
+  - {source: manual_entry, strength_bp: 5000, description: "List price and policy typed in by hand while\
+      no catalogue connector exists. Correct on the day it was entered."}
+  - {source: derived, strength_bp: 4000, description: "Sentiment around the commercial conversation. Corroborating\
+      only."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: average_discount_bp, unit: basis_points, description: "Discount against list, by rep and by\
+      deal shape. Uncomputable until a list price exists.", owner_layer: L6}
+  - {name: discount_without_exchange_rate, unit: percent, description: "Share of discounts granted with\
+      no reciprocal concession. The clearest measure of negotiation discipline and currently unmeasurable.",
+    owner_layer: L6}
+  - {name: quarter_end_discount_share, unit: percent, description: "Discount volume in the final fortnight\
+      against the rest of the quarter. If this is high, the problem is the compensation plan, not the reps.",
+    owner_layer: L6}
+  - {name: price_realisation, unit: percent, description: "Executed value against list. The number a board\
+      should ask for and rarely does.", owner_layer: L6}
+  - {name: renewal_uplift_achieved_bp, unit: basis_points, description: "Actual uplift at renewal against\
+      the cap conceded. Proves what a price hold really cost.", owner_layer: L6}
+  - {name: objection_to_close_rate, unit: percent, description: "Share of price objections that close\
+      without any discount. Usually far higher than reps believe.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: pr.quoted, name: Price Quoted, emitted_when: [has_obs: pricing_discussed], payload: [
+        quoted_price, packaging_tier, discount_bp]}
+  - {id: pr.objection_raised, name: Price Objection Raised, emitted_when: [has_obs: objection_price],
+    payload: [quoted_price, price_sensitivity]}
+  - {id: pr.discount_requested, name: Discount Requested, emitted_when: [has_obs: discount_pressure],
+    payload: [discount_bp, max_approved_discount_bp]}
+  - {id: pr.structure_changed, name: Pricing Structure Changed, payload: [pricing_model, committed_units,
+      metered_units], description: "Rarer than a discount and worth more. A model change should trigger
+      a review that a discount of the same value would not."}
+  - {id: pr.below_floor, name: Price Below Floor, payload: [quoted_price, floor_price, discount_reason]}
+  - {id: pr.locked, name: Pricing Locked, emitted_when: [has_obs: contract_requested], payload: [
+        quoted_price, contract_term_months, price_increase_cap_bp]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: pr.quote, name: Issue a quote, actor: human}
+  - {id: pr.rescope_to_budget, name: Change what is bought rather than what it costs, actor: human, preconditions: [
+      has_obs: objection_price], effect: "Move a tier or drop a module. Preserves the list relationship
+      and the renewal, which a discount destroys."}
+  - {id: pr.offer_ramp, name: Offer a ramped schedule, actor: human, effect: "Buyers accept a materially\
+      larger total when part of it arrives later. Usually cheaper than the discount it replaces."}
+  - {id: pr.trade_term_for_price, name: Trade term length for price, actor: human, preconditions: [has_obs:
+          discount_pressure], effect: "The one exchange both sides genuinely value. Only works if the uplift
+      cap is held."}
+  - {id: pr.escalate_for_approval, name: Escalate for discount approval, actor: human, effect: "Before\
+      the number goes out. Escalating after the buyer has accepted converts an internal question into a
+      public retraction."}
+  - {id: pr.hold_the_price, name: Hold the price, actor: human, effect: "The default and the least-taken\
+      option. Most price objections are tested once and not repeated."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Per-seat annual, 10% off list, traded for a two-year term", note: "The clean case. A discount\
+      exchanged for something, inside policy, with the uplift cap held."}
+  - {label: "Fully metered usage pricing with no minimum commitment", note: "Reads as customer-friendly\
+      and forecast-hostile. Next year's revenue is now a function of their business, and nobody agreed to
+      that."}
+  - {label: "List price held, three-year price hold conceded instead", note: "THE classic misclassification.\
+      Booked as a full-price win, reported as zero discount, and worth more to the buyer than the 15% they
+      originally asked for. price_increase_cap_bp = 0 is the whole story and nothing records it."}
+  - {label: "Price objection with no budget ever approved", note: "Handled as a negotiation and it is\
+      a sizing problem. Discounting here reduces the price towards a budget that does not exist."}
+  - {label: "Buyer accepts the first number without a word", note: "Celebrated in the deal review. Usually\
+      means we priced under, and the only correct action is to raise the floor for the next one."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Twelve patterns: seven executable, five needs_signal. The executable ones all read the
+    buyer's side of the conversation, which the observation vocabulary covers well; every
+    blocked one concerns our side, which it does not cover at all. The highest-value gap is
+    the obs kind discount_granted — Layer 2 sees the buyer ask for a discount and never sees
+    us agree, so the concession is invisible, pr.no_discount_without_exchange can never fire,
+    and discount discipline is unmeasurable across the whole business. catalogue.list_price
+    runs it close: without a list price, discount_bp is uncomputable and every discount rule
+    in this file is decorative.

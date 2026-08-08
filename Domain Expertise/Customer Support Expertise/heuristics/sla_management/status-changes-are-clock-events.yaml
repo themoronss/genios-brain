@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.sla_management.status_changes_are_clock_events
+  name: Status changes are clock events
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Reassignment, merge, split and reclassification are clock events. Any of them close to
+    a deadline is suspicious until the ledger says otherwise.
+heuristic:
+  statement: Reassignment, merge, split and reclassification are clock events. Any of them close to
+    a deadline is suspicious until the ledger says otherwise.
+  why: None of these is done in order to cheat, most of the time. But each one can restart or relocate
+    a clock as a side effect, and the ones that happen near a deadline are the ones where the side effect
+    changes the answer. Treating them as clock events makes the accident and the intent equally visible.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

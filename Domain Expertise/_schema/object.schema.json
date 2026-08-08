@@ -1,0 +1,632 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/object.schema.json",
+  "title": "Expert Brain Object",
+  "description": "The smallest reusable knowledge unit. TWENTY-THREE sections.\n\nSCOPE decides where the file lives:\n  scope: core        objects/core/<name>.yaml           loaded by MORE THAN ONE capability\n  scope: capability  objects/<capability>/<name>.yaml   loaded by EXACTLY ONE\nvalidate.py enforces this from the reference graph, not from intent — a scoped object two capabilities load is an error, a core object one capability loads is a warning. A distinction nobody can violate is the only kind that survives a hundred more objects.\n\nATTRIBUTES replaces the old Components + Properties pair. One structured field list, not two overlapping ones: an attribute is `composite` when it groups other attributes and `value` when it holds data. The earlier split had Components-as-folders and Properties-as-fields, which meant every real field appeared twice and the two copies disagreed within a week.\n\nSEVEN sections are required so a first pass can be incremental: identity, purpose, attributes, relationships, inference_patterns, evidence, metadata. The other sixteen may be absent. A thin object is still worse than none — it looks finished — so author all twenty-three when you can.\n\nVocabulary membership (ops, obs kinds, fact paths, verbs) is enforced by _tools/validate.py against _schema/vocabulary.yaml, not here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "purpose", "attributes", "relationships", "inference_patterns",
+               "evidence", "metadata"],
+
+  "allOf": [
+    {
+      "if": {
+        "properties": { "identity": { "properties": { "scope": { "const": "capability" } }, "required": ["scope"] } },
+        "required": ["identity"]
+      },
+      "then": { "properties": { "identity": { "required": ["owner_capability"] } } }
+    }
+  ],
+
+  "properties": {
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "domain", "scope", "version", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.obj\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+          "description": "<domain>.obj.<scope>.<snake_name>, where <scope> is the literal 'core' or the capability leaf name. The scope segment makes the id self-locating and lets the same noun exist in two capabilities without collision — sales.obj.negotiation.concession and sales.obj.objection_handling.objection are different knowledge."
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "scope": { "enum": ["core", "capability"] },
+        "owner_capability": {
+          "type": "string",
+          "description": "Required when scope = capability: the one capability that loads it. On a core object this is advisory and names who owns review."
+        },
+        "subdomain": { "type": "string", "description": "Advisory. A core object may be loaded by capabilities in any subdomain." },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "enum": ["draft", "review", "stable", "deprecated"] },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What the profession also calls this. Feeds terminology resolution and stops two teams authoring the same object twice under different names."
+        },
+        "supersedes": { "type": "string", "description": "Object id this replaces, when a rename or split happened." }
+      }
+    },
+
+    "purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement"],
+      "description": "What this object IS and what it is FOR. Replaces the old free-text description with something a reviewer can argue with.",
+      "properties": {
+        "statement": { "type": "string", "minLength": 30, "description": "What it is, in prose." },
+        "discriminator": {
+          "type": "string",
+          "description": "The single sentence that separates this object from the one it is most often confused with. Usually the most valuable line in the file — 'a VP who cannot sign is a Stakeholder, not a Decision Maker'."
+        },
+        "answers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The questions loading this object lets Layer 4 answer. If you cannot name one, the object is documentation."
+        },
+        "not": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What this object explicitly is NOT responsible for, and which object owns that instead."
+        }
+      }
+    },
+
+    "attributes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The object's structure AND its data, in one list. `composite` attributes group others via `contains`; `value` attributes hold data. Formerly two sections (Components + Properties) that duplicated every field.",
+      "items": { "$ref": "#/$defs/attribute" }
+    },
+
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The lifecycle this object moves through. Absent when the object genuinely has none — a Mental Model has no states and inventing them is noise.",
+      "properties": {
+        "initial": { "type": "string" },
+        "terminal": { "type": "array", "items": { "type": "string" } },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "entered_when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+              "implies": { "type": "string", "description": "What being in this state means for the deal or account, in business terms." }
+            }
+          }
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+              "trigger": { "type": "string" },
+              "reversible": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+
+    "relationships": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Typed edges to other objects. Eleven fields, because a relationship that carries no weight, confidence or condition is decoration — Layer 4 cannot reason over it, it can only display it.",
+      "items": { "$ref": "#/$defs/relationship" }
+    },
+
+    "inference_patterns": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How this object is DISCOVERED when nobody states it. Every pattern carries a human `statement` and, when executable, a machine `when` in the engine's whitelisted grammar. Prose alone cannot fire — there is no runtime that evaluates an English sentence except a model, and reaching for one here defeats the architecture.",
+      "properties": {
+        "deterministic": { "type": "array", "items": { "$ref": "#/$defs/pattern" } },
+        "heuristic": { "type": "array", "items": { "$ref": "#/$defs/pattern" } }
+      }
+    },
+
+    "inputs": {
+      "type": "array",
+      "description": "Where this object gets filled from.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source"],
+        "properties": {
+          "source": { "type": "string" },
+          "signal": { "type": "string" },
+          "path": { "type": "string" },
+          "fills": { "type": "array", "items": { "type": "string" }, "description": "Attribute names this input populates." },
+          "reliability_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "outputs": {
+      "type": "array",
+      "description": "What this object can tell the rest of the stack.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "description": { "type": "string" },
+          "derived_from": { "type": "array", "items": { "type": "string" } },
+          "consumed_by": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
+    "preconditions": {
+      "type": "array",
+      "description": "What must already be true before this object can be meaningfully resolved. Distinct from constraints: a precondition gates whether we can even ask, a constraint bounds the answer.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "statement": { "type": "string" },
+          "requires": { "type": "array", "items": { "type": "string" }, "description": "Object ids or attribute names that must be resolved first." },
+          "when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+          "if_unmet": {
+            "type": "string",
+            "description": "What to do when it is not satisfied. `block` and `degrade` are different answers and the difference is the whole of Layer 3 strategy S8."
+          }
+        }
+      }
+    },
+
+    "constraints": {
+      "type": "array",
+      "description": "Limits on what is possible or permitted. A hard constraint eliminates a Layer 4 candidate; a soft one only lowers its score.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "statement": { "type": "string" },
+          "when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+          "hard": { "type": "boolean", "default": true },
+          "why": { "type": "string" }
+        }
+      }
+    },
+
+    "business_rules": {
+      "type": "array",
+      "description": "Deterministic rules local to this object. No model evaluates these. A rule spanning two objects belongs in rules/, not here — authored in one place it can see both sides of its own condition.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "statement": { "type": "string" },
+          "when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+          "then": { "type": "string" },
+          "severity": { "enum": ["blocking", "warning", "advisory"] },
+          "why": { "type": "string" },
+          "rule_ref": { "type": "string", "description": "Id of a cross-object rule in rules/ that this one participates in." }
+        }
+      }
+    },
+
+    "decision_factors": {
+      "type": "array",
+      "description": "What Layer 4 should weigh when this object is in play. Advisory inputs to a reasoning unit, never a decision — Rule 05.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "weight_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+          "direction": { "enum": ["increases", "decreases", "context"] },
+          "description": { "type": "string" },
+          "reads": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "description": "What counts as a receipt for this object, and what each source is worth. Rule 04 — confidence without receipts is a guess.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source"],
+        "properties": {
+          "source": { "type": "string" },
+          "strength_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+          "independent_of": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Sources this one is genuinely independent of. Rule 11: only independent corroboration may RAISE confidence, so the graph of what-corroborates-what has to be authored rather than assumed."
+          },
+          "decays": { "type": "boolean", "description": "Whether age erodes this evidence." },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "description": { "type": "string" },
+          "direction": { "enum": ["higher_is_better", "lower_is_better", "target_band"] },
+          "owner_layer": { "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L5.2", "L6"] },
+          "calibrates": { "type": "array", "items": { "type": "string" }, "description": "Pattern or rule ids this metric is the feedback signal for." }
+        }
+      }
+    },
+
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "name": { "type": "string" },
+          "emitted_when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+          "payload": { "type": "array", "items": { "type": "string" } },
+          "severity": { "enum": ["info", "notable", "critical"] },
+          "invalidates": { "type": "array", "items": { "type": "string" }, "description": "Attribute names or object ids whose prior value this event makes untrustworthy — a champion departing voids everything they told us about internal politics." },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "actions": {
+      "type": "array",
+      "description": "What Layer 5 may operationalise. Naming an action here does not authorise it; Layer 5 still plans and Layer 5.2 still gates.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "name": { "type": "string" },
+          "actor": { "enum": ["human", "agent", "system"] },
+          "preconditions": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+          "effect": { "type": "string" },
+          "cost": { "enum": ["trivial", "low", "moderate", "high"] },
+          "reversible": { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "dependencies": {
+      "type": "array",
+      "description": "Other objects and artifacts this one cannot be reasoned about without. Distinct from relationships: a relationship is a fact about the world, a dependency is a fact about the compile.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "kind"],
+        "properties": {
+          "target": { "type": "string", "description": "Object, playbook, rule or framework id." },
+          "kind": { "enum": ["requires", "enriches", "invalidated_by", "derived_from", "blocks"] },
+          "strength": { "enum": ["hard", "soft"] },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "exceptions": {
+      "type": "array",
+      "description": "Where the rules above are legitimately wrong. Every experienced operator carries these and no playbook writes them down, which is precisely why the naive system feels stupid to an expert.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "statement": { "type": "string" },
+          "overrides": { "type": "array", "items": { "type": "string" }, "description": "Rule, constraint or pattern ids this exception suspends." },
+          "when": { "type": "array", "items": { "$ref": "#/$defs/predicate" } },
+          "why": { "type": "string" },
+          "frequency": { "enum": ["rare", "occasional", "common"] }
+        }
+      }
+    },
+
+    "best_practices": {
+      "type": "array",
+      "description": "What a good operator does with this object. Atlas lists Best Practices as first-class Expert Brain content.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["statement"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "statement": { "type": "string" },
+          "why": { "type": "string" },
+          "applies_when": { "type": "string" },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+
+    "anti_patterns": {
+      "type": "array",
+      "description": "What a plausible-looking operator does wrong. Usually more diagnostic than the best practice, because it names the specific mistake rather than the general virtue.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["statement"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+          "statement": { "type": "string" },
+          "why_it_happens": { "type": "string", "description": "The reasonable-sounding logic that leads someone there. An anti-pattern nobody would plausibly commit is not worth recording." },
+          "cost": { "type": "string" },
+          "instead": { "type": "string" },
+          "detectable_by": { "type": "array", "items": { "type": "string" }, "description": "Pattern or metric ids that would catch it." }
+        }
+      }
+    },
+
+    "examples": {
+      "type": "array",
+      "description": "Concrete instances, INCLUDING the classic misclassification. An example set with no negative case teaches only the easy half.",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label"],
+            "properties": {
+              "label": { "type": "string" },
+              "note": { "type": "string" },
+              "kind": { "enum": ["typical", "edge", "misclassification", "counterexample"] },
+              "attributes": { "type": "object", "additionalProperties": true }
+            }
+          }
+        ]
+      }
+    },
+
+    "references": {
+      "type": "array",
+      "description": "Where this knowledge comes from — the methodology, book, framework or internal source. Makes the object arguable rather than asserted, and tells a reviewer whose opinion they are reading.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "kind": { "enum": ["methodology", "book", "framework", "standard", "internal", "research", "practitioner"] },
+          "author": { "type": "string" },
+          "url": { "type": "string" },
+          "artifact_ref": { "type": "string", "description": "Id of a mental model, playbook or framework in this brain that formalises the reference." },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "last_updated", "review_status"],
+      "properties": {
+        "owner": { "type": "string" },
+        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
+        "reviewed_by": { "type": "string" },
+        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
+        "confidence": { "enum": ["experimental", "provisional", "stable"] },
+        "completeness": { "enum": ["skeleton", "partial", "complete"] },
+        "notes": { "type": "string" }
+      }
+    }
+  },
+
+  "$defs": {
+
+    "attribute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "purpose", "type"],
+      "description": "One field or one structural grouping. The union of the old Component (9 fields) and Property (7 fields) specs, because two overlapping field lists always disagree within a week.",
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "purpose": { "type": "string", "description": "What it captures and why it matters. Not a restatement of the name." },
+        "type": {
+          "enum": ["composite", "value", "derived", "reference"],
+          "description": "composite = groups other attributes via `contains`. value = holds data. derived = computed from other attributes or from Layer 2. reference = points at another object."
+        },
+        "data_type": { "enum": ["string", "integer", "number", "boolean", "enum", "timestamp", "duration", "money", "ref", "list", "object"] },
+        "contains": { "type": "array", "items": { "type": "string" }, "description": "Attribute names grouped under this one. Only when type = composite." },
+        "ref": { "type": "string", "description": "Target object id. Only when type = reference or data_type = ref." },
+        "required": { "type": "boolean", "default": false },
+        "allowed_values": { "type": "array", "items": {} },
+        "default": {},
+        "unit": { "type": "string" },
+        "validation": { "type": "string", "description": "A human-readable rule the compiler can later formalise, e.g. '>= 0' or 'must be one of allowed_values'." },
+        "constraints": { "type": "string", "description": "Business limits on the value, as opposed to type validation." },
+        "source_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Layer 2 fact paths that populate this attribute. Paths outside the substrate are reported by backlog.py, not rejected — they are the ask."
+        },
+        "derived_from": { "type": "array", "items": { "type": "string" }, "description": "Attribute names or fact paths this is computed from. Only when type = derived." },
+        "sensitivity": { "enum": ["public", "internal", "confidential"], "description": "Feeds Rule 10 — an attribute never widens the audience of the evidence it came from." },
+        "description": { "type": "string" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "composite" } }, "required": ["type"] },
+          "then": { "required": ["contains"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "value" } }, "required": ["type"] },
+          "then": { "required": ["data_type"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "derived" } }, "required": ["type"] },
+          "then": { "required": ["derived_from"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "reference" } }, "required": ["type"] },
+          "then": { "required": ["ref"] }
+        }
+      ]
+    },
+
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "type", "cardinality"],
+      "description": "Eleven fields. `source` defaults to the object declaring it. Weight and confidence are basis points because Layer 4 does arithmetic on them.",
+      "properties": {
+        "source": { "type": "string", "description": "Object id. Omit — it defaults to this object. Set it only when authoring an edge on behalf of another object, which should be rare and deliberate." },
+        "target": { "type": "string", "description": "Object id. Link integrity is checked by validate.py." },
+        "type": { "type": "string", "description": "The verb. Validated against vocabulary.yaml open.relationship_verbs." },
+        "direction": { "enum": ["outbound", "inbound", "bidirectional"], "default": "outbound" },
+        "cardinality": { "enum": ["one", "many", "zero_or_one", "zero_or_many"] },
+        "weight_bp": {
+          "type": "integer", "minimum": 0, "maximum": 10000,
+          "description": "How much this edge matters relative to the object's other edges. A Champion's route to the Decision Maker outweighs their membership of the committee, and Layer 4 cannot know that unless it is written down."
+        },
+        "confidence_bp": { "type": "integer", "minimum": 0, "maximum": 10000, "description": "How sure we are the edge exists at all, as distinct from how much it matters." },
+        "conditions": { "type": "array", "items": { "$ref": "#/$defs/predicate" }, "description": "When this edge holds. An edge that only exists under a condition and says so is worth more than one asserted unconditionally." },
+        "evidence": { "type": "array", "items": { "type": "string" }, "description": "Evidence sources that establish the edge." },
+        "priority": { "type": "integer", "minimum": 1, "description": "Traversal order when several edges compete. 1 is first." },
+        "description": { "type": "string" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "predicate": {
+      "description": "One condition in the engine's whitelisted grammar. engine.py:_eval_condition dispatches in this order and returns False for anything it does not recognise — it does not raise. Conditions in a list are ANDed; express OR as two entries.",
+      "type": "object",
+      "oneOf": [
+        { "required": ["exists"], "properties": { "exists": { "type": "string" } }, "additionalProperties": false },
+        { "required": ["absent"], "properties": { "absent": { "type": "string" } }, "additionalProperties": false },
+        { "required": ["has_obs"], "properties": { "has_obs": { "type": "string" } }, "additionalProperties": false },
+        { "required": ["no_obs"], "properties": { "no_obs": { "type": "string" } }, "additionalProperties": false },
+        { "required": ["neighbor_has_obs"], "properties": { "neighbor_has_obs": { "type": "string" } }, "additionalProperties": false },
+        { "required": ["neighbor_no_obs"], "properties": { "neighbor_no_obs": { "type": "string" } }, "additionalProperties": false },
+        {
+          "required": ["neighbor_fact", "op", "value"],
+          "properties": { "neighbor_fact": { "type": "string" }, "op": { "$ref": "#/$defs/op" }, "value": { "$ref": "#/$defs/value" } },
+          "additionalProperties": false
+        },
+        {
+          "required": ["fn", "op", "value"],
+          "properties": { "fn": { "const": "edge_count" }, "op": { "$ref": "#/$defs/op" }, "value": { "$ref": "#/$defs/value" } },
+          "additionalProperties": false
+        },
+        {
+          "required": ["fn", "path", "op", "value"],
+          "properties": { "fn": { "enum": ["days_since", "hours_since"] }, "path": { "type": "string" }, "op": { "$ref": "#/$defs/op" }, "value": { "$ref": "#/$defs/value" } },
+          "additionalProperties": false
+        },
+        {
+          "required": ["path", "op", "value"],
+          "properties": { "path": { "type": "string" }, "op": { "$ref": "#/$defs/op" }, "value": { "$ref": "#/$defs/value" } },
+          "additionalProperties": false
+        }
+      ]
+    },
+
+    "op": {
+      "enum": ["=", "!=", "IN", ">", ">=", "<", "<="],
+      "description": "IN is uppercase. engine.py:71 tests op == \"IN\"; a lowercase in falls through to the numeric branch and evaluates False forever."
+    },
+
+    "value": {
+      "description": "A literal, or a learned per-entity baseline resolved as max(floor, mult x baseline).",
+      "oneOf": [
+        { "type": ["string", "number", "boolean", "null"] },
+        { "type": "array" },
+        {
+          "type": "object",
+          "required": ["baseline"],
+          "additionalProperties": false,
+          "properties": { "baseline": { "type": "string" }, "mult": { "type": "number" }, "floor": { "type": "number" } }
+        }
+      ]
+    },
+
+    "pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "status", "yields"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_.]+$" },
+        "statement": { "type": "string", "minLength": 5, "description": "The pattern in plain language, for a human reviewer." },
+        "status": {
+          "enum": ["executable", "needs_signal"],
+          "description": "executable = every path and obs kind in `when` exists in the vocabulary substrate. needs_signal = it cannot fire yet; backlog.py reports it as a Layer 1/2 requirement."
+        },
+        "when": { "type": "array", "items": { "$ref": "#/$defs/predicate" }, "description": "ANDed. Required when status = executable." },
+        "yields": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["confidence_bp"],
+          "properties": {
+            "confidence_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+            "attribute": { "type": ["string", "null"], "description": "Attribute this pattern sets, or null when it asserts the object itself." },
+            "value": {},
+            "corroborates": { "type": "array", "items": { "type": "string" }, "description": "Other pattern ids this independently supports. Rule 11: confidence may only rise on independent evidence, so independence has to be declared, not inferred." }
+          }
+        },
+        "requires_signals": {
+          "type": "array",
+          "description": "Only when status = needs_signal. What Layer 1 or 2 must start emitting.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "name"],
+            "properties": {
+              "kind": { "enum": ["fact_path", "obs_kind", "baseline", "derived"] },
+              "name": { "type": "string" },
+              "owner_layer": { "enum": ["L1", "L2"] },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "evidence_fields": { "type": "array", "items": { "type": "string" } },
+        "false_positive": { "type": "string", "description": "The case where this pattern fires and is wrong. Knowing it is what lets a reviewer set the confidence honestly." },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "executable" } }, "required": ["status"] },
+          "then": { "required": ["when"], "properties": { "when": { "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "needs_signal" } }, "required": ["status"] },
+          "then": { "required": ["requires_signals"], "properties": { "requires_signals": { "minItems": 1 } } }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,727 @@
+# SCOPED to sales.market_and_targeting.icp_definition.
+#
+# The reading, not the ruler. sales.obj.core.icp holds the profile; this object holds one
+# account measured against one version of it, at one moment, with the evidence that produced
+# the number and the outcome that later confirmed or refuted it.
+#
+# Five of the eleven patterns below run today, and every one of them infers fit from how the
+# DEAL is behaving rather than from what the ACCOUNT is. That imbalance is not an authoring
+# choice — no firmographic fact is projected into the pipeline — and it is the point of the
+# needs_signal entries.
+
+identity:
+  id: sales.obj.icp_definition.fit_analysis
+  scope: capability
+  name: Fit Analysis
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 1.0.0
+  status: draft
+  aliases: ["Fit Assessment", "Fit Score", "ICP Match"]
+purpose:
+  statement: >
+    One account measured against one version of the ICP, at one point in time, carrying the
+    verdict, the evidence behind it, and how much of the profile was actually checked. The
+    discriminator against the ICP object it is constantly confused with: the ICP is the
+    instrument and this is the reading. Conflating them is why a definition gets rewritten every
+    time a particular account is inconvenient — the argument belongs on the reading, which is
+    allowed to be wrong, and not on the instrument, which has to stay stable long enough for
+    being wrong to be detectable. The discriminator against a qualification verdict is what is
+    being asked: qualification asks whether THIS purchase can happen, fit asks whether this
+    ACCOUNT should be in our pipeline at all, and an account can be perfectly qualified and
+    entirely wrong for us.
+attributes:
+  - name: verdict
+    purpose: The output. What the rest of the stack reads.
+    type: composite
+    contains:
+      - fit_verdict
+      - fit_score_bp
+      - confidence_bp
+      - disqualifier_hit
+      - disqualifier_refs
+  - name: dimension_scores
+    purpose: The score decomposed, so a verdict can be argued with rather than accepted.
+    type: composite
+    contains:
+      - firmographic_score_bp
+      - technographic_score_bp
+      - behavioural_score_bp
+      - need_score_bp
+      - economic_score_bp
+  - name: evidence_coverage
+    purpose: How much of the profile was actually checked. The half of a score that is normally
+      discarded.
+    type: composite
+    contains:
+      - evidence_basis
+      - dimensions_evidenced
+      - dimensions_unknown
+      - evidence_sources
+  - name: currency
+    purpose: Whether this reading still means anything.
+    type: composite
+    contains:
+      - assessed_at
+      - assessed_by
+      - profile_version
+      - is_stale
+      - stale_after_days
+  - name: exception_handling
+    purpose: The audit trail that stops silent widening.
+    type: composite
+    contains:
+      - exception_recorded
+      - exception_reason
+      - exception_approved_by
+  - name: calibration
+    purpose: What happened afterwards. The only part of this object that improves the profile.
+    type: composite
+    contains:
+      - deal_outcome
+      - retained_months
+      - observed_cycle_days
+      - observed_committee_size
+  - name: fit_verdict
+    purpose: '`adjacent` earns its place. Collapsing it into in_profile inflates the pipeline and collapsing
+      it into out_of_profile discards the accounts a profile is most likely to be wrong about — the boundary
+      cases are where a profile learns anything.'
+    type: value
+    data_type: enum
+    allowed_values: [unknown, in_profile, adjacent, out_of_profile, disqualified]
+    required: true
+    description: >
+      `adjacent` earns its place. Collapsing it into in_profile inflates the pipeline and
+      collapsing it into out_of_profile discards the accounts a profile is most likely to be
+      wrong about — the boundary cases are where a profile learns anything.
+  - name: fit_score_bp
+    purpose: Deterministic weighted roll-up of the dimension blocks. Never a model output, and never
+      the thing a disqualifier is subtracted from.
+    type: value
+    data_type: integer
+    description: Deterministic weighted roll-up of the dimension blocks. Never a model output, and
+      never the thing a disqualifier is subtracted from.
+  - name: confidence_bp
+    purpose: How much of the score rests on evidence rather than on absence. A high score computed
+      from three of eleven dimensions is a guess wearing a number, and reporting it without this field
+      is the most common way a fit model misleads the person reading it.
+    type: value
+    data_type: integer
+    description: >
+      How much of the score rests on evidence rather than on absence. A high score computed
+      from three of eleven dimensions is a guess wearing a number, and reporting it without
+      this field is the most common way a fit model misleads the person reading it.
+  - name: disqualifier_hit
+    purpose: Overrides fit_score_bp outright rather than reducing it. A disqualified account with an
+      excellent score is disqualified.
+    type: value
+    data_type: boolean
+    description: Overrides fit_score_bp outright rather than reducing it. A disqualified account with
+      an excellent score is disqualified.
+  - name: disqualifier_refs
+    purpose: Which disqualifiers matched. A verdict with no named cause cannot be contested, and an
+      uncontestable disqualification never gets corrected.
+    type: value
+    data_type: list
+    description: Which disqualifiers matched. A verdict with no named cause cannot be contested, and
+      an uncontestable disqualification never gets corrected.
+  - name: firmographic_score_bp
+    purpose: The firmographic_score_bp of this object.
+    type: value
+    data_type: integer
+  - name: technographic_score_bp
+    purpose: The technographic_score_bp of this object.
+    type: value
+    data_type: integer
+  - name: behavioural_score_bp
+    purpose: 'Consistently the most predictive block and reliably the last to be populated, because how
+      an account buys can only be observed once it starts buying. That ordering is the central awkwardness
+      of fit scoring: the useful evidence arrives after the decision it was needed for.'
+    type: value
+    data_type: integer
+    description: >
+      Consistently the most predictive block and reliably the last to be populated, because
+      how an account buys can only be observed once it starts buying. That ordering is the
+      central awkwardness of fit scoring: the useful evidence arrives after the decision it
+      was needed for.
+  - name: need_score_bp
+    purpose: The need_score_bp of this object.
+    type: value
+    data_type: integer
+  - name: economic_score_bp
+    purpose: The economic_score_bp of this object.
+    type: value
+    data_type: integer
+  - name: evidence_basis
+    purpose: The strongest class of evidence behind this reading. `public_only` is honest and common
+      and should cap confidence; `outcome` is the only value that lets the reading feed back into the
+      profile.
+    type: value
+    data_type: enum
+    allowed_values: [none, public_only, interaction, outcome]
+    description: >
+      The strongest class of evidence behind this reading. `public_only` is honest and common
+      and should cap confidence; `outcome` is the only value that lets the reading feed back
+      into the profile.
+  - name: dimensions_evidenced
+    purpose: The dimensions_evidenced of this object.
+    type: value
+    data_type: integer
+  - name: dimensions_unknown
+    purpose: Unknown is not neutral. A dimension nobody checked contributes no information, and a
+      weighted average that quietly renormalises over the missing ones pulls every sparse reading
+      toward the middle — which makes bad accounts look mediocre instead of bad.
+    type: value
+    data_type: integer
+    description: >
+      Unknown is not neutral. A dimension nobody checked contributes no information, and a
+      weighted average that quietly renormalises over the missing ones pulls every sparse
+      reading toward the middle — which makes bad accounts look mediocre instead of bad.
+  - name: evidence_sources
+    purpose: The evidence_sources of this object.
+    type: value
+    data_type: list
+  - name: assessed_at
+    purpose: The assessed_at of this object.
+    type: value
+    data_type: timestamp
+  - name: assessed_by
+    purpose: The assessed_by of this object.
+    type: value
+    data_type: enum
+    allowed_values: [system, agent, human]
+  - name: profile_version
+    purpose: Which version of the ICP produced this reading. Without it a reading cannot be
+      re-derived, and drift cannot be distinguished from a change of instrument.
+    type: value
+    data_type: string
+    description: Which version of the ICP produced this reading. Without it a reading cannot be
+      re-derived, and drift cannot be distinguished from a change of instrument.
+  - name: is_stale
+    purpose: The is_stale of this object.
+    type: value
+    data_type: boolean
+  - name: stale_after_days
+    purpose: The stale_after_days of this object.
+    type: value
+    data_type: integer
+    unit: days
+  - name: exception_recorded
+    purpose: A deal opened against an out_of_profile verdict must carry one. Silent exceptions, one
+      reasonable case at a time, are the mechanism by which a profile becomes fiction.
+    type: value
+    data_type: boolean
+    description: A deal opened against an out_of_profile verdict must carry one. Silent exceptions,
+      one reasonable case at a time, are the mechanism by which a profile becomes fiction.
+  - name: exception_reason
+    purpose: The exception_reason of this object.
+    type: value
+    data_type: string
+  - name: exception_approved_by
+    purpose: The exception_approved_by of this object.
+    type: value
+    data_type: string
+  - name: deal_outcome
+    purpose: The calibration hook. `churned` and `renewed` are separate from `won` because a profile
+      validated on `won` alone cannot see its worst failure mode.
+    type: value
+    data_type: enum
+    allowed_values: [pending, won, lost, churned, renewed]
+    description: The calibration hook. `churned` and `renewed` are separate from `won` because a
+      profile validated on `won` alone cannot see its worst failure mode.
+  - name: retained_months
+    purpose: The retained_months of this object.
+    type: value
+    data_type: integer
+    unit: months
+  - name: observed_cycle_days
+    purpose: Actual cycle against the profile's expectation. A cycle far longer than expected is
+      usually a fit finding misfiled as a process finding.
+    type: value
+    data_type: integer
+    unit: days
+    description: Actual cycle against the profile's expectation. A cycle far longer than expected is
+      usually a fit finding misfiled as a process finding.
+  - name: observed_committee_size
+    purpose: The observed_committee_size of this object.
+    type: value
+    data_type: integer
+  - name: last_engaged_at
+    purpose: One of the three properties on this object with a live Layer 2 source. That count is the
+      problem.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: One of the three properties on this object with a live Layer 2 source. That count is
+      the problem.
+  - name: momentum
+    purpose: The momentum of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+  - name: ball_in_court
+    purpose: The ball_in_court of this object.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: No reading taken. The default state of most accounts in most pipelines, including
+        the ones being actively worked.
+    - name: provisional
+      description: Scored from public data only, before any interaction. Legitimate and useful,
+        provided the confidence is capped and the cap is visible.
+      entered_when: [absent: thread.last_inbound]
+    - name: evidenced
+      description: Behavioural evidence from real interaction has entered the score.
+      entered_when: [exists: thread.last_inbound]
+    - name: disqualified
+      description: A disqualifier matched. Terminal until that disqualifier is contested or retired —
+        not until someone finds the account attractive again.
+    - name: stale
+      description: The profile moved on, or the reading aged past stale_after_days. A stale reading
+        may still be read; it may not gate.
+    - name: confirmed
+      description: The outcome arrived and matched the reading.
+      entered_when: [{path: deal.status, op: "!=", value: open}]
+    - name: refuted
+      description: >
+        The outcome contradicted the reading. The most valuable state in this object and the
+        one systems are least likely to record, because a refuted reading looks like a
+        mistake to hide rather than the only feedback a profile ever receives.
+  transitions:
+    - {from: unknown, to: provisional, when: [absent: thread.last_inbound]}
+    - {from: provisional, to: evidenced, when: [exists: thread.last_inbound]}
+    - {from: provisional, to: disqualified}
+    - {from: evidenced, to: disqualified}
+    - {from: evidenced, to: confirmed, when: [{path: deal.status, op: "!=", value: open}]}
+    - {from: evidenced, to: refuted, when: [{path: deal.status, op: "!=", value: open}]}
+    - {from: evidenced, to: stale}
+    - {from: stale, to: evidenced}
+    - {from: disqualified, to: evidenced}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: references
+    target: sales.obj.core.icp
+    cardinality: one
+    description: The instrument this reading was taken with, pinned to a version. An unpinned reading
+      is not reproducible.
+
+  - type: attaches_to
+    target: sales.obj.core.account
+    cardinality: one
+    description: The unit of fit is always the account. A fit reading attached to a contact is a
+      category error that produces "great fit" on a company that cannot buy.
+
+  - type: requires
+    target: sales.obj.icp_definition.disqualifier
+    cardinality: zero_or_many
+    description: Resolved before the verdict, because a match overrides the score rather than
+      adjusting it.
+
+  - type: gates
+    target: sales.obj.core.lead
+    cardinality: zero_or_many
+    description: Fit is the first gate. A lead outside the profile is not an early-stage deal, it is a
+      distraction with a stage name.
+
+  - type: influences
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_one
+
+  - type: precedes
+    target: sales.obj.core.deal
+    cardinality: zero_or_one
+    description: The reading should exist before the deal does. When it is created afterwards it is
+      almost always a justification rather than an assessment.
+
+  - type: references
+    target: sales.obj.core.company
+    cardinality: zero_or_one
+    description: Where firmographics would come from, if any were projected.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: fa.public_data_only
+      statement: "An open deal with no inbound contact of any kind — whatever score exists was computed
+        from public data alone."
+      status: executable
+      when:
+        - {path: deal.status, op: "=", value: open}
+        - {absent: thread.last_inbound}
+      yields: {confidence_bp: 9000, attribute: evidence_basis, value: public_only}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Reads as bookkeeping and is not. Without this the behavioural block is scored as
+        absent-and-therefore-neutral rather than unchecked, and an account nobody has spoken
+        to comes out looking like an account with average buying behaviour.
+
+    - id: fa.outcome_is_available_for_calibration
+      statement: "The deal has left open status — this reading can now be scored against what actually happened."
+      status: executable
+      when:
+        - {path: deal.status, op: "!=", value: open}
+      yields: {confidence_bp: 9500, attribute: evidence_basis, value: outcome}
+      evidence_fields: [deal.status]
+      note: >
+        The only pattern here that improves the profile rather than applying it. A reading
+        that is never calibrated is a number nobody can be wrong about, which is why fit
+        models drift for years without anyone noticing.
+
+    - id: fa.disqualifier_matched
+      statement: "An enforced disqualifier's test evaluates true against this account."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: fit_verdict, value: disqualified}
+      requires_signals:
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+        - {kind: fact_path, name: account.employee_count, owner_layer: L1}
+        - {kind: fact_path, name: account.geography, owner_layer: L1, note: "The whole anti-fit half of\
+            this capability sits behind these three facts. They are the cheapest enrichment available anywhere
+            in the stack and none of them is projected, so the disqualifier list can be authored, reviewed
+            and published and still never fire."}
+
+    - id: fa.profile_version_superseded
+      statement: "The ICP version this reading was taken against has been retired, so the reading is stale."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: is_stale, value: true}
+      requires_signals:
+        - {kind: fact_path, name: icp.active_profile_version, owner_layer: L1, note: "Requires the Organization\
+            Brain's active profile version to be projected as a fact. Without it, staleness can only be approximated
+            by wall-clock age, which is wrong in both directions — a profile can go a year without changing,
+            or change twice in a month."}
+
+    - id: fa.retention_confirms_the_reading
+      statement: "The account renewed past the profile's expected retention, confirming an in_profile verdict
+        on the evidence that actually matters."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: deal_outcome, value: renewed}
+      requires_signals:
+        - {kind: obs_kind, name: renewal_signed, owner_layer: L2, note: "Layer 2 emits contract_requested\
+            and nothing at all about the second contract. The profession validates a profile on retention;
+            the pipeline can watch every deal close and never learn whether closing it was a good idea."}
+        - {kind: fact_path, name: account.retention_months, owner_layer: L1}
+
+  heuristic:
+
+    - id: fa.value_below_the_economic_floor
+      statement: "An open deal priced below the bottom of the target band — economic anti-fit, whatever
+        the firmographics say."
+      status: executable
+      when:
+        - {path: deal.status, op: "=", value: open}
+        - {path: deal.value, op: "<", value: 10000}
+      yields: {confidence_bp: 7000, attribute: fit_verdict, value: adjacent}
+      evidence_fields: [deal.value]
+      note: >
+        The literal floor is a placeholder for the SHAPE of the test; at runtime it resolves
+        from the Organization Brain's target_acv_low, because the band is per tenant. Yields
+        `adjacent` rather than out_of_profile deliberately — a sub-floor deal at an otherwise
+        excellent account is usually a scoping error, and downgrading the verdict is the right
+        response where rejecting the account is not.
+
+    - id: fa.enterprise_shape_with_smb_economics
+      statement: "Three or more contacts on the deal, and a value below the band floor — the account buys
+        like an enterprise and pays like an SMB."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 3}
+        - {path: deal.value, op: "<", value: 10000}
+      yields: {confidence_bp: 7200, attribute: fit_verdict, value: out_of_profile}
+      evidence_fields: [deal.value]
+      note: >
+        The classic expensive-to-serve mis-fit, and the one sellers actively celebrate:
+        broad engagement across an account reads as a healthy deal, so the signal that should
+        trigger a fit review triggers optimism instead. Cost to serve scales with committee
+        size and revenue does not.
+
+    - id: fa.stalls_the_way_out_of_profile_accounts_stall
+      statement: "Open deal carrying a price objection and a timeline slip, with no budget ever approved
+        — the signature of an account sized wrong for us."
+      status: executable
+      when:
+        - {path: deal.status, op: "=", value: open}
+        - {has_obs: objection_price}
+        - {has_obs: timeline_slip}
+        - {no_obs: budget_approved}
+      yields: {confidence_bp: 6800, attribute: fit_verdict, value: out_of_profile}
+      evidence_fields: [deal.status]
+      note: >
+        This reads backwards against the qualification heuristic that a price objection proves
+        a budget exists — and it should. That heuristic holds when the objection stands alone;
+        here it is paired with a slip and an approval that never came, and the combination
+        says the interest is real while the money is not. Interest without economics is the
+        exact shape of an account that should never have been in pipeline, and it is
+        indistinguishable from a negotiable deal until you look at all three signals at once.
+
+    - id: fa.displacement_against_a_settled_incumbent
+      statement: "A competitor is present and momentum is falling — this is a displacement sale, which is
+        a different profile from greenfield."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {path: derived.momentum, op: "<", value: 0.4}
+      yields: {confidence_bp: 6000, attribute: null}
+      evidence_fields: [derived.momentum]
+      note: >
+        Deliberately weak, and deliberately not a disqualification. Displacement is a distinct
+        fit question — switching cost, contract timing, internal sponsor of the incumbent —
+        and the standard error is to treat a stalling displacement as a normal deal needing
+        more nurture. It needs a different profile, or none.
+
+    - id: fa.resembles_the_churned_cohort
+      statement: "The account looks more like the accounts that churned than the ones that renewed."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: fit_verdict, value: out_of_profile}
+      requires_signals:
+        - {kind: derived, name: derived.cohort_similarity, owner_layer: L2, note: "Needs closed-and-churned\
+            history joined to firmographics. The single most useful thing this object could compute and the
+            furthest from being possible."}
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+
+    - id: fa.category_naive_buyer
+      statement: "Nobody at the account has bought in this category before, so the cycle will be a category-education
+        cycle rather than a vendor-selection one."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: observed_cycle_days, value: null}
+      requires_signals:
+        - {kind: fact_path, name: account.tech_stack, owner_layer: L1, note: "Absence of any category-adjacent\
+            tool is the cheapest available proxy for category naivety."}
+      note: >
+        Worth the ask because it corrects the wrong thing. Category-naive accounts are not
+        bad fit — many are excellent — but every stage estimate, every forecast date and
+        every follow-up cadence built for a vendor-selection cycle is wrong for them, and the
+        deal gets written off as stalled when it is merely early.
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: derived, signal: graph degree on the deal — the committee-shape proxy}
+  - {source: derived, signal: progression rate, path: derived.momentum}
+  - {source: email, signal: whether any two-way contact exists at all, path: thread.last_inbound}
+  - {source: email, signal: "price objections, slips, competitor mentions"}
+  - {source: crm, signal: "deal value and status", path: deal.value}
+  - {source: crm, signal: "closed-won, closed-lost and churn history", description: "Not projected as\
+      typed facts — see the needs_signal patterns."}
+  - {source: website, signal: "public firmographics and observable tech stack"}
+  - {source: manual_entry, signal: "the exception reason on an out-of-profile deal"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: fit_verdict, type: string, description: "unknown | in_profile | adjacent | out_of_profile |\
+      disqualified.", consumed_by: [L4.decision_maker]}
+  - {name: fit_score_bp, type: integer, description: "Weighted roll-up. Never emitted without confidence_bp\
+      beside it.", consumed_by: [L4.reasoning_unit]}
+  - {name: confidence_bp, type: integer, description: "Evidence coverage, not certainty about the account.",
+      consumed_by: [L4.reasoning_unit]}
+  - {name: anti_fit_reasons, type: list, description: "Named disqualifiers that matched. Feeds the wording\
+      of a decline as well as the decision to decline.", consumed_by: [L4.decision_maker,
+        L5.communication_planning]}
+  - {name: expected_cycle_days, type: integer, description: "Prior for how long this account should take.\
+      Bounds Timeline's plausibility check and stops a normal cycle being logged as a stall.",
+      consumed_by: [L4.reasoning_unit]}
+  - {name: exception_required, type: boolean, description: "True when a deal is being worked against a\
+      negative verdict.", consumed_by: [L5.execution_planning]}
+  - {name: calibration_record, type: string, description: "Reading versus outcome, for profile refinement.\
+      The only output that flows backwards.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: fa.disqualifier_is_absolute, statement: "A hard disqualifier match cannot be outscored by any\
+      combination of positive dimensions.", hard: true}
+  - {id: fa.no_reading_without_version, statement: "A reading must name the profile_version it was taken\
+      against, or it is not reproducible and cannot be calibrated.", hard: true}
+  - {id: fa.stale_may_not_reject, statement: "A stale reading may inform but may not disqualify.", hard:
+      true}
+  - {id: fa.no_self_widening, statement: "This object may never alter the ICP it read. It may only raise\
+      a finding.", hard: true}
+  - {id: fa.account_scope_only, statement: "Fit is assessed against an account, never against a contact\
+      or a single deal.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: fa.disqualifier_overrides_score
+    statement: >
+      A disqualifier match sets fit_verdict to disqualified regardless of fit_score_bp. The
+      override is not subtractive — a subtractive model lets four strong blocks outvote a hard
+      blocker in the fifth, which is exactly the deal the instrument exists to refuse.
+    then: force_verdict_disqualified
+    severity: blocking
+
+  - id: fa.score_without_coverage_is_not_a_reading
+    statement: >
+      fit_score_bp may not be emitted without dimensions_unknown and confidence_bp alongside
+      it. A bare number implies a completeness that sparse data does not have, and every
+      downstream consumer will treat it as complete.
+    severity: blocking
+
+  - id: fa.out_of_profile_deal_needs_an_exception
+    statement: >
+      Opening a deal against an out_of_profile or disqualified verdict requires
+      exception_recorded with a reason. The exceptions are not the problem; unrecorded
+      exceptions are, because they cannot be counted and therefore cannot become a finding.
+    severity: warning
+
+  - id: fa.stale_reading_may_not_gate
+    statement: >
+      A reading taken against a superseded profile_version may inform, but may not disqualify.
+      Rejecting an account on a retired instrument is indefensible when the account asks why.
+    when: [{fn: days_since, path: deal.last_inbound, op: ">", value: 180}]
+    then: downgrade_to_advisory
+    severity: blocking
+
+  - id: fa.refuted_readings_must_reach_review
+    statement: >
+      A reading contradicted by its outcome is raised as a finding, never silently overwritten
+      by the correct answer. Overwriting destroys the only training signal the profile gets.
+    severity: warning
+
+  - id: fa.no_widening_from_a_single_refutation
+    statement: >
+      One refuted reading changes the reading, not the profile. Layer 6 may propose a profile
+      change; only a person merges one — Atlas Rule 06.
+    severity: blocking
+
+# ── 8 · Decision Factors — must sum to 10000 ─────────────────────────────────────────────
+decision_factors:
+
+  - name: disqualifier_state
+    weight_bp: 3000
+    direction: decreases
+    description: The heaviest factor by design. Anti-fit evidence is more reliable than fit evidence
+      because the failures are unambiguous and the successes are over-attributed.
+    reads: [disqualifier_hit, disqualifier_refs]
+
+  - name: behavioural_evidence
+    weight_bp: 2000
+    direction: increases
+    description: How the account is actually buying. Outranks firmographics whenever both are present,
+      which today is never.
+    reads: [behavioural_score_bp, observed_cycle_days, observed_committee_size]
+
+  - name: economic_fit
+    weight_bp: 2000
+    direction: increases
+    reads: [economic_score_bp, deal_outcome, retained_months]
+
+  - name: evidence_coverage
+    weight_bp: 1500
+    direction: context
+    description: Not a fit signal — a discount on every other factor. A reading with two dimensions
+      checked should move nothing very far in either direction.
+    reads: [evidence_basis, dimensions_evidenced, dimensions_unknown, confidence_bp]
+
+  - name: firmographic_fit
+    weight_bp: 1000
+    direction: increases
+    description: Weighted lowest of the fit blocks on purpose. It is the block everyone builds a
+      profile out of and the one that separates cohorts least.
+    reads: [firmographic_score_bp, technographic_score_bp, need_score_bp]
+
+  - name: reading_currency
+    weight_bp: 500
+    direction: context
+    reads: [is_stale, profile_version, assessed_at, stale_after_days]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# ANDed within a pattern. There is no OR — alternatives are separate patterns.
+evidence:
+  - {source: crm, strength_bp: 9000, description: "Closed-won, closed-lost and churn outcomes. The only\
+      evidence that validates a reading rather than producing one."}
+  - {source: derived, strength_bp: 6500, description: "Graph shape and momentum. Behavioural, live, and\
+      today the entire executable basis of this object."}
+  - {source: email, strength_bp: 6000, description: "Objection, slip and competitor observations. Circumstantial\
+      individually, diagnostic in combination."}
+  - {source: website, strength_bp: 5500, description: "Public firmographics and tech stack. Cheap and\
+      current, and not projected into a fact today."}
+  - {source: manual_entry, strength_bp: 4000, description: "A human's fit judgement. Fast, and the most\
+      over-weighted input in practice — it is where confirmation bias enters the score."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: verdict_coverage, unit: percent, description: "Share of open pipeline carrying a fit reading\
+      at all. The first number to look at, and usually the worst.", owner_layer: L6}
+  - {name: verdict_accuracy, unit: percent, description: "Readings later confirmed by outcome. Calibrates\
+      every pattern above; without it the confidence_bp values are decoration.", owner_layer: L6}
+  - {name: mean_dimensions_unknown, unit: count, description: "Average unchecked dimensions per reading.\
+      Measures the enrichment gap directly.", owner_layer: L6}
+  - {name: exception_rate, unit: percent, description: "Deals worked against a negative verdict. Rising\
+      exception rate means the profile is wrong or ignored, and the two need different fixes.",
+      owner_layer: L6}
+  - {name: refutation_rate, unit: percent, description: "Readings contradicted by outcome. The learning\
+      signal.", owner_layer: L6}
+  - {name: time_to_verdict, unit: hours, description: "First touch to recorded verdict.", owner_layer:
+      L4}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: fa.scored, name: Fit Scored, payload: [fit_verdict, fit_score_bp, confidence_bp, profile_version]}
+  - {id: fa.disqualified, name: Account Disqualified, payload: [disqualifier_refs]}
+  - {id: fa.downgraded, name: Fit Verdict Downgraded, emitted_when: [has_obs: timeline_slip],
+      payload: [previous_verdict, fit_verdict], description: "A verdict that moves down mid-deal is a stronger
+      finding than one that starts low, because it means the profile mis-read an account it had already
+      seen."}
+  - {id: fa.exception_opened, name: Out-of-Profile Exception Opened, payload: [exception_reason, exception_approved_by]}
+  - {id: fa.refuted, name: Reading Refuted by Outcome, emitted_when: [{path: deal.status, op: "!=", value:
+          open}], payload: [fit_verdict, deal_outcome, retained_months], description: "The feedback event.
+      Raised for a human; Layer 6 may propose a profile change and may never make one — Atlas Rule 06."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: fa.score, name: Score the account, actor: system}
+  - {id: fa.check_anti_fit, name: Run the disqualifier list, actor: system, effect: "Runs first. Cheapest\
+      check available and the only one that can end the assessment early."}
+  - {id: fa.request_enrichment, name: Enrich the missing dimensions, actor: agent, effect: "Targets the\
+      unknown dimensions specifically, rather than re-fetching what is already known."}
+  - {id: fa.record_exception, name: Record an out-of-profile exception, actor: human, effect: "Permits\
+      the deal and makes it countable. Exceptions are fine; uncounted exceptions are how a profile dies."}
+  - {id: fa.route_elsewhere, name: Refer the account to a partner, actor: human, effect: "A disqualified\
+      account is often somebody else's ideal customer. Referring costs nothing, because we were not going
+      to win it."}
+  - {id: fa.calibrate, name: Score the reading against the outcome, actor: system, effect: "Only runs\
+      once deal_outcome leaves pending. Without it every pattern above stays uncalibrated forever."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Confident reading on nothing", note: "fit_score_bp 8600 from three of eleven dimensions,\
+      all firmographic. The number is real, the reading is not, and confidence_bp is the only field that
+      says so."}
+  - {label: "Enterprise shape, SMB cheque", note: "Six contacts, security review under way, deal value\
+      a fifth of the band floor. Everyone reads the engagement as health; it is cost to serve."}
+  - {label: "Disqualified with a high score", note: "Perfect firmographics and technographics, in a jurisdiction\
+      we cannot legally serve. The override exists for exactly this row."}
+  - {label: "The classic misclassification", note: "An account marked out_of_profile because the DEAL\
+      was small. Fit belongs to the account; a small first deal at an ideal account is a land, not a mis-fit,
+      and rejecting it forfeits the expansion the profile was built to find."}
+  - {label: "Refuted reading", note: "Scored out_of_profile, won, and retained thirty months. One row\
+      is not permission to widen the profile — it is the first member of a candidate segment that now needs
+      validating on its own."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Eleven patterns: five executable, six blocked. Every executable one reads deal behaviour —
+    graph degree, value band, observation mix — and not one reads what the account IS, because
+    no firmographic fact reaches the engine. The highest-value gap by a distance is
+    account.industry / account.employee_count / account.geography as typed Layer 1 facts:
+    three cheap enrichment fields that would unblock fa.disqualifier_matched and
+    fa.resembles_the_churned_cohort, and with them the entire anti-fit half of ICP Definition,
+    which can currently be authored and published and still never fire. Second is a retention
+    signal (renewal_signed, account.retention_months): the profession validates a profile on
+    retention, and the pipeline can watch every deal close without ever learning whether
+    closing it was a good idea.

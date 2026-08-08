@@ -1,0 +1,117 @@
+# Digital product — offering type under Product.
+#
+# Content and licences: courses, media, templates, ebooks, plugins, downloadable assets, keys.
+# Declares only what differs from customer_support.offering.product.
+
+identity:
+  id: customer_support.offering.product.digital_product
+  name: Digital Product
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.product
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Content and licences rather than running software — courses, media, templates, ebooks,
+  plugins, downloadable assets, activation keys. It is not software and treating it as such is
+  the first mistake: there is nothing running that we operate, no release train, and usually no
+  configuration to get wrong. What breaks is almost never the artefact, it is access to the
+  artefact. A download that failed halfway, a licence key at its device limit, a payment that
+  is on the customer's statement and not in our system, an account created against a mistyped
+  email address. Support here is an entitlement and fulfilment job wearing a product costume,
+  and the fastest correct resolution is very often a refund, because the refund costs less than
+  the second reply.
+  The artefact does have one property that catches people out. When the content itself is
+  wrong, there is no deploy. The copy the customer downloaded is theirs and stale forever;
+  correcting it means republishing and then persuading every prior buyer to fetch it again,
+  which most of them will never do. A product organisation used to fixing forward has no
+  instinct for a defect that cannot be recalled.
+  Volume is cohort-shaped. A launch, a promotion or an expiring coupon pushes an entire buying
+  population through checkout inside one hour, so the queue is governed by the marketing
+  calendar — a schedule support does not own and is routinely not shown until it is running.
+
+characteristics:
+  delivery: "downloaded, streamed or unlocked by a key; delivered once and then in the customer's possession permanently"
+  pricing_shape: "low-ticket one-off purchase or a small recurring licence, frequently sold in launch waves at a discount that expires"
+  margin_profile: "very high margin per unit and very low absolute revenue per unit, so a two-touch ticket can cost more than the sale it belongs to — the only offering in this tree where refunding on first contact is often the profit-maximising move"
+  post_sale_load: "front-loaded and short; nearly all of it lands in the hours immediately after purchase and it is effectively over within a week"
+  support_load: "an extremely high contact-per-revenue ratio compressed into launch windows. The dominant contact reasons are access, licence and payment, not the product itself, which means the queue is testing our checkout and our fulfilment rather than our craft"
+  resolution_locus: "our fulfilment and billing systems rather than the product — a resent link, a released licence seat, a corrected email address or a refund, all performable unilaterally inside a single reply. Where the content itself is wrong there is no resolution at all for the copy already downloaded"
+  notes: >
+    The buyer is usually an individual spending their own money, which changes the emotional
+    register completely: the amount is small, the disappointment is personal, and the escalation
+    path is a public review rather than an account manager.
+
+capabilities:
+  # Two capabilities are switched off because they have nothing to point at, and three because
+  # what they model does not exist in this offering. Leaving them nominally on would be worse
+  # than useless: they would manufacture obligations and relationships out of a $29 transaction.
+  deactivates:
+    # There is no executive on either side of a single-copy purchase, and no account team to
+    # escalate into. What looks like an executive escalation here is a public complaint, which
+    # de-escalation and satisfaction measurement already own.
+    - customer_support.escalation_and_incident.executive_escalation
+    # There is no account. There are buyers. Modelling a repeat purchaser as a relationship to
+    # be managed invents a commercial structure that neither side has agreed to, and it makes
+    # the system recommend account plays to people who bought a template once.
+    - customer_support.support_management.account_relationship_management
+    # Response speed here is a service standard we set for ourselves and can change on a
+    # Tuesday. It is not a promise that can be breached. Running SLA machinery over it converts
+    # ordinary slowness into a breach event with a credit exposure that does not exist, and the
+    # resulting board metric is entirely self-inflicted.
+    - customer_support.entitlement_and_sla.sla_management
+    - customer_support.entitlement_and_sla.breach_prevention
+
+  emphasises:
+    # The licence, the key and the order are the whole ballgame. Entitlement verification here
+    # is not a contractual check, it is the diagnosis.
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # Volume is enormous and the answers are short and repeated, which is the one situation in
+    # this whole tree where macros and automated deflection are unambiguously correct rather
+    # than merely tempting.
+    - customer_support.knowledge_and_deflection.macro_management
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+    - customer_support.intake_and_triage.channel_intake
+    - customer_support.intake_and_triage.intent_classification
+    # Launch spikes are the entire capacity problem, and they are knowable in advance by anyone
+    # who is invited to the marketing standup.
+    - customer_support.support_operations.capacity_planning
+    - customer_support.support_operations.cost_to_serve
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [is_entitled, plan, seat_count, seats_in_use]
+      note: >
+        Seats are the licence mechanic that generates the most contacts, because a customer who
+        reinstalled twice is functionally indistinguishable from a customer sharing a key, and
+        the correct answer differs. Making seat counts mandatory is what lets an agent resolve
+        the honest case in one reply without accusing anybody of anything.
+    - object: customer_support.obj.core.ticket
+      require_properties: [intent_ref, channel]
+      note: >
+        The intent is the resolution here. "Download failed", "key rejected", "charged twice"
+        and "wrong content" have four fixed answers and four different owning systems, and a
+        ticket that has not been classified is a ticket that will be read by a human for no
+        reason.
+  never_load:
+    # Nothing in this offering has a contractual clock, so instantiating one creates a deadline
+    # that no document supports and that Layer 4 will then reason about as if it were owed.
+    - customer_support.obj.core.sla_target
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The deactivation of sla_management is the most arguable line in this file and is stated
+    deliberately so it can be argued with. The counter-case is a business-facing digital
+    product — a plugin sold to agencies on an annual licence — where a written response target
+    genuinely exists. If that becomes common, the right fix is a separate type rather than
+    weakening this one back into vagueness.

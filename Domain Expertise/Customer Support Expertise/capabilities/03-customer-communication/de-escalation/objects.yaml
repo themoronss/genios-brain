@@ -1,0 +1,42 @@
+# Load-set for customer_support.customer_communication.de_escalation — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/          loaded by more than one capability
+# scoped -> objects/de_escalation/ loaded by this capability alone (none: everything this
+#                                  capability reads is read by several others too)
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a heated
+#            contact still needs advice when we cannot see the contract, and withholding it is
+#            the worse failure.
+
+capability: customer_support.customer_communication.de_escalation
+
+core:
+  # Ticket, CustomerSentiment and Requester are required because the three questions this
+  # capability answers each need one of them: what is the state of the work (Ticket), how hot is
+  # this and getting hotter or cooler (CustomerSentiment), and who is this person and what are
+  # they exposed to internally (Requester). Drop any one and the remaining two produce confident
+  # advice about the wrong grievance — sentiment without a ticket cannot tell anger about a
+  # broken promise from anger about a broken product.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.requester
+  # Escalation, ChurnRisk and Entitlement change the ceiling rather than the reading. Escalation
+  # tells us whether ownership has already moved and therefore whether another move is routing or
+  # theatre; ChurnRisk says whether this is a bad week or the end of a relationship; Entitlement
+  # bounds what may be promised, and promising past it is how de-escalation becomes tomorrow's
+  # breach. All three are common enough to be absent that requiring them would silence the
+  # capability on exactly the mid-market accounts it is most useful on.
+  optional:
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.entitlement
+
+scoped:
+  # Nothing scoped. Every object de-escalation reads is read elsewhere — the grievance lives in
+  # the conversation and the sentiment, not in a private structure of its own. If a Grievance
+  # object is ever authored to hold the ledger separately from the ticket outcome, it starts here.
+  required: []
+  optional: []

@@ -1,0 +1,23 @@
+# Load-set for admin.executive_support.delegation_and_task_routing — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/delegation-and-task-routing/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.executive_support.delegation_and_task_routing
+
+core:
+  required:
+    - admin.obj.core.action_item
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.employee_record
+
+scoped:
+  required: []
+  optional: []

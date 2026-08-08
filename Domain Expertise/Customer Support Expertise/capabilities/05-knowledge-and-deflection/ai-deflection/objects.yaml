@@ -1,0 +1,29 @@
+# Load-set for customer_support.knowledge_and_deflection.ai_deflection
+# REFERENCES ONLY — never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.knowledge_and_deflection.ai_deflection
+
+core:
+  # Knowledge Article is required because an ungrounded assistant is not deflection, it is
+  # improvisation with the company's name on it. Intent is what decides whether the model may
+  # attempt an answer at all. Conversation is required here and only optional elsewhere in the
+  # subdomain, because the multi-turn transcript is where the handover decision is made — a
+  # single-turn view cannot see frustration accumulating.
+  required:
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.intent
+    - customer_support.obj.core.conversation
+  # Content Gap catches the case where the assistant had nothing to ground on, which is a
+  # content finding rather than a model finding. Customer Sentiment is the unprompted-handover
+  # trigger. Escalation is what a refusal to keep trying should produce.
+  optional:
+    - customer_support.obj.core.content_gap
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.escalation
+
+scoped:
+  required: []
+  optional: []

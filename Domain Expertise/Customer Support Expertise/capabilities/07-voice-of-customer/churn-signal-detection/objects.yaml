@@ -1,0 +1,33 @@
+# Load-set for customer_support.voice_of_customer.churn_signal_detection
+# REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                 loaded by more than one capability
+# scoped -> objects/churn_signal_detection/   loaded by this capability alone (none: everything
+#           this capability reads is read by somebody else too, which is the honest outcome of
+#           a capability that synthesises rather than originates)
+
+capability: customer_support.voice_of_customer.churn_signal_detection
+
+core:
+  # Required, and only these two. churn_risk is the object being produced and customer_account
+  # is the thing at risk — a churn read without an account is a mood, and a churn read without
+  # the risk object has nowhere to record itself. Everything else is corroboration.
+  required:
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.customer_account
+
+  # Optional by design, not by accident. Each of these strengthens a read that must still be
+  # produced without them: sentiment gives tone (vivid, least reliable), escalation gives a
+  # late but high-confidence confirmation, satisfaction_score gives a biased sample of the
+  # loudest and the happiest, and ticket gives the behavioural history that is actually the
+  # strongest predictor. Their absence lowers confidence rather than blocking, because the
+  # accounts most at risk are frequently the ones generating the least of this evidence.
+  optional:
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.ticket
+
+scoped:
+  required: []
+  optional: []

@@ -1,0 +1,51 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.sla_management.name_the_clock_first
+  name: Name the clock first
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Before working a ticket, establish which clocks the entitlement actually created and which
+    one this ticket will be judged on. Put that clock, and only that clock, in the view the agent works
+    from.
+
+
+    Agents optimise whatever is displayed. If the queue shows resolution and the contract promises first
+    response, the team will work the wrong deadline diligently and correctly, and no amount of coaching
+    will fix a display problem.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Before working a ticket, establish which clocks the entitlement actually created and which one
+    this ticket will be judged on. Put that clock, and only that clock, in the view the agent works
+    from.
+  actor: human
+  description: Agents optimise whatever is displayed. If the queue shows resolution and the contract
+    promises first response, the team will work the wrong deadline diligently and correctly, and no
+    amount of coaching will fix a display problem.
+  objects_read: &id001
+  - customer_support.obj.core.sla_target
+  - customer_support.obj.core.entitlement
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

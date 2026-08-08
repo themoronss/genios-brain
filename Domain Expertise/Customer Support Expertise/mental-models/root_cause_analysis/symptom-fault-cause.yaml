@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.root_cause_analysis.symptom_fault_cause
+  name: Symptom fault cause
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Symptom, fault and cause are three different objects. The symptom is what was seen, the
+    fault is what the system does wrong, the cause is why the system is permitted to do it.
+
+
+    Most fields labelled "root cause" in ticketing tools contain a fault, and a great many contain a
+    symptom. Once the three are named separately it becomes obvious which one an investigation has actually
+    reached, and that judgement is otherwise unavailable.'
+dimensions:
+- name: Symptom fault cause
+  asks: Symptom, fault and cause are three different objects. The symptom is what was seen, the fault
+    is what the system does wrong, the cause is why the system is permitted to do it.
+how_to_apply:
+- Symptom, fault and cause are three different objects. The symptom is what was seen, the fault is what
+  the system does wrong, the cause is why the system is permitted to do it.
+- Most fields labelled "root cause" in ticketing tools contain a fault, and a great many contain a symptom.
+  Once the three are named separately it becomes obvious which one an investigation has actually reached,
+  and that judgement is otherwise unavailable.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

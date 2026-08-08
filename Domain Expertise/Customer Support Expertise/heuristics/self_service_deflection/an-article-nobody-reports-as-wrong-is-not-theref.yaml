@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.self_service_deflection.an_article_nobody_reports_as_wrong_is_not_theref
+  name: An article nobody reports as wrong is not theref
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An article nobody reports as wrong is not therefore right.
+heuristic:
+  statement: An article nobody reports as wrong is not therefore right.
+  why: Feedback on knowledge is catastrophically under-supplied — the misled customer leaves rather
+    than complains, and the confused one assumes the fault is theirs. Silence on an article carries
+    the same information as silence on an article nobody read, so freshness must be checked on a schedule
+    and against releases rather than waited for.
+  reads:
+  - customer_support.obj.core.knowledge_article
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,29 @@
+identity:
+  id: sales.pb.lead_qualification.bant_budget_authority_need_timing_older
+  name: BANT — budget, authority, need, timing. Older, thinner, still the fast…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.lead_qualification
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: BANT — budget, authority, need, timing. Older, thinner, still the fastest first pass.
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: BANT — budget, authority, need, timing. Older, thinner, still the fast…
+  description: BANT — budget, authority, need, timing. Older, thinner, still the fastest first pass.
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.qualification.lead_qualification. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

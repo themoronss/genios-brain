@@ -1,0 +1,816 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CAPABILITY-SCOPED OBJECT — loaded by admin.compliance_and_governance.statutory_filing alone.
+#
+# The purest instance of the Admin atom. One submission, one authority, one jurisdiction, one
+# date that no prioritisation moves, and a penalty that arrives without anybody deciding to
+# impose it. Everything else in the domain is an obligation with some negotiability in it;
+# this one has none, which is why it is the cleanest object in the library and the one whose
+# missing substrate is most embarrassing.
+#
+# Three of ten patterns are executable, and all three run on commitment.due_at — that is, on
+# a date a human typed into a task. The statutory date itself has no system of record.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.statutory_filing.filing
+  name: Filing
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.statutory_filing
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+  aliases: ["Statutory Return", "Regulatory Submission", "Return", "Declaration"]
+purpose:
+  statement: >
+    One submission of one prescribed form to one authority in one jurisdiction for one defined
+    period. The discriminators are all external: the authority sets the form, the period and the
+    date, and the penalty accrues by operation of law rather than by anyone deciding to apply it.
+    Two properties follow from that and shape every rule below. First, a filing is not complete
+    when it is sent; it is complete when the authority acknowledges it, and the gap between those
+    two states is where late filings hide in plain sight. Second, the obligation does not depend
+    on there being anything to report — a nil return is a filing, and dormant entities generate
+    more penalties per head than trading ones for exactly that reason.
+attributes:
+  - name: obligation
+    purpose: What must be filed, with whom, under whose law, for what period.
+    type: composite
+    contains:
+      - filing_type
+      - authority
+      - jurisdiction
+      - legal_entity
+      - period_start
+      - period_end
+      - recurrence
+      - nil_return_required
+  - name: clock
+    purpose: The dates. One is set by law, one is set by us, and only one of them moves.
+    type: composite
+    contains:
+      - statutory_due_at
+      - internal_target_at
+      - extension_available
+      - extension_requested_at
+      - is_overdue
+  - name: preparation
+    purpose: What has to be true before a submission can be assembled at all.
+    type: composite
+    contains:
+      - dependency_ref
+      - data_source_system
+      - preparer_ref
+      - prior_period_correction
+  - name: authorisation
+    purpose: Who is permitted to sign, which is frequently a named role rather than a person.
+    type: composite
+    contains:
+      - signatory_role
+      - approver_ref
+      - approval_obtained_at
+  - name: submission
+    purpose: The act, and the proof of the act.
+    type: composite
+    contains:
+      - channel
+      - filed_by
+      - agent_ref
+      - submitted_at
+      - accepted_at
+      - reference_number
+      - rejection_reason
+  - name: consequence
+    purpose: What happens if it is late, and to whom.
+    type: composite
+    contains:
+      - penalty_basis
+      - penalty_amount
+      - penalty_is_personal
+      - escalation_ref
+  - name: filing_type
+    purpose: The prescribed form. "Confirmation Statement CS01", "VAT return", "Form MGT-7", "Form
+      5500", "PF ECR".
+    type: value
+    data_type: string
+    required: true
+    description: The prescribed form. "Confirmation Statement CS01", "VAT return", "Form MGT-7", "Form
+      5500", "PF ECR".
+  - name: authority
+    purpose: The body receiving it. Held as a string because the same organisation files with a dozen
+      authorities that share no schema — a tax office, a companies registry, a pensions regulator and
+      a data protection authority have nothing in common except that each has a date and a penalty.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The body receiving it. Held as a string because the same organisation files with a dozen
+      authorities that share no schema — a tax office, a companies registry, a pensions
+      regulator and a data protection authority have nothing in common except that each has a
+      date and a penalty.
+  - name: jurisdiction
+    purpose: Country and, where relevant, state or province. A group operating in four jurisdictions
+      has four calendars that agree on nothing, and the most common cause of a missed filing in a
+      multi-entity group is a calendar built for the parent's jurisdiction.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Country and, where relevant, state or province. A group operating in four jurisdictions
+      has four calendars that agree on nothing, and the most common cause of a missed filing
+      in a multi-entity group is a calendar built for the parent's jurisdiction.
+  - name: legal_entity
+    purpose: The filing entity, not the operating brand. Dormant subsidiaries file too, and they are
+      the ones nobody has an owner for.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The filing entity, not the operating brand. Dormant subsidiaries file too, and they are
+      the ones nobody has an owner for.
+  - name: period_start
+    purpose: The period_start of this object.
+    type: value
+    data_type: timestamp
+  - name: period_end
+    purpose: The period being reported. Distinct from the due date, and confusing the two is how a
+      quarter gets filed twice and a quarter not at all.
+    type: value
+    data_type: timestamp
+    description: The period being reported. Distinct from the due date, and confusing the two is how a
+      quarter gets filed twice and a quarter not at all.
+  - name: statutory_due_at
+    purpose: The date set by law. The single most consequential timestamp in the administrative
+      function and the one with no system of record — in most organisations it lives in a spreadsheet
+      maintained by one person.
+    type: value
+    data_type: timestamp
+    required: true
+    description: >
+      The date set by law. The single most consequential timestamp in the administrative
+      function and the one with no system of record — in most organisations it lives in a
+      spreadsheet maintained by one person.
+  - name: internal_target_at
+    purpose: The date the team works to. Must sit far enough before the statutory date to absorb one
+      rejection and one resubmission, because a rejection does not stop the clock.
+    type: value
+    data_type: timestamp
+    description: >
+      The date the team works to. Must sit far enough before the statutory date to absorb one
+      rejection and one resubmission, because a rejection does not stop the clock.
+  - name: is_overdue
+    purpose: Derived. True once the statutory date has passed with no acknowledgement recorded.
+    type: value
+    data_type: boolean
+    source_paths: [commitment.due_at]
+    description: Derived. True once the statutory date has passed with no acknowledgement recorded.
+  - name: extension_available
+    purpose: Most regimes offer none. Where one exists it must be applied for before the date, which
+      makes the extension itself a filing.
+    type: value
+    data_type: boolean
+    description: Most regimes offer none. Where one exists it must be applied for before the date,
+      which makes the extension itself a filing.
+  - name: extension_requested_at
+    purpose: The extension_requested_at of this object.
+    type: value
+    data_type: timestamp
+  - name: dependency_ref
+    purpose: What this filing cannot be assembled without — audited accounts, a payroll run, a board
+      resolution. Annual filings fail on their dependency, not on their preparation.
+    type: reference
+    ref: admin.obj.core.document
+    data_type: ref
+    description: >
+      What this filing cannot be assembled without — audited accounts, a payroll run, a board
+      resolution. Annual filings fail on their dependency, not on their preparation.
+  - name: data_source_system
+    purpose: Where the numbers come from. `spreadsheet` is not a criticism, it is a risk rating — an
+      unversioned workbook is the most common single point of failure in a filing calendar.
+    type: value
+    data_type: enum
+    allowed_values: [erp, payroll, hris, portal, manual, spreadsheet]
+    description: >
+      Where the numbers come from. `spreadsheet` is not a criticism, it is a risk rating — an
+      unversioned workbook is the most common single point of failure in a filing calendar.
+  - name: preparer_ref
+    purpose: The preparer_ref of this object.
+    type: reference
+    ref: admin.obj.core.employee_record
+    data_type: ref
+  - name: prior_period_correction
+    purpose: An amended return. Supersedes rather than replaces, and both versions are retained.
+    type: value
+    data_type: boolean
+    description: An amended return. Supersedes rather than replaces, and both versions are retained.
+  - name: signatory_role
+    purpose: Where the regime names a role, an approval from anybody else is not an approval. A CFO
+      signing something the statute reserves to a director produces a submission that is rejected
+      weeks later, after the date.
+    type: value
+    data_type: enum
+    allowed_values: [director, company_secretary, authorised_signatory, officer, agent, none]
+    description: >
+      Where the regime names a role, an approval from anybody else is not an approval. A CFO
+      signing something the statute reserves to a director produces a submission that is
+      rejected weeks later, after the date.
+  - name: approver_ref
+    purpose: The approver_ref of this object.
+    type: reference
+    ref: admin.obj.core.approver
+    data_type: ref
+  - name: approval_obtained_at
+    purpose: The approval_obtained_at of this object.
+    type: value
+    data_type: timestamp
+  - name: channel
+    purpose: Materially changes the risk. A portal gives an immediate acknowledgement; post gives a
+      posting date that may or may not be the filing date depending on the regime, and that
+      distinction has decided court cases.
+    type: value
+    data_type: enum
+    allowed_values: [portal, api, post, in_person, agent]
+    description: >
+      Materially changes the risk. A portal gives an immediate acknowledgement; post gives a
+      posting date that may or may not be the filing date depending on the regime, and that
+      distinction has decided court cases.
+  - name: filed_by
+    purpose: The filed_by of this object.
+    type: value
+    data_type: enum
+    allowed_values: [in_house, agent, auditor, outsourced_provider]
+  - name: agent_ref
+    purpose: The accountant, company secretarial firm or payroll bureau submitting on our behalf.
+    type: reference
+    ref: admin.obj.core.vendor
+    data_type: ref
+    description: The accountant, company secretarial firm or payroll bureau submitting on our behalf.
+  - name: submitted_at
+    purpose: When we sent it. Not when it was filed.
+    type: value
+    data_type: timestamp
+    description: When we sent it. Not when it was filed.
+  - name: accepted_at
+    purpose: When the authority acknowledged it. This is the filing date, and everything before it is
+      an intention.
+    type: value
+    data_type: timestamp
+    description: When the authority acknowledged it. This is the filing date, and everything before it
+      is an intention.
+  - name: reference_number
+    purpose: The acknowledgement reference. Without it there is no evidence a submission occurred, and
+      in a dispute with an authority the absence of a reference is decided against the filer every
+      time.
+    type: value
+    data_type: string
+    description: >
+      The acknowledgement reference. Without it there is no evidence a submission occurred,
+      and in a dispute with an authority the absence of a reference is decided against the
+      filer every time.
+  - name: rejection_reason
+    purpose: The rejection_reason of this object.
+    type: value
+    data_type: string
+  - name: penalty_basis
+    purpose: Determines whether being one day late and thirty days late are the same event. Under
+      daily accrual they are not, and treating all lateness as one category is why remediation gets
+      sequenced wrongly.
+    type: value
+    data_type: enum
+    allowed_values: [none, fixed, daily_accrual, percentage_of_liability, escalating_tiers,
+        personal_liability, prosecution]
+    description: >
+      Determines whether being one day late and thirty days late are the same event. Under
+      daily accrual they are not, and treating all lateness as one category is why remediation
+      gets sequenced wrongly.
+  - name: penalty_amount
+    purpose: The penalty_amount of this object.
+    type: value
+    data_type: money
+  - name: penalty_is_personal
+    purpose: Some regimes penalise the officer rather than the company, and some disqualify them. This
+      single boolean explains why some filings get done at two in the morning and others slip for a
+      fortnight.
+    type: value
+    data_type: boolean
+    description: >
+      Some regimes penalise the officer rather than the company, and some disqualify them.
+      This single boolean explains why some filings get done at two in the morning and others
+      slip for a fortnight.
+  - name: nil_return_required
+    purpose: Whether a return is due when there is nothing to report. Almost always yes, almost always
+      forgotten, and the most common penalty in any group with dormant entities.
+    type: value
+    data_type: boolean
+    description: >
+      Whether a return is due when there is nothing to report. Almost always yes, almost always
+      forgotten, and the most common penalty in any group with dormant entities.
+  - name: recurrence
+    purpose: '`event_driven` is the dangerous one — a change of director or registered office starts a short
+      clock that nobody has diarised because the event has not happened yet.'
+    type: value
+    data_type: enum
+    allowed_values: [one_off, monthly, quarterly, annual, event_driven]
+    description: >
+      `event_driven` is the dangerous one — a change of director or registered office starts a
+      short clock that nobody has diarised because the event has not happened yet.
+  - name: escalation_ref
+    purpose: The escalation_ref of this object.
+    type: reference
+    ref: admin.obj.core.escalation
+    data_type: ref
+states:
+  initial: draft
+  values:
+    - name: draft
+      description: The obligation is known and nothing has been assembled.
+    - name: in_progress
+      description: Data being gathered. Where annual filings spend most of their life and most of
+        their risk.
+    - name: pending_approval
+      description: >
+        Assembled, waiting on the named signatory. The obligation clock keeps running while a
+        person who does not feel urgency holds the file.
+    - name: submitted
+      description: >
+        Sent, no acknowledgement received. The most dangerous state in the object, because
+        everyone involved now believes it is finished.
+      entered_when: [exists: commitment.due_at]
+    - name: verified
+      description: Acknowledged by the authority with a reference recorded. The only terminal success
+        state.
+    - name: rejected
+      description: >
+        Returned by the authority. The clock did not pause while we waited to find out, and
+        the remaining window is now shorter than the one we planned against.
+    - name: overdue
+      description: The statutory date has passed without acknowledgement. Penalty is accruing whether
+        or not anyone has been told.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    - name: superseded
+      description: An amended return has been filed for the same period.
+    - name: cancelled
+      description: The obligation ceased — entity struck off, regime changed, threshold no longer met.
+        Requires evidence, not belief.
+  transitions:
+    - {from: draft, to: in_progress}
+    - {from: in_progress, to: pending_approval}
+    - {from: pending_approval, to: submitted}
+    - {from: submitted, to: verified}
+    - {from: submitted, to: rejected}
+    - {from: rejected, to: in_progress}
+    - {from: in_progress, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value:
+            0}]}
+    - {from: pending_approval, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">",
+            value: 0}]}
+    - {from: overdue, to: submitted}
+    - {from: verified, to: superseded}
+
+# ── 7 · Business Rules — deterministic. No model evaluates these. ────────────────────────
+relationships:
+
+  - type: resolves
+    target: admin.obj.core.compliance_obligation
+    cardinality: one
+    description: >
+      The filing is the discharge of the obligation, and the only thing that discharges it.
+      An obligation with no filing attached is an obligation nobody has operationalised.
+
+  - type: files_with
+    target: admin.obj.core.stakeholder
+    cardinality: one
+    description: >
+      The receiving authority, modelled as an external stakeholder because the roster has no
+      regulator object. That is a modelling compromise and it is recorded in metadata.
+
+  - type: attaches_to
+    target: admin.obj.core.deadline
+    cardinality: one
+    description: The statutory date. External, fixed, and the only deadline in the library that no
+      negotiation reaches.
+
+  - type: requires
+    target: admin.obj.core.approval
+    cardinality: zero_or_one
+    description: Sign-off before submission, by a role the statute may have named for us.
+
+  - type: requires
+    target: admin.obj.core.document
+    cardinality: zero_or_many
+    description: Source documents and dependencies — accounts, resolutions, payroll registers.
+
+  - type: produces
+    target: admin.obj.core.audit_evidence
+    cardinality: one
+    description: >
+      The acknowledgement, the filed copy and the approval trail. In a governed context the
+      filing did not happen unless this exists.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    cardinality: zero_or_many
+
+  - type: delegates_to
+    target: admin.obj.core.vendor
+    cardinality: zero_or_one
+    description: >
+      The filing agent. Delegating the act never delegates the obligation, and the sentence
+      "our accountants handle it" has no legal weight anywhere.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    cardinality: zero_or_one
+
+  - type: supersedes
+    target: admin.obj.statutory_filing.filing
+    cardinality: zero_or_one
+    description: An amended return supersedes the original. Both are retained; only one is current.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: fil.due_date_carried_as_a_commitment
+      statement: "A commitment carrying a filing action has a due date, and today that is the only machine-readable
+        version of a statutory date we possess."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {exists: commitment.action}
+      yields: {confidence_bp: 6000, attribute: null}
+      evidence_fields: [commitment.due_at, commitment.action]
+      note: >
+        Deliberately 6000 and it should stay there. This date is only as good as whoever typed
+        it into a task, which means the highest-consequence deadline in the function is
+        currently sourced from human memory. The correct fix is obligation.due_at, below.
+
+    - id: fil.overdue_from_the_commitment_clock
+      statement: "The tracked due date has passed and nothing records an acknowledgement, so the filing
+        is late and the penalty is already accruing."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {exists: commitment.action}
+      yields: {confidence_bp: 8800, attribute: is_overdue, value: true}
+      evidence_fields: [commitment.due_at]
+      note: >
+        High confidence in the lateness, low confidence in the consequence, because nothing in
+        the pipeline can distinguish a filing whose penalty is fifty pounds from one that
+        disqualifies a director.
+
+    - id: fil.statutory_calendar
+      statement: "The authority's own published deadline for this form, entity and period is known."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: statutory_due_at, value: null}
+      requires_signals:
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1, note: "There is no regulatory calendar\
+            connector and no statutory date feed. The single most consequential date in the administrative
+            function is typed by a human into a spreadsheet and copied forward each year, which is exactly
+            how a leap-year quarter-end gets a wrong date and nobody notices until the penalty notice arrives."}
+        - {kind: fact_path, name: obligation.authority, owner_layer: L1}
+        - {kind: fact_path, name: obligation.jurisdiction, owner_layer: L1, note: "Without jurisdiction\
+            a multi-entity group cannot be sequenced at all — the same form name means different dates in
+            different countries."}
+
+    - id: fil.acknowledgement_received
+      statement: "The authority has acknowledged the submission and issued a reference."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: accepted_at, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: filing_accepted, owner_layer: L2, note: "Every portal emails an acknowledgement\
+            containing a reference number in a stable format. Nothing parses it, so `submitted` and `accepted`
+            are the same state to the pipeline and the gap where late filings hide is invisible by construction."}
+        - {kind: fact_path, name: filing.reference_number, owner_layer: L2}
+
+    - id: fil.submission_detected
+      statement: "A submission has been made through the portal or by the agent."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: submitted_at, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: filing_submitted, owner_layer: L2, note: "Cheaper than filing_accepted\
+            and much less useful on its own; worth emitting only alongside it, because knowing something was
+            sent without knowing it landed creates false comfort rather than information."}
+
+    - id: fil.rejection_detected
+      statement: "The authority has rejected the submission and the original date still stands."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: rejection_reason, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: filing_rejected, owner_layer: L2, note: "The highest-urgency administrative\
+            event in this object. A rejection consumes buffer that was already planned against, and it currently
+            arrives as an email in one person's inbox with no route into the system that is reporting the
+            filing as done."}
+
+  heuristic:
+
+    - id: fil.agent_silence_before_the_date
+      statement: "The filing agent has gone past their own reply cadence while the next move is theirs,
+        with a statutory date approaching."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 2,
+            floor: 3}}
+      yields: {confidence_bp: 7000, attribute: null}
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      note: >
+        The most useful executable pattern in the file. Outsourced filings do not fail loudly;
+        they fail by an agent going quiet for three weeks while the client assumes silence
+        means progress. Measuring the silence against the agent's own baseline rather than a
+        fixed number is what makes this usable across a bureau that replies daily and a
+        company secretarial firm that replies fortnightly.
+
+    - id: fil.dependency_not_signed_off
+      statement: "The document this filing depends on has not been approved, so the preparation window has
+        not actually started."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: dependency_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: document.approved_at, owner_layer: L2, note: "Annual filings fail on their\
+            dependency, not on their preparation. An audit that slips two weeks moves the real start of the
+            filing by two weeks and moves the statutory date by nothing, and no current signal expresses that
+            squeeze."}
+
+    - id: fil.nil_period_detected
+      statement: "The period shows no reportable activity, which means a nil return is due — not that nothing
+        is due."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: nil_return_required, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.period_activity, owner_layer: L2, note: "Requires a ledger or payroll\
+            feed scoped to the period. Worth building specifically because the nil return is the highest-frequency
+            missed filing in existence and the cheapest one to never miss again."}
+
+    - id: fil.penalty_basis_known
+      statement: "The penalty regime for this form is known, so lateness can be ranked by cost rather than
+        by days."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: penalty_basis, value: null}
+      requires_signals:
+        - {kind: fact_path, name: filing.penalty_basis, owner_layer: L1, note: "Attached to the form type,\
+            not to the instance, so it is a small reference dataset rather than a feed. Its absence is why
+            every overdue filing currently looks equally urgent, which in practice means none of them do."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: manual_entry, signal: "the filing calendar, maintained by hand", description: "Today's system\
+      of record for statutory_due_at. That sentence is the finding."}
+  - {source: portal, signal: "submission receipts, acknowledgement references, rejection notices"}
+  - {source: regulator, signal: "notices, penalty assessments, correspondence"}
+  - {source: email, signal: "agent correspondence and portal acknowledgements", path: thread.last_inbound}
+  - {source: email, signal: "whether the next move sits with us or the agent", path: thread.ball_in_court}
+  - {source: erp, signal: "ledger balances and transaction data for the period"}
+  - {source: payroll, signal: "payroll registers underpinning employment filings"}
+  - {source: document, signal: "audited accounts, board resolutions, prior-period returns"}
+  - {source: attestation, signal: "the signatory's confirmation that the position filed is correct"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: filing_risk_bp, type: integer, description: "Likelihood this filing misses its statutory date,\
+      given dependency readiness, channel and history.", consumed_by: [L4.reasoning_unit,
+        L4.decision_maker]}
+  - {name: penalty_exposure, type: money, description: "Modelled exposure on the current trajectory, computed\
+      from the accrual basis rather than from a flat assumption.", consumed_by: [L4.reasoning_unit]}
+  - {name: remaining_usable_days, type: integer, description: "Statutory days remaining minus the rejection-and-resubmission\
+      cycle. Always smaller than the number on the wall calendar.", consumed_by: [
+        L5.execution_planning]}
+  - {name: evidence_pack, type: list, description: "Filed copy, acknowledgement reference, approval trail.\
+      The artefact an auditor asks for and the one assembled last.", consumed_by: [L6.learning_unit]}
+  - {name: signatory_request, type: string, description: "What the named signatory is being asked to approve\
+      and what they are personally exposed to if they do not.", consumed_by: [
+        L5.communication_planning]}
+  - {name: escalation_trigger, type: boolean, description: "True when the remaining usable window is shorter\
+      than the outstanding dependency.", consumed_by: [L4.decision_maker]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: fil.date_is_not_negotiable, statement: "The statutory date cannot be moved by prioritisation,\
+      escalation or agreement with anyone inside the organisation.", hard: true}
+  - {id: fil.signatory_role_required, statement: "Only the role named by the regime may authorise the\
+      submission.", hard: true}
+  - {id: fil.no_submission_without_approval, statement: "A return may not be submitted before the recorded\
+      approval exists. Filing first and papering it after is the single most common audit finding in this
+      capability.", hard: true}
+  - {id: fil.closure_requires_acknowledgement, statement: "The obligation may not be marked discharged\
+      without an acknowledgement reference.", hard: true}
+  - {id: fil.filed_copy_is_retained, statement: "The exact document submitted must be retained for the\
+      statutory retention period, not a regenerated equivalent.", hard: true}
+  - {id: fil.agent_delegation_is_operational_only, statement: "Delegating submission to an agent does\
+      not delegate the obligation or the liability.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: fil.acknowledgement_is_the_filing
+    statement: >
+      A submission without a recorded acknowledgement reference is not a filing. Until the
+      reference exists the organisation's position is that nothing was filed, and it should be
+      reported that way internally however uncomfortable that is at month end.
+    then: block_closure_without_reference
+    severity: blocking
+
+  - id: fil.nil_return_still_due
+    statement: >
+      A nil return is a filing. Having nothing to report suspends nothing. This rule exists
+      because dormant entities generate more penalties per head than trading ones, entirely
+      through this misunderstanding.
+    severity: blocking
+
+  - id: fil.rejection_does_not_reset_the_clock
+    statement: >
+      A rejected submission leaves the original statutory date in force. The remaining window
+      is the original window minus the time spent waiting to be told, which is why the internal
+      target must absorb one full rejection cycle.
+    then: recompute_remaining_window
+    severity: blocking
+
+  - id: fil.signatory_role_is_not_delegable
+    statement: >
+      Where the regime names a signing role, approval from any other role is not approval. The
+      submission will be accepted by the portal and rejected by the authority, usually after
+      the date.
+    severity: blocking
+
+  - id: fil.internal_target_precedes_statutory_date
+    statement: internal_target_at must precede statutory_due_at by at least one full
+      rejection-and-resubmission cycle for the channel in use.
+    when: [exists: commitment.due_at]
+    then: warn_insufficient_buffer
+    severity: warning
+
+  - id: fil.agent_does_not_transfer_liability
+    statement: >
+      Delegating submission to an agent transfers the work and none of the obligation. An agent
+      who has gone quiet is our problem on the statutory date and nobody else's.
+    severity: warning
+
+  - id: fil.penalty_accrues_without_notice
+    statement: >
+      Daily-accrual penalties do not wait for a reminder from the authority, and the first
+      notice frequently arrives months later with the full accrual attached. Absence of
+      correspondence is not evidence of compliance.
+    severity: advisory
+
+  - id: fil.event_driven_obligations_need_a_trigger
+    statement: >
+      Event-driven filings — director changes, registered office moves, share allotments — have
+      no recurring date to diarise and must be triggered by the event itself. This is the
+      category where a competent filing calendar still fails.
+    severity: warning
+
+# ── 8 · Decision Factors — advisory inputs to Layer 4, never a decision. ─────────────────
+decision_factors:
+
+  - name: days_to_statutory_date
+    weight_bp: 2500
+    direction: increases
+    description: The only factor that cannot be argued with. Everything else on this list modifies how
+      much of the remaining window is actually usable.
+    reads: [statutory_due_at, internal_target_at, is_overdue]
+
+  - name: penalty_severity
+    weight_bp: 2200
+    direction: increases
+    description: >
+      A fixed penalty and a daily accrual are different objects wearing the same word. Ranking
+      remediation by lateness rather than by accrual basis is how a team fixes the visible
+      breach and leaves the expensive one running.
+    reads: [penalty_basis, penalty_amount]
+
+  - name: personal_liability
+    weight_bp: 1500
+    direction: increases
+    description: Where the officer is personally liable or disqualifiable, the escalation path changes
+      and so does the tone.
+    reads: [penalty_is_personal, signatory_role]
+
+  - name: dependency_readiness
+    weight_bp: 1500
+    direction: context
+    description: An annual filing is only as ready as the audit it waits on. Reporting the filing as
+      on track while its dependency slips is the standard failure.
+    reads: [dependency_ref, data_source_system]
+
+  - name: rejection_risk
+    weight_bp: 1200
+    direction: context
+    description: First-time filings, amended returns and new preparers all raise it, and it is priced
+      in days of buffer rather than in effort.
+    reads: [prior_period_correction, channel, filed_by]
+
+  - name: channel_reliability
+    weight_bp: 600
+    direction: context
+    reads: [channel, agent_ref]
+
+  - name: prior_period_history
+    weight_bp: 500
+    direction: context
+    description: An entity that filed late twice will file late again. History is a better predictor
+      than the plan.
+    reads: [recurrence, legal_entity]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: regulator, strength_bp: 10000, description: "An acknowledgement with a reference from the\
+      authority. Nothing outranks it and nothing substitutes for it."}
+  - {source: portal, strength_bp: 9500, description: "Portal submission record with timestamp. Effectively\
+      conclusive where the portal is the prescribed channel."}
+  - {source: signed_form, strength_bp: 9000, description: "The signed return itself."}
+  - {source: attestation, strength_bp: 8000, description: "The signatory's confirmation of the position\
+      filed. Proves authorisation, not submission."}
+  - {source: erp, strength_bp: 6500, description: "The underlying figures. Supports the content, says\
+      nothing about the act."}
+  - {source: document, strength_bp: 7000, description: "Filed copy retained in the document store."}
+  - {source: email, strength_bp: 6000, description: "Agent correspondence stating it was filed. An assertion,\
+      not a receipt, and treated as one."}
+  - {source: manual_entry, strength_bp: 4000, description: "A tick in the filing spreadsheet. Currently\
+      the most common evidence in existence and the weakest."}
+  - {source: derived, strength_bp: 3000, description: "Inferred from a commitment clock. Corroborating\
+      only."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: on_time_filing_rate, unit: percent, description: "Share acknowledged on or before the statutory\
+      date. Measured on acceptance, never on submission.", owner_layer: L6}
+  - {name: median_buffer_days, unit: days, description: "Days between acknowledgement and the statutory\
+      date. A programme running at one day of buffer is not compliant, it is lucky.", owner_layer: L6}
+  - {name: rejection_rate, unit: percent, description: "Share of submissions rejected first time. Directly\
+      sets the buffer every filing needs.", owner_layer: L6}
+  - {name: acknowledgement_capture_rate, unit: percent, description: "Share of submissions with a reference\
+      recorded. Measures the evidence discipline that the audit will actually test.", owner_layer: L6}
+  - {name: penalty_incurred, unit: money, owner_layer: L6}
+  - {name: preparation_cycle_days, unit: days, description: "Dependency ready to submission. Distinguishes\
+      a slow team from a blocked one.", owner_layer: L2}
+  - {name: nil_return_miss_rate, unit: percent, description: "Nil returns missed as a share of nil returns\
+      due. The cheapest number on this list to drive to zero.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: fil.window_opened, name: Filing Window Opened, payload: [period_end, statutory_due_at, preparer_ref]}
+  - {id: fil.submitted, name: Filing Submitted, payload: [submitted_at, channel, filed_by]}
+  - {id: fil.acknowledged, name: Filing Acknowledged, payload: [accepted_at, reference_number],
+      description: "The only event that closes the obligation. Nothing emits it today."}
+  - {id: fil.rejected, name: Filing Rejected, payload: [rejection_reason, statutory_due_at],
+      description: "Highest-urgency event in the object. The window shrank and nobody was told."}
+  - {id: fil.overdue, name: Filing Overdue, emitted_when: [{fn: days_since, path: commitment.due_at, op: ">",
+        value: 0}], payload: [statutory_due_at, penalty_basis]}
+  - {id: fil.penalty_accruing, name: Penalty Accruing, payload: [penalty_basis, penalty_amount, penalty_is_personal]}
+  - {id: fil.amended, name: Amended Return Filed, payload: [prior_period_correction, reference_number]}
+
+# ── 13 · Actions — Layer 5 may operationalise these. Naming one here does not authorise it. ─
+actions:
+  - {id: fil.assemble, name: Assemble the return, actor: human, effect: "Pull the period data and reconcile\
+      it to the source system before anyone is asked to sign."}
+  - {id: fil.chase_dependency, name: Chase the blocking dependency, actor: agent, effect: "The audit,\
+      the board resolution, the payroll close. Chasing the return before its dependency is theatre."}
+  - {id: fil.request_signoff, name: Request approval from the named signatory, actor: agent, preconditions: [
+      exists: commitment.due_at], effect: "Names the role the statute requires, not the most available senior
+      person."}
+  - {id: fil.submit, name: Submit to the authority, actor: human, effect: "Through the declared channel.\
+      The channel decides what counts as the filing date."}
+  - {id: fil.record_acknowledgement, name: Record the acknowledgement reference, actor: system, effect: "The
+      step that actually closes the obligation and the one most often skipped, because by then everyone
+      has moved on."}
+  - {id: fil.request_extension, name: Request an extension, actor: human, effect: "Where the regime allows\
+      one, and before the date — an extension requested late is itself a late filing."}
+  - {id: fil.file_nil_return, name: File a nil return, actor: human, effect: "For a period with nothing\
+      to report. Cheapest filing in the calendar and the most frequently missed."}
+  - {id: fil.escalate_to_officer, name: Escalate to the accountable officer, actor: human, effect: "Mandatory\
+      where penalty_is_personal — the person carrying the liability is entitled to know before the date,
+      not after."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "UK Confirmation Statement CS01", note: "Annual, fixed date, escalating consequence ending\
+      in strike-off and director disqualification. Ten minutes of work carrying an existential penalty."}
+  - {label: "Quarterly VAT return", note: "Recurring, percentage-of-liability penalty, dependency on a\
+      ledger close. The routine one that trains a team to assume all filings behave like this one."}
+  - {label: "Monthly PF and ESI returns", note: "Short window, daily accrual, payroll dependency. Being\
+      three days late every month costs more than being three weeks late once a year, and looks less serious."}
+  - {label: "Annual accounts contingent on audit sign-off", note: "The classic dependency failure. The\
+      filing is reported green while the audit it waits on is amber."}
+  - {label: "Nil return for a dormant subsidiary", note: "nil_return_required = true, owner unassigned.\
+      The single highest-frequency penalty in any group holding dormant entities."}
+  - {label: "Change of registered office", note: "recurrence = event_driven. A short clock starting from\
+      an event nobody diarised, because the event had not happened when the calendar was built."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Three of ten patterns are executable and all three run on commitment.due_at — a date a
+    human typed into a task. That is the honest state of statutory filing on this substrate.
+    The ranked asks are obligation.due_at (no statutory date feed exists anywhere in the
+    stack), filing_accepted (portals already email a parseable acknowledgement and nothing
+    reads it, so `submitted` and `filed` are indistinguishable), and filing_rejected (the
+    highest-urgency event this object can generate, currently arriving as an email in one
+    person's inbox). Modelling note: `files_with` targets admin.obj.core.stakeholder because
+    the roster has no regulator or authority object; the authority is not a stakeholder in any
+    ordinary sense — it is a counterparty with statutory power — and a future roster should
+    carry admin.obj.core.authority instead.

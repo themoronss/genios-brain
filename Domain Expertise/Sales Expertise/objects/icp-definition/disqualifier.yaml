@@ -1,0 +1,675 @@
+# SCOPED to sales.market_and_targeting.icp_definition.
+#
+# The anti-fit half of a profile, promoted from a list property on the ICP into a first-class
+# object — because a disqualifier has a lifecycle, an evidence base and a false-positive rate,
+# and none of that survives being a string in a list.
+#
+# Four of the nine patterns run today. The four that run all detect anti-fit from how a LIVE
+# DEAL is behaving, which is the latest and most expensive moment to detect it; the five that
+# are blocked are the ones that would catch it before anyone picked up the phone. That
+# inversion is the finding.
+
+identity:
+  id: sales.obj.icp_definition.disqualifier
+  scope: capability
+  name: Disqualifier
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 1.0.0
+  status: draft
+  aliases: ["Anti-Fit Rule", "Negative Criterion", "Exclusion Criterion", "Red Flag"]
+purpose:
+  statement: >
+    One testable condition under which an account cannot be won, or cannot be kept profitably,
+    stated so that it can be evaluated before any conversation happens. The discriminator against
+    an Objection — the object it is most often confused with — is who owns it and whether
+    selling changes it: an objection is something the buyer says, and a good seller answers it;
+    a disqualifier is something true about the account that no amount of selling alters. Teams
+    routinely spend quarters "handling" a disqualifier, which is why the distinction is the
+    first thing this object exists to enforce. The second discriminator is against a blocker: a
+    blocker delays a deal that will eventually happen; a disqualifier means it will not, and the
+    correct response is to leave rather than to escalate.
+attributes:
+  - name: definition
+    purpose: What the condition is and how it is checked. The checkability half is the half that gets
+      skipped.
+    type: composite
+    contains:
+      - condition_statement
+      - dimension
+      - test_expression
+      - evaluable_pre_contact
+      - checked_at_stage
+  - name: severity_and_effect
+    purpose: What happens when it matches. A disqualifier with no defined effect is an opinion.
+    type: composite
+    contains:
+      - severity
+      - effect
+      - override_allowed
+      - override_authority
+  - name: evidence
+    purpose: What put this on the list. Most lists cannot answer this for most of their entries.
+    type: composite
+    contains:
+      - source
+      - evidenced_by_lost_count
+      - evidenced_by_churned_count
+      - evidence_strength_bp
+      - counterexample_count
+  - name: lifecycle
+    purpose: A disqualifier is proposed, evidenced, enforced, contested and retired — not written
+      once.
+    type: composite
+    contains:
+      - status
+      - proposed_by
+      - validated_at
+      - last_reviewed_at
+      - retired_at
+      - retirement_reason
+  - name: application
+    purpose: How it behaves in the field, including when it is wrong.
+    type: composite
+    contains:
+      - applies_to_segment
+      - hit_count
+      - false_positive_count
+      - supersedes_ref
+  - name: condition_statement
+    purpose: The condition in one sentence, phrased as a property of the account rather than as a
+      feeling about it. "Fewer than twenty staff" is a condition; "not serious about growth" is not.
+    type: value
+    data_type: string
+    required: true
+    description: The condition in one sentence, phrased as a property of the account rather than as a
+      feeling about it. "Fewer than twenty staff" is a condition; "not serious about growth" is not.
+  - name: dimension
+    purpose: legal_regulatory and operational are separated from the fit dimensions on purpose. They
+      are the two categories that are genuinely absolute — we cannot serve them, or servicing them
+      costs more than they pay — whereas the others are matters of degree that a strong enough deal
+      can override.
+    type: value
+    data_type: enum
+    allowed_values: [firmographic, technographic, behavioural, need, economic, legal_regulatory,
+        operational, relationship]
+    description: >
+      legal_regulatory and operational are separated from the fit dimensions on purpose. They
+      are the two categories that are genuinely absolute — we cannot serve them, or servicing
+      them costs more than they pay — whereas the others are matters of degree that a strong
+      enough deal can override.
+  - name: test_expression
+    purpose: How the condition is evaluated, not what it means. A disqualifier with no expressible
+      test is an opinion with a status field.
+    type: value
+    data_type: string
+    description: How the condition is evaluated, not what it means. A disqualifier with no expressible
+      test is an opinion with a status field.
+  - name: evaluable_pre_contact
+    purpose: The single field that decides whether this rule saves any time. A disqualifier only
+      checkable after discovery has already consumed the effort it exists to avoid — it turns a wasted
+      quarter into a wasted quarter that is correctly labelled.
+    type: value
+    data_type: boolean
+    required: true
+    description: >
+      The single field that decides whether this rule saves any time. A disqualifier only
+      checkable after discovery has already consumed the effort it exists to avoid — it turns
+      a wasted quarter into a wasted quarter that is correctly labelled.
+  - name: checked_at_stage
+    purpose: '`never` is a real and common value, and any rule holding it should be retired rather than
+      kept for completeness.'
+    type: value
+    data_type: enum
+    allowed_values: [list_build, first_touch, discovery, proposal, never]
+    description: "`never` is a real and common value, and any rule holding it should be retired rather than
+      kept for completeness."
+  - name: severity
+    purpose: hard = never pursue. soft = pursue only with an explicit exception. conditional =
+      disqualifying only while some other state holds, which is where budget freezes and hiring
+      freezes belong.
+    type: value
+    data_type: enum
+    allowed_values: [hard, soft, conditional]
+    description: "hard = never pursue. soft = pursue only with an explicit exception. conditional = disqualifying
+      only while some other state holds, which is where budget freezes and hiring freezes belong."
+  - name: effect
+    purpose: route_to_partner earns its place. A large share of correctly disqualified accounts are
+      somebody else's ideal customer, and referral relationships are built out of exactly the accounts
+      you were never going to win. Treating disqualification as deletion throws away the only value a
+      rejected account still has.
+    type: value
+    data_type: enum
+    allowed_values: [reject, deprioritise, require_exception, route_to_partner]
+    description: >
+      route_to_partner earns its place. A large share of correctly disqualified accounts are
+      somebody else's ideal customer, and referral relationships are built out of exactly the
+      accounts you were never going to win. Treating disqualification as deletion throws away
+      the only value a rejected account still has.
+  - name: override_allowed
+    purpose: The override_allowed of this object.
+    type: value
+    data_type: boolean
+  - name: override_authority
+    purpose: Who can override, by role. Unstated authority means the loudest person on the deal review
+      has it.
+    type: value
+    data_type: string
+    description: Who can override, by role. Unstated authority means the loudest person on the deal
+      review has it.
+  - name: source
+    purpose: founder_belief is in the enum because it is where most disqualifier lists start, and
+      naming it honestly is what allows it to be challenged later. A belief labelled as analysis is
+      unfalsifiable; a belief labelled as a belief has a review date.
+    type: value
+    data_type: enum
+    allowed_values: [win_loss_analysis, churn_analysis, delivery_capacity, legal_policy, pricing_floor,
+      security_posture, support_burden, founder_belief]
+    description: >
+      founder_belief is in the enum because it is where most disqualifier lists start, and
+      naming it honestly is what allows it to be challenged later. A belief labelled as
+      analysis is unfalsifiable; a belief labelled as a belief has a review date.
+  - name: evidenced_by_lost_count
+    purpose: The evidenced_by_lost_count of this object.
+    type: value
+    data_type: integer
+  - name: evidenced_by_churned_count
+    purpose: Churn evidence outranks loss evidence. A lost deal cost a quarter of one seller's effort;
+      a churned account cost a year of delivery, a reference that now works against you, and the
+      opportunity cost of the account you did not pursue instead.
+    type: value
+    data_type: integer
+    description: >
+      Churn evidence outranks loss evidence. A lost deal cost a quarter of one seller's
+      effort; a churned account cost a year of delivery, a reference that now works against
+      you, and the opportunity cost of the account you did not pursue instead.
+  - name: counterexample_count
+    purpose: Won-and-retained accounts matching this condition. One makes it soft; several make it
+      wrong. A rule with no counterexample search behind it has not been tested, only asserted.
+    type: value
+    data_type: integer
+    description: Won-and-retained accounts matching this condition. One makes it soft; several make it
+      wrong. A rule with no counterexample search behind it has not been tested, only asserted.
+  - name: evidence_strength_bp
+    purpose: The evidence_strength_bp of this object.
+    type: value
+    data_type: integer
+  - name: status
+    purpose: The status of this object.
+    type: value
+    data_type: enum
+    allowed_values: [proposed, evidenced, enforced, contested, retired]
+    required: true
+  - name: proposed_by
+    purpose: The proposed_by of this object.
+    type: value
+    data_type: string
+  - name: validated_at
+    purpose: The validated_at of this object.
+    type: value
+    data_type: timestamp
+  - name: last_reviewed_at
+    purpose: The last_reviewed_at of this object.
+    type: value
+    data_type: timestamp
+  - name: retired_at
+    purpose: The retired_at of this object.
+    type: value
+    data_type: timestamp
+  - name: retirement_reason
+    purpose: The retirement_reason of this object.
+    type: value
+    data_type: string
+  - name: applies_to_segment
+    purpose: A disqualifier that holds for enterprise and not for SMB is two rules. Merging them
+      produces a list that is wrong for everybody in a different way.
+    type: value
+    data_type: string
+    description: A disqualifier that holds for enterprise and not for SMB is two rules. Merging them
+      produces a list that is wrong for everybody in a different way.
+  - name: hit_count
+    purpose: The hit_count of this object.
+    type: value
+    data_type: integer
+  - name: false_positive_count
+    purpose: Accounts this rule rejected that a competitor then won and kept. Nobody collects it,
+      because it requires looking at what happened to the accounts you walked away from, and it is the
+      only number that can ever retire a bad disqualifier. Its absence is why anti-fit lists grow and
+      never shrink.
+    type: value
+    data_type: integer
+    description: >
+      Accounts this rule rejected that a competitor then won and kept. Nobody collects it,
+      because it requires looking at what happened to the accounts you walked away from, and
+      it is the only number that can ever retire a bad disqualifier. Its absence is why
+      anti-fit lists grow and never shrink.
+  - name: supersedes_ref
+    purpose: Self-referential. The usual healthy evolution is a broad rule replaced by a narrower one,
+      not a rule deleted.
+    type: reference
+    ref: sales.obj.icp_definition.disqualifier
+    data_type: ref
+    description: Self-referential. The usual healthy evolution is a broad rule replaced by a narrower
+      one, not a rule deleted.
+  - name: deal_status
+    purpose: Present so the executable patterns below can distinguish a live-deal signal from a
+      closed-outcome one. Two of the three properties on this object with a real source.
+    type: value
+    data_type: enum
+    allowed_values: [open, won, lost, unknown]
+    source_paths: [deal.status]
+    description: Present so the executable patterns below can distinguish a live-deal signal from a
+      closed-outcome one. Two of the three properties on this object with a real source.
+  - name: observed_momentum
+    purpose: The observed_momentum of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+states:
+  initial: proposed
+  values:
+    - name: proposed
+      description: Asserted from belief. Legitimate as a starting point and dangerous as an ending
+        point, because a proposed rule enforced informally is indistinguishable from an evidenced one.
+    - name: evidenced
+      description: Backed by named lost or churned accounts. May be applied advisorily, and cannot yet
+        reject anything automatically.
+    - name: enforced
+      description: Applied automatically at a declared stage. The only state in which it can end an
+        assessment.
+    - name: contested
+      description: A counterexample has appeared — an account matching the condition that was won and
+        kept.
+    - name: retired
+      description: Withdrawn, with a reason. Retirement is a normal outcome; a list that has never
+        retired anything is not being reviewed.
+  transitions:
+    - {from: proposed, to: evidenced}
+    - {from: proposed, to: retired}
+    - {from: evidenced, to: enforced}
+    - {from: enforced, to: contested}
+    - {from: evidenced, to: contested}
+    - {from: contested, to: enforced}
+    - {from: contested, to: retired}
+    - {from: enforced, to: retired}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.icp
+    cardinality: one
+    description: A disqualifier is part of a profile, and versioned with it. Free-floating anti-fit
+      rules are how two teams end up applying different lists.
+
+  - type: gates
+    target: sales.obj.icp_definition.fit_analysis
+    cardinality: zero_or_many
+    description: Runs before the score and overrides it. Ordering is the whole mechanism — a check
+      that runs after the score becomes a tie-breaker instead of a veto.
+
+  - type: blocks
+    target: sales.obj.core.lead
+    cardinality: zero_or_many
+
+  - type: references
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+    description: A settled incumbent with high switching cost is the most common
+      relationship-dimension disqualifier and the one most often mislabelled as a competitive
+      objection.
+
+  - type: supersedes
+    target: sales.obj.icp_definition.disqualifier
+    cardinality: zero_or_one
+
+  - type: influences
+    target: sales.obj.core.risk
+    cardinality: zero_or_many
+    description: A soft disqualifier that is overridden does not disappear — it becomes a named risk
+      on the deal it was overridden for.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: dq.freeze_is_conditional_not_hard
+      statement: "A budget freeze with no loss language anywhere on the deal is a timing condition, not
+        a disqualifier."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+        - {no_obs: closed_lost_mention}
+      yields: {confidence_bp: 8000, attribute: severity, value: conditional}
+      evidence_fields: [deal.status]
+      note: >
+        The most common false disqualifier in the profession, and it reads backwards to a
+        seller who has just been told there is no money. A frozen budget thaws — usually at
+        the next fiscal boundary, with the relationship intact and the competitors gone. A
+        company that cannot legally use us never thaws. Classifying the first as the second
+        writes off a pipeline that would have closed itself, and nobody ever measures the
+        loss, because a deal you stopped working does not appear in closed-lost.
+
+    - id: dq.closed_below_the_pricing_floor
+      statement: "A deal that closed below the pricing floor is evidence of an economic disqualifier, not
+        of a discounting problem."
+      status: executable
+      when:
+        - {path: deal.status, op: "!=", value: open}
+        - {path: deal.value, op: "<", value: 5000}
+      yields: {confidence_bp: 6500, attribute: dimension, value: economic}
+      evidence_fields: [deal.value]
+      note: >
+        The literal floor stands in for the Organization Brain's pricing_floor; the shape of
+        the test is what is authored here. The reason this belongs on the anti-fit object
+        rather than on pricing: a segment that can only close below the floor has been
+        correctly priced out, and repeatedly rescuing those deals with discretion is how a
+        company acquires a whole cohort of accounts that cost more to serve than they pay.
+
+    - id: dq.regulatory_exclusion
+      statement: "The account operates in a jurisdiction or sector we are not permitted to serve."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: severity, value: hard}
+      requires_signals:
+        - {kind: fact_path, name: account.geography, owner_layer: L1}
+        - {kind: fact_path, name: account.industry, owner_layer: L1, note: "The most absolute disqualifier\
+            class in existence — no seller can override a licence we do not hold — and it is entirely invisible
+            to the pipeline. Two enrichment fields would make it automatic."}
+
+    - id: dq.repeat_loss_signature
+      statement: "Accounts matching this condition have been lost repeatedly for the same stated reason."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: status, value: evidenced}
+      requires_signals:
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+        - {kind: obs_kind, name: loss_reason, owner_layer: L2, note: "closed_lost_mention exists but carries\
+            no reason. Without the reason a loss cohort cannot be grouped, and without grouping there is no
+            evidence base for any disqualifier at all — this is the gate on the entire lifecycle above."}
+
+    - id: dq.churn_signature
+      statement: "Accounts matching this condition were won and then churned inside the expected retention
+        window."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: status, value: evidenced}
+      requires_signals:
+        - {kind: obs_kind, name: churn_event, owner_layer: L2}
+        - {kind: fact_path, name: account.retention_months, owner_layer: L1, note: "The strongest evidence\
+            class this object recognises, and the pipeline cannot see any of it. Everything downstream of
+            the sale is invisible to Layer 2, which means the profile can only ever be validated on the half
+            of the outcome that arrives first and matters least."}
+
+  heuristic:
+
+    - id: dq.price_pressure_without_budget
+      statement: "Sustained discount pressure and a price objection, with no budget ever approved — economic
+        anti-fit, not a negotiation to be won."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {has_obs: objection_price}
+        - {no_obs: budget_approved}
+      yields: {confidence_bp: 6500, attribute: dimension, value: economic}
+      evidence_fields: [deal.status]
+      note: >
+        A price objection alone is evidence a budget exists — buyers with no money disengage
+        rather than haggle. Sustained pressure with no approval anywhere is the opposite
+        reading: the account wants the outcome and cannot fund it at our price. The two look
+        identical for the first several weeks, which is why this needs all three conditions
+        and why sellers keep discounting into the second one.
+
+    - id: dq.security_posture_stalls_the_motion
+      statement: "Security review under way and momentum collapsing — a candidate operational disqualifier
+        around our security posture."
+      status: executable
+      when:
+        - {has_obs: security_review_started}
+        - {path: derived.momentum, op: "<", value: 0.3}
+      yields: {confidence_bp: 5500, attribute: dimension, value: operational}
+      evidence_fields: [derived.momentum]
+      note: >
+        Deliberately weak, and honest about why. One stalled security review is a deal problem
+        to be worked. The same review stalling across a segment is a disqualifier — we do not
+        hold the certification that segment requires — and the pipeline cannot see "across a
+        segment", so this pattern can only ever raise a candidate for a human to aggregate.
+
+    - id: dq.settled_incumbent_low_switching_appetite
+      statement: "A competitor is present, the deal is cooling, and no pricing conversation ever started
+        — a satisfied incumbent, which is a relationship disqualifier rather than a competitive one."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {no_obs: pricing_discussed}
+        - {path: derived.momentum, op: "<", value: 0.4}
+      yields: {confidence_bp: 6000, attribute: dimension, value: relationship}
+      evidence_fields: [derived.momentum]
+      note: >
+        The no_obs on pricing is what separates this from an ordinary competitive deal. An
+        account genuinely evaluating alternatives discusses price; one that is merely being
+        polite to a challenger does not. Sellers read the meetings as progress and keep
+        nurturing, because the account never says no — it does not have to.
+
+    - id: dq.counterexample_detected
+      statement: "An account matching an enforced disqualifier was won and retained — the rule is contested."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: status, value: contested}
+      requires_signals:
+        - {kind: fact_path, name: account.industry, owner_layer: L1}
+        - {kind: fact_path, name: account.retention_months, owner_layer: L1, note: "The self-correction\
+            mechanism. Without it a disqualifier list only ever grows, because the evidence that would shrink
+            it lives in accounts nobody looks at again."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: crm, signal: "closed-lost cohorts and stated loss reasons", description: "Reasons are not\
+      projected — see dq.repeat_loss_signature."}
+  - {source: crm, signal: "churn and retention outcomes", description: "Not visible to Layer 2 at all."}
+  - {source: email, signal: "discount pressure, price objections, competitor mentions"}
+  - {source: derived, signal: momentum collapse during a review, path: derived.momentum}
+  - {source: contract, signal: "terms we could not accept, and why"}
+  - {source: document, signal: "security questionnaires and certifications we failed"}
+  - {source: manual_entry, signal: "the proposed rule, and who proposed it"}
+  - {source: meeting_transcript, signal: "delivery and support burden reported after the sale"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: match, type: boolean, description: "Whether this condition holds for the account under assessment.",
+      consumed_by: [L4.decision_maker]}
+  - {name: severity, type: string, description: "hard | soft | conditional. Decides whether an override\
+      is even offered.", consumed_by: [L4.decision_maker]}
+  - {name: decline_reason, type: string, description: "The condition in language that can be said out\
+      loud to the account. A decline with no stated reason costs the referral.", consumed_by: [
+        L5.communication_planning]}
+  - {name: recheck_at, type: timestamp, description: "For conditional rules only. The field that stops\
+      a freeze becoming a permanent write-off.", consumed_by: [L5.execution_planning]}
+  - {name: rule_health, type: string, description: "Evidence against counterexamples, for review. Flows\
+      backwards, not into a deal.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: dq.hard_cannot_be_outscored, statement: "A hard disqualifier cannot be outweighed by any combination\
+      of positive fit dimensions.", hard: true}
+  - {id: dq.no_enforcement_from_proposed, statement: "A rule cannot be enforced directly from proposed;\
+      it must be evidenced first.", hard: true}
+  - {id: dq.conditional_must_expire, statement: "A conditional disqualifier without a recheck date is\
+      invalid.", hard: true}
+  - {id: dq.one_segment_one_rule, statement: "A condition that holds for one segment and not another is\
+      two rules, not one with a caveat.", hard: true}
+  - {id: dq.no_protected_attributes, statement: "A disqualifier may not be defined on a protected characteristic\
+      of the people at the account. Fit is a property of the business.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: dq.hard_match_overrides_any_score
+    statement: A hard disqualifier match sets the fit verdict outright. It is not a negative weight,
+      because a negative weight can be outvoted.
+    then: force_verdict_disqualified
+    severity: blocking
+
+  - id: dq.no_enforcement_without_evidence
+    statement: >
+      A disqualifier may not move from proposed straight to enforced; it must pass through
+      evidenced. Without the gate, one bad quarter permanently removes a segment from the
+      market and nobody remembers why the rule is there.
+    severity: blocking
+
+  - id: dq.counterexample_demotes_automatically
+    statement: >
+      A won-and-retained account matching an enforced hard disqualifier moves it to contested
+      without discussion. Requiring a debate first means the debate never happens, because the
+      person who won the account has no incentive to raise it.
+    then: set_status_contested
+    severity: warning
+
+  - id: dq.unevaluable_is_not_a_disqualifier
+    statement: A rule with checked_at_stage = never, or with no test_expression, is an opinion and
+      must not be published on the list.
+    severity: warning
+
+  - id: dq.conditional_rules_need_a_recheck_date
+    statement: >
+      A conditional disqualifier — a freeze, a migration, a pending reorganisation — expires
+      by nature and must carry a recheck date. Treating a temporary state as permanent anti-fit
+      is the most expensive common error on this object, because the account never comes back.
+    when: [has_obs: budget_freeze]
+    severity: blocking
+
+  - id: dq.retirement_needs_a_reason
+    statement: A retired disqualifier keeps its retirement_reason, or the same rule is re-proposed
+      within a year by someone who does not know it was tested.
+    severity: advisory
+
+# ── 8 · Decision Factors — must sum to 10000 ─────────────────────────────────────────────
+decision_factors:
+
+  - name: evidence_strength
+    weight_bp: 3000
+    direction: increases
+    description: Weighted by cohort, not by count. Churn evidence outranks loss evidence for the same
+      number of accounts.
+    reads: [evidenced_by_lost_count, evidenced_by_churned_count, evidence_strength_bp, source]
+
+  - name: counterexample_pressure
+    weight_bp: 2500
+    direction: decreases
+    description: Nearly as heavy as the evidence itself, because a rule that rejects good accounts is
+      worse than no rule — a missing rule wastes effort, a wrong rule forfeits revenue silently.
+    reads: [counterexample_count, false_positive_count]
+
+  - name: severity_and_effect
+    weight_bp: 2000
+    direction: context
+    reads: [severity, effect, override_allowed, override_authority]
+
+  - name: checkability
+    weight_bp: 1500
+    direction: increases
+    description: An unevaluable rule contributes nothing however true it is. Checkability is a
+      property of the rule, not of the account, and it is the field that decides whether the rule ever
+      runs.
+    reads: [evaluable_pre_contact, checked_at_stage, test_expression]
+
+  - name: recency
+    weight_bp: 1000
+    direction: context
+    reads: [last_reviewed_at, validated_at, retired_at]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# These infer that an account MATCHES an anti-fit condition, or that a candidate condition
+# deserves proposing. ANDed within a pattern; alternatives are separate patterns.
+evidence:
+  - {source: crm, strength_bp: 9500, description: "Churn cohorts. The strongest evidence a disqualifier\
+      can have and the least available."}
+  - {source: contract, strength_bp: 8500, description: "Terms we walked away from. Unambiguous, dated,\
+      and rarely mined."}
+  - {source: document, strength_bp: 7500, description: "Failed security questionnaires and compliance\
+      requirements we do not meet."}
+  - {source: email, strength_bp: 6000, description: "Price pressure and competitor language in the thread."}
+  - {source: derived, strength_bp: 5000, description: "Momentum collapse during a review. Circumstantial,\
+      and today most of what is available."}
+  - {source: meeting_transcript, strength_bp: 5000, description: "Post-sale support burden described by\
+      the delivery team."}
+  - {source: manual_entry, strength_bp: 2500, description: "An asserted belief. Lowest deliberately —\
+      this is where most lists start and it should be visibly the weakest row on the page."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: rules_enforced, unit: count, description: "How many rules actually run. A published list and\
+      an enforced list are different objects.", owner_layer: L6}
+  - {name: pre_contact_share, unit: percent, description: "Share of rules evaluable before first contact.\
+      Directly proportional to the effort this capability saves.", owner_layer: L6}
+  - {name: hit_rate, unit: percent, description: "Share of assessed accounts matching at least one rule.",
+      owner_layer: L6}
+  - {name: false_positive_rate, unit: percent, description: "Rejected accounts a competitor won and kept.\
+      Almost never measured, and the only number that can retire a bad rule.", owner_layer: L6}
+  - {name: override_rate, unit: percent, description: "Overridden matches. A high rate means the rule\
+      is wrong or the severity is; both need fixing and they need different fixes.", owner_layer: L6}
+  - {name: mean_rule_age_unreviewed, unit: days, description: "Time since last review. Anti-fit lists\
+      rot quietly because nothing forces a re-read.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: dq.matched, name: Disqualifier Matched, payload: [condition_statement, severity, effect]}
+  - {id: dq.proposed, name: Disqualifier Proposed, payload: [condition_statement, source, proposed_by]}
+  - {id: dq.contested, name: Disqualifier Contested, payload: [counterexample_count], description: "Raised
+      when a rule rejects an account that turns out to be good. The event nobody builds, and the only one
+      that shrinks a list."}
+  - {id: dq.overridden, name: Disqualifier Overridden, payload: [override_authority, exception_reason]}
+  - {id: dq.recheck_due, name: Conditional Rule Due for Recheck, emitted_when: [has_obs: budget_freeze],
+    payload: [condition_statement, recheck_at]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: dq.evaluate, name: Evaluate against an account, actor: system, preconditions: [{path: deal.status,
+        op: "=", value: open}]}
+  - {id: dq.propose, name: Propose a new disqualifier, actor: human, effect: "Enters at proposed, never\
+      at enforced. The gate is the point."}
+  - {id: dq.evidence, name: Attach cohort evidence, actor: agent, effect: "Names the lost and churned\
+      accounts behind the rule. A rule that cannot name them stays proposed."}
+  - {id: dq.enforce, name: Enforce at a stage, actor: human, effect: "Declares where in the funnel it\
+      runs. Enforcing at discovery rather than list build keeps the cost the rule was meant to remove."}
+  - {id: dq.override, name: Override for this account, actor: human, effect: "Permitted only where override_allowed,\
+      and always recorded — an override that is not counted cannot become a contest."}
+  - {id: dq.retire, name: Retire the rule, actor: human, effect: "With a reason. Retirement is a healthy\
+      outcome and an anti-fit list that has never retired anything is not being reviewed."}
+  - {id: dq.refer, name: Refer the account onward, actor: human, effect: "The disqualified account is\
+      frequently a partner's ideal customer, and referring it costs nothing because we were not going to
+      win it."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Hard, legal", note: "Operates in a jurisdiction our data residency terms cannot serve. severity\
+      hard, evaluable_pre_contact true, override_allowed false. The cleanest kind of rule and the rarest."}
+  - {label: "Hard, economic", note: "Below the pricing floor at any realistic seat count. Evidenced by\
+      a cohort that closed at discount and churned. effect route_to_partner, not reject."}
+  - {label: "Soft, operational", note: "Requires an on-premise deployment we support badly. Winnable,\
+      unprofitable, and the deals that get overridden here are the ones support remembers."}
+  - {label: "The classic misclassification", note: "\"They have no budget this quarter.\" Recorded as\
+      a hard disqualifier; it is a conditional one with a fiscal-boundary recheck date. The account is written
+      off, nobody logs it as a loss, and the competitor who kept calling wins it in April."}
+  - {label: "Contested", note: "\"Under fifty staff\" — enforced for two years, then three sub-fifty accounts\
+      are won and retained at full price. The rule was a proxy for buying maturity all along, and the correct
+      fix is to replace the proxy, not to lower the number."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Nine patterns: four executable, five blocked. The four that run all detect anti-fit from a
+    live deal's behaviour, which is the latest and most expensive point at which to detect it;
+    the five that are blocked are precisely the ones that would catch it at list build. The
+    highest-value gap is a loss REASON on the closed_lost_mention observation, closely followed
+    by account.industry as a typed fact: together they let a loss cohort be grouped, and
+    without grouping there is no evidence base for any disqualifier, which strands the entire
+    proposed -> evidenced -> enforced lifecycle on this object at its first step. Churn
+    visibility (churn_event, account.retention_months) is the strongest evidence class the
+    object recognises and is entirely absent from Layer 2, so the profile can only ever be
+    validated on the half of the outcome that arrives first and matters least.

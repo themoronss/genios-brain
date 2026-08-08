@@ -1,0 +1,28 @@
+# Load-set for customer_support.entitlement_and_sla.commitment_tracking — REFERENCES ONLY.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.entitlement_and_sla.commitment_tracking
+
+core:
+  # commitment is the promise and ticket is the context that makes it meaningful — "I will get
+  # back to you" is unactionable without knowing what about. This pair is also the one place in
+  # the subdomain where the shipped substrate already reaches: commitment.due_at and
+  # commitment.action are real fact paths and commitment_overdue is a real L2 situation type.
+  required:
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.ticket
+  # requester is who the promise was made to, and a promise made to a person who has since left
+  # is a different problem. sla_target is optional rather than required on purpose: a personal
+  # commitment is enforceable in the customer's memory whether or not a contractual clock exists
+  # behind it, and requiring one would silently drop every promise made on an unentitled ticket.
+  # conversation carries the wording, which is where the actual undertaking lives.
+  optional:
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.conversation
+
+scoped:
+  required: []
+  optional: []

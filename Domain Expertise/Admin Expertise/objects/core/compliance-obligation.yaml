@@ -1,0 +1,1691 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin core object — COMPLIANCE OBLIGATION.
+#
+# The external duty. A law, a regulator, a licence condition, a court order or a contract
+# imposes it; nobody in this building agreed to it, nobody here can renegotiate it, its
+# deadline was set outside and its breach is automatic. That is the whole distinction, and
+# every field below exists to hold one end of it.
+#
+# It is the only object in the Admin brain where the correct response to "we're too busy" is
+# "that is not a fact the authority is interested in". Everything else administrators handle —
+# commitments, requests, approvals, internal deadlines — is negotiable with a person. This is
+# not, and treating it as though it were is the single most expensive category error in the
+# domain: the register shows amber, somebody reprioritises, and the consequence lands on a
+# date nobody could move.
+#
+# FIVE of fifteen patterns are executable today, and none of them can read an obligation.
+# They read contracting activity, thread silence, graph degree and a commitment date that
+# Layer 2 happens to carry. The ten needs_signal entries are the honest ask, and the honest
+# summary is that the pipeline can see an unanswered email but not an overdue statutory
+# filing.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.compliance_obligation
+  scope: core
+  name: Compliance Obligation
+  domain: admin
+  subdomain: compliance_and_governance
+  owner_capability: admin.compliance_and_governance.board_and_secretarial
+  version: 1.0.0
+  status: draft
+  aliases: ["Regulatory Obligation", "Statutory Duty", "Applicable Requirement",
+            "Legal Requirement", "Contractual Undertaking", "Obligations Register Entry"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A duty imposed on the organisation from outside it — by statute, by a regulator, by a
+    licence condition, by a court order or by a contract somebody signed. Nobody here agreed to
+    it in any sense that matters, nobody here can renegotiate it, its deadline is external and
+    its breach is automatic on the date rather than on discovery. An obligation is standing: it
+    survives the person who found it, the system that tracked it and the project that
+    implemented it, and it goes on generating filings, attestations and evidence requirements
+    until the instrument is repealed or the activity that pulled us into scope stops.
+  discriminator: >
+    Could somebody inside this organisation move the deadline by asking? If yes it is a
+    Commitment, an Action Item or an internal Deadline. If no — if moving it requires an
+    application to an authority, a variation of a contract, or an act of Parliament — it is a
+    Compliance Obligation. Seniority is irrelevant to this test, which is precisely why it works.
+  answers:
+    - "What are we actually required to do here, by whom, by when, and under which instrument?"
+    - "Which obligation is closest to breach, and what happens on the day it lands?"
+    - "Who is the accountable individual — and does the obligation know it has one, or does the register just say 'Finance'?"
+    - "Does this obligation still apply, now that we have crossed a headcount threshold / entered a jurisdiction / stopped that activity?"
+    - "If a regulator asked tomorrow, what would we produce, and would it be sufficient?"
+    - "Is our internal retention, review and access schedule at least as strict as what the obligation requires?"
+    - "Did the instrument change, and when did anyone last look?"
+  not:
+    - "Not the internal policy that implements it — admin.obj.core.policy owns that. A policy can be rewritten in an afternoon by people in this building; that is the difference, and it is the entire difference."
+    - "Not the procedure that performs it — admin.obj.core.sop owns the steps."
+    - "Not the artefact that evidences it — admin.obj.core.document owns that. An obligation discharged and unevidenced is, to the authority that imposed it, an obligation not discharged."
+    - "Not the individual filing that discharges one instance — admin.obj.statutory_filing.filing is the event; this object is the standing duty that keeps producing them."
+    - "Not a commitment. A commitment is owed to a person who can release you from it, and most of them are released informally every week."
+    - "Not a contract. admin.obj.core.contract is the instrument; several obligations fall out of one contract, and the contract can be renegotiated while the statute behind it cannot."
+    - "Not a risk. admin.obj.core.admin_risk is a probability and an impact; an obligation is a duty that exists whether or not anyone has assessed it."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ---- composites ----
+  - name: source_of_duty
+    purpose: Where the duty comes from and why it reaches us at all. The half of the register that is never filled in.
+    type: composite
+    contains: [obligation_type, instrument, instrument_reference, authority, jurisdiction, applies_because]
+
+  - name: applicability
+    purpose: Whether it binds us today. Assessed, not assumed, and re-assessed when we change shape.
+    type: composite
+    contains: [applicability_state, triggering_activity, threshold_test, exemption_claimed, exemption_basis]
+
+  - name: timing
+    purpose: The external clock. Nothing in here can be moved from inside the organisation.
+    type: composite
+    contains: [obligation_frequency, clock_trigger, first_due_at, due_at, notice_period_days,
+               grace_period_days, days_to_due]
+
+  - name: accountability
+    purpose: Who answers for it. Delegation moves the work and never the answering.
+    type: composite
+    contains: [accountable_owner_ref, delegated_to_ref, senior_manager_attested, control_ref]
+
+  - name: discharge
+    purpose: How the duty is satisfied, whether it has been, and what proves it.
+    type: composite
+    contains: [discharge_method, discharge_state, last_discharged_at, evidence_ref, evidence_sufficiency]
+
+  - name: consequence
+    purpose: What actually happens on breach. The section that decides whether anybody moves.
+    type: composite
+    contains: [breach_trigger, sanction_type, max_penalty, personal_liability,
+               notification_deadline_hours, reputational_exposure, remediable]
+
+  - name: change_control
+    purpose: Whether what we believe about the duty is still what the duty says.
+    type: composite
+    contains: [instrument_version, instrument_changed_at, horizon_scanned_at, interpretation_confidence]
+
+  # ---- values, references, derived ----
+  - name: obligation_type
+    purpose: The kind of authority behind the duty, which sets how immovable it is and who can be argued with.
+    type: value
+    data_type: enum
+    allowed_values: [statutory, regulatory, licence_condition, contractual, court_order,
+                     binding_undertaking, industry_code]
+    required: true
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      There is deliberately no `internal` member. An internally-imposed duty is a policy, and
+      admitting it to this enum is how an obligations register fills with house rules and stops
+      being credible. `industry_code` is the softest member and the one most often over-weighted
+      — a code of practice is evidence of what reasonable looks like, not a statute.
+
+  - name: instrument
+    purpose: The named law, regulation, licence, order or agreement that imposes the duty.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      "UK GDPR", "Companies Act 2006", "FCA SYSC", "the MSA with Northwind, clause 14". A
+      register row without an instrument is somebody's recollection of a training course.
+
+  - name: instrument_reference
+    purpose: The specific article, section, clause or condition. The citation.
+    type: value
+    data_type: string
+    description: >
+      Article 30. Section 854. Condition 4(b). This is the field that turns an argument into a
+      citation, and its absence is the reason compliance discussions are so often decided by
+      whoever sounds most certain. An obligation without a citation is an opinion with a deadline.
+
+  - name: authority
+    purpose: Who imposes it and, therefore, who has to be satisfied.
+    type: value
+    data_type: string
+    source_paths: [obligation.authority]
+    description: >
+      Named, not "the regulator". It matters operationally: different authorities have different
+      tolerances for late notification, different self-report credit, and different appetites for
+      publishing the outcome.
+
+  - name: jurisdiction
+    purpose: Where the duty bites.
+    type: value
+    data_type: string
+    source_paths: [obligation.jurisdiction]
+    description: >
+      The same activity is unregulated in one jurisdiction and notifiable in another, and a
+      register that holds one row for "data protection" across six countries is a register that
+      will be wrong in five of them.
+
+  - name: applies_because
+    purpose: The activity, threshold or relationship that pulls this organisation into scope.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      The single most useful field in the object and the emptiest column in most registers.
+      During an audit, half the entries cannot be explained by anyone still employed. Recording
+      why it applies is also the only way to know when it stops applying.
+
+  - name: applicability_state
+    purpose: Whether we have actually decided this binds us.
+    type: value
+    data_type: enum
+    allowed_values: [unassessed, in_scope, out_of_scope, exempt, ceased]
+    required: true
+    default: unassessed
+    description: >
+      `unassessed` is the honest default and must be treated as in-scope until somebody decides
+      otherwise. Defaulting unassessed to out-of-scope is how a register reports full compliance
+      against a population nobody has counted.
+
+  - name: triggering_activity
+    purpose: The thing we do that creates the duty.
+    type: value
+    data_type: string
+    description: >
+      Processing employee health data. Holding client money. Employing more than N people.
+      Operating a vehicle over 3.5 tonnes. Obligations do not attach to organisations, they
+      attach to activities — which is why the register goes stale the moment a new product ships
+      and nobody re-runs the assessment.
+
+  - name: threshold_test
+    purpose: The quantitative test that decides whether we are in or out.
+    type: value
+    data_type: string
+    description: >
+      Headcount, turnover, data volume, transaction value, seats, sites. Thresholds are crossed
+      silently by growth, and the crossing is never an event anybody notices — nobody sends a
+      letter on the day you hire your 250th employee.
+
+  - name: exemption_claimed
+    purpose: Whether we are relying on a derogation or exemption rather than complying.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      Exemptions are almost always narrower than the person relying on them believes. The GDPR
+      Art. 30 small-organisation derogation is the canonical example: it evaporates the moment
+      processing is not occasional, or touches special-category data, or poses a risk to rights —
+      which covers essentially every employer.
+
+  - name: exemption_basis
+    purpose: The written reasoning for the exemption, and who signed it off.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      An exemption claimed without a written basis is a decision nobody will own when it is
+      tested, and it is always tested at the worst moment by someone who was not there when it
+      was taken.
+
+  - name: obligation_frequency
+    purpose: How often the duty recurs.
+    type: value
+    data_type: enum
+    allowed_values: [one_off, on_event, daily, monthly, quarterly, annual, biennial, continuous]
+    description: >
+      `continuous` is the dangerous member. A continuous duty — keep records accurate, maintain
+      adequate security, notify without undue delay — has no due date, so it never appears on
+      anybody's list, and it is the category in which most enforcement action actually lands.
+
+  - name: clock_trigger
+    purpose: What starts the countdown.
+    type: value
+    data_type: enum
+    allowed_values: [fixed_calendar_date, period_end, event_plus_days, on_awareness, on_demand, continuous]
+    description: >
+      `on_awareness` is carried separately because it is the cruellest form: the clock starts
+      when you become aware, not when you finish investigating. A 72-hour breach notification
+      under GDPR Art. 33 is running while you are still establishing what happened, and the
+      instinct to wait until the facts are clear is the instinct that misses it.
+
+  - name: first_due_at
+    purpose: The first occurrence, which is the one nobody has a process for yet.
+    type: value
+    data_type: timestamp
+    description: >
+      Recurring duties are handled well after the second cycle and badly on the first, because
+      the first is a project and every subsequent one is a routine.
+
+  - name: due_at
+    purpose: The external deadline for the current occurrence.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [obligation.due_at, commitment.due_at]
+    description: >
+      Set outside the organisation. This is the load-bearing field and it is also the one most
+      often copied into a spreadsheet with a private, softer date beside it labelled "internal
+      target" — a useful practice that becomes a lie the moment the internal date is the only one
+      anybody looks at.
+
+  - name: notice_period_days
+    purpose: How far ahead work must start for the deadline to be achievable.
+    type: value
+    data_type: integer
+    unit: days
+    validation: ">= 0"
+    description: >
+      Derived from how long discharge actually takes, not from how much warning feels
+      comfortable. The correct escalation point is here, not at the deadline: an obligation
+      escalated on its due date is a breach with a meeting attached.
+
+  - name: grace_period_days
+    purpose: Any period after the deadline before consequence attaches.
+    type: value
+    data_type: integer
+    unit: days
+    default: 0
+    description: >
+      Usually zero, and recording the zero explicitly is the point. Internal deadlines have
+      informal grace by default and people transfer that expectation across without noticing.
+
+  - name: accountable_owner_ref
+    purpose: The named individual who answers for this duty.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    required: true
+    sensitivity: internal
+    description: >
+      A person, never a function. "Finance owns it" means the obligation is owned by a rota. Under
+      senior-manager and accountability regimes the naming is itself part of the duty, and where
+      it is not, it is still the only thing that makes escalation possible.
+
+  - name: delegated_to_ref
+    purpose: Who performs the work, where that is not the accountable owner.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    sensitivity: internal
+    description: >
+      Delegation moves the doing and never the answering. The most common failure is not that
+      delegation happened, it is that the accountable owner stopped reading the register the day
+      it did.
+
+  - name: senior_manager_attested
+    purpose: Whether a named senior person has positively confirmed the duty is being met.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      An attestation is worth little as evidence of fact and a great deal as evidence of
+      attention. Its practical value is that people read things carefully before signing them,
+      which is the only reliable way to make a register be reviewed.
+
+  - name: control_ref
+    purpose: The internal policy or control implementing the duty.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.policy
+    description: >
+      Obligation to control to evidence is the chain an auditor walks. A duty with no control
+      mapped to it is being met by individual diligence, which works until the individual is on
+      leave.
+
+  - name: discharge_method
+    purpose: What actually satisfies the duty.
+    type: value
+    data_type: enum
+    allowed_values: [filing, publication, notification, record_keeping, attestation, payment,
+                     training, technical_control, cessation]
+    description: >
+      `record_keeping` and `technical_control` are the two that never appear on a deadline list,
+      because they are continuous and produce no event. They are also the two that most often
+      fail an inspection.
+
+  - name: discharge_state
+    purpose: Where this occurrence stands.
+    type: value
+    data_type: enum
+    allowed_values: [not_started, in_progress, discharged, discharged_late, overdue, breached,
+                     waived, not_applicable]
+    default: not_started
+    description: >
+      `overdue` and `breached` are deliberately separate: overdue is our finding, breached is
+      theirs. `discharged_late` is separate from `discharged` because collapsing the two lets a
+      register report a hundred per cent on-time compliance that consists entirely of late
+      filings that were eventually accepted.
+
+  - name: last_discharged_at
+    purpose: When the duty was last actually satisfied.
+    type: value
+    data_type: timestamp
+    description: >
+      For a continuous obligation this is the last date evidence was produced, not the last date
+      somebody believed it was fine.
+
+  - name: evidence_ref
+    purpose: The controlled artefact that proves discharge.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    description: >
+      Must be a controlled document, not an email. An obligation discharged and evidenced only in
+      somebody's sent items is discharged and unprovable, and the two are the same thing from the
+      outside.
+
+  - name: evidence_sufficiency
+    purpose: How strong the proof would be if it were tested tomorrow.
+    type: value
+    data_type: enum
+    allowed_values: [none, asserted, documented, independently_verified]
+    default: none
+    description: >
+      "We do this" is `asserted` and it is worth nothing in an inspection. The gap between
+      `asserted` and `documented` is where most compliance programmes actually live, and it is
+      invisible from inside because everybody knows the thing is being done.
+
+  - name: breach_trigger
+    purpose: What causes the breach to exist.
+    type: value
+    data_type: enum
+    allowed_values: [automatic_on_date, continuous_while_unremedied, on_discovery, on_complaint,
+                     on_inspection]
+    description: >
+      `automatic_on_date` is what makes this object different from everything else an
+      administrator handles: the breach happens whether or not anybody notices, and the discovery
+      only decides when the consequence arrives. `continuous_while_unremedied` is worse
+      arithmetic — daily penalties compound while the file sits in somebody's holiday cover.
+
+  - name: sanction_type
+    purpose: What the authority can actually do about it.
+    type: value
+    data_type: enum
+    allowed_values: [none, warning, fine, licence_condition, licence_suspension, prosecution,
+                     director_disqualification, contract_termination, damages]
+    sensitivity: internal
+    description: >
+      Ranked here roughly by how much attention each one buys internally, which is almost the
+      inverse of how often each occurs. Fines get budgeted for; licence suspension stops the
+      business; disqualification changes the behaviour of the person reading the register.
+
+  - name: max_penalty
+    purpose: The ceiling, for prioritisation only.
+    type: value
+    data_type: money
+    sensitivity: confidential
+    description: >
+      GDPR's greater-of-twenty-million-or-four-per-cent is the famous number and is almost never
+      the operative one. Useful for ranking a register; dangerous as a planning figure, because
+      the cost that actually lands is remediation, legal time and the eighteen months of
+      supervisory attention that follows.
+
+  - name: personal_liability
+    purpose: Whether a named individual is personally liable, not just the entity.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      The field that changes behaviour more than any other in this object. Directors' duties,
+      senior-manager regimes, health-and-safety offences and money-laundering failures all reach
+      individuals, and an obligation carrying personal liability gets an answer within the hour
+      when the same person has ignored the register for a year.
+
+  - name: notification_deadline_hours
+    purpose: How long there is to tell somebody once the trigger occurs.
+    type: value
+    data_type: integer
+    unit: hours
+    description: >
+      72 hours for a personal-data breach to the supervisory authority under GDPR Art. 33, and
+      the clock starts on awareness. Separated from due_at because it is a different kind of
+      deadline: it begins at an unpredictable moment and it usually begins outside office hours.
+
+  - name: reputational_exposure
+    purpose: Whether the consequence becomes public.
+    type: value
+    data_type: enum
+    allowed_values: [none, low, moderate, high]
+    default: low
+    description: >
+      Most regulators publish enforcement outcomes, and publication is frequently the larger cost
+      by an order of magnitude. A modest fine that appears in a searchable register is priced into
+      every subsequent tender the organisation bids for.
+
+  - name: remediable
+    purpose: Whether the breach can be cured, and whether curing it helps.
+    type: value
+    data_type: boolean
+    default: true
+    description: >
+      A late filing accepted is remediated. A missed notification window is not — the deadline
+      passed and no subsequent act un-passes it. The distinction should drive urgency far more
+      than penalty size does, and it almost never does.
+
+  - name: instrument_version
+    purpose: Which version of the instrument our interpretation was formed against.
+    type: value
+    data_type: string
+    description: >
+      Regulations are amended more often than registers are re-read. A register entry pinned to a
+      2019 reading of a 2023 instrument is not a stale field, it is a wrong answer being given
+      confidently.
+
+  - name: instrument_changed_at
+    purpose: When the instrument last changed.
+    type: value
+    data_type: timestamp
+
+  - name: horizon_scanned_at
+    purpose: When anybody last checked whether the instrument moved.
+    type: value
+    data_type: timestamp
+    description: >
+      The staleness of this one field is the whole of regulatory change control. An obligations
+      register with no horizon-scan date is a photograph of what the law was on the day somebody
+      built the spreadsheet.
+
+  - name: interpretation_confidence
+    purpose: How sure we are that our reading of the duty is right.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, internal_view, advised, counsel_opinion, regulator_confirmed]
+    default: unknown
+    sensitivity: internal
+    description: >
+      Most register entries sit at `internal_view` and are treated as `regulator_confirmed` in
+      conversation. Recording the difference is what lets an organisation spend advice money where
+      the exposure actually is, instead of where the anxiety is.
+
+  - name: last_touched_at
+    purpose: When traffic about this obligation was last seen.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: >
+      The only live signal this object currently has. It measures conversation, not compliance,
+      and the two diverge most sharply on continuous obligations that nobody ever emails about.
+
+  - name: days_to_due
+    purpose: Time remaining against the external deadline.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [due_at, notice_period_days]
+    description: >
+      Negative values are not a display problem. Read against notice_period_days rather than
+      against zero — an obligation that needs six weeks and has four is already in trouble while
+      the register still shows it green.
+
+  - name: obligation_pressure
+    purpose: Composite urgency across proximity, consequence and readiness.
+    type: derived
+    data_type: number
+    source_paths: [derived.obligation_pressure]
+    derived_from: [days_to_due, sanction_type, evidence_sufficiency, discharge_state, remediable]
+    description: >
+      Exists so that a register can be ranked by something other than date. A distant obligation
+      with no evidence, no owner and an irremediable breach mode outranks a near one that is
+      already drafted, and a date-sorted register can never say so.
+
+  - name: register_entry_age_days
+    purpose: How long this entry has gone without assessment or attestation.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [horizon_scanned_at, applicability_state, senior_manager_attested]
+    description: >
+      Registers do not fail loudly. They age, and every entry that ages is one more thing the
+      organisation believes without having checked.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: unknown
+  terminal: [expired, cancelled, archived]
+  values:
+    - name: unknown
+      description: >
+        Not on the register. The state a surprising share of an organisation's obligations are
+        genuinely in, and the only one that cannot be measured — you can count what you found,
+        never what you did not.
+      implies: "Undischarged and unowned, and the breach clock is running regardless."
+    - name: identified
+      description: On the register; applicability not yet assessed.
+      implies: "Must be handled as in-scope until assessed. Default-deny is the only safe direction."
+    - name: active
+      description: Assessed as applying, with an owner, a control and a live cycle.
+      entered_when: [{exists: commitment.due_at}]
+      implies: "Everything downstream — filings, evidence, attestations — hangs off this state."
+    - name: on_hold
+      description: >
+        Suspended by the authority — a transitional period, a moratorium, a stay, an agreed
+        forbearance. Not the same as us deciding to pause, which is not a state but a breach in
+        progress.
+      implies: "The suspension is somebody else's decision and can be withdrawn without notice."
+    - name: overdue
+      description: Past due_at and not discharged. Our finding, not the authority's.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+      implies: "Escalation to the accountable owner, immediately and by name."
+    - name: breached
+      description: >
+        The duty is unmet and the breach is established — by the authority, by the passage of an
+        irremediable deadline, or by our own determination.
+      implies: "Self-report becomes the live question. Concealment converts a technical breach into a conduct one."
+    - name: expired
+      description: >
+        The instrument was repealed, or the activity that pulled us into scope has ceased. The
+        obligation stops; the retention duty attached to its records almost never does.
+      implies: "Close the entry, keep the evidence. The records outlive the duty by years."
+    - name: cancelled
+      description: Assessed as out of scope, or an exemption was accepted with a written basis.
+      implies: "The reasoning must survive the assessor. An out-of-scope decision nobody can explain is re-litigated at every audit."
+    - name: archived
+      description: >
+        Superseded by a replacement instrument. Kept, because a breach is judged under the
+        instrument in force at the time and not the one in force when the question is asked.
+      implies: "Referenced by the successor obligation, never deleted."
+  transitions:
+    - {from: unknown, to: identified, trigger: "found by horizon scan, audit, incident or somebody asking"}
+    - {from: identified, to: active, trigger: "applicability assessed as in scope and an owner named"}
+    - {from: identified, to: cancelled, trigger: "assessed out of scope with written reasoning"}
+    - {from: active, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: overdue, to: active, trigger: "discharged late and accepted", reversible: true}
+    - {from: overdue, to: breached, trigger: "grace period exhausted or deadline irremediable", reversible: false}
+    - {from: breached, to: active, trigger: "remediated and accepted"}
+    - {from: active, to: on_hold, trigger: "authority grants a transitional period or forbearance", reversible: true}
+    - {from: on_hold, to: active, trigger: "suspension ends"}
+    - {from: active, to: expired, trigger: "instrument repealed or triggering activity ceased"}
+    - {from: active, to: archived, trigger: "replaced by a successor instrument"}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - source: admin.obj.core.document
+    type: evidences
+    target: admin.obj.core.compliance_obligation
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 2000
+    confidence_bp: 8500
+    priority: 1
+    evidence: [register, portal, signed_form, regulator]
+    description: >
+      Read inbound: the controlled document evidences this duty. Authored from this side as well
+      because the question an auditor asks starts here — "show me" — and an obligation that cannot
+      traverse to its evidence in one hop is an obligation that will be answered by a search of
+      somebody's mailbox.
+
+  - type: requires
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1600
+    confidence_bp: 8000
+    priority: 2
+    evidence: [document, register]
+    description: >
+      The internal control that implements the duty. Obligation to control to evidence is the
+      chain every audit walks, and the commonest break in it is here: a duty everybody knows about
+      with no policy mapped to it, met by individual diligence until that individual takes leave.
+
+  - type: produces
+    target: admin.obj.statutory_filing.filing
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 9000
+    priority: 3
+    conditions: [{exists: commitment.due_at}]
+    evidence: [portal, regulator]
+    description: >
+      A recurring obligation generates a filing per cycle. The filing is the event and can fail,
+      be rejected, or be accepted late; the obligation is unaffected by any of that and simply
+      produces the next one.
+
+  - type: assigned_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: one
+    weight_bp: 1400
+    confidence_bp: 7500
+    priority: 4
+    evidence: [register, attestation, hris]
+    description: >
+      The accountable individual. Cardinality one on purpose: two owners is nobody, and the second
+      name is always added to close an audit finding rather than to do the work.
+
+  - type: produces
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 8500
+    priority: 5
+    description: >
+      The obligation emits dates; it does not consume them. This is the direction that matters —
+      an internal deadline derived from an obligation inherits its immovability, and a planning
+      process that treats it as negotiable is negotiating with a statute.
+
+  - type: belongs_to
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 8000
+    priority: 6
+    conditions: [{has_obs: contract_requested}]
+    evidence: [contract, signed_form]
+    description: >
+      Only for contractual obligations. One contract typically creates several — notice periods,
+      audit rights, data-processing terms, insurance levels, reporting undertakings — and almost
+      none of them are extracted onto a register at signature, which is the moment they are
+      cheapest to capture and the only moment anybody has read the document.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 7000
+    priority: 7
+    conditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    description: >
+      Escalation fires at notice_period_days, not at the deadline. An escalation raised on the due
+      date is a breach with a meeting attached to it.
+
+  - type: supersedes
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 8000
+    priority: 8
+    description: >
+      Self-referential. When an instrument is replaced, the predecessor is archived rather than
+      deleted — breaches are judged under the instrument in force at the time, and an organisation
+      that overwrote its register can only describe today.
+
+  - type: references
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 6000
+    priority: 9
+    evidence: [attestation, register]
+    description: >
+      The evidence pack assembled for a specific inspection. Distinct from the standing evidence
+      document: packs are point-in-time and are the thing that actually gets handed over.
+
+  - type: gates
+    target: admin.obj.core.access_right
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 6500
+    priority: 10
+    evidence: [access_log, register]
+    description: >
+      Access recertification, least privilege and segregation of duties are obligations before
+      they are IT hygiene. This edge is why an access review has a hard date rather than a
+      backlog priority.
+
+# ── 6 · Inference Patterns ⭐ — how this object is discovered when nobody says it ─────────
+#
+# Conditions in a `when` are ANDed. The honest position: nothing in the shipped substrate can
+# read an obligation. What follows reads contracting activity, thread behaviour, graph degree
+# and a commitment date, and says so.
+inference_patterns:
+
+  deterministic:
+
+    - id: obl.past_external_due_date
+      statement: "The duty's date has passed and nothing records it as discharged."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8500, attribute: discharge_state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        The largest source of a wrong nudge here, and it is a category error rather than a data
+        error: commitment.due_at carries INTERNAL promises, which are releasable by the person
+        owed them. Where Layer 2 has projected an obligation onto a commitment node the reading is
+        right; where it has not, this fires on a promise somebody quietly waived last week.
+      note: >
+        Also fires on an obligation discharged out of band — filed through a portal that leaves no
+        trace in the graph — which will read overdue until something closes it. 8500 rather than
+        higher for both reasons. Note what the pattern cannot see: grace_period_days is unknown,
+        so it can assert overdue and must never assert breached.
+
+    - id: obl.new_paper_creates_unregistered_duties
+      statement: "A contract is being negotiated and reviewed — obligations are being created right now and none of them are on the register yet."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 6000, attribute: obligation_type, value: contractual}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        Plenty of contract negotiations create no new standing obligation — a renewal on identical
+        terms, a purchase order against an existing framework. This fires on all of them.
+      note: >
+        Worth having at 6000 despite that, because it catches the exact moment the register should
+        be updated and never is. Notice periods, audit rights, data-processing terms and reporting
+        undertakings are cheapest to capture at signature — the only moment anybody has actually
+        read the document — and are otherwise rediscovered eighteen months later by someone trying
+        to terminate.
+
+    - id: obl.duty_of_record_from_the_register
+      statement: "The obligations register states this duty, its authority, its jurisdiction and its next date."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: applicability_state, value: in_scope}
+      requires_signals:
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "The obligations register exists as a spreadsheet in most organisations and as a typed fact in none. Without it every judgement in this file is inferred from email."}
+        - {kind: fact_path, name: obligation.authority, owner_layer: L1,
+           note: "Who has to be satisfied. Determines self-report credit, notification tolerance and whether the outcome gets published — three things that change the plan completely."}
+        - {kind: fact_path, name: obligation.jurisdiction, owner_layer: L1,
+           note: "One row per jurisdiction, not one row per topic. A single 'data protection' entry spanning six countries is wrong in five of them."}
+
+    - id: obl.filing_accepted_discharges_the_duty
+      statement: "The authority has accepted the filing, so this occurrence is discharged."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: discharge_state, value: discharged}
+      requires_signals:
+        - {kind: obs_kind, name: filing_accepted, owner_layer: L2,
+           note: "Acceptance by the authority is the only 10000-confidence discharge signal that exists in this domain, because it is the only one we did not write ourselves. Portals emit it; nothing consumes it."}
+
+    - id: obl.filing_rejected_does_not_discharge
+      statement: "The filing was submitted and rejected — the duty is undischarged and the clock never stopped."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: discharge_state, value: not_started}
+      requires_signals:
+        - {kind: obs_kind, name: filing_rejected, owner_layer: L2,
+           note: "The nastiest gap in this file. Submission is what every internal tracker records, and a submitted-and-rejected filing reads as done everywhere inside the organisation while the deadline continues to run outside it. Rejections arrive by post or portal notice, days later, to whoever filed — who is frequently on leave by then."}
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "Needed to know whether the resubmission window still lands inside the deadline, which is the only question that matters at that moment."}
+
+    - id: obl.threshold_crossed_pulls_us_into_scope
+      statement: "A headcount, turnover or volume threshold has been crossed, so a duty that did not apply now does."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: applicability_state, value: in_scope}
+      requires_signals:
+        - {kind: fact_path, name: employee.start_at, owner_layer: L1,
+           note: "Headcount is the commonest threshold and the easiest to compute. Nobody sends a letter on the day you hire your 250th employee, and no internal system treats it as an event."}
+        - {kind: derived, name: derived.threshold_position, owner_layer: L2,
+           note: "Current value against each recorded threshold_test, with the crossing emitted as an event. The whole class of silent scope-change is invisible without it, and silent scope-change is how a compliant organisation becomes non-compliant with nobody doing anything wrong."}
+
+    - id: obl.instrument_amended_invalidates_our_reading
+      statement: "The instrument behind this duty has been amended since our interpretation was formed."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: interpretation_confidence, value: unknown}
+      requires_signals:
+        - {kind: fact_path, name: obligation.authority, owner_layer: L1,
+           note: "The subscription key for horizon scanning — you monitor an authority, not a topic."}
+        - {kind: derived, name: derived.instrument_version_current, owner_layer: L2,
+           note: "A regulatory-change feed compared against instrument_version. Commercially available and connected almost nowhere, so most registers are pinned to whatever the law said on the day the spreadsheet was built."}
+
+  heuristic:
+
+    - id: obl.owed_by_us_and_gone_quiet
+      statement: "A duty with a live date, the next move ours, and three weeks of silence. Nothing is being done and nobody has noticed."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 21}
+      yields: {confidence_bp: 6000, attribute: discharge_state, value: not_started}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound, commitment.due_at]
+      false_positive: >
+        Most real compliance work generates no email at all. Someone assembling a filing in a
+        portal, running a training campaign or completing a technical control leaves this thread
+        silent for weeks while doing exactly the right thing.
+      note: >
+        6000, and it should rank rather than alert. Its value is as a first-look list for the
+        obligations owner, because the alternative ordering — by due date — systematically visits
+        the ones already in hand and never reaches the ones nobody picked up.
+
+    - id: obl.duty_under_interpretation_is_not_being_discharged
+      statement: "Legal review is open on this duty. It is being argued about, which is not the same as being performed."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 6500, attribute: interpretation_confidence, value: advised}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        legal_review was built for contract redlines and fires on plenty of things that are not
+        interpretations of a duty. It also cannot distinguish "counsel confirmed our reading" from
+        "counsel disagrees with our reading", which are opposite findings.
+      note: >
+        The useful half is the negative one. An interpretation in progress means the deadline is
+        still running while the organisation decides what the deadline requires, and that is the
+        specific shape of a missed filing that everybody afterwards remembers as unavoidable.
+
+    - id: obl.orphaned_register_entry
+      statement: "A duty with one edge in the graph — no owner, no control, no evidence. A line in a register."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+      yields: {confidence_bp: 6000, attribute: evidence_sufficiency, value: none}
+      false_positive: >
+        Sparse graph coverage rather than genuine orphaning, particularly for duties administered
+        entirely inside a portal that no connector reads.
+      note: >
+        Weak, and the most useful weak pattern in the file. Orphaned entries are the ones an
+        obligations register acquires by being copied from a template or from another
+        organisation's list, and they are invisible to every other check here because there is
+        nothing attached to them to check.
+
+    - id: obl.accountable_owner_has_left
+      statement: "The named accountable owner is a leaver, so the duty is unowned and nothing says so."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: accountable_owner_ref}
+      requires_signals:
+        - {kind: obs_kind, name: leaver_confirmed, owner_layer: L2,
+           note: "Joiner-mover-leaver reliably reaches access rights and payroll. It reaches the obligations register in almost no organisation, so duties keep an owner who has been gone for a year and every escalation path terminates in a disabled mailbox."}
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1,
+           note: "Needed to distinguish a leaver from long-term absence — identical silence, opposite responses, and the second one has an end date."}
+
+    - id: obl.discharged_but_unevidenced
+      statement: "The duty was performed and nothing controlled proves it."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: evidence_sufficiency, value: asserted}
+      requires_signals:
+        - {kind: obs_kind, name: evidence_provided, owner_layer: L2,
+           note: "Its ABSENCE against a discharged state is the finding. Compliance work is performed far more often than it is evidenced, and from outside the organisation those two situations are identical."}
+        - {kind: fact_path, name: document.approved_at, owner_layer: L1,
+           note: "An unapproved artefact is not evidence. Without this the object cannot distinguish a controlled record from a draft somebody wrote after being asked."}
+
+    - id: obl.notification_clock_running
+      statement: "A notifiable event has been detected and the external notification window is already running."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: notification_deadline_hours, value: 72}
+      requires_signals:
+        - {kind: obs_kind, name: notifiable_event_detected, owner_layer: L2,
+           note: "Invented; planned_substrate has nothing for it. The 72-hour GDPR Art. 33 clock starts on awareness, not on confirmation, and the single most common way it is missed is an organisation waiting for the facts to settle. Nothing anywhere in the stack starts a clock on awareness today."}
+        - {kind: fact_path, name: obligation.authority, owner_layer: L1,
+           note: "Which authority must be told, and therefore which window applies. 72 hours is the famous one and is not universal."}
+
+    - id: obl.continuous_duty_never_examined
+      statement: "A continuous obligation with no due date has gone a full year without evidence, attestation or a horizon scan."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: register_entry_age_days}
+      requires_signals:
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "Its ABSENCE is the whole pattern. A continuous duty has no date, so it never appears on a deadline report, and deadline reports are how organisations decide what to look at."}
+        - {kind: derived, name: derived.obligation_pressure, owner_layer: L2,
+           note: "Ranking by something other than date. Record-keeping and technical-control duties are where inspections most often land findings, and they are precisely the ones a date-sorted register can never surface."}
+
+    - id: obl.exemption_claimed_without_a_basis
+      statement: "An exemption or derogation is being relied on and no written basis exists for it."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: exemption_basis}
+      requires_signals:
+        - {kind: fact_path, name: document.approved_at, owner_layer: L1,
+           note: "The written basis has to be an approved artefact or it is a conversation. Exemptions are narrower than the people relying on them believe — the Art. 30 small-organisation derogation evaporates on special-category data or non-occasional processing, which is essentially every employer."}
+        - {kind: obs_kind, name: evidence_provided, owner_layer: L2,
+           note: "Links the reasoning to the entry. An exemption with no traversable basis will be re-argued from scratch at every audit, by people who were not there."}
+
+    - id: obl.retention_floor_breached_by_internal_schedule
+      statement: "Our own retention schedule would dispose of records earlier than this duty requires them to be kept."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: evidence_sufficiency, value: none}
+      requires_signals:
+        - {kind: fact_path, name: document.retention_until, owner_layer: L1,
+           note: "One side of the comparison. Internal schedules may exceed the external floor and never fall short, and today nothing can perform the comparison at all."}
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "The other side, as the record-keeping duty's own horizon. A tidy internal retention policy destroying records a statute required for six years is the rare compliance failure caused entirely by diligence."}
+
+# ── 7 · Inputs — where this object gets filled from ──────────────────────────────────────
+inputs:
+  - {source: regulator, signal: "the instrument, its amendments, guidance and enforcement outcomes",
+     fills: [instrument, instrument_reference, instrument_version, authority], reliability_bp: 10000,
+     description: "The only source that can tell you that you are wrong. Read directly rather than through a summary — the summary is where the qualification gets lost."}
+  - {source: portal, signal: "submissions, acceptances, rejections and lodgement receipts",
+     fills: [discharge_state, last_discharged_at], reliability_bp: 9200}
+  - {source: contract, signal: "notice periods, audit rights, data-processing terms, reporting undertakings",
+     fills: [obligation_type, due_at, notice_period_days], reliability_bp: 9000,
+     description: "Extract at signature. Contractual obligations discovered eighteen months later are discovered by somebody trying to terminate."}
+  - {source: register, signal: "the obligations register: duty, owner, cycle, control, evidence",
+     fills: [applicability_state, accountable_owner_ref, control_ref, obligation_frequency], reliability_bp: 7000,
+     description: "Only ever as good as its last horizon scan, and the scan date is the field nobody fills in."}
+  - {source: attestation, signal: "a named senior person confirming the duty is met",
+     fills: [senior_manager_attested, evidence_sufficiency], reliability_bp: 7500}
+  - {source: hris, signal: "headcount and leaver events that move thresholds and vacate owners",
+     fills: [threshold_test, accountable_owner_ref], reliability_bp: 8500}
+  - {source: erp, signal: "turnover and transaction volumes behind quantitative thresholds",
+     fills: [threshold_test], reliability_bp: 8500}
+  - {source: document, signal: "policies, DPIAs, evidence packs and written exemption reasoning",
+     fills: [control_ref, evidence_ref, exemption_basis], reliability_bp: 8000}
+  - {source: access_log, signal: "recertification evidence for access-related duties",
+     fills: [evidence_sufficiency], reliability_bp: 6500}
+  - {source: email, signal: "counsel advice, regulator correspondence and interpretation debate",
+     path: thread.last_inbound, fills: [interpretation_confidence, last_touched_at], reliability_bp: 4500,
+     description: "Where most interpretation actually lives, and the reason nobody can find it two years later."}
+  - {source: email, signal: "who owes the next move on a duty", path: thread.ball_in_court,
+     fills: [discharge_state], reliability_bp: 5000}
+
+# ── 8 · Outputs — what this object can tell the rest of the stack ────────────────────────
+outputs:
+  - {name: breach_proximity_days, type: integer,
+     description: "Days to the external deadline, measured against notice_period_days rather than against zero.",
+     derived_from: [due_at, notice_period_days, days_to_due],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: consequence_weight_bp, type: integer,
+     description: "How much the breach would actually cost — sanction, publication, personal liability — normalised for ranking a register.",
+     derived_from: [sanction_type, max_penalty, personal_liability, reputational_exposure, remediable],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: negotiable, type: boolean,
+     description: "Always false. Emitted explicitly so that planning cannot treat this date like any other date, which is the failure the object exists to prevent.",
+     derived_from: [obligation_type, breach_trigger],
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: evidence_readiness, type: string,
+     description: "What we could produce today if asked, and how strong it would be.",
+     derived_from: [evidence_ref, evidence_sufficiency, last_discharged_at],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: accountable_person, type: string,
+     description: "The named individual to escalate to. Never a function.",
+     derived_from: [accountable_owner_ref, delegated_to_ref],
+     consumed_by: [L5.execution_planning, L5.communication_planning]}
+  - {name: retention_floor, type: duration,
+     description: "The minimum retention any linked document must observe. Internal schedules may exceed it and never fall short.",
+     derived_from: [instrument_reference, discharge_method],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: disclosure_sensitivity, type: string,
+     description: "How this may be discussed and with whom. Regulatory correspondence and self-report deliberation are frequently privileged, and routing them casually forfeits that.",
+     derived_from: [interpretation_confidence, sanction_type, personal_liability],
+     consumed_by: ["L5.2.channel_planner", L5.communication_planning]}
+  - {name: register_staleness_days, type: integer,
+     description: "How long since anyone checked this entry against the instrument.",
+     derived_from: [horizon_scanned_at, register_entry_age_days],
+     consumed_by: [L6.learning_unit, L4.reasoning_unit]}
+
+# ── 9 · Preconditions — gates on whether this object can be reasoned about at all ────────
+preconditions:
+
+  - id: obl.instrument_is_cited
+    statement: "The duty names an instrument and, where one exists, a specific article, section or clause."
+    requires: [instrument, instrument_reference]
+    if_unmet: >
+      Block any advice or plan built on the entry, and route it for citation. An obligation
+      without a citation is an opinion with a deadline attached, and it will be settled by whoever
+      sounds most certain in the meeting.
+
+  - id: obl.jurisdiction_resolved
+    statement: "The jurisdiction is resolved before any assessment of what the duty requires."
+    requires: [jurisdiction, admin.obj.core.compliance_obligation]
+    if_unmet: >
+      Block. The same activity is unregulated in one jurisdiction and notifiable in another, and a
+      register holding one row per topic across several countries produces confident answers that
+      are wrong everywhere but the country it was written in.
+
+  - id: obl.applicability_assessed
+    statement: "Applicability has been positively assessed rather than assumed."
+    requires: [applicability_state, triggering_activity]
+    when: [{exists: commitment.due_at}]
+    if_unmet: >
+      Degrade to in-scope and raise for assessment. Default-deny in this one direction only:
+      treating unassessed as out-of-scope is how a register reports full compliance against a
+      population nobody has counted.
+
+  - id: obl.owner_is_a_named_individual
+    statement: "An accountable individual is named before the obligation may enter the active state."
+    requires: [admin.obj.core.employee_record, accountable_owner_ref]
+    if_unmet: >
+      Block activation and escalate to the register owner. A duty owned by a function is owned by a
+      rota, and every escalation path through it ends in a shared mailbox nobody reads on a Friday.
+
+  - id: obl.interpretation_recorded
+    statement: "The organisation's reading of the duty, and its basis, is recorded before work is planned against it."
+    requires: [interpretation_confidence, instrument_version]
+    if_unmet: >
+      Degrade to internal_view, mark evidence_sufficiency as asserted, and proceed. Do not block —
+      most duties are performed perfectly well on an internal reading — but never let an internal
+      view be reported upward as though counsel had confirmed it.
+
+  - id: obl.horizon_scanned_within_cycle
+    statement: "The instrument has been checked for amendment within the register's own scan cycle."
+    requires: [horizon_scanned_at]
+    if_unmet: >
+      Degrade: lower confidence on every attribute of the entry and flag it for scan. A register
+      nobody has re-read is a photograph of what the law was on the day the spreadsheet was built,
+      and it grows more confident-looking with age rather than less.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - id: obl.deadline_is_not_negotiable
+    statement: "due_at may not be moved by any internal decision, at any level of seniority."
+    hard: true
+    why: >
+      The defining property of the object. An internal target may sit in front of the external
+      date; it may never replace it, and the moment the internal date is the only one anybody
+      looks at, the register has started lying quietly.
+
+  - id: obl.accountability_cannot_be_delegated
+    statement: "delegated_to_ref moves the work. accountable_owner_ref does not move with it."
+    hard: true
+    why: >
+      Under every senior-manager and directors'-duties regime the answering stays put. The
+      practical failure is smaller and more common: the accountable owner stops reading the
+      register the day they delegate, and nobody notices until the delegate leaves.
+
+  - id: obl.internal_schedule_at_least_as_strict
+    statement: "Internal retention, review and access schedules may exceed what the obligation requires and may never fall short of it."
+    hard: true
+    why: >
+      A tidy internal retention policy that destroys records a statute required for six years is
+      the rare compliance failure produced entirely by diligence, and it is unrecoverable.
+
+  - id: obl.no_discharge_without_evidence
+    statement: "An obligation may not be recorded as discharged without a controlled artefact evidencing it."
+    hard: true
+    why: "Performed-and-unevidenced and not-performed are the same thing from outside the organisation."
+
+  - id: obl.exemption_requires_written_basis
+    statement: "exemption_claimed = true requires a written, approved exemption_basis."
+    hard: true
+
+  - id: obl.notification_clock_starts_on_awareness
+    statement: "Where clock_trigger is on_awareness, the deadline runs from becoming aware, not from establishing the facts."
+    hard: true
+    why: >
+      The 72-hour window under GDPR Art. 33 is running while the investigation is still open. An
+      incomplete notification inside the window beats a complete one outside it, and every
+      organisation that missed the window missed it while being thorough.
+
+  - id: obl.unassessed_is_treated_as_in_scope
+    statement: "applicability_state = unassessed must be handled as in_scope until assessed."
+    hard: true
+
+  - id: obl.privilege_is_not_a_routing_default
+    statement: "Regulatory correspondence, counsel advice and self-report deliberation may not be routed on general internal channels."
+    hard: false
+    why: >
+      Privilege is forfeited by circulation, and the circulation is almost never a decision —
+      somebody forwards the thread to get an answer faster.
+
+# ── 11 · Business Rules — deterministic. No model evaluates these. ───────────────────────
+business_rules:
+
+  - id: obl.unassessed_defaults_to_in_scope
+    statement: "An obligation with applicability_state = unassessed is planned for as though it applies."
+    then: treat_as_in_scope
+    severity: blocking
+    why: "The opposite default is how a register reports compliance against a population nobody has counted."
+
+  - id: obl.no_active_without_named_owner
+    statement: "An obligation may not enter the active state without a named accountable individual."
+    then: block_activation
+    severity: blocking
+
+  - id: obl.escalate_at_notice_period_not_at_deadline
+    statement: "Escalation fires at notice_period_days before due_at, to the accountable owner by name."
+    when: [{exists: commitment.due_at}, {fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    then: escalate_to_accountable_owner
+    severity: blocking
+    why: "An escalation raised on the due date is a breach with a meeting attached to it."
+
+  - id: obl.late_discharge_is_recorded_as_late
+    statement: "A duty satisfied after due_at is recorded as discharged_late, never as discharged."
+    then: record_discharged_late
+    severity: warning
+    why: >
+      Collapsing the two lets a register report a hundred per cent on-time compliance consisting
+      entirely of late filings that were eventually accepted. Layer 6 then learns that lateness has
+      no cost, which is the wrong lesson from true data.
+
+  - id: obl.notification_takes_priority_over_investigation
+    statement: "Where a notification window is running, notifying inside the window outranks completing the investigation."
+    then: prioritise_notification
+    severity: blocking
+
+  - id: obl.retention_floor_binds_documents
+    statement: "Any document evidencing this obligation inherits its retention floor, and the internal schedule may not shorten it."
+    then: apply_retention_floor
+    severity: blocking
+    rule_ref: rule.retention_floor
+
+  - id: obl.evidence_collected_at_discharge
+    statement: "Evidence is captured at the moment of discharge, not assembled at the point of inspection."
+    then: require_evidence_at_discharge
+    severity: warning
+    why: >
+      Evidence assembled during an audit is reconstruction, and reconstruction is visible: it has
+      no contemporaneous timestamps and everybody involved remembers it differently.
+
+  - id: obl.instrument_change_reopens_assessment
+    statement: "An amendment to the instrument resets applicability_state to unassessed and interpretation_confidence to unknown."
+    then: reopen_assessment
+    severity: warning
+
+  - id: obl.self_report_decision_is_recorded
+    statement: "A decision not to self-report a known breach must be recorded with its reasoning and its decision-maker."
+    severity: advisory
+    why: >
+      It is sometimes the right call. It is never the right call to leave undocumented — an
+      unrecorded decision not to report is indistinguishable from concealment when it surfaces,
+      and it surfaces.
+
+# ── 12 · Decision Factors — advisory inputs to Layer 4, never a decision. Sum = 10000. ───
+decision_factors:
+
+  - name: breach_proximity
+    weight_bp: 2500
+    direction: increases
+    description: >
+      Time to the external deadline, read against notice_period_days rather than against zero. An
+      obligation needing six weeks with four remaining is already failing while the register shows
+      it green.
+    reads: [due_at, days_to_due, notice_period_days, grace_period_days]
+
+  - name: consequence_severity
+    weight_bp: 2000
+    direction: increases
+    description: >
+      What actually happens on the day. Personal liability and licence suspension move
+      organisations; fines get budgeted for, and publication is frequently the larger cost by an
+      order of magnitude.
+    reads: [sanction_type, max_penalty, personal_liability, reputational_exposure]
+
+  - name: evidence_readiness
+    weight_bp: 1500
+    direction: increases
+    description: >
+      What could be produced today. Weighted this heavily because performed-and-unevidenced and
+      not-performed are the same thing from outside, and only one of them feels like a problem
+      from inside.
+    reads: [evidence_ref, evidence_sufficiency, last_discharged_at, discharge_state]
+
+  - name: applicability_certainty
+    weight_bp: 1500
+    direction: context
+    description: >
+      Whether it binds us and whether we are sure. Context, not increases: an unassessed duty is
+      not lower priority, it is a different task — assessment rather than discharge.
+    reads: [applicability_state, exemption_claimed, exemption_basis, interpretation_confidence]
+
+  - name: ownership_clarity
+    weight_bp: 1200
+    direction: increases
+    description: >
+      A named individual who knows they hold it. The cheapest predictor of on-time discharge there
+      is, and the first thing to decay silently when somebody leaves.
+    reads: [accountable_owner_ref, delegated_to_ref, senior_manager_attested]
+
+  - name: remediability
+    weight_bp: 800
+    direction: decreases
+    description: >
+      Decreases urgency where a breach can genuinely be cured. A late filing accepted is
+      remediated; a missed notification window is not, and no subsequent act un-passes the
+      deadline. This should drive prioritisation far more than penalty size does, and it almost
+      never does.
+    reads: [remediable, breach_trigger, grace_period_days]
+
+  - name: change_exposure
+    weight_bp: 500
+    direction: context
+    description: >
+      How likely our reading is to be out of date. Low weight, high asymmetry — most entries are
+      fine and the ones that are not are wrong in a way nobody has noticed for two years.
+    reads: [horizon_scanned_at, instrument_changed_at, instrument_version, register_entry_age_days]
+
+# ── 13 · Evidence — what counts as a receipt, and what each source is worth ──────────────
+evidence:
+  - {source: regulator, strength_bp: 10000, decays: false,
+     independent_of: [register, document, attestation, email],
+     description: "A written determination, acceptance, guidance letter or no-action position from the authority itself. Nothing outranks it, and it is the only source capable of telling you that you are wrong."}
+  - {source: portal, strength_bp: 9200, decays: false,
+     independent_of: [register, document, email],
+     description: "Lodgement receipt with a timestamp we did not generate. The cleanest proof of discharge available, and the reason a portal acknowledgement should be captured rather than merely read."}
+  - {source: contract, strength_bp: 9000, decays: false,
+     independent_of: [register, email],
+     description: "The executed instrument creating a contractual duty. Authoritative for the term and silent about whether anybody is doing it."}
+  - {source: signed_form, strength_bp: 8500, decays: false,
+     independent_of: [register, email],
+     description: "Executed statutory forms, consents and returns."}
+  - {source: erp, strength_bp: 8000, decays: false,
+     independent_of: [register, attestation],
+     description: "The financial facts behind quantitative thresholds and behind payment obligations. Hard to argue with and blind to everything qualitative."}
+  - {source: hris, strength_bp: 8000, decays: false,
+     independent_of: [register, attestation],
+     description: "Headcount for thresholds, leaver dates for ownership. The system that knows the register's owner has left before the register does."}
+  - {source: document, strength_bp: 7800, decays: true,
+     independent_of: [portal, hris, erp],
+     description: "The controlled policy, DPIA, procedure or evidence pack. Self-asserted, and stronger the more contemporaneous it is."}
+  - {source: attestation, strength_bp: 7500, decays: true,
+     independent_of: [portal, access_log],
+     description: "A named senior person confirming the duty is met. Weak evidence of fact, strong evidence of attention — people read things carefully before signing them."}
+  - {source: register, strength_bp: 7000, decays: true,
+     independent_of: [portal, hris],
+     description: "The obligations register entry. Only ever as current as its last horizon scan, and it looks identical whether that was last month or 2019."}
+  - {source: access_log, strength_bp: 6500, decays: true,
+     independent_of: [register, attestation],
+     description: "Recertification and least-privilege evidence for access-related duties. Machine-generated, which makes it the most trustworthy routine evidence an organisation produces."}
+  - {source: email, strength_bp: 4500, decays: true,
+     description: "Counsel advice, regulator correspondence and interpretation debate. Where most of this knowledge actually lives, and why nobody can find it two years later."}
+  - {source: manual_entry, strength_bp: 3000, decays: true,
+     description: "Somebody typed it into the register once, probably from another organisation's template."}
+  - {source: derived, strength_bp: 2500, decays: true,
+     description: "Inferred from thread behaviour and graph shape. Ranks work; never proves a duty was met."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: register_completeness, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [obl.threshold_crossed_pulls_us_into_scope],
+     description: "Share of applicable obligations actually on the register. Structurally unmeasurable from inside — you can only count what you found — so it is estimated against an external benchmark or an assessment, and any organisation reporting it as 100% is reporting the size of its own list."}
+  - {name: on_time_discharge_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [obl.past_external_due_date],
+     description: "Discharged by the external date, counting discharged_late as a miss. Counting it as a success is how a register reports perfect compliance made entirely of late filings."}
+  - {name: lead_time_at_start, unit: days, direction: target_band, owner_layer: L6,
+     description: "Days remaining when work actually began, against notice_period_days. The leading indicator for every late filing, visible weeks before the miss."}
+  - {name: evidence_readiness_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [obl.discharged_but_unevidenced],
+     description: "Share of discharged obligations with controlled evidence attached at the time of discharge, not assembled afterwards."}
+  - {name: horizon_scan_currency, unit: days, direction: lower_is_better, owner_layer: L6,
+     calibrates: [obl.instrument_amended_invalidates_our_reading],
+     description: "Median age of the last instrument check across the register. Rises silently and is the single best predictor of a confidently wrong answer."}
+  - {name: owner_coverage, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [obl.accountable_owner_has_left],
+     description: "Share of active obligations with a named, currently-employed accountable individual. Departments do not count."}
+  - {name: breach_count, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "Established breaches in the period. A low number proves little on its own — an organisation that has never found a breach is more likely under-looking than over-performing."}
+  - {name: self_report_share, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of breaches the organisation reported before the authority found them. Counter-intuitive as a target and the correct one: self-reported breaches attract materially lower sanction and, more importantly, they prove the detection works."}
+  - {name: regulator_response_time, unit: days, direction: lower_is_better, owner_layer: L6,
+     description: "Time to answer a regulatory information request. Measured directly by the person who asked, and the only compliance metric an authority forms an opinion from without being shown it."}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: obl.identified, name: Obligation Identified, severity: notable,
+     payload: [instrument, instrument_reference, jurisdiction, applies_because],
+     description: "Frequently arrives via an incident, a tender questionnaire or a new hire who asks why nobody does this. Rarely via a scan."}
+  - {id: obl.applicability_changed, name: Applicability Changed, severity: critical,
+     payload: [applicability_state, threshold_test, triggering_activity],
+     invalidates: [applicability_state, exemption_claimed, exemption_basis, control_ref],
+     description: "The silent one. A threshold crossed by growth or a new activity shipped, with nobody doing anything wrong at any point."}
+  - {id: obl.due_soon, name: Obligation Due Soon, severity: notable,
+     payload: [due_at, notice_period_days, accountable_owner_ref, evidence_sufficiency],
+     description: "Fires at notice_period_days, which is the only warning that leaves time to act."}
+  - {id: obl.overdue, name: Obligation Overdue, severity: critical,
+     emitted_when: [{exists: commitment.due_at}, {fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [due_at, discharge_state, accountable_owner_ref, sanction_type],
+     description: "Our finding. Escalates by name, immediately, and not to the function."}
+  - {id: obl.breached, name: Obligation Breached, severity: critical,
+     payload: [instrument_reference, breach_trigger, sanction_type, personal_liability, remediable],
+     description: "The self-report decision starts here, and it is a decision with a shelf life measured in days."}
+  - {id: obl.discharged, name: Obligation Discharged, severity: info,
+     payload: [last_discharged_at, evidence_ref, evidence_sufficiency],
+     description: "Only meaningful with evidence attached. Without it this event records a belief."}
+  - {id: obl.instrument_amended, name: Instrument Amended, severity: critical,
+     payload: [instrument_version, instrument_changed_at, authority],
+     invalidates: [interpretation_confidence, control_ref, threshold_test, exemption_basis],
+     description: "Invalidates the reading, not the duty. Everything the register says about how to comply is now provisional and nothing looks any different."}
+  - {id: obl.owner_vacated, name: Accountable Owner Vacated, severity: critical,
+     payload: [accountable_owner_ref, delegated_to_ref, due_at],
+     invalidates: [accountable_owner_ref, senior_manager_attested],
+     description: "Every escalation path through this entry now terminates in a disabled mailbox, and the register still shows a name."}
+  - {id: obl.notification_clock_started, name: Notification Clock Started, severity: critical,
+     payload: [notification_deadline_hours, authority, jurisdiction],
+     description: "Starts on awareness. Frequently outside working hours, and always before the facts are clear."}
+
+# ── 16 · Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ─
+actions:
+  - {id: obl.assess_applicability, name: Assess whether the duty applies, actor: human, cost: moderate, reversible: true,
+     effect: "Records applicability_state, triggering_activity and applies_because. The last field is the one that lets a future colleague know when it stops applying."}
+  - {id: obl.assign_accountable_owner, name: Name an accountable individual, actor: human, cost: trivial, reversible: true,
+     effect: "A person, not a function. The cheapest single improvement to on-time discharge available."}
+  - {id: obl.map_control, name: Map the duty to an internal control, actor: human, cost: moderate, reversible: true,
+     effect: "Completes the obligation-control-evidence chain an audit walks. A duty with no control is being met by individual diligence."}
+  - {id: obl.collect_evidence, name: Capture evidence at discharge, actor: agent, cost: low, reversible: false,
+     effect: "Attaches a controlled artefact at the moment of discharge. Evidence assembled during an inspection is reconstruction, and reconstruction is visible."}
+  - {id: obl.discharge, name: Perform and record the discharge, actor: human, cost: moderate, reversible: false,
+     preconditions: [{exists: commitment.due_at}],
+     effect: "Records discharged or discharged_late honestly. The honesty is the point — the alternative teaches Layer 6 that lateness is free."}
+  - {id: obl.escalate_before_deadline, name: Escalate at the notice period, actor: agent, cost: low, reversible: true,
+     effect: "To the accountable owner by name, with days remaining and evidence status. Not to the function, and not on the due date."}
+  - {id: obl.request_extension, name: Apply to the authority for an extension, actor: human, cost: high, reversible: false,
+     effect: "The ONLY legitimate way this date moves, and it is an application to somebody else that may be refused. Where it exists it is almost always available only before the deadline, which is exactly when nobody has asked yet."}
+  - {id: obl.self_report, name: Self-report a breach to the authority, actor: human, cost: high, reversible: false,
+     effect: "Counter-intuitive and usually correct. Self-reported breaches attract materially lower sanction, and concealment converts a technical breach into a conduct one — which is the version that reaches individuals."}
+  - {id: obl.horizon_scan, name: Check the instrument for amendment, actor: system, cost: low, reversible: true,
+     effect: "Updates instrument_version and horizon_scanned_at. Monitor the authority, not the topic."}
+  - {id: obl.record_exemption, name: Record a claimed exemption and its written basis, actor: human, cost: moderate, reversible: true,
+     effect: "Forces the reasoning to be written down while the person who formed it is still available to write it."}
+  - {id: obl.attest, name: Attest that the duty is met, actor: human, cost: low, reversible: false,
+     effect: "Worth little as evidence of fact and a great deal as evidence of attention — people read carefully before signing, which is the only reliable way to make a register be reviewed."}
+
+# ── 17 · Dependencies — what this object cannot be reasoned about without ────────────────
+dependencies:
+  - {target: admin.obj.core.employee_record, kind: requires, strength: hard,
+     description: "The accountable owner and the leaver event that vacates them. Without it the register keeps a name and loses the person, and every escalation lands nowhere."}
+  - {target: admin.obj.core.document, kind: requires, strength: hard,
+     description: "Evidence, exemption reasoning and the recorded interpretation all resolve to controlled artefacts. An obligation with no reachable document cannot be shown to be met."}
+  - {target: admin.obj.core.policy, kind: requires, strength: soft,
+     description: "The implementing control. Soft because a duty can genuinely be met without a written control; the cost is that it is met by a person rather than by a process."}
+  - {target: admin.obj.core.contract, kind: derived_from, strength: soft,
+     description: "Contractual obligations are extracted from the instrument. Where the extraction never happened the duty exists anyway and is discovered by whoever tries to terminate."}
+  - {target: admin.obj.statutory_filing.filing, kind: enriches, strength: soft,
+     description: "Each cycle's filing evidences one occurrence. The filing can be rejected without the obligation changing at all, which is the distinction that keeps a rejected submission from reading as done."}
+  - {target: admin.obj.core.record_series, kind: enriches, strength: soft,
+     description: "Record-keeping duties set the retention floor for a whole series. This is the edge that turns a statute into a schedule row."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "The escalation path used at notice_period_days. Without it escalation is an email to whoever is nearest."}
+  - {target: admin.obj.core.admin_risk, kind: enriches, strength: soft,
+     description: "Feeds the risk register with consequence and proximity. Never the reverse — a risk assessment cannot make a duty stop applying, though it is routinely used as though it could."}
+  - {target: admin.obj.core.approval, kind: enriches, strength: soft,
+     description: "Filings, notifications and self-reports usually need sign-off before they leave the building, and that approval sits inside the external deadline rather than outside it."}
+
+# ── 18 · Exceptions — where the rules above are legitimately wrong ───────────────────────
+exceptions:
+
+  - id: obl.regulator_grants_forbearance
+    statement: "An authority may grant an extension, a transitional period or formal forbearance, which genuinely moves the date."
+    overrides: [obl.deadline_is_not_negotiable]
+    why: >
+      The exception that proves the rule: the date moved, and it moved because somebody outside
+      the organisation decided it should. It must be recorded with the grant reference, because a
+      remembered extension is worth nothing and an assumed one is a breach.
+    frequency: occasional
+
+  - id: obl.notify_incomplete_inside_the_window
+    statement: "Where the facts are not yet established, notify inside the window with what is known and supplement afterwards."
+    overrides: [obl.no_discharge_without_evidence]
+    why: >
+      Regulators expect phased notification and explicitly permit it; they do not accept a late
+      complete one in place of an early partial one. Every organisation that missed a 72-hour
+      window missed it while being thorough, and thoroughness is the thing that has to be
+      overridden here.
+    frequency: rare
+
+  - id: obl.conflicting_jurisdictions
+    statement: "Where two jurisdictions impose contradictory duties, comply with the stricter and document the conflict."
+    why: >
+      Blocking-statute and cross-border-disclosure conflicts are real and unresolvable at
+      administrative level. The value of documenting the conflict is not that it resolves anything
+      — it is that it demonstrates the conflict was identified rather than ignored, which is the
+      difference between a difficult position and a careless one.
+    frequency: rare
+
+  - id: obl.de_minimis_and_proportionality
+    statement: "Some duties are expressed proportionately — adequate, appropriate, reasonable — and a small organisation's compliant answer is genuinely smaller."
+    overrides: [obl.unassessed_defaults_to_in_scope]
+    why: >
+      Reading every proportionate duty at its maximum produces a register nobody can service and
+      an organisation that complies with nothing properly because it is complying with everything
+      nominally. The judgement must be recorded as a judgement, with its basis — that is what
+      separates proportionality from neglect, and the two look identical afterwards.
+    frequency: common
+
+  - id: obl.exemption_genuinely_applies
+    statement: "A derogation may genuinely remove the duty, and a well-founded exemption is not avoidance."
+    overrides: [obl.unassessed_defaults_to_in_scope]
+    when: [{absent: commitment.due_at}]
+    why: >
+      The failure is not claiming exemptions, it is claiming them by assumption. Exemptions are
+      consistently narrower than the people relying on them believe, and the one relied on most
+      often — the Art. 30 small-organisation derogation — evaporates on special-category data or
+      non-occasional processing, which is essentially every employer.
+    frequency: occasional
+
+  - id: obl.duty_ends_records_do_not
+    statement: "When an obligation expires or the activity ceases, the record-keeping duty attached to it usually continues for years."
+    overrides: [obl.retention_floor_binds_documents]
+    why: >
+      The commonest disposal error made in good faith: the activity stopped, the register entry
+      was closed, and the evidence was cleared out — three years before the limitation period on
+      the duty ran out. Close the entry, keep the records, and record why they are still there.
+    frequency: common
+
+  - id: obl.decision_not_to_self_report
+    statement: "There are cases where not self-reporting is defensible — de minimis, no risk to rights, remedied immediately within the assessment window."
+    overrides: [obl.self_report_decision_is_recorded]
+    why: >
+      A genuine judgement, and one that must be taken with advice and written down at the time.
+      Written down it is a defensible assessment; undocumented it is indistinguishable from
+      concealment at the moment it surfaces, and it surfaces because somebody who was in the room
+      later leaves.
+    frequency: occasional
+
+# ── 19 · Best Practices — each one needs a WHY ───────────────────────────────────────────
+best_practices:
+
+  - id: obl.one_row_per_duty_per_jurisdiction
+    statement: "Hold one register row per duty per jurisdiction, cited to article or clause."
+    why: >
+      Topic-level rows spanning several countries produce confident answers that are wrong
+      everywhere but the country the row was written in, and the wrongness is invisible because the
+      row looks complete.
+    applies_when: "Any organisation operating in more than one jurisdiction, including through a single overseas customer."
+
+  - id: obl.record_why_it_applies
+    statement: "Record applies_because — the activity, threshold or relationship that pulls the organisation into scope."
+    why: >
+      It is the only way to know when a duty stops applying, and the only way a future colleague
+      can defend the entry. Half the rows in a mature register cannot be explained by anyone still
+      employed, and unexplained rows are never removed, only carried.
+    applies_when: "Every entry, at the moment it is created."
+
+  - id: obl.extract_obligations_at_signature
+    statement: "Extract contractual obligations onto the register at signature, not at renewal."
+    why: >
+      Signature is the only moment somebody has actually read the document, and notice periods,
+      audit rights and reporting undertakings are cheapest to capture then. Discovered later, they
+      are discovered by somebody trying to terminate and finding they have missed the window.
+    applies_when: "Every executed contract with a term, a notice period or a reporting undertaking."
+
+  - id: obl.escalate_at_the_notice_period
+    statement: "Set escalation at notice_period_days before the deadline, derived from how long discharge actually takes."
+    why: >
+      The deadline is not the decision point; the last day work could start is. Registers escalate
+      on the due date because that field already exists, which produces a meeting to discuss a
+      breach that already happened.
+    applies_when: "Every obligation with a discharge activity longer than a day."
+
+  - id: obl.evidence_at_the_moment_of_discharge
+    statement: "Capture the evidence as part of performing the duty, never as a separate later task."
+    why: >
+      Evidence assembled during an inspection is reconstruction, and it is visible as
+      reconstruction: no contemporaneous timestamps, and everyone remembers it slightly
+      differently. Contemporaneous evidence costs minutes; reconstructed evidence costs weeks and
+      convinces nobody.
+    applies_when: "Every discharge, including routine recurring ones."
+
+  - id: obl.horizon_scan_by_authority
+    statement: "Subscribe to the authority, not to the topic, and record horizon_scanned_at on every entry."
+    why: >
+      Authorities publish amendments, guidance and enforcement themes; topics do not. The scan date
+      is what turns a register into a maintained instrument, and its absence is what turns one into
+      a photograph.
+    applies_when: "Every register with more than a handful of entries."
+
+  - id: obl.attest_annually_by_name
+    statement: "Have the accountable individual positively attest, annually and by name, that the duty is met."
+    why: >
+      The attestation is weak evidence of fact and strong evidence of attention. People read
+      carefully before signing something with their name on it, and that reading is the only
+      reliable mechanism for getting a register reviewed at all.
+    applies_when: "Any obligation carrying sanction or personal liability."
+
+  - id: obl.rank_by_pressure_not_by_date
+    statement: "Order the register by consequence and readiness, not by next due date."
+    why: >
+      A date-sorted register systematically visits the obligations already in hand and never
+      reaches the continuous, unowned, unevidenced ones — which are precisely where inspections
+      land findings. Sorting by date feels rigorous and is why record-keeping duties fail.
+    applies_when: "Any register large enough that it cannot be read end to end weekly."
+
+  - id: obl.self_report_early
+    statement: "Where a breach is established and reportable, report it promptly and completely."
+    why: >
+      Self-reported breaches attract materially lower sanction across essentially every regime, and
+      the reduction is not the main benefit. The main benefit is that a self-report proves the
+      detection works, which is the thing the authority is really forming a view about.
+    applies_when: "Any established, reportable breach — with advice taken first where sanction is severe."
+
+# ── 20 · Anti-Patterns — the highest-signal section ──────────────────────────────────────
+anti_patterns:
+
+  - id: obl.internal_target_replaces_external_date
+    statement: "A softer internal date beside the real one, which quietly becomes the only one anybody looks at."
+    why_it_happens: >
+      It starts as good practice — build in buffer, aim to finish early — and the buffer date is
+      the one that goes on the plan, into the dashboard and into the conversation.
+    cost: "The buffer is consumed once and never rebuilt. Within two cycles the internal date IS the deadline and the real one is a footnote nobody checks."
+    instead: "Show both, always, with the external date primary and immovable, and treat consumption of the buffer as the escalation trigger rather than as slack."
+    detectable_by: [obl.past_external_due_date, lead_time_at_start]
+
+  - id: obl.register_owned_by_a_function
+    statement: "The obligations register lists departments as owners rather than people."
+    why_it_happens: >
+      It survives turnover, avoids an argument about accountability, and looks robust in a board
+      pack. Naming an individual feels like pre-allocating blame.
+    cost: "A duty owned by a function is owned by a rota. Escalation ends in a shared mailbox, nobody reads it on a Friday, and the first person who reads it is an auditor."
+    instead: "Name individuals, attest annually, and put owner reassignment on the leaver checklist."
+    detectable_by: [owner_coverage, obl.accountable_owner_has_left]
+
+  - id: obl.compliance_by_annual_project
+    statement: "Compliance handled as an annual project ending at certification or filing."
+    why_it_happens: >
+      Projects have budgets, deadlines and a satisfying end. Continuous duties have none of these
+      and cannot be finished, so they are converted into projects that can be.
+    cost: "Continuous duties — keep records accurate, maintain adequate security, notify without undue delay — decay for eleven months and are re-established in the twelfth, which is exactly the pattern an inspection is designed to expose."
+    instead: "Run the continuous duties as controls with evidence produced routinely, and let the annual exercise verify rather than create."
+    detectable_by: [obl.continuous_duty_never_examined, evidence_readiness_rate]
+
+  - id: obl.exemption_by_assumption
+    statement: "Relying on an exemption or derogation nobody has written down or tested."
+    why_it_happens: >
+      Someone read a summary of the exemption, it plainly applied to an organisation of this size,
+      and writing the reasoning down felt like bureaucracy about a settled point.
+    cost: "Exemptions are consistently narrower than the summary suggests. The Art. 30 small-organisation derogation evaporates on special-category data or non-occasional processing — which covers essentially every employer — and the discovery happens under inspection."
+    instead: "Write the basis, name who took the decision, and re-test it when the threshold facts change."
+    detectable_by: [obl.exemption_claimed_without_a_basis]
+
+  - id: obl.submitted_equals_done
+    statement: "Marking a filing complete on submission rather than on acceptance."
+    why_it_happens: >
+      Submission is the act the organisation performs and can see. Acceptance is somebody else's
+      act, arriving days later through a channel the tracker does not watch.
+    cost: "A rejected filing reads as done in every internal system while the deadline continues to run outside. The rejection arrives by post or portal notice to whoever filed, who is frequently on leave, and the duty is re-discovered late."
+    instead: "Close on acceptance, never on submission, and treat a submission with no acceptance after N days as overdue."
+    detectable_by: [obl.filing_rejected_does_not_discharge, on_time_discharge_rate]
+
+  - id: obl.risk_assessed_into_non_existence
+    statement: "Using a risk rating to justify not doing something the law requires."
+    why_it_happens: >
+      Risk frameworks are designed to prioritise finite effort and they work. Applied to a
+      mandatory duty, low likelihood times low impact produces a green rating, and a green rating
+      reads as permission.
+    cost: "Risk appetite is irrelevant to a statutory duty. The rating changes nothing about the obligation and provides an excellent written record that the organisation knew and chose not to act — which is the aggravating version of the facts."
+    instead: "Use risk to sequence how obligations are met, never to decide whether they are met. Where compliance is genuinely impossible, that is an exception with an owner and a route out, not a rating."
+    detectable_by: [obl.orphaned_register_entry, register_completeness]
+
+  - id: obl.register_copied_from_a_template
+    statement: "An obligations register populated from another organisation's list or a consultancy template."
+    why_it_happens: >
+      It produces a complete-looking register in an afternoon, and building one from actual
+      activities takes months and surfaces uncomfortable gaps.
+    cost: "Rows nobody can explain, duties that do not apply, and — far worse — the specific duties this organisation has because of what it actually does are absent. The register looks fullest exactly where it is emptiest."
+    instead: "Build from the activity list upward: what do we do, who regulates that, what does it require. Use the template only to check for omissions afterwards."
+    detectable_by: [obl.orphaned_register_entry, obl.duty_of_record_from_the_register]
+
+  - id: obl.conceal_and_remediate_quietly
+    statement: "Fixing a breach quietly and not reporting it, on the reasoning that it is resolved."
+    why_it_happens: >
+      It genuinely is resolved, reporting invites scrutiny of everything adjacent, and the person
+      deciding is the person who will be scrutinised. The logic is sincere and it is almost always
+      wrong.
+    cost: "Concealment converts a technical breach into a conduct breach, and conduct breaches reach individuals. It also destroys the sanction reduction self-reporting would have earned, and it will surface — the people who were in the room leave and take the story with them."
+    instead: "Take advice, decide deliberately, and record the decision and its reasoning either way. A documented decision not to report is defensible; an undocumented one is not distinguishable from a cover-up."
+    detectable_by: [self_report_share, breach_count]
+
+  - id: obl.horizon_scanning_as_a_newsletter
+    statement: "Treating a subscription to a legal-update newsletter as regulatory change control."
+    why_it_happens: >
+      Something arrives weekly, somebody reads it, and it feels like coverage. It costs nothing and
+      produces a visible artefact.
+    cost: "Nothing connects the newsletter to the register. The amendment is read, found interesting, and never mapped to the three entries it invalidates — so the register grows more confident-looking with age rather than less."
+    instead: "Map every change to affected register entries, reset their interpretation_confidence, and record horizon_scanned_at whether or not anything changed."
+    detectable_by: [horizon_scan_currency, obl.instrument_amended_invalidates_our_reading]
+
+# ── 21 · Examples — including the classic misclassifications ─────────────────────────────
+examples:
+  - {label: "GDPR Art. 30 record of processing activities", kind: typical,
+     note: "Continuous, no due date, no filing, no event — so it appears on no deadline report and is the entry most likely to be produced from memory the week an inspection is announced. The small-organisation derogation is relied on far more often than it applies."}
+  - {label: "Annual confirmation statement to the companies registrar", kind: typical,
+     note: "Fixed calendar date, automatic on the date, remediable but publicly visible as late. The easy archetype, and the reason people believe obligation management is a calendar problem."}
+  - {label: "72-hour personal-data breach notification under Art. 33", kind: edge,
+     note: "clock_trigger on_awareness, irremediable, and it starts before anybody knows what happened. Every organisation that missed it missed it while establishing the facts."}
+  - {label: "Contractual audit-rights clause in a customer MSA", kind: edge,
+     note: "obligation_type contractual, sanction contract_termination. Nobody extracted it at signature, it lives in clause 14 of a PDF, and it is rediscovered when the customer exercises it with thirty days' notice."}
+  - {label: "Licence condition requiring qualified staff on site", kind: edge,
+     note: "Continuous, breach_trigger continuous_while_unremedied, sanction licence_suspension. A single resignation breaches it, and the resignation is handled by HR as a vacancy rather than as a compliance event."}
+  - {label: "Access recertification under an information-security standard", kind: typical,
+     note: "Quarterly, evidence machine-generated, discharge cheap. Consistently deprioritised because it is boring, and consistently a finding because the evidence exists and shows it was skipped."}
+  - {label: "The internal policy that implements the retention obligation", kind: misclassification,
+     note: "That is admin.obj.core.policy. It can be rewritten this afternoon by people in this building, which is the whole test. The statutory retention period behind it cannot, and only one of them belongs on this register."}
+  - {label: "A commitment to the board to complete a remediation plan by quarter end", kind: misclassification,
+     note: "A Commitment, not an obligation. The board can move it, and will, once. Recording it here inflates the register and — worse — teaches everybody that entries on this register are moveable."}
+  - {label: "An industry code of practice adopted voluntarily", kind: counterexample,
+     note: "obligation_type industry_code, and the softest thing on the register. Evidence of what reasonable looks like rather than a duty in itself — though breach of an adopted code is quoted back as evidence of unreasonableness, which is why it is here at all rather than absent."}
+  - {label: "A regulator's informal 'we'd like to see' in a supervisory call", kind: counterexample,
+     note: "Not an obligation until it is written. Treat it as one operationally, record it as an expectation, and get it in writing — the informal ask is real, and its absence from any instrument is exactly why it gets forgotten between supervisors."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "GDPR Article 30 — Records of processing activities", kind: standard,
+     note: "The canonical continuous obligation: no deadline, no filing, no event, and a documentation duty that exists whether or not anybody asks. Its derogation for organisations under 250 staff is the most over-relied-upon exemption in the domain."}
+  - {title: "GDPR Article 33 — Notification of a personal data breach to the supervisory authority", kind: standard,
+     note: "72 hours from awareness, not from confirmation, and partial notification is expressly permitted. The source of clock_trigger = on_awareness and of the constraint that notification outranks investigation."}
+  - {title: "GDPR Article 9 — Special categories of personal data", kind: standard,
+     note: "Why an exemption assessment cannot be done at organisation level: special-category processing pulls duties back into scope that headcount alone would have excluded."}
+  - {title: "GDPR Article 5(1)(e) — Storage limitation", kind: standard,
+     note: "The ceiling that sits opposite the statutory retention floor. Where the two conflict the resolution is a documented judgement, not a default."}
+  - {title: "Companies Act 2006 — confirmation statement and register-keeping duties", kind: standard,
+     note: "The archetypal fixed-date statutory filing, and the reason obligation management is so often mistaken for a calendar problem."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "Where a record-keeping obligation becomes an operable schedule: series, retention, trigger, disposal, evidence."}
+  - {title: "ISO 37301 — Compliance management systems", kind: standard,
+     note: "The obligations-register discipline itself: identify, assess applicability, assign accountability, control, evidence, monitor, review. The seven fields this object is built around."}
+  - {title: "ISO 27001 Statement of Applicability", kind: framework,
+     note: "The most disciplined worked example of applicability there is — every control either applies with a justification or does not with a justification, and neither state may be silent."}
+  - {title: "Obligations register", kind: framework,
+     note: "The standard instrument. Its two chronic failure modes are both structural: rows copied from a template that do not apply, and rows nobody can explain that are never removed."}
+  - {title: "Regulatory horizon scanning", kind: framework,
+     note: "Subscribe to authorities, not topics; map every change to affected register entries; record the scan date whether or not anything changed. The last part is what distinguishes it from reading a newsletter."}
+  - {title: "Senior manager accountability regimes", kind: framework,
+     note: "Where naming an accountable individual is itself the duty. The source of personal_liability and of why that single boolean changes behaviour more than any penalty figure."}
+  - {title: "Self-reporting and sanction mitigation", kind: practitioner,
+     note: "Essentially every regime discounts for prompt self-report and treats concealment as an aggravating factor. The mitigation is the smaller half of the argument — a self-report also demonstrates that detection works, which is the thing the authority is really assessing."}
+  - {title: "Three lines of defence", kind: framework,
+     note: "Why accountable_owner_ref sits in the first line and attestation in the second. An obligations register maintained by the second line about duties the first line does not know it holds is the commonest structural failure of the model."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Authored fresh on the 23-section schema. Five of fifteen patterns are executable and none of
+    them can read an obligation: they read contracting activity (contract_requested +
+    legal_review), thread silence, graph degree, and commitment.due_at — which Layer 2 carries for
+    internal promises and which is only correct here where an obligation has been projected onto a
+    commitment node. That caveat is stated inside obl.past_external_due_date rather than hidden,
+    because it is the exact category error the object exists to prevent: an internal promise is
+    releasable by the person owed it and an external duty is not. Ranked, the asks are: (1)
+    obligation.due_at, obligation.authority and obligation.jurisdiction, which together make an
+    obligations register queryable at all; (2) the filing_accepted / filing_rejected observation
+    pair — rejection is the nastiest gap in the file, since a submitted-and-rejected filing reads
+    as done in every internal tracker while the external deadline keeps running; (3)
+    derived.threshold_position, because silent scope-change through growth is how a compliant
+    organisation becomes non-compliant with nobody doing anything wrong; (4) a notifiable-event
+    observation that starts a clock on awareness, which nothing anywhere in the stack currently
+    does; (5) leaver_confirmed reaching the obligations register, so escalation paths stop
+    terminating in disabled mailboxes. Two structural notes for review: `continuous` obligations
+    have no due date and therefore appear on no deadline report, which is why obligation_pressure
+    and rank-by-pressure exist rather than rank-by-date; and the object deliberately holds no
+    `internal` obligation_type, because admitting one is how a register fills with house rules and
+    stops being credible.

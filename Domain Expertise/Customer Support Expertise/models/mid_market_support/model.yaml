@@ -1,0 +1,168 @@
+# Mid-Market Support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+#
+# This is a SEGMENT branch. It composes with an operating-structure branch (tiered, swarming,
+# follow-the-sun) rather than competing with one.
+
+identity:
+  id: customer_support.model.mid_market_support
+  name: Mid-Market Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  The awkward middle, and the awkwardness is structural rather than a sign of immaturity. There
+  is a contract and there is an entitlement — real, machine-checkable, with a response target
+  written in it — and nobody on either side has read it. It was chosen as a checkbox late in a
+  short sales cycle by a buyer optimising for licence price, so the agent typically discovers
+  what was promised at the moment it is about to be missed, and the customer discovers it when
+  they are told something is not in their plan. That sentence — "that is not included in your
+  tier" — is the most expensive one in the model, because it is a commercial conversation being
+  conducted by someone who does not own the commercial relationship.
+  .
+  There is no support organisation on the other side and no procurement process. One admin owns
+  the tool alongside four other jobs, and that person is the deployment's entire institutional
+  memory: they know why the integration is configured the way it is and nobody else does. When
+  they leave, ticket quality collapses in a way that looks like a product regression and is not,
+  and the account gets quietly harder to serve for a year.
+  .
+  Escalation has no ladder to climb, so it goes sideways. It travels through the AE or the CSM
+  into the commercial relationship and arrives as a forwarded email from our own colleague
+  rather than as a request from the customer — which means the participant list on a mid-market
+  escalation includes people whose incentive is to promise things support has not agreed to.
+  .
+  What an operator carries over wrongly from enterprise: assuming there is a structure to
+  escalate into. There is no sponsor, no change window, no incident review board and no TAM, so
+  a procedure built around a governance chain that does not exist stalls the ticket while
+  looking procedurally correct. What they carry over wrongly from SMB is the exact inverse:
+  assuming there is no contract. There is one, it has a number in it, and it will be read aloud
+  during the first bad week — usually by our own account executive, in front of the customer.
+
+characteristics:
+  requester: "the one admin who owns the tool alongside four other jobs, occasionally a colleague they delegated to, never a support team"
+  typical_resolution_hours: 24
+  volume_shape: "moderate volume, moderate complexity, clustered around onboarding, seat and plan changes, integration work and the weeks before renewal"
+  staffing_model: "pooled generalists with a light second line; a CSM shared across dozens of accounts and no named engineer"
+  coverage: "business hours in one or two regions; anything wider is an upgrade line item rather than an operational decision"
+  automation_level: "moderate — this admin will self-serve willingly, but the documentation was written either for developers or for consumers and they are neither"
+  buyer: "a department head or an operator close to the founders, who picked the support tier as a checkbox late in the cycle"
+  typical_cycle_days: 45
+  typical_acv: "five figures, with support bundled into the plan rather than priced separately"
+  committee_size: "small — one or two people, and one of them is frequently the person now filing the tickets"
+  decision_style: "pragmatic and fast at purchase, forensic at renewal; the contract goes unread until something goes wrong and is then read very carefully"
+  notes: >
+    The plan boundary is the daily negotiation surface. Every mid-market support org discovers
+    that a meaningful share of its escalations are not about a defect at all — they are about
+    something the customer believes they bought. Whether that gets handled as a support failure
+    or routed to the account owner is the single highest-leverage routing decision in this
+    branch, and it is made dozens of times a week by whoever happens to pick up.
+
+capabilities:
+
+  # Nominal elsewhere, structural here. Mid-market accounts are the ones an under-pressure org
+  # gives enterprise handling to by instinct — they have a logo, a contract and an angry admin —
+  # and the only defence against that instinct is a visible cost line. content_gap_analysis is
+  # activated for a different reason: this segment's documentation gap is not a coverage gap but
+  # an audience gap, and nothing else in the roster is looking for that.
+  activates:
+    - customer_support.support_operations.cost_to_serve
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+
+  # Nothing. The tempting deletion is executive_escalation — mid-market customers have no
+  # executive sponsor to escalate to — and it deletes the wrong half of the mechanism. The
+  # capability fires constantly in this segment; what changes is the DIRECTION. The executive
+  # in a mid-market escalation is usually ours, brought in by our own AE to protect a renewal,
+  # and an org that removed the capability has no defined way to handle that arrival.
+  deactivates: []
+
+  emphasises:
+    # The entitlement is real and unread. Reading it early is the whole difference between a
+    # correct "no" and an expensive "yes".
+    - customer_support.entitlement_and_sla.entitlement_verification
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.entitlement_and_sla.sla_management
+    # One admin is the account. Their silence is an account event, not a quiet week.
+    - customer_support.support_management.account_relationship_management
+    - customer_support.voice_of_customer.churn_signal_detection
+    - customer_support.escalation_and_incident.escalation_management
+    # Deflection has a real ceiling here, but it is nowhere near where most mid-market orgs
+    # give up — the ceiling they hit is usually documentation written for the wrong reader.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.voice_of_customer.satisfaction_measurement
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, entitled_channels, entitled_first_response_minutes, expires_at,
+                           last_verified_at]
+      note: >
+        The entitlement is checkable and nobody checks it, which is a different failure from
+        enterprise (where it is checked and argued over) and from SMB (where there is nothing to
+        check). `last_verified_at` earns its place here specifically: the useful question in
+        this segment is not what the plan says but whether anyone has looked this quarter. The
+        check belongs before the first reply, not before the breach — by breach time the promise
+        has already been made in the customer's head.
+    - object: customer_support.obj.core.sla_target
+      require_properties: [is_contractual, clock_state]
+      note: >
+        Half the targets in a mid-market queue are internal service standards and half are
+        contractual, and in the tooling they look identical. Missing an internal one costs
+        goodwill; missing a contractual one costs credits and gets quoted at renewal. Treating
+        them as the same thing produces the characteristic mid-market pattern of over-serving
+        the accounts that cannot invoice us and under-serving the two that can.
+    - object: customer_support.obj.core.requester
+      require_properties: [is_admin, is_named_contact, product_familiarity]
+      note: >
+        This person is not a requester in the enterprise sense — they are the account. Their
+        product familiarity is the ceiling on how fast anything gets diagnosed, and their
+        departure is an account-level event that should propagate to the renewal risk, not a
+        contact record going stale. An org that models them as one contact among many loses the
+        only early warning this segment reliably emits.
+    - object: customer_support.obj.core.escalation
+      require_properties: [origin, receiving_owner_ref, reason]
+      note: >
+        `origin` carries more weight here than in any other branch. A mid-market escalation
+        usually enters sideways through our own AE or CSM, and one logged as customer-originated
+        loses the load-bearing fact that a colleague with a quota is now a participant. The
+        receiving owner is frequently a commercial owner rather than a technical one, which is
+        the correct answer and looks wrong on an escalation dashboard built for enterprise.
+    - object: customer_support.obj.core.churn_risk
+      note: >
+        Renewal is one person's decision, taken partly on how the last bad ticket felt and
+        almost never discussed with us in advance. There is no procurement review to surface it
+        and no QBR in which it becomes visible, so the support record is the leading indicator —
+        specifically the tickets that were resolved correctly and slowly.
+
+overrides:
+  capabilities.customer_support.entitlement_and_sla.entitlement_verification.check_before_first_reply: true
+  capabilities.customer_support.customer_communication.expectation_setting.state_entitlement_explicitly: true
+  capabilities.customer_support.escalation_and_incident.executive_escalation.escalating_side: "vendor"
+  capabilities.customer_support.escalation_and_incident.escalation_management.commercial_owner_is_valid_receiver: true
+  capabilities.customer_support.support_management.account_relationship_management.contacts_per_account: "one_to_three"
+  capabilities.customer_support.knowledge_and_deflection.content_gap_analysis.gap_type: "audience_not_coverage"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Segment branch, and the one most likely to be run by inheritance from the wrong parent. An
+    org that grew up-market brings SMB reflexes and misses the contract; an org that grew
+    down-market brings enterprise procedure and stalls on governance that was never there. Both
+    failures are recorded in the description because both are recoverable once named.

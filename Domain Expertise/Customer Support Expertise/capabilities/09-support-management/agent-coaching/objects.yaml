@@ -1,0 +1,30 @@
+# Load-set for customer_support.support_management.agent_coaching — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_management.agent_coaching
+
+core:
+  # Coaching needs the person and the standard. support_agent carries tenure and queue mix, which
+  # decide whether a gap is a skill gap or an assignment gap. quality_scorecard supplies the
+  # named behaviour — coaching without a rubric is an opinion delivered by someone senior.
+  required:
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.quality_scorecard
+  # Feedback lands only when it is anchored to one interaction the agent remembers, which is what
+  # ticket and conversation provide. satisfaction_score is deliberately optional and deliberately
+  # last: it is the outcome, it is contaminated by which tickets the agent drew, and coaching
+  # against it teaches agents to avoid hard work rather than to handle it better.
+  optional:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.satisfaction_score
+
+scoped:
+  required: []
+  optional: []

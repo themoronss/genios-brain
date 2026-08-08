@@ -1,0 +1,146 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE OF THE FIVE THAT ROUTE ON DAY ONE — and the one where the borrowed sales binding must
+# be read backwards.
+#
+# THE INVERSION. `champion_quiet` was written for a PUSH relationship. In sales we are the
+# ones initiating; the champion going quiet is a change in how they respond to our pressure,
+# and the standard reading — momentum has stalled, we are being managed out — is correct
+# because the silence is silence in reply to us.
+#
+# Support is a PULL relationship. The customer initiates; we answer. Silence here is not a
+# failure to respond to us, it is a change in THEIR behaviour, unprompted, and it has three
+# explanations that look identical from the outside:
+#
+#   1. Everything is working. The comfortable reading, sometimes true, and the only one most
+#      support organisations ever consider — which is precisely why they are blindsided.
+#   2. They routed around us. An internal wiki, a partner, a Slack channel we are not in, a
+#      power user who now answers their colleagues' questions. Our queue looks healthy while
+#      we are being quietly replaced as the source of answers. This is the state that precedes
+#      "we didn't see the value in the support contract" at renewal.
+#   3. They gave up. They filed tickets, the experience cost more than the answers were worth,
+#      and they have concluded that asking us is not worth the effort. This is the expensive
+#      one, it is invisible in every support metric ever built — CSAT only surveys people who
+#      still contact you — and it is indistinguishable from (1) without asking.
+#
+# Two of the three explanations are bad, both are silent, and the good one is the default
+# assumption. That asymmetry is the entire argument for this situation existing. A support
+# organisation that reads quiet as health is measuring its own comfort.
+#
+# The counter-argument deserves stating: chasing a happy account to ask why it is happy is
+# annoying, and doing it at scale is how "proactive support" became a synonym for spam. The
+# answer is not to lower the bar but to narrow it — this fires on a named contact at an
+# account with a history, measured against that account's own rhythm, and never on a customer
+# who was always quiet.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.named_contact_gone_quiet
+  name: Named Contact Gone Quiet
+  domain: customer_support
+  owner_capability: customer_support.support_management.account_relationship_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  A named contact at a supported account has stopped writing in, and the gap is long relative
+  to how often they used to. Nothing is broken, no clock is running, and no ticket is open —
+  which is exactly the problem, because every instrument a support team owns is pointed at
+  open work and this account has none. The expert reading is that silence from an account that
+  used to file tickets is a hypothesis to be tested rather than a result to be enjoyed: either
+  the product got better, or they found another way to get answers, or they stopped believing
+  it was worth asking us. The test is cheap and it is not a survey — it is a specific message
+  that references something real from their history and asks a question only they can answer.
+  A generic check-in gets ignored, and being ignored converts a soft signal into no signal.
+
+matches:
+  # champion_quiet is real and domain-neutral. The type fires correctly; only its
+  # INTERPRETATION differs from the sales domain, which is why this file spends most of its
+  # length on interpretation rather than on binding.
+  l2_situation_types:
+    - champion_quiet
+
+  scope: person
+
+  when:
+    # Quiet is meaningless in absolute days. An account that filed weekly and has not written
+    # in a month is a completely different object from one that files twice a year, and a
+    # fixed threshold necessarily gets one of the two wrong. The multiplier measures against
+    # the contact's own learned rhythm; the floor stops a brand-new contact with no baseline
+    # yet from firing on an ordinary fortnight of nothing happening.
+    - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 4, floor: 14}}
+
+# churn_signal_detection owns the aggregate read and this is one of its better inputs.
+# entitlement_verification because quiet and lapsed correlate more than anyone expects: an
+# account that stopped contacting us has often also stopped being entitled to, and nobody
+# noticed either.
+also_serves:
+  - customer_support.voice_of_customer.churn_signal_detection
+  - customer_support.entitlement_and_sla.entitlement_verification
+
+objects:
+  # The relationship, the person, and the risk read. Note what is NOT here: no ticket in the
+  # required set, because the defining property of this situation is that there is no ticket.
+  # A load-set built around open work cannot see an account that has stopped creating any.
+  load:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.named_contact
+    - customer_support.obj.core.churn_risk
+  optional:
+    # entitlement to check whether the quiet coincides with a lapse; ticket for the history
+    # that makes the outreach specific rather than generic; satisfaction_score because a
+    # detractor who then went silent is a different and much worse case than a silent
+    # promoter.
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.satisfaction_score
+  never_load:
+    # This is the load-set exclusion that carries the file's argument. No clock is running on
+    # a quiet account, so every SLA instrument reports perfect health — and loading that
+    # framing produces exactly the false reassurance this situation exists to counter. An
+    # account with no open tickets has 100% attainment and may be a month from cancelling.
+    - customer_support.obj.core.sla_target
+
+# Lower than the situations where a customer is actively waiting, because nobody is blocked.
+# Not much lower, because this is one of the few things in the domain that is cheap to fix
+# early and effectively unfixable late.
+priority_bp: 6800
+typical_duration_days: 30
+
+signals_of_progress:
+  - ticket_created
+  - followup_sent
+  - introduction
+  - self_service_attempted
+
+signals_of_decay:
+  - champion_change
+  - cancellation_threat
+  - entitlement_expired
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    champion_change, introduction and followup_sent are real substrate observation kinds.
+    ticket_created, self_service_attempted, cancellation_threat and entitlement_expired are
+    support-native and sit in planned_substrate.obs_kinds. The lists are unvalidated so the
+    mixture is legal; noting it so the file is not later read as more executable than it is.
+
+    THE BASELINE IS WRONG AND IT IS THE BEST AVAILABLE. reply_cadence is learned from reply
+    latency inside threads, not from how often an account opens new contacts. What this
+    situation actually wants is contact_rate_per_account, which exists in
+    planned_substrate.baselines and is emitted by nothing. Until it ships, the narrowing above
+    is a proxy: it will be roughly right for accounts whose support relationship runs through
+    email threads and roughly wrong for accounts that live in a portal or a chat widget, where
+    the pipeline sees nothing at all and this situation therefore never fires — which is a
+    quiet failure worth remembering, because those are usually the higher-volume accounts.
+
+    champion_change appears under decay and deserves its own read: silence plus a departed
+    contact is not one signal, it is the specific failure where a relationship had exactly one
+    thread and nobody inherited it. That case is more urgent than plain quiet and today the
+    two are indistinguishable at this level; separating them wants a
+    churn_risk_from_support type, which is in planned_substrate.

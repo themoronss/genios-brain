@@ -1,0 +1,141 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE OF THE FIVE THAT ROUTE ON DAY ONE.
+#
+# THE CLAIM: a handover is where entitlement knowledge dies, and neither side notices for
+# months.
+#
+# Entitlement is the most fragile knowledge in a support relationship, because it lives in a
+# contract that nobody on either side reads and survives only as habit in one person's head.
+# The admin who left KNEW things: that P1s go through the phone bridge and not the web form,
+# that there is a named engineer, that the priority alias exists, that a four-hour target
+# applies on weekdays and not Sundays. None of that was written down for the successor,
+# because it had stopped feeling like knowledge and started feeling like how things are.
+#
+# So the replacement emails the general address and waits. They are handled as a standard
+# queue item, correctly by every rule the system has, and their first experience of us is the
+# free tier of a contract that is not free. Nobody is at fault and the relationship is
+# measurably worse. The mirror failure is as common and more awkward: a new contact who
+# assumes an entitlement the account does not have, and receives their first "no" from us
+# before there is any trust to spend on it.
+#
+# Two other things are lost in the same moment and are worth naming because they are usually
+# blamed on the customer:
+#   - History resets from their side. They will re-report known issues and re-ask answered
+#     questions, and they will read "as discussed previously" as a brush-off, because it was
+#     not discussed with THEM.
+#   - The escalation path — who to call when it is bad — is exactly the knowledge that is
+#     never handed over, and it is only ever needed on the worst day.
+#
+# The window is short. A new contact forms their working model of "how support works here"
+# inside their first two or three contacts, and after that it is a belief rather than a gap.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.new_account_contact
+  name: New Account Contact
+  domain: customer_support
+  owner_capability: customer_support.support_management.account_relationship_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  A new person has appeared on a supported account — introduced, handed over to, or simply
+  copied in as the successor to someone who has gone. They arrive with the account's entire
+  support history in our records and none of it in their head, and with no idea what the
+  account is actually entitled to. The correct move is not a welcome message. It is a short,
+  concrete orientation: what you are entitled to and through which channel, what is currently
+  open, what has already been resolved that you may be about to re-report, and who to contact
+  when it is urgent. This costs one message and prevents the first-contact failure that
+  otherwise defines the relationship for a year. It is also, quietly, our own housekeeping —
+  our records still name the person who left, and the ticket that gets routed to them is the
+  one nobody answers.
+
+matches:
+  # intro_followup is real and domain-neutral: someone was introduced and a follow-up is owed
+  # by us. Support reads it as a handover rather than as a warm lead, but the underlying
+  # thread shape is the same and the binding is honest.
+  l2_situation_types:
+    - intro_followup
+
+  scope: person
+
+  when:
+    # intro_followup can be inferred from thread shape alone, which means it also catches
+    # everyone merely copied into an introduction — colleagues, managers, the account team on
+    # our side. Requiring the explicit introduction observation on this person's node keeps
+    # the situation pointed at the party who was actually introduced, which is the only one
+    # who needs orienting.
+    - {has_obs: introduction}
+
+# entitlement_verification because the entire value of acting here is that what the account is
+# owed gets stated once, early, by us rather than discovered late by them.
+# expectation_setting because the first message to a new contact sets the response-time norm
+# they will hold us to for the rest of the relationship, whether or not we meant to set one.
+also_serves:
+  - customer_support.entitlement_and_sla.entitlement_verification
+  - customer_support.customer_communication.expectation_setting
+
+objects:
+  # The person, the account they now speak for, and the contract that bounds what may be
+  # promised to them. Entitlement is in the required set and not the optional one on purpose:
+  # it is the thing being handed over, and a load-set that treats it as optional reproduces
+  # the exact failure this situation is about.
+  load:
+    - customer_support.obj.core.named_contact
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.entitlement
+  optional:
+    # support_plan for the channels and hours behind the entitlement; ticket for what is open
+    # and what was recently resolved, which is what makes the orientation specific;
+    # requester when this person has already filed something before anyone got to them.
+    - customer_support.obj.core.support_plan
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+  never_load:
+    # A new contact has no history, so they score badly on every behavioural measure of risk —
+    # no contact rhythm, no satisfaction record, no baseline of any kind. Loading churn_risk
+    # here reliably manufactures an alarm out of the absence of data, at exactly the moment a
+    # relationship is being built rather than lost. If the account is genuinely at risk, it is
+    # at risk for reasons that predate this person.
+    - customer_support.obj.core.churn_risk
+
+# The lowest priority of the five that route today, and correctly so — nobody is waiting and
+# nothing is breaking. It earns its place because the intervention is one message and the
+# alternative is discovering the gap during the account's first real emergency.
+priority_bp: 5500
+typical_duration_days: 14
+
+signals_of_progress:
+  - introduction
+  - followup_sent
+  - entitlement_checked
+  - ticket_created
+
+signals_of_decay:
+  - champion_change
+  - escalation_requested
+  - angry_language
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    introduction and followup_sent are real substrate observation kinds. entitlement_checked,
+    ticket_created, escalation_requested and angry_language are support-native and sit in
+    planned_substrate.obs_kinds. Unvalidated lists, legal mixture, recorded here so it is not
+    mistaken for coverage.
+
+    ticket_created is listed under progress and that is arguable — a new contact filing their
+    first ticket is normal volume, not a win. It is here because the failure mode this
+    situation guards against is a successor who never contacts us at all and quietly stops
+    treating support as available, which is indistinguishable from a healthy handover until
+    the renewal. First contact is the cheapest available evidence that the handover took.
+
+    champion_change under decay means a SECOND handover shortly after this one: the account is
+    churning internally, our records are now two people stale, and no orientation we send will
+    survive long enough to matter. That is a different and worse situation than this one and
+    the domain does not yet have a file for it.

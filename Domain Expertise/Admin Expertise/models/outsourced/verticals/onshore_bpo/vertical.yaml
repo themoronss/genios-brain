@@ -1,0 +1,26 @@
+# Onshore BPO — vertical branch node under outsourced.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.outsourced.onshore_bpo
+  name: Onshore BPO
+  kind: vertical
+  domain: admin
+  parent: admin.model.outsourced
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  A third-party provider in the same jurisdiction. Regulatory alignment is simple; commercial
+  leverage is where the administration goes.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

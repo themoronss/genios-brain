@@ -1,0 +1,28 @@
+identity:
+  id: sales.prospecting_and_outreach.lead_generation
+  name: Lead Generation
+  domain: sales
+  subdomain: prospecting_and_outreach
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Producing a repeatable flow of accounts and contacts that match the ICP. Volume without fit
+  is the most expensive form of activity in sales, because it consumes the qualification
+  capacity that real leads need.
+
+question: "Where does a steady supply of in-profile leads come from?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

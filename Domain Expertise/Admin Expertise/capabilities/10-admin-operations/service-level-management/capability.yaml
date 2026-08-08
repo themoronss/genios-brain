@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.admin_operations.service_level_management
+  name: Service Level Management
+  domain: admin
+  subdomain: admin_operations
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Defining and holding service levels for administrative work: response and resolution targets
+  by request class, measurement, breach handling and periodic review. Service levels are how
+  an internal function stops being judged by anecdote.
+
+question: "Are we meeting the response and resolution times we committed to?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

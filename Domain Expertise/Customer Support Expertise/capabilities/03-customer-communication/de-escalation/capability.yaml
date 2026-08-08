@@ -1,0 +1,197 @@
+# FULL capability for subdomain 03 · Customer Communication.
+#
+# The subdomain asks: "Does the human on the other end know where they stand?" De-escalation is
+# that question asked at the moment the answer has already been no for a while.
+#
+# The single most important claim in this file, and the one everything else hangs off: the anger
+# is not about the defect. The defect was present before the anger and did not cause it. What
+# caused it was a gap where an answer should have been, a retelling nobody acknowledged, or a
+# promise that passed without a word. Fix the defect and leave the gap and the customer stays
+# angry, which is the moment most support teams conclude the customer is unreasonable.
+#
+# NOTE ON NUMBERS: there are none here, deliberately. How long a silence is too long, what
+# counts as a heated contact, when to escalate — all of that is thresholded arithmetic and it
+# belongs to Layer 4's pack manifest. This file says what the judgement is, not where the line
+# sits, because the line moves per model, per entitlement tier and per account and the judgement
+# does not.
+#
+# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
+# file and into knowledge.yaml + the artifact folders. They are files now because a
+# Layer 6 suggestion needs an id and a version to point at, and because a framework
+# used by four capabilities cannot live inline in all four.
+
+identity:
+  id: customer_support.customer_communication.de_escalation
+  name: De-escalation
+  domain: customer_support
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+  stub: false
+description: 'Bringing the temperature of a contact down far enough that the real problem can actually
+  be worked, and doing it without buying quiet with promises the queue cannot keep. The work is rarely
+  about the fault: it is about the uncertainty and the sense of not being heard that grew around the
+  fault while nobody said anything. So de-escalation is a communication discipline rather than a concession
+  budget, and it is finished when the customer can predict what happens next — not when they stop writing
+  in capitals. A customer who goes quiet because they have given up looks identical, on every dashboard
+  support owns, to one who has been recovered.
+
+  '
+question: Why is this person angry, and what would make them feel in control again?
+outcomes:
+- The customer's own account of what happened has been played back to them in their words, before any
+  explanation of ours was offered.
+- The thing they are actually aggrieved about is named and is distinct from the defect — usually the
+  not-knowing, the repeating, or the being handed around.
+- 'A specific next contact exists: a named owner, a stated time, and a commitment that it happens whether
+  or not there is news.'
+- Nothing was promised that the queue cannot deliver. An expectation set to end an uncomfortable exchange
+  is a future escalation with a date on it.
+- The customer can state, unprompted, what happens next and who is doing it. If they ask again, de-escalation
+  has not happened yet.
+- Where the contact still needs a different owner, it moved as a real escalation with a receiving name
+  — not as a way of making the anger someone else's.
+- The grievance is recorded separately from the ticket outcome, so a resolved ticket with an unrepaired
+  relationship is still visible downstream.
+failure_modes:
+- Defending the company in the first sentence. Everything after it is heard as continuation of the defence,
+  including the parts intended as apology. This is the characteristic failure of the capability and
+  it is usually committed by the most technically competent agent on the team, because they can see
+  immediately that the customer's account is inaccurate.
+- 'Going quiet in order to come back with something concrete. Silence is itself a message and it is
+  almost always the worst one available: the customer fills the gap and the story they write is worse
+  than anything we would have had to admit.'
+- Explaining before acknowledging. Not a sequencing preference — an explanation offered first is processed
+  as a rebuttal, and a person who is being rebutted cannot absorb the content of the rebuttal.
+- A sincere apology carrying no next time. It asks the customer to trust our feelings when what they
+  need is something they can check against a calendar.
+- Matching the customer's emotion rather than their urgency. An anxious reply to an angry one confirms
+  their fear that nobody here is in control, and that fear is the actual engine of the escalation.
+- Offering compensation before acknowledgement. It teaches the account that the fastest route to being
+  taken seriously is to be expensive, and it reads as buying silence even when it is generous.
+- Escalating to make the anger stop rather than because a different owner can do something the current
+  one cannot. It buys quiet this week and installs anger as the routing mechanism for every future contact.
+- Correcting the customer's version of events while they are still hot. The inaccuracy is real and correcting
+  it is a later conversation; done now it costs the whole relationship to win a detail.
+- Reading softened tone as resolution. Tone softens in resignation as often as in reassurance, and the
+  resigned customer is the one who does not renew.
+- Over-explaining root cause to someone who only wants to know whether they can work tomorrow. Depth
+  of explanation is a service to the explainer here.
+- Passing the contact between agents so each can bring fresh eyes. Reassignment is invisible to us and
+  highly visible to them, and every handover resets the retelling.
+- Treating an angry public post and an angry private email as the same event. The audience changes what
+  the customer needs from the reply, and it changes nothing about what we owe them privately.
+kpis:
+- name: time_to_first_acknowledgement
+  unit: hours
+  direction: lower_is_better
+  description: 'Deliberately not first response. Acknowledgement is the message that names what happened
+    without needing an answer, and it is the clock that actually governs temperature.
+
+    '
+- name: promised_update_hit_rate
+  unit: percent
+  direction: higher_is_better
+  description: 'Share of committed next-contact times that were met. The most predictive single number
+    in this capability, because it is the one the customer is also keeping.
+
+    '
+- name: longest_silence_gap
+  unit: hours
+  direction: lower_is_better
+  description: Longest stretch with no outbound message while the contact was open and hot.
+- name: reassignment_count
+  unit: count
+  direction: lower_is_better
+  description: Owners the customer has had to explain themselves to. Each one resets the retelling.
+- name: repeat_contact_rate
+  unit: percent
+  direction: lower_is_better
+  description: Customers who wrote again before we wrote to them. A direct measure of unmet reassurance.
+- name: escalation_rate_after_heated_contact
+  unit: percent
+  direction: lower_is_better
+  description: 'Rising here alongside a flat defect rate means anger is functioning as the routing mechanism
+    and the organisation has taught it.
+
+    '
+- name: sentiment_recovery_rate
+  unit: percent
+  direction: higher_is_better
+  description: Contacts that started hot and ended measurably better. Weak on its own — resignation
+    reads as recovery.
+- name: post_recovery_retention
+  unit: percent
+  direction: higher_is_better
+  description: 'Whether recovered accounts actually stayed. The only measure that distinguishes de-escalation
+    from exhaustion, and the only reason to trust the sentiment number above it.
+
+    '
+- name: goodwill_concession_rate
+  unit: percent
+  direction: target_band
+  description: 'Credits and refunds issued per heated contact. A band, not a direction — near zero means
+    agents have no room to act, and high means the team is buying quiet instead of earning it.
+
+    '
+handoffs:
+  upstream:
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.voice_of_customer.sentiment_analysis
+  - customer_support.entitlement_and_sla.breach_prevention
+  - customer_support.entitlement_and_sla.commitment_tracking
+  - customer_support.intake_and_triage.priority_and_severity
+  - customer_support.diagnosis_and_resolution.verification_and_closure
+  downstream:
+  - customer_support.escalation_and_incident.escalation_management
+  - customer_support.escalation_and_incident.executive_escalation
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.voice_of_customer.churn_signal_detection
+  - customer_support.support_management.account_relationship_management
+  - customer_support.support_management.ticket_review
+  parallel:
+  - customer_support.customer_communication.response_drafting
+  - customer_support.customer_communication.tone_and_localization
+  - customer_support.diagnosis_and_resolution.workaround_management
+  - customer_support.entitlement_and_sla.sla_management
+  - customer_support.escalation_and_incident.major_incident_communication
+applies_to:
+  models:
+  - b2b
+  - b2c
+  - b2b2c
+  - plg_self_serve
+  - enterprise_support
+  - mid_market_support
+  - smb_support
+  - tiered_support
+  - swarming_support
+  - follow_the_sun
+  - named_tam
+  - community_support
+  - outsourced_bpo
+  - ai_first_support
+  - embedded_in_product
+  - field_service
+  - premium_paid_support
+  offerings:
+  - product
+  - service
+  - hybrid
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: 'The load-bearing content here is failure_modes and the heuristics'' `why` clauses, not the
+    outcomes. Note also what is absent: no thresholds for how long a silence is too long, no definition
+    of what counts as heated, no escalation trigger. Those are Layer 4''s arithmetic and they belong
+    in the pack manifest. What makes this capability hard to run today is upstream of that — there is
+    no angry_language observation kind, no cancellation_threat, no escalation signal in the shipped
+    substrate, so nothing in this file can currently be fired automatically. That gap is the point of
+    vocabulary.yaml planned_substrate and is tracked there rather than papered over here by binding
+    heat to derived.sentiment, which measures a different thing.
+
+    '

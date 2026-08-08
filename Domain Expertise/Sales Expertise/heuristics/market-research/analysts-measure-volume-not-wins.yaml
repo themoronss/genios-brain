@@ -1,0 +1,36 @@
+identity:
+  id: sales.heu.market_research.analysts_measure_volume_not_wins
+  name: Analyst quadrants and category reports describe vendor marketing budge…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Analyst quadrants and category reports describe vendor marketing budgets. Use them to\
+    \ find who is loud, never to find who is winning.\n Placement correlates with briefing effort and\
+    \ with paid coverage, not with renewal rates. The useful thing in an analyst report is the vocabulary\
+    \ buyers are being taught, because that is the language the segment will use back at us.\n"
+heuristic:
+  statement: 'Analyst quadrants and category reports describe vendor marketing budgets. Use them to
+    find who is loud, never to find who is winning.
+
+    '
+  why: 'Placement correlates with briefing effort and with paid coverage, not with renewal rates. The
+    useful thing in an analyst report is the vocabulary buyers are being taught, because that is the
+    language the segment will use back at us.
+
+    '
+  reads:
+  - sales.obj.market_research.market_finding
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

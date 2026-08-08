@@ -1,0 +1,23 @@
+# Load-set for sales.qualification.decision_maker_identification — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/decision-maker-identification/ loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.qualification.decision_maker_identification
+
+core:
+  required:
+    - sales.obj.core.decision_maker
+  optional:
+    - sales.obj.core.buying_committee
+    - sales.obj.core.champion
+    - sales.obj.core.decision_maker
+
+scoped:
+  required: []
+  optional: []

@@ -1,0 +1,45 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.quality_assurance.rubric_refresh
+  name: Rubric refresh
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'On a standing cadence, re-derive the rubric from the tickets that actually arrived this
+    period, and delete dimensions that no longer discriminate.
+
+
+    Rubrics rot as the product changes. Dimensions written for a problem the product no longer has cost
+    reviewer attention and crowd out the ones that matter now, and nobody ever removes a dimension unless
+    removal is somebody''s scheduled job.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: On a standing cadence, re-derive the rubric from the tickets that actually arrived this period,
+    and delete dimensions that no longer discriminate.
+  actor: human
+  description: Rubrics rot as the product changes. Dimensions written for a problem the product no longer
+    has cost reviewer attention and crowd out the ones that matter now, and nobody ever removes a dimension
+    unless removal is somebody's scheduled job.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

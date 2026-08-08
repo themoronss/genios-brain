@@ -1,0 +1,705 @@
+identity:
+  id: sales.obj.core.account
+  scope: core
+  name: Account
+  domain: sales
+  subdomain: sales_management
+  owner_capability: sales.sales_management.relationship_management
+  version: 1.0.0
+  status: draft
+  aliases: ["Customer Account", "Client", "Named Account"]
+purpose:
+  statement: >
+    The customer-facing relationship with one organisation, spanning every deal, contact and
+    contract with it. Distinct from Company: Company is what the organisation IS, Account is
+    our relationship WITH it. Conflating them is why expansion looks like new business and
+    churn looks like a lost deal — both errors flow from having one record that carries
+    firmographics and relationship state in the same fields. The test is ownership of the
+    fact: employee count is true whether or not we exist, so it belongs to Company; who owns
+    the relationship, what has been signed, and whether the last renewal was fought over are
+    facts about us and belong here. One company may carry several accounts — subsidiaries,
+    regions, business units — and the reverse is never true.
+attributes:
+  - name: identity_and_ownership
+    purpose: Which relationship this is, and who inside our organisation holds it.
+    type: composite
+    contains:
+      - account_name
+      - company_ref
+      - crm_account_id
+      - account_owner
+      - account_team
+      - territory
+  - name: relationship
+    purpose: The history and quality of the relationship itself. None of it is true of the company.
+    type: composite
+    contains:
+      - relationship_stage
+      - first_contact_at
+      - customer_since
+      - relationship_strength_bp
+      - executive_sponsor_ref
+      - reference_willingness
+  - name: commercial_footprint
+    purpose: What the relationship is worth, cumulatively rather than per deal.
+    type: composite
+    contains:
+      - arr
+      - lifetime_value
+      - contract_count
+      - open_deal_count
+      - last_purchase_at
+      - renewal_at
+  - name: health
+    purpose: Whether the relationship is improving or decaying. Read as a trend, never as a level.
+    type: composite
+    contains:
+      - health_score_bp
+      - churn_risk_bp
+      - engagement_trend
+      - sentiment_trend
+      - last_inbound_at
+  - name: coverage
+    purpose: How much of the organisation we actually reach. The leading indicator of both expansion
+      and churn.
+    type: composite
+    contains:
+      - mapped_stakeholder_count
+      - is_multi_threaded
+      - departments_penetrated
+      - segment
+  - name: account_name
+    purpose: Our name for the relationship, which is not necessarily the company's legal name. A
+      single company routinely carries "Acme — EMEA" and "Acme — Federal" as separate accounts because
+      they buy separately, and forcing one name loses that.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Our name for the relationship, which is not necessarily the company's legal name. A
+      single company routinely carries "Acme — EMEA" and "Acme — Federal" as separate
+      accounts because they buy separately, and forcing one name loses that.
+  - name: company_ref
+    purpose: 'The organisation this relationship is with. Required, and the structural expression of the
+      discriminator: an account with no company cannot be scored for ICP fit, because fit is a property
+      of the organisation and not of how well we are getting on with it.'
+    type: reference
+    ref: sales.obj.core.company
+    data_type: ref
+    required: true
+    description: >
+      The organisation this relationship is with. Required, and the structural expression of
+      the discriminator: an account with no company cannot be scored for ICP fit, because fit
+      is a property of the organisation and not of how well we are getting on with it.
+  - name: crm_account_id
+    purpose: The crm_account_id of this object.
+    type: value
+    data_type: string
+  - name: account_owner
+    purpose: The internal owner. Unowned accounts do not churn loudly; they go quiet and then renew
+      somewhere else.
+    type: value
+    data_type: string
+    description: The internal owner. Unowned accounts do not churn loudly; they go quiet and then
+      renew somewhere else.
+  - name: account_team
+    purpose: The account_team of this object.
+    type: value
+    data_type: list
+  - name: territory
+    purpose: The territory of this object.
+    type: value
+    data_type: string
+  - name: relationship_stage
+    purpose: Mirrors `states` exactly. `customer` and `expansion` are separate from `prospect` and
+      `opportunity` precisely so that revenue reporting can tell new business from growth — the
+      distinction that disappears the moment Account and Company are one record.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, prospect, opportunity, customer, expansion, at_risk, churned]
+    required: true
+    description: >
+      Mirrors `states` exactly. `customer` and `expansion` are separate from `prospect` and
+      `opportunity` precisely so that revenue reporting can tell new business from growth —
+      the distinction that disappears the moment Account and Company are one record.
+  - name: first_contact_at
+    purpose: First two-way contact, not the first email we sent. An unanswered sequence starts
+      nothing.
+    type: value
+    data_type: timestamp
+    description: First two-way contact, not the first email we sent. An unanswered sequence starts
+      nothing.
+  - name: customer_since
+    purpose: First signed contract. Deliberately separate from first_contact_at, because the gap
+      between them is the account's real sales cycle and it is the only honest input to a cycle-length
+      forecast for accounts like this one.
+    type: value
+    data_type: timestamp
+    description: >
+      First signed contract. Deliberately separate from first_contact_at, because the gap
+      between them is the account's real sales cycle and it is the only honest input to a
+      cycle-length forecast for accounts like this one.
+  - name: relationship_strength_bp
+    purpose: Depth and durability of the relationship, independent of current deal activity.
+    type: value
+    data_type: integer
+    description: Depth and durability of the relationship, independent of current deal activity.
+  - name: executive_sponsor_ref
+    purpose: The senior person who would take our call if the relationship went wrong. Null on most
+      accounts, and its absence is the single best predictor that a churn event will arrive as a
+      notification rather than a conversation.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: >
+      The senior person who would take our call if the relationship went wrong. Null on most
+      accounts, and its absence is the single best predictor that a churn event will arrive
+      as a notification rather than a conversation.
+  - name: reference_willingness
+    purpose: A blunt and honest proxy for satisfaction. Customers who will not take a reference call
+      are telling you something they will not put in a survey.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, refuses, private_only, logo_only, full_reference]
+    description: >
+      A blunt and honest proxy for satisfaction. Customers who will not take a reference call
+      are telling you something they will not put in a survey.
+  - name: arr
+    purpose: Annual recurring revenue currently contracted. Excludes anything in flight.
+    type: value
+    data_type: money
+    description: Annual recurring revenue currently contracted. Excludes anything in flight.
+  - name: lifetime_value
+    purpose: The lifetime_value of this object.
+    type: value
+    data_type: money
+  - name: contract_count
+    purpose: The contract_count of this object.
+    type: value
+    data_type: integer
+  - name: open_deal_count
+    purpose: Deals currently live on this account. An account-level aggregate, which is exactly the
+      shape of fact the engine cannot compute today — see the needs_signal patterns below.
+    type: value
+    data_type: integer
+    description: >
+      Deals currently live on this account. An account-level aggregate, which is exactly the
+      shape of fact the engine cannot compute today — see the needs_signal patterns below.
+  - name: last_purchase_at
+    purpose: The last_purchase_at of this object.
+    type: value
+    data_type: timestamp
+  - name: renewal_at
+    purpose: The next contractual decision point. Not a close date we chose — a date the paper chose
+      for us, and the one that should drive the account plan backwards from.
+    type: value
+    data_type: timestamp
+    description: >
+      The next contractual decision point. Not a close date we chose — a date the paper chose
+      for us, and the one that should drive the account plan backwards from.
+  - name: health_score_bp
+    purpose: The health_score_bp of this object.
+    type: value
+    data_type: integer
+  - name: churn_risk_bp
+    purpose: Kept separate from health_score_bp rather than derived from it. Health is a level and
+      churn risk is a trajectory; a high-value account sliding from excellent to merely good is a
+      bigger problem than a mediocre one holding steady.
+    type: value
+    data_type: integer
+    description: >
+      Kept separate from health_score_bp rather than derived from it. Health is a level and
+      churn risk is a trajectory; a high-value account sliding from excellent to merely good
+      is a bigger problem than a mediocre one holding steady.
+  - name: engagement_trend
+    purpose: The engagement_trend of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+  - name: sentiment_trend
+    purpose: The sentiment_trend of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+  - name: last_inbound_at
+    purpose: Approximated today by the most recent deal or thread fact, because no account-scoped
+      recency exists. On a multi-deal account this reads optimistically — one live deal masks three
+      silent relationships.
+    type: value
+    data_type: timestamp
+    source_paths: [deal.last_inbound, thread.last_inbound]
+    description: >
+      Approximated today by the most recent deal or thread fact, because no account-scoped
+      recency exists. On a multi-deal account this reads optimistically — one live deal masks
+      three silent relationships.
+  - name: mapped_stakeholder_count
+    purpose: Count in mapping_state = mapped. A floor on the room, never a measure of it.
+    type: value
+    data_type: integer
+    description: Count in mapping_state = mapped. A floor on the room, never a measure of it.
+  - name: is_multi_threaded
+    purpose: Two or more genuinely independent relationships, in different reporting lines. Two
+      contacts who report to each other are one thread with a CC, and counting them as two is the most
+      common way a single-threaded account is recorded as safe.
+    type: value
+    data_type: boolean
+    description: >
+      Two or more genuinely independent relationships, in different reporting lines. Two
+      contacts who report to each other are one thread with a CC, and counting them as two is
+      the most common way a single-threaded account is recorded as safe.
+  - name: departments_penetrated
+    purpose: The unit of expansion in most B2B motions is the next department, not the next seat.
+    type: value
+    data_type: list
+    description: The unit of expansion in most B2B motions is the next department, not the next seat.
+  - name: segment
+    purpose: How WE choose to serve them, which is a relationship decision and belongs here. Company
+      size is a firmographic and belongs on Company. A 12,000-person organisation served through
+      self-service is `smb` by segment and nothing by size.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, smb, mid_market, enterprise, strategic]
+    description: >
+      How WE choose to serve them, which is a relationship decision and belongs here. Company
+      size is a firmographic and belongs on Company. A 12,000-person organisation served
+      through self-service is `smb` by segment and nothing by size.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: A record exists and nothing has happened. Most CRM accounts live here permanently.
+    - name: prospect
+      description: Targeted, contacted, no live deal. Not the same as unknown, and it is the state
+        most CRMs cannot express.
+    - name: opportunity
+      description: At least one open deal, never yet a customer.
+      entered_when: [{neighbor_fact: deal.status, op: "=", value: open}]
+    - name: customer
+      description: Has signed and is under contract. The transition that must never be recorded as a
+        stage change on a deal.
+    - name: expansion
+      description: A customer with a live deal. Revenue here is growth, not new business, and
+        reporting it as new business is the error this object exists to prevent.
+    - name: at_risk
+      description: A customer whose engagement or sentiment is decaying, or who is under competitive
+        attack.
+      entered_when: [{path: derived.engagement, op: "<=", value: 0.5}]
+    - name: churned
+      description: Contract ended without renewal. Distinct from a lost deal — a lost deal on a
+        customer leaves them a customer.
+  transitions:
+    - {from: unknown, to: prospect}
+    - {from: prospect, to: opportunity, when: [{neighbor_fact: deal.status, op: "=", value: open}]}
+    - {from: opportunity, to: customer}
+    - {from: opportunity, to: prospect}
+    - {from: customer, to: expansion, when: [{neighbor_fact: deal.status, op: "=", value: open}]}
+    - {from: expansion, to: customer}
+    - {from: customer, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}]}
+    - {from: expansion, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}]}
+    - {from: at_risk, to: customer}
+    - {from: at_risk, to: churned}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.company
+    cardinality: one
+    description: >
+      Exactly one, and never the reverse. The account is our side of a relationship with an
+      organisation that exists without us.
+
+  - type: owns
+    target: sales.obj.core.deal
+    cardinality: zero_or_many
+    description: Every deal, open and closed. The closed ones are the history that makes the open ones
+      readable.
+
+  - type: owns
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_many
+
+  - type: owns
+    target: sales.obj.core.contract
+    cardinality: zero_or_many
+    description: Contracts set renewal_at. A renewal date discovered from the paper beats one entered
+      by hand.
+
+  - type: works_with
+    target: sales.obj.core.stakeholder
+    cardinality: zero_or_many
+    description: Stakeholders attach to the account, not the deal, so they survive the deal that found
+      them.
+
+  - type: competes_with
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+    description: Competitors present in this relationship — displacing us, or being displaced.
+
+  - type: produces
+    target: sales.obj.core.risk
+    cardinality: zero_or_many
+
+  - type: gates
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+    description: Their renewal date and fiscal calendar bound every close date we can honestly
+      promise.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: ac.relationship_gone_quiet
+      statement: "An open deal on this account has had no inbound traffic for well over the learned reply
+        cadence."
+      status: executable
+      when:
+        - {neighbor_fact: deal.status, op: "=", value: open}
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 5, floor:
+              30}}
+      yields: {confidence_bp: 8000, attribute: relationship_stage, value: at_risk}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        Baseline-relative rather than a fixed window, because a public-sector account that
+        replies fortnightly and a startup that replies hourly are both normal, and a single
+        threshold pathologises one and misses the other entirely.
+
+    - id: ac.crm_account_link
+      statement: "The CRM account record supplies the canonical id, owner, ARR and renewal date."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: crm_account_id}
+      requires_signals:
+        - {kind: fact_path, name: crm.account.id, owner_layer: L1, note: "The connector reads deals and\
+            contacts but never the account object above them, so the record that already holds the answer
+            to almost every field here is not projected."}
+        - {kind: fact_path, name: crm.account.arr, owner_layer: L1}
+
+    - id: ac.signature_starts_the_customer_clock
+      statement: "A contract was signed, which is the exact moment a prospect becomes a customer."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: relationship_stage, value: customer}
+      requires_signals:
+        - {kind: obs_kind, name: contract_signed, owner_layer: L2, note: "L2 emits contract_requested and\
+            stops there. The single most consequential state transition in the whole object — prospect to
+            customer, new business to expansion — happens on every won deal and is invisible to the pipeline."}
+
+    - id: ac.renewal_date_from_the_paper
+      statement: "The contract's end date sets renewal_at without anybody typing it."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: renewal_at}
+      requires_signals:
+        - {kind: fact_path, name: contract.end_date, owner_layer: L1, note: "Renewal dates entered by hand\
+            are wrong on a predictable fraction of accounts, and always in the direction of being too late
+            to act on."}
+
+  heuristic:
+
+    - id: ac.breadth_from_graph_degree
+      statement: "The account node carries many edges, which is the closest thing to a coverage measure
+        available."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 4}
+      yields: {confidence_bp: 6000, attribute: is_multi_threaded, value: true}
+      note: >
+        Deliberately weak. Degree counts edges of every kind — threads, meetings, deals,
+        people — so a single busy conversation with four attachments reads identically to four
+        independent relationships. It over-reports in exactly the case that matters, which is
+        why it yields 6000 and why departments_penetrated exists as the field a human fills in.
+
+    - id: ac.competitor_active_in_a_live_relationship
+      statement: "A competitor observation on an open deal at this account."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 7000, attribute: churn_risk_bp, value: 6000}
+      evidence_fields: [deal.status]
+      note: >
+        On a prospect account a competitor is normal and priced in. On a customer account the
+        same observation is a displacement attempt and should read several times louder, which
+        is a distinction Layer 4 can only make because relationship_stage lives here.
+
+    - id: ac.discount_pressure_near_a_decision
+      statement: "Discount pressure alongside a competitor — the shape of a renewal being shopped."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {has_obs: competitor}
+      yields: {confidence_bp: 7200, attribute: relationship_stage, value: at_risk}
+      note: >
+        Price pressure on its own is negotiation. Price pressure with a named alternative is
+        leverage, and on a customer account leverage means they have already had the
+        conversation we were not in.
+
+    - id: ac.went_dark_after_the_proposal
+      statement: "A proposal went out and inbound traffic stopped for several reply cadences."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3,
+            floor: 10}}
+      yields: {confidence_bp: 6800, attribute: churn_risk_bp, value: 5000}
+      note: >
+        Silence after a proposal is not consideration. In the overwhelming majority of cases
+        the proposal reached someone we never mapped and the answer was decided without us.
+
+    - id: ac.second_live_deal_means_expansion
+      statement: "A customer account with more than one open deal is expanding, and the revenue must be
+        classified accordingly."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: relationship_stage, value: expansion}
+      requires_signals:
+        - {kind: derived, name: derived.account_open_deal_count, owner_layer: L2, note: "The highest-value\
+            gap on this object. Every fact path in the substrate is deal- or thread-scoped, so no account-level
+            aggregate exists at all — the engine literally cannot count how many deals an account has. That
+            single absence is why expansion cannot be told from new business, why coverage falls back to graph
+            degree, and why account recency is approximated from whichever deal happened to be busiest."}
+
+    - id: ac.reference_willingness_from_behaviour
+      statement: "They agreed to a reference call or a case study, which outranks any satisfaction score."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: reference_willingness, value: full_reference}
+      requires_signals:
+        - {kind: obs_kind, name: reference_agreed, owner_layer: L2, note: "Willingness to be named to a\
+            stranger is the only satisfaction measure a customer cannot politely fake."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: crm, signal: "account record, owner, ARR, territory, segment"}
+  - {source: contract, signal: "signed value, term, end date, entity name"}
+  - {source: email, signal: inbound recency across the relationship, path: deal.last_inbound}
+  - {source: email, signal: "competitor mentions, discount pressure, proposals"}
+  - {source: derived, signal: engagement trajectory, path: derived.engagement}
+  - {source: derived, signal: observation balance across the account, path: derived.sentiment}
+  - {source: calendar, signal: meeting cadence with the account}
+  - {source: meeting_transcript, signal: "renewal intent, satisfaction, competitive evaluation"}
+  - {source: manual_entry, signal: "account plan, departments penetrated, executive sponsor"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: account_health_bp, type: integer, description: "Composite relationship health, trend-weighted.",
+      consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: revenue_classification, type: string, description: "new_business | expansion | renewal. Derived\
+      from relationship_stage and consumed by every revenue report downstream.", consumed_by: [
+        L4.reasoning_unit, L6.learning_unit]}
+  - {name: churn_risk_bp, type: integer, description: "Trajectory of the relationship, distinct from its\
+      level.", consumed_by: [L4.decision_maker]}
+  - {name: expansion_headroom, type: list, description: "Departments and products not yet sold into.",
+      consumed_by: [L5.execution_planning]}
+  - {name: renewal_horizon_days, type: integer, description: "Days to the next contractual decision point.\
+      Bounds every account plan.", consumed_by: [L5.execution_planning]}
+  - {name: coverage_summary, type: string, description: "Threading and sponsor state in one line.", consumed_by: [
+      L5.communication_planning]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: ac.one_company_per_account, statement: "An account references exactly one company. Many accounts\
+      to one company is legitimate; the reverse is a data error that double-counts pipeline.", hard:
+      true}
+  - {id: ac.no_firmographics_here, statement: "Employee count, industry, revenue and technology are facts\
+      about the organisation and must live on Company. Any such field appearing on Account is the conflation
+      this object exists to prevent.", hard: true}
+  - {id: ac.stage_cannot_regress_past_customer, statement: "relationship_stage may not move from customer\
+      back to prospect or opportunity. The only exit from customer is churned.", hard: true}
+  - {id: ac.churn_requires_contract_end, statement: "relationship_stage = churned requires a contract\
+      that ended unrenewed, not a lost deal.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: ac.account_requires_a_company
+    statement: >
+      An account with no company_ref cannot be scored for ICP fit or territory assignment. Fit
+      is a property of the organisation; without the link there is nothing to score against.
+    then: block_fit_scoring
+    severity: blocking
+
+  - id: ac.expansion_is_not_new_business
+    statement: >
+      A deal on an account in relationship_stage customer, expansion or at_risk must be
+      reported as expansion revenue, never as new business. The two carry different costs of
+      acquisition and different win rates, and mixing them makes both numbers meaningless.
+    then: classify_as_expansion
+    severity: blocking
+
+  - id: ac.churn_is_not_a_lost_deal
+    statement: >
+      Losing a deal on an existing customer must not move relationship_stage to churned. They
+      remain a customer with a contract until that contract ends unrenewed. Treating the two
+      as one event both overstates churn and hides it, in different quarters.
+    severity: blocking
+
+  - id: ac.renewal_dates_bound_the_plan
+    statement: >
+      An account with a populated renewal_at and no plan working backwards from it is
+      unmanaged. Renewals are lost in the quarter before they are decided, not in the week
+      they fall due.
+    severity: warning
+
+  - id: ac.single_threaded_account
+    statement: >
+      An account with one edge and a live deal is single-threaded. On a customer account this
+      is worse than on a prospect, because the entire renewal rests on one person's continued
+      employment.
+    when:
+      - {fn: edge_count, op: "<=", value: 1}
+      - {neighbor_fact: deal.status, op: "=", value: open}
+    then: flag_single_threaded_account
+    severity: warning
+
+  - id: ac.silent_customer_is_not_a_happy_customer
+    statement: >
+      A customer account with no inbound contact for several reply-cadence multiples must be
+      surfaced. Satisfied customers are quiet in a different way from departing ones, and the
+      pipeline cannot tell them apart, so a human must look.
+    when:
+      - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 6, floor:
+            45}}
+    then: flag_dormant_relationship
+    severity: advisory
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: relationship_health
+    weight_bp: 2500
+    direction: context
+    description: >
+      Trend over level. An account moving from 9000 to 7000 needs attention before one sitting
+      steadily at 6000, and any factor that reads only the current value inverts that.
+    reads: [health_score_bp, churn_risk_bp, engagement_trend, sentiment_trend]
+
+  - name: commercial_footprint
+    weight_bp: 2000
+    direction: increases
+    description: What is already contracted. The base that expansion multiplies and churn removes.
+    reads: [arr, lifetime_value, contract_count]
+
+  - name: coverage_breadth
+    weight_bp: 1800
+    direction: increases
+    description: >
+      Independent relationships across departments. The strongest available predictor of both
+      expansion capacity and survival of a champion's departure.
+    reads: [mapped_stakeholder_count, is_multi_threaded, departments_penetrated, executive_sponsor_ref]
+
+  - name: expansion_headroom
+    weight_bp: 1500
+    direction: increases
+    reads: [departments_penetrated, open_deal_count, segment]
+
+  - name: renewal_proximity
+    weight_bp: 1200
+    direction: context
+    description: Near a renewal every other signal is amplified, in both directions.
+    reads: [renewal_at, last_purchase_at, customer_since]
+
+  - name: competitive_displacement_risk
+    weight_bp: 1000
+    direction: decreases
+    reads: [reference_willingness, churn_risk_bp]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: contract, strength_bp: 10000, description: "Signed paper. Establishes customer_since, arr\
+      and renewal_at beyond argument."}
+  - {source: crm, strength_bp: 8000, description: "The account object itself — owner, segment, territory.\
+      Authoritative for ownership, unreliable for health."}
+  - {source: email, strength_bp: 7000, description: "Live traffic across the relationship. The only continuously\
+      refreshed source here."}
+  - {source: meeting_transcript, strength_bp: 7000, description: "Stated renewal intent or dissatisfaction."}
+  - {source: derived, strength_bp: 5000, description: "Engagement and sentiment trajectory. Strong on\
+      direction, meaningless as a level."}
+  - {source: calendar, strength_bp: 4500, description: "Meeting cadence. A falling cadence on a customer\
+      account is an early and quiet signal."}
+  - {source: manual_entry, strength_bp: 4000, description: "Account plan fields. As current as the last\
+      time someone was asked for a forecast."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: net_revenue_retention, unit: percent, description: "Expansion minus churn over the base. Computable\
+      only if expansion and new business are separable, which is this object's whole job.",
+      owner_layer: L6}
+  - {name: logo_retention, unit: percent, owner_layer: L6}
+  - {name: expansion_rate, unit: percent, description: "Share of customer accounts with a live expansion\
+      deal.", owner_layer: L6}
+  - {name: single_threaded_customer_share, unit: percent, description: "Customer accounts with one relationship.\
+      The number that predicts churn best and is watched least.", owner_layer: L6}
+  - {name: time_to_second_purchase, unit: days, description: "customer_since to the second signed contract.\
+      The clearest measure of whether onboarding worked.", owner_layer: L6}
+  - {name: account_response_latency, unit: hours, description: "Inbound latency across the relationship,\
+      against its own baseline.", owner_layer: L2}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: ac.became_customer, name: Became a Customer, payload: [customer_since, first_contact_at, cycle_days],
+    description: "Blocked today — contract_signed is not emitted, so the most important transition in the
+      object is invisible and must be entered by hand."}
+  - {id: ac.entered_expansion, name: Entered Expansion, emitted_when: [{neighbor_fact: deal.status, op: "=",
+        value: open}], payload: [open_deal_count, arr]}
+  - {id: ac.at_risk, name: Account At Risk, emitted_when: [{path: derived.engagement, op: "<=", value:
+          0.5}], payload: [health_score_bp, churn_risk_bp, renewal_at]}
+  - {id: ac.competitor_detected, name: Competitor Detected in the Relationship, emitted_when: [has_obs:
+          competitor], payload: [competitor_ref, relationship_stage], description: "Severity depends entirely
+      on relationship_stage, which is why this event carries it in the payload rather than leaving Layer
+      4 to look it up."}
+  - {id: ac.renewal_approaching, name: Renewal Approaching, payload: [renewal_at, arr, health_score_bp]}
+  - {id: ac.went_dormant, name: Relationship Went Dormant, emitted_when: [{fn: days_since, path: deal.last_inbound,
+        op: ">", value: 90}], payload: [last_inbound_at]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: ac.build_account_plan, name: Build the account plan backwards from renewal_at, actor: human,
+      effect: "The date is fixed by paper we already have. Planning forwards from today is how renewals
+      arrive as surprises."}
+  - {id: ac.multithread, name: Open a second independent relationship, actor: human, preconditions: [{
+        fn: edge_count, op: "<=", value: 1}], effect: "In a different reporting line, or it is not a second
+      thread. This is the only durable defence against a champion leaving."}
+  - {id: ac.secure_exec_sponsor, name: Secure an executive sponsor, actor: human, effect: "Someone senior\
+      who would take the call if things went wrong. Cheap to arrange while the relationship is healthy and
+      impossible afterwards."}
+  - {id: ac.defend_against_displacement, name: Run a displacement defence, actor: human, preconditions: [
+      has_obs: competitor], effect: "Different play from a competitive new-business deal: the incumbent
+      advantage is real but only if used before procurement formalises the comparison."}
+  - {id: ac.qualify_expansion, name: Qualify an expansion into a new department, actor: human, effect: "Treat
+      it as a new sale with a warm reference, not as an upsell. The new department has its own budget, its
+      own stakeholders and no loyalty to us."}
+  - {id: ac.request_reference, name: Request a reference, actor: human, effect: "Doubles as the cheapest\
+      available satisfaction test. A polite refusal is data."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Prospect account with three open deals across two divisions", note: "relationship_stage opportunity,\
+      never customer. Three deals do not make a customer; a signature does."}
+  - {label: "Customer buying a second product", note: "relationship_stage expansion. Reported as new business\
+      by most CRMs, which is precisely the error the Account/Company split exists to prevent."}
+  - {label: "Customer who lost a competitive deal for a new module", note: "Still a customer. A lost deal\
+      here is not churn, and recording it as churn both overstates the churn number and hides the real one."}
+  - {label: "One company, three accounts — EMEA, Federal, and the acquired subsidiary", note: "Separate\
+      budgets, separate stakeholders, separate renewals. Merging them to tidy the CRM destroys the only
+      view in which one is healthy and another is leaving."}
+  - {label: "Silent account, renewal in six weeks, no executive sponsor", note: "THE classic misread.\
+      Reads as low-maintenance and green on every dashboard because nothing bad has been observed — and
+      nothing at all has been observed."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Five of ten patterns are executable; five are blocked. The highest-value signal gap is
+    derived.account_open_deal_count, or any account-scoped aggregate at all — every one of
+    the twelve substrate fact paths is deal- or thread-scoped, so the engine cannot count the
+    deals, contacts or contracts belonging to an account. That single absence is the root of
+    three separate degradations in this file: expansion cannot be distinguished from new
+    business, coverage falls back to raw graph degree, and account recency is approximated
+    from whichever deal happens to be busiest. Second-ranked is the contract_signed
+    observation kind, shared with Decision Maker and Company: the prospect-to-customer
+    transition, the most consequential in the object, currently has to be typed in by hand.

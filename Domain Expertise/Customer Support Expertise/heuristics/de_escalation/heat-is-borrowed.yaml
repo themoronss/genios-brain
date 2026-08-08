@@ -1,0 +1,38 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.de_escalation.heat_is_borrowed
+  name: Heat is borrowed
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Assume some of the heat is borrowed from the customer's own stakeholders.
+heuristic:
+  statement: Assume some of the heat is borrowed from the customer's own stakeholders.
+  why: The person writing to us usually promised something internally on our behalf and is now exposed.
+    Giving them something they can forward — a plain statement of status they can send onward without
+    editing — often does more than anything we say about the fault itself.
+  applies_when: The requester is not the person suffering the impact, or is relaying a complaint from
+    elsewhere in their organisation.
+  reads:
+  - customer_support.obj.core.requester
+  - customer_support.obj.core.ticket
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

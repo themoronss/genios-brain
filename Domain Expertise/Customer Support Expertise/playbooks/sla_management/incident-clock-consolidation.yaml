@@ -1,0 +1,45 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.sla_management.incident_clock_consolidation
+  name: Incident clock consolidation
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'When one cause is breaching many clocks, manage the clocks as a set: one status of record,
+    one restoration commitment, per-ticket updates that all point at it.
+
+
+    Treating a shared cause as many independent clocks multiplies the communication load exactly when
+    capacity is lowest, and produces contradictory promises across tickets that customers compare with
+    each other.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: 'When one cause is breaching many clocks, manage the clocks as a set: one status of record,
+    one restoration commitment, per-ticket updates that all point at it.'
+  actor: human
+  description: Treating a shared cause as many independent clocks multiplies the communication load
+    exactly when capacity is lowest, and produces contradictory promises across tickets that customers
+    compare with each other.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

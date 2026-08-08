@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.queue_management.utilisation_curve
+  name: Utilisation curve
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The utilisation curve — expected wait rises steeply, not smoothly, as arrival rate approaches
+    service capacity.
+
+
+    Used here as a shape rather than a formula. It is the reason a report of near-full utilisation is
+    an alarm and not a status, and the reason the last increment of demand costs far more than the previous
+    one. Where the bend sits for a given queue is arithmetic and lives in the pack manifest, not here.'
+criteria:
+- name: Utilisation curve
+  description: The utilisation curve — expected wait rises steeply, not smoothly, as arrival rate approaches
+    service capacity.
+how_to_apply:
+- The utilisation curve — expected wait rises steeply, not smoothly, as arrival rate approaches service
+  capacity.
+- Used here as a shape rather than a formula. It is the reason a report of near-full utilisation is
+  an alarm and not a status, and the reason the last increment of demand costs far more than the previous
+  one. Where the bend sits for a given queue is arithmetic and lives in the pack manifest, not here.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

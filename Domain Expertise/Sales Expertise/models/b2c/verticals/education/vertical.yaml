@@ -1,0 +1,26 @@
+# Consumer Education — vertical branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.b2c.education
+  name: Consumer Education
+  kind: vertical
+  domain: sales
+  parent: sales.model.b2c
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Considered purchase with a longer cycle than most B2C — the buyer researches, compares and
+  often defers.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,50 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.churn_signal_detection.risk_triangulation
+  name: Risk triangulation
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Risk triangulation — treat a flag as credible when a behavioural change, a relationship
+    change and a support-history pattern point the same way.
+
+
+    Any one of these alone produces more false positives than an account team will tolerate, and tolerance
+    is the scarce resource. Agreement across independent channels is what makes a flag survive contact
+    with someone who has a quota.'
+criteria:
+- name: Risk triangulation
+  description: Risk triangulation — treat a flag as credible when a behavioural change, a relationship
+    change and a support-history pattern point the same way.
+  reads: &id001
+  - customer_support.obj.core.customer_account
+  - customer_support.obj.core.requester
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.churn_risk
+how_to_apply:
+- Risk triangulation — treat a flag as credible when a behavioural change, a relationship change and
+  a support-history pattern point the same way.
+- Any one of these alone produces more false positives than an account team will tolerate, and tolerance
+  is the scarce resource. Agreement across independent channels is what makes a flag survive contact
+  with someone who has a quota.
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

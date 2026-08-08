@@ -1,0 +1,39 @@
+identity:
+  id: customer_support.intake_and_triage.priority_and_severity
+  name: Priority & Severity
+  domain: customer_support
+  subdomain: intake_and_triage
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Holding apart how broken something is from what we work on first, under exactly the conditions
+  that make people collapse them. Severity is a property of the fault, established from blast
+  radius and whether a workaround exists; priority is an allocation of scarce attention,
+  established from severity crossed with what the account is entitled to and what else is currently
+  in the queue. The two routinely invert — the worst fault on a free trial against a middling one
+  on an account renewing next month — and an organisation whose data model cannot express that
+  inversion will work the wrong one first and be able to prove it followed the rules. This is one
+  capability rather than two because all of the expertise lives in the tension between them, and
+  splitting it loses precisely the knowledge that matters.
+
+question: "How broken is this, and — separately — what do we work on first?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, purpose and load-set only. Promote by adding decision_frameworks first
+    (impact times urgency, the workaround ladder, the blast-radius ladder), then the heuristics
+    that govern revision: who may change severity and on what evidence, who may change priority
+    and on whose authority, and why those two answers should differ. failure_modes should cover
+    severity inflation by escalation, the single-field collapse, and the quieter one where
+    severity is set correctly and priority is never revisited as the queue changes around it.
+    Keep all band definitions out of this file — they are Layer 4 arithmetic and belong in the
+    pack manifest. Cannot become executable until an SLA and severity signal exists; today
+    ticket.severity and sla.clock_state are planned substrate only.

@@ -1,0 +1,30 @@
+# Load-set for customer_support.support_operations.capacity_planning — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_operations.capacity_planning
+
+core:
+  # capacity_plan is the artefact being produced and argued over; backlog is the evidence that
+  # the current plan is wrong. A plan authored without the backlog it inherits is a forecast of
+  # a company that does not exist.
+  required:
+    - customer_support.obj.core.capacity_plan
+    - customer_support.obj.core.backlog
+  # queue gives demand its shape by line rather than in total; support_agent supplies who is
+  # actually available versus nominally headcounted; coverage_window is what turns a headcount
+  # into presence at the hour the work arrives. Absent any of them the plan is coarser, not
+  # impossible.
+  optional:
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.coverage_window
+
+scoped:
+  required: []
+  optional: []

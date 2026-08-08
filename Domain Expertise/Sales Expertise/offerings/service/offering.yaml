@@ -1,0 +1,41 @@
+# Service — offering_family branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is type -> family -> canonical.
+
+identity:
+  id: sales.offering.service
+  name: Service
+  kind: offering_family
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Capability delivered by people over time. Most of the revenue depends on work done AFTER
+  signature, which is the discriminator that actually matters: scope definition becomes part
+  of the sale, and margin is a delivery outcome rather than a pricing decision.
+
+characteristics:
+  delivery: "people, over an engagement period"
+  pricing_shape: "time and materials, fixed fee, or retainer"
+  margin_profile: "variable, and set during delivery rather than at signature"
+  post_sale_load: "high — the sale is a promise about future work"
+
+capabilities:
+  activates:
+    - sales.closing.contract_management
+  emphasises:
+    - sales.discovery_and_solution.need_analysis
+    - sales.proposal_and_commercials.proposal_creation
+    - sales.post_sale_and_growth.onboarding
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

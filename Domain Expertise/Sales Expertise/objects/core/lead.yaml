@@ -1,0 +1,726 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Lead — a claim about a person at a moment in time.
+#
+# Two boundaries define this object and blurring either one is expensive:
+#   Contact -> Lead     requires INTENT EVIDENCE. A list import is a contact import.
+#   Lead -> Opportunity requires a PURCHASE PROCESS. Enthusiasm is not a process.
+#
+# Five of the eleven patterns below are executable. The blocked six are almost all the same
+# gap: the pipeline sees intent only once it is spoken in an email thread, so every web,
+# form and marketing-automation signal — the majority of inbound intent in practice — is
+# invisible until the buyer announces themselves twice.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.lead
+  scope: core
+  name: Lead
+  domain: sales
+  subdomain: prospecting_and_outreach
+  owner_capability: sales.prospecting_and_outreach.lead_generation
+  version: 1.0.0
+  status: draft
+  aliases: ["Prospect", "Inquiry", "MQL", "SQL"]
+purpose:
+  statement: >
+    A Contact plus the evidence that they might be in market. Two discriminators, and both are
+    load-bearing. Against Contact: intent evidence — without an observed act suggesting a reason
+    to buy, you have a person, not a lead. Against Opportunity: no purchase process exists yet —
+    no scoped need, no named money, no agreed next step with someone who could say yes. Most CRM
+    hygiene disasters come from blurring one of those two boundaries. Blur the first and a
+    purchased list becomes ten thousand leads, the top of the funnel inflates and conversion rate
+    becomes meaningless. Blur the second and a warm conversation becomes forecast revenue. A lead
+    is also temporary in a way a Contact is not: the same person can be a lead three times in five
+    years, and each time is a separate claim with its own evidence and its own expiry.
+attributes:
+  - name: origin
+    purpose: Who this is about and where the claim came from. Unreconstructable a week later.
+    type: composite
+    contains:
+      - contact_ref
+      - account_ref
+      - persona_ref
+      - source_channel
+      - first_touch_at
+      - referred_by
+  - name: intent_evidence
+    purpose: The acts that make this a lead rather than a contact. The whole discriminator lives here.
+    type: composite
+    contains:
+      - intent_signals
+      - intent_strength_bp
+      - intent_recency_days
+      - self_declared_need
+      - compelling_event_hint
+  - name: fit
+    purpose: Whether we should want them, measured against the standard rather than against hope.
+    type: composite
+    contains:
+      - icp_ref
+      - fit_score_bp
+      - disqualifiers
+  - name: routing_and_response
+    purpose: Who owns it and how fast we answered. The most controllable variable in the object.
+    type: composite
+    contains:
+      - owner_rep
+      - first_response_at
+      - response_sla_minutes
+      - touch_count
+  - name: progression
+    purpose: The verdict, and the boundary crossing into a real purchase process.
+    type: composite
+    contains:
+      - qualification_verdict
+      - disqualify_reason
+      - converted_opportunity_ref
+  - name: decay
+    purpose: Observed interaction. Intent has a half-life and this section measures it.
+    type: composite
+    contains:
+      - last_inbound_at
+      - ball_in_court
+      - engagement_trend
+  - name: contact_ref
+    purpose: A lead is never a person; it is a claim about one, and the person outlives the claim.
+      Storing identity on this object instead of pointing at a Contact is how the same human ends up
+      as four rows with three job titles and two owners.
+    type: reference
+    ref: sales.obj.core.contact
+    data_type: ref
+    required: true
+    description: >
+      A lead is never a person; it is a claim about one, and the person outlives the claim. Storing
+      identity on this object instead of pointing at a Contact is how the same human ends up as
+      four rows with three job titles and two owners.
+  - name: account_ref
+    purpose: Zero until resolved. Resolving late is normal; recording an unresolved account as
+      resolved breaks territory routing silently.
+    type: reference
+    ref: sales.obj.core.account
+    data_type: ref
+    description: Zero until resolved. Resolving late is normal; recording an unresolved account as
+      resolved breaks territory routing silently.
+  - name: persona_ref
+    purpose: The archetype used to frame the first message. A prior, not a finding.
+    type: reference
+    ref: sales.obj.core.persona
+    data_type: ref
+    description: The archetype used to frame the first message. A prior, not a finding.
+  - name: source_channel
+    purpose: The spread between the best and worst value here is larger than the spread of every other
+      factor on this object combined. referral and pricing_page convert in double digits; list_import
+      converts near zero and fills a pipeline faster than anything else in the enum.
+    type: value
+    data_type: enum
+    allowed_values: [inbound_form, content_download, pricing_page, free_trial, referral, event,
+        webinar, cold_outbound, partner, list_import, unknown]
+    description: >
+      The spread between the best and worst value here is larger than the spread of every other
+      factor on this object combined. referral and pricing_page convert in double digits;
+      list_import converts near zero and fills a pipeline faster than anything else in the enum.
+  - name: first_touch_at
+    purpose: When the claim was created. Starts both the SLA clock and the decay clock.
+    type: value
+    data_type: timestamp
+    description: When the claim was created. Starts both the SLA clock and the decay clock.
+  - name: referred_by
+    purpose: The introducer. Worth capturing at the moment it happens, and worth an outcome message
+      back to them afterwards.
+    type: reference
+    ref: sales.obj.core.contact
+    data_type: ref
+    description: The introducer. Worth capturing at the moment it happens, and worth an outcome
+      message back to them afterwards.
+  - name: intent_signals
+    purpose: Observed, timestamped acts — asked for a demo, discussed pricing, named a deadline. A
+      list of acts rather than a score, because Layer 4 needs the acts to explain the score and a rep
+      needs them to open the call.
+    type: value
+    data_type: list
+    description: >
+      Observed, timestamped acts — asked for a demo, discussed pricing, named a deadline. A list
+      of acts rather than a score, because Layer 4 needs the acts to explain the score and a rep
+      needs them to open the call.
+  - name: intent_strength_bp
+    purpose: Aggregate weight of the observed acts. Zero is a legitimate and very common value; it
+      means this is a Contact.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: Aggregate weight of the observed acts. Zero is a legitimate and very common value; it
+      means this is a Contact.
+  - name: intent_recency_days
+    purpose: Intent decays far faster than pipeline reviews assume. A pricing-page visit is worth
+      acting on within days; the identical visit six weeks later is a cold call with extra steps and a
+      worse opening line, because the reference to it now reads as surveillance.
+    type: value
+    data_type: integer
+    unit: days
+    description: >
+      Intent decays far faster than pipeline reviews assume. A pricing-page visit is worth acting
+      on within days; the identical visit six weeks later is a cold call with extra steps and a
+      worse opening line, because the reference to it now reads as surveillance.
+  - name: self_declared_need
+    purpose: What they said they wanted, verbatim. Paraphrasing it into our category language is how
+      the actual problem gets lost before discovery starts.
+    type: value
+    data_type: string
+    description: What they said they wanted, verbatim. Paraphrasing it into our category language is
+      how the actual problem gets lost before discovery starts.
+  - name: compelling_event_hint
+    purpose: A hint, explicitly not a compelling event. Timeline owns the verified one. Recording it
+      here stops the hint evaporating between capabilities and stops it being promoted to a fact by
+      the next person who reads the record.
+    type: value
+    data_type: string
+    description: >
+      A hint, explicitly not a compelling event. Timeline owns the verified one. Recording it here
+      stops the hint evaporating between capabilities and stops it being promoted to a fact by the
+      next person who reads the record.
+  - name: icp_ref
+    purpose: The standard fit is measured against. Fit without a stated standard is a preference.
+    type: reference
+    ref: sales.obj.core.icp
+    data_type: ref
+    description: The standard fit is measured against. Fit without a stated standard is a preference.
+  - name: fit_score_bp
+    purpose: Account-level fit against the ICP. Deliberately separate from intent — the two are
+      orthogonal and averaging them hides both.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: Account-level fit against the ICP. Deliberately separate from intent — the two are
+      orthogonal and averaging them hides both.
+  - name: disqualifiers
+    purpose: 'Hard exclusions: wrong geography, active competitor, sub-scale, prohibited sector. Checked
+      BEFORE scoring, because a high-intent disqualified lead is still disqualified and scoring it first
+      is exactly how it survives triage and consumes a fortnight.'
+    type: value
+    data_type: list
+    description: >
+      Hard exclusions: wrong geography, active competitor, sub-scale, prohibited sector. Checked
+      BEFORE scoring, because a high-intent disqualified lead is still disqualified and scoring it
+      first is exactly how it survives triage and consumes a fortnight.
+  - name: owner_rep
+    purpose: One owner. An unowned lead is worked by nobody and reported by everybody.
+    type: value
+    data_type: string
+    description: One owner. An unowned lead is worked by nobody and reported by everybody.
+  - name: first_response_at
+    purpose: Time from first_touch_at to here is the strongest controllable predictor of inbound
+      conversion there is, and it is measured in minutes rather than days. It is also, today,
+      unmeasurable — nothing records when we replied.
+    type: value
+    data_type: timestamp
+    description: >
+      Time from first_touch_at to here is the strongest controllable predictor of inbound
+      conversion there is, and it is measured in minutes rather than days. It is also, today,
+      unmeasurable — nothing records when we replied.
+  - name: response_sla_minutes
+    purpose: The response_sla_minutes of this object.
+    type: value
+    data_type: integer
+    unit: minutes
+  - name: touch_count
+    purpose: Attempts made. Useful as a cost measure and dangerous as a progress measure — activity is
+      not engagement.
+    type: value
+    data_type: integer
+    description: Attempts made. Useful as a cost measure and dangerous as a progress measure —
+      activity is not engagement.
+  - name: last_inbound_at
+    purpose: The last_inbound_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: ball_in_court
+    purpose: '`nobody` on a lead means the claim has expired and nothing has moved it to a verdict.'
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: "`nobody` on a lead means the claim has expired and nothing has moved it to a verdict."
+  - name: engagement_trend
+    purpose: The engagement_trend of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+  - name: qualification_verdict
+    purpose: Three real outcomes and a waiting room. `pending` is the state that must be time-boxed —
+      a lead with no verdict after its window is a disqualification nobody was willing to write down.
+    type: value
+    data_type: enum
+    allowed_values: [pending, pursue, nurture, disqualified]
+    description: >
+      Three real outcomes and a waiting room. `pending` is the state that must be time-boxed —
+      a lead with no verdict after its window is a disqualification nobody was willing to write down.
+  - name: disqualify_reason
+    purpose: Required whenever the verdict is disqualified. Without the reason the next rep reworks
+      the same lead in six months and reaches the same conclusion at the same cost.
+    type: value
+    data_type: enum
+    allowed_values: [no_budget, no_authority, no_need, no_timeline, out_of_icp, competitor, duplicate,
+        unreachable, unresponsive, other]
+    description: Required whenever the verdict is disqualified. Without the reason the next rep
+      reworks the same lead in six months and reaches the same conclusion at the same cost.
+  - name: converted_opportunity_ref
+    purpose: Set only at the boundary crossing. Its presence is what makes this lead historical rather
+      than live.
+    type: reference
+    ref: sales.obj.core.opportunity
+    data_type: ref
+    description: Set only at the boundary crossing. Its presence is what makes this lead historical
+      rather than live.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: Intent suspected, contact unresolved. Should be short-lived or the claim is not
+        real.
+    - name: identified
+      description: >
+        Contact resolved and at least one intent signal attached. This is where a lead actually
+        begins — everything before it is a Contact wearing a different label.
+    - name: contacted
+      description: First outbound sent, nothing back.
+      entered_when: [has_obs: followup_sent]
+    - name: engaged
+      description: Two-way. They replied and the ball came back.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: us}]
+    - name: qualified
+      description: Verdict pursue. Money, authority and a reason to act now are all at least
+        plausible.
+    - name: dormant
+      description: Silent past three times their own reply cadence. Intent has expired even if the
+        record has not.
+      entered_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline:
+              reply_cadence, mult: 3.0, floor: 21}}]
+    - name: disqualified
+      description: Verdict disqualified, with a reason recorded. A terminal state and a valuable one.
+    - name: converted
+      description: A purchase process now exists and the Opportunity owns it. The lead stops being
+        live and stays as attribution.
+  transitions:
+    - {from: unknown, to: identified}
+    - {from: identified, to: contacted, when: [has_obs: followup_sent]}
+    - {from: contacted, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: us}]}
+    - {from: engaged, to: qualified}
+    - {from: engaged, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {
+            baseline: reply_cadence, mult: 3.0, floor: 21}}]}
+    - {from: contacted, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {
+            baseline: reply_cadence, mult: 3.0, floor: 21}}]}
+    - {from: dormant, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: us}]}
+    - {from: qualified, to: converted}
+    - {from: identified, to: disqualified}
+    - {from: engaged, to: disqualified, when: [has_obs: closed_lost_mention]}
+    - {from: dormant, to: disqualified}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: attaches_to
+    target: sales.obj.core.contact
+    cardinality: one
+    description: Exactly one. A lead with no contact is a row, and a contact with three open leads is
+      a duplication problem, not a hot prospect.
+
+  - type: belongs_to
+    target: sales.obj.core.account
+    cardinality: zero_or_one
+    description: Zero while unresolved, which is a normal and temporary state.
+
+  - type: references
+    target: sales.obj.core.persona
+    cardinality: zero_or_one
+
+  - type: requires
+    target: sales.obj.core.icp
+    cardinality: one
+    description: Fit is meaningless without the standard it is measured against, so the reference is
+      required even when the score is not yet computed.
+
+  - type: references
+    target: sales.obj.core.buying_signal
+    cardinality: zero_or_many
+    description: The typed intent evidence. These are what make this object a Lead rather than a
+      Contact; with none of them attached, the record is misfiled.
+
+  - type: precedes
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_one
+    description: >
+      The conversion boundary. Crossing it should require a scoped need and an agreed next step
+      with someone who can buy. It is crossed on enthusiasm roughly as often as on evidence, and
+      that is where forecast inflation begins.
+
+  - type: produces
+    target: sales.obj.core.next_action
+    cardinality: zero_or_many
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: lead.asked_to_see_the_product
+      statement: "A demo request exists on this thread."
+      status: executable
+      when:
+        - {has_obs: demo_requested}
+      yields: {confidence_bp: 9000, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        The least ambiguous intent evidence a thread can carry, and the only pattern here that
+        promotes a Contact to a Lead on its own. Not higher than 9000 because competitors,
+        students and analysts all ask for demos and all look identical at this layer.
+
+    - id: lead.said_no_in_writing
+      statement: "A closed-lost mention on this thread — they have told us no."
+      status: executable
+      when:
+        - {has_obs: closed_lost_mention}
+      yields: {confidence_bp: 8000, attribute: qualification_verdict, value: disqualified}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Recording a no is worth as much as recording a yes and is done a tenth as often, because
+        nobody enjoys typing it. Without it the row survives every clean-up and is reworked at full
+        cost by whoever inherits the territory.
+
+    - id: lead.submitted_an_inbound_form
+      statement: "A form submission on our own site created this claim."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: source_channel, value: inbound_form}
+      requires_signals:
+        - {kind: obs_kind, name: form_submitted, owner_layer: L1, note: "Web and marketing-automation events\
+            are the single largest intent source in an inbound motion and none of them reach the graph. Today
+            an inbound lead has to announce itself twice — once on the form and again in email — before the
+            system notices it exists, and the SLA clock starts at the second one."}
+
+    - id: lead.visited_the_pricing_page
+      statement: "Repeat views of the pricing page from the account."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: intent_strength_bp, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: page_view_pricing, owner_layer: L1, note: "The highest-converting anonymous\
+            signal in B2B and completely invisible. It is also the most perishable, which makes the gap worse
+            than its conversion rate suggests."}
+
+    - id: lead.response_sla_breached
+      statement: "We did not respond within response_sla_minutes of first_touch_at."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: first_response_at, value: null}
+      requires_signals:
+        - {kind: fact_path, name: outbound.sent_at, owner_layer: L1, note: "The substrate records when THEY\
+            replied and never when WE did. So the most controllable lever on inbound conversion — measured
+            in minutes, not days — cannot be measured, let alone alerted on. This is the highest-value gap
+            on this object: it is trivially available from the mail connector's own send log."}
+
+    - id: lead.duplicate_of_an_open_lead
+      statement: "Another open lead already exists for this contact and account."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: disqualify_reason, value: duplicate}
+      requires_signals:
+        - {kind: derived, name: derived.contact_duplicate_cluster, owner_layer: L2, note: "Duplicates are\
+            the default state of any lead database with more than one source. Nothing clusters them, so two
+            reps run two cadences into one inbox and the buyer concludes we are disorganised before the first
+            call."}
+
+  heuristic:
+
+    - id: lead.asked_what_it_costs
+      statement: "Pricing was discussed on this thread."
+      status: executable
+      when:
+        - {has_obs: pricing_discussed}
+      yields: {confidence_bp: 8000, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        People with no intention of buying do not ask what it costs. Below demo_requested because
+        pricing also gets discussed for benchmarking and for building the business case for
+        somebody else's product.
+
+    - id: lead.price_objection_proves_the_money_exists
+      statement: "A price objection on the thread — they are haggling, which means they are buying."
+      status: executable
+      when:
+        - {has_obs: objection_price}
+      yields: {confidence_bp: 6500, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Reads exactly backwards to a naive reader, who logs a price objection as a negative. A
+        buyer with no money disengages; they do not negotiate. The objection is evidence a budget
+        exists and that we are being compared against something real.
+
+    - id: lead.budget_freeze_is_nurture_not_disqualify
+      statement: "A budget freeze on the thread — a timing fact, not a fit fact."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 7500, attribute: qualification_verdict, value: nurture}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Nurture, explicitly not disqualified. The same lead is the best one in the territory the
+        quarter the freeze lifts, and a freeze is one of the few events that tells you exactly when
+        to come back. Disqualifying on it destroys the only asset the freeze created.
+
+    - id: lead.a_colleague_is_already_evaluating
+      statement: "Someone else at this account asked for a demo — the account is in market even if this
+        person has not said so."
+      status: executable
+      when:
+        - {neighbor_has_obs: demo_requested}
+        - {no_obs: demo_requested}
+      yields: {confidence_bp: 6000, attribute: intent_strength_bp, value: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Account-level intent, which is where intent actually lives in B2B. The second condition
+        matters: without it this fires on the requester themselves and double-counts one act as two
+        leads at the same account, which is the failure mode that makes intent data distrusted.
+
+    - id: lead.past_champion_started_a_new_job
+      statement: "Someone who championed us elsewhere has moved to a new company."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: intent_strength_bp, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: contact_role_change, owner_layer: L1, note: "The highest-converting lead\
+            source in B2B by a wide margin — they already know the product and already argued for it once
+            — and nothing watches for it. Every won deal creates several of these and all of them are discarded
+            when the champion's address bounces."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: intent language in a live thread, path: thread.last_inbound}
+  - {source: email, signal: who owes the next message, path: thread.ball_in_court}
+  - {source: derived, signal: two-way interaction trajectory, path: derived.engagement}
+  - {source: website, signal: "form submissions, pricing-page views, trial starts", description: "The\
+      largest intent source in an inbound motion and entirely absent from the graph."}
+  - {source: crm, signal: "campaign membership, lead source, owner, prior disqualifications"}
+  - {source: calendar, signal: a booked first meeting — the strongest conversion evidence available}
+  - {source: slack, signal: internal referral chatter naming an inbound enquiry}
+  - {source: manual_entry, signal: "rep-captured verbatim need and compelling-event hint"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: intent_summary, type: list, description: "The observed acts, timestamped, in order. What the\
+      rep opens the call with.", consumed_by: [L4.reasoning_unit, L5.communication_planning]}
+  - {name: priority_rank, type: integer, description: "Intent by fit, kept as two axes rather than one\
+      average.", consumed_by: [L4.decision_maker]}
+  - {name: verdict, type: string, description: "pursue / nurture / disqualified. `pending` past its window\
+      is reported as a failure to decide.", consumed_by: [L4.decision_maker]}
+  - {name: routing_target, type: string, description: "Owner and territory.", consumed_by: [L5.execution_planning]}
+  - {name: sla_status, type: string, description: "Whether first response met the window. Currently unmeasurable\
+      — see the blocked pattern.", consumed_by: [L4.reasoning_unit]}
+  - {name: nurture_return_date, type: string, description: "When to come back, driven by the freeze or\
+      slip that caused the nurture.", consumed_by: [L5.execution_planning]}
+  - {name: conversion_evidence, type: list, description: "What justified crossing into an Opportunity.\
+      Audited later against the outcome.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: lead.intent_required, statement: "A Lead cannot exist with zero intent signals.", hard: true}
+  - {id: lead.process_required, statement: "Cannot convert to an Opportunity without a scoped need and\
+      an agreed next step with a named buyer.", hard: true}
+  - {id: lead.reason_required, statement: "Cannot be disqualified without disqualify_reason.", hard: true}
+  - {id: lead.one_owner, statement: "Exactly one owner_rep at a time.", hard: true}
+  - {id: lead.contact_rules_apply, statement: "Every Contact consent and do-not-contact constraint applies\
+      unchanged. Intent is not permission.", hard: true}
+  - {id: lead.pending_is_time_boxed, statement: "A verdict of pending past its window is escalated rather\
+      than left.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: lead.no_lead_without_intent
+    statement: >
+      A Contact with no intent evidence may not be created as a Lead. A list import is a contact
+      import. This is the rule the object exists to hold, and the one every quarterly pipeline
+      target quietly pressures a team into breaking.
+    then: reject_lead_creation
+    severity: blocking
+
+  - id: lead.no_conversion_without_a_process
+    statement: >
+      A Lead may not convert to an Opportunity until a scoped need and an agreed next step with a
+      named buyer both exist. Enthusiasm, a good meeting and a request for a proposal are none of
+      those things.
+    then: block_conversion
+    severity: blocking
+
+  - id: lead.disqualifier_beats_intent
+    statement: A lead matching any ICP disqualifier is disqualified regardless of intent strength. The
+      check runs before scoring, not after it.
+    then: force_disqualify
+    severity: blocking
+
+  - id: lead.disqualification_requires_a_reason
+    statement: A verdict of disqualified without disqualify_reason is rejected. The reason is the only
+      thing that stops the same lead being reworked at full cost next year.
+    then: reject_verdict
+    severity: blocking
+
+  - id: lead.stale_intent_is_not_intent
+    statement: >
+      Silence past three times the contact's own reply cadence, floored at twenty-one days, expires
+      the intent claim. The lead moves to dormant and stops counting as pipeline; it does not become
+      disqualified, because the person is still perfectly good and only the moment has passed.
+    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult:
+            3.0, floor: 21}}]
+    then: expire_intent_and_flag_dormant
+    severity: warning
+
+  - id: lead.one_open_lead_per_contact_and_account
+    statement: A second open lead against the same contact and account is a duplicate. Merge it before
+      either is worked, or two reps run two cadences at one inbox and the account is lost rather than
+      the deal.
+    severity: warning
+
+# ── 8 · Decision Factors — must sum to 10000 ─────────────────────────────────────────────
+decision_factors:
+
+  - name: intent_strength
+    weight_bp: 2500
+    direction: increases
+    description: The discriminating factor. Everything else here describes a Contact equally well.
+    reads: [intent_signals, intent_strength_bp, self_declared_need]
+
+  - name: intent_recency
+    weight_bp: 2000
+    direction: context
+    description: >
+      Context, not increases, because recency cuts both ways: fresh weak intent beats stale strong
+      intent, and neither is a deal. A six-week-old signal referenced in an opening line actively
+      damages the approach.
+    reads: [intent_recency_days, last_inbound_at, first_touch_at]
+
+  - name: icp_fit
+    weight_bp: 2000
+    direction: increases
+    description: Kept separate from intent on purpose. High intent with low fit is the most seductive
+      row in any queue and the one that costs a quarter.
+    reads: [fit_score_bp, icp_ref, account_ref]
+
+  - name: disqualifier_present
+    weight_bp: 1500
+    direction: decreases
+    reads: [disqualifiers]
+
+  - name: responsiveness
+    weight_bp: 1200
+    direction: increases
+    reads: [first_response_at, ball_in_court, engagement_trend, touch_count]
+
+  - name: source_quality
+    weight_bp: 800
+    direction: context
+    description: A strong prior with a wide range, and context rather than increases because a
+      referral into a disqualified account is still disqualified.
+    reads: [source_channel, referred_by]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# ANDed within a pattern. Express OR as two patterns.
+evidence:
+  - {source: calendar, strength_bp: 9000, description: "A booked first meeting. Someone gave up time,\
+      which is the only currency that cannot be faked."}
+  - {source: email, strength_bp: 8500, description: "Intent stated in their own words in a reply. What\
+      every executable pattern here runs on."}
+  - {source: website, strength_bp: 8000, description: "Form submission or repeat pricing-page views. Strong,\
+      perishable, and absent from the graph."}
+  - {source: meeting_transcript, strength_bp: 8000, description: "A need described unprompted, with a\
+      timeframe attached."}
+  - {source: crm, strength_bp: 6500, description: "Campaign membership and lead source. Reliable about\
+      provenance, silent about intent."}
+  - {source: slack, strength_bp: 5000, description: "Internal referral chatter. Fast and unstructured."}
+  - {source: manual_entry, strength_bp: 6000, description: "Rep-captured verbatim. High signal and systematically\
+      optimistic about timing."}
+  - {source: derived, strength_bp: 4500, description: "Inferred from engagement shape and account-level\
+      neighbours. Corroborating only."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: lead_to_opportunity_rate, unit: percent, description: "The honest funnel number. Rises when\
+      the intent bar is enforced, which is why it is unpopular.", owner_layer: L6}
+  - {name: time_to_first_response, unit: minutes, description: "Strongest controllable predictor of inbound\
+      conversion. Currently unmeasurable.", owner_layer: L2}
+  - {name: time_to_verdict, unit: days, description: "How long a lead sits in pending. A queue is a decision\
+      nobody made.", owner_layer: L6}
+  - {name: disqualification_rate, unit: percent, description: "Near zero means the object is not doing\
+      its job, whatever the dashboard says.", owner_layer: L6}
+  - {name: conversion_by_source, unit: percent, description: "The widest-variance comparison in the funnel\
+      and the first place to cut spend.", owner_layer: L6}
+  - {name: duplicate_rate, unit: percent, description: "Share of leads clustering to a contact that already\
+      had an open one.", owner_layer: L6}
+  - {name: false_conversion_rate, unit: percent, description: "Converted leads later lost with no purchase\
+      process ever found. Calibrates the conversion bar.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: lead.created, name: Lead Created, payload: [contact_ref, source_channel, intent_signals],
+      description: "Only valid with at least one intent signal in the payload. An empty list means a Contact
+      was mislabelled."}
+  - {id: lead.intent_observed, name: New Intent Signal, emitted_when: [has_obs: demo_requested],
+      payload: [intent_signals, intent_strength_bp]}
+  - {id: lead.responded_to, name: First Response Sent, payload: [first_touch_at, first_response_at],
+      description: "The event whose timing predicts inbound conversion better than anything else on this
+      object, and which nothing can currently emit."}
+  - {id: lead.intent_expired, name: Intent Expired, emitted_when: [{fn: days_since, path: thread.last_inbound,
+        op: ">=", value: {baseline: reply_cadence, mult: 3.0, floor: 21}}], payload: [
+        intent_recency_days, last_inbound_at]}
+  - {id: lead.disqualified, name: Lead Disqualified, emitted_when: [has_obs: closed_lost_mention],
+      payload: [disqualify_reason, intent_strength_bp, fit_score_bp]}
+  - {id: lead.converted, name: Lead Converted, payload: [converted_opportunity_ref, conversion_evidence],
+    description: "The boundary crossing. The payload is the audit trail that later tells you whether the
+      bar was real."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: lead.route, name: Route to an owner, actor: system, effect: "Immediately. An unowned inbound\
+      lead loses most of its conversion value inside the first hour."}
+  - {id: lead.respond, name: Send the first response, actor: agent, preconditions: [absent: thread.last_inbound],
+    effect: "Speed beats polish here by a margin that embarrasses most sequence design."}
+  - {id: lead.check_disqualifiers, name: Run the disqualifier check, actor: system, effect: "Before scoring,\
+      not after. Order is the whole point of the rule."}
+  - {id: lead.qualify, name: Reach a verdict, actor: human, effect: "Pursue, nurture or disqualify. Continuing\
+      by default is not a verdict."}
+  - {id: lead.nurture, name: Move to nurture with a return date, actor: human, effect: "A nurture with\
+      no date is a deletion with extra bookkeeping."}
+  - {id: lead.disqualify, name: Disqualify with a reason, actor: human, effect: "The cheapest action available\
+      and the least used."}
+  - {id: lead.convert, name: Convert to an Opportunity, actor: human, effect: "Requires a scoped need\
+      and an agreed next step with a named buyer."}
+  - {id: lead.merge_duplicate, name: Merge a duplicate lead, actor: human, effect: "Merge before working.\
+      Two cadences into one inbox costs the account, not the deal."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Downloaded a whitepaper, no reply to three emails", note: "Intent evidence exists and is\
+      weak and stale. A real lead, correctly ranked near the bottom — and the row most often re-scored upward
+      at quarter end."}
+  - {label: "Referred by a customer into a perfect-fit account, no stated need", note: "Excellent fit,\
+      zero intent. This is a Contact and a target, not a lead. Calling it a lead is the first boundary blurred."}
+  - {label: "Asked for pricing and pushed back on it twice", note: "Strong lead. The push-back is evidence\
+      of budget, not of its absence — the reading a mediocre seller gets exactly backwards."}
+  - {label: "Great discovery call, asked for a proposal, no other stakeholder named", note: "The classic\
+      misclassification: converted to an Opportunity on enthusiasm. No named buyer and no agreed process
+      means it is still a lead, and forecasting it is where the quarter goes wrong."}
+  - {label: "Champion from a won deal turns up at a new employer", note: "The highest-converting lead\
+      available and nothing watches for it. Today it surfaces only when their old address bounces, by which
+      point a competitor has usually already called."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Eleven patterns: five executable, six blocked. The blocked six share one shape — intent is
+    only visible once it is spoken in an email thread, so forms, pricing-page views and trial
+    starts never reach the graph. The single highest-value gap is outbound.sent_at: the substrate
+    records when the buyer replied and never when we did, so time-to-first-response — the strongest
+    controllable predictor of inbound conversion, measured in minutes — cannot be computed, alerted
+    on or learned from. It is available directly from the mail connector's own send log, which
+    makes it the cheapest high-value ask in this file.

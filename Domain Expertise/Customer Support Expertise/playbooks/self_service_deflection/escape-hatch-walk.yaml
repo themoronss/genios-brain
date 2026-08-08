@@ -1,0 +1,47 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.self_service_deflection.escape_hatch_walk
+  name: Escape hatch walk
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Have someone who did not build the flow attempt to reach a human from each self-service
+    surface, unaided, and record what they had to do.
+
+
+    Nobody sets out to hide the contact button; it disappears one reasonable optimisation at a time.
+    Walking it is the only test that survives everyone''s good intentions, and if the walk is hard the
+    deflection number is fiction regardless of how it is computed.'
+when_to_use:
+  situations:
+  - Any time the help center, in-product help or the contact form is redesigned.
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Have someone who did not build the flow attempt to reach a human from each self-service surface,
+    unaided, and record what they had to do.
+  actor: human
+  description: Nobody sets out to hide the contact button; it disappears one reasonable optimisation
+    at a time. Walking it is the only test that survives everyone's good intentions, and if the walk
+    is hard the deflection number is fiction regardless of how it is computed.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

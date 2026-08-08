@@ -1,0 +1,26 @@
+# Public Sector — vertical branch node under regulated.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.regulated.public_sector
+  name: Public Sector
+  kind: vertical
+  domain: admin
+  parent: admin.model.regulated
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Public money and public scrutiny. Procurement thresholds, publication duties and freedom of
+  information requests reshape purchasing and records administration.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

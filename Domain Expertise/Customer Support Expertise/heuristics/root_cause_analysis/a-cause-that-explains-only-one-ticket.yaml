@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.root_cause_analysis.a_cause_that_explains_only_one_ticket
+  name: A cause that explains only one ticket
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: If the cause explains this ticket but not the other tickets attached to the same issue,
+    it is a cause and not the cause.
+heuristic:
+  statement: If the cause explains this ticket but not the other tickets attached to the same issue,
+    it is a cause and not the cause.
+  why: Multiple contributing faults with a shared symptom are common, and declaring the first one found
+    closes the investigation on the rest. They then return as "the fix did not work", which costs more
+    credibility than the original fault.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

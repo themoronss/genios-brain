@@ -1,0 +1,37 @@
+identity:
+  id: sales.df.icp_definition.fit_scorecard
+  name: Weighted dimension scorecard — firmographic, technographic, behavioura…
+  kind: decision_framework
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Weighted dimension scorecard — firmographic, technographic, behavioural, need and economic\
+    \ blocks each scored and weighted into a single fit score, with a disqualifier match overriding\
+    \ the score outright rather than subtracting from it.\n The override is the part that matters. A\
+    \ subtractive model lets a strong score in four blocks outvote a hard blocker in the fifth, which\
+    \ is exactly the deal you m"
+criteria:
+- name: Weighted dimension scorecard — firmographic, technographic, behavioura…
+  description: 'The override is the part that matters. A subtractive model lets a strong score in four
+    blocks outvote a hard blocker in the fifth, which is exactly the deal you most need the instrument
+    to refuse.
+
+    '
+how_to_apply:
+- 'The override is the part that matters. A subtractive model lets a strong score in four blocks outvote
+  a hard blocker in the fifth, which is exactly the deal you most need the instrument to refuse.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

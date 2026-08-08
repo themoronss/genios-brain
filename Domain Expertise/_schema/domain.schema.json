@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/domain.schema.json",
+  "title": "Expert Brain Domain root",
+  "description": "One per <X> Expertise/ folder. Declares the subdomain spine, the id scheme validate.py enforces, and the glossary. Holds no expertise itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "description", "question", "subdomains", "id_scheme", "metadata"],
+
+  "properties": {
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "name": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "enum": ["draft", "review", "stable", "deprecated"] }
+      }
+    },
+
+    "description": { "type": "string", "minLength": 20 },
+    "question": { "type": "string", "minLength": 10 },
+
+    "subdomains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "dir", "name", "question", "capabilities"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "dir": { "type": "string", "pattern": "^\\d{2}-[a-z0-9-]+$", "description": "Folder name. Numbered so the lifecycle reads in order on disk." },
+          "name": { "type": "string" },
+          "question": { "type": "string" },
+          "capabilities": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z0-9_]+$" } },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "id_scheme": { "type": "object", "additionalProperties": { "type": "string" } },
+
+    "artifact_kinds": {
+      "type": "object",
+      "description": "The five Atlas knowledge types that are not objects, plus terminology: their folder and id prefix. Documentation for authors; the authoritative mapping lives in vocabulary.yaml closed.artifact_kinds and is what validate.py enforces.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dir": { "type": "string" },
+          "prefix": { "type": ["string", "null"] },
+          "holds": { "type": "string" }
+        }
+      }
+    },
+
+    "core_artifacts": {
+      "type": "object",
+      "description": "The shared knowledge-artifact roster, grouped by kind. Pinned before authoring so a capability's knowledge.yaml can reference MEDDICC on the day MEDDICC does not exist yet — unauthored entries are tracked through planned_objects rather than reading as dead links.",
+      "additionalProperties": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9_]+$" } }
+    },
+
+    "core_objects": {
+      "type": "object",
+      "description": "The shared library roster, grouped for readability. Every name here must exist as objects/core/<name>.yaml and be loaded by at least two capabilities — validate.py checks both.",
+      "additionalProperties": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9_]+$" } }
+    },
+
+    "planned_objects": {
+      "type": "array",
+      "description": "Object AND artifact ids that are known to be coming but are not authored yet. A reference to one of these is a WARNING; a reference to an id that appears nowhere is an ERROR.\n\nThis is what lets real expertise be authored before the whole library exists. Without it every honest forward reference — 'Decision Maker approves Proposal', 'this capability applies MEDDICC' — becomes a dead link, and a validator that cries wolf three hundred times is a validator nobody runs.\n\nRegenerate with _tools/plan.py; seed it by hand when you are pinning a roster the authoring pass will fill.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+\\.(obj|pb|heu|mm|rule|df)\\.[a-z0-9_]+\\.[a-z0-9_]+$" },
+          "scope": { "type": "string", "description": "core, or the capability leaf it is scoped to." },
+          "referenced_by": { "type": "integer", "minimum": 0, "description": "How many files already point at it. High counts are the objects to author first." },
+          "name": { "type": "string" },
+          "phase": { "type": "string" }
+        }
+      }
+    },
+
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "means"],
+        "properties": {
+          "term": { "type": "string" },
+          "means": { "type": "string" }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "last_updated", "review_status"],
+      "properties": {
+        "owner": { "type": "string" },
+        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
+        "reviewed_by": { "type": "string" },
+        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
+        "confidence": { "enum": ["experimental", "provisional", "stable"] },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

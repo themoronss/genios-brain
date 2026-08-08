@@ -1,0 +1,98 @@
+# Edtech support — vertical branch under customer_support.model.b2b.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2b.edtech
+  name: Edtech Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2b
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting schools, districts and universities. The academic calendar is not a seasonality
+  adjustment here; it is the structure of the whole operation.
+  Volume arrives as cliffs, not curves. Term start, rostering rollover and exam windows produce
+  multiples of baseline inside days, and the quiet months in between are genuinely quiet. A
+  staffing model built on the annual average is simultaneously overstaffed for eight months and
+  catastrophically short for the two weeks that decide whether the institution renews. Worse,
+  the surge is composed of the same twenty questions asked by ten thousand people who have never
+  used the product before, which means the knowledge base and the macro library have to be
+  rebuilt in August for a population that will never read a release note.
+  The requester is not the affected user and has no latitude. A teacher with a class in front of
+  them or an IT coordinator covering six schools cannot experiment, cannot wait for a callback,
+  and cannot be asked to reproduce anything during a lesson. The affected user is a student, and
+  in the K-12 case may not lawfully be contacted by us at all.
+  The stakes are calendar-shaped too. A bad September is a lost renewal in a way that an
+  identical bad March is not, because the buying decision is made once a year and remembered from
+  the worst week of it.
+  The error carried in from SaaS is annualising. The error carried in from consumer support is
+  assuming the surge can be absorbed by hiring — the ramp time for an agent who can answer
+  rostering questions is longer than the surge itself, so the only real lever is what the
+  institution can answer without us.
+
+characteristics:
+  requester: "a teacher, school IT coordinator or university administrator; rarely technical, never free, and usually contacting us during the lesson the problem is breaking"
+  typical_resolution_hours: 10
+  volume_shape: "extreme calendar cliffs — term start, rostering rollover and exam windows run at several times baseline, with near-zero demand across holidays"
+  staffing_model: "small permanent core with seasonal surge capacity and a rostering/integration specialist pod that cannot be surged"
+  coverage: "term-time extended hours aligned to the school day, reduced out of term, on-call through go-live and exam windows"
+  automation_level: "high by necessity at peak — the surge is repetitive and first-time, so self-service and macros carry it or nothing does"
+  notes: >
+    The two functions that cannot be surged are rostering/SSO integration and anything touching
+    student data. Planning capacity as one pool hides that, and it is the specialist pod that
+    breaks first every September.
+
+capabilities:
+  emphasises:
+    # The cliff is on a calendar known a year ahead. Missing it is a planning failure.
+    - customer_support.support_operations.capacity_planning
+    - customer_support.support_operations.workload_balancing
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    # At peak, only what never reaches a human is survivable — and the content has to be rewritten
+    # each year for a cohort that has never seen the product.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.knowledge_and_deflection.macro_management
+    # Telling a teacher mid-lesson what will and will not happen, honestly, in one message.
+    - customer_support.customer_communication.expectation_setting
+
+objects:
+  extends:
+    - object: customer_support.obj.core.requester
+      require_properties: [is_affected_user, working_hours]
+      note: >
+        The gap between requester and affected user is wider here than anywhere else in B2B and
+        it is legally significant: the requester is staff, the affected user is frequently a
+        child, and the resolution path may not involve contacting them at all. Working hours
+        matter because a reply sent at 4pm to a teacher reaches them the following morning, so
+        the real response window is shorter than the clock suggests.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [audience, last_verified_at]
+      note: >
+        Audience separates the teacher-facing article from the IT-coordinator-facing one, which
+        in this vertical are different documents about the same feature and are not
+        interchangeable. Verification dates matter because content written for last September's
+        rollover is silently wrong for this one and nobody discovers it until the cliff.
+    - object: customer_support.obj.core.ticket
+      require_properties: [product_area_ref, intent_ref]
+      note: >
+        Intent is what makes the surge tractable. A September queue is a small number of intents
+        repeated thousands of times, and classifying at intake is what allows one good answer to
+        be reused rather than ten thousand individually typed ones.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Child-data and safeguarding obligations vary by country and by age group, so no specific
+    regime is named. The portable structural fact is that the affected user may be someone we
+    are not permitted to contact, which breaks the ordinary support loop of going direct.

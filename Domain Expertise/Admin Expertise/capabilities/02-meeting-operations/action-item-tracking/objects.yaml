@@ -1,0 +1,24 @@
+# Load-set for admin.meeting_operations.action_item_tracking — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/action-item-tracking/  loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.meeting_operations.action_item_tracking
+
+core:
+  required:
+    - admin.obj.core.action_item
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.escalation
+    - admin.obj.core.meeting
+
+scoped:
+  required: []
+  optional: []

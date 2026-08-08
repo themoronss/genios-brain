@@ -1,0 +1,39 @@
+# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
+# shape a promoted capability takes.
+
+identity:
+  id: customer_support.support_management.performance_management
+  name: Performance Management
+  domain: customer_support
+  subdomain: support_management
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Judging whether an agent is meeting the standard, with consequences attached. It is the only
+  capability in this subdomain where the answer goes on a record, and that fact governs how every
+  input to it must be treated: any measure used here will be optimised, so the measure has to be
+  one that is harmless when gamed. Throughput and handle time fail that test immediately — both
+  improve when an agent closes tickets that were not finished. The defensible version compares an
+  agent against the queue they actually worked rather than against the team, because queue mix
+  explains more variance in every support metric than individual skill does.
+
+question: "Is this agent meeting the standard, measured against the work they were actually given?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
+    hardest thing to get right, and the thing worth writing down first, is the relationship with
+    quality_assurance: QA scores exist to teach, and the moment they are admissible as evidence
+    here, honest self-reporting stops and the sample stops describing the work. Some organisations
+    accept that trade deliberately; the file should say which trade is being made rather than
+    leave it implicit. Second is the volume-versus-quality trap — every metric that rewards
+    closing tickets rewards closing them prematurely, and reopen rate is the only cheap correction.

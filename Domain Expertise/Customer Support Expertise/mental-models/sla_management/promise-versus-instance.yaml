@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.sla_management.promise_versus_instance
+  name: Promise versus instance
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Entitlement is the promise; an SLA target is that promise instantiated on one ticket.
+    The first is a clause, the second is a timestamp.
+
+
+    Collapsing them is the most common modelling error in ticketing software. It makes it impossible
+    to express a ticket whose clock is wrong because the entitlement lookup was wrong, which is one
+    of the most common ways an SLA goes bad.'
+dimensions:
+- name: Promise versus instance
+  asks: Entitlement is the promise; an SLA target is that promise instantiated on one ticket. The first
+    is a clause, the second is a timestamp.
+how_to_apply:
+- Entitlement is the promise; an SLA target is that promise instantiated on one ticket. The first is
+  a clause, the second is a timestamp.
+- Collapsing them is the most common modelling error in ticketing software. It makes it impossible to
+  express a ticket whose clock is wrong because the entitlement lookup was wrong, which is one of the
+  most common ways an SLA goes bad.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

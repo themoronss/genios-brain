@@ -1,0 +1,26 @@
+# Legal & Professional Services — vertical branch node under regulated.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.regulated.legal_professional
+  name: Legal & Professional Services
+  kind: vertical
+  domain: admin
+  parent: admin.model.regulated
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Client confidentiality, conflict checks and matter-based filing. Records are organised by
+  engagement rather than by department.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

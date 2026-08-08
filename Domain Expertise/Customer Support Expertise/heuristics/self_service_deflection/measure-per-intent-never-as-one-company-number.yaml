@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.self_service_deflection.measure_per_intent_never_as_one_company_number
+  name: Measure per intent never as one company number
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Measure per intent, never as one company number.
+heuristic:
+  statement: Measure per intent, never as one company number.
+  why: A blended rate moves with question mix for reasons unrelated to knowledge quality. Password resets
+    deflect well and always did; a billing dispute never will. Per-intent is the only granularity at
+    which the number is actionable and the only one at which gaming is visible.
+  reads:
+  - customer_support.obj.core.intent
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,38 @@
+identity:
+  id: sales.mm.icp_definition.fit_is_a_joint_property
+  name: Fit is a property of the pairing, not of the account. Half the profile…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Fit is a property of the pairing, not of the account. Half the profile is a statement\
+    \ about us.\n Change the price, the packaging or the implementation model and accounts move across\
+    \ the boundary without changing at all. A profile that has not been revisited since the last pricing\
+    \ change is stale by construction, and nobody thinks to revisit it because nothing about the market\
+    \ moved.\n"
+dimensions:
+- name: Fit is a property of the pairing, not of the account. Half the profile…
+  asks: 'Change the price, the packaging or the implementation model and accounts move across the boundary
+    without changing at all. A profile that has not been revisited since the last pricing change is
+    stale by construction, and nobody thinks to revisit it because nothing about the market moved.
+
+    '
+how_to_apply:
+- 'Change the price, the packaging or the implementation model and accounts move across the boundary
+  without changing at all. A profile that has not been revisited since the last pricing change is stale
+  by construction, and nobody thinks to revisit it because nothing about the market moved.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

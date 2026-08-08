@@ -1,0 +1,25 @@
+# Load-set for customer_support.voice_of_customer.sentiment_analysis
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.voice_of_customer.sentiment_analysis
+
+core:
+  # conversation is required rather than ticket because tone lives in the message thread, not
+  # in the work item — a ticket can be reassigned, merged and closed without a single word of
+  # the customer's changing. customer_sentiment is the object being produced.
+  required:
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.conversation
+
+  # ticket supplies the circumstances that make a tone reading interpretable (how long, how many
+  # reopens); requester supplies the per-writer baseline without which "negative" is a judgement
+  # about someone's prose style; churn_risk is downstream but loaded here so a tone shift can be
+  # read against a risk already on file rather than in isolation.
+  optional:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.churn_risk
+
+scoped:
+  required: []
+  optional: []

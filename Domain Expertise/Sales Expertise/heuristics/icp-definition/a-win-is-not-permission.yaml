@@ -1,0 +1,37 @@
+identity:
+  id: sales.heu.icp_definition.a_win_is_not_permission
+  name: An out-of-profile win is evidence about the profile, not permission to…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "An out-of-profile win is evidence about the profile, not permission to widen it.\n One\
+    \ win is noise and the person who closed it has every incentive to read it as a trend. A repeated\
+    \ cluster of unexpected wins is a candidate segment, and a candidate segment gets validated on retention\
+    \ like any other — it does not get appended to the existing profile, because appending is how a\
+    \ classifier is turned "
+heuristic:
+  statement: 'An out-of-profile win is evidence about the profile, not permission to widen it.
+
+    '
+  why: 'One win is noise and the person who closed it has every incentive to read it as a trend. A repeated
+    cluster of unexpected wins is a candidate segment, and a candidate segment gets validated on retention
+    like any other — it does not get appended to the existing profile, because appending is how a classifier
+    is turned into a list of everyone.
+
+    '
+  reads:
+  - sales.obj.core.icp
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

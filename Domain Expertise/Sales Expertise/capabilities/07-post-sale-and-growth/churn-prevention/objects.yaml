@@ -1,0 +1,24 @@
+# Load-set for sales.post_sale_and_growth.churn_prevention — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/churn-prevention/       loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.post_sale_and_growth.churn_prevention
+
+core:
+  required:
+    - sales.obj.core.account
+    - sales.obj.core.risk
+  optional:
+    - sales.obj.core.champion
+    - sales.obj.core.stakeholder
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

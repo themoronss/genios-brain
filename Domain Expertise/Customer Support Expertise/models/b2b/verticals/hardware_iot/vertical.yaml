@@ -1,0 +1,103 @@
+# Hardware / IoT support — vertical branch under customer_support.model.b2b.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2b.hardware_iot
+  name: Hardware & IoT Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2b
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting deployed physical devices — instruments, terminals, sensors, connected equipment.
+  The structural break from every software vertical is that resolution requires atoms to move.
+  Diagnosis may finish in twenty minutes and resolution still takes nine days, because a part
+  has to exist in a depot, clear customs and be fitted by someone who can travel there. Time to
+  resolve is therefore bounded by logistics rather than by expertise, and an operator who
+  optimises agent handling time in this vertical is polishing the fast part.
+  A workaround is not free. In software, offering a workaround costs a sentence; here it is
+  frequently an advance replacement, which consumes a unit of inventory, ships before the faulty
+  one comes back, and cannot be un-sent when the fault turns out to be the customer's power
+  supply. The entitlement check that gates it is serial-number-based — warranty attaches to the
+  unit, not to the account — so a customer with an excellent contract can still own an
+  out-of-warranty device, and a customer with no contract can own a device still covered.
+  Telemetry inverts the intake direction for part of the queue. We frequently know a device is
+  failing before its owner does, which makes proactive contact possible; the same telemetry goes
+  silent exactly when the device dies, so absence of signal is the most important signal and the
+  easiest one to miss.
+  The error carried in from SaaS is promising a fix on a release cadence. Firmware goes out in
+  staged waves to fleets that cannot all be rebooted, some of which are on a boat, and rollback
+  in the field is often not available at all.
+
+characteristics:
+  requester: "a site engineer, facilities manager or field technician standing next to the broken thing, frequently without network access from where they are standing"
+  typical_resolution_hours: 96
+  volume_shape: "steady baseline driven by installed-base size, with cohort spikes after firmware waves and after a manufacturing batch defect surfaces"
+  staffing_model: "tiered remote diagnosis feeding a dispatch and depot function, with field engineers scheduled against parts availability"
+  coverage: "business hours remote, contracted on-site response windows for covered units, on-call for safety-relevant faults"
+  automation_level: "moderate on diagnosis via telemetry, near zero on resolution — nothing automates a courier"
+  notes: >
+    typical_resolution_hours is deliberately four days. Anything shorter describes time to
+    diagnosis, which is the number this vertical is most often reported with and the number that
+    misleads the most.
+
+capabilities:
+  emphasises:
+    # Warranty is per-unit and expires on its own schedule. Assuming account-level cover is the
+    # most expensive assumption in this vertical.
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # The workaround has a bill of materials.
+    - customer_support.diagnosis_and_resolution.workaround_management
+    # Every dispatch is a dated promise to a human who will be waiting on site.
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.customer_communication.expectation_setting
+    # On-site windows and parts logistics are a coverage problem before they are a staffing one.
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    - customer_support.support_operations.capacity_planning
+    # Cost to serve is real money here — a truck roll and a replaced unit, not agent minutes.
+    - customer_support.support_operations.cost_to_serve
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [expires_at, coverage_hours, entitled_channels]
+      note: >
+        Cover here is a property of the device, and the object has to be resolvable from a serial
+        number rather than from the account on the ticket. Every hardware support organisation
+        has shipped a free replacement for a unit whose warranty ended two years ago because the
+        parent account was in good standing, and every one of them has then had to explain it.
+    - object: customer_support.obj.core.ticket
+      require_properties: [resolution_type, commitment_ref]
+      note: >
+        Resolution type has to distinguish repair, advance replacement, RMA-return and
+        configuration, because the four have different cost, different reversibility and
+        different follow-up obligations. The commitment reference is mandatory because a dispatch
+        date is a promise a person will physically wait for, and an unmet one is not recoverable
+        with an apology email.
+    - object: customer_support.obj.core.sla_target
+      require_properties: [target_type, calendar_type, exclusions]
+      note: >
+        On-site response clocks run on business calendars with regional holidays and travel
+        exclusions that no software SLA carries. A four-hour on-site target quoted without the
+        calendar attached will be read by the customer as four hours from now, and they will be
+        wrong in a way that is entirely our fault.
+    - object: customer_support.obj.core.incident
+      require_properties: [affected_account_count, detection_source]
+      note: >
+        Detection source matters because a batch defect is usually found by correlating telemetry
+        across unrelated customers, not by a report. Recording that an incident was found by us
+        rather than by a customer is what tells you whether proactive monitoring is earning its
+        keep.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional

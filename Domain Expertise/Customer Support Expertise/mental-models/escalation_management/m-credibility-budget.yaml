@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.escalation_and_incident.escalation_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.escalation_management.m_credibility_budget
+  name: M credibility budget
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'An agent''s escalations draw on a finite credibility balance with the receiving team.
+    Spend it on things that did not need it and the balance is empty on the day it matters.
+
+
+    It explains why blanket "escalate whenever unsure" guidance fails in practice. The cost of an unnecessary
+    escalation is not the receiver''s time; it is the discount applied to that agent''s next one, which
+    is paid by a future customer.'
+dimensions:
+- name: M credibility budget
+  asks: An agent's escalations draw on a finite credibility balance with the receiving team. Spend it
+    on things that did not need it and the balance is empty on the day it matters.
+how_to_apply:
+- An agent's escalations draw on a finite credibility balance with the receiving team. Spend it on things
+  that did not need it and the balance is empty on the day it matters.
+- It explains why blanket "escalate whenever unsure" guidance fails in practice. The cost of an unnecessary
+  escalation is not the receiver's time; it is the discount applied to that agent's next one, which
+  is paid by a future customer.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

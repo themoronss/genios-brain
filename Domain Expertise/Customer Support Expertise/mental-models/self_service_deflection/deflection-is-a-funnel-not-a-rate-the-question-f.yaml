@@ -1,0 +1,45 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.self_service_deflection.deflection_is_a_funnel_not_a_rate_the_question_f
+  name: Deflection is a funnel not a rate the question f
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Deflection is a funnel, not a rate: the question forms, the surface is reached, an answer
+    is found, the problem stops, the customer agrees it stopped. Every published deflection number silently
+    picks one of those arrows and calls it the whole thing.
+
+
+    Naming the arrow you measured is what makes two teams'' numbers comparable, and is what makes it
+    obvious that "did not file a ticket" is the weakest arrow in the chain.'
+dimensions:
+- name: Deflection is a funnel not a rate the question f
+  asks: 'Deflection is a funnel, not a rate: the question forms, the surface is reached, an answer is
+    found, the problem stops, the customer agrees it stopped. Every published deflection number silently
+    picks one of those arrows and calls it the whole thing.'
+how_to_apply:
+- 'Deflection is a funnel, not a rate: the question forms, the surface is reached, an answer is found,
+  the problem stops, the customer agrees it stopped. Every published deflection number silently picks
+  one of those arrows and calls it the whole thing.'
+- Naming the arrow you measured is what makes two teams' numbers comparable, and is what makes it obvious
+  that "did not file a ticket" is the weakest arrow in the chain.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

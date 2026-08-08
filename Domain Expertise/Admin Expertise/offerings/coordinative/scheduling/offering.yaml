@@ -1,0 +1,25 @@
+# Scheduling — offering_type branch node under coordinative.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.coordinative.scheduling
+  name: Scheduling
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.coordinative
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Time as the scarce resource. Constraint satisfaction across calendars, seniority and time
+  zones.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

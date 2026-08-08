@@ -1,0 +1,27 @@
+# Load-set for customer_support.diagnosis_and_resolution.resolution_delivery
+# REFERENCES ONLY — never an inline object.
+
+capability: customer_support.diagnosis_and_resolution.resolution_delivery
+
+core:
+  # Two required, and issue is deliberately not among them. Delivery is an act performed on a
+  # ticket: plenty of real resolutions — an entitlement corrected, a misunderstanding cleared,
+  # a refund — never had an issue behind them, and requiring one would block the capability on
+  # the cases where it runs most smoothly.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.resolution
+  # knowledge_article both feeds delivery and is fed by it. workaround is here because shipping
+  # one IS a delivery and must be labelled as such to the customer. commitment covers the
+  # deferred cases — fixed in a release they have not taken yet. sla_target because the clock
+  # usually stops on this act, and whether it should have is a question worth asking here rather
+  # than in the breach review.
+  optional:
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.workaround
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.sla_target
+
+scoped:
+  required: []
+  optional: []

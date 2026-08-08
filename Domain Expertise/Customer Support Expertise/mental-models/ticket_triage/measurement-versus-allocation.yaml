@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.ticket_triage.measurement_versus_allocation
+  name: Measurement versus allocation
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Severity is a measurement. Priority is an allocation.
+
+
+    Measurements are compared against the world and can be wrong. Allocations are compared against everything
+    else in the queue and can only be better or worse. They obey different rules for revision, review
+    and audit, which is why merging them into one field destroys both.'
+dimensions:
+- name: Measurement versus allocation
+  asks: Severity is a measurement. Priority is an allocation.
+how_to_apply:
+- Severity is a measurement. Priority is an allocation.
+- Measurements are compared against the world and can be wrong. Allocations are compared against everything
+  else in the queue and can only be better or worse. They obey different rules for revision, review
+  and audit, which is why merging them into one field destroys both.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

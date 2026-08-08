@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.quality_assurance.framework_separation_of_instruments
+  name: Framework separation of instruments
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Separation of instruments — QA for coaching, satisfaction for outcome, performance management
+    standing on its own independently gathered evidence.
+
+
+    Each instrument is only trustworthy while it is not being asked to do another one''s job. This framework
+    is the operational form of the whole capability''s central claim, and it is the one most often abandoned
+    under pressure from a manager who wants a number today.'
+criteria:
+- name: Framework separation of instruments
+  description: Separation of instruments — QA for coaching, satisfaction for outcome, performance management
+    standing on its own independently gathered evidence.
+how_to_apply:
+- Separation of instruments — QA for coaching, satisfaction for outcome, performance management standing
+  on its own independently gathered evidence.
+- Each instrument is only trustworthy while it is not being asked to do another one's job. This framework
+  is the operational form of the whole capability's central claim, and it is the one most often abandoned
+  under pressure from a manager who wants a number today.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

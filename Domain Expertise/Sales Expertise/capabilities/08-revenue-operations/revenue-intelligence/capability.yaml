@@ -1,0 +1,27 @@
+identity:
+  id: sales.revenue_operations.revenue_intelligence
+  name: Revenue Intelligence
+  domain: sales
+  subdomain: revenue_operations
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Deriving patterns from activity, conversation and outcome data across the whole pipeline —
+  the cross-deal view no individual rep can hold.
+
+question: "What is the data telling us that nobody has noticed?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

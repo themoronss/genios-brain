@@ -1,0 +1,32 @@
+# Load-set for customer_support.support_management.account_relationship_management —
+# REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_management.account_relationship_management
+
+core:
+  # The only capability in the domain whose subject is an account over time rather than a ticket
+  # in front of you, so the required pair is the account and the humans in it. Note that `ticket`
+  # is NOT required here and that is deliberate — a relationship view assembled from the open
+  # tickets is exactly the view this capability exists to replace.
+  required:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.named_contact
+  # churn_risk is the reading this capability most often produces; entitlement bounds what may be
+  # offered to repair a relationship; escalation is the history that was resolved technically and
+  # may never have been repaired socially; satisfaction_score and ticket are the raw trace.
+  optional:
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.ticket
+
+scoped:
+  required: []
+  optional: []

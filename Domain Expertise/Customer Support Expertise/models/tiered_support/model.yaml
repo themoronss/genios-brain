@@ -1,0 +1,199 @@
+# Tiered Support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+#
+# This is an OPERATING-STRUCTURE branch, not a segment. It describes how the work is arranged,
+# and it composes with a segment branch (enterprise, mid-market, SMB, B2C). It is the direct
+# structural opposite of swarming_support, and the two files should be read against each other.
+
+identity:
+  id: customer_support.model.tiered_support
+  name: Tiered Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  L1 generalists, L2 product specialists, L3 engineering-adjacent, and a written criterion for
+  crossing each boundary. What the structure buys is specialisation and, above everything else,
+  a shield: L3 is the scarcest capacity in the company and the ladder exists so that volume
+  never reaches it. That benefit is real and it is fragile — the moment L1 is under-skilled the
+  shield leaks upward, and the org is left carrying every cost of the model with none of the
+  protection it was built for.
+  .
+  What it pays is handoffs. Each tier is its own queue with its own backlog and its own arrival
+  order, so a ticket "escalated to our specialists" frequently joins the back of a slower line:
+  the customer was told it sped up at the exact moment it slowed down. The SLA clock does not
+  restart at a tier boundary but the queue position does, and tier queues sorted by their own
+  arrival time rather than by time remaining are the most common structural cause of breach in
+  this model. The customer pays in repetition — they re-describe the problem to each new
+  stranger — and it is characteristically the second handoff, not the elapsed hours, where their
+  patience ends.
+  .
+  The permanent management problem is the L1 metric, and it does not have a clean answer.
+  Measure L1 on resolution rate and they hoard tickets they cannot solve, because escalating
+  counts against them. Measure them on speed or on volume cleared and they escalate prematurely
+  to clear their board. Both failures saturate L2, both are invisible in an org-level dashboard
+  that only shows aggregate resolution time, and every tiered org oscillates between them. The
+  only stable L1 target is correct disposition — did this ticket end up in the right place, at
+  the right time, with the right context — which is a quality judgement and therefore expensive
+  to measure, which is why so few orgs do it.
+  .
+  Worth knowing before switching a branch: this is the structure commercial contracts were
+  written against. "Escalated to tier two within two hours" has a referent here and none in a
+  flat or swarming org, so a tiered org can satisfy clauses its swarming successor structurally
+  cannot.
+  .
+  What an operator carries over wrongly from a pooled or swarming team: that whoever answers can
+  finish it, and can therefore promise. In a tiered org the first responder frequently does not
+  yet know whether the answer is theirs, and a commitment made at L1 is delivered — or missed —
+  by an L3 who never saw it being made. The second carry-over error is treating the assignee as
+  the relationship owner. After two transfers the ticket has an owner and the customer does not,
+  which is precisely when they start chasing, and the chase arrives at L1 who can no longer
+  answer it.
+
+characteristics:
+  requester: "unchanged by the model — tiering describes who answers, and the customer's only direct experience of it is being passed on"
+  typical_resolution_hours: 18
+  volume_shape: "moderate to high volume with a long difficulty tail; the tail is the entire reason the ladder exists and the middle is where it costs"
+  staffing_model: "L1 generalists, L2 product specialists, L3 engineering-adjacent, with a written skill-boundary criterion between each level"
+  coverage: "wide at L1, thin and business-hours at L2 and L3 — the ladder narrows exactly as it deepens, so an out-of-hours L3 problem waits regardless of severity"
+  automation_level: "moderate; deflection and macros sit at and in front of L1, and their real job is protecting L2 capacity rather than saving L1 time"
+  primary_channels: [ticket_portal, email, phone, chat]
+  notes: >
+    Tier boundaries must be written as SKILL boundaries, never as effort boundaries. "L1 tries
+    for fifteen minutes and then escalates" is the single most common way the criterion is
+    written and it produces a permanent queue of half-diagnosed tickets at L2 — the timer
+    guarantees the handoff happens at whatever point the diagnosis had reached, which is
+    unrelated to whether anything useful was established. The correct criterion names what L1 is
+    equipped to conclude, and the corollary is that changing L1's training changes the boundary.
+
+capabilities:
+
+  # Nominal in most orgs, structural here. L1 skill level is the model's single point of failure
+  # — it decides whether the shield holds — so coaching is capacity planning by another name and
+  # not a development programme. capacity_planning is activated because tier capacity has wildly
+  # different lead times: an L1 can be hired and productive in a month, an L3 in six, and a
+  # tiered org that plans headcount in aggregate discovers the difference during the quarter it
+  # most needed L3.
+  activates:
+    - customer_support.support_management.agent_coaching
+    - customer_support.support_operations.capacity_planning
+
+  # Nothing. The tempting deletion is de_escalation at L1 — "angry customers go up the ladder" —
+  # and it is wrong in a way that quietly destroys the model. L1 receives the anger first and by
+  # definition; an org that routes every unhappy customer upward has converted a skill ladder
+  # into a mood ladder and will saturate L2 with tickets that had no technical difficulty at
+  # all, while the customers who are merely stuck wait behind them.
+  deactivates: []
+
+  emphasises:
+    # The boundary decisions are the model. Everything else is ordinary support.
+    - customer_support.intake_and_triage.routing_and_assignment
+    - customer_support.escalation_and_incident.escalation_management
+    - customer_support.escalation_and_incident.engineering_handoff
+    # Whoever answers first sets an expectation someone else will have to meet.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.customer_communication.proactive_status_updates
+    - customer_support.entitlement_and_sla.commitment_tracking
+    # The only mechanism by which a tiered org avoids growing senior headcount in proportion to
+    # volume: yesterday's L2 answer becomes today's L1 procedure. Without it the ladder is a
+    # cost structure with no learning curve attached.
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.knowledge_and_deflection.macro_management
+    # Handoff quality is not visible in queue data and has to be sampled deliberately.
+    - customer_support.support_management.quality_assurance
+    - customer_support.support_management.ticket_review
+    - customer_support.support_operations.workload_balancing
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [assignee_ref, queue_ref, team, assignment_count, is_escalated]
+      note: >
+        `assignment_count` is this model's own diagnostic and it is not a workflow statistic: it
+        is the number of times the customer has been re-introduced to a stranger. One is the
+        design. Two is where satisfaction characteristically falls away. A ticket sitting at four
+        has a handoff problem rather than a difficulty problem, and reading it as a hard ticket
+        sends it to a fifth person. `team` and `queue_ref` are both required because the tier
+        that owns the queue and the team currently holding the work diverge during a transfer,
+        and that divergence window is where tickets go missing.
+    - object: customer_support.obj.core.escalation
+      require_properties: [direction, level, receiving_owner_ref, context_handed_over,
+                           handoff_note, diagnosis_repeats]
+      note: >
+        `direction` is the field that separates the two things the word "escalation" means in a
+        tiered org: up a tier, which is a skill transfer and a routine event, and up a
+        management line, which is a relationship event and is not routine at all. They arrive
+        through the same word, land in the same field in most tooling, and want opposite
+        responses — one needs an engineer, the other needs an apology and an owner.
+        `diagnosis_repeats` is the customer-side cost made countable: it records how many times
+        the same question has been asked of them, which is the number they will quote when they
+        finally complain.
+    - object: customer_support.obj.core.sla_target
+      require_properties: [clock_state, elapsed_minutes, remaining_minutes]
+      note: >
+        The clock belongs to the ticket and the backlog belongs to the tier, and nothing in the
+        default tooling reconciles the two. A ticket entering L2 carries a clock that is already
+        two-thirds spent and takes a queue position that knows nothing about it. Sorting each
+        tier's queue by remaining time rather than by arrival into that tier is the one change
+        that removes most breaches in this model, and it is unpopular at L2 because it makes
+        their queue order look arbitrary from the inside.
+    - object: customer_support.obj.core.commitment
+      require_properties: [due_at, action]
+      note: >
+        The promise is made at the tier that cannot keep it. L1 says "an engineer will come back
+        to you today" because that is what the customer needs to hear, and the delivery belongs
+        to someone who never saw the sentence. A commitment in this branch therefore has to
+        survive the transfer as an attribute of the ticket rather than of the agent — otherwise
+        every handoff silently voids every outstanding promise, and the customer's experience of
+        the ladder is that people stop keeping their word as it goes up.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [audience, article_type, owner_ref]
+      note: >
+        In a tiered org the majority of the knowledge base is written for the tier below, not
+        for the customer, and conflating the two audiences produces articles that serve neither.
+        An L2 who resolves a ticket without writing the L1-executable version has bought
+        themselves the identical ticket next month, at their own desk — which is the mechanism
+        by which a tiered org's senior capacity gets consumed by problems it has already solved.
+    - object: customer_support.obj.core.requester
+      require_properties: [technical_fluency, prior_escalation_count]
+      note: >
+        Fluency is a routing input here in a way it is not elsewhere: a requester who has
+        already run the L1 diagnostics themselves and says so should not be made to run them
+        again, and the standard tiered intake makes them do exactly that. It is the single
+        fastest way to convert a competent, calm customer into an escalation.
+
+overrides:
+  capabilities.customer_support.intake_and_triage.routing_and_assignment.ladder: "L1_L2_L3"
+  capabilities.customer_support.intake_and_triage.routing_and_assignment.boundary_criterion: "skill_not_elapsed_effort"
+  capabilities.customer_support.escalation_and_incident.escalation_management.ownership_transfers: true
+  capabilities.customer_support.escalation_and_incident.escalation_management.context_package_required: true
+  capabilities.customer_support.support_operations.queue_management.tier_sort_key: "sla_remaining_not_tier_arrival"
+  capabilities.customer_support.support_management.performance_management.l1_primary_metric: "correct_disposition"
+  capabilities.customer_support.knowledge_and_deflection.knowledge_authoring.primary_audience: "tier_below"
+  capabilities.customer_support.support_operations.capacity_planning.planning_unit: "per_tier"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Operating-structure branch, and the default one — most support orgs are tiered without ever
+    having decided to be, because the structure is what a growing queue produces on its own when
+    the first specialist is hired. That is why this file spends its length on costs rather than
+    on benefits: the benefits are why it was adopted, the costs are what nobody wrote down. Read
+    against swarming_support, which pays the opposite price for the opposite benefit.

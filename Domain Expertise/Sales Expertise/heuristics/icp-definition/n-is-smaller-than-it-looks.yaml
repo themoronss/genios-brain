@@ -1,0 +1,35 @@
+identity:
+  id: sales.heu.icp_definition.n_is_smaller_than_it_looks
+  name: Divide the sample by the number of dimensions before believing it
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Divide the sample by the number of dimensions before believing it.\n Twenty won accounts\
+    \ across four industries and three size bands is a couple of accounts per cell — a story, not a\
+    \ signal. Say the profile is a hypothesis until it has survived losses it predicted in advance,\
+    \ because a profile has only really been tested when it told you to walk away and walking away turned\
+    \ out to be right.\n"
+heuristic:
+  statement: 'Divide the sample by the number of dimensions before believing it.
+
+    '
+  why: 'Twenty won accounts across four industries and three size bands is a couple of accounts per
+    cell — a story, not a signal. Say the profile is a hypothesis until it has survived losses it predicted
+    in advance, because a profile has only really been tested when it told you to walk away and walking
+    away turned out to be right.
+
+    '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

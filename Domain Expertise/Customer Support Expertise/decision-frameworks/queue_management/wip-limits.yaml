@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.queue_management.wip_limits
+  name: Wip limits
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Work-in-progress limits — cap what is held open per agent and per queue, rather than targeting
+    what is closed.
+
+
+    Throughput targets encourage starting; WIP limits encourage finishing. Since wait is driven by how
+    much is simultaneously in flight, limiting the in-flight count lowers wait without anyone working
+    faster.'
+criteria:
+- name: Wip limits
+  description: Work-in-progress limits — cap what is held open per agent and per queue, rather than
+    targeting what is closed.
+how_to_apply:
+- Work-in-progress limits — cap what is held open per agent and per queue, rather than targeting what
+  is closed.
+- Throughput targets encourage starting; WIP limits encourage finishing. Since wait is driven by how
+  much is simultaneously in flight, limiting the in-flight count lowers wait without anyone working
+  faster.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

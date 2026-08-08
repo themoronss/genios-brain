@@ -1,0 +1,1598 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Approval — the atom of administrative delay.
+#
+# The distinction this whole file turns on is PENDING versus STUCK. Every approval queue
+# report in every organisation shows a pending count. Almost none show a stuck count,
+# because stuck requires knowing what normal looks like for this approver, this approval
+# type and this value band — and once you know that, the number is uncomfortable.
+#
+# Pending means the clock is running and a named person owes an answer. Stuck means nobody
+# is going to give one: the holder is in Lisbon, the route was wrong from the start, the
+# information they need was never sent, or neither side believes it is theirs. Almost all
+# invisible administrative delay lives in that gap, and no deployed system reports it.
+#
+# Five of fourteen patterns below are executable today, and all five lean on domain-neutral
+# substrate rather than on a sales fact bent into an administrative meaning. The nine that
+# cannot fire are the densest cluster of Layer 1/2 asks in the Admin brain.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.approval
+  scope: core
+  name: Approval
+  domain: admin
+  subdomain: executive_support
+  owner_capability: admin.executive_support.approval_coordination
+  version: 2.0.0
+  status: draft
+  aliases: ["Sign-off", "Authorisation", "Sanction", "Approval Request", "Consent", "Sign-off Gate"]
+
+purpose:
+  statement: >
+    A required decision on a specific item, held by a specific person under a specific
+    authority, blocking something downstream whose deadline it does not control. Three
+    things make it an object rather than a status field: it has a named holder who can be
+    absent, an authority basis that can be wrong or expired, and a consequence that belongs
+    to somebody else. An approval is not administrative overhead — it is a queue with one
+    server, and everything that is true of queues is true of it.
+  discriminator: >
+    Pending or stuck, not old or new. An approval is PENDING while a named, reachable person
+    still owes an answer and the wait is inside that person's own normal; it is STUCK the
+    moment nobody is going to answer — absent holder, wrong route, missing information, or
+    ball_in_court = nobody. Age is not the test. A three-week policy sign-off can be perfectly
+    healthy and a four-hour travel approval can already be dead.
+  answers:
+    - "Is this approval working, or has it quietly stopped?"
+    - "Who actually holds the decision right now — the named approver, or their delegate?"
+    - "What is stopped downstream while this is open, and can that deadline move?"
+    - "Is this even the right approver for this value, or has it been ageing in the wrong queue?"
+    - "Should we remind, re-route, supply information, or escalate? Four different remedies for symptoms that look identical."
+    - "Can we produce evidence that this decision was made, by whom, under what authority?"
+    - "Should this approval step exist at all?"
+  not:
+    - "NOT the person. Authority, availability, delegation and limits belong to admin.obj.core.approver."
+    - "NOT the underlying ask. The intake record, requester and priority belong to admin.obj.core.request."
+    - "NOT the deadline it sits in front of — admin.obj.core.deadline owns hardness and consequence."
+    - "NOT the escalation. Climbing a rung is admin.obj.core.escalation; this object only says when a climb is warranted."
+    - "NOT a promise. 'I will sign it Friday' is admin.obj.core.commitment, which is how an approval currently acquires its only machine-visible due date."
+
+attributes:
+
+  - name: subject_and_authority
+    purpose: What is being decided, and the rule that makes a decision necessary at all.
+    type: composite
+    contains: [approval_type, subject_kind, subject_ref, subject_value, required_by,
+               authority_reference, threshold_value, budget_line_ref]
+
+  - name: routing
+    purpose: Who holds it now, how many holders are needed, and in what order.
+    type: composite
+    contains: [approver_ref, delegate_ref, approvers_required, approvals_received,
+               is_serial, sequence_position, channel, reroute_count]
+
+  - name: timing
+    purpose: >
+      The clock. Everything an administrator actually reads about an approval lives here,
+      and almost none of it is recorded anywhere today.
+    type: composite
+    contains: [state, requested_at, due_at, decided_at, last_touched_at, ball_in_court,
+               approval_action, pending_days, reminder_count, stuck_reason, is_past_normal]
+
+  - name: consequence
+    purpose: What is stopped while this is open. The only thing that makes one approval matter more than another.
+    type: composite
+    contains: [blocks_description, downstream_deadline_ref, downstream_hardness, escalation_ref]
+
+  - name: control
+    purpose: The bits an auditor reads — four-eyes, segregation of duties, conditionality, retrospection.
+    type: composite
+    contains: [is_retrospective, is_conditional, conditions, segregation_breach,
+               rejection_reason, is_deemed]
+
+  - name: proof
+    purpose: What survives to demonstrate the decision was made, by whom, under what authority.
+    type: composite
+    contains: [evidence_ref, evidence_strength_bp]
+
+  - name: approval_type
+    purpose: The class of decision, which sets every norm downstream.
+    type: value
+    data_type: enum
+    allowed_values: [spend, contract, policy, document, access, leave, travel, payroll,
+                     filing, exception, recruitment, disposal, other]
+    required: true
+    sensitivity: internal
+    validation: "must be one of allowed_values"
+    description: >
+      Drives who may hold it, what evidence it needs, and how long normal is. A travel
+      approval is normal at two days and stuck at five; a policy approval is normal at three
+      weeks. A single organisation-wide "approval SLA" is the surest sign nobody has looked
+      at the queue by type.
+
+  - name: subject_kind
+    purpose: The class of thing awaiting the decision, as distinct from the class of decision.
+    type: value
+    data_type: enum
+    allowed_values: [invoice, purchase_order, contract, expense, document, policy,
+                     access_right, leave_request, budget_line, asset, trip, filing, other]
+    sensitivity: internal
+    description: >
+      Kept separate from approval_type because a document approval and a contract approval
+      are the same act on different objects, and the evidence each needs is set by the object
+      rather than by the act.
+
+  - name: subject_ref
+    purpose: The intake record this approval sits on.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.request
+    description: >
+      Approvals that arrived as a forwarded email have no subject_ref, and those are the ones
+      that vanish. An approval with no intake record appears in no queue, ages against no
+      target, and is remembered only by the person waiting.
+
+  - name: subject_value
+    purpose: The amount at stake, which decides whose authority is sufficient.
+    type: value
+    data_type: money
+    sensitivity: confidential
+    description: >
+      Null means unmeasured, not zero. A non-financial approval still blocks something with a
+      cost, and pricing that cost is how a policy sign-off gets prioritised against an invoice.
+
+  - name: required_by
+    purpose: The instrument that makes this approval necessary.
+    type: value
+    data_type: enum
+    allowed_values: [policy, doa_matrix, contract_clause, statute, board_resolution,
+                     precedent, undocumented]
+    default: undocumented
+    sensitivity: internal
+    description: >
+      `precedent` and `undocumented` are the honest options and together they cover more real
+      approvals than the other five combined. An approval nobody can cite a source for is a
+      habit; habits are where the queue silts up, and deleting one is the cheapest cycle-time
+      win available in the function.
+
+  - name: authority_reference
+    purpose: The citation — the DOA matrix row, policy clause or resolution date.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: The field that turns an argument into a citation. Empty on most approvals, which is itself the finding.
+
+  - name: threshold_value
+    purpose: The limit above which this approver alone is insufficient.
+    type: value
+    data_type: money
+    sensitivity: internal
+    description: >
+      Separate from the approver's own limit because the same person commonly holds different
+      limits by approval_type — a quarter of a million in capital spend and no authority
+      whatsoever over an access grant.
+
+  - name: budget_line_ref
+    purpose: The budget this approval commits against.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+    description: >
+      Commitment accounting says the money is spent at approval, not at payment. Where this is
+      null, the budget shows headroom that three approved purchase orders have already consumed.
+
+  - name: approver_ref
+    purpose: The person the decision is with right now.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+    required: true
+    description: >
+      Not the person originally addressed. Those differ more often than anyone expects and
+      nothing records the difference, which is why re-routed approvals report a duration that
+      began with somebody who never opened them.
+
+  - name: delegate_ref
+    purpose: Who is exercising the authority while the holder cannot.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.delegate
+    description: Null with an absent approver is the single most common cause of a stuck approval.
+
+  - name: approvers_required
+    purpose: How many distinct people must decide.
+    type: value
+    data_type: integer
+    default: 1
+    validation: ">= 1"
+    description: >
+      Two under a four-eyes rule. Anything above two is usually accumulated fear rather than
+      designed control — each addition was a reasonable response to one incident and nobody
+      owns removing any of them.
+
+  - name: approvals_received
+    purpose: How many of the required decisions have actually landed.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0 and <= approvers_required"
+
+  - name: is_serial
+    purpose: Whether each approver waits for the one before.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Where the days go, and almost always inherited from a paper form rather than chosen.
+      Most serial chains parallelise with no loss of control except for the reviewer who wanted
+      to see what the previous reviewer said — which is a preference, not a control.
+
+  - name: sequence_position
+    purpose: Position in a serial chain.
+    type: value
+    data_type: integer
+    description: >
+      Position 1 stalling costs the whole chain; position 4 stalling costs only itself. Chasing
+      position 4 for a position 1 stall is the standard wasted chase, and it teaches position 4
+      to ignore chases.
+
+  - name: channel
+    purpose: How the decision was asked for and given.
+    type: value
+    data_type: enum
+    allowed_values: [email, portal, erp, slack, teams, signed_form, meeting, verbal, unknown]
+    default: unknown
+    description: >
+      `verbal` is real, common, and worthless as evidence. An approval given in a corridor and
+      never written down did not happen — a statement about the record rather than about the
+      corridor.
+
+  - name: reroute_count
+    purpose: How many times this has been passed to a different approver.
+    type: value
+    data_type: integer
+    default: 0
+    description: >
+      Above one, the DOA matrix is not being read or does not exist. Each re-route silently
+      resets every duration metric while the requester's clock keeps running.
+
+  - name: state
+    purpose: Where this approval is in its lifecycle, and specifically whether it is still working.
+    type: value
+    data_type: enum
+    allowed_values: [draft, submitted, pending_approval, overdue, at_risk, escalated,
+                     approved, rejected, expired, cancelled, on_hold, archived]
+    required: true
+    default: draft
+    validation: "must be one of allowed_values"
+    description: >
+      `at_risk` is this library's name for STUCK — open past the point where waiting is still
+      normal, with nobody expecting it. It is a separate value from `overdue` on purpose:
+      overdue means a stated date passed, stuck means there never was a stated date and the
+      silence has outrun the norm. Most stuck approvals are not overdue, which is exactly why
+      they are invisible.
+
+  - name: requested_at
+    purpose: When the approver could first have acted.
+    type: value
+    data_type: timestamp
+    description: Not when the requester started drafting. Draft time is invisible to every approval metric and is frequently the largest slice.
+
+  - name: due_at
+    purpose: The stated date by which the decision is needed.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    description: >
+      Live today only where the approval was captured as a commitment. That accident of capture
+      is currently the only way an approval acquires a deadline the engine can see.
+
+  - name: decided_at
+    purpose: When the decision landed. The end of the clock.
+    type: value
+    data_type: timestamp
+
+  - name: last_touched_at
+    purpose: Last movement of any kind on the thread carrying this approval.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: One of three attributes on this object with a real Layer 2 source today.
+
+  - name: ball_in_court
+    purpose: Who owes the next move.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      `them` means the approver holds it. `nobody` is the dangerous value and the engine can
+      genuinely produce it — an approval where neither side believes it is theirs is stuck by
+      construction and will stay that way until a deadline hits something else.
+
+  - name: approval_action
+    purpose: The promised act, where the approval was recorded as a commitment.
+    type: value
+    data_type: string
+    source_paths: [commitment.action]
+    description: >
+      "Approve the Q3 renewal." Free text, and the only place in the shipped substrate where an
+      approval commitment can be told apart from any other kind.
+
+  - name: pending_days
+    purpose: Elapsed decision time, which every duration metric on this object depends on.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [requested_at, decided_at, last_touched_at]
+    description: >
+      Computed from requested_at, which is why apv.approval_requested_observation is the
+      highest-value backlog item here. Without a clock start this is a lower bound derived from
+      whenever the thread first became visible, and it must be labelled as one.
+
+  - name: reminder_count
+    purpose: How many chases have been sent.
+    type: value
+    data_type: integer
+    default: 0
+    description: >
+      Past about three, reminders stop being information and become noise the approver has
+      learned to filter. A high reminder_count with no decision is not diligence by the
+      requester, it is evidence the route is wrong.
+
+  - name: stuck_reason
+    purpose: Why the decision is not coming. The field that turns a queue into a work list.
+    type: value
+    data_type: enum
+    allowed_values: [not_stuck, no_response, approver_absent, information_missing,
+                     wrong_approver, awaiting_prior_step, disputed, budget_unavailable,
+                     awaiting_external_party, unknown]
+    default: not_stuck
+    description: >
+      `wrong_approver` and `information_missing` are fixable by the coordinator in minutes;
+      `approver_absent` needs a delegate; `no_response` needs an escalation. Reporting all four
+      as "pending" guarantees the wrong remedy is applied to all four, which is what every
+      approval dashboard currently does.
+
+  - name: is_past_normal
+    purpose: Whether the wait has outrun what is normal for this approver and this type.
+    type: derived
+    data_type: boolean
+    derived_from: [pending_days, approval_type, approver_ref, last_touched_at]
+    description: >
+      The pending-versus-stuck test, expressed as a field so Layer 4 does not have to re-derive
+      it. Deliberately relative: an absolute threshold labels the finance director stuck every
+      Tuesday and never labels the fast responder stuck at all.
+
+  - name: blocks_description
+    purpose: What cannot proceed while this is open, in the words of the person waiting.
+    type: value
+    data_type: string
+    description: A payment run, a start date, a filing, a shipment. The single most useful free-text field on the object and almost never captured.
+
+  - name: downstream_deadline_ref
+    purpose: The deadline this approval sits in front of.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.deadline
+    description: >
+      Where that deadline is statutory, the approval inherits a non-negotiable date it did not
+      agree to and cannot move. That inheritance is the structural difference between
+      administrative and commercial urgency: a sales deadline slips, a filing deadline produces
+      a penalty.
+
+  - name: downstream_hardness
+    purpose: Whether the thing being blocked can move at all.
+    type: value
+    data_type: enum
+    allowed_values: [statutory, contractual, internal, none, unknown]
+    default: unknown
+    description: >
+      The whole of prioritisation. A small approval in front of a statutory deadline outranks a
+      large one in front of nothing, and no queue sorted by value will ever show that.
+
+  - name: escalation_ref
+    purpose: The escalation raised when this stalled.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.escalation
+
+  - name: is_retrospective
+    purpose: Whether the work happened before the approval.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Sometimes operationally necessary; always an audit finding. Recording it honestly is worth
+      more than the approval itself, because the pattern of retrospective approvals tells you
+      precisely which control is too slow to be complied with. People do not bypass controls
+      they can meet.
+
+  - name: is_conditional
+    purpose: Whether the approval was given subject to conditions.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: conditions
+    purpose: The conditions attached to a conditional approval.
+    type: value
+    data_type: list
+    description: >
+      Unrecorded conditions are how an approved item gets blocked again three weeks later by the
+      same person, who is not being difficult and did say so at the time.
+
+  - name: segregation_breach
+    purpose: Whether the approver also raised, benefits from, or executes the thing approved.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      Segregation of duties tested at the level of the individual decision rather than at the
+      level of the role design, which is where it actually fails.
+
+  - name: rejection_reason
+    purpose: Why it was refused.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      The only field that tells the requester population how to raise a better request. Almost
+      universally left blank, which is why the same rejection recurs monthly.
+
+  - name: is_deemed
+    purpose: Whether the approval was granted by the passage of time under an explicit clause.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      True only where a cited clause genuinely operates deemed approval after a stated period.
+      Everywhere else silence is not consent, and the flag exists precisely so the one
+      legitimate case cannot be used to justify the general one.
+
+  - name: evidence_ref
+    purpose: The artefact that proves the decision.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.audit_evidence
+    description: >
+      The countersigned form, the workflow audit line, the minuted resolution. In a governed
+      context this is the deliverable; the decision is only the occasion for it.
+
+  - name: evidence_strength_bp
+    purpose: How defensible the proof is, so a weak record can be strengthened before it is needed.
+    type: derived
+    data_type: integer
+    derived_from: [evidence_ref, channel, is_retrospective]
+    validation: "0..10000"
+    description: >
+      A signed form is 10000 and a coordinator typing "approved" into a tracker is 4000. The
+      point of computing it now is that the moment you need it is three years later, when the
+      thread has been deleted and the approver has left.
+
+states:
+  initial: draft
+  terminal: [approved, rejected, expired, cancelled, archived]
+  values:
+    - name: draft
+      description: Being prepared by the requester. Time spent here is invisible to every approval metric and is frequently the largest slice.
+      implies: Nothing is blocked yet and nobody owes anybody an answer.
+    - name: submitted
+      description: Sent, but no approver has acknowledged holding it. Sent is not received; this state exists because the gap between the two is real and unmeasured.
+      implies: The clock has started and there is no evidence anyone knows it.
+    - name: pending_approval
+      description: With a named approver, inside normal. Healthy. The clock running here is not a problem.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+      implies: Working. Do not chase.
+    - name: overdue
+      description: Past a stated due date. The easy case, precisely because somebody stated a date.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+      implies: A named breach exists and can be pointed at, which is why overdue approvals resolve faster than stuck ones.
+    - name: at_risk
+      description: >
+        STUCK. Open past the point where waiting is normal for this approver, with no stated
+        date to breach and nobody expecting it. The hard case, the common case, and the reason
+        this object exists.
+      entered_when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}
+      implies: A remedy is needed and it is probably not a reminder. Establish stuck_reason before acting.
+    - name: on_hold
+      description: Paused deliberately — awaiting a prior step, an external party or a budget period. Distinct from stuck because somebody chose it and named a resume condition.
+      implies: The clock should be paused. Counting hold time as pending is how an approval SLA becomes fiction.
+    - name: escalated
+      description: Moved to a higher rung. Escalation does not clear the original approval; it adds a second person waiting on the first.
+      implies: Relationship capital has been spent, and it cannot be spent twice on the same approval.
+    - name: approved
+      description: Decided in favour. Only meaningful with evidence attached — an approval nobody can produce later is indistinguishable from one that never happened.
+      entered_when: [{has_obs: budget_approved}]
+      implies: The downstream act may proceed, and the budget is committed from this moment rather than from payment.
+    - name: rejected
+      description: Decided against. A queue with a zero rejection rate is not a control; it is a postbox.
+      implies: The requester needs a reason, or the same request returns unchanged.
+    - name: expired
+      description: >
+        The decision window closed — the budget period ended, the quote lapsed, the board meeting
+        passed. Distinct from rejected: nobody decided anything, and the work restarts from the
+        request under authority that may itself have changed.
+      implies: The quiet failure. Nobody said no and the outcome is identical to no.
+    - name: cancelled
+      description: Withdrawn by the requester. Worth counting — a high cancellation rate usually means approvals are being raised before the underlying decision is ready.
+    - name: archived
+      description: Closed and retained for its retention period. In a governed context this state, not `approved`, is where the obligation actually discharges.
+      implies: The record survives the people, which is the entire point of the state.
+  transitions:
+    - {from: draft, to: submitted, trigger: request_sent}
+    - {from: submitted, to: pending_approval, when: [{path: thread.ball_in_court, op: "=", value: them}]}
+    - {from: pending_approval, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: pending_approval, to: at_risk, reversible: true,
+       when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}]}
+    - {from: at_risk, to: pending_approval, trigger: approver_responded, reversible: true}
+    - {from: pending_approval, to: on_hold, trigger: hold_reason_recorded, reversible: true}
+    - {from: on_hold, to: pending_approval, trigger: hold_condition_cleared}
+    - {from: at_risk, to: escalated, trigger: escalation_raised}
+    - {from: overdue, to: escalated, trigger: escalation_raised}
+    - {from: at_risk, to: submitted, trigger: rerouted, reversible: false}
+    - {from: pending_approval, to: approved, when: [{has_obs: budget_approved}]}
+    - {from: escalated, to: approved}
+    - {from: pending_approval, to: rejected}
+    - {from: pending_approval, to: expired}
+    - {from: submitted, to: cancelled}
+    - {from: approved, to: archived}
+    - {from: rejected, to: archived}
+
+relationships:
+
+  - type: requires
+    target: admin.obj.core.approver
+    direction: outbound
+    cardinality: one
+    weight_bp: 2500
+    confidence_bp: 9000
+    priority: 1
+    evidence: [email, erp, document]
+    description: >
+      An approval with no named approver is not pending; it is unrouted, and it will sit forever
+      without ever appearing late to anyone. This edge is the difference between a queue entry
+      and a work item.
+
+  - type: blocks
+    target: admin.obj.core.request
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1500
+    confidence_bp: 8000
+    priority: 2
+    evidence: [portal, email]
+    description: The requester's view. Every day here is a day on somebody else's clock, and the approver cannot see that clock from inside their inbox.
+
+  - type: gates
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1500
+    confidence_bp: 6500
+    priority: 2
+    evidence: [document, regulator, contract]
+    description: >
+      Where the downstream deadline is external, this approval is on the critical path of
+      something nobody can renegotiate. All the slack has to come out of the approval, because
+      there is none anywhere else.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 7000
+    priority: 3
+    evidence: [document, register]
+    description: >
+      The DOA matrix or policy clause that makes this approval necessary and sets its threshold.
+      A missing edge here is what produces required_by = undocumented, and an approval nobody can
+      trace to a rule is the first candidate for deletion.
+
+  - type: delegates_to
+    target: admin.obj.core.delegate
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 6000
+    priority: 3
+    conditions: [{path: thread.ball_in_court, op: "=", value: them}]
+    evidence: [signed_form, hris, email]
+    description: >
+      Exercised authority while the holder is absent. Valid only where the delegation is recorded
+      and time-bounded — an unrecorded delegation is not a lighter version of this edge, it is a
+      different and worse thing.
+
+  - type: precedes
+    target: admin.obj.core.invoice
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 7500
+    priority: 4
+    evidence: [erp]
+    description: >
+      Payment release. In a three-way match the approval sits alongside the purchase order and
+      the goods receipt, and releasing without it is the classic payables control failure — the
+      one that pays a duplicate invoice twice and finds out at year end.
+
+  - type: references
+    target: admin.obj.core.commitment
+    direction: bidirectional
+    cardinality: zero_or_one
+    weight_bp: 700
+    confidence_bp: 7000
+    priority: 4
+    conditions: [{exists: commitment.action}]
+    evidence: [email]
+    description: >
+      Where the approval was captured as a promise — "I'll sign it Friday". Currently the only
+      route by which an approval acquires a machine-visible due date, which is an accident of the
+      substrate rather than a design.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 5500
+    priority: 5
+    conditions: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}]
+    description: The path taken when this stalls. An approval object with no escalation path is a queue entry with no exit.
+
+  - type: governed_by
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 600
+    confidence_bp: 5000
+    priority: 5
+    evidence: [regulator, document]
+    description: >
+      Where the approval exists because a regulator requires it rather than because the
+      organisation chose it. These are the ones that cannot be retired however badly they perform.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 6
+    evidence: [erp]
+    description: Commitment accounting — the money is spent at approval, not at payment. Budgets that ignore this edge report headroom that is already gone.
+
+  - type: evidences
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 5000
+    priority: 7
+    evidence: [signed_form, erp, meeting_transcript]
+
+  - type: attaches_to
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 300
+    confidence_bp: 6000
+    priority: 8
+    description: The thing being approved, where the subject is a document — a policy at version 3.1, a drawing, a statement of applicability.
+
+# Conditions are ANDed. Five executable, nine not. The nine are the backlog, ordered by
+# leverage rather than by ease.
+inference_patterns:
+
+  deterministic:
+
+    - id: apv.overdue_commitment_to_approve
+      statement: "A commitment with a stated action is past its due date — a sign-off promised and not given."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8500, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        A sign-off given out of band — in a corridor, in a meeting, in a system the pipeline
+        cannot see — still reads overdue until something closes the commitment. This is the
+        largest single source of a wrong nudge on this object, and it is worst with the fastest
+        approvers, who decide verbally and never write back.
+      note: >
+        The one genuinely administrative thing the shipped substrate does well. commitment.due_at
+        and commitment.action are domain-neutral, so this fires on a promised sign-off exactly as
+        it fires on a promised document. Not 10000 because not every overdue commitment is an
+        approval — the action text has to be read to know.
+
+    - id: apv.budget_approved_is_a_decided_spend_approval
+      statement: "A budget-approval observation on the thread means the spend approval on it has been decided in favour."
+      status: executable
+      when:
+        - {has_obs: budget_approved}
+      yields: {confidence_bp: 9000, attribute: state, value: approved}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        The observation cannot distinguish "I approve" from "it was approved upstairs". The second
+        is a relay, not a decision, and the two have different approvers — which matters enormously
+        three years later when somebody asks who authorised it.
+      note: >
+        The strongest approval evidence the pipeline currently emits, and it emits it for one
+        approval_type out of thirteen.
+
+    - id: apv.explicit_state_field
+      statement: "A workflow system records this approval's state directly."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: state, value: null}
+      requires_signals:
+        - {kind: fact_path, name: approval.state, owner_layer: L1,
+           note: "Every ERP, P2P and ITSM tool exposes an approval state on its API and none of them are read. This single path would convert most of this object from inference to fact — the highest-leverage unbuilt connector field in the Admin domain."}
+        - {kind: fact_path, name: approval.approver, owner_layer: L1,
+           note: "State without a holder is still unactionable: you know it is open, not who to chase."}
+
+    - id: apv.approval_requested_observation
+      statement: "An approval was explicitly asked for in a thread, with a timestamp."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: state, value: submitted}
+      requires_signals:
+        - {kind: obs_kind, name: approval_requested, owner_layer: L2,
+           note: "L2 already classifies asks in email, and approval asks are lexically distinctive — 'please approve', 'for your sign-off', 'awaiting your authorisation'. They are not extracted."}
+        - {kind: fact_path, name: approval.requested_at, owner_layer: L2,
+           note: "The clock start. Every duration metric on this object is uncomputable without it, which makes this the single ask that unblocks the most other work."}
+
+    - id: apv.approval_decision_observation
+      statement: "An approval decision — grant or refusal — was stated in writing."
+      status: needs_signal
+      yields: {confidence_bp: 9600, attribute: decided_at, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: approval_granted, owner_layer: L2}
+        - {kind: obs_kind, name: approval_rejected, owner_layer: L2,
+           note: "Rejections matter more than grants. A queue whose rejection rate is zero is a postbox, and only the rejected set tells you whether the control is doing anything at all."}
+
+    - id: apv.doa_threshold_covers_the_value
+      statement: "A recorded delegation-of-authority limit covers this amount, so no upward routing is required."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: threshold_value, value: null}
+      requires_signals:
+        - {kind: fact_path, name: approval.threshold_value, owner_layer: L1,
+           note: "The DOA matrix exists in every organisation past about fifty people, usually as a spreadsheet appended to a finance policy. No connector reads it, so the system cannot tell a correctly routed approval from a wrongly routed one — and wrongly routed approvals age identically to correct ones until somebody notices by hand."}
+
+    - id: apv.duplicate_of_an_existing_approval
+      statement: "The same subject is already approved under another record — this one should be closed, not decided."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: state, value: cancelled}
+      requires_signals:
+        - {kind: fact_path, name: invoice.po_ref, owner_layer: L1,
+           note: "Duplicate requests are routine where an item arrives by both email and portal. Without a subject key the same invoice is approved twice and paid twice — the failure the three-way match exists to prevent and routinely does not."}
+
+  heuristic:
+
+    - id: apv.stuck_with_the_approver
+      statement: "The ball has been with the approver for longer than twice their own normal reply cadence — pending has become stuck."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}
+      yields: {confidence_bp: 7200, attribute: state, value: at_risk}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        A batching approver who clears their queue every Friday morning trips this every Wednesday
+        and is not stuck at all. See the exception apv.batching_window_is_not_stuck — this is the
+        most damaging wrong nudge the object produces, because the approver knows they are not
+        late and switches the channel off.
+      note: >
+        The most valuable executable pattern on this object, and the reason reply_cadence being a
+        per-entity baseline matters. An absolute threshold labels the finance director stuck every
+        Tuesday and never labels the fast responder stuck at all. Held at 7200 because silence past
+        cadence is sometimes a considered pause before a refusal.
+
+    - id: apv.nobody_owns_the_decision
+      statement: "Neither side believes the decision is theirs. Unrouted, not slow."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: nobody}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 5}
+      yields: {confidence_bp: 6800, attribute: stuck_reason, value: wrong_approver,
+               corroborates: [apv.stuck_with_the_approver]}
+      evidence_fields: [thread.ball_in_court]
+      false_positive: A thread genuinely finished — decision given elsewhere, request withdrawn — also settles to nobody. The tell is whether anything downstream moved.
+      note: >
+        The `nobody` value is rare and it is the one worth acting on immediately, because no
+        deadline anywhere will surface it. Costs a minute to fix and can cost a quarter to miss.
+        Declared as corroborating the cadence pattern because it reads a genuinely independent
+        thing: that pattern reads the approver's silence, this one reads the absence of an owner.
+
+    - id: apv.gate_visible_as_legal_review
+      statement: "A legal review is under way and the ball is with them — a contract approval is open."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 7500, attribute: approval_type, value: contract}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        Legal review is an approval gate with a holder, a queue and a stall pattern, and it is one
+        of only two the shipped pack can see at all. The pack records it starting and never records
+        it finishing, which is precisely the pending-versus-stuck blindness this object exists to
+        name.
+
+    - id: apv.chased_repeatedly_without_movement
+      statement: "Outbound touches continue, nothing comes back, and two-way volume has collapsed — the route is wrong, not the requester's persistence."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {path: derived.engagement, op: "<=", value: 0.5}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+      yields: {confidence_bp: 6600, attribute: null, corroborates: [apv.stuck_with_the_approver]}
+      evidence_fields: [derived.engagement, thread.ball_in_court]
+      false_positive: An approver on annual leave produces exactly this shape, and the remedy there is a delegate rather than an escalation. Silence cannot distinguish absent from unwilling.
+      note: >
+        Yields no attribute deliberately. What it adds is corroboration of stuckness from the volume
+        signal rather than from the interval signal, which is exactly the kind of independence Rule
+        11 requires to be declared rather than assumed.
+
+    - id: apv.stuck_because_the_approver_is_absent
+      statement: "The approver is out of office and no delegate is recorded."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: stuck_reason, value: approver_absent}
+      requires_signals:
+        - {kind: fact_path, name: approver.unavailable_until, owner_layer: L1,
+           note: "The calendar connector reads timed meetings and discards all-day absence events, so the system knows the approver is not in a meeting and not that they are in Lisbon for a fortnight. Cheapest fix in the whole backlog and it removes the most common cause of a stuck approval."}
+        - {kind: obs_kind, name: approval_delegated, owner_layer: L2,
+           note: "Needed to tell absent-with-cover from absent-without-cover. Only the second is stuck; chasing the first is noise and chasing the second is futile."}
+
+    - id: apv.latency_beyond_this_approver_norm
+      statement: "This approval has taken longer than this approver takes for this approval type."
+      status: needs_signal
+      yields: {confidence_bp: 7800, attribute: is_past_normal, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.approval_latency, owner_layer: L2,
+           note: "reply_cadence is a thread-level proxy that counts a one-line acknowledgement as a response. A real per-approver, per-type decision-latency baseline is what separates a slow approver from a stuck approval, and it can only be built once approval_requested and approval_granted both exist."}
+        - {kind: baseline, name: approval_turnaround, owner_layer: L2}
+
+    - id: apv.blocked_behind_a_prior_serial_step
+      statement: "This approval has not started because the one before it in the chain has not finished."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: stuck_reason, value: awaiting_prior_step}
+      requires_signals:
+        - {kind: fact_path, name: approval.state, owner_layer: L1,
+           note: "Serial chains are invisible today, so a position-4 approver is chased for a delay caused entirely at position 1. The chase is wasted, the real blocker is never contacted, and position 4 learns to ignore chases."}
+
+    - id: apv.information_missing_not_unwillingness
+      statement: "The approver replied asking for something and is now waiting on us, not the other way round."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: stuck_reason, value: information_missing}
+      requires_signals:
+        - {kind: obs_kind, name: approval_requested, owner_layer: L2,
+           note: "Needed with direction attached, so a clarifying question can be told from a decision. Today an approval where the ball has bounced back to us looks identical to one the approver is sitting on, and the two have opposite remedies: send the quote comparison, or escalate."}
+
+    - id: apv.retrospective_collection
+      statement: "The approval was granted after the thing it approves had already been done."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: is_retrospective, value: true}
+      requires_signals:
+        - {kind: fact_path, name: approval.requested_at, owner_layer: L2}
+        - {kind: obs_kind, name: payment_released, owner_layer: L2,
+           note: "Comparing the decision timestamp against the execution timestamp is a two-line rule that cannot be written because neither timestamp exists. The rate of retrospective approvals is the sharpest available diagnostic of which control is too slow to be complied with."}
+
+    - id: apv.segregation_breach_on_this_decision
+      statement: "The approver is also the requester, the beneficiary or the executor of the thing approved."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: segregation_breach, value: true}
+      requires_signals:
+        - {kind: fact_path, name: approval.approver, owner_layer: L1}
+        - {kind: fact_path, name: request.created_at, owner_layer: L1,
+           note: "Requires the requester identity alongside the approver identity. Self-approval is the control failure most often committed in good faith and most reliably found in the first walkthrough, and detecting it is a string comparison no system currently performs."}
+
+inputs:
+  - {source: email, signal: "the request, the chase, and the reply that decides it", path: thread.last_inbound,
+     fills: [last_touched_at, state], reliability_bp: 7000}
+  - {source: email, signal: "who is waiting on whom", path: thread.ball_in_court,
+     fills: [ball_in_court, stuck_reason], reliability_bp: 7500}
+  - {source: derived, signal: "promised sign-off captured as a commitment", path: commitment.action,
+     fills: [approval_action], reliability_bp: 6500}
+  - {source: derived, signal: "the date the sign-off was promised for", path: commitment.due_at,
+     fills: [due_at], reliability_bp: 7000}
+  - {source: erp, signal: "workflow approval state, approver, thresholds and timestamps",
+     fills: [state, approver_ref, threshold_value, requested_at, decided_at], reliability_bp: 9500,
+     description: "Exists in every P2P and finance system and is not ingested. See apv.explicit_state_field."}
+  - {source: portal, signal: "ITSM and HR self-service approval queues",
+     fills: [state, subject_ref, requested_at], reliability_bp: 8500}
+  - {source: document, signal: "the DOA matrix, usually a spreadsheet appended to a finance policy",
+     fills: [threshold_value, required_by, authority_reference], reliability_bp: 8000}
+  - {source: signed_form, signal: "countersigned authorisation for approvals that never enter a system",
+     fills: [evidence_ref, decided_at], reliability_bp: 10000}
+  - {source: register, signal: "board minutes recording matters reserved and decisions taken",
+     fills: [required_by, authority_reference, evidence_ref], reliability_bp: 9500}
+  - {source: calendar, signal: "approver absence, currently discarded as an all-day event",
+     fills: [stuck_reason], reliability_bp: 6000}
+  - {source: meeting_transcript, signal: "approvals granted verbally in a governance meeting and minuted afterwards",
+     fills: [decided_at, evidence_ref], reliability_bp: 7000}
+
+outputs:
+  - {name: stuck_confidence_bp, type: integer,
+     description: "How sure we are this is stuck rather than merely pending. The number the queue should be sorted by, and the number no queue currently has.",
+     derived_from: [state, is_past_normal, ball_in_court, stuck_reason],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: blocked_downstream, type: list,
+     description: "What cannot proceed while this is open, ordered by deadline hardness rather than by value.",
+     derived_from: [blocks_description, downstream_deadline_ref, downstream_hardness],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: correct_route, type: list,
+     description: "Approver, delegate or next authority level, given value, scope and current availability.",
+     derived_from: [approver_ref, delegate_ref, threshold_value, subject_value],
+     consumed_by: [L5.execution_planning]}
+  - {name: chase_recommendation, type: string,
+     description: "Remind, re-route, supply information or escalate — and on which channel, given reminder_count and the approver's window.",
+     derived_from: [stuck_reason, reminder_count, channel],
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: control_exception, type: boolean,
+     description: "Segregation breach, self-approval, sub-threshold splitting or retrospective collection, for the audit trail.",
+     derived_from: [segregation_breach, is_retrospective, approvers_required, approvals_received],
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: approval_cycle_sample, type: number,
+     description: "One observation of decision latency for this approver and type, to build the baseline that does not exist.",
+     derived_from: [pending_days, approval_type, approver_ref],
+     consumed_by: [L6.learning_unit]}
+  - {name: gate_value_assessment, type: string,
+     description: "Whether this approval step earns its cycle time — cited basis, rejection history and blocked value together.",
+     derived_from: [required_by, authority_reference, downstream_hardness],
+     consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+
+preconditions:
+
+  - id: apv.route_resolved_to_a_person
+    statement: "The route is resolved to a named individual, not to a role, a team inbox or a job title."
+    requires: [admin.obj.core.approver, approver_ref]
+    when: [{exists: thread.ball_in_court}]
+    if_unmet: >
+      Block. Do not send. Route the question to the owner of the delegation-of-authority matrix,
+      not to the requester — the requester has no way of knowing and will guess upwards, which
+      produces a senior approver ageing an item they were never entitled to decide.
+
+  - id: apv.clock_start_known
+    statement: "requested_at is known, so that duration means something."
+    requires: [requested_at]
+    if_unmet: >
+      Degrade. Fall back to last_touched_at and mark pending_days explicitly as a lower bound.
+      Do not present an unbounded duration as a measured one — an approval reported as four days
+      old that is actually eleven is worse than one reported as unknown, because it gets triaged
+      as healthy.
+
+  - id: apv.authority_basis_citable
+    statement: "required_by and authority_reference resolve to something a reviewer could look up."
+    requires: [admin.obj.core.policy, required_by, authority_reference]
+    if_unmet: >
+      Degrade, and mark for removal review. An approval whose basis nobody can cite still has to
+      be honoured today, because refusing it mid-flight punishes the requester for a governance
+      failure. But it goes on the list.
+
+  - id: apv.value_known_for_financial_types
+    statement: "subject_value is known where approval_type is spend, contract, expense or payroll."
+    requires: [subject_value, threshold_value]
+    if_unmet: >
+      Block the threshold test only, not the approval. Route to the approver on the stated
+      assumption that their limit may be insufficient — an approver told the value is unverified
+      will check; an approver shown a confident number will not.
+
+  - id: apv.downstream_consequence_known
+    statement: "What this approval blocks, and how hard that deadline is, are both recorded."
+    requires: [blocks_description, downstream_hardness, admin.obj.core.deadline]
+    if_unmet: >
+      Degrade to a default of internal hardness and expect the queue to be mis-sorted. This is the
+      precondition most often unmet and the one that most degrades prioritisation, because value
+      is a poor proxy for urgency and it is the only proxy available without this.
+
+  - id: apv.hold_has_a_resume_condition
+    statement: "An approval moved to on_hold carries a named condition that ends the hold, and an owner for that condition."
+    when: [{path: thread.ball_in_court, op: "=", value: nobody}]
+    if_unmet: >
+      Block the transition. An open-ended hold is indistinguishable from an abandoned approval and
+      it stops the clock on a queue report while the requester's clock keeps running. Holds without
+      resume conditions are where approvals go to die quietly and legitimately.
+
+constraints:
+  - {id: apv.cannot_exceed_threshold, hard: true,
+     statement: "An approver cannot decide an item whose subject_value exceeds threshold_value; it must route up.",
+     why: "This is the whole content of a delegation-of-authority matrix. Breaching it does not merely bend a rule — the decision is void and the commitment it authorised is unauthorised."}
+  - {id: apv.no_self_approval, hard: true,
+     statement: "The approver may not be the requester or a beneficiary of the item.",
+     why: "Segregation of duties at the level of the individual decision. Broken most often by founders, in good faith, and found reliably in the first controls walkthrough."}
+  - {id: apv.four_eyes_distinct_persons, hard: true,
+     statement: "Where approvers_required >= 2, the holders must be distinct natural persons, and neither may satisfy the other's requirement via a delegate they appointed.",
+     why: "Maker-checker collapses entirely if one person can occupy both roles through a delegation they themselves granted."}
+  - {id: apv.delegation_must_be_in_date, hard: true,
+     statement: "A delegate may act only inside the recorded delegation window.",
+     why: "A delegate approving past delegation_until believes they are covered and is not. Nothing tells them otherwise, and every decision in the gap is challengeable."}
+  - {id: apv.no_verbal_only_for_governed, hard: true,
+     statement: "For approval_type in spend, contract, filing or access, channel = verbal is insufficient without a written record.",
+     why: "Not because the corridor decision was wrong, but because an approval nobody can produce is evidentially identical to one that never happened."}
+  - {id: apv.expired_requires_reraise, hard: true,
+     statement: "An expired approval cannot be reopened; a new request must be raised under current authority.",
+     why: "Reviving it carries forward an authority basis, a value and a budget period that no longer apply. Re-raising takes ten minutes; reviving takes a control finding."}
+  - {id: apv.no_splitting_below_threshold, hard: true,
+     statement: "A single procurement must not be divided into parts each below the threshold in order to avoid the higher approval.",
+     why: "Order splitting is the most common deliberate circumvention of a DOA matrix, and it is trivially detectable by same-supplier, same-week, just-under-limit clustering that nobody runs."}
+  - {id: apv.escalation_does_not_transfer, hard: false,
+     statement: "Escalating does not transfer the decision; the original approver remains accountable until the rung above explicitly takes it.",
+     why: "Otherwise an escalation creates two people each believing the other has it, which is precisely how ball_in_court becomes nobody."}
+
+business_rules:
+
+  - id: apv.silence_is_not_consent
+    statement: >
+      No approval may be inferred from non-response. Where a policy genuinely operates deemed
+      approval after a stated period, that clause must be cited in authority_reference and
+      is_deemed set true; absent the citation, an unanswered approval is open, not granted.
+    then: block_inferred_approval
+    severity: blocking
+    why: The most dangerous shortcut available to an automated administrator, and the one a busy human will ask for by the second week.
+
+  - id: apv.no_execution_before_decision
+    statement: >
+      The approved act must not be executed while state is anything other than approved. Executing
+      first and collecting the signature later sets is_retrospective and raises a control finding.
+    then: block_execution
+    severity: blocking
+
+  - id: apv.four_eyes_requires_two_people
+    statement: Where approvers_required is 2 or more, the same natural person may not satisfy two of them, including via a delegate they themselves appointed.
+    then: reject_approval_set
+    severity: blocking
+
+  - id: apv.self_approval_prohibited
+    statement: An approver may not approve an item they raised or personally benefit from.
+    then: require_alternate_approver
+    severity: blocking
+
+  - id: apv.value_above_threshold_routes_up
+    statement: Where subject_value exceeds threshold_value, the approval must route to the next authority level before it can be recorded as decided.
+    then: require_next_level
+    severity: blocking
+
+  - id: apv.pending_is_not_stuck
+    statement: >
+      An approval must not be reported as pending once ball_in_court has been with the approver
+      beyond that approver's own normal response window. A report showing forty pending approvals
+      and zero stuck ones is not measuring anything.
+    when:
+      - {path: thread.ball_in_court, op: "=", value: them}
+      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}
+    then: reclassify_as_stuck
+    severity: warning
+    why: The rule this object exists to make enforceable.
+
+  - id: apv.nobody_holds_it
+    statement: An approval whose ball_in_court is `nobody` must be re-routed within one working day. It is queued nowhere and no deadline will surface it.
+    when: [{path: thread.ball_in_court, op: "=", value: nobody}]
+    then: flag_unrouted
+    severity: warning
+
+  - id: apv.reminder_ceiling
+    statement: >
+      After the third reminder with no movement, the next action must be a re-route or an
+      escalation, never a fourth reminder. Volume is the wrong lever once the route is in doubt.
+    when:
+      - {path: thread.ball_in_court, op: "=", value: them}
+      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+    then: switch_from_remind_to_reroute
+    severity: warning
+
+  - id: apv.expired_cannot_be_revived
+    statement: An expired approval must be re-requested, never re-opened. Reviving it carries forward an authority basis that no longer applies.
+    severity: blocking
+
+  - id: apv.approved_without_evidence
+    statement: An approval with no evidence_ref may not be relied on in an audit response. Decided and undocumented is indistinguishable from not decided.
+    severity: warning
+
+  - id: apv.hold_pauses_the_clock
+    statement: Time in on_hold must be excluded from pending_days and reported separately. Counting it as pending flatters the approver; excluding it silently flatters the queue.
+    then: split_duration_reporting
+    severity: advisory
+
+  - id: apv.undocumented_basis_is_reviewable
+    statement: >
+      An approval whose required_by is `precedent` or `undocumented` should be reviewed for removal.
+      Most approval-cycle time in a mature organisation sits behind sign-offs nobody can find a
+      rule for.
+    severity: advisory
+
+decision_factors:
+
+  - name: blocked_value
+    weight_bp: 2200
+    direction: increases
+    description: What is stopped downstream, not what is being approved. A four-hundred-pound approval holding a payroll run outranks a four-hundred-thousand-pound one holding nothing.
+    reads: [blocks_description, downstream_deadline_ref, subject_value]
+
+  - name: external_deadline_proximity
+    weight_bp: 2000
+    direction: increases
+    description: Where the downstream deadline is statutory or contractual it cannot be renegotiated, so the entire slack budget has to come out of the approval.
+    reads: [downstream_hardness, downstream_deadline_ref, due_at]
+
+  - name: pending_duration_vs_normal
+    weight_bp: 1800
+    direction: context
+    description: Absolute age is nearly useless; age against this approver's and this type's own norm is the signal. Two days is stuck for travel and early for policy.
+    reads: [pending_days, is_past_normal, last_touched_at, approval_type, state]
+
+  - name: approver_reachability
+    weight_bp: 1500
+    direction: decreases
+    description: An absent approver with no recorded delegate is not slow, they are unrouted, and reminders make it worse rather than better.
+    reads: [approver_ref, delegate_ref, stuck_reason, ball_in_court]
+
+  - name: authority_correctness
+    weight_bp: 1200
+    direction: context
+    description: Whether this is even the right approver at this value. Wrongly routed approvals age exactly like correctly routed ones and are fixed in five minutes once seen.
+    reads: [threshold_value, subject_value, required_by, authority_reference, reroute_count]
+
+  - name: control_criticality
+    weight_bp: 800
+    direction: increases
+    description: Four-eyes and segregation-of-duties approvals must not be bypassed under time pressure, which is precisely when they are.
+    reads: [approvers_required, segregation_breach, is_serial, is_retrospective]
+
+  - name: reminder_fatigue
+    weight_bp: 500
+    direction: decreases
+    description: Each additional chase lowers the probability the next one is read. The correct move after the third is to change route, not volume.
+    reads: [reminder_count, channel]
+
+evidence:
+  - {source: signed_form, strength_bp: 10000, decays: false,
+     independent_of: [erp, email, derived],
+     description: "A countersigned authorisation. Nothing outranks it and almost nothing produces it any more."}
+  - {source: erp, strength_bp: 9500, decays: false,
+     independent_of: [email, signed_form, meeting_transcript],
+     description: "A workflow audit line — actor, timestamp, action, immutable. The gold standard for anything that runs inside a system."}
+  - {source: register, strength_bp: 9500, decays: false,
+     independent_of: [email, erp],
+     description: "Board minutes recording a reserved matter. Slow, narrow, and unimpeachable."}
+  - {source: contract, strength_bp: 9000, decays: false,
+     independent_of: [erp, email],
+     description: "An executed contract proves the approval preceding it existed, even where the approval record itself has been lost."}
+  - {source: portal, strength_bp: 8000, decays: false,
+     independent_of: [email],
+     description: "ITSM or HR self-service approval record. Good, and routinely deleted on tenant migration."}
+  - {source: email, strength_bp: 7500, decays: true,
+     independent_of: [erp, signed_form],
+     description: "Written approval in a thread. Strong, universally available, and unretrievable in three years without a retention schedule."}
+  - {source: meeting_transcript, strength_bp: 7000, decays: true,
+     independent_of: [erp, email],
+     description: "Approval given in a governance meeting. Becomes durable only once minuted and adopted at the following meeting."}
+  - {source: attestation, strength_bp: 6500, decays: true,
+     independent_of: [email, erp],
+     description: "The approver confirming after the fact that they approved. Acceptable evidence, weaker than contemporaneous, and a finding if it is the norm."}
+  - {source: manual_entry, strength_bp: 4000, decays: true,
+     description: "A coordinator typed 'approved' into a tracker. Real information, no evidential weight."}
+  - {source: derived, strength_bp: 3000, decays: true,
+     description: "Inferred from silence or from downstream execution. Corroborating only — see apv.silence_is_not_consent."}
+
+metrics:
+  - {name: median_decision_latency, unit: hours, direction: lower_is_better, owner_layer: L6,
+     description: "By approver and approval_type. A single organisation-wide figure hides every real problem.",
+     calibrates: [apv.stuck_with_the_approver, apv.latency_beyond_this_approver_norm]}
+  - {name: stuck_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of open approvals past their type's normal window. The number nobody currently reports and everybody feels.",
+     calibrates: [apv.stuck_with_the_approver, apv.nobody_owns_the_decision]}
+  - {name: first_time_right_route, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share decided by the first approver they were sent to. Low values mean the DOA matrix is not being read, or does not exist.",
+     calibrates: [apv.doa_threshold_covers_the_value]}
+  - {name: rejection_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Target band, not maximise. Zero means the control is a postbox; high means the requesters have no guidance."}
+  - {name: retrospective_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share collected after execution. Rising values are a message about the control's speed, not about the staff's discipline.",
+     calibrates: [apv.retrospective_collection]}
+  - {name: escalation_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share requiring a rung climb to resolve. Every point of it is relationship capital spent on a routing failure."}
+  - {name: reminders_per_decision, unit: count, direction: lower_is_better, owner_layer: L2,
+     description: "Chase effort per approval. The coordinator's real workload and the least visible cost of a slow queue."}
+  - {name: hold_time_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Proportion of elapsed time spent on_hold. Large values mean approvals are being raised before their inputs exist."}
+  - {name: gate_survival_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Share of approval steps that have rejected at least once in the period. Steps below the band are candidates for conversion to notification."}
+
+events:
+  - {id: apv.requested, name: Approval Requested, severity: info,
+     payload: [approval_type, approver_ref, subject_value, requested_at]}
+  - {id: apv.became_stuck, name: Approval Became Stuck, severity: notable,
+     emitted_when: [{path: thread.ball_in_court, op: "=", value: them},
+                    {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}],
+     payload: [approver_ref, pending_days, stuck_reason, downstream_hardness],
+     description: "The event this object exists to emit. Nothing else in the stack currently fires when an approval crosses from working to abandoned."}
+  - {id: apv.overdue, name: Approval Overdue, severity: notable,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [due_at, approver_ref, blocks_description]}
+  - {id: apv.decided, name: Approval Decided, severity: info,
+     emitted_when: [{has_obs: budget_approved}],
+     payload: [state, decided_at, approver_ref, evidence_ref],
+     invalidates: [stuck_reason, is_past_normal, reminder_count]}
+  - {id: apv.rerouted, name: Approval Re-routed, severity: notable,
+     payload: [previous_approver_ref, approver_ref, reroute_count, reason],
+     invalidates: [pending_days, is_past_normal],
+     description: "Worth its own event because a re-route resets every duration metric and almost no system records that it happened, so the new approver inherits an age they did not cause."}
+  - {id: apv.escalated, name: Approval Escalated, severity: notable,
+     payload: [escalation_ref, current_rung, pending_days]}
+  - {id: apv.expired, name: Approval Expired, severity: critical,
+     payload: [approval_type, subject_ref, downstream_hardness],
+     description: "The quiet failure: nobody said no, the window simply closed, and the work restarts from the request under authority that may itself have changed."}
+  - {id: apv.control_exception_raised, name: Control Exception Raised, severity: critical,
+     payload: [segregation_breach, is_retrospective, approvers_required, approvals_received],
+     description: "Self-approval, a four-eyes collapse, or a retrospective collection. Emitted at the moment of decision because the audit is two years later and the thread will be gone."}
+
+actions:
+  - {id: apv.route, name: Route to the correct approver, actor: agent, cost: trivial, reversible: true,
+     effect: "Match subject_value against threshold_value before sending. The five minutes spent here is the difference between a two-day approval and a two-week one."}
+  - {id: apv.remind, name: Send a reminder, actor: agent, cost: trivial, reversible: false,
+     preconditions: [{path: thread.ball_in_court, op: "=", value: them}],
+     effect: "Only useful while reminder_count is low. Past the third, volume is the wrong lever and each further send lowers the odds the next is read."}
+  - {id: apv.reroute_to_delegate, name: Re-route to the recorded delegate, actor: agent, cost: low, reversible: true,
+     effect: "The correct move for stuck_reason = approver_absent. Requires a recorded, in-date delegation — exercising an unrecorded one is the control failure, not the fix."}
+  - {id: apv.supply_missing_information, name: Supply what the approver is waiting for, actor: human, cost: low, reversible: true,
+     effect: "The cheapest resolution and the least attempted, because almost nobody asks the approver why they have not decided."}
+  - {id: apv.pause_with_resume_condition, name: Place on hold with a named resume condition, actor: human, cost: trivial, reversible: true,
+     effect: "Stops the clock honestly. An approval genuinely waiting on an external party should not be counted as approver latency, and a hold with no resume condition should not be permitted at all."}
+  - {id: apv.escalate, name: Escalate to the next rung, actor: human, cost: moderate, reversible: false,
+     effect: "Spends relationship capital with the person escalated past. Correct when reachability has failed, wrong when information was missing."}
+  - {id: apv.split_serial_chain, name: Parallelise a serial approval chain, actor: human, cost: moderate, reversible: true,
+     effect: "Removes the largest structural source of cycle time. Requires confirming that no approver genuinely depends on a prior one's decision, which is usually only one of them."}
+  - {id: apv.attach_evidence, name: Attach the decision evidence, actor: system, cost: trivial, reversible: false,
+     effect: "Converts an approval into something defensible. In a governed model this is the deliverable, not the decision."}
+  - {id: apv.retire_the_gate, name: Propose removing the approval step, actor: human, cost: high, reversible: true,
+     effect: "For required_by = precedent or undocumented, or any step with a zero rejection rate over a full period. Deleting one habitual sign-off usually beats optimising ten real ones."}
+  - {id: apv.reindex_threshold, name: Propose re-indexing the threshold, actor: human, cost: moderate, reversible: true,
+     effect: "A limit set a decade ago and never revisited routes inflation to the board. Re-indexing removes queue volume without weakening a single control."}
+
+dependencies:
+  - {target: admin.obj.core.approver, kind: requires, strength: hard,
+     description: "Without a named approver the object cannot leave submitted and cannot be classified pending or stuck at all."}
+  - {target: admin.obj.core.policy, kind: requires, strength: soft,
+     description: "The DOA matrix supplies threshold_value and required_by. Without it every approval reads as required_by = undocumented, which is honest and useless."}
+  - {target: admin.obj.core.deadline, kind: enriches, strength: hard,
+     description: "Supplies downstream_hardness, without which the queue can only be sorted by value — a poor proxy for urgency."}
+  - {target: admin.obj.core.request, kind: derived_from, strength: soft,
+     description: "The intake record supplies the subject, the requester and the priority. Approvals arriving as forwarded email have none of these and are the ones that vanish."}
+  - {target: admin.obj.core.delegate, kind: enriches, strength: soft,
+     description: "Resolves the effective approver during an absence. Its absence is the most common cause of stuck, not merely a missing enrichment."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "Supplies the exit. An approval with no escalation path can only be reminded at."}
+  - {target: admin.obj.core.audit_evidence, kind: requires, strength: soft,
+     description: "Required for the approval to be relied on later. Not required for it to function today, which is exactly why it is skipped."}
+  - {target: admin.obj.core.commitment, kind: derived_from, strength: soft,
+     description: "Currently the only route by which an approval acquires a machine-visible due date."}
+  - {target: admin.obj.core.budget_line, kind: enriches, strength: soft,
+     description: "Commitment accounting. Without the edge, the budget shows headroom already consumed by approved but unpaid items."}
+  - {target: admin.obj.core.compliance_obligation, kind: requires, strength: soft,
+     description: "Where the approval exists because a regulator requires it. These cannot be retired however poorly they perform."}
+  - {target: admin.obj.core.employee_record, kind: invalidated_by, strength: hard,
+     description: "A leaver event voids the route entirely. Every open approval held by a departed approver is stuck, and none of them are marked so."}
+
+exceptions:
+
+  - id: apv.emergency_ratification
+    statement: "Emergency spend may be committed before approval and ratified within a stated window, commonly five working days."
+    overrides: [apv.no_execution_before_decision, apv.cannot_exceed_threshold]
+    when: [{has_obs: budget_approved}]
+    why: >
+      A control that cannot be broken under fire gets bypassed permanently instead of temporarily.
+      The ratification window is the whole mechanism — it converts a breach into a logged,
+      time-boxed exception with a named ratifier. Organisations that refuse to write one down get
+      the same behaviour with no record of it.
+    frequency: rare
+
+  - id: apv.deemed_approval_clause
+    statement: "Where a cited clause operates deemed approval after a stated period, silence genuinely is consent."
+    overrides: [apv.silence_is_not_consent]
+    why: >
+      Real in public-sector schemes of delegation, in some planning and licensing regimes, and in
+      contracts with an explicit acceptance period. The exception is narrow on purpose: is_deemed
+      may only be set where authority_reference cites the clause, because otherwise the one
+      legitimate case is used to justify the general one within a fortnight.
+    frequency: rare
+
+  - id: apv.chair_action_between_meetings
+    statement: "A reserved matter arising between board meetings may be taken by chair's action and ratified at the next meeting."
+    overrides: [apv.value_above_threshold_routes_up, apv.expired_cannot_be_revived]
+    why: >
+      A matter reserved to the board that arises three days after the board met would otherwise
+      wait six weeks. Chair's action is the standard instrument and it is bounded by two things:
+      it must be minuted at the next meeting, and it cannot be used twice for the same matter.
+    frequency: occasional
+
+  - id: apv.four_eyes_waiver_small_organisation
+    statement: "Below a certain headcount two genuinely independent approvers do not exist, and the requirement must be met by a documented compensating control instead."
+    overrides: [apv.four_eyes_requires_two_people, apv.four_eyes_distinct_persons]
+    why: >
+      In a nine-person company the finance lead raises the payment and the founder approves it, and
+      there is no third party. The conflict is unavoidable; the absence of a compensating control —
+      a monthly independent review of all payments above a threshold — is not. The failure here is
+      pretending the conflict does not exist, not the conflict.
+    frequency: common
+
+  - id: apv.statutory_deadline_outranks_internal_gate
+    statement: "Where a statutory filing deadline collides with an internal approval sequence, file and approve afterwards."
+    overrides: [apv.no_execution_before_decision]
+    why: >
+      A late filing produces an automatic penalty and, in some jurisdictions, personal director
+      liability. An internal approval produces a conversation. Administrators know this ordering
+      instinctively; systems built from policy documents do not, and will happily hold a filing for
+      an internal sign-off past the point where the sign-off is worth anything.
+    frequency: rare
+
+  - id: apv.pre_approved_catalogue
+    statement: "Spend inside a pre-approved catalogue, framework agreement or standing approval requires no per-item decision."
+    why: >
+      The correct structural answer to a high-volume, low-value approval stream, and it is routinely
+      re-litigated per item because nobody records that the standing approval exists. Where it does
+      exist, the approval should be created in state approved with the framework cited, not raised
+      as pending.
+    frequency: common
+
+  - id: apv.batching_window_is_not_stuck
+    statement: "An approver who clears their queue on a known cadence is not stuck inside that cadence, however long the interval."
+    overrides: [apv.stuck_with_the_approver, apv.pending_is_not_stuck]
+    when: [{path: thread.ball_in_court, op: "=", value: them}]
+    why: >
+      A Friday-morning batcher is entirely predictable and entirely reliable, and chasing them on
+      Wednesday is pure noise that trains them to ignore the channel. The correct response to
+      batching is to change when you send, not how hard you push. This is the most important
+      suppression on the object, because the stuck pattern would otherwise fire weekly against the
+      organisation's most disciplined approvers.
+    frequency: common
+
+  - id: apv.conditional_approval_is_a_decision
+    statement: "An approval given subject to recorded conditions is decided, not pending."
+    why: >
+      Coordinators routinely leave these open "until the conditions are met", which double-counts
+      the same wait and hides the real blocker — now the condition owner, not the approver. Close it
+      as approved with is_conditional true, and raise the condition as its own item with its own
+      owner.
+    frequency: occasional
+
+best_practices:
+
+  - id: apv.parallel_where_independent
+    statement: "Route independent approvers in parallel and dependent ones in series."
+    why: >
+      Serial routing is the default because it is easier to build and easier to draw, and it
+      multiplies cycle time by the number of approvers for no control benefit. In most chains
+      exactly one approver genuinely needs to see a prior decision; the rest are reading the same
+      request.
+    applies_when: "More than two approvers and no stated ordering dependency between them."
+
+  - id: apv.state_a_date_when_asking
+    statement: "Always state a due date in the request, even where policy sets none."
+    why: >
+      An approval with no stated date can never be overdue — only stuck, which is invisible. A date
+      converts a silent failure into a nameable one, and nameable failures get fixed. The date does
+      not have to be enforceable to work.
+    applies_when: "Every approval request, and especially the informal ones."
+
+  - id: apv.send_what_they_always_ask_for
+    statement: "Attach the evidence this approver demands before they ask for it."
+    why: >
+      information_missing is one of the largest stuck_reason categories and it costs a full round
+      trip each time, typically doubling cycle time on an approval that was never contentious. What
+      each approver asks for is learnable from three prior approvals and is recorded by nobody.
+    applies_when: "The approver has decided items of this type before."
+
+  - id: apv.record_the_delegate_before_the_absence
+    statement: "Record a time-bounded delegation at the point the leave is booked, not at the point the queue stops."
+    why: >
+      Absence is the most predictable event in the calendar and the least prepared for. A delegation
+      recorded in advance converts a fortnight's stoppage into a re-route; one arranged after the
+      fact is verbal, undocumented, and exercised by someone who does not hold the authority.
+    applies_when: "Any sole authority holder, and any absence over three working days."
+
+  - id: apv.measure_by_type_not_by_organisation
+    statement: "Set and report approval targets per approval_type and value band, never as a single organisation-wide SLA."
+    why: >
+      One figure makes travel approvals look excellent and policy approvals look catastrophic, and
+      both readings are artefacts of aggregation. Per-type norms are also the only way to define
+      stuck in the absence of a per-approver baseline.
+    applies_when: "Any queue carrying more than one approval_type."
+
+  - id: apv.diagnose_before_chasing
+    statement: "Establish stuck_reason before choosing a remedy — remind, re-route, supply, or escalate."
+    why: >
+      The four symptoms are identical from the outside and the four remedies are not
+      interchangeable. Escalating an approval that stalled for want of a quote comparison spends
+      relationship capital to obtain a document you already had.
+    applies_when: "Any approval entering at_risk."
+
+  - id: apv.capture_evidence_at_the_moment
+    statement: "Attach the decision evidence as the decision is made, not when it is asked for."
+    why: >
+      The moment you need the evidence is three years later, when the thread is deleted, the tenant
+      is migrated and the approver has left. Contemporaneous evidence outranks an attestation
+      obtained afterwards, and it costs one click at the time versus half a day later.
+    applies_when: "approval_type in spend, contract, filing, access, payroll."
+
+  - id: apv.review_the_gates_annually
+    statement: "Review every approval step yearly against its rejection rate, its cited basis and the value it blocks."
+    why: >
+      Approval steps accumulate and are never removed, because each was added after a real incident
+      and every removal proposal sounds like weakening a control. An annual review with a written
+      basis test is the only mechanism that reliably deletes any of them.
+    applies_when: "Any organisation past roughly a hundred people."
+    evidence: "Steps with zero rejections over a full period and required_by = precedent are the standard first candidates."
+
+  - id: apv.index_the_thresholds
+    statement: "Re-index monetary thresholds whenever the DOA matrix is re-issued."
+    why: >
+      A limit set a decade ago now catches routine consumables, so volume climbs into senior queues
+      every year without a single decision being taken about it. Re-indexing removes queue volume
+      without weakening any control — the only lever on this object that does both.
+    applies_when: "Any DOA matrix over about three years old."
+
+anti_patterns:
+
+  - id: apv.approval_theatre
+    statement: "An approval step that has never once rejected anything."
+    why_it_happens: >
+      It was added after an incident, nobody owns removing it, and every removal proposal sounds
+      like weakening a control. The approver themselves often knows they add nothing and cannot say
+      so without appearing to shirk.
+    cost: "Cycle time and credibility. People start pre-clearing offline and back-filling the record, which destroys the audit trail the step was meant to create."
+    instead: "Measure rejection rate per step over a full period, then convert never-rejecting steps to notification — the approver still sees everything and stops holding it."
+    detectable_by: [gate_survival_rate, rejection_rate]
+
+  - id: apv.serial_by_default
+    statement: "Routing every approver in sequence because the workflow tool made it easy."
+    why_it_happens: >
+      Serial is the default in most workflow products, it renders as a tidy diagram, and it mirrors
+      the paper form the process was digitised from. Nobody chose it.
+    cost: "Cycle time multiplied by the number of approvers, and a position-4 approver chased weekly for a stall at position 1."
+    instead: "Parallelise everything with no stated dependency. Keep the one genuine dependency in series and say out loud what it is."
+    detectable_by: [median_decision_latency, reminders_per_decision]
+
+  - id: apv.thresholds_frozen_in_time
+    statement: "Approval limits that have not been revisited since the year they were set."
+    why_it_happens: >
+      Changing a limit means re-issuing the DOA matrix, which means a board or committee slot, and
+      nobody's objectives include it. Meanwhile inflation quietly promotes routine spend into senior
+      queues, one item at a time, with no decision ever taken to put it there.
+    cost: "Rising volume in the most expensive queues in the organisation with no corresponding rise in risk. Senior approvers become the bottleneck for consumables."
+    instead: "Re-index thresholds when the matrix is re-issued, and report queue volume by value band so the drift is visible before it is structural."
+    detectable_by: [first_time_right_route, median_decision_latency]
+
+  - id: apv.reminder_as_the_only_lever
+    statement: "Chasing the same approver a fifth time because it is the only action the tool offers."
+    why_it_happens: >
+      Reminders are free, they feel like progress, and they produce a defensible record of having
+      tried. Re-routing requires knowing the matrix, which nobody has.
+    cost: "The approver learns to filter the channel, which degrades every future approval routed to them, including the urgent ones."
+    instead: "Cap reminders at three. After that, diagnose stuck_reason and change the route or supply what is missing."
+    detectable_by: [reminders_per_decision, escalation_rate]
+
+  - id: apv.escalate_when_information_was_missing
+    statement: "Climbing a rung when the approver was simply waiting for a document."
+    why_it_happens: >
+      Silence is read as unwillingness, and escalation is the visible, procedurally correct response
+      to unwillingness. Nobody asks the approver why.
+    cost: "Relationship capital spent to obtain a quote comparison you already had, and an approver who now has a reason to be slower next time."
+    instead: "One direct question — 'what do you need in order to decide this?' — before any escalation."
+    detectable_by: [escalation_rate]
+
+  - id: apv.pending_count_as_a_health_metric
+    statement: "Reporting the size of the approval queue as though it measured anything."
+    why_it_happens: >
+      It is the one number every workflow tool exposes without configuration, and it goes down when
+      things get decided, which makes it look like a performance measure.
+    cost: "A queue of forty healthy approvals and a queue of forty abandoned ones report identically, so the eleven abandoned ones are never worked."
+    instead: "Report stuck_share and hold_time_share alongside the count. The count is a volume figure, not a health figure."
+    detectable_by: [stuck_share, hold_time_share]
+
+  - id: apv.order_splitting_below_the_limit
+    statement: "Dividing one purchase into three so each falls under the approval threshold."
+    why_it_happens: >
+      Almost always well-intentioned — the threshold is stale, the senior approver is away, and the
+      work is needed this week. It is presented as pragmatism and usually is, right up until it is
+      not.
+    cost: "The control is defeated silently, and the pattern is indistinguishable from genuine incremental buying without analysis."
+    instead: "Detect same-supplier, same-period, just-under-threshold clustering. Then fix the threshold, because splitting is a symptom of a limit nobody believes in."
+    detectable_by: [first_time_right_route]
+
+  - id: apv.the_forwarded_email_approval
+    statement: "An approval that exists only as a forwarded email chain with no intake record."
+    why_it_happens: >
+      Raising it properly takes four minutes and forwarding takes four seconds, and for the first
+      two days the forward genuinely works better.
+    cost: "It appears in no queue, ages against no target, is visible to no coordinator, and is remembered only by the person waiting. These are the approvals that surface at the deadline."
+    instead: "Create the request record on receipt even where the decision continues by email. The record is the queue entry; the conversation is not."
+    detectable_by: [stuck_share]
+
+  - id: apv.approval_as_a_shield
+    statement: "Routing something for approval to obtain cover rather than a decision."
+    why_it_happens: >
+      A requester who is unsure wants a senior name attached, and an approval request is the socially
+      acceptable way to ask for one. The approver, given no decision to make, sits on it.
+    cost: "Queue volume with no control value, and a slow response the requester reads as disapproval when it is only confusion."
+    instead: "Separate 'I need a decision' from 'I want advice'. The second is a conversation and should never enter the approval queue."
+    detectable_by: [rejection_rate, gate_survival_rate]
+
+  - id: apv.hold_without_a_resume_condition
+    statement: "Parking an approval on hold indefinitely to keep the queue metrics clean."
+    why_it_happens: >
+      On-hold time is excluded from the SLA, so moving a difficult item there improves every number
+      on the report immediately and costs nothing visible.
+    cost: "The requester's clock keeps running while the queue reports health. This is the most defensible-looking way to hide a stuck approval and therefore the most common."
+    instead: "Require a named resume condition and an owner on every hold, and report hold_time_share as prominently as the pending count."
+    detectable_by: [hold_time_share]
+
+examples:
+  - {label: "Supplier invoice for £1,200 awaiting cost-centre owner sign-off", kind: typical,
+     note: "Pending four days, normal is one. Payment run is Thursday and the supplier goes on stop after that. Small value, hard downstream deadline — the case where sorting by value gets it exactly wrong."}
+  - {label: "Board-reserved matter above the CEO's limit", kind: edge,
+     note: "required_by = board_resolution. Cannot be escalated, cannot be delegated, expires with the meeting cycle. The only route is the agenda, and the agenda closes ten days before the meeting."}
+  - {label: "Access request approved by the requester's own manager, who is also the system owner", kind: edge,
+     note: "segregation_breach true. Nothing will flag it, everything will pass it, and it is the first thing a controls walkthrough finds."}
+  - {label: "Travel approval sent to a director in the air for eleven hours", kind: typical,
+     note: "stuck_reason = approver_absent, no delegate. Three reminders sent, none read, and the fare expired at 18:00. The remedy was a delegate, not a chase."}
+  - {label: "Policy sign-off circulated to nine reviewers in series", kind: typical,
+     note: "is_serial true, sequence_position 7 chased for a stall at position 2. Parallelising costs nothing and saves five weeks."}
+  - {label: "Finance director who clears their entire approval queue on Friday mornings", kind: misclassification,
+     note: "Trips apv.stuck_with_the_approver every Wednesday and is the most reliable approver in the organisation. The object's most damaging false positive — see apv.batching_window_is_not_stuck."}
+  - {label: "'Approved' said in a corridor before a site visit", kind: misclassification,
+     note: "channel = verbal, no evidence_ref. Operationally sufficient, evidentially worthless, and the site visit is the part that will be audited."}
+  - {label: "Three purchase orders to one supplier in a week, each just under the limit", kind: counterexample,
+     note: "Not three approvals. One approval, split. The detection is trivial and nobody runs it."}
+  - {label: "Approval placed on_hold in March 'pending clarification', still on hold in September", kind: counterexample,
+     note: "Excluded from every SLA, invisible on every report, and the requester gave up in April. The cleanest way to hide a stuck approval is to pause it."}
+
+references:
+  - {title: "Delegation of Authority matrix", kind: framework,
+     note: "The standard instrument for expressing approval thresholds by role, value band and decision class. Present in essentially every organisation past fifty people and machine-readable in almost none."}
+  - {title: "Segregation of duties", kind: framework,
+     note: "Authorisation, custody, recording and reconciliation held by different people. The origin of both the self-approval prohibition and the four-eyes requirement."}
+  - {title: "Four-eyes principle (maker-checker)", kind: framework,
+     note: "Two distinct people on a single decision. Widely implemented as a field count rather than as an independence test, which is how both signatures end up inside one reporting line."}
+  - {title: "Three-way match", kind: framework,
+     note: "Purchase order, goods receipt and invoice reconciled before payment. The approval sits alongside them, and releasing without it is the classic payables control failure."}
+  - {title: "COSO Internal Control — Integrated Framework", kind: framework,
+     note: "The control-activity and monitoring components are what make 'a step that has never rejected anything' a finding rather than an efficiency."}
+  - {title: "Sarbanes-Oxley section 404", kind: standard,
+     note: "Why approval evidence must be contemporaneous and reproducible rather than attested afterwards. Drives the evidence_strength_bp attribute."}
+  - {title: "Commitment accounting", kind: methodology,
+     note: "Budget is consumed at approval, not at payment. The reason allocated_to budget_line is a real edge rather than reporting decoration."}
+  - {title: "Matters reserved for the board, and chair's action", kind: practitioner,
+     note: "The standard governance instruments behind apv.chair_action_between_meetings and the board_resolution value of required_by."}
+  - {title: "Little's Law applied to approval queues", kind: methodology,
+     note: "Cycle time is queue length divided by throughput. It is why removing one approval step beats speeding up three, and why serial routing is so expensive."}
+  - {title: "ISO 30301 — Management systems for records", kind: standard,
+     note: "The retention obligation behind the archived state. In a governed context the approval discharges at archive, not at decision."}
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Rewritten from the 18-section shape onto the 23-section schema. The load-bearing content is
+    carried forward — the pending-versus-stuck distinction, stuck_reason as the field that turns a
+    queue into a work list, and the honest ranking of the Layer 1/2 backlog. preconditions,
+    dependencies, exceptions, best_practices, anti_patterns and references are additions rather
+    than migrations.
+
+    Five of fourteen patterns are executable, and all five use domain-neutral substrate
+    (commitment.due_at, commitment.action, thread.ball_in_court, derived.engagement, the
+    reply_cadence baseline) rather than a sales fact stretched into an administrative meaning. The
+    nine needs_signal entries are ranked deliberately: approval.state plus the approval_requested /
+    approval_granted / approval_rejected observation trio would convert this object from
+    mostly-inferred to mostly-known, and until approval.requested_at exists every duration metric
+    here is a lower bound rather than a measurement.
+
+    The most important single line in the file is the exception apv.batching_window_is_not_stuck.
+    Without it the object's best executable pattern fires weekly against the organisation's most
+    disciplined approvers, and an assistant that cries wolf at the finance director every Wednesday
+    is switched off by the end of the month.

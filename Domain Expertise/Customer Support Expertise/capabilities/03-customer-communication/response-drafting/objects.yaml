@@ -1,0 +1,29 @@
+# Load-set for customer_support.customer_communication.response_drafting — REFERENCES ONLY,
+# never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.customer_communication.response_drafting
+
+core:
+  # A reply needs three things and they are three different objects: the state of the promised
+  # work (Ticket), the thread it has to fit into and not repeat (Conversation), and the person it
+  # is addressed to (Requester). Drafting without the conversation is how a support team sends the
+  # same explanation twice.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.requester
+  # KnowledgeArticle supplies the answer we should be linking rather than retyping;
+  # CustomerSentiment sets the register; Entitlement bounds what the message is allowed to
+  # promise. Each improves the draft and none of them blocks writing one.
+  optional:
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.entitlement
+
+scoped:
+  # Nothing scoped — every object a reply draws on is shared with the rest of the subdomain.
+  required: []
+  optional: []

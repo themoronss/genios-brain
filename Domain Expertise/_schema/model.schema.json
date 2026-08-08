@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/model.schema.json",
+  "title": "Model / Vertical branch node",
+  "description": "A node in the models/ tree — HOW the domain's motion runs. Sales calls these B2B, PLG and channel; Customer Support calls them tiered, swarming and follow-the-sun. Same mechanism either way.\n\nThe tree is real and navigable, but it INHERITS: a capability or object file exists inside a branch only when it genuinely differs from the canonical one. Resolution order is vertical -> model -> canonical. Full copies at every node would produce ~45 divergent decision-maker.yaml files within a month, which is the failure this file's `overrides` and `extends` blocks exist to avoid.\n\n`characteristics` carries two families of key — commercial (buyer, cycle, ACV, committee) and operational (requester, resolution time, volume, staffing, coverage, automation). A branch fills in whichever family describes it and leaves the other absent. They are not alternatives to each other in general: an enterprise support branch legitimately has both a committee and a coverage window.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "description", "metadata"],
+
+  "properties": {
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "domain", "version", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+\\.model\\.[a-z0-9_.]+$", "description": "<domain>.model.<model>[.<vertical>]" },
+        "name": { "type": "string" },
+        "kind": { "enum": ["model", "vertical"] },
+        "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "parent": { "type": ["string", "null"], "description": "Parent branch id. null at a top-level model; required on a vertical." },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "enum": ["draft", "review", "stable", "deprecated"] },
+        "stub": { "type": "boolean", "default": false }
+      }
+    },
+
+    "description": { "type": "string", "minLength": 20 },
+
+    "characteristics": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What is structurally true of running the motion this way. Read by a human deciding whether a tenant fits this branch; never evaluated.",
+      "properties": {
+        "buyer": { "type": "string" },
+        "typical_cycle_days": { "type": "integer", "minimum": 0 },
+        "typical_acv": { "type": "string" },
+        "committee_size": { "type": "string" },
+        "decision_style": { "type": "string" },
+        "primary_channels": { "type": "array", "items": { "type": "string" } },
+
+        "requester": { "type": "string", "description": "Operational branches: who actually contacts support, which is frequently not the buyer. The end user raising a ticket has no commercial relationship with us and no patience for one." },
+        "typical_resolution_hours": { "type": "integer", "minimum": 0, "description": "Hours, not days — a consumer chat resolving in 20 minutes and an enterprise defect resolving in three weeks both round badly to days." },
+        "volume_shape": { "type": "string", "description": "e.g. high-volume/low-complexity, spiky around releases, seasonal." },
+        "staffing_model": { "type": "string", "description": "e.g. tiered L1/L2/L3, swarming, pooled, named engineer." },
+        "coverage": { "type": "string", "description": "e.g. 24x7 follow-the-sun, business hours in one region, on-call after hours." },
+        "automation_level": { "type": "string", "description": "How much is deflected or resolved before a human sees it." },
+
+        "notes": { "type": "string" }
+      }
+    },
+
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Which of the canonical capabilities this branch exercises. Absent means inherit the parent's set unchanged.",
+      "properties": {
+        "activates": { "type": "array", "items": { "type": "string" }, "description": "Capability ids that are in play here and are NOT in the canonical default set." },
+        "deactivates": { "type": "array", "items": { "type": "string" }, "description": "Canonical capability ids that do not exist in this motion at all." },
+        "emphasises": { "type": "array", "items": { "type": "string" }, "description": "Present in both, but disproportionately important here. Advisory." }
+      }
+    },
+
+    "objects": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "extends": {
+          "type": "array",
+          "description": "Branch-local additions to a shared object. This is how the tree stays navigable without duplicating the object.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object"],
+            "properties": {
+              "object": { "type": "string", "description": "Object id being extended. Must resolve." },
+              "add_properties": { "type": "array", "items": { "type": "object" } },
+              "add_patterns": { "type": "array", "items": { "type": "object" } },
+              "require_properties": { "type": "array", "items": { "type": "string" }, "description": "Canonical properties that become mandatory in this branch." },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "never_load": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "overrides": {
+      "type": "object",
+      "description": "Dotted-path overrides against canonical files, e.g. capabilities.sales.qualification.lead_qualification.min_stakeholders: 3. Applied by _tools/index.py in resolution order. Flat map so a diff reads as a diff.",
+      "additionalProperties": true
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "last_updated", "review_status"],
+      "properties": {
+        "owner": { "type": "string" },
+        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
+        "reviewed_by": { "type": "string" },
+        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
+        "confidence": { "enum": ["experimental", "provisional", "stable"] },
+        "notes": { "type": "string" }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "vertical" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "properties": { "identity": { "required": ["parent"], "properties": { "parent": { "type": "string" } } } } }
+    }
+  ]
+}

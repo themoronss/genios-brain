@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.sla_management.clock_is_shared_but_only_we_see_it
+  name: Clock is shared but only we see it
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The clock is a shared object that only one party can see.
+
+
+    We hold the instrument and the customer holds the expectation. Everything good in SLA communication
+    follows from deliberately showing them our side of it — a stated deadline, a stated pause, a stated
+    miss — and everything bad follows from assuming they can infer it.'
+dimensions:
+- name: Clock is shared but only we see it
+  asks: The clock is a shared object that only one party can see.
+how_to_apply:
+- The clock is a shared object that only one party can see.
+- We hold the instrument and the customer holds the expectation. Everything good in SLA communication
+  follows from deliberately showing them our side of it — a stated deadline, a stated pause, a stated
+  miss — and everything bad follows from assuming they can infer it.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

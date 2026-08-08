@@ -1,0 +1,22 @@
+# Load-set for sales.market_and_targeting.tam_sam_som — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/tam-sam-som/            loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.market_and_targeting.tam_sam_som
+
+core:
+  required:
+    - sales.obj.core.icp
+  optional:
+    - sales.obj.core.company
+    - sales.obj.core.competitor
+
+scoped:
+  required: []
+  optional: []

@@ -1,0 +1,1483 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# admin.obj.core.invoice — a supplier's demand for money, and the evidence that the
+# organisation actually owes it.
+#
+# The three-way match is the whole object. Purchase order, goods receipt, invoice: what we
+# agreed to buy, what actually arrived, what we are being asked to pay. A mismatch on any leg
+# is a QUERY, not a payment — and the entire discipline of payables is the willingness to keep
+# it open while a supplier applies pressure. Duplicate and phantom invoices do not survive
+# because they are clever. They survive because a mismatch of a few hundred pounds costs more
+# in argument than in cash, and somebody pays it to keep the peace.
+#
+# Five of the thirteen patterns below run against the pipeline as it exists today, and all five
+# read the ARGUMENT about the invoice rather than the invoice. The eight that cannot fire are
+# the honest reason payables is not automatable on this stack: nothing in Layer 1 or Layer 2
+# can currently see a purchase order, a goods receipt, or an amount.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1 · Identity ─────────────────────────────────────────────────────────────────────────
+identity:
+  id: admin.obj.core.invoice
+  name: Invoice
+  domain: admin
+  scope: core
+  subdomain: finance_administration
+  owner_capability: admin.finance_administration.invoice_processing
+  version: 2.0.0
+  status: draft
+  aliases: ["Supplier Invoice", "Payable", "Bill", "AP Document", "Accounts Payable Item"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    A supplier's claim on the organisation's cash, arriving as a document and leaving as either
+    a payment or a query. It carries the demand, the commercial basis for the demand, the
+    reconciliation between what was ordered, what was received and what is being billed, and the
+    named human who owns whatever is wrong with it. Payables' real output is not the payment.
+    It is the provable reason for the payment.
+  discriminator: >
+    Reconciliation, not obligation. An expense is money the organisation certainly owes where the
+    only open question is eligibility; an invoice is money somebody ASSERTS the organisation owes
+    and the open question is whether it reconciles to an order and a receipt. If nobody outside
+    the payee can be asked to confirm the thing arrived, this is not an invoice being processed,
+    it is a payment being made on trust.
+  answers:
+    - "Do we actually owe this, and what proves it?"
+    - "Which leg of the three-way match failed, and therefore whose question is it — procurement's, the requisitioner's, or the supplier's?"
+    - "Can this be released for payment, or is it a query that a supplier is trying to convert into a payment by applying pressure?"
+    - "Whose court is this exception sitting in, and how much of its age is ours rather than theirs?"
+    - "Which budget line does this land on, and is that line still live?"
+    - "Is anything about this document unusual enough to look at before paying it — new payee, changed bank details, off-channel arrival, an amount we have already paid once?"
+  not:
+    - "NOT the purchase commitment. That is admin.obj.core.purchase_order — the invoice arrives long after the money was committed, and confusing the two is why commitment stays invisible until the invoice lands."
+    - "NOT the authority to pay. That is admin.obj.core.approval, which carries the limit that made the approver sufficient. An organisation storing only the approver's name has kept the signature and lost the control."
+    - "NOT the budget consequence. admin.obj.core.budget_line owns whether cover exists; the invoice only asks."
+    - "NOT the supplier relationship, the rate card or the notice period. Those belong to admin.obj.core.contract and admin.obj.core.vendor."
+    - "NOT an employee reimbursement. admin.obj.core.expense covers money already spent by our own people, where the obligation is not in dispute and only eligibility is."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ---- Identity and provenance -------------------------------------------------------
+  - name: identity_and_provenance
+    purpose: What this document is, who sent it, and how it arrived. Channel is a control, not filing metadata — the inbox is where phantom invoices enter.
+    type: composite
+    contains: [invoice_number, vendor_ref, received_at, received_channel, currency, document_ref]
+
+  - name: invoice_number
+    purpose: The supplier's own reference, identifying their document rather than ours.
+    type: value
+    data_type: string
+    required: true
+    validation: "unique per vendor, never globally unique"
+    sensitivity: internal
+    description: >
+      Uniqueness must be enforced per vendor. Two unrelated suppliers will happily both issue
+      INV-001, and a global unique constraint rejects the honest one while teaching the team that
+      the duplicate check produces noise.
+
+  - name: vendor_ref
+    purpose: The payee, resolved to an onboarded record with independently verified bank details.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.vendor
+    required: true
+    sensitivity: internal
+    description: >
+      An invoice from an unrecognised payee is the single highest-value exception in the whole
+      object, and the one most often "resolved" by creating the vendor rather than by asking why
+      it exists.
+
+  - name: received_at
+    purpose: When it landed with us, which is what the ageing clock runs from.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: Not the invoice date the supplier printed on it. Suppliers routinely date documents earlier than they send them, and paying on their date funds their working capital out of ours.
+
+  - name: received_channel
+    purpose: How it arrived, treated as a fraud control rather than as metadata.
+    type: value
+    data_type: enum
+    allowed_values: [portal, email, edi, post, embedded_in_contract, expense_claim, unknown]
+    default: unknown
+    sensitivity: internal
+    description: >
+      An invoice arriving by email from a vendor who has used the portal for three years deserves
+      a look before it deserves a payment. Channel deviation is the cheapest signal that
+      correlates with the expensive ones.
+
+  - name: currency
+    purpose: Settlement currency as invoiced.
+    type: value
+    data_type: string
+    validation: "ISO 4217 three-letter code"
+    sensitivity: internal
+    description: A currency change on a recurring supplier is a repricing in disguise, and it is almost never approved as one.
+
+  - name: document_ref
+    purpose: The artefact itself — the scan, the PDF, the portal submission.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    sensitivity: internal
+    description: In a governed context the payment without the document did not happen. The ledger entry is not the audit trail; this is.
+
+  # ---- Commercial terms ---------------------------------------------------------------
+  - name: commercial_terms
+    purpose: What is being demanded, on what basis, and by when.
+    type: composite
+    contains: [gross_amount, net_amount, tax_amount, payment_terms_days, due_at, days_to_due, contract_ref, early_settlement_discount_bp]
+
+  - name: gross_amount
+    purpose: The total demanded, inclusive of tax. The figure every threshold in the policy turns on.
+    type: value
+    data_type: money
+    required: true
+    validation: ">= 0"
+    sensitivity: confidential
+
+  - name: net_amount
+    purpose: The amount before tax, which is the figure that consumes budget.
+    type: value
+    data_type: money
+    sensitivity: confidential
+
+  - name: tax_amount
+    purpose: Recoverable tax, kept separate because its recoverability is a different test from the debt's validity.
+    type: value
+    data_type: money
+    sensitivity: confidential
+    description: >
+      An invoice failing the statutory format test is still payable while the tax on it is not
+      reclaimable. That is a finding at audit rather than a payables error, and the two are
+      routinely collapsed into "reject the invoice", which penalises a supplier who did nothing
+      wrong except use the wrong template.
+
+  - name: payment_terms_days
+    purpose: The agreed terms, which are the contract's and never the document's.
+    type: value
+    data_type: integer
+    unit: days
+    validation: ">= 0"
+    sensitivity: internal
+    description: Suppliers routinely print shorter terms than they agreed, and are routinely paid on them because nobody opens the contract.
+
+  - name: due_at
+    purpose: When payment falls due under the agreed terms.
+    type: derived
+    data_type: timestamp
+    derived_from: [received_at, payment_terms_days]
+    sensitivity: internal
+    description: Computed from receipt plus contractual terms, not copied off the document.
+
+  - name: days_to_due
+    purpose: Time pressure, as distinct from the query's own age.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [due_at]
+    sensitivity: internal
+    description: >
+      Urgency is a reason to resolve an exception faster. It is never a reason to pay an unmatched
+      invoice, and every payables function that has quietly reversed those two reversed them here.
+
+  - name: contract_ref
+    purpose: The agreement that makes the rate legitimate and therefore arguable.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.contract
+    sensitivity: internal
+    description: Without it the price cannot be challenged, only felt to be high — and a feeling loses every argument with a supplier holding a signed rate card.
+
+  - name: early_settlement_discount_bp
+    purpose: Discount available for settling ahead of terms.
+    type: value
+    data_type: integer
+    unit: basis_points
+    validation: "0-10000"
+    sensitivity: internal
+    description: >
+      Present far more often than it is taken. One of the very few places where payables
+      administration is directly and measurably profitable, and a lapsed discount is a realised
+      loss rather than a missed opportunity.
+
+  # ---- The three-way match ------------------------------------------------------------
+  - name: three_way_match
+    purpose: >
+      Purchase order, goods receipt, invoice. The three legs and the state of the reconciliation
+      between them. A two-way match is not a lesser version of this — it is a different control
+      that proves the order was placed and never that anything arrived.
+    type: composite
+    contains: [po_ref, match_type, match_state, price_variance_bp, quantity_variance_bp, receipt_confirmed, receipt_confirmed_by_ref]
+
+  - name: po_ref
+    purpose: The commitment this invoice draws down against.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.purchase_order
+    sensitivity: internal
+    description: >
+      Null is a real answer and it means maverick spend — somebody bought first and told
+      procurement afterwards. Treating a null PO as a coding problem rather than as a control
+      failure is precisely how the practice becomes normal within two quarters.
+
+  - name: match_type
+    purpose: Which control is actually being run on this invoice.
+    type: value
+    data_type: enum
+    allowed_values: [three_way, two_way, contract_match, non_po, unmatched]
+    default: unmatched
+    sensitivity: internal
+    description: >
+      three_way is PO plus receipt plus invoice. two_way drops the receipt and therefore proves
+      ordering but never delivery. contract_match covers rent, rates, retainers and subscriptions
+      where no PO exists by design. non_po is the exception path, and it should require a named
+      approver every single time rather than a blanket category rule.
+
+  - name: match_state
+    purpose: The outcome of the reconciliation. The most load-bearing field on the object.
+    type: value
+    data_type: enum
+    allowed_values: [unmatched, matched, price_variance, quantity_variance, no_receipt, over_receipt, no_po, duplicate_suspected]
+    required: true
+    default: unmatched
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      Everything downstream branches on this one field, and it is deliberately not a boolean.
+      "Failed" does not tell you whose question it is, and a payables queue that cannot route by
+      failure type routes everything to finance, where roughly a third of it can be answered.
+
+  - name: price_variance_bp
+    purpose: Invoiced unit price against ordered unit price.
+    type: value
+    data_type: integer
+    unit: basis_points
+    sensitivity: internal
+    description: >
+      Tolerance is a policy decision, and a tolerance band nobody has ever breached is set too
+      wide. Repeated sub-tolerance variances on a recurring supply are a repricing nobody
+      approved, arriving two hundred basis points at a time.
+
+  - name: quantity_variance_bp
+    purpose: Invoiced quantity against receipted quantity.
+    type: value
+    data_type: integer
+    unit: basis_points
+    sensitivity: internal
+    description: Positive variance is the classic over-delivered-or-never-delivered ambiguity, and the two have opposite answers.
+
+  - name: receipt_confirmed
+    purpose: Whether somebody confirmed the goods or the service actually arrived.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      The leg that is quietly skipped for services, which is exactly where phantom invoicing
+      lives. Nothing physical fails to turn up to prompt a question about a consultancy day.
+
+  - name: receipt_confirmed_by_ref
+    purpose: Who confirmed it, so the confirmer can be tested for independence.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    sensitivity: internal
+    description: A receipt confirmed by the requisitioner is not a control, it is the same assertion written down twice.
+
+  # ---- Exception handling -------------------------------------------------------------
+  - name: exception_handling
+    purpose: What is wrong, who owns it, how long it has been wrong, and how much of that age is ours. The half of payables that is actually a job.
+    type: composite
+    contains: [exception_type, exception_owner_ref, exception_opened_at, query_sent_at, query_send_lag_hours, exception_age_days, hold_reason, ball_in_court, last_correspondence_at]
+
+  - name: exception_type
+    purpose: The typed reason the invoice did not match, which selects who can answer it.
+    type: value
+    data_type: enum
+    allowed_values: [none, price, quantity, missing_receipt, missing_po, unknown_vendor, duplicate, tax_invalid, coding_disputed, bank_change, legal_dispute]
+    default: none
+    sensitivity: internal
+    description: >
+      Exceptions are typed because their resolution paths are different people. A price query is
+      procurement's, a missing receipt is the requisitioner's, an unknown vendor is nobody's until
+      someone senior says so. An untyped exception queue routes everything to finance.
+
+  - name: exception_owner_ref
+    purpose: The named human who must answer.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.stakeholder
+    sensitivity: internal
+    description: An exception owned by "finance" is an exception owned by nobody, and it will age until a supplier escalates it on our behalf.
+
+  - name: exception_opened_at
+    purpose: When we knew something was wrong.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: query_sent_at
+    purpose: When the query actually left the building.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: The gap between this and exception_opened_at is the part of the ageing that is entirely ours, and it is the part nobody reports.
+
+  - name: query_send_lag_hours
+    purpose: How long we sat on a known problem before telling anybody about it.
+    type: derived
+    data_type: number
+    unit: hours
+    derived_from: [exception_opened_at, query_sent_at]
+    sensitivity: internal
+    description: Rarely measured, usually embarrassing, and the only component of exception ageing that can be fixed without the supplier's cooperation.
+
+  - name: exception_age_days
+    purpose: Total age of the open exception.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [exception_opened_at]
+    sensitivity: internal
+
+  - name: hold_reason
+    purpose: Why payment is being withheld, in terms that can be said out loud to a supplier.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: A hold reason that cannot be stated to the counterparty is not a hold, it is a delay with a story attached.
+
+  - name: ball_in_court
+    purpose: Who owes the next move on the open exception.
+    type: value
+    data_type: enum
+    allowed_values: [us, vendor, requisitioner, approver, nobody]
+    source_paths: [thread.ball_in_court]
+    sensitivity: internal
+    description: >
+      One of the very few attributes with a live Layer 2 source. `nobody` is the dangerous value:
+      an exception with no side waiting is one everybody has stopped thinking about, and it
+      resurfaces as a stop-supply notice rather than as a query.
+
+  - name: last_correspondence_at
+    purpose: When anything last moved on this invoice's thread.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    sensitivity: internal
+    description: Live today. Drives the stalled-query patterns below, baselined against this supplier's own reply rhythm rather than a fixed number of days.
+
+  # ---- Coding and coverage ------------------------------------------------------------
+  - name: coding_and_coverage
+    purpose: Which budget bears this, and whether that budget is still live.
+    type: composite
+    contains: [budget_line_ref, cost_centre, gl_code, coding_confidence_bp]
+
+  - name: budget_line_ref
+    purpose: The line the cost lands on.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.budget_line
+    sensitivity: internal
+    description: Coding is not clerical. It is the moment the spend becomes visible to the person accountable for it, and a mis-code produces an invisible spend rather than a wrong one.
+
+  - name: cost_centre
+    purpose: The organisational unit carrying the cost.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: gl_code
+    purpose: The account the posting hits.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: coding_confidence_bp
+    purpose: How sure we are of the account, recorded rather than assumed.
+    type: value
+    data_type: integer
+    unit: basis_points
+    validation: "0-10000"
+    sensitivity: internal
+    description: >
+      Low-confidence coding posted anyway is the most common cause of a budget holder disputing a
+      number three months later, by which point the correction costs ten times the original
+      decision and involves three more people.
+
+  # ---- Approval and release -----------------------------------------------------------
+  - name: approval_and_release
+    purpose: Who authorised payment, under what limit, and whether that was a different person from the one who ordered it.
+    type: composite
+    contains: [approval_ref, approver_ref, approved_at, segregation_satisfied, payment_released_at]
+
+  - name: approval_ref
+    purpose: The approval record, which carries the limit that made the approver sufficient.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+    sensitivity: internal
+    description: An organisation that stores only the approver's name has kept the signature and lost the control.
+
+  - name: approver_ref
+    purpose: The person who authorised release.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+    sensitivity: internal
+
+  - name: approved_at
+    purpose: When authority was given, as distinct from when cash left.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: segregation_satisfied
+    purpose: Whether requisitioner, approver and payment releaser are three different people.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      Three roles, and in a small organisation frequently two people. That is a documented
+      compensating-control conversation, not a box to tick and not a reason to pretend the
+      separation exists.
+
+  - name: payment_released_at
+    purpose: When the cash actually left.
+    type: value
+    data_type: timestamp
+    sensitivity: confidential
+    description: Approval and release are different events, and conflating them hides the payment run — the last control point before the money is unrecoverable.
+
+  # ---- Integrity signals --------------------------------------------------------------
+  - name: integrity_signals
+    purpose: The attributes that exist only because fraud and error exist. None of them is a verdict; all of them are reasons to look.
+    type: composite
+    contains: [bank_details_changed, duplicate_candidate_of, first_invoice_from_vendor, submitted_outside_portal, supersedes_invoice_ref]
+
+  - name: bank_details_changed
+    purpose: Whether payment instructions have changed since the last settled invoice from this payee.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: confidential
+    description: >
+      The most reliable single indicator of invoice redirection fraud, and the one control that
+      must never be verified by replying to the email that requested the change. Call a number
+      held on file from before the request arrived.
+
+  - name: duplicate_candidate_of
+    purpose: A prior invoice this one may be a re-presentation of.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.invoice
+    sensitivity: internal
+    description: >
+      Self-referential. Duplicates are rarely identical — they arrive as the same amount under a
+      different number, or the same number in a different currency, which is exactly why
+      number-based deduplication catches nothing.
+
+  - name: first_invoice_from_vendor
+    purpose: Whether this is the first-ever demand from this payee.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: A first invoice deserves scrutiny the hundredth does not, and gets less of it because the vendor record was created five minutes ago to clear the queue.
+
+  - name: submitted_outside_portal
+    purpose: Whether this arrived off the vendor's established channel.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+
+  - name: supersedes_invoice_ref
+    purpose: The invoice this one replaces after a rejection, credit note or reissue.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.invoice
+    sensitivity: internal
+    description: Without this link the corrected invoice reads as a second demand, and both age in the queue while somebody works out which is live.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: new
+  terminal: [closed, cancelled, archived]
+  values:
+    - name: new
+      description: Received, not yet looked at. The queue everyone measures and nobody enjoys.
+      implies: The supplier's clock is already running and ours has not started.
+    - name: triaged
+      description: Vendor resolved, document readable, amount extracted. Not yet matched.
+    - name: in_progress
+      description: Matching under way. PO retrieved, receipt being chased.
+    - name: verified
+      description: Three legs reconcile within tolerance. The only state that should reach approval without a human argument.
+      implies: Releasable subject to authority. Nothing here needs a judgement call.
+    - name: on_hold
+      description: >
+        A query is open and the ball is with the other side. A legitimate resting place rather
+        than a failure — the discipline of payables is the willingness to leave an invoice here
+        while a supplier applies pressure.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+      implies: The debt may well be real. The evidence is not, and paying it anyway converts a control into a courtesy.
+    - name: escalated
+      description: The exception has outlived its owner's attention or the payment terms.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    - name: pending_approval
+      description: Matched and coded, awaiting the authority to release cash.
+    - name: approved
+      description: Authorised, not yet paid. Two different events, and the gap between them is the last recoverable moment.
+    - name: rejected
+      description: Returned to the supplier. A credit note or a corrected invoice is expected.
+      implies: Their clock restarts rather than ours, which is why rejecting usually beats holding.
+    - name: overdue
+      description: Past terms and unpaid, for whatever reason. Our fault or theirs, the supplier experiences it identically.
+    - name: closed
+      description: Paid and reconciled.
+    - name: cancelled
+      description: Withdrawn, superseded, or credited in full.
+    - name: archived
+      description: Retention clock running. Payables records routinely outlive the vendor relationship by years.
+  transitions:
+    - {from: new, to: triaged, trigger: vendor_and_document_resolved}
+    - {from: triaged, to: in_progress, trigger: match_started}
+    - {from: triaged, to: cancelled, trigger: withdrawn_by_supplier}
+    - {from: in_progress, to: verified, trigger: match_clean_within_tolerance}
+    - {from: in_progress, to: on_hold, when: [{path: thread.ball_in_court, op: "=", value: them}], reversible: true}
+    - {from: on_hold, to: in_progress, trigger: query_answered, reversible: true}
+    - {from: on_hold, to: escalated, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 14}]}
+    - {from: on_hold, to: rejected, trigger: returned_to_supplier}
+    - {from: on_hold, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: escalated, to: in_progress, trigger: exception_resolved, reversible: true}
+    - {from: verified, to: pending_approval}
+    - {from: pending_approval, to: approved, trigger: authority_recorded}
+    - {from: pending_approval, to: on_hold, trigger: approver_raised_a_question, reversible: true}
+    - {from: pending_approval, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: approved, to: closed, trigger: payment_released}
+    - {from: overdue, to: closed, trigger: payment_released}
+    - {from: rejected, to: cancelled, trigger: credit_note_received}
+    - {from: closed, to: archived, trigger: retention_period_started}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: admin.obj.core.vendor
+    direction: outbound
+    cardinality: one
+    weight_bp: 2000
+    confidence_bp: 9500
+    priority: 1
+    evidence: [register, erp, portal]
+    description: >
+      An invoice without a resolvable vendor is not a payable, it is an incident. Everything else
+      on this object is unanswerable until this edge exists, which is exactly why queue pressure
+      resolves it by creating the vendor.
+
+  - type: references
+    target: admin.obj.core.purchase_order
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1800
+    confidence_bp: 7000
+    priority: 2
+    evidence: [erp, register]
+    description: Zero is the maverick-spend case and must be surfaced as such rather than tidied away into a coding decision.
+
+  - type: allocated_to
+    target: admin.obj.core.budget_line
+    direction: outbound
+    cardinality: one
+    weight_bp: 1400
+    confidence_bp: 8000
+    priority: 3
+    evidence: [erp, manual_entry]
+    description: The coding decision. It converts a supplier's demand into somebody's variance, and it is the moment the spend becomes visible to the person accountable for it.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 8500
+    priority: 4
+    conditions: [{path: invoice.state, op: "=", value: pending_approval}]
+    evidence: [erp, email, signed_form]
+    description: More than one where the amount crosses a delegated-authority band. The record carries the limit; the name alone does not.
+
+  - type: governed_by
+    target: admin.obj.core.contract
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1000
+    confidence_bp: 7500
+    priority: 5
+    evidence: [contract, register]
+    description: The contract is what makes the rate arguable. Without it, price is a matter of opinion, and the supplier's opinion is the one written down.
+
+  - type: assigned_to
+    target: admin.obj.core.stakeholder
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 6500
+    priority: 6
+    conditions: [{path: invoice.state, op: "=", value: on_hold}]
+    evidence: [email, erp]
+    description: The named exception owner. Unset is the normal state and the reason exceptions age — the routing rule names a team, and teams do not answer questions.
+
+  - type: attaches_to
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 9000
+    priority: 7
+    evidence: [document, portal]
+    description: The invoice image, the goods receipt note, the query correspondence. The audit trail is these, not the ledger entry.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 8
+    conditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    evidence: [email]
+    description: Fires when an exception outlives the terms it is blocking. The supplier stops shipping long before finance stops arguing.
+
+  - type: produces
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 250
+    confidence_bp: 8000
+    priority: 9
+    evidence: [erp, signed_form, document]
+    description: The matched set is the evidence. What payables actually produces is not a payment, it is a defensible reason for one.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 100
+    confidence_bp: 7000
+    priority: 10
+    evidence: [document, register]
+    description: Tolerance bands, delegated authority, non-PO exception rules. The policy is where the tolerance nobody has ever breached is written down.
+
+  - type: supersedes
+    target: admin.obj.core.invoice
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 50
+    confidence_bp: 6000
+    priority: 11
+    evidence: [erp, email]
+    description: Self-referential. A reissue after rejection. Without the edge the corrected invoice reads as a second demand, and both age while somebody works out which is live.
+
+# ── 6 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# Five executable, eight not. Every executable one reads the argument around the invoice
+# rather than the invoice, because this pipeline can see a stalled thread and cannot see an
+# amount, a purchase order or a goods receipt.
+inference_patterns:
+
+  deterministic:
+
+    - id: inv.resolution_promised_and_overdue
+      statement: "Someone committed to resolving this invoice's exception and the date has passed."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8800, attribute: exception_type, value: coding_disputed}
+      evidence_fields: [commitment.action, commitment.due_at]
+      false_positive: >
+        The promise may have been kept out of band — the requisitioner walked to a desk, confirmed
+        the delivery and never closed the record. The exception then reads open forever while the
+        invoice is perfectly payable. This is the single largest source of a wrong chase in
+        payables.
+      note: >
+        An overdue commitment on an invoice thread is almost always a promise to find a PO, chase
+        a receipt or confirm a price. The engine can see the broken promise even though it cannot
+        see what was promised about, which is why the yield is a generic dispute type.
+
+    - id: inv.cover_withdrawn_after_receipt
+      statement: "A budget freeze has been observed on the line this invoice codes to."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 8000, attribute: hold_reason, value: budget_cover_withdrawn}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        A freeze declared on a neighbouring line in the same cost centre reads as a freeze on this
+        one. The consequence is an invoice held for a budget reason that does not apply to it —
+        a supplier-relations cost paid for an internal filing error.
+      note: >
+        The obligation people get wrong most often. A freeze arriving after the goods did does not
+        cancel the debt, it removes the cover for it. The correct output is an escalation about
+        coding, not a payment hold, and the invoice ages while everybody argues about which it is.
+
+    - id: inv.three_way_match_clean
+      statement: "Purchase order, goods receipt and invoice reconcile within tolerance."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: match_state, value: matched}
+      requires_signals:
+        - {kind: fact_path, name: invoice.po_ref, owner_layer: L1,
+           note: "No ERP or purchase-to-pay connector exists. The single most automatable control in the whole administrative function is unreachable because nothing projects a PO reference into a typed fact."}
+        - {kind: obs_kind, name: goods_receipted, owner_layer: L2,
+           note: "The receipt leg has no emitter at all. Its absence is why every match on this pipeline would be two-way, which proves ordering and never delivery."}
+        - {kind: fact_path, name: invoice.amount, owner_layer: L1}
+
+    - id: inv.no_po_is_maverick_spend
+      statement: "An invoice arrives with no purchase order and no governing contract — somebody bought first and told procurement afterwards."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: match_state, value: no_po}
+      requires_signals:
+        - {kind: fact_path, name: invoice.po_ref, owner_layer: L1,
+           note: "Requires the ABSENCE of a PO to be observable, which means the PO register must be readable. Absence of a signal is not a signal of absence, and today we have neither."}
+        - {kind: obs_kind, name: po_raised, owner_layer: L2}
+
+    - id: inv.overdue_against_contractual_terms
+      statement: "Past the contractual due date and not yet released."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: invoice.due_at, owner_layer: L1,
+           note: "commitment.due_at is the nearest live equivalent, and binding invoice ageing to it would report every unrelated promise on the thread as a late payment. That is precisely the stretch this library exists to refuse."}
+        - {kind: fact_path, name: invoice.state, owner_layer: L1}
+
+    - id: inv.approver_over_their_limit
+      statement: "The invoice amount is above the recorded signing limit of the person who approved it."
+      status: needs_signal
+      yields: {confidence_bp: 9600, attribute: segregation_satisfied, value: false}
+      requires_signals:
+        - {kind: fact_path, name: approval.threshold_value, owner_layer: L1,
+           note: "Delegation-of-authority matrices live in a policy document, not a system. Until the DOA is machine-readable, over-limit approval is only ever caught at audit, months after the cash left."}
+        - {kind: fact_path, name: invoice.amount, owner_layer: L1}
+
+  heuristic:
+
+    - id: inv.query_open_and_vendor_silent
+      statement: "The ball is with the supplier and they have gone quiet well beyond their own reply rhythm."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 7}}
+      yields: {confidence_bp: 7500, attribute: ball_in_court, value: vendor, corroborates: [inv.resolution_promised_and_overdue]}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Shared AR mailboxes at large suppliers are genuinely slow and the baseline learns that.
+        Where the baseline is cold the seven-day floor fires on a supplier who simply had a bank
+        holiday, and chasing them reads as aggressive to a relationship we need.
+      note: >
+        Baselined against this supplier's own cadence rather than a fixed number, because a
+        fortnight of silence from a multinational's AR mailbox is normal and three days from a
+        sole trader is not. A supplier who stops replying to a price query has usually decided to
+        wait us out, and waiting works.
+
+    - id: inv.exception_abandoned_by_both_sides
+      statement: "An open exception where nobody is waiting on anybody and nothing has moved for over a week."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: nobody}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 10}
+      yields: {confidence_bp: 7000, attribute: ball_in_court, value: nobody}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        A resolved exception that nobody closed looks identical to an abandoned one. Both have no
+        owner and no traffic, and the difference is only visible in a system this stack cannot
+        read.
+      note: >
+        `nobody` is the dangerous value on ball_in_court and this is the pattern that surfaces it.
+        An exception with no side waiting is one everybody has stopped thinking about, and it
+        resurfaces as a stop-supply notice rather than as a query.
+
+    - id: inv.dispute_has_reached_legal
+      statement: "A legal review observation sits on an invoice thread while the ball is with us — the argument has stopped being commercial."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 6500, attribute: exception_type, value: legal_dispute}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        legal_review is emitted for contract negotiation as readily as for a payment dispute, so a
+        renewal being papered on the same thread as an invoice query fires this. Deliberately weak
+        at 6500 for exactly that reason.
+      note: >
+        Worth catching because the handling changes completely. Once legal is involved, ordinary
+        payables chasing becomes correspondence in a dispute, and the useful action is to stop
+        writing rather than to write faster.
+
+    - id: inv.duplicate_suspected_by_amount
+      statement: "Same vendor, same amount, close in time, different invoice number."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: match_state, value: duplicate_suspected}
+      requires_signals:
+        - {kind: fact_path, name: invoice.amount, owner_layer: L1}
+        - {kind: derived, name: derived.invoice_fingerprint, owner_layer: L2,
+           note: "A vendor-amount-period hash. Cheap to compute, nothing computes it. Number-based deduplication is the version that ships everywhere and the version that catches nothing, because reissued duplicates always carry new numbers."}
+
+    - id: inv.bank_detail_change_before_payment
+      statement: "Payment instructions have changed since the last settled invoice from this vendor."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: bank_details_changed, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: vendor_bank_detail_change, owner_layer: L2,
+           note: "The highest-value fraud control in payables and the one with no emitter. An email extractor could plausibly catch the request language today; the authoritative version needs the vendor master."}
+
+    - id: inv.channel_deviation
+      statement: "A vendor who has always invoiced through the portal has sent this one by email."
+      status: needs_signal
+      yields: {confidence_bp: 6800, attribute: submitted_outside_portal, value: true,
+               corroborates: [inv.bank_detail_change_before_payment]}
+      requires_signals:
+        - {kind: derived, name: derived.vendor_channel_norm, owner_layer: L2,
+           note: "A per-vendor channel baseline. Weak alone — plenty of legitimate invoices arrive by email — but it is the cheapest signal correlating with the expensive ones, and it is genuinely independent of the bank-change signal, which is why it may raise confidence rather than merely restate it."}
+
+    - id: inv.service_invoice_never_receipted
+      statement: "A services invoice against a live PO where nobody has ever confirmed the work happened."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: receipt_confirmed, value: false}
+      requires_signals:
+        - {kind: obs_kind, name: goods_receipted, owner_layer: L2,
+           note: "Services are the blind spot inside the blind spot. Even organisations running a working three-way match routinely waive the receipt leg for consultancy and support — which is where the money is, and where nothing physical fails to arrive to prompt a question."}
+
+    - id: inv.unknown_payee_plausible_project
+      statement: "A first-ever invoice from a payee, referencing a real internal project name, arriving off the vendor's usual channel."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: exception_type, value: unknown_vendor}
+      requires_signals:
+        - {kind: fact_path, name: invoice.state, owner_layer: L1}
+        - {kind: derived, name: derived.vendor_first_seen, owner_layer: L2,
+           note: "The classic redirection fraud. It survives because the project is real and the amount is plausible. Detecting it needs only the vendor master's first-seen date, which no connector supplies."}
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "invoice arrival, queries and supplier chasing", path: thread.last_inbound,
+     fills: [last_correspondence_at, received_at], reliability_bp: 6000}
+  - {source: email, signal: "who owes the next move on an open exception", path: thread.ball_in_court,
+     fills: [ball_in_court], reliability_bp: 6500}
+  - {source: derived, signal: "promises made about resolving this invoice", path: commitment.action,
+     fills: [exception_type], reliability_bp: 5500}
+  - {source: derived, signal: "the date those promises were due", path: commitment.due_at,
+     fills: [exception_age_days], reliability_bp: 6000}
+  - {source: erp, signal: "purchase order, goods receipt, ledger posting",
+     fills: [po_ref, match_state, receipt_confirmed, gl_code], reliability_bp: 9800,
+     description: "The authoritative source and the one with no connector. Every needs_signal pattern above traces back here."}
+  - {source: portal, signal: "supplier-submitted invoice and its status",
+     fills: [invoice_number, gross_amount, received_channel], reliability_bp: 8000}
+  - {source: document, signal: "the invoice image, OCR'd amounts and tax lines",
+     fills: [gross_amount, net_amount, tax_amount, currency], reliability_bp: 7500}
+  - {source: contract, signal: "agreed rates, payment terms, settlement discounts",
+     fills: [payment_terms_days, early_settlement_discount_bp, contract_ref], reliability_bp: 9000}
+  - {source: register, signal: "vendor master, verified bank details, prior payment history",
+     fills: [vendor_ref, bank_details_changed, first_invoice_from_vendor], reliability_bp: 8500}
+  - {source: signed_form, signal: "goods receipt note, delivery confirmation",
+     fills: [receipt_confirmed, receipt_confirmed_by_ref], reliability_bp: 9200}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: match_confidence_bp, type: integer, derived_from: [match_state, match_type, receipt_confirmed],
+     description: "How sure we are the three legs reconcile.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: payment_readiness, type: string, derived_from: [match_state, approval_ref, segregation_satisfied, bank_details_changed],
+     description: "ready | held | queried | rejected. The single field a payment run reads.", consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: exception_queue_entry, type: object, derived_from: [exception_type, exception_owner_ref, exception_age_days, ball_in_court],
+     description: "Typed exception with a named owner and an age, split by whose court it sits in. The working list payables actually runs on.", consumed_by: [L5.execution_planning]}
+  - {name: query_message, type: string, derived_from: [exception_type, hold_reason, vendor_ref],
+     description: "The supplier-facing query, phrased to keep the relationship while refusing the payment.", consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: accrual_candidate, type: boolean, derived_from: [receipt_confirmed, match_state, budget_line_ref],
+     description: "Received but unmatched at period end. The number that makes the close late.", consumed_by: [L4.reasoning_unit]}
+  - {name: fraud_indicator_set, type: list, derived_from: [bank_details_changed, submitted_outside_portal, first_invoice_from_vendor, duplicate_candidate_of],
+     description: "Never a verdict, always a reason to look before releasing.", consumed_by: [L4.reasoning_unit, L6.learning_unit]}
+  - {name: owned_ageing_hours, type: number, derived_from: [query_send_lag_hours],
+     description: "The portion of exception age that is entirely ours. The only part fixable without the supplier.", consumed_by: [L6.learning_unit]}
+
+# ── 9 · Preconditions ────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: inv.payee_resolved_to_verified_vendor
+    statement: "The payee resolves to an onboarded vendor record whose bank details were verified independently of this invoice."
+    requires: [admin.obj.core.vendor, vendor_ref]
+    when: [{exists: invoice.state}]
+    if_unmet: >
+      BLOCK. Do not create the vendor to clear the queue — route to the vendor master owner as a
+      suspected mandate fraud, not as missing reference data. Creating a vendor record in order to
+      pay an invoice IS the fraud, in almost every case where the fraud succeeded.
+
+  - id: inv.document_legible_and_complete
+    statement: "A readable document exists carrying number, date, payee, amount and tax lines."
+    requires: [document_ref, invoice_number, gross_amount]
+    if_unmet: >
+      DEGRADE. Triage on what is readable and query the rest, but never post an amount inferred
+      from an email body. Reject early rather than hold: rejection restarts the supplier's clock,
+      holding restarts ours.
+
+  - id: inv.commitment_basis_known
+    statement: "A purchase order, a governing contract, or a named non-PO approver exists before matching begins."
+    requires: [admin.obj.core.purchase_order, admin.obj.core.contract, po_ref, contract_ref]
+    if_unmet: >
+      DEGRADE to match_type = non_po and raise it as maverick spend to the budget holder, not as a
+      coding question to finance. That distinction is the difference between a control failure that
+      gets fixed and a clerical task that recurs monthly forever.
+
+  - id: inv.coding_target_live
+    statement: "A budget line exists for the period the cost belongs to, and it is open."
+    requires: [admin.obj.core.budget_line, budget_line_ref]
+    when: [{no_obs: budget_freeze}]
+    if_unmet: >
+      DEGRADE. Code it provisionally with a recorded coding_confidence_bp and escalate the cover
+      question separately. Holding a valid payment while the budget argument runs converts an
+      internal problem into a supplier problem.
+
+  - id: inv.terms_sourced_from_the_agreement
+    statement: "payment_terms_days is read from the contract, not from the document."
+    requires: [admin.obj.core.contract, payment_terms_days]
+    if_unmet: "DEGRADE to the organisation's standard terms and flag it. Never adopt the terms printed by the supplier, which are shorter roughly whenever they differ."
+
+  - id: inv.exception_has_a_named_owner
+    statement: "Before an invoice may sit on hold, a named individual owns the open question."
+    requires: [exception_owner_ref, admin.obj.core.stakeholder]
+    when: [{path: invoice.state, op: "=", value: on_hold}]
+    if_unmet: "BLOCK the hold. An exception assigned to a team is an exception assigned to nobody, and it ages until a supplier escalates it for us."
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: inv.no_pay_without_verified_vendor, statement: "Cannot pay a payee absent from the verified vendor master.", hard: true,
+     why: "Every successful invoice redirection ends with a payee record created in a hurry to release a payment."}
+  - {id: inv.no_pay_above_po, statement: "Cannot pay above the purchase order value without a documented variance approval.", hard: true,
+     why: "Otherwise the PO stops being a commitment and becomes an estimate, and commitment accounting silently stops working."}
+  - {id: inv.no_self_approval, statement: "Cannot be approved by the person who raised the requisition.", hard: true,
+     why: "One person able to order, receive and approve can create a supplier and pay it."}
+  - {id: inv.no_pay_on_unverified_bank_change,
+     statement: "Cannot release payment on bank details changed since the last settlement until verified out-of-band on a contact held before the change request arrived.",
+     when: [{path: invoice.state, op: "=", value: pending_approval}], hard: true,
+     why: "Verification through the requesting channel verifies the fraudster."}
+  - {id: inv.tax_recovery_bounded, statement: "Tax cannot be reclaimed on a document failing the statutory invoice format, even where the amount is genuinely owed.", hard: true,
+     why: "The debt and the tax recovery are separate tests. Treating a format failure as grounds to reject the whole invoice penalises a supplier for a template."}
+  - {id: inv.retention_before_disposal, statement: "Cannot be disposed of before the statutory retention period, which typically outlives the vendor relationship.", hard: true}
+  - {id: inv.currency_of_settlement, statement: "Cannot be settled in a currency other than the one invoiced without a recorded rate and an approval.", hard: false,
+     why: "Soft because operationally routine, but an unrecorded rate is where an unexplained variance is born."}
+  - {id: inv.no_payment_run_without_duplicate_check, statement: "Cannot enter a payment run without a duplicate check run on vendor, amount and period rather than on invoice number.", hard: true}
+
+# ── 11 · Business Rules ──────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: inv.no_payment_without_match
+    statement: >
+      An invoice must not reach approved while match_state is anything other than matched, unless a
+      named non-PO exception approval exists. A mismatch is a query, not a payment.
+    when: [{path: invoice.state, op: "=", value: pending_approval}]
+    then: block_approval
+    severity: blocking
+    why: "The rule this whole object exists to hold. Every duplicate and phantom invoice that ever succeeded did so because somebody paid a mismatch to end an argument."
+
+  - id: inv.receipt_required_for_delivery
+    statement: >
+      Goods require receipt_confirmed by someone other than the requisitioner before payment. The
+      services equivalent is routinely waived, and that waiver is precisely where phantom invoicing
+      lives.
+    then: require_goods_receipt
+    severity: blocking
+
+  - id: inv.bank_change_freezes_payment
+    statement: "bank_details_changed = true suspends payment until the change is verified out-of-band against a contact held before the request arrived."
+    then: hold_payment_pending_verification
+    severity: blocking
+    why: "The one control in payables whose absence is unrecoverable — once cash has gone to a fraudulent account it is gone."
+
+  - id: inv.segregation_of_duties
+    statement: "Requisitioner, approver and payment releaser must not be the same person. Where headcount makes three roles impossible, the compensating control is documented, not assumed."
+    then: require_second_pair_of_eyes
+    severity: blocking
+
+  - id: inv.duplicate_check_on_amount
+    statement: "The duplicate check must run on vendor, amount and period rather than on invoice_number, because reissued duplicates always carry new numbers."
+    then: run_amount_based_duplicate_check
+    severity: blocking
+
+  - id: inv.query_must_be_sent_not_merely_opened
+    statement: >
+      An exception opened without query_sent_at is an invoice ageing on our side while the record
+      claims we are waiting on the supplier. This is the most common way payables lies to itself.
+    when: [{path: thread.ball_in_court, op: "=", value: us}]
+    then: flag_unsent_query
+    severity: warning
+
+  - id: inv.non_po_needs_a_named_approver
+    statement: "A non-PO invoice requires an approver with a recorded limit above the gross amount. A role title is not a named approver."
+    then: require_named_approver
+    severity: warning
+
+  - id: inv.terms_come_from_the_contract
+    statement: "payment_terms_days is taken from the contract, never from the document."
+    severity: advisory
+
+  - id: inv.lapsed_discount_is_a_loss
+    statement: "An early_settlement_discount_bp allowed to lapse is a realised loss and should be reported as one rather than as a missed opportunity."
+    severity: advisory
+    why: "Framed as an opportunity it competes with everything else in the queue. Framed as a loss it gets a name against it."
+
+  - id: inv.freeze_does_not_void_the_debt
+    statement: "A budget freeze arriving after receipt removes the cover, not the obligation. Route to coding escalation, not to payment hold."
+    when: [{has_obs: budget_freeze}]
+    then: escalate_coding_not_payment
+    severity: warning
+
+# ── 12 · Decision Factors ────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: match_status
+    weight_bp: 2500
+    direction: increases
+    description: A clean three-way match is the strongest single reason to pay and the only one that survives an audit unaided.
+    reads: [match_state, match_type, receipt_confirmed, receipt_confirmed_by_ref]
+
+  - name: exception_severity
+    weight_bp: 2000
+    direction: decreases
+    description: >
+      Not all exceptions are equal. An unknown payee outranks a two per cent price variance by an
+      order of magnitude, and a queue sorted by amount gets this backwards every time.
+    reads: [exception_type, price_variance_bp, quantity_variance_bp, exception_age_days]
+
+  - name: payment_terms_pressure
+    weight_bp: 1500
+    direction: context
+    description: >
+      Proximity to due_at plus any settlement window. Context rather than increases: urgency is a
+      reason to resolve faster and never a reason to pay an unmatched invoice.
+    reads: [due_at, days_to_due, payment_terms_days, early_settlement_discount_bp]
+
+  - name: approval_completeness
+    weight_bp: 1500
+    direction: increases
+    description: The approval record with its limit, and three distinct people across order, approval and release.
+    reads: [approval_ref, approver_ref, segregation_satisfied]
+
+  - name: integrity_risk
+    weight_bp: 1200
+    direction: decreases
+    description: Bank change, channel deviation, first invoice, duplicate candidate. Weighted below the match on purpose — these are reasons to look, and the match is the reason to pay.
+    reads: [bank_details_changed, submitted_outside_portal, first_invoice_from_vendor, duplicate_candidate_of]
+
+  - name: vendor_reliability
+    weight_bp: 800
+    direction: context
+    description: A vendor whose invoices have never matched cleanly is a vendor whose master data is wrong, not a vendor who is difficult.
+    reads: [vendor_ref, first_invoice_from_vendor, ball_in_court]
+
+  - name: budget_coverage
+    weight_bp: 500
+    direction: context
+    description: Whether the coded line is still live. A freeze between commitment and invoice does not void the obligation, it relocates the argument.
+    reads: [budget_line_ref, coding_confidence_bp]
+
+# ── 13 · Evidence ────────────────────────────────────────────────────────────────────────
+evidence:
+  - {source: erp, strength_bp: 10000, decays: false, independent_of: [email, portal, derived],
+     description: "A posted three-way match. Nothing outranks it, and nothing on this stack currently produces it."}
+  - {source: signed_form, strength_bp: 9200, decays: false, independent_of: [erp, portal, email],
+     description: "A goods receipt note signed by someone with no interest in the payment. Independent of both the supplier and the buyer, which is the whole point of it."}
+  - {source: contract, strength_bp: 8800, decays: true, independent_of: [portal, email, document],
+     description: "The rate and the terms. Turns a price complaint into a price breach. Decays because rate cards are amended more often than they are refiled."}
+  - {source: register, strength_bp: 8000, decays: true, independent_of: [email, portal],
+     description: "Vendor master and payment history. Strong for identity, silent on entitlement."}
+  - {source: document, strength_bp: 7800, decays: false, independent_of: [erp, register],
+     description: "The invoice itself. Proof of the demand, never proof of the obligation — and everyone treats it as both."}
+  - {source: portal, strength_bp: 7000, decays: false, independent_of: [email],
+     description: "Submitted through a controlled channel: authenticated, and still self-asserted by the supplier."}
+  - {source: email, strength_bp: 5000, decays: true, independent_of: [erp, register, signed_form],
+     description: "Query correspondence and informal approvals. Sufficient for narrative, insufficient for audit, and the medium most invoice fraud arrives in."}
+  - {source: derived, strength_bp: 3500, decays: true,
+     description: "Fingerprints and channel baselines. Corroborating only, never sole grounds for refusing a payment — a refusal needs a reason a supplier can be told."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: first_pass_match_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     calibrates: [inv.three_way_match_clean],
+     description: "Share matched clean with no human touch. Tells you whether payables is a process or a rescue operation."}
+  - {name: exception_ageing_days, unit: days, direction: lower_is_better, owner_layer: L6,
+     calibrates: [inv.query_open_and_vendor_silent, inv.exception_abandoned_by_both_sides],
+     description: "Median age of open exceptions, split by whose court the ball is in. The split is the whole insight."}
+  - {name: query_send_lag_hours, unit: hours, direction: lower_is_better, owner_layer: L2,
+     calibrates: [inv.query_must_be_sent_not_merely_opened],
+     description: "Exception opened to query actually sent. Entirely ours, rarely measured, usually embarrassing."}
+  - {name: on_time_payment_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Paid within contractual terms. Suppliers judge the relationship almost entirely on this one number."}
+  - {name: duplicate_payments_prevented, unit: count, direction: higher_is_better, owner_layer: L6,
+     calibrates: [inv.duplicate_suspected_by_amount],
+     description: "Caught before release. The ones caught after release belong in a different and sadder metric."}
+  - {name: discount_capture_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Settlement discounts taken against available. The only payables metric a CFO reads voluntarily."}
+  - {name: non_po_spend_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     calibrates: [inv.no_po_is_maverick_spend],
+     description: "Share of invoice value arriving with no purchase order. Rises quietly and is never budgeted for."}
+  - {name: tolerance_breach_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Share of invoices breaching the variance tolerance. Near zero means the band is set too wide, not that suppliers are accurate."}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: inv.received, name: Invoice Received, severity: info,
+     payload: [invoice_number, vendor_ref, gross_amount, received_channel]}
+  - {id: inv.matched, name: Match Completed, severity: info,
+     payload: [match_type, match_state, price_variance_bp, quantity_variance_bp]}
+  - {id: inv.exception_opened, name: Exception Opened, severity: notable,
+     payload: [exception_type, exception_owner_ref, exception_opened_at],
+     description: "Starts the only clock that matters in payables — ours, not the supplier's."}
+  - {id: inv.query_stalled, name: Query Stalled, severity: notable,
+     emitted_when: [{path: thread.ball_in_court, op: "=", value: them},
+                    {fn: days_since, path: thread.last_inbound, op: ">=", value: 14}],
+     payload: [exception_type, query_sent_at, exception_age_days]}
+  - {id: inv.resolution_slipped, name: Resolution Commitment Missed, severity: notable,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [exception_owner_ref, exception_type]}
+  - {id: inv.cover_withdrawn, name: Budget Cover Withdrawn, severity: notable,
+     emitted_when: [{has_obs: budget_freeze}],
+     payload: [budget_line_ref, gross_amount],
+     invalidates: [coding_confidence_bp, budget_line_ref],
+     description: "A freeze arriving after the goods did. The obligation survives the budget; somebody still has to say whose problem that is."}
+  - {id: inv.bank_change_detected, name: Payment Instructions Changed, severity: critical,
+     payload: [vendor_ref, bank_details_changed],
+     invalidates: [payment_released_at],
+     description: "Every prior assumption about where this vendor's money goes is untrustworthy until re-verified out-of-band."}
+  - {id: inv.duplicate_flagged, name: Duplicate Suspected, severity: critical,
+     payload: [duplicate_candidate_of, gross_amount, vendor_ref]}
+  - {id: inv.approved, name: Invoice Approved, severity: info,
+     payload: [approver_ref, approved_at, segregation_satisfied]}
+  - {id: inv.paid, name: Payment Released, severity: notable,
+     payload: [payment_released_at, gross_amount],
+     description: "The last recoverable moment has passed. Everything after this is recovery, not control."}
+
+# ── 16 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: inv.triage, name: Triage and extract, actor: agent, cost: trivial, reversible: true,
+     effect: "Vendor resolved, amounts read, document filed. The only part of payables genuinely ready for automation on this stack."}
+  - {id: inv.run_match, name: Run the three-way match, actor: system, cost: trivial, reversible: true,
+     effect: "Sets match_state. Requires the PO and receipt signals that do not exist yet."}
+  - {id: inv.raise_query, name: Raise a query with the supplier, actor: agent, cost: low, reversible: false,
+     preconditions: [{path: thread.ball_in_court, op: "=", value: us}],
+     effect: "Moves the ball to the vendor and starts an ageing clock that is now defensibly theirs."}
+  - {id: inv.chase_receipt, name: Chase the goods receipt internally, actor: agent, cost: low, reversible: true,
+     effect: "Almost always faster than chasing the supplier, and almost always done second."}
+  - {id: inv.escalate_exception, name: Escalate the exception, actor: human, cost: moderate, reversible: false,
+     preconditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     effect: "Names the person whose silence is holding the payment. Escalation is unpopular precisely because it works."}
+  - {id: inv.verify_bank_change, name: Verify changed bank details out-of-band, actor: human, cost: low, reversible: true,
+     effect: "Call a number held on file from before the change request arrived. Never a number in the request."}
+  - {id: inv.approve, name: Approve for payment, actor: human, cost: low, reversible: false,
+     effect: "Requires a match or a documented exception approval with a limit above the amount."}
+  - {id: inv.reject_and_return, name: Reject and return to the supplier, actor: agent, cost: low, reversible: true,
+     effect: "Requests a credit note or a corrected invoice. Usually preferable to holding, because it restarts their clock rather than ours."}
+  - {id: inv.accrue, name: Accrue at period end, actor: system, cost: trivial, reversible: true,
+     effect: "Recognises the cost while the document is still in dispute. Keeps the close honest and the next period clean."}
+  - {id: inv.close_abandoned_exception, name: Close or reassign an abandoned exception, actor: agent, cost: trivial, reversible: true,
+     preconditions: [{path: thread.ball_in_court, op: "=", value: nobody}],
+     effect: "Forces a decision on the exceptions nobody is waiting on. They are the ones that become stop-supply notices."}
+
+# ── 17 · Dependencies ────────────────────────────────────────────────────────────────────
+dependencies:
+  - {target: admin.obj.core.vendor, kind: requires, strength: hard,
+     description: "Without a resolved, verified payee the object cannot leave `new` and must not be paid under any circumstances."}
+  - {target: admin.obj.core.document, kind: requires, strength: hard,
+     description: "No readable document, no defensible payment. The ledger entry alone is not evidence."}
+  - {target: admin.obj.core.budget_line, kind: requires, strength: hard,
+     description: "Coding must resolve to a live line for the period, or the cost is invisible to the person accountable for it."}
+  - {target: admin.obj.core.approval, kind: requires, strength: hard,
+     description: "Release requires an approval record carrying a limit above the gross amount, not merely an approver's name."}
+  - {target: admin.obj.core.purchase_order, kind: requires, strength: soft,
+     description: "Absent by design for contract-match spend, absent by failure for maverick spend. The object must distinguish the two, which is why the dependency is soft."}
+  - {target: admin.obj.core.contract, kind: enriches, strength: soft,
+     description: "Supplies terms, rates and settlement discounts. Its absence does not block payment; it removes the ability to argue about the price."}
+  - {target: admin.obj.core.policy, kind: derived_from, strength: soft,
+     description: "Tolerance bands, delegated authority and the non-PO exception route are all policy values this object reads rather than owns."}
+  - {target: admin.obj.core.contract, kind: invalidated_by, strength: soft,
+     description: "A renegotiated or terminated contract voids every prior price-variance judgement made against the old rate card."}
+  - {target: admin.obj.core.escalation, kind: enriches, strength: soft,
+     description: "Carries the exception upward when it outlives the terms it is blocking."}
+  - {target: admin.obj.core.audit_evidence, kind: enriches, strength: soft,
+     description: "The matched set is what an auditor samples. Payables produces evidence as its real output; the payment is a side effect."}
+
+# ── 18 · Exceptions ──────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: inv.tolerance_absorbs_immaterial_variance
+    statement: "A price or quantity variance inside the published tolerance band is paid without query."
+    overrides: [inv.no_payment_without_match]
+    why: >
+      Querying a two-pound variance costs more in handling than the variance. The exception is
+      correct and it has a failure mode: repeated sub-tolerance variances on a recurring supply are
+      a repricing nobody approved, arriving in slices small enough that each one is beneath
+      argument. Review the breach RATE annually, not the tolerance value.
+    frequency: common
+
+  - id: inv.contract_match_where_no_po_exists_by_design
+    statement: "Rent, rates, utilities, retainers and subscriptions match to the contract rather than to a purchase order."
+    overrides: [inv.no_po_is_maverick_spend, inv.non_po_needs_a_named_approver]
+    why: >
+      Forcing a PO onto standing spend teaches the whole organisation that the PO is theatre, and
+      an organisation that believes the PO is theatre stops raising them for the spend where they
+      matter.
+    frequency: common
+
+  - id: inv.pay_under_protest_to_preserve_supply
+    statement: "A sole-source supplier threatening stop-supply may be paid against an unresolved query, recovering the disputed amount by credit note."
+    overrides: [inv.no_payment_without_match]
+    when: [{path: invoice.state, op: "=", value: on_hold}]
+    why: >
+      Continuity beats control when the alternative is a production line stopping. It must be
+      recorded as an exception with a named approver and a recovery plan, or it silently becomes
+      the route — and a supplier who learns that pressure produces payment applies pressure to
+      every invoice thereafter.
+    frequency: rare
+
+  - id: inv.self_billing_inverts_the_match
+    statement: "Under a self-billing agreement the organisation raises the invoice on the supplier's behalf, so the supplier's document is a reconciliation rather than a demand."
+    overrides: [inv.duplicate_check_on_amount]
+    why: >
+      The controls invert. The risk is no longer a phantom demand but our own erroneous self-billed
+      amount, and running a standard duplicate check against the supplier's copy flags every
+      legitimate transaction.
+    frequency: occasional
+
+  - id: inv.compensating_control_in_a_small_entity
+    statement: "Where headcount makes three distinct roles impossible, segregation is satisfied by a documented compensating control — typically an independent post-payment review by a director."
+    overrides: [inv.segregation_of_duties, inv.no_self_approval]
+    why: >
+      A control that cannot be satisfied is a control that gets recorded as satisfied. Naming the
+      compensating control keeps the record honest and gives an auditor something real to test,
+      which is strictly better than a segregation flag everybody knows is fiction.
+    frequency: occasional
+
+  - id: inv.credit_note_settles_without_a_receipt
+    statement: "An invoice offset in full by a credit note closes without ever satisfying the receipt leg."
+    overrides: [inv.receipt_required_for_delivery]
+    why: "Nothing arrived and nothing is being paid. Insisting on a receipt for a net-zero transaction is the control running for its own sake."
+    frequency: occasional
+
+  - id: inv.emergency_spend_ratified_afterwards
+    statement: "Genuinely urgent spend committed without approval may be paid and ratified within a fixed window, typically five working days."
+    overrides: [inv.non_po_needs_a_named_approver]
+    why: >
+      A control that cannot be broken under fire gets bypassed permanently instead of temporarily.
+      The ratification window is what keeps the exception an exception, and the count of unratified
+      emergencies is the real health metric.
+    frequency: rare
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: inv.match_before_you_argue
+    statement: "Run the match to completion before contacting anyone, so the query names which leg failed."
+    why: >
+      "There is a problem with your invoice" produces a conversation. "Your unit price is 4.20
+      against a purchase order at 3.95, line three" produces a credit note. The second costs one
+      email and the first costs four.
+    applies_when: "Any exception where a purchase order exists."
+
+  - id: inv.send_the_query_the_same_day
+    statement: "Measure and minimise the gap between exception_opened_at and query_sent_at."
+    why: >
+      Exception ageing is reported as a single number, which lets the portion we own hide inside
+      the portion the supplier owns. Splitting them is uncomfortable and it is the only version
+      that produces improvement, because it is the only half we can act on unilaterally.
+    applies_when: "Always. The cheapest improvement available to any payables function."
+    evidence: "query_send_lag_hours measured against exception_ageing_days."
+
+  - id: inv.deduplicate_on_amount_and_period
+    statement: "Run the duplicate check on vendor, amount and period rather than on invoice number."
+    why: >
+      Number-based deduplication ships in every system and catches only the accidental
+      resubmission of an identical document. Reissued and fraudulent duplicates always carry new
+      numbers, because a new number is the cheapest way to make a duplicate look novel.
+    applies_when: "Before every payment run, without exception."
+
+  - id: inv.verify_bank_changes_on_a_contact_held_before
+    statement: "Verify any change of payment instructions by calling a contact recorded before the change request arrived."
+    why: >
+      Invoice redirection works by controlling the channel. Any verification performed through the
+      requesting channel verifies the fraudster — and that includes calling the number in the
+      signature block of the email that asked for the change.
+    applies_when: "Every bank detail change, on every vendor, regardless of relationship length."
+
+  - id: inv.receipt_the_service_leg
+    statement: "Require a named individual to confirm services were delivered, exactly as goods are receipted."
+    why: >
+      Nothing physical fails to arrive to prompt a question about consultancy days, so the services
+      receipt is the only evidence the work happened. It is the leg most often waived and the leg
+      protecting the largest non-payroll spend category in most organisations.
+    applies_when: "Any professional services, support or subscription invoice above the de-minimis threshold."
+
+  - id: inv.reject_rather_than_hold
+    statement: "Where a document is genuinely wrong, return it rather than holding it."
+    why: >
+      Holding accrues age against us and leaves an incorrect document in our system as the live
+      record. Rejecting resets the supplier's clock, forces a corrected document, and removes the
+      ambiguity about which version is payable.
+    applies_when: "Format errors, wrong entity, wrong currency, missing PO reference — anything only the supplier can fix."
+
+  - id: inv.name_the_exception_owner_individually
+    statement: "Assign every exception to a person, never to a function."
+    why: "A queue owned by finance is answered by finance, and finance can answer roughly a third of the exceptions it receives. The rest age until a supplier escalates them on our behalf."
+    applies_when: "The moment exception_opened_at is set."
+
+  - id: inv.review_tolerance_against_breach_rate
+    statement: "Review variance tolerance bands annually against how often they actually fire."
+    why: "A band that has never been breached is not evidence of accurate suppliers, it is evidence of a control that is not running. Tolerance is a policy decision that quietly becomes a permanent gift."
+    applies_when: "Annually, and after any material change in supplier mix."
+
+  - id: inv.treat_settlement_discounts_as_a_treasury_decision
+    statement: "Evaluate available settlement discounts against the cost of capital and take the ones that clear it, systematically rather than opportunistically."
+    why: "Two per cent for paying twenty days early is an annualised return most treasury functions cannot beat. It lapses because nobody owns it, not because anybody decided against it."
+    applies_when: "Any invoice carrying early_settlement_discount_bp above zero."
+
+# ── 20 · Anti-Patterns ───────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: inv.pay_to_keep_the_peace
+    statement: "Paying a mismatch because the argument costs more than the money."
+    why_it_happens: >
+      Each individual instance is genuinely rational. A four-hundred-pound variance takes three
+      emails, two internal chases and a phone call to resolve, and the person doing it has ninety
+      other invoices. Nobody ever decides to abandon the control; it is abandoned four hundred
+      pounds at a time.
+    cost: "Every duplicate and phantom invoice that has ever succeeded, succeeded here. Also the slow repricing of recurring supply, which nobody notices because each slice is beneath argument."
+    instead: "Set a materiality threshold explicitly and publish it, so below-threshold payments are a policy rather than a surrender. Then measure the annual value flowing through it — the number is always larger than anyone guessed."
+    detectable_by: [tolerance_breach_rate, first_pass_match_rate]
+
+  - id: inv.create_the_vendor_to_clear_the_queue
+    statement: "Resolving an unknown payee by adding them to the vendor master."
+    why_it_happens: >
+      The queue metric counts unresolved invoices, the invoice looks plausible, the project it
+      references is real, and creating a vendor takes ninety seconds while investigating one takes
+      a week. The person doing it is optimising exactly what they are measured on.
+    cost: "This is the terminal step of essentially every successful invoice redirection fraud. The fraud does not defeat the control; the queue metric does."
+    instead: "Route unknown payees to the vendor master owner as a suspected fraud, and exclude them from the ageing metric so that investigating one is not personally expensive."
+    detectable_by: [inv.unknown_payee_plausible_project, non_po_spend_share]
+
+  - id: inv.deduplicate_on_the_invoice_number
+    statement: "Running the duplicate check on the supplier's own reference."
+    why_it_happens: "It is the field labelled 'invoice number', it is unique-looking, and it is what every system indexes on by default."
+    cost: "Catches only the identical resubmission and misses every reissue and every deliberate duplicate, because a new number is the cheapest possible disguise."
+    instead: "Fingerprint on vendor, amount and period. Accept the false positives — a reviewed false positive costs minutes and a missed duplicate costs the invoice."
+    detectable_by: [duplicate_payments_prevented, inv.duplicate_suspected_by_amount]
+
+  - id: inv.waive_the_receipt_leg_for_services
+    statement: "Treating professional services as unreceiptable and matching two-way by convention."
+    why_it_happens: >
+      There is no delivery note for a consultancy day, the engagement partner is senior and busy,
+      and asking them to confirm work happened feels like an accusation. So the leg is waived once
+      for a genuinely awkward case and then permanently by precedent.
+    cost: "Services are usually the largest non-payroll spend category. Waiving the receipt leg there runs the largest exposure on the weakest control, which is precisely inverted."
+    instead: "Require a named confirmer against a deliverable or a timesheet. It need not be onerous — one line from someone who would know is a control; nothing from anyone is not."
+    detectable_by: [inv.service_invoice_never_receipted, first_pass_match_rate]
+
+  - id: inv.queue_sorted_by_amount
+    statement: "Working the payables queue largest-value-first."
+    why_it_happens: "It feels like risk-based prioritisation and it is trivially implementable in every system."
+    cost: >
+      Amount is weakly correlated with risk and strongly correlated with legitimacy — large
+      invoices come from established suppliers under contract. The unknown payee for eleven
+      thousand pounds sits behind the routine rent invoice for ninety.
+    instead: "Sort by exception_type severity first, then by owned ageing. An unknown vendor at any value outranks a price variance at any value."
+    detectable_by: [exception_ageing_days]
+
+  - id: inv.query_opened_and_never_sent
+    statement: "Marking an invoice as queried without the query having left the building."
+    why_it_happens: >
+      Opening the exception is the system step and sending the query is the human step, and the
+      metric watches the system step. The record then says we are waiting on the supplier, which
+      is comfortable and false.
+    cost: "The invoice ages entirely on our side while the report shows it ageing on theirs. Discovered when the supplier calls about a payment nobody told them was disputed."
+    instead: "Make query_sent_at mandatory to enter the on_hold state, and report ageing split by ball_in_court."
+    detectable_by: [query_send_lag_hours, inv.query_must_be_sent_not_merely_opened]
+
+  - id: inv.approval_by_forwarded_email
+    statement: "Treating a forwarded 'ok to pay' as approval."
+    why_it_happens: "It is fast, it names a real person, and chasing a formal approval for something everyone agrees on feels like bureaucracy for its own sake."
+    cost: >
+      The email carries a name and no limit, so nobody can tell whether the approver was authorised
+      for the amount. Over-limit approval then surfaces only at audit, by which point the pattern
+      is a year old and involves several people who have since been promoted.
+    instead: "Record the approval against a limit. A name without a limit is a signature on a blank cheque, filed."
+    detectable_by: [inv.approver_over_their_limit]
+
+  - id: inv.hard_freeze_applied_to_existing_payables
+    statement: "Reading a budget freeze as an instruction to stop paying what is already owed."
+    why_it_happens: "The word freeze sounds total, the instruction usually arrives as one line in an email, and stopping payments is the fastest visible response to it."
+    cost: "A supplier-relations incident within a fortnight, late payment interest, and occasionally a stop-supply costing more than the budget being protected."
+    instead: "Read a freeze as stopping new commitment, and escalate the coding question separately. Where a payment stop is genuinely intended, require someone to say so explicitly and in writing."
+    detectable_by: [inv.cover_withdrawn_after_receipt, on_time_payment_rate]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Clean three-way match on a stationery order", kind: typical,
+     note: "PO, receipt and invoice agree. Should never touch a human, and on this pipeline touches three."}
+  - {label: "Consultancy invoice with no receipt leg", kind: typical,
+     note: "match_type = two_way by convention. Nobody confirms the days were worked, and everybody treats the absence as normal."}
+  - {label: "2.4% price variance on a recurring monthly supply", kind: edge,
+     note: "Inside most tolerance bands so it is paid. Repeated monthly for a year it is a repricing nobody approved."}
+  - {label: "Invoice from an unknown payee quoting a real internal project name", kind: misclassification,
+     note: "Filed as 'vendor record missing'. It is mandate fraud, and it survives because the project is real and the amount is plausible."}
+  - {label: "Same amount, new invoice number, six weeks later", kind: misclassification,
+     note: "Number-based deduplication passes it. Amount-based deduplication catches it. Almost everyone runs the first."}
+  - {label: "Budget freeze declared after delivery", kind: edge,
+     note: "The goods are in the building and the cover is gone. The debt is real; this is a coding escalation, not a payment hold."}
+  - {label: "Rent invoice with no purchase order, by design", kind: counterexample,
+     note: "match_type = contract_match. Forcing a PO onto it teaches everyone that the PO is theatre."}
+  - {label: "Supplier emails new bank details on headed paper, then chases politely for a week", kind: edge,
+     note: "The politeness is the tell. Verify on a contact held before the request, never on the one inside it."}
+  - {label: "Credit note fully offsetting a disputed invoice", kind: counterexample,
+     note: "Closes without a receipt and should. Insisting on the receipt leg for a net-zero transaction is the control running for its own sake."}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "Three-way match (purchase order, goods receipt, invoice)", kind: framework,
+     note: "The core control of the purchase-to-pay cycle and the discriminator this whole object is built on."}
+  - {title: "Segregation of duties", kind: framework,
+     note: "Order, approve, receive and release held by different people. Where headcount makes it impossible, the compensating control is documented rather than assumed."}
+  - {title: "Purchase-to-pay (P2P) cycle", kind: framework,
+     note: "Requisition, order, receipt, invoice, payment. Commitment attaches at the order step, which is why an invoice-shaped view of spend is always late."}
+  - {title: "Delegation of Authority matrix", kind: framework,
+     note: "The standard instrument for expressing approval thresholds by role and value. Almost always a document rather than a system, which is why over-limit approval is an audit finding rather than a control."}
+  - {title: "COSO Internal Control — Integrated Framework", kind: framework,
+     note: "The control-environment vocabulary auditors use when testing payables. Relevant here for compensating controls and for management override."}
+  - {title: "EN 16931 — European standard on electronic invoicing", kind: standard,
+     note: "Defines the semantic data model for a compliant e-invoice. Where it applies, format failure and tax recoverability become the same test."}
+  - {title: "Invoice redirection and mandate fraud controls", kind: practitioner,
+     note: "Consistent guidance across banking and fraud-prevention bodies: verify any change of payment instruction out-of-band, on contact details held before the request arrived."}
+  - {title: "Accruals concept — cost recognised when incurred, not when invoiced", kind: standard,
+     note: "Why an unmatched invoice at period end is an accounting event as well as a payables one."}
+  - {title: "Statutory retention periods for accounting records", kind: standard,
+     note: "Typically six years or more, routinely outliving both the vendor relationship and the system the records were created in."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of thirteen patterns are executable, and all five read the correspondence around the
+    invoice rather than the invoice — the pipeline can see a stalled argument, a broken promise
+    and a budget freeze, but not an amount, a purchase order or a goods receipt. The standout
+    backlog item is `goods_receipted`: without it every match on this stack is two-way, which
+    proves that something was ordered and never that anything arrived. Second is
+    `derived.invoice_fingerprint`, because number-based deduplication is what ships everywhere and
+    reissued duplicates always carry new numbers. Third is `approval.threshold_value`, the
+    difference between catching an over-limit approval before the cash leaves and finding it at
+    audit a year later. Note the authoring choice running through the exceptions and anti-patterns:
+    every failure recorded here is individually rational. Paying a small mismatch, creating a
+    vendor to clear a queue, waiving a receipt for a partner nobody wants to chase — each is the
+    sensible local decision, and this object exists because the aggregate is not.
