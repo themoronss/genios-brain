@@ -8,7 +8,7 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.1.0",              # 1.1.0 +intro_followup
+    "version": "1.1.1",              # 1.1.1: intro_followup rule (content changed vs published 1.1.0)
     "requires": {"engine": ">=0.1.0"},
 
     "scoring_defaults": {

@@ -268,7 +268,7 @@ GC = GENERAL_V1["scoring_defaults"]
 
 
 def test_general_pack_is_wellformed():
-    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.1.0"
+    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.1.1"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= GC.keys()
     assert GC["weights"]["u"] + GC["weights"]["i"] + GC["weights"]["r"] == 100

@@ -184,6 +184,7 @@ def dismiss(execution_id: str, reason: str = Body("not_relevant", embed=True),
     """
     _require_db()
     from genios_engine.executive import execution_store as store
+    at = _now()
     with _graph.engine.begin() as c:
         exists = c.execute(text(
             "select 1 from executions where org_id=:o and execution_id=:x and closed_at is null"),
@@ -193,10 +194,12 @@ def dismiss(execution_id: str, reason: str = Body("not_relevant", embed=True),
         store.log_event(c, org_id=ctx.org_id, execution_id=execution_id,
                         kind="execution.cancelled", reason_code="human_dismissed",
                         actor=ctx.actor_id or "human", detail={"reason": str(reason)[:200]},
-                        occurred_at=_now())
-        c.execute(text("update executions set next_check_at=now() "
+                        occurred_at=at)
+        # Bound explicitly rather than written as SQL now(): every other time in this codebase
+        # is passed in, so a replay or a test observes the same instant the event recorded.
+        c.execute(text("update executions set next_check_at=:n, updated_at=now() "
                        "where org_id=:o and execution_id=:x"),
-                  {"o": ctx.org_id, "x": execution_id})
+                  {"n": at, "o": ctx.org_id, "x": execution_id})
     return {"dismissed": True, "execution_id": execution_id}
 
 
@@ -236,7 +239,10 @@ def sweep(ctx: AuthCtx = Depends(require_owner)) -> dict:
     guarded on the state it expects to find.
     """
     _require_db()
+    import dataclasses
+
     from genios_engine.executive.sweep import run_executive
     effective, _ = (_registry.effective(ctx.org_id) if _registry else (None, None))
     result = run_executive(_graph.engine, ctx.org_id, effective=effective)
-    return {"planned": vars(result["planned"]), "lifecycle": vars(result["lifecycle"])}
+    # `asdict`, not `vars`: SweepReport is a frozen slotted dataclass and has no __dict__.
+    return {name: dataclasses.asdict(report) for name, report in result.items()}

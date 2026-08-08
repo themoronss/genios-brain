@@ -1,0 +1,334 @@
+"""Layer 5.2's control surface — the dial a tenant actually reaches for.
+
+The delivery gate is only as good as the settings it reads, and until this router existed those
+settings could only be written with raw SQL.  A quiet-hours table nobody can edit is not a
+feature; it is dead schema that makes the product look like it ignores people.
+
+Four things live here, and the third is the one that earns the file:
+
+  ``GET  …/delivery/preferences``   what is stored, at every specificity.
+  ``PUT  …/delivery/preferences``   set or change one row.
+  ``GET  …/delivery/effective``     **what will actually happen to me, and when.**
+  ``GET  …/delivery/held``          what the gate is sitting on right now, and why.
+
+``/effective`` runs the real resolver and the real units against a real instant and reports the
+verdict for every band.  It is the same instinct as ``POST /channels/slack/test``: "did my
+setting work?" should be a button, not a support ticket.  Without it a tenant sets quiet hours,
+sees nothing change for eleven hours, and cannot distinguish "working" from "broken".
+
+**Two responses to bad configuration, and that asymmetry is deliberate.**  ``build_context``
+*degrades* — one tenant's typo must never stop another tenant's mail draining.  This router
+*refuses*: it writes, re-resolves inside the same transaction, and rolls back if the result
+would degrade.  Same predicate, opposite responses, each correct for its layer — the engine
+cannot afford to fail, and the form field cannot afford to lie.  The consequence is the one
+that matters: a setting that survives a ``PUT`` is a setting that will actually take effect.
+
+**Authority.**  Reads take ``get_current_org``; writes take ``require_owner``, because a rule
+written at ``('*','*')`` silences an entire tenant and a scoped key must not be able to reach
+it.  Both already exist in ``platform/auth.py`` — no third auth model is invented here, which is
+how two of them would start disagreeing.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+from sqlalchemy import text
+
+from genios_engine.contracts.delivery import BAND_ORDER, DeliveryCandidate
+from genios_engine.deliver.gate import (
+    WILDCARD,
+    PgDeliveryContext,
+    channel_class_for,
+    evaluate_delivery,
+)
+from genios_engine.executive.communication import CHAT_CHANNELS
+from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner
+from genios_engine.platform.wiring import make_graph_store
+
+router = APIRouter()
+_graph = make_graph_store()
+
+#: The settable columns, and the only strings ever interpolated into a statement here. Every
+#: write is keyed off this tuple rather than off the request body, so a field a client invents
+#: cannot reach the SQL.
+_SETTABLE: tuple[str, ...] = (
+    "delivery_enabled", "hold_until", "min_band", "opted_out",
+    "tz_name", "quiet_enabled", "quiet_start_hour", "quiet_end_hour", "quiet_weekends",
+    "max_interrupts_per_hour", "override_band")
+
+
+def _org(org_id: str, org: str = Depends(get_current_org)) -> str:
+    if org_id != org:
+        raise HTTPException(403, "org mismatch")
+    return org
+
+
+def _require_db():
+    if _graph is None:
+        raise HTTPException(400, "delivery preferences need a configured database")
+
+
+def _moment(value: str | None) -> datetime:
+    """Parse the caller's "pretend it is now" instant, defaulting to actual now.
+
+    Requires an offset. A naive instant would be silently read as UTC, and a tenant in Kolkata
+    testing "does 21:30 wake me?" would get an answer about a completely different moment —
+    which is worse than an error, because they would believe it.
+    """
+    if not value:
+        return datetime.now(timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(422, f"at must be an ISO-8601 instant: {exc}") from exc
+    if parsed.tzinfo is None:
+        raise HTTPException(422, "at must carry a UTC offset (e.g. 2026-08-07T02:00:00+05:30)")
+    return parsed
+
+
+# ── read: what is stored ──────────────────────────────────────────────────────────────
+@router.get("/api/org/{org_id}/delivery/preferences")
+def list_preferences(org_id: str, org: str = Depends(_org)) -> dict:
+    """Every rule this tenant has, most specific first — the shape the settings screen renders."""
+    _require_db()
+    with _graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select * from delivery_preferences where org_id=:o "
+            "order by (seat_id <> :any) desc, (channel <> :any) desc, seat_id, channel"),
+            {"o": org, "any": WILDCARD}).mappings().all()
+    return {"preferences": [_public(dict(row)) for row in rows], "wildcard": WILDCARD}
+
+
+def _public(row: dict[str, Any]) -> dict[str, Any]:
+    out = {"seat_id": row.get("seat_id"), "channel": row.get("channel"),
+           "scope": _scope(row.get("seat_id"), row.get("channel"))}
+    for column in _SETTABLE:
+        value = row.get(column)
+        out[column] = value.isoformat() if isinstance(value, datetime) else value
+    updated = row.get("updated_at")
+    out["updated_at"] = updated.isoformat() if isinstance(updated, datetime) else None
+    out["updated_by"] = row.get("updated_by")
+    return out
+
+
+def _scope(seat: Any, channel: Any) -> str:
+    """A human name for the row's specificity, so a settings screen never has to explain '*'."""
+    seated, channelled = str(seat) != WILDCARD, str(channel) != WILDCARD
+    if seated and channelled:
+        return "seat_channel"
+    if seated:
+        return "seat"
+    if channelled:
+        return "org_channel"
+    return "org"
+
+
+# ── read: what will actually happen ───────────────────────────────────────────────────
+@router.get("/api/org/{org_id}/delivery/effective")
+def effective_preferences(org_id: str, org: str = Depends(_org),
+                          seat_id: str | None = Query(None),
+                          channel: str = Query("slack"),
+                          at: str | None = Query(None)) -> dict:
+    """Resolve the rules for one person on one channel, and say what happens to each band.
+
+    The verdicts are produced by the same functions the drain calls, against the same resolver,
+    at the instant the caller names. Not a simulation of the gate — the gate, asked a question.
+    A second code path here would be a second set of answers, and the one people would trust is
+    whichever one they saw last.
+    """
+    _require_db()
+    now = _moment(at)
+    seat = seat_id or WILDCARD
+    if channel == WILDCARD:
+        # "What happens on every channel at once?" is not a well-formed question — the answer
+        # differs per adapter, which is the whole reason channel_class exists. Naming one is a
+        # smaller ask than returning an answer that is only true for some of them.
+        raise HTTPException(422, f"channel must be a concrete adapter, one of {CHAT_CHANNELS}")
+    with _graph.engine.connect() as conn:
+        resolver = PgDeliveryContext(conn)
+        probe = _probe(org, seat, channel, band=BAND_ORDER[0], interrupt=False)
+        context = resolver.resolve(probe, now=now)
+        verdicts = {}
+        for band in BAND_ORDER:
+            for interrupt in (False, True):
+                subject = _probe(org, seat, channel, band=band, interrupt=interrupt)
+                decision = evaluate_delivery(subject, context, now=now)
+                verdicts[f"{band}{'_interrupt' if interrupt else ''}"] = {
+                    "verdict": decision.verdict.value,
+                    "unit": decision.unit,
+                    "reason_code": decision.reason_code,
+                    "not_before": (decision.not_before.isoformat()
+                                   if decision.not_before else None)}
+
+    resolved = context.to_semantic_dict()
+    return {"at": now.isoformat(), "seat_id": seat, "channel": channel,
+            "scope": _scope(seat, channel),
+            "channel_class": channel_class_for(channel).value,
+            "resolved": resolved,
+            "local_time": now.astimezone(context.profile.zone).isoformat(),
+            "in_quiet_hours": context.profile.is_quiet(now.astimezone(context.profile.zone)),
+            "verdicts": verdicts,
+            "config_error": context.config_error}
+
+
+def _probe(org: str, seat: str, channel: str, *, band: str,
+           interrupt: bool) -> DeliveryCandidate:
+    """A candidate that stands for "a message like this", used only to ask the gate a question.
+
+    ``channel`` must be a concrete adapter. ``'*'`` is a *scope* in the preferences table, never
+    a route a message can travel on, and the contract refuses it — correctly, because a delivery
+    that names no channel is not a delivery. Callers with a wildcard rule expand it first.
+    """
+    return DeliveryCandidate(
+        org_id=org, subject_id=f"probe:{band}", channel=channel,
+        channel_class=channel_class_for(channel), band=band, interrupt=interrupt,
+        recipient=None if seat == WILDCARD else seat)
+
+
+def _governed_channels(channel: str) -> tuple[str, ...]:
+    """The concrete adapters a rule at this specificity actually governs.
+
+    A wildcard rule applies to all of them, so validating it means validating it against each —
+    a setting that is harmless for the digest can still be broken for chat, and the tenant would
+    only find out at 03:00. One adapter ships today, which makes this loop a no-op now and the
+    correct shape the day a second one lands.
+    """
+    if channel != WILDCARD:
+        return (channel,)
+    return tuple(CHAT_CHANNELS) or ("slack",)
+
+
+# ── write ─────────────────────────────────────────────────────────────────────────────
+class PreferenceUpdate(BaseModel):
+    """One row's worth of settings.
+
+    Only fields the caller actually sent are written, which is what makes an explicit ``null``
+    mean *clear this and inherit again* while an omitted field means *leave it alone*. Collapsing
+    those two would make it impossible to remove an override without deleting the whole row and
+    re-typing every other setting on it.
+    """
+
+    seat_id: str = Field(WILDCARD)
+    channel: str = Field(WILDCARD)
+    delivery_enabled: bool | None = None
+    hold_until: datetime | None = None
+    min_band: str | None = None
+    opted_out: bool | None = None
+    tz_name: str | None = None
+    quiet_enabled: bool | None = None
+    quiet_start_hour: int | None = None
+    quiet_end_hour: int | None = None
+    quiet_weekends: bool | None = None
+    max_interrupts_per_hour: int | None = None
+    override_band: str | None = None
+
+
+@router.put("/api/org/{org_id}/delivery/preferences")
+def set_preferences(org_id: str, body: PreferenceUpdate,
+                    ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Write one rule — and refuse it if the *resolved* result would not be usable.
+
+    The check is on the resolution, not on the body, and that distinction is the whole point.
+    A row is legal in isolation and still broken in combination: a seat that sets
+    ``quiet_start_hour=9`` against an org row whose ``quiet_end_hour`` is also 9 produces the
+    ambiguous all-day window the engine has to degrade around. Writing, re-resolving and rolling
+    back inside one transaction is what makes "it saved" mean "it will take effect".
+    """
+    _require_db()
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    org = ctx.org_id
+    if body.hold_until is not None and body.hold_until.tzinfo is None:
+        raise HTTPException(422, "hold_until must carry a UTC offset")
+
+    provided = [name for name in _SETTABLE if name in body.model_fields_set]
+    if not provided:
+        raise HTTPException(422, f"send at least one of {list(_SETTABLE)}")
+
+    seat, channel = (body.seat_id or WILDCARD).strip(), (body.channel or WILDCARD).strip()
+    if not seat or not channel:
+        raise HTTPException(422, "seat_id and channel must be non-empty ('*' for all)")
+
+    columns = ", ".join(provided)
+    placeholders = ", ".join(f":{name}" for name in provided)
+    assignments = ", ".join(f"{name}=excluded.{name}" for name in provided)
+    params: dict[str, Any] = {name: getattr(body, name) for name in provided}
+    params.update({"o": org, "seat": seat, "ch": channel, "by": ctx.actor_id})
+
+    with _graph.engine.begin() as conn:
+        conn.execute(text(
+            f"insert into delivery_preferences (org_id, seat_id, channel, {columns}, updated_by) "
+            f"values (:o, :seat, :ch, {placeholders}, :by) "
+            "on conflict (org_id, seat_id, channel) do update set "
+            f"{assignments}, updated_by=excluded.updated_by, updated_at=now()"),
+            params)
+
+        # Re-resolve inside the transaction. The engine degrades bad settings so the drain
+        # survives; this surface refuses them so they are never written in the first place.
+        # Raising unwinds `engine.begin()`, which rolls back the insert above — the tenant is
+        # left exactly as they were rather than half-configured into a degraded state.
+        resolver = PgDeliveryContext(conn)
+        now = datetime.now(timezone.utc)
+        for concrete in _governed_channels(channel):
+            context = resolver.resolve(
+                _probe(org, seat, concrete, band=BAND_ORDER[0], interrupt=False), now=now)
+            if context.config_error:
+                raise HTTPException(422, context.config_error)
+
+    return {"saved": True, "seat_id": seat, "channel": channel, "scope": _scope(seat, channel),
+            "set": provided}
+
+
+@router.delete("/api/org/{org_id}/delivery/preferences/{seat_id}/{channel}")
+def clear_preferences(org_id: str, seat_id: str, channel: str,
+                      org: str = Depends(_org)) -> dict:
+    """Drop a whole rule so its settings inherit from the level above again."""
+    _require_db()
+    with _graph.engine.begin() as conn:
+        result = conn.execute(text(
+            "delete from delivery_preferences where org_id=:o and seat_id=:seat "
+            "and channel=:ch"), {"o": org, "seat": seat_id, "ch": channel})
+    return {"deleted": int(result.rowcount or 0), "seat_id": seat_id, "channel": channel}
+
+
+# ── read: what the gate is holding ────────────────────────────────────────────────────
+@router.get("/api/org/{org_id}/delivery/held")
+def held_messages(org_id: str, org: str = Depends(_org),
+                  limit: int = Query(50, ge=1, le=200)) -> dict:
+    """Everything the gate stopped or is sitting on, with the unit and reason that did it.
+
+    The answer to "why didn't I get told about that?", which is asked far more often — and far
+    more angrily — than "why did I get told about that?". It reads the row rather than a log,
+    because by the time anybody asks, the clock has moved on and the log has rotated.
+    """
+    _require_db()
+    with _graph.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select card_id, channel, recipient, band, channel_class, interrupt, status, "
+            "defer_count, gate_unit, gate_reason, next_attempt_at, created_at, last_error "
+            "from delivery_outbox where org_id=:o "
+            "and (status='suppressed' or (status='queued' and defer_count > 0)) "
+            "order by created_at desc limit :l"),
+            {"o": org, "l": limit}).mappings().all()
+
+    held = []
+    for row in rows:
+        held.append({
+            "card_id": row["card_id"], "channel": row["channel"],
+            "recipient": row["recipient"], "band": row["band"],
+            "channel_class": row["channel_class"], "interrupt": bool(row["interrupt"]),
+            "status": row["status"], "defer_count": int(row["defer_count"] or 0),
+            "held_by": row["gate_unit"], "reason_code": row["gate_reason"],
+            "retryable": row["status"] == "queued",
+            "next_attempt_at": (row["next_attempt_at"].isoformat()
+                                if row["next_attempt_at"] else None),
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None})
+    return {"held": held,
+            "deferred": sum(1 for item in held if item["status"] == "queued"),
+            "suppressed": sum(1 for item in held if item["status"] == "suppressed")}
+
+
+__all__ = ["router"]

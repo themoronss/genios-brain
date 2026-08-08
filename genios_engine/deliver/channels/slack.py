@@ -43,6 +43,39 @@ def format_digest_message(digest: dict) -> dict:
                         "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
 
 
+_URGENCY_ICON = {"urgent": "🔴", "firm": "🟠", "gentle": "🔵"}
+
+
+def format_reminder_message(payload: dict, *, base_url: str = "") -> dict:
+    """Pure: a Layer 5 commitment reminder → Slack payload.
+
+    Every value here was put in the payload by ``deliver/executive_bridge.format_reminder``,
+    which in turn only copies the grounded fact corpus Layer 5 attached to the reminder event.
+    The adapter adds punctuation and an icon and nothing else — same law as the card path.
+
+    The consequence line is what makes this a reminder rather than a nag: "the Acme deal slips
+    past quarter end" is a reason to act; "this is still open" is an accusation.
+    """
+    icon = _URGENCY_ICON.get(str(payload.get("urgency") or "gentle"), "🔵")
+    head = str(payload.get("headline") or "")[:150]
+    lines = [f"{icon} *Still open — {head}*"]
+    situation = str(payload.get("situation") or "")
+    if situation:
+        lines.append(situation)
+    consequence = str(payload.get("consequence") or "")
+    if consequence:
+        lines.append(f"_{consequence[:300]}_")
+    next_action = str(payload.get("next_action") or "")
+    if next_action:
+        lines.append(f"Next: {next_action[:200]}")
+    card_id = payload.get("card_id")
+    if base_url and card_id:
+        lines.append(f"<{base_url.rstrip('/')}/cards/{card_id}|Open the card →>")
+    return {"text": f"{icon} Still open — {head}",
+            "blocks": [{"type": "section",
+                        "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
+
+
 def valid_webhook_url(url: str | None) -> bool:
     return bool(url) and str(url).startswith("https://hooks.slack.com/")
 
