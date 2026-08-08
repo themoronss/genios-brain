@@ -78,6 +78,11 @@ def test_run_learning_produces_metrics_and_is_weekly_idempotent(conn):
                         {"o": org}).scalar()
     assert metrics >= 1
 
+    # an append-only evaluation row was written per decision (0046 hardening ledger)
+    evals = c.execute(text("select count(*) from learning_object_evaluations "
+                           "where org_id=:o and run_id=:r"), {"o": org, "r": first["run_id"]}).scalar()
+    assert evals >= 1
+
     # same week -> the DB claim makes it a no-op
     again = run_learning(c, org_id=org, now=NOW)
     assert again.get("skipped") == "already_ran_this_week"

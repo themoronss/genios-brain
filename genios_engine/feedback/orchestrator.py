@@ -95,10 +95,16 @@ def run_learning(conn, *, org_id: str, now: datetime) -> dict:
                           policy_revision=policy.revision)
         if outcome == "unchanged":
             unchanged += 1
+            _record_evaluation(conn, org_id, run_id, obj, policy, now,
+                               prior=None, result="unchanged", inserted=False,
+                               sink="no_material_change")
             continue
-        publish(conn, obj, target_state=decision.target_state, at=now)
+        sink = publish(conn, obj, target_state=decision.target_state, at=now)
         inserted += 1 if outcome == "inserted" else 0
         published += 1
+        _record_evaluation(conn, org_id, run_id, obj, policy, now, prior="governed",
+                           result=decision.target_state.value,
+                           inserted=(outcome == "inserted"), sink=sink)
 
     counts = {"proposals": len(proposals), "inserted": inserted, "published": published,
               "held": held, "refused": refused, "unchanged": unchanged}
@@ -108,6 +114,22 @@ def run_learning(conn, *, org_id: str, now: datetime) -> dict:
         "where org_id = :o and run_id = :r"),
         {"at": now, "ins": inserted, "unc": unchanged, "c": _json(counts), "o": org_id, "r": run_id})
     return {"org_id": org_id, "run_id": run_id, **counts, **batch.counts()}
+
+
+def _record_evaluation(conn, org_id, run_id, obj, policy, now, *, prior, result, inserted, sink):
+    """Append-only: the final sink-level outcome of one actual decision, pinned to run+policy+time.
+
+    Storing the final publisher/lifecycle result (not merely the last planned policy edge) keeps
+    published / no_material_change / metric_identity_conflict distinguishable, and object replay
+    never needs to mutate the proposal.
+    """
+    conn.execute(text(
+        "insert into learning_object_evaluations (id, org_id, run_id, learning_id, policy_revision, "
+        "evaluated_at, prior_state, result_state, object_inserted, sink_reason) "
+        "values (:id, :o, :r, :l, :pr, :at, :prior, :res, :ins, :sink)"),
+        {"id": new_id("leval"), "o": org_id, "r": run_id, "l": obj.learning_id,
+         "pr": policy.revision, "at": now, "prior": prior, "res": result, "ins": inserted,
+         "sink": sink})
 
 
 def _json(d: dict) -> str:
