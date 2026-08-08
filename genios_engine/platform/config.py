@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     # OCR (Tesseract) fallback for scanned/image docs. Native text always works; OCR
     # needs the tesseract binary, so default off — turn on where the binary is present.
     enable_ocr: bool = False
+    # Layer 3 Domain Expertise compiler, shadow pass. When on, each sweep also compiles the
+    # active L2 situations into ExpertisePackages (route/coverage measured, nothing persisted,
+    # NO decision impact) so route/package parity can be observed before any live cutover.
+    # Default off — this is the design's mandated shadow-first activation step.
+    use_domain_compiler: bool = False
 
     @property
     def use_real_db(self) -> bool:

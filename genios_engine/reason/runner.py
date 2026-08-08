@@ -15,6 +15,7 @@ from genios_engine.packs.capabilities import BUILTIN_CAPABILITIES
 from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
+from genios_engine.platform.config import get_settings
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
@@ -401,6 +402,16 @@ def _muted_rules(store, org_id: str, pack_id: str, pack_version: str) -> set[str
 def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
+
+    # Layer 3 Domain Expertise compiler — shadow pass (flag off by default). Decoupled from the
+    # node sweep below and from every return path: it compiles active L2 situations into
+    # ExpertisePackages to MEASURE route/coverage, persists nothing and changes no decision.
+    if get_settings().use_domain_compiler:
+        try:
+            from genios_engine.reason.domain_shadow import shadow_compile
+            shadow_compile(store=store, org_id=org_id, eval_time=eval_time)
+        except Exception:
+            logger.exception("domain-compiler shadow pass failed org=%s", org_id)
 
     # L4 — resolve the tenant's effective config (rules + scoring + gate + budget + snapshot id).
     registry = registry or make_registry()
