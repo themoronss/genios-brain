@@ -46,15 +46,19 @@ def register(body: Register) -> dict:
                            {"e": body.email}).first()
         if exists:
             raise HTTPException(409, "email already registered")
-        # New tenants start on the trial with its credit allowance already granted — otherwise
-        # the credits column defaults to 0 and a fresh trial reads as "out of credits".
-        from genios_engine.platform.billing import PLAN_CREDITS
+        # New tenants start on a 7-day trial with its credit allowance already granted —
+        # otherwise the credits column defaults to 0 and a fresh trial reads as "out of credits".
+        from datetime import datetime, timedelta, timezone
+        from genios_engine.platform.billing import PLAN_CREDITS, TRIAL_DAYS
+        now = datetime.now(timezone.utc)
         c.execute(text("insert into orgs (id, name, email, pass_hash, api_key_hash, "
-                       "subscription_tier, plan_status, credits) "
-                       "values (:id,:n,:e,:p,:kh,'trial','trial',:cr)"),
+                       "subscription_tier, plan_status, credits, plan_started_at, plan_expires_at, "
+                       "credit_period_start, credit_period_end) "
+                       "values (:id,:n,:e,:p,:kh,'trial','trial',:cr,:now,:exp,:now,:exp)"),
                   {"id": org_id, "n": body.name, "e": body.email,
                    "p": hash_password(body.password), "kh": key_hash,
-                   "cr": PLAN_CREDITS["trial"]})
+                   "cr": PLAN_CREDITS["trial"], "now": now,
+                   "exp": now + timedelta(days=TRIAL_DAYS)})
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
                        "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
                   {"o": org_id, "cr": PLAN_CREDITS["trial"], "idem": f"trial:{org_id}"})

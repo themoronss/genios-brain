@@ -27,6 +27,7 @@ TOPUP_PACKS = {
     "large":  {"credits": 100_000, "inr": 3500000, "usd": 44900, "label": "Large"},
 }
 GRACE_DAYS = 7
+TRIAL_DAYS = 7                 # a fresh signup gets 500 credits for 7 days
 _ALIAS = {"hustler": "early"}
 
 
