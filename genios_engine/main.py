@@ -14,6 +14,7 @@ from genios_engine.api.channel_routes import router as channel_router
 from genios_engine.api.delivery_routes import router as delivery_router
 from genios_engine.api.executive_routes import router as executive_router
 from genios_engine.api.expertise_routes import router as expertise_router
+from genios_engine.api.home_routes import router as home_router
 from genios_engine.api.identity_routes import router as identity_router
 from genios_engine.api.intelligence_routes import router as intelligence_router
 from genios_engine.api.knowledge_routes import router as knowledge_router
@@ -88,6 +89,7 @@ app.include_router(audit_router)
 app.include_router(segments_router)
 app.include_router(merge_router)
 app.include_router(benchmarks_router)
+app.include_router(home_router)
 
 
 @app.get("/")
