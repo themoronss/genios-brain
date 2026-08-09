@@ -270,11 +270,19 @@ async def billing_stream(token: str = "", org: str = "") -> StreamingResponse:
         raise HTTPException(401, "missing or invalid token")
 
     async def gen():
+        # The balance read is a synchronous DB call; run it in a thread so it never blocks
+        # uvicorn's single event loop (a blocking read here stalls EVERY other request).
         last = None
-        yield f"event: balance\ndata: {json.dumps(_read_balance(org_id))}\n\n"
-        for _ in range(0, 3600, 5):                       # up to ~1h, 5s cadence
-            await asyncio.sleep(5)
-            current = _read_balance(org_id)
+        initial = await asyncio.to_thread(_read_balance, org_id)
+        yield f"event: balance\ndata: {json.dumps(initial)}\n\n"
+        last = initial
+        for _ in range(0, 3600, 30):                      # up to ~1h, 30s cadence
+            await asyncio.sleep(30)
+            try:
+                current = await asyncio.to_thread(_read_balance, org_id)
+            except Exception:
+                yield "event: ping\ndata: {}\n\n"
+                continue
             if _publish_flags.pop(org_id, False) or current != last:
                 last = current
                 yield f"event: balance\ndata: {json.dumps(current)}\n\n"
