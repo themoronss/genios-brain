@@ -22,6 +22,7 @@ from genios_engine.api.learning_routes import router as learning_router
 from genios_engine.api.policy_routes import router as policy_router
 from genios_engine.api.routes import router
 from genios_engine.api.benchmarks_routes import router as benchmarks_router
+from genios_engine.api.billing_routes import router as billing_router
 from genios_engine.api.mapping_routes import router as mapping_router
 from genios_engine.api.merge_routes import router as merge_router
 from genios_engine.api.segments_routes import router as segments_router
@@ -92,6 +93,7 @@ app.include_router(merge_router)
 app.include_router(benchmarks_router)
 app.include_router(home_router)
 app.include_router(mapping_router)
+app.include_router(billing_router)
 
 
 @app.get("/")

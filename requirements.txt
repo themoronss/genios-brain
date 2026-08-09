@@ -29,3 +29,5 @@ pypdf==6.14.2                        # .pdf
 # ── optional: production Redis cache (engine falls back to a no-op NullCache if absent) ──
 # Set GENIOS_REDIS_URL to enable. Uncomment to install:
 # redis==5.2.1
+razorpay>=1.4  # billing (optional; lazy-imported)
+stripe>=7.0  # billing (optional; lazy-imported)
