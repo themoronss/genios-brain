@@ -20,6 +20,7 @@ from genios_engine.api.knowledge_routes import router as knowledge_router
 from genios_engine.api.learning_routes import router as learning_router
 from genios_engine.api.policy_routes import router as policy_router
 from genios_engine.api.routes import router
+from genios_engine.api.merge_routes import router as merge_router
 from genios_engine.api.segments_routes import router as segments_router
 from genios_engine.api.situation_routes import router as situation_router
 from genios_engine.api.upload_routes import router as upload_router
@@ -84,6 +85,7 @@ app.include_router(approval_router)
 app.include_router(usermodel_router)
 app.include_router(audit_router)
 app.include_router(segments_router)
+app.include_router(merge_router)
 
 
 @app.get("/")
