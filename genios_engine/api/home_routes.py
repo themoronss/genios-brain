@@ -207,8 +207,28 @@ def home_summary(org_id: str, org: str = Depends(_org)) -> dict:
         docs = one("select count(*) from source_events where org_id=:o")
         sources = one("select count(*) from connections where org_id=:o")
 
+        # Real inputs for intervention + the evidence/freshness/policy health strip.
+        grounded = one("select count(*) from graph_facts where org_id=:o and valid_to is null "
+                       "and status='active' and confidence >= 0.5")
+        fresh_facts = one("select count(*) from graph_facts where org_id=:o and valid_to is null "
+                          "and status='active' and occurred_at > now() - interval '30 days'")
+        notify = one("select count(*) from decisions where org_id=:o "
+                     "and created_at > now() - interval '7 days' "
+                     "and route in ('notify','flag','human','human_approval')")
+
     coverage = min(100, round(100 * decisions_7d / situations_total)) if situations_total else 0
-    intervention = 42                                       # no proactive/auto split stored yet
+    # Human intervention = share of this week's decisions that needed a human (0 when none yet).
+    intervention = round(100 * notify / decisions_7d) if decisions_7d else 0
+    evidence_cov = round(100 * grounded / facts) if facts else 0
+    freshness = round(100 * fresh_facts / facts) if facts else 0
+    policy_safe = 100 if decisions_7d else 0                # fail-closed gating; nothing yet → 0
+    health = [
+        {"label": "Evidence coverage", "value": f"{evidence_cov}%",
+         "note": "Facts backed by source evidence"},
+        {"label": "Freshness", "value": f"{freshness}%", "note": "Facts confirmed recently"},
+        {"label": "Policy-safe actions", "value": f"{policy_safe}%",
+         "note": "No action bypassed a hard rule"},
+    ]
     dec_delta, dec_dir = _delta(dec_series)
     sit_delta, sit_dir = _delta(sit_series)
     out_delta, out_dir = _delta(out_series)
@@ -222,6 +242,7 @@ def home_summary(org_id: str, org: str = Depends(_org)) -> dict:
             "beforeAsk": min(100, round(100 * decisions_7d / max(1, situations_7d))),
             "outcomeRate": min(100, round(100 * outcomes_7d / max(1, decisions_7d))),
             "humanEffortReduction": 100 - intervention,
+            "health": health,
             "notice": {
                 "title": "Your company is becoming more proactive.",
                 "summary": ("GeniOS identified meaningful changes across your company, prepared "
