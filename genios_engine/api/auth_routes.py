@@ -46,10 +46,18 @@ def register(body: Register) -> dict:
                            {"e": body.email}).first()
         if exists:
             raise HTTPException(409, "email already registered")
-        c.execute(text("insert into orgs (id, name, email, pass_hash, api_key_hash) "
-                       "values (:id,:n,:e,:p,:kh)"),
+        # New tenants start on the trial with its credit allowance already granted — otherwise
+        # the credits column defaults to 0 and a fresh trial reads as "out of credits".
+        from genios_engine.platform.billing import PLAN_CREDITS
+        c.execute(text("insert into orgs (id, name, email, pass_hash, api_key_hash, "
+                       "subscription_tier, plan_status, credits) "
+                       "values (:id,:n,:e,:p,:kh,'trial','trial',:cr)"),
                   {"id": org_id, "n": body.name, "e": body.email,
-                   "p": hash_password(body.password), "kh": key_hash})
+                   "p": hash_password(body.password), "kh": key_hash,
+                   "cr": PLAN_CREDITS["trial"]})
+        c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
+                       "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
+                  {"o": org_id, "cr": PLAN_CREDITS["trial"], "idem": f"trial:{org_id}"})
         c.execute(text("insert into api_keys (id, org_id, key_hash, key_prefix, name, scopes) "
                        "values (:id,:o,:kh,:pfx,'primary',:sc)"),
                   {"id": new_id("key"), "o": org_id, "kh": key_hash, "pfx": prefix,
