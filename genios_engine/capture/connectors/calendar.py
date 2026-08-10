@@ -10,6 +10,11 @@ from .composio_base import ComposioExec
 # mapping, so the gate short-circuits them (no LLM extraction needed). Field paths are
 # defensive and finalized against the real response on first live run (as with Gmail).
 
+# First-connect backfill window: how far BACK to pull on a fresh sync (all FUTURE events are
+# always pulled). Kept to the last 4 months — enough recent meeting history to ground context
+# without dragging in a year of stale calendar noise.
+_BACKFILL_DAYS = 120
+
 
 def _parse_start(ev: dict) -> datetime:
     start = ev.get("start") or {}
@@ -31,9 +36,9 @@ class ComposioCalendarConnector:
         self._cal = calendar_id
 
     def _fetch(self, *, max_results: int, since: datetime | None, page_token: str | None):
-        # window: from the watermark, or the last 365 days on a first run (+ all future). A year
-        # back so a fresh connect captures real history, not just the last month.
-        tmin = since or (datetime.now(timezone.utc) - timedelta(days=365))
+        # window: from the watermark, or the last _BACKFILL_DAYS (4 months) on a first run
+        # (+ all future). Recent history to ground context, without a year of stale events.
+        tmin = since or (datetime.now(timezone.utc) - timedelta(days=_BACKFILL_DAYS))
         args: dict[str, Any] = {"calendarId": self._cal, "maxResults": max_results,
                                 "singleEvents": True, "orderBy": "startTime",
                                 "timeMin": tmin.astimezone(timezone.utc).isoformat()}

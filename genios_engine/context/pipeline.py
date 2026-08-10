@@ -9,7 +9,7 @@ from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
 from genios_engine.context.extract.extractor import Extraction, extract
 from genios_engine.context.graph_store import GraphStore
-from genios_engine.context.guard import _norm, keep_grounded
+from genios_engine.context.guard import _norm, annotate_grounding, keep_grounded
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
 from genios_engine.context.identity import (observe_person_name, resolve_company_mention,
@@ -77,6 +77,7 @@ PROMPT_VERSION = "b3-2"          # b3-2: enriched observations with the canonica
 # email classes that carry no real relationship → no structural graph (newsletters, bots, spam).
 # NOTE: "personal" is NOT here — a personal 1:1 email is still a real correspondence edge.
 _NOISE_TYPES = {"newsletter", "automated", "spam"}
+_GROUNDING_PENALTY = 0.4      # ungrounded (paraphrased) claim → kept but scored down, not dropped
 # P1 — node-type whitelist. An LLM entity_mention becomes a first-class graph NODE only if its type
 # is a person WITH an email (a deterministic anchor). Anything else (product/system/organization/
 # tool/event, or an anchorless person/company mention) is recorded as a `mention:<type>` observation
@@ -253,11 +254,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
     # not something the org asserted, and they never occur on a canon event anyway.
     claim_rank = authority_rank_for(internal_kind)
 
-    # B4 guard — keep candidates that quote the source (anti-hallucination — so garbage doesn't
-    # enter, but nothing relevant is dropped by a relevance score).
+    # B4 guard. Grounding is a HARD gate only for identity NODES (a fabricated entity must never
+    # become a graph node → keep_grounded). For SCORED claims (facts/observations) it is a
+    # PENALTY, not a drop: an ungrounded/paraphrased-but-real fact is kept and scored down
+    # (_grounded flag → _GROUNDING_PENALTY), never silently deleted. Store-and-score, not delete.
     ents = keep_grounded(content, ex.entity_mentions)
-    facts = keep_grounded(content, ex.fact_candidates)
-    obs = keep_grounded(content, ex.observations)
+    facts = annotate_grounding(content, ex.fact_candidates)
+    obs = annotate_grounding(content, ex.observations)
 
     with store.engine.begin() as conn:          # one transaction (B7)
         version = store.bump_version(conn, org_id)
@@ -322,10 +325,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 knowledge_key=raw_extra.get("knowledge_key") or event_id,
                 event_id=event_id)
             touched[canon_node] = internal_kind
-        # P2 — a NODE means a real relationship. A noise sender (newsletter/automated/spam) does
-        # NOT become a person/company node; the email stays in the L1 ledger (recoverable), out of
-        # the graph. A real sender (incl. a personal 1:1) still anchors its facts/observations.
-        if sender_email and not is_noise:
+        # A sender always gets a node so its extracted facts/observations have something to attach
+        # to — store-and-score, not delete. Noise (newsletter/automated) is NOT dropped here: its
+        # facts land with a LOW relevance score and it is kept OUT of the network graph and
+        # correlation below (guarded by `not is_noise`), so a newsletter never becomes a
+        # relationship or a live situation — but its content is not silently thrown away. True junk
+        # was already stopped upstream at the L1 LLM junk-gate, before it ever reached L2.
+        if sender_email:
             sender_node = _person(sender_email)
             nodes += 1
 
@@ -465,11 +471,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             subj = _resolve_subject(f.get("subject"), name_to_node, content_subject)
             if subj is None:
                 continue
+            # ungrounded (paraphrased) fact → kept, but scored down instead of dropped.
+            fact_rel = ex.relevance if f.get("_grounded", True) else ex.relevance * _GROUNDING_PENALTY
             wrote = store.write_fact(conn, org_id=org_id, subject_node_id=subj,
                                      field=str(f.get("field") or "note"), value=f.get("value"),
                                      value_type="string",
                                      confidence=FACT_CONF_BY_RANK[claim_rank],
-                                     relevance=ex.relevance,
+                                     relevance=fact_rel,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence=_claim_evidence(f, internal_kind),
                                      source=source,
@@ -486,8 +494,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if key in seen_obs:
                 continue
             seen_obs.add(key)
+            obs_conf = ex.relevance if o.get("_grounded", True) else ex.relevance * _GROUNDING_PENALTY
             store.write_observation(conn, org_id=org_id, subject_node_id=content_subject,
-                                    kind=kind, confidence=ex.relevance,
+                                    kind=kind, confidence=obs_conf,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"text": o.get("evidence_text")}, source=source)
             obs_n += 1

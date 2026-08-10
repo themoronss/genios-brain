@@ -55,9 +55,12 @@ class Settings(BaseSettings):
     # tenant / options
     org_id: str = "org_trial"
     mask_phone: bool = False
-    # optional S2 relevance classifier in L1 (defense-in-depth). Deterministic until an
-    # LLM classifier is wired. Default off — decide on real-data evidence.
+    # optional DETERMINISTIC S2 relevance classifier in L1 (dev/regex fallback). Default off.
     enable_l1_relevance: bool = False
+    # The L1 S2 LLM junk-gate — the reliable filter that keeps noise OUT of the graph. On by
+    # default, but only actually runs when an Anthropic key is present (so hermetic tests without
+    # a key are unaffected). Set false to disable the gate even in production.
+    l1_llm_gate: bool = True
     # OCR (Tesseract) fallback for scanned/image docs. Native text always works; OCR
     # needs the tesseract binary, so default off — turn on where the binary is present.
     enable_ocr: bool = False

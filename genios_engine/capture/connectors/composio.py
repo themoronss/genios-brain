@@ -3,8 +3,15 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any
+
+# Bounded concurrency for the per-message full-body fetch (the slow part: one Composio call per
+# message). This is NETWORK-ONLY work — no DB touched here — so it never pressures the DB pool; the
+# ceiling keeps us under Composio's rate limits and avoids a thread explosion inside a background
+# backfill. DB writes stay in run_sync's own separate bounded pool.
+_FETCH_WORKERS = 6
 
 from genios_engine.capture.documents.native import process_document
 
@@ -56,7 +63,7 @@ _NOISE_HEADERS = ("Auto-Submitted", "Precedence", "List-Unsubscribe",
 # First-ever backfill window on a fresh connect. Kept SHORT (1 month) so onboarding is fast — a
 # Composio list page (~100 emails) is ~26s, so fewer days = fewer pages = quicker first sync.
 # Steady-state incremental sync resumes from the watermark and only pulls new mail regardless.
-_BACKFILL_WINDOW = "newer_than:30d"
+_BACKFILL_WINDOW = "newer_than:60d"     # first-connect backfill: last 2 months of email history
 
 
 def _extract_email(s: str | None) -> str | None:
@@ -238,13 +245,19 @@ class ComposioGmailConnector:
     # -- response mapping (adjust field paths on first live run) --------------------
     def _to_batch(self, result: Any) -> SourceBatch:
         data = result.get("data", result) if isinstance(result, dict) else {}
-        messages = (data.get("messages") or data.get("emails")
-                    or data.get("response_data") or [])
-        objs: list[RawObject] = []
-        for m in messages:
-            if isinstance(m, dict):
-                objs.extend(self._to_objects(m))       # email + its attachments
+        messages = [m for m in (data.get("messages") or data.get("emails")
+                    or data.get("response_data") or []) if isinstance(m, dict)]
         cursor = data.get("nextPageToken") or data.get("next_page_token")
+        if not messages:
+            return SourceBatch(objects=[], next_cursor=cursor)
+        # Each message needs a per-message full-body fetch (the slow ~0.5s Composio call). Run them
+        # CONCURRENTLY with a bounded pool — network only, so the DB pool is untouched and the backend
+        # stays responsive. ex.map preserves order, so the batch is deterministic; one message failing
+        # is already handled inside _to_objects/_full_message (falls back to the list row).
+        workers = min(_FETCH_WORKERS, len(messages))
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            per_message = list(ex.map(self._to_objects, messages))
+        objs: list[RawObject] = [o for sub in per_message for o in sub]
         return SourceBatch(objects=objs, next_cursor=cursor)
 
     def _to_raw(self, m: dict) -> RawObject | None:

@@ -6,6 +6,10 @@ registry so the page shows real data instead of dead calls.
 """
 from __future__ import annotations
 
+from functools import lru_cache
+from pathlib import Path
+
+import yaml
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -19,6 +23,55 @@ from genios_engine.platform.wiring import make_graph_store
 router = APIRouter()
 _log = get_logger("genios.expertise")
 _graph = make_graph_store()
+
+# The authored Layer-3 Domain Expertise corpus (the NEW system) — three human-authored domains
+# (Sales / Admin / Customer Support) with their real capability areas. This replaces the legacy
+# BUILTIN_PACKS view for the Expertise page so it shows the actual authored domains + detail.
+_CORPUS_ROOT = Path(__file__).resolve().parents[2] / "Domain Expertise"
+_ARTIFACT_DIRS = frozenset({"playbooks", "heuristics", "mental-models", "decision-frameworks"})
+
+
+@lru_cache(maxsize=1)
+def _corpus_domains() -> list[dict]:
+    """Read the 3 authored domains straight from the corpus YAML (domain.yaml + capability.yaml).
+    Read-only, cached once. A malformed file is skipped, never a 500."""
+    out: list[dict] = []
+    if not _CORPUS_ROOT.is_dir():
+        return out
+    for droot in sorted(_CORPUS_ROOT.iterdir()):
+        dpath = droot / "domain.yaml"
+        if not droot.is_dir() or droot.name.startswith("_") or not dpath.is_file():
+            continue
+        try:
+            data = yaml.safe_load(dpath.read_text(encoding="utf-8")) or {}
+        except Exception as e:      # noqa: BLE001 — one bad domain must not break the page
+            _log.warning("corpus domain %s unreadable: %s", droot.name, e)
+            continue
+        ident = data.get("identity", {}) if isinstance(data, dict) else {}
+        subs = [s for s in (data.get("subdomains") or []) if isinstance(s, dict)]
+        cap_files = list(droot.rglob("capability.yaml"))
+        artifacts = sum(1 for p in droot.rglob("*.yaml")
+                        if _ARTIFACT_DIRS & set(p.relative_to(droot).parts))
+        out.append({
+            "id": ident.get("id") or droot.name,
+            "name": ident.get("name") or droot.name.replace(" Expertise", ""),
+            "version": str(ident.get("version") or "0.1.0"),
+            "status": ident.get("status") or "draft",
+            "description": " ".join((data.get("description") or "").split()),
+            "question": data.get("question") or "",
+            "subdomain_count": len(subs),
+            "capability_count": len(cap_files),
+            "artifact_count": artifacts,
+            "subdomains": [{
+                "id": s.get("id"),
+                "name": s.get("name"),
+                "question": s.get("question") or "",
+                "note": " ".join((s.get("note") or "").split())[:280],
+                "capabilities": [str(x) for x in (s.get("capabilities") or [])],
+            } for s in subs],
+            "active": True,             # authored + present in the corpus
+        })
+    return out
 
 # per-pack display metadata the manifest doesn't carry (kept small + explicit, not guessed).
 _MATURITY = {"sales": "ga", "general": "ga"}
@@ -57,12 +110,9 @@ def _domain_from_pack(pack: dict, active: bool) -> dict:
 
 @router.get("/v1/expertise/domains")
 def expertise_domains(org_id: str = Depends(get_current_org)) -> dict:
-    _require_graph()
-    with _graph.engine.connect() as c:
-        active_ids = {r.pack_id for r in c.execute(text(
-            "select pack_id from tenant_packs where org_id=:o and state='active'"),
-            {"o": org_id})}
-    domains = [_domain_from_pack(p, p["id"] in active_ids) for p in BUILTIN_PACKS]
+    """The authored Layer-3 Domain Expertise (Sales / Admin / Customer Support) with real detail —
+    reads the corpus, NOT the legacy BUILTIN_PACKS."""
+    domains = _corpus_domains()
     return {"domains": domains,
             "active_count": sum(1 for d in domains if d["active"]),
             "available_count": sum(1 for d in domains if not d["active"])}

@@ -30,13 +30,41 @@ def test_business_email_routes_to_extraction():
     assert [r.stage for r in tr.records] == ["S0", "S1", "S2"]
 
 
-def test_no_reply_sender_dropped_at_s1():
-    ctx = GateContext(event=_event("no-reply@newsletter.com"),
-                      raw={"subject": "Weekly digest", "snippet": "..."})
+class _DropClassifier:
+    """Stub S2 LLM junk-gate that drops (stands in for the real LLM in a hermetic test)."""
+
+    def classify(self, ctx, prepared):
+        from genios_engine.capture.gate.relevance import RelevanceVerdict
+        return RelevanceVerdict(False, 0.1, disposition="drop", reason="marketing")
+
+
+def test_dead_sender_dropped_at_s1():
+    # bounce / mailer-daemon carries no business signal ever → still a hard S1 drop (N-03).
+    ctx = GateContext(event=_event("mailer-daemon@newsletter.com"),
+                      raw={"subject": "Delivery failed", "snippet": "..."})
     tr = _trace()
     res = run_gate(ctx, tr)
     assert res.action == "drop" and res.reason_code == "N-03"
     assert tr.records[-1].stage == "S1" and tr.records[-1].action.value == "drop"
+
+
+def test_plain_no_reply_deferred_to_s2_gate():
+    # A plain no-reply/newsletter sender is NO LONGER regex-dropped at S1 — a receipt or invoice
+    # comes from noreply@ too. With no S2 classifier it routes; the LLM gate makes the real call.
+    ctx = GateContext(event=_event("no-reply@newsletter.com"),
+                      raw={"subject": "Weekly digest", "snippet": "..."})
+    res = run_gate(ctx, _trace())
+    assert res.action == "route"
+
+
+def test_llm_gate_drops_marketing_at_s2():
+    # The S2 LLM junk-gate is the one filter allowed to drop on judgment.
+    ctx = GateContext(event=_event("no-reply@promo.io"),
+                      raw={"subject": "Sale!", "snippet": "50% off this week"})
+    tr = _trace()
+    res = run_gate(ctx, tr, relevance=_DropClassifier())
+    assert res.action == "drop" and res.reason_code == "llm_junk"
+    assert tr.records[-1].stage == "S2"
 
 
 def test_known_sender_bypasses_bulk_drop():

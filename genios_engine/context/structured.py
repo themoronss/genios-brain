@@ -10,6 +10,14 @@ from genios_engine.context.graph_store import GraphStore
 # fields (L1 mapped them via the registry). We write them straight to the graph — NO LLM,
 # confidence 1.0, authority R3 (configured system-of-record). This is the cost hero.
 
+# A meeting with more than this many people is a webinar / mass event, not a set of 1:1
+# relationships (mirrors the email path's _BULK_RECIPIENTS). Above it we do NOT turn each attendee
+# into a person node + a situation — that floods the graph with meaningless "X attended Y"
+# situations (against the MD: "a meeting is not a situation" / "when unsure, leave apart"). The
+# attendee list is NOT lost — it stays as the meeting node's `attendees` fact — it just doesn't
+# explode into nodes/edges/correlations. Small meetings keep per-person relationships.
+_BULK_ATTENDEES = 10
+
 
 @dataclass
 class StructuredResult:
@@ -53,9 +61,25 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
         # relationships → graph edges (person→attended→meeting, deal→about→company, …). The related
         # node is find-or-created by its own canonical_key (email for people) so it MERGES with the
         # same entity seen elsewhere, turning the graph from a scatter of nodes into a real network.
+        # Bulk-event guard: a webinar's 100 attendees are not 100 relationships. We skip exploding
+        # them into per-person nodes/edges/situations — but the data is NOT lost: the whole attendee
+        # list is written as ONE `attendees` fact on the meeting node (store-don't-delete). The gcal
+        # mapping never carried attendees as a field (only as relations), so without this the skip
+        # would silently drop them. Non-person relations (e.g. a deal→company) are unaffected.
+        attendee_keys = [r.get("canonical_key") for r in (relations or [])
+                         if r.get("node_type") == "person" and r.get("canonical_key")]
+        bulk_attendees = len(attendee_keys) > _BULK_ATTENDEES
+        if bulk_attendees and store.write_fact(
+                conn, org_id=org_id, subject_node_id=node, field="attendees", value=attendee_keys,
+                value_type="string", confidence=1.0, occurred_at=occurred_at, event_id=event_id,
+                evidence={"derived": "bulk attendee list", "count": len(attendee_keys)},
+                source=source, authority_rank=3):
+            fact_n += 1
         edge_n = 0
         related_nodes: dict[str, str] = {}
         for rel in (relations or []):
+            if bulk_attendees and rel.get("node_type") == "person":
+                continue                                  # data retained as the meeting's attendees fact
             other = store.find_or_create_node(
                 conn, org_id=org_id, node_type=rel["node_type"],
                 canonical_key=rel["canonical_key"], display_name=rel.get("display_name"),

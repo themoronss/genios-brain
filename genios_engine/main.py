@@ -17,6 +17,7 @@ from genios_engine.api.expertise_routes import router as expertise_router
 from genios_engine.api.home_routes import router as home_router
 from genios_engine.api.identity_routes import router as identity_router
 from genios_engine.api.intelligence_routes import router as intelligence_router
+from genios_engine.api.brain_routes import router as brain_router
 from genios_engine.api.knowledge_routes import router as knowledge_router
 from genios_engine.api.learning_routes import router as learning_router
 from genios_engine.api.policy_routes import router as policy_router
@@ -82,6 +83,7 @@ app.include_router(account_router)
 app.include_router(upload_router)
 app.include_router(knowledge_router)
 app.include_router(learning_router)
+app.include_router(brain_router)
 app.include_router(identity_router)
 app.include_router(situation_router)
 app.include_router(policy_router)

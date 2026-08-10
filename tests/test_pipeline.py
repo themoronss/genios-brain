@@ -34,17 +34,28 @@ def test_duplicate_stops_at_landing():
     assert [r.stage for r in res2.trace.records] == ["landing"]
 
 
+class _DropClassifier:
+    """Stub S2 LLM junk-gate that drops (stands in for the real LLM in a hermetic test)."""
+
+    def classify(self, ctx, prepared):
+        from genios_engine.capture.gate.relevance import RelevanceVerdict
+        return RelevanceVerdict(False, 0.1, disposition="drop", reason="marketing")
+
+
 def test_noise_dropped_before_extraction():
+    # Marketing from a no-reply sender is now dropped by the S2 LLM junk-gate (stubbed), not a
+    # regex — so a real receipt/invoice from noreply@ survives while true junk is stopped pre-L2.
     raw = RawObject(source="gmail", object_type="email_message",
                     source_object_id="m_noise",
                     occurred_at=datetime(2026, 7, 28, tzinfo=timezone.utc),
                     actor_email="no-reply@promo.io",
                     raw={"subject": "Sale!", "snippet": "50% off this week"})
     repo = InMemorySourceEventRepository()
-    res = capture_event(raw, org_id="o", connection_id="c", repo=repo)
+    res = capture_event(raw, org_id="o", connection_id="c", repo=repo,
+                        relevance=_DropClassifier())
     assert res.outcome == "dropped"
     assert res.gated is None
-    assert res.trace.records[-1].reason_code == "N-03"     # no-reply sender
+    assert res.trace.records[-1].reason_code == "llm_junk"
 
 
 def test_structured_event_emits_structured_route():

@@ -217,6 +217,15 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         org_id=org_id, module_id=module_id, question=question, envelope=env,
         graph_version=gv, cache_key=ckey, triggered_by="query")
 
+    # AUDIT — one Intelligence-category row per fresh decision (route + id, no content).
+    from genios_engine.platform.audit import record
+    rec = env.get("recommendation") if isinstance(env.get("recommendation"), dict) else {}
+    record(org_id, "decision_made", actor_type="user", target_type="decision",
+           target_id=env.get("decision_id"),
+           metadata={"audit_category": "intelligence", "module_id": module_id,
+                     "route": env.get("route"), "action": rec.get("action"),
+                     "question": question[:120]})
+
     return env
 
 

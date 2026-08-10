@@ -321,6 +321,11 @@ def reset_graph(org_id: str, org: str = Depends(_org)) -> dict:
             "update tenant_packs set lvl3_config='{}'::jsonb, "
             "authority_revision=authority_revision+1,updated_at=clock_timestamp() "
             "where org_id=:o"), {"o": org})
+    from genios_engine.platform.audit import record
+    record(org, "data_subject_erasure", actor_type="user", target_type="workspace", target_id=org,
+           metadata={"audit_category": "update", "scope": "workspace_reset",
+                     "rows_wiped": sum(v for v in wiped.values() if isinstance(v, int)),
+                     "upload_files_removed": removed_files})
     return {"wiped": True, "rows": wiped, "upload_files_removed": removed_files}
 
 

@@ -233,9 +233,17 @@ def make_pack_registry():
 
 
 def make_relevance_classifier():
-    """Optional L1 S2 relevance gate. None (off) unless enabled. Deterministic today;
-    swap for the LLM classifier at LLM-integration time (same interface)."""
-    if not get_settings().enable_l1_relevance:
-        return None
-    from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
-    return DeterministicRelevanceClassifier()
+    """The L1 S2 relevance gate. Prefers the LLM junk-gate whenever an Anthropic key is present
+    (production) — it is the one reliable filter that keeps noise OUT of the graph, replacing the
+    over-aggressive regex drops. Falls back to the deterministic classifier only when explicitly
+    opted in (dev), and to None (off) otherwise — so the hermetic test suite is unchanged."""
+    s = get_settings()
+    if s.l1_llm_gate and s.use_real_llm:
+        from genios_engine.capture.gate.relevance import LLMRelevanceClassifier
+        from genios_engine.context.llm.client import LLMClient
+        return LLMRelevanceClassifier(
+            LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model))
+    if s.enable_l1_relevance:
+        from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
+        return DeterministicRelevanceClassifier()
+    return None

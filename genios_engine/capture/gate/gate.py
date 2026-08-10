@@ -39,11 +39,17 @@ def run_gate(ctx: GateContext, trace: EventTrace,
             return GateResult(action=action, reason_code=code)
         trace.record("S1", "pass")
 
-    # S2 — optional relevance classifier (defense-in-depth; deterministic now,
-    # LLM-swappable later). Low relevance parks for review (never a hard drop).
+    # S2 — relevance classifier. The LLM junk-gate is the ONE filter allowed to DROP on
+    # judgment (keeps noise out of the graph); the deterministic classifier only parks.
+    # `disposition` decides: "drop" (LLM-confident junk), "park" (low relevance, recoverable),
+    # else route to extraction. Empty disposition falls back to the legacy relevant→route rule.
     if relevance is not None:
         v = relevance.classify(ctx, ctx.prepared)
-        if not v.relevant:
+        disp = v.disposition or ("keep" if v.relevant else "park")
+        if disp == "drop":
+            trace.record("S2", "drop", reason_code="llm_junk", relevance=v.relevance, reason=v.reason)
+            return GateResult(action="drop", reason_code="llm_junk", whitelist_code=wl)
+        if disp == "park":
             trace.record("S2", "park", reason_code="low_relevance", relevance=v.relevance)
             return GateResult(action="park", reason_code="low_relevance", whitelist_code=wl)
         trace.record("S2", "pass", relevance=v.relevance, reason=v.reason)

@@ -22,5 +22,12 @@ def get_engine(database_url: str) -> Engine:
     # 8+4=12 leaves headroom for other clients (migrations, a psql session). If more throughput is
     # needed, move DATABASE_URL to the TRANSACTION pooler (port 6543) which multiplexes many clients.
     # pool_timeout: fast-fail (15s) instead of the 30s default so a saturated pool errors clearly.
+    #
+    # psycopg (v3) auto-uses server-side PREPARED STATEMENTS. The TRANSACTION pooler (6543) gives
+    # each transaction a different backend, so a statement prepared on one is gone on the next →
+    # "prepared statement does not exist". Disabling them (prepare_threshold=None) is REQUIRED for
+    # the transaction pooler and harmless on the session pooler, so we set it unconditionally — this
+    # is the one code change needed to safely move DATABASE_URL from :5432 (session) to :6543.
     return create_engine(url, pool_pre_ping=True, pool_size=8, max_overflow=4,
-                         pool_recycle=1800, pool_timeout=15)
+                         pool_recycle=1800, pool_timeout=15,
+                         connect_args={"prepare_threshold": None})

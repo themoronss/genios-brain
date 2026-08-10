@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 
@@ -433,7 +435,7 @@ def sync_one(connection_id: str, background_tasks: BackgroundTasks,
 
 @router.post("/connections/{connection_id}/backfill")
 def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
-                        limit: int = 100, org_id: str = Depends(get_current_org)) -> dict:
+                        limit: int = 25, org_id: str = Depends(get_current_org)) -> dict:
     """Drain a connection's FULL history in the background — the older tail an incremental sync skips
     on a huge first connect (newest-first watermark + max_pages). OWNER-triggered, not automatic:
     it can pull thousands of items and each drives L2 extraction, so it is a deliberate cost choice."""
@@ -446,11 +448,15 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
         try:
             summary = backfill_drain(
                 make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
-                repo=_repo, source=conn.source_type, limit=limit, trace_repo=_trace_repo,
+                repo=_repo, source=conn.source_type, limit=limit,
+                relevance=make_relevance_classifier(), parked_store=_parked,
+                sender_resolver=_sender_resolver_for(conn.org_id), trace_repo=_trace_repo,
                 payload_store=_payload_store, prepared_store=_prepared_store,
-                document_job_store=_documents)
-            _log.info("backfill drain done org=%s conn=%s scanned=%s",
-                      conn.org_id, connection_id, summary.scanned)
+                document_job_store=_documents, run_ledger=_run_ledger)
+            _log.info("backfill drain done org=%s conn=%s scanned=%s emitted=%s",
+                      conn.org_id, connection_id, summary.scanned, summary.emitted)
+            if _graph is not None:
+                _run_l2(conn.org_id)                     # extract everything the backfill landed
         except Exception:                                # a drain failure must not crash the worker
             _log.exception("backfill drain failed org=%s conn=%s", conn.org_id, connection_id)
 
@@ -653,6 +659,9 @@ def tool_connect_redirect(tool: str, org_id: str, callback: str | None = None):
     # NOTE: we do NOT mirror a local connection row here — a click ≠ a completed OAuth. The tool
     # is "connected" only once Composio reports an ACTIVE account (see _composio_connected below),
     # which is the single source of truth for status + sync.
+    from genios_engine.platform.audit import record
+    record(org_id, "source_connect_started", actor_type="user", target_type="source",
+           target_id=_norm_source(tool), metadata={"audit_category": "update", "tool": tool})
     return RedirectResponse(redirect, status_code=302)
 
 
@@ -718,6 +727,11 @@ def integration_disconnect(tool: str, wipe_data: bool = False,
                               {"o": org_id, "s": _norm_source(tool)}).rowcount
             c.execute(text("delete from source_events where org_id=:o and source=:s"),
                       {"o": org_id, "s": _norm_source(tool)})
+    from genios_engine.platform.audit import record
+    record(org_id, "source_disconnected", actor_type="user", target_type="source",
+           target_id=_norm_source(tool),
+           metadata={"audit_category": "update", "tool": tool, "wipe_data": wipe_data,
+                     "accounts_removed": removed, "events_wiped": wiped})
     return {"disconnected": True, "tool": tool, "accounts_removed": removed,
             "data_wiped": bool(wipe_data), "payloads_wiped": wiped}
 
@@ -739,7 +753,9 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
         cur = out.get(a["source_type"])
         if cur is None or active:      # prefer an ACTIVE account if the tool has several
             out[a["source_type"]] = {"connected": active,
-                                     "syncStatus": "idle",
+                                     "syncStatus": ("running"
+                                                    if _sync_is_running(org_id, a["source_type"])
+                                                    else "idle"),
                                      "freshness": "error" if not active else "stale",
                                      "syncIntervalHours": 6,   # trial cadence; drives the card copy
                                      "lastSyncAt": None,
@@ -800,25 +816,137 @@ def _sync_source(org_id: str, source_type: str, limit: int):
                     run_ledger=_run_ledger)
 
 
+_BACKFILL_MAX_ROUNDS = 24       # 24 × 25 = up to 600 messages on first connect — see below
+_BACKFILL_L2_EVERY = 6          # drain L2 every N rounds so facts appear DURING the backfill
+# Hard first-connect event cap per source (in addition to the round cap). Calendar: never pull more
+# than 150 events on a first connect. Sources not listed here fall back to the round cap only.
+_SOURCE_EVENT_CAP: dict[str, int] = {"gcal": 150}
+
+# Which (org, source) syncs are ACTIVE right now. Lives on the SERVER for the whole L1+backfill+L2
+# lifetime, so /integrations/status can report "running" and the Sync button stays "Syncing…" from
+# ANY page load — a client's local button state resets on navigation, this does not. Cleared when
+# the whole background chain finishes (or on failure). In-memory = per-process (fine for the single
+# app instance; a restart clears it, and a restart also kills the sync, so the two agree).
+_running_syncs: set[tuple[str, str]] = set()
+_running_lock = threading.Lock()
+
+
+def _set_sync_running(org_id: str, source: str, running: bool) -> None:
+    with _running_lock:
+        (_running_syncs.add if running else _running_syncs.discard)((org_id, source))
+
+
+def _sync_is_running(org_id: str, source: str) -> bool:
+    with _running_lock:
+        return (org_id, source) in _running_syncs
+
+
+def _backfill_full(org_id: str, source_type: str, limit: int = 25,
+                   max_rounds: int = _BACKFILL_MAX_ROUNDS) -> None:
+    """First-connect history backfill, run once in the background — BOUNDED and progressive.
+
+    The incremental 'Sync' only pulls the newest page and advances a watermark, so on a large first
+    connect the older tail is skipped permanently. This pages BACKWARD through the window (dedup-safe,
+    cursor_store=None so it never touches the incremental watermark) through the SAME S2 junk-gate,
+    and drains L2 every few rounds so facts surface progressively instead of only at the very end.
+
+    Why bounded: a high-volume inbox can hold thousands of messages in the window, and fetching +
+    gating every one costs real time/LLM. We cap at `max_rounds` (~600 messages) — plenty to reach a
+    normal 2-month business history and this inbox's recent real mail — and LOG (never silently) if
+    more history remains, which an owner can pull with the manual /connections/{id}/backfill."""
+    from genios_engine.contracts.connection import Connection
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
+    connector = make_connector_for(conn)
+    event_cap = _SOURCE_EVENT_CAP.get(source_type)     # e.g. calendar → 150 events max
+    cursor: str | None = None
+    scanned = emitted = 0
+    try:
+        for rnd in range(max_rounds):
+            summary = run_sync(
+                connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
+                mode="backfill", cursor=cursor, limit=limit, source=source_type,
+                cursor_store=None, max_pages=1, relevance=make_relevance_classifier(),
+                parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
+                trace_repo=_trace_repo, payload_store=_payload_store,
+                prepared_store=_prepared_store, document_job_store=_documents,
+                run_ledger=_run_ledger)
+            scanned += summary.scanned
+            emitted += summary.emitted
+            cursor = summary.next_cursor
+            # Per-source hard event cap (e.g. calendar 150): stop once the org holds that many for
+            # this source, so a busy calendar never floods in more than the user asked for.
+            if event_cap is not None and _graph is not None:
+                with _graph.engine.connect() as _c:
+                    have = _c.execute(text("select count(*) from source_events "
+                                           "where org_id=:o and source=:s"),
+                                      {"o": org_id, "s": source_type}).scalar() or 0
+                if have >= event_cap:
+                    break
+            if _graph is not None and (rnd + 1) % _BACKFILL_L2_EVERY == 0:
+                try:
+                    _run_l2(org_id)               # progressive: facts appear mid-backfill
+                except Exception:      # noqa: BLE001
+                    _log.exception("backfill mid-L2 failed org=%s", org_id)
+            if not cursor:
+                break                             # window exhausted
+        if _graph is not None:
+            _run_l2(org_id)                       # final drain of whatever remains
+        capped = cursor is not None
+        _log.info("first-connect backfill %s org=%s source=%s scanned=%s emitted=%s%s",
+                  "CAPPED" if capped else "done", org_id, source_type, scanned, emitted,
+                  " — more history remains; run manual /backfill to continue" if capped else "")
+        from genios_engine.platform.audit import record
+        record(org_id, "data_backfilled", actor_type="system", target_type="source",
+               target_id=source_type,
+               metadata={"audit_category": "meeting" if source_type == "gcal" else "data_extraction",
+                         "source": source_type, "scanned": scanned, "emitted": emitted,
+                         "capped": capped})
+    except Exception:      # noqa: BLE001 — a backfill failure must never crash the worker
+        _log.exception("first-connect backfill failed org=%s source=%s (scanned=%s)",
+                       org_id, source_type, scanned)
+
+
 @router.post("/integrations/{tool}/sync")
 def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 25,
                      org_id: str = Depends(get_current_org)) -> dict:
     """Sync one tool for the authed tenant. Runs L1 SYNCHRONOUSLY (bounded) for an immediate item
-    count, then L2→L3→L5 in the background. Requires an ACTIVE Composio account for the tool."""
+    count, then L2→L3→L5 in the background. Requires an ACTIVE Composio account for the tool.
+
+    On the FIRST sync of a connection (no watermark yet) it ALSO kicks a full-history backfill in
+    the background, so a large inbox's older tail is ingested once instead of only its newest page.
+    Later syncs are pure incremental (the backfill only fires when there is no prior watermark)."""
     norm = _norm_source(tool)
     active = {a["source_type"] for a in _composio_connected(org_id) if a["status"] == "ACTIVE"}
     if norm not in active:
         raise HTTPException(404, f"{tool} is not connected (or the OAuth wasn't completed). "
                             f"Click Connect and finish the authorization first.")
+    # First sync = no stored watermark for this connection yet → also backfill the full window once.
+    _conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=norm, config={})
+    first_sync = _cursors is not None and _cursors.get(org_id, _conn.connection_id, norm) is None
+    # Mark ACTIVE up front so /integrations/status reports "running" (button stays "Syncing…" across
+    # navigation) for the entire L1 + background L2/backfill lifetime, not just this HTTP call.
+    _set_sync_running(org_id, norm, True)
     try:
         s = _sync_source(org_id, norm, limit)
     except Exception as e:      # noqa: BLE001
+        _set_sync_running(org_id, norm, False)              # clear on failure — not stuck "Syncing…"
         _log.exception("L1 sync failed for org=%s tool=%s", org_id, tool)
         raise HTTPException(502, f"sync failed for {tool}: {str(e)[:200]}")
+    # AUDIT — one legible ledger row per sync (Data extraction, or Meeting for calendar), counts only.
+    from genios_engine.platform.audit import record
+    record(org_id, "data_synced", actor_type="user", target_type="source", target_id=norm,
+           metadata={"audit_category": "meeting" if norm == "gcal" else "data_extraction",
+                     "tool": tool, "scanned": s.scanned, "emitted": s.emitted,
+                     "dropped": s.dropped, "parked": s.parked})
     if _graph is not None:
-        background_tasks.add_task(_run_l2, org_id)
+        background_tasks.add_task(_run_l2, org_id)          # extract the incremental page first
+    if first_sync:
+        background_tasks.add_task(_backfill_full, org_id, norm)   # then fill the older tail once
+    # Runs LAST (background tasks are sequential) → clears "running" only after L2 + backfill finish.
+    background_tasks.add_task(_set_sync_running, org_id, norm, False)
     return {"started": True, "tool": tool, "scanned": s.scanned, "emitted": s.emitted,
-            "dropped": s.dropped, "parked": s.parked, "duplicate": getattr(s, "duplicate", 0)}
+            "dropped": s.dropped, "parked": s.parked, "duplicate": getattr(s, "duplicate", 0),
+            "backfilling": first_sync}
 
 
 def _sync_all_bg(org_id: str, sources: list[str], limit: int) -> None:

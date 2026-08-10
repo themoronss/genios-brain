@@ -9,10 +9,11 @@ from .context import GateContext
 # Deterministic S1. Whitelist runs BEFORE destructive drops so known
 # customers/prospects/vendors/important-attachments are never blanket-dropped.
 
-_NOREPLY = re.compile(
-    r"(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?@|updates?@|newsletters?@|"
-    r"digest@|marketing@|bounces?@|mailer-daemon)", re.I
-)
+# Only DEAD mail is hard-dropped on the sender alone: a bounce/mailer-daemon carries no
+# business signal ever. Ambiguous no-reply/notification/newsletter senders are NOT dropped
+# here anymore (a receipt, an invoice, an "action required" notice all come from noreply@);
+# they fall through to the S2 LLM gate, which keeps the relevant ones and drops true junk.
+_DEAD_SENDER = re.compile(r"(mailer-daemon|bounces?@|postmaster@)", re.I)
 _OOO = re.compile(r"\b(out of office|ooo|on leave|automatic reply|chutti)\b", re.I)
 
 # Human-readable label per reason code — shown in traces/logs so a drop is legible.
@@ -25,6 +26,7 @@ REASON_LABELS = {
     "N-10": "empty_no_attachment", "duplicate": "already_seen",
     "out_of_scope": "out_of_scope", "mapping_missing": "structured_unmapped",
     "structured_mapped": "structured_ok", "low_relevance": "low_relevance",
+    "llm_junk": "llm_junk_gate",
     "poison_quarantine": "poison_quarantine",
     "DOC-02": "doc_unsupported", "DOC-04": "doc_ocr_review", "DOC-05": "doc_fetch_failed",
 }
@@ -81,15 +83,18 @@ def hard_rule(ctx: GateContext) -> tuple[str, str] | None:
 
     if str(hdrs.get("Auto-Submitted", "no")) not in ("no", ""):
         return ("N-01", "drop")                  # machine acknowledgement
-    if _OOO.search(subject) or _OOO.search(body[:160]):
-        return ("N-05", "drop")                  # out-of-office (real impl: availability hint first)
+    if _OOO.search(subject):
+        return ("N-05", "drop")                  # out-of-office — SUBJECT only. Body no longer drops:
+                                                 # a normal email that merely mentions "out of office"
+                                                 # in prose is real mail, not an auto-reply.
     # N-02/03/04 are bulk / no-reply SIGNALS, not certainties: a vendor invoice or receipt routinely
     # comes from noreply@ or carries a List-Unsubscribe header. If the message carries a real
     # attachment (an invoice/contract PDF), do NOT hard-drop it on these signals — let relevance/L2
     # decide. High-confidence noise (SPAM/TRASH, Gmail PROMOTIONS/SOCIAL) above still drops regardless.
     att = bool(ctx.raw.get("has_attachment"))
-    if not att and _NOREPLY.search(email):
-        return ("N-03", "drop")                  # no-reply / notification sender
+    if not att and _DEAD_SENDER.search(email):
+        return ("N-03", "drop")                  # dead mail only (bounce/mailer-daemon); other
+                                                 # no-reply senders now go to the S2 LLM gate
     if not att and str(hdrs.get("Precedence", "")).lower() in ("bulk", "list", "junk"):
         return ("N-04", "drop")                  # bulk campaign (Precedence header)
     if not att and (hdrs.get("List-Unsubscribe") or hdrs.get("List-Id")
