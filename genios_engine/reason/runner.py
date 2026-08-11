@@ -608,9 +608,18 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     native_candidates: list = []                           # authorized native decisions, unspent
     graph_drifted = False
     with store.engine.connect() as c:
-        nodes = c.execute(text("select node_id, node_type from graph_nodes "
+        nodes = c.execute(text("select node_id, node_type, canonical_key from graph_nodes "
                                "where org_id=:o and valid_to is null order by node_id"),
                           {"o": org_id}).fetchall()
+        # The account owner is a participant in their own emails/meetings, so a person node exists
+        # for them too. GeniOS assists the owner about OTHERS — it must never treat the owner as a
+        # deal/contact to pursue ("save the <owner> deal" is nonsense). Exclude the owner's own
+        # identity (org email) from reasoning subjects.
+        self_keys = {
+            (k or "").strip().lower()
+            for (k,) in c.execute(text("select lower(email) from orgs where id=:o"), {"o": org_id})
+            if k
+        }
     # Pre-load the whole org's facts + observations in TWO org-wide queries instead of two per
     # node. The per-node reads were the runner's dominant cost (N×2 round-trips against a networked
     # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
@@ -619,6 +628,9 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     metrics_by_node = _bulk_load_metrics(store, org_id)
     _supp_batch.rows = []            # buffer suppressions for this sweep; one bulk INSERT at the end
     for nd in nodes:
+        if (nd.canonical_key or "").strip().lower() in self_keys:
+            out["self_excluded"] += 1                       # never reason about the account owner
+            continue
         rules = rules_for_scope(all_rules, nd.node_type)
         node_capabilities = tuple(capability for capability in native_capabilities
                                   if capability.root_entity_type == nd.node_type)
