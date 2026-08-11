@@ -184,6 +184,29 @@ def _bulk_load_obs(store, org_id) -> dict:
     return out
 
 
+def _bulk_load_metrics(store, org_id) -> dict:
+    """Every node's baseline metrics in ONE org-wide query → {node_id: (baselines, derived)}. Same
+    key parsing + shape as baselines.load_node_metrics per node (keys are 'metric:node_id'), so
+    result[node_id] equals load_node_metrics(node_id). Replaces the last per-node read in run()."""
+    out: dict = {}
+    with store.engine.connect() as c:
+        rows = c.execute(text("select key, value from baselines where org_id=:o"),
+                         {"o": org_id}).fetchall()
+    for r in rows:
+        parts = str(r.key).split(":", 1)
+        if len(parts) != 2:
+            continue
+        metric, node_id = parts[0], parts[1]
+        baselines, derived = out.setdefault(node_id, ({}, {}))
+        v = float(r.value)
+        if metric == "reply_cadence":
+            baselines["reply_cadence"] = v
+        elif metric in ("momentum", "engagement"):
+            derived[f"derived.{metric}"] = {"value": v, "confidence": 0.85,
+                                            "authority_rank": 2, "occurred_at": None, "src_count": 1}
+    return out
+
+
 def _neighbor_index(store, org_id):
     """Bulk-load the org's edge/obs/fact structure ONCE (3 org-wide queries) → adjacency + per-node
     obs-kinds + per-node latest-facts. The runner scans every node, so this O(1)-query index beats
@@ -567,6 +590,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
     facts_by_node = _bulk_load_facts(store, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
+    metrics_by_node = _bulk_load_metrics(store, org_id)
     for nd in nodes:
         rules = rules_for_scope(all_rules, nd.node_type)
         node_capabilities = tuple(capability for capability in native_capabilities
@@ -575,7 +599,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             continue
         ctx = _load_context(store, org_id, nd.node_id, nd.node_type,
                             facts_by_node=facts_by_node, obs_by_node=obs_by_node)
-        baselines, derived = load_node_metrics(store, org_id, nd.node_id)  # C1: one query, both
+        baselines, derived = metrics_by_node.get(nd.node_id, ({}, {}))  # C1: bulk-loaded once
         ctx.baselines = baselines
         ctx.facts.update(derived)                          # derived.momentum / derived.engagement
         ctx.facts.update(sentiment_facts(ctx.obs, eval_time))  # derived.sentiment (90d window)
@@ -712,38 +736,41 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                           {"captured_graph_version": graph_version})
                 out["graph_changed_retry"] += 1
                 break
-            # P2: a rule that neither matched nor produced a blocking/failed/insufficient decision is
-            # a pure no-op for this node — every path below (blocked/failed suppress, matched emit)
-            # is skipped and its run_id + audit bundle are never read (see the `if not
-            # reasoned.matched: continue` a few lines down). Persisting a full audit bundle for these
-            # was the dominant write cost of a sweep (one transaction of ~9 rows per no-op, and no-ops
-            # are the large majority of node×rule evaluations). Skip only these; matched, blocked,
-            # failed and insufficient still persist in full — so signals AND their audit trail are
-            # byte-for-byte unchanged. Fewer writes also means far less load on the pooled Postgres.
+            # P2 + P2b: only pay for the full ~9-row audit bundle (its own transaction) when something
+            # downstream actually reads it. The bundle's run_id is just the in-memory trace run id, so:
+            #   - matched          → the emission path reads audit_bundle["output"] → MUST persist
+            #   - failed / insuff. → kept as inspectable fail-closed audit records → persist
+            #   - BLOCKED          → only referenced by the reasoning_blocked suppression, which stores
+            #                        the (in-memory) run id in its detail; the heavy bundle is never
+            #                        read again → skip the write, keep the lightweight suppression row
+            #   - pure no-op       → nothing reads it at all → skip entirely
+            # BLOCKED + no-op are the overwhelming majority of a sweep (score-gate rejections), so this
+            # is what turns a ~10-min sweep into ~1 min. Signals and their audit are byte-for-byte
+            # unchanged (only matched emits, and matched still persists in full). Far less Postgres load.
             _outcome = reasoned.execution.decision.outcome
-            if not reasoned.matched and _outcome not in {
-                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT,
-                    DecisionOutcome.BLOCKED}:
+            audit_bundle = None
+            reasoning_run_id = reasoned.execution.trace.run_id
+            if _outcome == DecisionOutcome.BLOCKED:
+                pass                                          # handled by the reasoning_blocked branch
+            elif reasoned.matched or _outcome in {
+                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
+                try:
+                    audit_bundle = persist_execution(
+                        store=reasoning_store,
+                        execution=reasoned.execution,
+                    )
+                    reasoning_run_id = audit_bundle["run"]["run_id"]
+                except Exception as exc:
+                    logger.exception("Layer 4 audit persistence failed for %s:%s:%s",
+                                     org_id, rule.id, nd.node_id)
+                    _suppress(store, org_id, rule.id, nd.node_id, "audit_failed", eval_time,
+                              {"error_type": type(exc).__name__,
+                               "trace_run_id": reasoned.execution.trace.run_id})
+                    indeterminate.add((rule.id, nd.node_id))
+                    out["audit_failed"] += 1
+                    continue
+            else:
                 out["no_op_skipped"] += 1
-                continue
-            try:
-                # Persist every AUTHORITATIVE-relevant outcome (matched / blocked / failed /
-                # insufficient) — not only recommendations that survive the delivery gate. This
-                # makes insufficient-context, blocked, and failed executions available for
-                # audit/replay while authorizing none of them.
-                audit_bundle = persist_execution(
-                    store=reasoning_store,
-                    execution=reasoned.execution,
-                )
-                reasoning_run_id = audit_bundle["run"]["run_id"]
-            except Exception as exc:
-                logger.exception("Layer 4 audit persistence failed for %s:%s:%s",
-                                 org_id, rule.id, nd.node_id)
-                _suppress(store, org_id, rule.id, nd.node_id, "audit_failed", eval_time,
-                          {"error_type": type(exc).__name__,
-                           "trace_run_id": reasoned.execution.trace.run_id})
-                indeterminate.add((rule.id, nd.node_id))
-                out["audit_failed"] += 1
                 continue
             if reasoned.execution.decision.outcome in {
                     DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
