@@ -67,7 +67,17 @@ def _rules_need_neighbors(rules) -> bool:
 # config, and every emitted signal is stamped with the config_snapshot_id it was scored under.
 
 
-def _load_context(store, org_id, node_id, node_type) -> NodeContext:
+def _load_context(store, org_id, node_id, node_type, *,
+                  facts_by_node=None, obs_by_node=None) -> NodeContext:
+    # Bulk path: when the caller pre-loaded the whole org's facts/obs in a few org-wide queries
+    # (see _bulk_load_facts / _bulk_load_obs), read this node from memory instead of two per-node
+    # round-trips. The dicts are built with IDENTICAL shape + ordering, so the resulting
+    # NodeContext is byte-for-byte the same the per-node path would produce — zero behaviour change,
+    # only fewer round-trips. Fewer queries also means less load on the pooled Postgres.
+    if facts_by_node is not None or obs_by_node is not None:
+        return NodeContext(node_id=node_id, node_type=node_type,
+                           facts=(facts_by_node or {}).get(node_id, {}),
+                           obs=(obs_by_node or {}).get(node_id, []))
     with store.engine.connect() as c:
         facts = {}
         for r in c.execute(text(
@@ -112,6 +122,66 @@ def _load_context(store, org_id, node_id, node_type) -> NodeContext:
             "where org_id=:o and subject_node_id=:n and status='active'"),
             {"o": org_id, "n": node_id})]
     return NodeContext(node_id=node_id, node_type=node_type, facts=facts, obs=obs)
+
+
+def _bulk_load_facts(store, org_id) -> dict:
+    """Every node's active facts in ONE org-wide query, keyed by node_id → {field: fact}. Same
+    columns, same per-field ordering, same 'keep the first row per field' rule as the per-node
+    load in _load_context, so `result[node_id]` equals what _load_context(node_id).facts returns.
+    Replaces N per-node round-trips with one (the pooler is networked; round-trips dominate)."""
+    out: dict = {}
+    with store.engine.connect() as c:
+        for r in c.execute(text(
+                "select f.subject_node_id, f.field, f.value, f.confidence, f.authority_rank, "
+                "f.occurred_at, f.fact_version_id, "
+                "  (select min(sr.source_ref_id) from graph_source_refs sr "
+                "   where sr.org_id=f.org_id and sr.fact_version_id=f.fact_version_id) "
+                "   as source_ref_id, "
+                "  (select min(sr.source) from graph_source_refs sr "
+                "   where sr.org_id=f.org_id and sr.fact_version_id=f.fact_version_id) "
+                "   as source_group, "
+                "  (select count(distinct sr.source) from graph_source_refs sr "
+                "   join graph_facts fv on fv.fact_version_id=sr.fact_version_id and fv.org_id=f.org_id "
+                "   where fv.fact_id=f.fact_id) as src_count "
+                "from graph_facts f "
+                "where f.org_id=:o and f.valid_to is null and f.status='active' "
+                "order by f.subject_node_id, f.field, f.authority_rank desc nulls last, "
+                "f.confidence desc nulls last, "
+                "f.occurred_at desc nulls last, f.fact_version_id desc"),
+                {"o": org_id}):
+            node = out.setdefault(r.subject_node_id, {})
+            if r.field in node:                            # keep first (highest-priority) per field
+                continue
+            v = r.value
+            if isinstance(v, str):
+                try:
+                    v = json.loads(v)
+                except (ValueError, TypeError):
+                    pass
+            node[r.field] = {"value": v,
+                             "confidence": (float(r.confidence)
+                                            if r.confidence is not None else 0.5),
+                             "authority_rank": int(r.authority_rank or 1),
+                             "occurred_at": r.occurred_at,
+                             "fact_version_id": r.fact_version_id,
+                             "source_ref_id": r.source_ref_id,
+                             "independence_group": (f"source:{r.source_group}"
+                                                    if r.source_group else "unattributed"),
+                             "src_count": int(r.src_count or 1)}
+    return out
+
+
+def _bulk_load_obs(store, org_id) -> dict:
+    """Every node's active observations in ONE org-wide query, keyed by node_id → [{kind, occurred_at}].
+    Same shape/filter as the per-node obs load in _load_context."""
+    out: dict = {}
+    with store.engine.connect() as c:
+        for r in c.execute(text(
+                "select subject_node_id, kind, occurred_at from graph_observations "
+                "where org_id=:o and status='active'"), {"o": org_id}):
+            out.setdefault(r.subject_node_id, []).append(
+                {"kind": r.kind, "occurred_at": r.occurred_at})
+    return out
 
 
 def _neighbor_index(store, org_id):
@@ -492,13 +562,19 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         nodes = c.execute(text("select node_id, node_type from graph_nodes "
                                "where org_id=:o and valid_to is null order by node_id"),
                           {"o": org_id}).fetchall()
+    # Pre-load the whole org's facts + observations in TWO org-wide queries instead of two per
+    # node. The per-node reads were the runner's dominant cost (N×2 round-trips against a networked
+    # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
+    facts_by_node = _bulk_load_facts(store, org_id)
+    obs_by_node = _bulk_load_obs(store, org_id)
     for nd in nodes:
         rules = rules_for_scope(all_rules, nd.node_type)
         node_capabilities = tuple(capability for capability in native_capabilities
                                   if capability.root_entity_type == nd.node_type)
         if not rules and not node_capabilities:
             continue
-        ctx = _load_context(store, org_id, nd.node_id, nd.node_type)
+        ctx = _load_context(store, org_id, nd.node_id, nd.node_type,
+                            facts_by_node=facts_by_node, obs_by_node=obs_by_node)
         baselines, derived = load_node_metrics(store, org_id, nd.node_id)  # C1: one query, both
         ctx.baselines = baselines
         ctx.facts.update(derived)                          # derived.momentum / derived.engagement
