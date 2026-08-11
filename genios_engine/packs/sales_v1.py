@@ -5,7 +5,7 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.8.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
+    "version": "1.9.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
                                       # · 1.5.0 deep lifecycle corpus (pricing_objection, verbal_yes_not_closed,
                                       #   contract_requested, security_review_pending, champion_left, budget_freeze)
@@ -20,8 +20,11 @@ SALES_V1 = {
         "weights": {"u": 45, "i": 35, "r": 20},              # S = C·(0.45U+0.35I+0.20R)
         "c_weights": {"conf": 50, "fresh": 30, "corr": 20},  # score.v0.3
         "corroboration": {"one": 60, "two": 85, "three_plus": 100, "rank3_full": True},
-        "gate": {"s_min": 55, "c_min": 60},                  # c_min ≥ 50 guardrail
-        "budget_per_user_day": 7,                            # ≤ 15 guardrail
+        "gate": {"s_min": 42, "c_min": 50},                  # c_min ≥ 50 guardrail; s_min lowered so
+        #   real-but-lower-corroboration loops in a founder's own inbox (overdue commitments, quiet
+        #   champions, deals to defend) surface instead of being cut with the low-value noise. The
+        #   high-volume junk (a "send a recap" for every past meeting) still scores well under this.
+        "budget_per_user_day": 15,                           # ≤ 15 guardrail — show the day's loops
         # i_floor is what a DEAL-LINKED rule scores when the deal's value is unknown.
         # 40 read the missing value as "assume a median deal" — but combined with the
         # gate it meant unknown-value deals could never clear s_min, i.e. the whole

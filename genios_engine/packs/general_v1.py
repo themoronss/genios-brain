@@ -8,18 +8,20 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.1.1",              # 1.1.1: intro_followup rule (content changed vs published 1.1.0)
+    "version": "1.1.2",              # 1.1.1: intro_followup rule (content changed vs published 1.1.0)
     "requires": {"engine": ">=0.1.0"},
 
     "scoring_defaults": {
         "weights": {"u": 45, "i": 35, "r": 20},
         "c_weights": {"conf": 50, "fresh": 30, "corr": 20},
         "corroboration": {"one": 60, "two": 85, "three_plus": 100, "rank3_full": True},
-        "gate": {"s_min": 55, "c_min": 60},
+        "gate": {"s_min": 42, "c_min": 50},                  # lowered with sales_v1 so real founder-inbox
+        #   loops (overdue commitments, unanswered emails, meeting follow-ups that matter) surface
+        #   instead of being cut with the low-value noise; kept in lockstep with sales_v1.
         # same value as sales — the daily signal budget is shared org-wide (runner._budget_used
-        # counts every signal regardless of pack), so matching numbers keeps the cap at 7/day
-        # combined, not 7+7.
-        "budget_per_user_day": 7,
+        # counts every signal regardless of pack), so matching numbers keeps the cap combined,
+        # not doubled.
+        "budget_per_user_day": 15,
         # matched to sales_v1 deliberately — one org's cards are ranked against each
         # other in a shared 7/day budget, so a different floor here would silently make
         # general-pack cards lose (or win) every tie on scale alone. See sales_v1 for
