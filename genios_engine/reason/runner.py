@@ -712,10 +712,25 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                           {"captured_graph_version": graph_version})
                 out["graph_changed_retry"] += 1
                 break
+            # P2: a rule that neither matched nor produced a blocking/failed/insufficient decision is
+            # a pure no-op for this node — every path below (blocked/failed suppress, matched emit)
+            # is skipped and its run_id + audit bundle are never read (see the `if not
+            # reasoned.matched: continue` a few lines down). Persisting a full audit bundle for these
+            # was the dominant write cost of a sweep (one transaction of ~9 rows per no-op, and no-ops
+            # are the large majority of node×rule evaluations). Skip only these; matched, blocked,
+            # failed and insufficient still persist in full — so signals AND their audit trail are
+            # byte-for-byte unchanged. Fewer writes also means far less load on the pooled Postgres.
+            _outcome = reasoned.execution.decision.outcome
+            if not reasoned.matched and _outcome not in {
+                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT,
+                    DecisionOutcome.BLOCKED}:
+                out["no_op_skipped"] += 1
+                continue
             try:
-                # Persist every deterministic outcome—not only recommendations that survive the
-                # delivery gate. This makes no-action, insufficient-context, blocked, and failed
-                # executions available for audit/replay while authorizing none of them.
+                # Persist every AUTHORITATIVE-relevant outcome (matched / blocked / failed /
+                # insufficient) — not only recommendations that survive the delivery gate. This
+                # makes insufficient-context, blocked, and failed executions available for
+                # audit/replay while authorizing none of them.
                 audit_bundle = persist_execution(
                     store=reasoning_store,
                     execution=reasoned.execution,
