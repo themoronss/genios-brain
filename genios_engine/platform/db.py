@@ -28,6 +28,23 @@ def get_engine(database_url: str) -> Engine:
     # "prepared statement does not exist". Disabling them (prepare_threshold=None) is REQUIRED for
     # the transaction pooler and harmless on the session pooler, so we set it unconditionally — this
     # is the one code change needed to safely move DATABASE_URL from :5432 (session) to :6543.
+    # Resilience over a slow/flaky link (e.g. a laptop reaching a remote Supabase region):
+    # without TCP keepalives and timeouts, a silently-dropped connection makes libpq block on a
+    # socket read FOREVER — the process sits at 0% CPU, no query active, looking "hung". These
+    # connect_args make a dead connection surface as an error in seconds instead of never:
+    #   keepalives*        — probe idle connections; drop-detect within ~30s
+    #   tcp_user_timeout   — cap unacked in-flight sends (ms) so a mid-query death fails fast
+    #   connect_timeout    — bound the initial connect
+    #   statement_timeout  — no single server query can run unbounded (server-side, ms)
     return create_engine(url, pool_pre_ping=True, pool_size=8, max_overflow=4,
                          pool_recycle=1800, pool_timeout=15,
-                         connect_args={"prepare_threshold": None})
+                         connect_args={
+                             "prepare_threshold": None,
+                             "connect_timeout": 10,
+                             "keepalives": 1,
+                             "keepalives_idle": 30,
+                             "keepalives_interval": 10,
+                             "keepalives_count": 5,
+                             "tcp_user_timeout": 30000,
+                             "options": "-c statement_timeout=120000",
+                         })
