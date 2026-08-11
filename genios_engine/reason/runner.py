@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import threading
 from collections import Counter
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -406,13 +407,38 @@ def _graph_version_guard(store, org_id: str, expected: int, *, pack_id: str | No
         yield current == expected and pack_stable and publication_fresh
 
 
+# A sweep suppresses one row per rejected candidate — hundreds to thousands per run. Each in its own
+# transaction was a per-eval round-trip that dominated the sweep once the audit bundles were trimmed.
+# When a batch is open (set for the duration of run()), _suppress buffers the row in this thread's
+# list and one bulk INSERT flushes them all at the end. Thread-local so concurrent org sweeps on the
+# same engine never share a buffer. Suppression rows are write-only telemetry (nothing in the sweep
+# reads them back), so buffering changes nothing but the number of round-trips.
+_supp_batch = threading.local()
+
+
 def _suppress(store, org_id, rule_id, node_id, reason, eval_time, detail=None) -> None:
+    row = {"o": org_id, "r": rule_id, "n": node_id, "rc": reason,
+           "d": json.dumps(detail or {}, default=str), "e": eval_time}
+    buf = getattr(_supp_batch, "rows", None)
+    if buf is not None:
+        buf.append(row)
+        return
     with store.engine.begin() as c:
         c.execute(text(
             "insert into signal_suppression_log (org_id, rule_id, subject_node_id, "
-            "reason_code, detail, eval_time) values (:o,:r,:n,:rc,cast(:d as jsonb),:e)"),
-            {"o": org_id, "r": rule_id, "n": node_id, "rc": reason,
-             "d": json.dumps(detail or {}, default=str), "e": eval_time})
+            "reason_code, detail, eval_time) values (:o,:r,:n,:rc,cast(:d as jsonb),:e)"), row)
+
+
+def _flush_suppress_batch(store) -> None:
+    """One bulk INSERT for every buffered suppression, then close the batch."""
+    rows = getattr(_supp_batch, "rows", None)
+    _supp_batch.rows = None
+    if not rows:
+        return
+    with store.engine.begin() as c:
+        c.execute(text(
+            "insert into signal_suppression_log (org_id, rule_id, subject_node_id, "
+            "reason_code, detail, eval_time) values (:o,:r,:n,:rc,cast(:d as jsonb),:e)"), rows)
 
 
 def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot_id,
@@ -591,6 +617,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     facts_by_node = _bulk_load_facts(store, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
     metrics_by_node = _bulk_load_metrics(store, org_id)
+    _supp_batch.rows = []            # buffer suppressions for this sweep; one bulk INSERT at the end
     for nd in nodes:
         rules = rules_for_scope(all_rules, nd.node_type)
         node_capabilities = tuple(capability for capability in native_capabilities
@@ -979,6 +1006,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                     {"o": org_id, "id": sig.signal_id})
                                 out["resolved"] += 1
 
+    _flush_suppress_batch(store)     # one bulk INSERT for every suppression buffered this sweep
     if graph_drifted:
         return {"nodes": len(nodes), "outcomes": dict(out),
                 "eval_time": eval_time.isoformat(), "retry_required": True,
