@@ -274,7 +274,10 @@ class CardStore:
         params = {"o": org_id, "states": list(states),
                   "authority_time": datetime.now(timezone.utc)}
         if not admin:
-            q += " and k.assignee=:a"
+            # A non-owner (scoped API key / seat) sees loops routed to it AND the org's UNCLAIMED
+            # loops (assignee null) — an unassigned open loop belongs to whoever picks it up, so a
+            # single-seat app connecting with a scoped key still sees the org's queue, not nothing.
+            q += " and (k.assignee=:a or k.assignee is null)"
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "
               "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack")
