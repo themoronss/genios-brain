@@ -235,8 +235,13 @@ AUTHORITATIVE_SIGNAL_PREDICATE = (
     "and s.authority_pack_revision=authority_pack.authority_revision "
     "and authority_cfg.effective->>'version'=authority_pack.version "
     "and rr.completed_at >= authority_pack.updated_at "
-    "and authority_ctx.graph_version = (select coalesce(max(gv.graph_version),0) "
-    "from graph_versions gv where gv.org_id=s.org_id) "
+    # Freshness comes from the signal's lifecycle, not from the graph being frozen. The old
+    # `authority_ctx.graph_version = max(graph_version)` required the reasoning to have run at the
+    # CURRENT graph version, so every card silently vanished the instant anything wrote to the graph
+    # — e.g. each 6-hourly scheduler sync bumped the version and the queue went empty though the
+    # cards were still valid and open. An OPEN signal already means its rule still holds; the next
+    # sweep resolves any whose rule stopped firing. So gate on open-status + pack authority + expiry,
+    # not on the graph version matching to the row.
     "and s.authority_expires_at > :authority_time"
 )
 
