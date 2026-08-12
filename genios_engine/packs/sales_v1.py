@@ -5,7 +5,9 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.9.0",              # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
+    "version": "1.10.0",             # 1.10.0 staleness guard: timeline_slip/closed_lost_risk fire only when
+                                      #   ball_in_court != them (missing_ok) — no "save now" after we've replied
+                                      # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
                                       # · 1.5.0 deep lifecycle corpus (pricing_objection, verbal_yes_not_closed,
                                       #   contract_requested, security_review_pending, champion_left, budget_freeze)
@@ -240,7 +242,8 @@ SALES_V1 = {
         # timeline slip — they signalled the timeline is moving. Re-anchor the plan before the deal
         # loses urgency and slips a quarter.
         {"id": "timeline_slip", "level": "predictive", "scope": "person",
-         "when": [{"has_obs": "timeline_slip"}],
+         "when": [{"has_obs": "timeline_slip"},
+                  {"path": "thread.ball_in_court", "op": "!=", "value": "them", "missing_ok": True}],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 8, "slow": True},
          "reason_code": "timeline_slip", "play": "re_engage", "cooldown_hours": 168,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -267,7 +270,8 @@ SALES_V1 = {
         # closed-lost risk — they hinted the deal may be lost / going with someone else. Last chance
         # to save it with a direct, specific save play before it's gone.
         {"id": "closed_lost_risk", "level": "predictive", "scope": "person",
-         "when": [{"has_obs": "closed_lost_mention"}],
+         "when": [{"has_obs": "closed_lost_mention"},
+                  {"path": "thread.ball_in_court", "op": "!=", "value": "them", "missing_ok": True}],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "closed_lost_risk", "play": "defend_position", "cooldown_hours": 120,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},

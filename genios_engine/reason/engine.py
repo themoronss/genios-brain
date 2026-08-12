@@ -114,7 +114,14 @@ def _eval_condition(ctx: NodeContext, cond: dict, eval_time: datetime) -> bool:
         return _cmp(val, cond["op"], _resolve_value(ctx, cond["value"]))
     if "path" in cond:
         f = ctx.facts.get(cond["path"])
-        return _cmp(f.get("value"), cond["op"], _resolve_value(ctx, cond["value"])) if f else False
+        if f is None:
+            # A missing fact fails a positive check (unchanged default). But a NEGATIVE guard —
+            # "fire unless the fact is explicitly X" — must PASS when the fact is absent, or it
+            # would silently suppress every node that never captured the fact (e.g. ball_in_court
+            # exists on <5% of persons). `missing_ok` opts a single condition into absent→pass;
+            # conditions without it keep the strict absent→False behaviour.
+            return bool(cond.get("missing_ok"))
+        return _cmp(f.get("value"), cond["op"], _resolve_value(ctx, cond["value"]))
     return False
 
 

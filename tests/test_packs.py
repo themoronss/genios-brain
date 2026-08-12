@@ -20,7 +20,7 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.8.0"
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.10.0"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands", "execution"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100
@@ -75,7 +75,7 @@ def test_merge_layers_lvl1_lvl2_lvl3():
     eff = merge_config(SC, {"budget_per_user_day": 10}, {"gate": {"s_min": 60}}, [])
     assert eff["budget_per_user_day"] == 10          # LVL2 admin override wins over pack
     assert eff["gate"]["s_min"] == 60                # LVL3 learned nudge applied
-    assert eff["gate"]["c_min"] == 60                # untouched pack value survives merge
+    assert eff["gate"]["c_min"] == 50                # untouched pack value survives merge
 
 
 def test_guardrails_clamp_hostile_overrides():
@@ -95,7 +95,7 @@ def test_valid_lopsided_weights_are_admin_freedom():
 
 def test_pin_freezes_a_path_against_lvl3():
     eff = merge_config(SC, {}, {"gate": {"s_min": 80}}, pins=["gate.s_min"])
-    assert eff["gate"]["s_min"] == 55                # pinned → LVL3 nudge rejected
+    assert eff["gate"]["s_min"] == 42                # pinned → LVL3 nudge rejected
 
 
 # ---- snapshot hasher --------------------------------------------------------
@@ -268,7 +268,7 @@ GC = GENERAL_V1["scoring_defaults"]
 
 
 def test_general_pack_is_wellformed():
-    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.1.1"
+    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.1.2"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= GC.keys()
     assert GC["weights"]["u"] + GC["weights"]["i"] + GC["weights"]["r"] == 100

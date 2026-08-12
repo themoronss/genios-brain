@@ -586,13 +586,22 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      event_id=event_id,
                                      evidence={"text": cm.get("evidence_text")},
                                      source=source, authority_rank=2)
-                # legacy dual-write (person-level; latest wins — pre-existing shape)
-                store.write_fact(conn, org_id=org_id, subject_node_id=subj,
-                                 field="commitment.due_at", value=due.isoformat(),
-                                 value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
-                                 relevance=ex.relevance, occurred_at=due,
-                                 event_id=event_id, evidence={"text": cm.get("evidence_text")},
-                                 source=source, authority_rank=2)
+                # legacy dual-write (person-level; latest wins — pre-existing shape).
+                # commitment.action rides alongside due_at (same latest-wins key space) so the
+                # person-scoped commitment_overdue card can render WHAT was promised instead of a
+                # hollow "you promised this" — the rule's evidence_fields already cite it; the
+                # pipeline just never wrote it. Firing is unchanged (trigger stays commitment.due_at).
+                for fld, val, oc in (("commitment.due_at", due.isoformat(), due),
+                                     ("commitment.action", cm_text, occurred_at)):
+                    if fld == "commitment.action" and not cm_text:
+                        continue  # no promise text extracted → leave unset rather than write ""
+                    store.write_fact(conn, org_id=org_id, subject_node_id=subj,
+                                     field=fld, value=val,
+                                     value_type="timestamp" if fld == "commitment.due_at" else "string",
+                                     confidence=FACT_CONF_BY_RANK[2],
+                                     relevance=ex.relevance, occurred_at=oc,
+                                     event_id=event_id, evidence={"text": cm.get("evidence_text")},
+                                     source=source, authority_rank=2)
 
         # CORRELATION — the last thing in the same transaction, because a situation must
         # never reference nodes that rolled back. Anchors are the COUNTERPARTY only: our
