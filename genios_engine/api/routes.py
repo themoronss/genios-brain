@@ -1757,9 +1757,9 @@ def _decision_projection(reason_code, card, facts, obs_kinds, actionability) -> 
     elif reason_code == "commitment_overdue":
         act = facts.get("commitment.action")
         rec = {"verdict": "deliver",
-               "objective": f"Deliver: {act}" if act else "Deliver the commitment",
-               "steps": ([f"Complete: {act}"] if act else []) + ["Confirm completion in the thread"],
-               "avoid": "Don't mark done until it's actually delivered"}
+               "objective": f"Close this loop — “{act}”" if act else "Deliver the commitment",
+               "steps": ["Reply in the thread to resolve it"] if act else ["Confirm completion in the thread"],
+               "avoid": "Don't mark done until it's actually resolved"}
     elif reason_code == "meeting_no_followup":
         rec = {"verdict": "follow_up", "objective": "Send a recap of the meeting",
                "steps": ["Recap the key points discussed", "State the next step and who owns it"],
@@ -1834,6 +1834,31 @@ def _meeting_lifecycle(status, start_raw, now) -> tuple[str, str]:
     return "past_scheduled", "Past scheduled · occurrence unverified"
 
 
+def _commitment_neighbors(c, org_id: str, node_id: str) -> list[dict]:
+    """One-hop traversal to the person's connected commitment nodes. The promised text is extracted
+    and stored on the commitment node (e.g. 'Let's speak coming Monday 11am-1pm?'), but the card was
+    node-local and only saw the person's due-date — so it said 'context incomplete'. Reading the
+    commitment node recovers the actual promise, no re-capture needed."""
+    from sqlalchemy import text
+    rows = c.execute(text(
+        "select distinct m.node_id from graph_edges e "
+        "join graph_nodes m on m.org_id=e.org_id and m.node_id = "
+        "  case when e.from_node_id=:n then e.to_node_id else e.from_node_id end "
+        "where e.org_id=:o and (e.from_node_id=:n or e.to_node_id=:n) "
+        "and m.node_type='commitment' and e.valid_to is null"), {"o": org_id, "n": node_id}).all()
+    out = []
+    for r in rows:
+        cf = {x.field: x.value for x in c.execute(text(
+            "select field, value from graph_facts where org_id=:o and subject_node_id=:m "
+            "and status='active' and field like 'commitment.%'"), {"o": org_id, "m": r.node_id})}
+        txt = cf.get("commitment.text")
+        if txt:
+            out.append({"text": txt, "due_at": cf.get("commitment.due_at"),
+                        "status": cf.get("commitment.status")})
+    out.sort(key=lambda m: m.get("due_at") or "", reverse=True)
+    return out[:3]
+
+
 def _meeting_neighbors(c, org_id: str, node_id: str) -> list[dict]:
     """One-hop traversal to the person's connected Calendar meetings — the cross-tool bridge the card
     used to ignore (Update 3 §6.9). Node-local projection hid these; now a person's card can show the
@@ -1887,20 +1912,28 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
             "select kind, count(*) n from graph_observations where org_id=:o "
             "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
         interactions = _meeting_neighbors(c, org_id, node_id)
+        commitments = _commitment_neighbors(c, org_id, node_id)
     obs_kinds = {r.kind for r in obs}
     obs_counts = {r.kind: int(r.n) for r in obs}
     profile = [{"field": k, "value": v} for k, v in facts.items()
                if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
     signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
                for r in obs if r.kind in _CONTEXT_OBS]
+    # The promised/said text lives on the connected commitment node (already extracted). Use it to
+    # GROUND the commitment gate — so the card recovers the real thread topic instead of saying
+    # 'context incomplete' — but keep it as neutral 'what was said' context, not a mis-attributed
+    # 'you promised', since extraction can capture the counterparty's reschedule ask (Update 4 nuance).
+    said = facts.get("commitment.action") or (commitments[0]["text"] if commitments else None)
+    gate_facts = set(facts) | ({"commitment.action"} if said else set())
+    dec_facts = {**facts, "commitment.action": said} if said else facts
     # A connector/bot subject fails closed to 'reply to the real contacts', never to the intermediary.
     if _is_connector(canonical_key, obs_counts):
         actionability = _connector_gate(canonical_key)
     else:
-        actionability = _actionability(reason_code, obs_kinds, set(facts))
-    decision = _decision_projection(reason_code, card, facts, obs_kinds, actionability)
+        actionability = _actionability(reason_code, obs_kinds, gate_facts)
+    decision = _decision_projection(reason_code, card, dec_facts, obs_kinds, actionability)
     context = {"profile": profile, "signals": signals, "interactions": interactions,
-               "freshness": _freshness(fact_rows)}
+               "commitments": commitments, "freshness": _freshness(fact_rows)}
     return context, actionability, decision
 
 
