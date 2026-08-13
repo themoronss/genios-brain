@@ -210,7 +210,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # ingestion (background must keep flowing even at zero balance; the user-facing query/draft gates
     # do the hard block). Idempotent per drain so a re-run doesn't double-charge.
     llm_events = done - out.get("committed_structured", 0) - out.get("skipped_no_llm", 0)
-    charge = llm_events // 10
+    # 1 credit per 10 LLM-extracted items, but ALWAYS at least 1 whenever the LLM actually ran —
+    # so a small upload or a light sync still visibly bills. No LLM work → no charge.
+    charge = max(1, llm_events // 10) if llm_events > 0 else 0
     if charge > 0:
         try:
             from datetime import datetime, timezone
