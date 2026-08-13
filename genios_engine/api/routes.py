@@ -1695,22 +1695,109 @@ def _actionability(reason_code: str | None, obs_kinds: set, fact_fields: set) ->
     return {"state": "actionable"}
 
 
-def _subject_context(org_id: str, signal_id: str | None) -> tuple[dict, dict]:
-    """Return (context, actionability). Context = the subject's captured profile facts + relationship
-    signals (role, company, proposed slot, questions, next step, …) so the card shows WHO this is and
-    WHAT is going on. Actionability = the Update-1 clarity gate. Read-only, deterministic, no LLM.
+# Per-ask-signal step text — the concrete next move the recommendation should propose.
+_ASK_STEP: dict[str, str] = {
+    "question": "Answer their open question",
+    "meeting_request": "Confirm or decline the proposed meeting",
+    "proposal_sent": "Respond to their proposal",
+    "demo_requested": "Book the demo they asked for",
+    "contract_requested": "Send the contract they requested",
+    "objection": "Address the objection they raised",
+    "next_step_agreed": "Deliver the agreed next step",
+}
+# Every CTA carries ONE documented server-side effect (Update 1 §9.5). Opening/handling never
+# completes the loop; completion is an explicit, evidence-backed transition.
+_ACTION_EFFECT: dict[str, str] = {
+    "run_play": "draft_only",       # opens grounded steps / a draft; does not send or execute
+    "do_it_myself": "claim_only",   # claims ownership; does NOT mark the work complete
+    "snooze": "defer_surface",      # defers delivery to a chosen time; decision unchanged
+    "wrong": "feedback",            # records structured feedback, suppresses per policy
+    "open_source": "none",          # read-only navigation
+}
 
-    The subject node + reason_code live on the signal (the cards table has neither column), so resolve
-    them via signal_id first."""
+
+def _annotate_effects(actions):
+    """Attach the documented server-side effect to each CTA so the surface can label transitions
+    honestly ('I'll handle this' = claim only, never complete)."""
+    out = []
+    for a in actions or []:
+        a = dict(a)
+        a["effect"] = _ACTION_EFFECT.get(a.get("type"), "none")
+        out.append(a)
+    return out
+
+
+def _confidence_block(facts: dict, score_block: dict, actionable: bool) -> dict:
+    """Separate confidence meanings (Update 1): evidence vs identity vs situation vs recommendation.
+    These are DIFFERENT quantities and must never collapse into one number."""
+    evidence = int((score_block or {}).get("C") or 0)
+    identity = 85 if ("company" in facts or "role" in facts) else 30
+    situation = 80 if (facts.get("thread.last_inbound") or facts.get("commitment.due_at")
+                       or facts.get("meeting.description")) else 50
+    return {"evidence": evidence, "identity": identity, "situation": situation,
+            "recommendation": evidence if actionable else 10}
+
+
+def _decision_projection(reason_code, card, facts, obs_kinds, actionability) -> dict:
+    """card.v2 decision projection — the typed, grounding-aware read model. Deterministic, no LLM,
+    no new reasoning: it only shapes what Layers 1-5 already produced. Fields we cannot ground
+    (request text, promised outcome, cost-of-inaction, completion criteria) stay `missing` rather
+    than being invented — that gap closes when source bodies are captured (Level 2)."""
+    actionable = actionability.get("state") == "actionable"
+    if not actionable:
+        rec = {"verdict": "review_source",
+               "objective": "Verify what's actually needed before acting",
+               "steps": [actionability.get("recommended") or "Open the source and review the request"],
+               "avoid": "Don't reply, deliver, or mark done until the request is verified"}
+    elif reason_code == "unanswered_email":
+        steps = [_ASK_STEP[k] for k in _ASK_STEP if k in obs_kinds][:3]
+        rec = {"verdict": "reply", "objective": "Reply to what they actually asked",
+               "steps": steps or ["Reply in the thread"],
+               "avoid": "Don't send a generic acknowledgement"}
+    elif reason_code == "commitment_overdue":
+        act = facts.get("commitment.action")
+        rec = {"verdict": "deliver",
+               "objective": f"Deliver: {act}" if act else "Deliver the commitment",
+               "steps": ([f"Complete: {act}"] if act else []) + ["Confirm completion in the thread"],
+               "avoid": "Don't mark done until it's actually delivered"}
+    elif reason_code == "meeting_no_followup":
+        rec = {"verdict": "follow_up", "objective": "Send a recap of the meeting",
+               "steps": ["Recap the key points discussed", "State the next step and who owns it"],
+               "avoid": "Don't recap to yourself or a group with no external counterparty"}
+    else:
+        rec = {"verdict": reason_code or "review", "objective": (card.get("situation") or "").strip(),
+               "steps": [], "avoid": None}
+
+    def gs(cond):
+        return "grounded" if cond else "missing"
+
+    grounding = {
+        "situation": "grounded",
+        "request": gs(reason_code == "unanswered_email" and bool(obs_kinds & _ASK_SIGNALS)),
+        "obligation": gs(reason_code == "commitment_overdue" and "commitment.action" in facts),
+        "stakes": "missing",       # cost-of-inaction / business consequence not captured yet
+        "completion": "missing",   # observable completion criteria not captured yet
+    }
+    return {"card_version": "card.v2", "recommendation": rec,
+            "confidence": _confidence_block(facts, card.get("score_block") or {}, actionable),
+            "grounding": grounding}
+
+
+def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
+    """Return (context, actionability, decision) for a card — the subject's captured profile facts +
+    relationship signals, the Update-1 clarity gate, and the card.v2 decision projection. One DB read,
+    deterministic, no LLM. The subject node + reason_code live on the signal (the cards table has
+    neither column), so resolve them via signal_id first."""
+    signal_id = card.get("signal_id")
     if _graph is None or not signal_id:
-        return {}, {"state": "actionable"}
+        return {}, {"state": "actionable"}, {}
     from sqlalchemy import text
     with _graph.engine.connect() as c:
         row = c.execute(text(
             "select subject_node_id, reason_code from signals where signal_id=:s and org_id=:o"),
             {"s": signal_id, "o": org_id}).first()
         if not row or not row.subject_node_id:
-            return {}, {"state": "actionable"}
+            return {}, {"state": "actionable"}, {}
         node_id, reason_code = row.subject_node_id, row.reason_code
         facts = {r.field: r.value for r in c.execute(text(
             "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
@@ -1723,7 +1810,9 @@ def _subject_context(org_id: str, signal_id: str | None) -> tuple[dict, dict]:
                if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
     signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
                for r in obs if r.kind in _CONTEXT_OBS]
-    return {"profile": profile, "signals": signals}, _actionability(reason_code, obs_kinds, set(facts))
+    actionability = _actionability(reason_code, obs_kinds, set(facts))
+    decision = _decision_projection(reason_code, card, facts, obs_kinds, actionability)
+    return {"profile": profile, "signals": signals}, actionability, decision
 
 
 def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
@@ -1800,9 +1889,12 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     if (ctx.scopes is not None and card.get("assignee") is not None
             and card.get("assignee") not in {actor_id, ctx.agent_id}):
         raise HTTPException(403, "card is assigned to a different seat")
-    # Enrich the detail with the subject's captured context (profile + relationship signals) and the
-    # Update-1 clarity gate (actionable vs context_incomplete). Deterministic, no extra LLM.
-    card["context"], card["actionability"] = _subject_context(ctx.org_id, card.get("signal_id"))
+    # Enrich the detail with the Update-1 decision context: captured profile + relationship signals,
+    # the clarity gate (actionable vs context_incomplete), and the card.v2 decision projection
+    # (recommendation verdict/steps, separate confidences, per-section grounding). Plus a documented
+    # server-side effect on each CTA. All deterministic, no extra LLM.
+    card["context"], card["actionability"], card["decision"] = _card_intelligence(ctx.org_id, card)
+    card["actions"] = _annotate_effects(card.get("actions"))
     return card
 
 
