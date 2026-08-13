@@ -1949,10 +1949,12 @@ def _freshness(fact_rows) -> dict | None:
     if newest.tzinfo is None:
         newest = newest.replace(tzinfo=timezone.utc)
     age_h = (datetime.now(timezone.utc) - newest).total_seconds() / 3600
-    label = "fresh" if age_h <= 6 else "aging" if age_h <= 24 else "stale"
+    # Only genuinely old context (>7d) is worth flagging — 1–7 day-old business context is normal and
+    # should not carry an alarming 'not live' note on every card.
+    label = "fresh" if age_h <= 48 else "aging" if age_h <= 24 * 7 else "stale"
     ago = "just now" if age_h < 1 else f"~{round(age_h)}h ago" if age_h < 48 else f"~{round(age_h / 24)}d ago"
     return {"as_of": newest.isoformat(), "age_hours": round(age_h, 1), "label": label,
-            "note": f"Context, not live — synced {ago}"}
+            "note": f"Latest info here is {ago} — open the source for anything newer"}
 
 
 def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
