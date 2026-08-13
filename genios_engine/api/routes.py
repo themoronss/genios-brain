@@ -1783,6 +1783,37 @@ def _decision_projection(reason_code, card, facts, obs_kinds, actionability) -> 
             "grounding": grounding}
 
 
+# Known networking-connector bots — the transport sender is never the business subject (Update 4).
+_BOT_DOMAINS = frozenset({"boardy.ai"})
+
+
+def _is_connector(canonical_key: str | None, obs_counts: dict) -> bool:
+    """Update 4 — detect an introduction connector / bot that many separate threads collapse onto, so
+    the card never treats the intermediary as the person to reply to. Two signals: a known bot domain,
+    or an automated sender that has accumulated many introductions/meeting-requests across threads
+    (§20's 'connector node with many intro/meeting observations but no person-specific loop' detector)."""
+    key = (canonical_key or "").lower()
+    domain = key.rsplit("@", 1)[-1] if "@" in key else ""
+    if domain in _BOT_DOMAINS:
+        return True
+    if obs_counts.get("email_noise:automated", 0) >= 1 and (
+            obs_counts.get("introduction", 0) >= 3 or obs_counts.get("meeting_request", 0) >= 5):
+        return True
+    return False
+
+
+def _connector_gate(canonical_key: str | None) -> dict:
+    """Fail-closed actionability for a connector subject: point the user at the real contacts instead
+    of confidently telling them to reply to the bot."""
+    who = canonical_key or "This sender"
+    return {"state": "context_incomplete", "connector": True,
+            "missing": ["the actual person to reply to"],
+            "message": f"{who} is an introduction connector — many separate intros are collapsed "
+                       "here, so this is not one person to reply to.",
+            "recommended": "Open Gmail and reply to each introduced contact in their own thread; "
+                           "don't reply to the connector."}
+
+
 def _meeting_lifecycle(status, start_raw, now) -> tuple[str, str]:
     """Reconcile a meeting's honest lifecycle state (Update 3 §4/§9.6). A past scheduled event proves
     it was SCHEDULED, not HELD — 'held' needs attendance/transcript/follow-up evidence we don't have,
@@ -1841,11 +1872,13 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
     from sqlalchemy import text
     with _graph.engine.connect() as c:
         row = c.execute(text(
-            "select subject_node_id, reason_code from signals where signal_id=:s and org_id=:o"),
+            "select s.subject_node_id, s.reason_code, n.canonical_key "
+            "from signals s join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=s.org_id "
+            "where s.signal_id=:s and s.org_id=:o"),
             {"s": signal_id, "o": org_id}).first()
         if not row or not row.subject_node_id:
             return {}, {"state": "actionable"}, {}
-        node_id, reason_code = row.subject_node_id, row.reason_code
+        node_id, reason_code, canonical_key = row.subject_node_id, row.reason_code, row.canonical_key
         fact_rows = c.execute(text(
             "select field, value, created_at from graph_facts where org_id=:o and subject_node_id=:n "
             "and valid_to is null and status='active'"), {"o": org_id, "n": node_id}).all()
@@ -1855,11 +1888,16 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
             "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
         interactions = _meeting_neighbors(c, org_id, node_id)
     obs_kinds = {r.kind for r in obs}
+    obs_counts = {r.kind: int(r.n) for r in obs}
     profile = [{"field": k, "value": v} for k, v in facts.items()
                if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
     signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
                for r in obs if r.kind in _CONTEXT_OBS]
-    actionability = _actionability(reason_code, obs_kinds, set(facts))
+    # A connector/bot subject fails closed to 'reply to the real contacts', never to the intermediary.
+    if _is_connector(canonical_key, obs_counts):
+        actionability = _connector_gate(canonical_key)
+    else:
+        actionability = _actionability(reason_code, obs_kinds, set(facts))
     decision = _decision_projection(reason_code, card, facts, obs_kinds, actionability)
     context = {"profile": profile, "signals": signals, "interactions": interactions,
                "freshness": _freshness(fact_rows)}
