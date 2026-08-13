@@ -1662,33 +1662,68 @@ _CONTEXT_FACT_SKIP = frozenset({"thread.ball_in_court", "thread.last_inbound", "
                                 "meeting.end_at", "end_at", "meeting.title", "title"})
 
 
-def _subject_context(org_id: str, signal_id: str | None) -> dict:
-    """The subject's captured context — the profile facts + relationship signals GeniOS already
-    extracted (role, company, proposed slot, questions, next step, …), so the card shows WHO this is
-    and WHAT is going on rather than only the trigger metadata. Read-only, deterministic, no LLM.
+# Observation kinds that ground WHAT the counterparty is asking for — the "expectation" half of the
+# clarity gate. If none of these are on record for an unanswered thread, we know they wrote but not
+# what response they need, so the card must fail closed.
+_ASK_SIGNALS = frozenset({"question", "meeting_request", "proposal_sent", "demo_requested",
+                          "contract_requested", "objection", "next_step_agreed"})
 
-    The subject node lives on the signal (the cards table has no subject_node_id column), so resolve
-    it via signal_id first."""
+
+def _actionability(reason_code: str | None, obs_kinds: set, fact_fields: set) -> dict:
+    """Update 1 — the universal zero-clarity gate. A card may carry a confident action imperative
+    ('reply now', 'deliver the commitment') ONLY when the decisive context for its type is grounded.
+    When the action-critical fact is missing, fail closed: switch to a context-recovery outcome so
+    the card says 'review the source' instead of inventing confidence. Deterministic, no LLM."""
+    if reason_code == "unanswered_email":
+        if obs_kinds & _ASK_SIGNALS:
+            return {"state": "actionable"}
+        return {"state": "context_incomplete", "missing": ["what response they need"],
+                "message": "We verified they wrote and the ball is on you — but not what response they need.",
+                "recommended": "Open the email to see what they're actually asking before replying."}
+    if reason_code == "commitment_overdue":
+        if "commitment.action" in fact_fields:
+            return {"state": "actionable"}
+        return {"state": "context_incomplete", "missing": ["the promised outcome"],
+                "message": "We found a due date, but not what was actually promised.",
+                "recommended": "Open the source thread to verify what you committed to before acting."}
+    if reason_code == "meeting_no_followup":
+        if "meeting.description" in fact_fields:
+            return {"state": "actionable"}
+        return {"state": "context_incomplete", "missing": ["what to recap"],
+                "message": "A meeting ended with no follow-up, but we don't have its agenda on record.",
+                "recommended": "Open the calendar event to see what was discussed before sending a recap."}
+    return {"state": "actionable"}
+
+
+def _subject_context(org_id: str, signal_id: str | None) -> tuple[dict, dict]:
+    """Return (context, actionability). Context = the subject's captured profile facts + relationship
+    signals (role, company, proposed slot, questions, next step, …) so the card shows WHO this is and
+    WHAT is going on. Actionability = the Update-1 clarity gate. Read-only, deterministic, no LLM.
+
+    The subject node + reason_code live on the signal (the cards table has neither column), so resolve
+    them via signal_id first."""
     if _graph is None or not signal_id:
-        return {}
+        return {}, {"state": "actionable"}
     from sqlalchemy import text
     with _graph.engine.connect() as c:
-        node_id = c.execute(text(
-            "select subject_node_id from signals where signal_id=:s and org_id=:o"),
-            {"s": signal_id, "o": org_id}).scalar()
-        if not node_id:
-            return {}
+        row = c.execute(text(
+            "select subject_node_id, reason_code from signals where signal_id=:s and org_id=:o"),
+            {"s": signal_id, "o": org_id}).first()
+        if not row or not row.subject_node_id:
+            return {}, {"state": "actionable"}
+        node_id, reason_code = row.subject_node_id, row.reason_code
         facts = {r.field: r.value for r in c.execute(text(
             "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
             "and valid_to is null and status='active'"), {"o": org_id, "n": node_id})}
         obs = c.execute(text(
             "select kind, count(*) n from graph_observations where org_id=:o "
             "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
+    obs_kinds = {r.kind for r in obs}
     profile = [{"field": k, "value": v} for k, v in facts.items()
                if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
     signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
                for r in obs if r.kind in _CONTEXT_OBS]
-    return {"profile": profile, "signals": signals}
+    return {"profile": profile, "signals": signals}, _actionability(reason_code, obs_kinds, set(facts))
 
 
 def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
@@ -1765,9 +1800,9 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     if (ctx.scopes is not None and card.get("assignee") is not None
             and card.get("assignee") not in {actor_id, ctx.agent_id}):
         raise HTTPException(403, "card is assigned to a different seat")
-    # Enrich the detail with the subject's captured context (profile + relationship signals) so the
-    # card reads as real intelligence, not just the trigger metadata. Deterministic, no extra LLM.
-    card["context"] = _subject_context(ctx.org_id, card.get("signal_id"))
+    # Enrich the detail with the subject's captured context (profile + relationship signals) and the
+    # Update-1 clarity gate (actionable vs context_incomplete). Deterministic, no extra LLM.
+    card["context"], card["actionability"] = _subject_context(ctx.org_id, card.get("signal_id"))
     return card
 
 
