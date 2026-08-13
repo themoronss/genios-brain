@@ -1799,9 +1799,10 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
         if not row or not row.subject_node_id:
             return {}, {"state": "actionable"}, {}
         node_id, reason_code = row.subject_node_id, row.reason_code
-        facts = {r.field: r.value for r in c.execute(text(
-            "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
-            "and valid_to is null and status='active'"), {"o": org_id, "n": node_id})}
+        fact_rows = c.execute(text(
+            "select field, value, created_at from graph_facts where org_id=:o and subject_node_id=:n "
+            "and valid_to is null and status='active'"), {"o": org_id, "n": node_id}).all()
+        facts = {r.field: r.value for r in fact_rows}
         obs = c.execute(text(
             "select kind, count(*) n from graph_observations where org_id=:o "
             "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
@@ -1812,7 +1813,26 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
                for r in obs if r.kind in _CONTEXT_OBS]
     actionability = _actionability(reason_code, obs_kinds, set(facts))
     decision = _decision_projection(reason_code, card, facts, obs_kinds, actionability)
-    return {"profile": profile, "signals": signals}, actionability, decision
+    context = {"profile": profile, "signals": signals, "freshness": _freshness(fact_rows)}
+    return context, actionability, decision
+
+
+def _freshness(fact_rows) -> dict | None:
+    """Update 2 §10/§16 — the card must be honest that it reads a synced Context Graph, never
+    'real-time'. Report when the newest fact was captured, and label the freshness against the trial
+    sync cadence (~6h). Deterministic."""
+    from datetime import datetime, timezone
+    times = [r.created_at for r in fact_rows if getattr(r, "created_at", None)]
+    if not times:
+        return None
+    newest = max(times)
+    if newest.tzinfo is None:
+        newest = newest.replace(tzinfo=timezone.utc)
+    age_h = (datetime.now(timezone.utc) - newest).total_seconds() / 3600
+    label = "fresh" if age_h <= 6 else "aging" if age_h <= 24 else "stale"
+    ago = "just now" if age_h < 1 else f"~{round(age_h)}h ago" if age_h < 48 else f"~{round(age_h / 24)}d ago"
+    return {"as_of": newest.isoformat(), "age_hours": round(age_h, 1), "label": label,
+            "note": f"Context, not live — synced {ago}"}
 
 
 def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
