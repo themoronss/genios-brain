@@ -1660,14 +1660,22 @@ _CONTEXT_FACT_SKIP = frozenset({"thread.ball_in_court", "thread.last_inbound", "
                                 "thread.last_seen", "meeting.status"})
 
 
-def _subject_context(org_id: str, node_id: str | None) -> dict:
+def _subject_context(org_id: str, signal_id: str | None) -> dict:
     """The subject's captured context — the profile facts + relationship signals GeniOS already
     extracted (role, company, proposed slot, questions, next step, …), so the card shows WHO this is
-    and WHAT is going on rather than only the trigger metadata. Read-only, deterministic, no LLM."""
-    if _graph is None or not node_id:
+    and WHAT is going on rather than only the trigger metadata. Read-only, deterministic, no LLM.
+
+    The subject node lives on the signal (the cards table has no subject_node_id column), so resolve
+    it via signal_id first."""
+    if _graph is None or not signal_id:
         return {}
     from sqlalchemy import text
     with _graph.engine.connect() as c:
+        node_id = c.execute(text(
+            "select subject_node_id from signals where signal_id=:s and org_id=:o"),
+            {"s": signal_id, "o": org_id}).scalar()
+        if not node_id:
+            return {}
         facts = {r.field: r.value for r in c.execute(text(
             "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
             "and valid_to is null and status='active'"), {"o": org_id, "n": node_id})}
@@ -1757,7 +1765,7 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
         raise HTTPException(403, "card is assigned to a different seat")
     # Enrich the detail with the subject's captured context (profile + relationship signals) so the
     # card reads as real intelligence, not just the trigger metadata. Deterministic, no extra LLM.
-    card["context"] = _subject_context(ctx.org_id, card.get("subject_node_id"))
+    card["context"] = _subject_context(ctx.org_id, card.get("signal_id"))
     return card
 
 
