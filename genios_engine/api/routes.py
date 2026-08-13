@@ -1655,9 +1655,11 @@ _CONTEXT_OBS: dict[str, str] = {
     "verbal_yes": "Verbal yes",
     "champion_change": "Champion changed",
 }
-# Facts already shown in the card's subject line / why rows — don't repeat them under Context.
+# Facts already shown in the card's subject line / why rows, or redundant/noisy for a card —
+# don't repeat them under Context (the date is in the subject line; title repeats the headline).
 _CONTEXT_FACT_SKIP = frozenset({"thread.ball_in_court", "thread.last_inbound", "thread.last_outbound",
-                                "thread.last_seen", "meeting.status"})
+                                "thread.last_seen", "meeting.status", "meeting.start_at",
+                                "meeting.end_at", "end_at", "meeting.title", "title"})
 
 
 def _subject_context(org_id: str, signal_id: str | None) -> dict:
