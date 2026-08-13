@@ -1636,6 +1636,51 @@ def _owns_card(card_id: str, org_id: str) -> dict:
     return card
 
 
+# Relationship signals worth surfacing on a card (skip bookkeeping/noise kinds like mention:*,
+# email_relevance, email_noise:*). Maps the raw obs kind → a human label.
+_CONTEXT_OBS: dict[str, str] = {
+    "meeting_request": "Meeting proposed",
+    "next_step_agreed": "Next step agreed",
+    "question": "Open question",
+    "introduction": "Intro thread",
+    "proposal_sent": "Proposal sent",
+    "demo_requested": "Demo requested",
+    "objection": "Objection raised",
+    "contract_requested": "Contract requested",
+    "pricing_discussed": "Pricing discussed",
+    "positive_reply": "Positive reply",
+    "timeline_slip": "Timeline slipping",
+    "closed_lost_mention": "At-risk mention",
+    "budget_approved": "Budget approved",
+    "verbal_yes": "Verbal yes",
+    "champion_change": "Champion changed",
+}
+# Facts already shown in the card's subject line / why rows — don't repeat them under Context.
+_CONTEXT_FACT_SKIP = frozenset({"thread.ball_in_court", "thread.last_inbound", "thread.last_outbound",
+                                "thread.last_seen", "meeting.status"})
+
+
+def _subject_context(org_id: str, node_id: str | None) -> dict:
+    """The subject's captured context — the profile facts + relationship signals GeniOS already
+    extracted (role, company, proposed slot, questions, next step, …), so the card shows WHO this is
+    and WHAT is going on rather than only the trigger metadata. Read-only, deterministic, no LLM."""
+    if _graph is None or not node_id:
+        return {}
+    from sqlalchemy import text
+    with _graph.engine.connect() as c:
+        facts = {r.field: r.value for r in c.execute(text(
+            "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
+            "and valid_to is null and status='active'"), {"o": org_id, "n": node_id})}
+        obs = c.execute(text(
+            "select kind, count(*) n from graph_observations where org_id=:o "
+            "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
+    profile = [{"field": k, "value": v} for k, v in facts.items()
+               if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
+    signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
+               for r in obs if r.kind in _CONTEXT_OBS]
+    return {"profile": profile, "signals": signals}
+
+
 def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
     """Assert tenant ownership and that the originating Layer 4 authority is still live."""
     card = _card_store.get_authoritative_card(card_id, org_id)
@@ -1710,6 +1755,9 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     if (ctx.scopes is not None and card.get("assignee") is not None
             and card.get("assignee") not in {actor_id, ctx.agent_id}):
         raise HTTPException(403, "card is assigned to a different seat")
+    # Enrich the detail with the subject's captured context (profile + relationship signals) so the
+    # card reads as real intelligence, not just the trigger metadata. Deterministic, no extra LLM.
+    card["context"] = _subject_context(ctx.org_id, card.get("subject_node_id"))
     return card
 
 
