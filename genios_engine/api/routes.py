@@ -1783,6 +1783,53 @@ def _decision_projection(reason_code, card, facts, obs_kinds, actionability) -> 
             "grounding": grounding}
 
 
+def _meeting_lifecycle(status, start_raw, now) -> tuple[str, str]:
+    """Reconcile a meeting's honest lifecycle state (Update 3 §4/§9.6). A past scheduled event proves
+    it was SCHEDULED, not HELD — 'held' needs attendance/transcript/follow-up evidence we don't have,
+    so we say 'occurrence unverified' rather than inventing that it happened."""
+    from datetime import datetime, timezone
+    if status == "cancelled":
+        return "cancelled", "Cancelled"
+    start = None
+    if isinstance(start_raw, str):
+        try:
+            start = datetime.fromisoformat(start_raw)
+        except ValueError:
+            start = None
+    if start is not None and start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if start is None or start > now:
+        return "scheduled", "Scheduled"
+    return "past_scheduled", "Past scheduled · occurrence unverified"
+
+
+def _meeting_neighbors(c, org_id: str, node_id: str) -> list[dict]:
+    """One-hop traversal to the person's connected Calendar meetings — the cross-tool bridge the card
+    used to ignore (Update 3 §6.9). Node-local projection hid these; now a person's card can show the
+    meeting that a Gmail thread led to, with its reconciled lifecycle state."""
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    rows = c.execute(text(
+        "select distinct m.node_id, m.display_name from graph_edges e "
+        "join graph_nodes m on m.org_id=e.org_id and m.node_id = "
+        "  case when e.from_node_id=:n then e.to_node_id else e.from_node_id end "
+        "where e.org_id=:o and (e.from_node_id=:n or e.to_node_id=:n) "
+        "and m.node_type='meeting' and e.valid_to is null"), {"o": org_id, "n": node_id}).all()
+    now = datetime.now(timezone.utc)
+    out = []
+    for r in rows:
+        mf = {x.field: x.value for x in c.execute(text(
+            "select field, value from graph_facts where org_id=:o and subject_node_id=:m "
+            "and status='active' and field like 'meeting.%'"), {"o": org_id, "m": r.node_id})}
+        start = mf.get("meeting.start_at")
+        state, label = _meeting_lifecycle(mf.get("meeting.status"), start, now)
+        out.append({"title": r.display_name or mf.get("meeting.title"),
+                    "start_at": start, "status": mf.get("meeting.status"),
+                    "state": state, "state_label": label, "source": "gcal"})
+    out.sort(key=lambda m: m.get("start_at") or "", reverse=True)
+    return out[:4]
+
+
 def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
     """Return (context, actionability, decision) for a card — the subject's captured profile facts +
     relationship signals, the Update-1 clarity gate, and the card.v2 decision projection. One DB read,
@@ -1806,6 +1853,7 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
         obs = c.execute(text(
             "select kind, count(*) n from graph_observations where org_id=:o "
             "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
+        interactions = _meeting_neighbors(c, org_id, node_id)
     obs_kinds = {r.kind for r in obs}
     profile = [{"field": k, "value": v} for k, v in facts.items()
                if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
@@ -1813,7 +1861,8 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
                for r in obs if r.kind in _CONTEXT_OBS]
     actionability = _actionability(reason_code, obs_kinds, set(facts))
     decision = _decision_projection(reason_code, card, facts, obs_kinds, actionability)
-    context = {"profile": profile, "signals": signals, "freshness": _freshness(fact_rows)}
+    context = {"profile": profile, "signals": signals, "interactions": interactions,
+               "freshness": _freshness(fact_rows)}
     return context, actionability, decision
 
 
