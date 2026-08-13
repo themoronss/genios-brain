@@ -149,17 +149,12 @@ def _enforce_query_budget(org_id: str) -> None:
         raise
     except Exception:                                       # noqa: BLE001 — cache blip never blocks
         pass
-    try:                                                    # monthly credit allowance
-        now = datetime.now(timezone.utc)
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    try:                                                    # credit balance gate — the pool must cover it
+        from genios_engine.platform import billing as B
         with _graph.engine.connect() as c:
-            tier = (c.execute(text("select subscription_tier from orgs where id=:o"),
-                              {"o": org_id}).scalar() or "trial").lower()
-            used = c.execute(text("select count(*) from decisions where org_id=:o and created_at>=:s"),
-                             {"o": org_id, "s": month_start}).scalar() or 0
-        limit = _CREDIT_LIMIT.get(tier, 100)
-        if int(used) >= limit:
-            raise HTTPException(402, f"monthly credit limit reached ({limit}) — upgrade or wait for reset")
+            bal = B.balance(c, org_id)["balance"]
+        if bal < 1:
+            raise HTTPException(402, "out of credits — top up or upgrade to keep asking")
     except HTTPException:
         raise
     except Exception:                                       # noqa: BLE001 — DB blip never blocks
@@ -208,6 +203,15 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001 — never let cost logging break the answer
             _log.warning("intelligence cost log failed for %s", org_id)
+        # charge 1 credit for the LLM synthesis (idempotent on the cache key → a retry never
+        # double-charges; a cache hit never reaches here so it stays free).
+        if res.ok:
+            try:
+                from genios_engine.platform import billing as B
+                with _graph.engine.begin() as c:
+                    B.deduct(c, org_id, 1, reason="intelligence_query", idem=f"q:{ckey}", bucket="query")
+            except Exception:  # noqa: BLE001 — never let billing break the answer
+                _log.warning("credit deduct failed (query) for %s", org_id)
 
     _require_stable_query_inputs(
         org_id=org_id, module_id=module_id, graph_version=gv,
@@ -959,6 +963,15 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
         raise HTTPException(404, "contact not found in context")
     if _llm is None:
         raise HTTPException(503, "LLM not configured")
+    try:                                                    # credit gate before the on-demand LLM
+        from genios_engine.platform import billing as B
+        with _graph.engine.connect() as c:
+            if B.balance(c, org_id)["balance"] < 1:
+                raise HTTPException(402, "out of credits — top up to draft replies")
+    except HTTPException:
+        raise
+    except Exception:                                       # noqa: BLE001 — DB blip never blocks
+        pass
     prompt = (
         f"Write a short, warm, professional reply to {node.display_name}. Ground it ONLY in these "
         f"known facts; do not invent specifics.\nFACTS: {json.dumps(facts, default=str)[:1500]}\n"
@@ -975,4 +988,12 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
     draft = (res.parsed or {}).get("draft") if res.ok else None
     if not draft:
         raise HTTPException(502, "draft generation failed")
+    if res.ok:                                              # charge 1 credit for the draft LLM call
+        try:
+            from genios_engine.platform import billing as B
+            idem = f"draft:{org_id}:{contact}:{datetime.now(timezone.utc):%Y%m%d%H%M}"
+            with _graph.engine.begin() as c:
+                B.deduct(c, org_id, 1, reason="intelligence_draft", idem=idem, bucket="draft")
+        except Exception:  # noqa: BLE001
+            _log.warning("credit deduct failed (draft) for %s", org_id)
     return {"draft": draft, "contact": node.display_name}

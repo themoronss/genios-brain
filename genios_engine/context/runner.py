@@ -205,5 +205,20 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             from genios_engine.platform.logging import get_logger
             get_logger("genios.l2").exception(
                 "situation refresh failed for org=%s", org_id)
+    # Credits: charge only the LLM-metered Gmail extraction — structured Calendar events use no LLM,
+    # so they never bill. 1 credit per 10 emails keeps a sync from draining the balance. Never blocks
+    # ingestion (background must keep flowing even at zero balance; the user-facing query/draft gates
+    # do the hard block). Idempotent per drain so a re-run doesn't double-charge.
+    llm_events = done - out.get("committed_structured", 0) - out.get("skipped_no_llm", 0)
+    charge = llm_events // 10
+    if charge > 0:
+        try:
+            from datetime import datetime, timezone
+            from genios_engine.platform import billing as _B
+            idem = f"sync:{org_id}:{datetime.now(timezone.utc):%Y%m%d%H%M}:{done}"
+            with store.engine.begin() as c:
+                _B.deduct(c, org_id, charge, reason="gmail_extraction", idem=idem, bucket="sync")
+        except Exception:      # noqa: BLE001 — billing must never break ingestion
+            pass
     return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected),
             "attention_rows": attention_rows, "situation_rows": situation_rows}
