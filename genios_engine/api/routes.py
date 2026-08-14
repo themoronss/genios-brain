@@ -1005,6 +1005,18 @@ def _process_and_reason_tracked(org_id: str) -> None:
         P.set_phase(eng, org_id, "intelligence", state="error")
 
 
+def _sync_active(org_id: str) -> bool:
+    """Is a sync run currently in progress for this org? Reads the DB progress state so a duplicate
+    Sync click (or a second endpoint) doesn't reset the bar / spawn a competing run."""
+    if _graph is None:
+        return False
+    try:
+        from genios_engine.platform import progress as P
+        return P.read(_graph.engine, org_id).get("state") == "running"
+    except Exception:      # noqa: BLE001 — never let the guard block a sync
+        return False
+
+
 def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25) -> None:
     """THE single Sync action: for every connected tool, pull the full 2-month window, then process
     → graph → intelligence — all in the background (no gateway-kill), with DB-backed progress the
@@ -1064,6 +1076,10 @@ def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 
     if norm not in active:
         raise HTTPException(404, f"{tool} is not connected (or the OAuth wasn't completed). "
                             f"Click Connect and finish the authorization first.")
+    # Guard: if a sync is already running for this org, DON'T start a second one — a duplicate would
+    # reset the progress bar back to 0 and the two runs would fight. Just report it's already going.
+    if _sync_active(org_id):
+        return {"started": True, "tool": tool, "already_running": True}
     # Returns IMMEDIATELY. The whole 2-month backfill → process → graph → intelligence runs in the
     # background (no synchronous L1 in-request → no gateway-kill), with DB-backed progress the
     # dashboard polls. One click completes the tool; the user does nothing else.
@@ -1103,6 +1119,9 @@ def integrations_sync_all(background_tasks: BackgroundTasks, limit: int = 25,
     if not active:
         return {"started": False, "reason": "no connected tools", "tools": []}
     sources = [a["source_type"] for a in active]
+    # Guard against overlapping runs (a duplicate resets the progress bar to 0 and both fight).
+    if _sync_active(org_id):
+        return {"started": True, "already_running": True, "tools": sources}
     for st in sources:
         _set_sync_running(org_id, st, True)
     # Full 2-month backfill for every connected tool → process → graph → intelligence, background,
