@@ -18,6 +18,8 @@ from sqlalchemy import text
 
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, hash_key, invalidate_key_cache,
                                          require_owner)
+from genios_engine.platform.config import get_settings
+from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.wiring import make_graph_store
 
@@ -152,6 +154,19 @@ def _mint_key() -> tuple[str, str, str]:
     return raw, raw[:12], hash_key(raw)
 
 
+def _encrypt_key(raw: str) -> bytes | None:
+    """Encrypt the raw key at rest so the owner can reveal/copy it again later. Best-effort:
+    if no crypto key is configured, we simply don't store a reveal copy (auth still works via
+    the hash). Never blocks agent creation."""
+    ck = get_settings().crypto_key
+    if not ck:
+        return None
+    try:
+        return encrypt(raw, ck)
+    except Exception:      # noqa: BLE001 — reveal is a convenience, never fatal
+        return None
+
+
 def _mint_webhook_secret() -> str:
     """Per-agent HMAC signing secret for outbound push. Shown once; the agent verifies
     X-Genios-Signature = sha256 hex of the raw body with this secret."""
@@ -180,19 +195,20 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
     webhook_secret = _mint_webhook_secret() if webhook_url else None
     profile = body.operating_profile
     actions = _actions_for_handoff(profile)          # claim-capable when handoff is draft/execute
+    key_enc = _encrypt_key(raw)                       # re-viewable copy (owner can reveal later)
     now = datetime.now(timezone.utc)
     with _graph.engine.begin() as c:
         # race-safe: rely on the unique(org_id, agent_id) index (migration 0017) — ON CONFLICT DO
         # NOTHING + RETURNING means a concurrent create can't slip past a TOCTOU SELECT check.
         row = c.execute(text(
-            "insert into agent_registry (id, org_id, agent_id, key_hash, allowed_actions, name, "
+            "insert into agent_registry (id, org_id, agent_id, key_hash, key_enc, allowed_actions, name, "
             "description, status, scope, scope_version, key_prefix, webhook_url, webhook_secret, "
             "operating_profile, operating_profile_version, operating_profile_updated_at, "
             "created_at, scope_updated_at) "
-            "values (:id,:o,:a,:kh,:acts,:nm,:desc,'active',cast(:sc as jsonb),1,:kp,:wu,:ws,"
+            "values (:id,:o,:a,:kh,:ke,:acts,:nm,:desc,'active',cast(:sc as jsonb),1,:kp,:wu,:ws,"
             "cast(:op as jsonb),:opv,:opu,:ts,:ts) "
             "on conflict (org_id, agent_id) do nothing returning agent_id"),
-            {"id": new_id("agt"), "o": org_id, "a": aid, "kh": key_hash, "acts": actions,
+            {"id": new_id("agt"), "o": org_id, "a": aid, "kh": key_hash, "ke": key_enc, "acts": actions,
              "nm": body.name, "desc": body.description, "sc": json.dumps(scope), "kp": prefix,
              "wu": webhook_url, "ws": webhook_secret,
              "op": json.dumps(profile) if profile else None,
@@ -337,24 +353,56 @@ def rotate_key(aid: str, body: KeyRotate,
                ctx: AuthCtx = Depends(require_owner)) -> dict:
     org_id = ctx.org_id
     raw, prefix, key_hash = _mint_key()
+    key_enc = _encrypt_key(raw)
     with _graph.engine.begin() as c:
         old = _get_agent(c, org_id, aid)
-        old_hash = c.execute(text("select key_hash from agent_registry where org_id=:o and agent_id=:a"),
-                             {"o": org_id, "a": aid}).scalar()
-        c.execute(text("update agent_registry set key_hash=:kh, key_prefix=:kp, key_last_used_at=null "
-                       "where org_id=:o and agent_id=:a"),
-                  {"kh": key_hash, "kp": prefix, "o": org_id, "a": aid})
+        row = c.execute(text("select key_hash, allowed_actions from agent_registry "
+                             "where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid}).first()
+        old_hash = row.key_hash if row else None
+        # preserve the agent's real permissions on rotation — a draft/execute agent must NOT be
+        # silently downgraded to read-only just because its key was rotated.
+        actions = list(row.allowed_actions) if row and row.allowed_actions else _DEFAULT_ACTIONS
+        c.execute(text("update agent_registry set key_hash=:kh, key_enc=:ke, key_prefix=:kp, "
+                       "key_last_used_at=null where org_id=:o and agent_id=:a"),
+                  {"kh": key_hash, "ke": key_enc, "kp": prefix, "o": org_id, "a": aid})
         # keep api_keys in sync (that's what /v1/* auth reads); deactivate old rows, add the new one.
         c.execute(text("update api_keys set is_active=false where org_id=:o and agent_id=:a"),
                   {"o": org_id, "a": aid})
         c.execute(text("insert into api_keys (id, org_id, key_hash, key_prefix, name, agent_id, "
                        "scopes, is_active) values (:i,:o,:kh,:kp,:nm,:a,:sc,true)"),
                   {"i": new_id("key"), "o": org_id, "kh": key_hash, "kp": prefix, "nm": aid,
-                   "a": aid, "sc": _DEFAULT_ACTIONS})
+                   "a": aid, "sc": actions})
     if old_hash:
         invalidate_key_cache(old_hash)          # old key must stop working immediately (bust 60s cache)
     return {"agent_id": aid, "key": raw, "key_prefix": prefix,
             "warning": "New key issued — the previous key no longer works. Copy this now."}
+
+
+@router.get("/v1/agents/{aid}/key")
+def reveal_key(aid: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Reveal an agent's current API key so the owner can copy it again (not only once at
+    creation). Owner-gated; decrypts the at-rest copy stored with GENIOS_CRYPTO_KEY. Agents
+    created before this feature (or when no crypto key was set) have no reveal copy → the
+    caller must rotate to get a fresh, copyable key."""
+    org_id = ctx.org_id
+    with _graph.engine.connect() as c:
+        _get_agent(c, org_id, aid)          # 404s if the agent isn't in this org
+        r = c.execute(text("select key_enc, key_prefix from agent_registry "
+                           "where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid}).first()
+    if r is None or not r.key_enc:
+        raise HTTPException(409, {"error": "key_not_recoverable",
+                                  "message": "This key predates key reveal (or was never stored "
+                                             "encrypted). Rotate the key to get a copyable one.",
+                                  "key_prefix": (r.key_prefix if r else None)})
+    try:
+        raw = decrypt(bytes(r.key_enc), get_settings().crypto_key)
+    except Exception:      # noqa: BLE001 — wrong/rotated crypto key → can't recover
+        raise HTTPException(409, {"error": "key_not_recoverable",
+                                  "message": "Stored key could not be decrypted. Rotate to reissue."})
+    from genios_engine.platform.audit import record
+    record(org_id, "config_changed", actor_type="user", target_type="agent", target_id=aid,
+           metadata={"event": "key_revealed"})       # reveal is an auditable event
+    return {"agent_id": aid, "key": raw, "key_prefix": r.key_prefix}
 
 
 @router.delete("/v1/agents/{aid}")
