@@ -126,12 +126,16 @@ class ComposioGmailConnector:
     source = "gmail"
 
     def __init__(self, *, api_key: str, user_id: str,
-                 connected_account_id: str | None = None, ocr=None) -> None:
+                 connected_account_id: str | None = None, ocr=None, relevance=None) -> None:
         self._api_key = api_key
         self._user_id = user_id
         self._account = connected_account_id or None
         self._client: Any = None
         self._ocr = ocr          # OcrEngine | None — for scanned-PDF attachments (native-only if None)
+        # Optional S2 classifier. When it can batch-gate on the cheap LIST snippet, we skip the slow
+        # per-message full-body fetch for confident DROPS — full-fetch runs ONLY for keepers. The
+        # SAME instance is handed to the pipeline, so its primed verdict is reused (no re-call).
+        self._relevance = relevance
 
     def _client_(self) -> Any:
         if self._client is None:
@@ -250,14 +254,43 @@ class ComposioGmailConnector:
         cursor = data.get("nextPageToken") or data.get("next_page_token")
         if not messages:
             return SourceBatch(objects=[], next_cursor=cursor)
-        # Each message needs a per-message full-body fetch (the slow ~0.5s Composio call). Run them
-        # CONCURRENTLY with a bounded pool — network only, so the DB pool is untouched and the backend
-        # stays responsive. ex.map preserves order, so the batch is deterministic; one message failing
-        # is already handled inside _to_objects/_full_message (falls back to the list row).
+
+        # FAST PATH: gate on the cheap LIST snippet first, then full-fetch ONLY the keepers. On a
+        # newsletter-heavy inbox this skips ~95% of the slow per-message calls. Needs a classifier
+        # that can batch-prime (prime()) and answer verdict_for(id). Bias is KEEP: anything not a
+        # confident DROP is full-fetched, so recall (and L2's full body) is preserved.
+        rel = self._relevance
+        if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
+            light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
+                                                         for m in messages]
+            all_light = [o for _, objs in light for o in objs]
+            try:
+                rel.prime(all_light)                          # one batched gate call per ~12 snippets
+            except Exception:      # noqa: BLE001 — gate failure → treat all as keepers (full-fetch)
+                pass
+            keepers = [m for m, objs in light
+                       if not (objs and (v := rel.verdict_for(objs[0].source_object_id))
+                               and v.disposition == "drop")]
+            drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
+            # full-fetch keepers concurrently; drops keep their light (snippet) object — the pipeline
+            # gate re-reads the SAME primed verdict and drops them without another call.
+            fetched: dict[int, list[RawObject]] = {}
+            if keepers:
+                workers = min(_FETCH_WORKERS, len(keepers))
+                with ThreadPoolExecutor(max_workers=workers) as ex:
+                    for m, sub in zip(keepers, ex.map(lambda mm: self._to_objects(mm, fetch_full=True),
+                                                      keepers)):
+                        fetched[id(m)] = sub
+            objs: list[RawObject] = []
+            for m, light_objs in light:
+                objs.extend(light_objs if id(m) in drops else fetched.get(id(m), light_objs))
+            return SourceBatch(objects=objs, next_cursor=cursor)
+
+        # LEGACY PATH (no priming classifier): full-fetch every message concurrently.
         workers = min(_FETCH_WORKERS, len(messages))
         with ThreadPoolExecutor(max_workers=workers) as ex:
             per_message = list(ex.map(self._to_objects, messages))
-        objs: list[RawObject] = [o for sub in per_message for o in sub]
+        objs = [o for sub in per_message for o in sub]
         return SourceBatch(objects=objs, next_cursor=cursor)
 
     def _to_raw(self, m: dict) -> RawObject | None:
@@ -265,26 +298,31 @@ class ComposioGmailConnector:
         objs = self._to_objects(m)
         return objs[0] if objs else None
 
-    def _to_objects(self, m: dict) -> list[RawObject]:
+    def _to_objects(self, m: dict, fetch_full: bool | None = None) -> list[RawObject]:
         """One Gmail message → [email_message] + one [email_attachment] per file. The email carries
         the FULL body (walked from MIME parts, snippet only as fallback); each attachment is text-
-        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too."""
+        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too.
+
+        fetch_full: None → decide by need_full (legacy); True → always full-fetch (keepers); False →
+        LIGHT (list snippet only, NO per-message call) — used to gate cheaply before deciding."""
         mid = m.get("messageId") or m.get("id") or m.get("message_id")
         if not mid:
             return []
         mid = str(mid)
 
-        # Pull the FULL MIME message UNLESS the list row already carries a complete MIME structure
-        # (payload.parts, walked below). A flat body string of ANY length may be Gmail's clipped
-        # preview — and for deep extraction a signal (competitor, pricing, legal, budget) can sit
-        # anywhere in the body, so we never feed the LLM a possibly-truncated body. Full-fetch is one
-        # extra call for exactly the at-risk emails; if it fails we fall back to the list row (safe).
-        # (Was: only fetched full when body < 400 chars → a 500-char clip of a 2,000-char email slipped
-        #  through truncated → the LLM missed everything past the clip.)
+        # Full-fetch policy. For keepers we pull the FULL MIME message (a signal can sit anywhere in
+        # the body); for a LIGHT pass (fetch_full=False) we use only the cheap list snippet so the
+        # gate can drop obvious junk WITHOUT paying ~2000 per-message fetches. Legacy (None) keeps the
+        # old need_full behaviour so nothing else changes.
         list_body = m.get("messageText") or m.get("body") or ""
         list_body = list_body if isinstance(list_body, str) else ""
         list_payload = m.get("payload") if isinstance(m.get("payload"), dict) else None
-        need_full = not (list_payload and list_payload.get("parts"))
+        if fetch_full is False:
+            need_full = False
+        elif fetch_full is True:
+            need_full = True
+        else:
+            need_full = not (list_payload and list_payload.get("parts"))
         full = self._full_message(mid) if need_full else {}
         src = full or m                                  # prefer the full message for every field
         payload = (src.get("payload") if isinstance(src.get("payload"), dict) else list_payload)

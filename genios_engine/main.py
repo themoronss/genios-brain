@@ -49,9 +49,12 @@ async def lifespan(app: FastAPI):
     # Start the in-process auto-sync scheduler (cross-org L1→L2/L3/L5 sweep every N hours). Only when
     # a real DB is configured — no point sweeping in-memory dev. Disable via GENIOS_SCHEDULER_ENABLED.
     from genios_engine.platform.scheduler import start_scheduler, stop_scheduler
+    from genios_engine.platform.sync_worker import start_sync_worker, stop_sync_worker
     if get_settings().use_real_db:
         start_scheduler()
+        start_sync_worker()          # durable sync-job worker: runs Sync jobs, resumes on restart
     yield
+    stop_sync_worker()
     stop_scheduler()
 
 

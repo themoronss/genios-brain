@@ -41,10 +41,13 @@ COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
 })
 
 
-def make_connector_for(connection) -> SourceConnector:
+def make_connector_for(connection, relevance=None) -> SourceConnector:
     """Build the right connector for ONE org's connection, dispatched by source_type.
     Composio API key is global (GeniOS's); per-org identity is composio_user_id. Every
-    source sits behind the same SourceConnector interface — the pipeline is agnostic."""
+    source sits behind the same SourceConnector interface — the pipeline is agnostic.
+
+    `relevance` (optional): the SAME S2 classifier the pipeline uses. Passed to Gmail so it can
+    gate on the list snippet and skip full-body fetches for confident drops (huge speedup)."""
     s = get_settings()
     st = connection.source_type
     # Client's own database — no Composio; read-only pull → structured route.
@@ -64,7 +67,8 @@ def make_connector_for(connection) -> SourceConnector:
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
         ocr = make_ocr()                        # scanned-PDF attachments need OCR (native-only if off)
         return ComposioGmailConnector(api_key=key, user_id=uid,
-                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr)
+                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr,
+                                      relevance=relevance)
     if st in ("gcal", "calendar", "google_calendar"):
         from genios_engine.capture.connectors.calendar import ComposioCalendarConnector
         return ComposioCalendarConnector(api_key=key, user_id=uid)

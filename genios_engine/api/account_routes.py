@@ -269,6 +269,7 @@ _ORG_SCOPED_TABLES = [
     "l2_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
     "source_coverage", "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
+    "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)
 ]
 
 _UPLOAD_ROOT = (Path(__file__).resolve().parents[2] / "uploads").resolve()

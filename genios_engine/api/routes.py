@@ -807,9 +807,11 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
 def _sync_source(org_id: str, source_type: str, limit: int):
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
-    return run_sync(make_connector_for(conn), org_id=org_id, connection_id=conn.connection_id,
+    rel = make_relevance_classifier()          # ONE classifier: connector gates on snippet + fetches
+    return run_sync(make_connector_for(conn, relevance=rel),   # only keepers; pipeline reuses its cache
+                    org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
-                    relevance=make_relevance_classifier(), trace_repo=_trace_repo,
+                    relevance=rel, trace_repo=_trace_repo,
                     payload_store=_payload_store, prepared_store=_prepared_store,
                     sender_resolver=_sender_resolver_for(org_id), cursor_store=_cursors,
                     document_job_store=_documents, source=source_type, max_pages=3,
@@ -937,15 +939,16 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
     bar can move live. Returns (scanned, emitted, capped-at-ceiling)."""
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
-    connector = make_connector_for(conn)
-    event_cap = _SOURCE_EVENT_CAP.get(source_type)
+    rel = make_relevance_classifier()          # ONE classifier for the whole backfill: the connector
+    connector = make_connector_for(conn, relevance=rel)   # gates on snippet + fetches only keepers;
+    event_cap = _SOURCE_EVENT_CAP.get(source_type)        # the pipeline reuses its primed verdicts.
     cursor: str | None = None
     scanned = emitted = 0
     for _rnd in range(max_rounds):
         summary = run_sync(
             connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
             mode="backfill", cursor=cursor, limit=limit, source=source_type,
-            cursor_store=None, max_pages=1, relevance=make_relevance_classifier(),
+            cursor_store=None, max_pages=1, relevance=rel,
             parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
             trace_repo=_trace_repo, payload_store=_payload_store,
             prepared_store=_prepared_store, document_job_store=_documents, run_ledger=_run_ledger)
@@ -968,11 +971,12 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
     return scanned, emitted, capped
 
 
-def _process_and_reason_tracked(org_id: str) -> None:
+def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
     """L2 (chunked, so progress moves) → graph → L3/L5, each surfaced as a plain-language phase.
     L3 runs ONCE at the very end (not mid-backfill) so the graph is stable when signals emit."""
     from genios_engine.context.runner import process_pending
     from genios_engine.platform import progress as P
+    hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
     eng = _graph.engine
     total = _pending_count(org_id)
     P.set_phase(eng, org_id, "processing", state="running", total=total, done=0,
@@ -985,6 +989,7 @@ def _process_and_reason_tracked(org_id: str) -> None:
         processed += n
         P.set_phase(eng, org_id, "processing",
                     done=min(processed, total or processed), detail=f"{processed} processed")
+        hb()                                   # liveness beat per L2 chunk
         if n == 0:
             break
     P.set_phase(eng, org_id, "processing", state="done",
@@ -1019,12 +1024,15 @@ def _sync_active(org_id: str) -> bool:
         return False
 
 
-def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25) -> None:
+def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartbeat=None) -> None:
     """THE single Sync action: for every connected tool, pull the full 2-month window, then process
-    → graph → intelligence — all in the background (no gateway-kill), with DB-backed progress the
-    dashboard polls. One Sync click completes the whole tool; the user does nothing else."""
+    → graph → intelligence. Runs inside the durable worker; `heartbeat(checkpoint=None)` is called
+    as it works so a crash leaves a stale beat and the job is re-claimed + resumed (idempotent —
+    dedup + l2_processing_runs make a re-run safe). Re-raises on an unrecoverable failure so the
+    worker can mark the job for retry."""
     from genios_engine.platform import progress as P
     eng = _graph.engine if _graph is not None else None
+    hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
     # gmail first, then calendar, then anything else — a sensible phase order for the UI.
     order = ([s for s in ("gmail", "gcal") if s in sources]
              + [s for s in sources if s not in ("gmail", "gcal")])
@@ -1037,11 +1045,13 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25) -> Non
             tracked = phase in ("emails", "calendar")
             if eng is not None and tracked:
                 P.set_phase(eng, org_id, phase, state="running", detail="Fetching…")
+
+            def _round(cnt, p=phase, _tracked=tracked):
+                if eng is not None and _tracked:
+                    P.set_phase(eng, org_id, p, done=cnt, detail=f"{cnt} synced")
+                hb()                                    # liveness beat every backfill round
             try:
-                _backfill_one_source(org_id, st, limit,
-                                     on_round=(lambda cnt, p=phase: eng is not None and tracked
-                                               and P.set_phase(eng, org_id, p, done=cnt,
-                                                               detail=f"{cnt} synced")))
+                _backfill_one_source(org_id, st, limit, on_round=_round)
             except Exception:      # noqa: BLE001 — one source failing never stops the rest
                 _log.exception("onboarding backfill failed org=%s src=%s", org_id, st)
                 if eng is not None and tracked:
@@ -1052,46 +1062,74 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25) -> Non
                     P.set_phase(eng, org_id, phase, state="done", done=cnt, total=cnt,
                                 detail=f"{cnt} synced")
         if _graph is not None:
-            _process_and_reason_tracked(org_id)
+            _process_and_reason_tracked(org_id, heartbeat=hb)
         if eng is not None:
             P.finish(eng, org_id)
     except Exception as e:      # noqa: BLE001
         _log.exception("onboarding sync failed org=%s", org_id)
         if eng is not None:
             P.finish(eng, org_id, error=True, detail=f"{type(e).__name__}: {str(e)[:160]}")
+        raise                                           # let the worker retry (resume) this job
     finally:
         for st in sources:
             _set_sync_running(org_id, st, False)
 
 
+def run_one_sync_job(worker_id: str) -> bool:
+    """Worker entry: claim ONE sync job and run it to completion. Returns True if a job ran (so the
+    worker loops immediately to drain the queue), False if the queue was empty. A heartbeat ticker
+    beats every 30s for the WHOLE run so a long step (e.g. L3) never looks stale; on failure the job
+    goes back to 'queued' and a worker resumes it from the durable state."""
+    if _graph is None:
+        return False
+    from genios_engine.platform import sync_jobs as J
+    eng = _graph.engine
+    job = J.claim_next(eng, worker_id)
+    if job is None:
+        return False
+    jid, org, sources = job["id"], job["org_id"], job["sources"]
+    stop_beat = threading.Event()
+
+    def _beat() -> None:
+        while not stop_beat.wait(30):
+            try:
+                J.heartbeat(eng, jid)
+            except Exception:      # noqa: BLE001 — a missed beat is not fatal
+                pass
+    ticker = threading.Thread(target=_beat, daemon=True, name=f"job-beat-{jid}")
+    ticker.start()
+    try:
+        _onboarding_sync_bg(org, sources, heartbeat=lambda *a, **k: J.heartbeat(eng, jid))
+        J.complete(eng, jid)
+    except Exception:      # noqa: BLE001 — orchestrator re-raises on failure → mark for resume/retry
+        _log.exception("sync job failed org=%s job=%s", org, jid)
+        try:
+            J.fail(eng, jid, "run failed")
+        except Exception:      # noqa: BLE001
+            pass
+    finally:
+        stop_beat.set()
+    return True
+
+
 @router.post("/integrations/{tool}/sync")
 def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 25,
                      org_id: str = Depends(get_current_org)) -> dict:
-    """Sync one tool for the authed tenant. Runs L1 SYNCHRONOUSLY (bounded) for an immediate item
-    count, then L2→L3→L5 in the background. Requires an ACTIVE Composio account for the tool.
-
-    On the FIRST sync of a connection (no watermark yet) it ALSO kicks a full-history backfill in
-    the background, so a large inbox's older tail is ingested once instead of only its newest page.
-    Later syncs are pure incremental (the backfill only fires when there is no prior watermark)."""
+    """ENQUEUE a durable sync job for one tool, then return immediately. A server-side worker claims
+    and runs it (L1 backfill → L2 → graph → intelligence), heart-beating + checkpointing, so it
+    survives a process restart and the user closing the tab. The client only reads progress."""
     norm = _norm_source(tool)
     active = {a["source_type"] for a in _composio_connected(org_id) if a["status"] == "ACTIVE"}
     if norm not in active:
         raise HTTPException(404, f"{tool} is not connected (or the OAuth wasn't completed). "
                             f"Click Connect and finish the authorization first.")
-    # Guard: if a sync is already running for this org, DON'T start a second one — a duplicate would
-    # reset the progress bar back to 0 and the two runs would fight. Just report it's already going.
-    if _sync_active(org_id):
-        return {"started": True, "tool": tool, "already_running": True}
-    # Returns IMMEDIATELY. The whole 2-month backfill → process → graph → intelligence runs in the
-    # background (no synchronous L1 in-request → no gateway-kill), with DB-backed progress the
-    # dashboard polls. One click completes the tool; the user does nothing else.
-    _set_sync_running(org_id, norm, True)
+    from genios_engine.platform import sync_jobs as J
     from genios_engine.platform.audit import record
+    queued = J.enqueue(_graph.engine, org_id, [norm]) if _graph is not None else False
     record(org_id, "data_synced", actor_type="user", target_type="source", target_id=norm,
            metadata={"audit_category": "meeting" if norm == "gcal" else "data_extraction",
                      "tool": tool, "mode": "onboarding_backfill"})
-    background_tasks.add_task(_onboarding_sync_bg, org_id, [norm], limit)
-    return {"started": True, "tool": tool, "queued": True}
+    return {"started": True, "tool": tool, "queued": queued, "already_running": not queued}
 
 
 def _sync_all_bg(org_id: str, sources: list[str], limit: int) -> None:
@@ -1121,15 +1159,12 @@ def integrations_sync_all(background_tasks: BackgroundTasks, limit: int = 25,
     if not active:
         return {"started": False, "reason": "no connected tools", "tools": []}
     sources = [a["source_type"] for a in active]
-    # Guard against overlapping runs (a duplicate resets the progress bar to 0 and both fight).
-    if _sync_active(org_id):
-        return {"started": True, "already_running": True, "tools": sources}
-    for st in sources:
-        _set_sync_running(org_id, st, True)
-    # Full 2-month backfill for every connected tool → process → graph → intelligence, background,
-    # progress-tracked. This is the one "Sync" action; one click completes everything.
-    background_tasks.add_task(_onboarding_sync_bg, org_id, sources, limit)
-    return {"started": True, "queued": True, "tools": sources}
+    # ENQUEUE a durable job (full 2-month backfill → process → graph → intelligence for every
+    # connected tool). A server-side worker runs it and resumes on any restart; the client just
+    # reads progress. The unique partial index means a duplicate click doesn't spawn a second job.
+    from genios_engine.platform import sync_jobs as J
+    queued = J.enqueue(_graph.engine, org_id, sources) if _graph is not None else False
+    return {"started": True, "queued": queued, "already_running": not queued, "tools": sources}
 
 
 # ── real-time webhook (Composio trigger push → L1, no poll) ───────────────────────

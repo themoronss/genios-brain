@@ -139,8 +139,8 @@ class LLMRelevanceClassifier:
         for o in objects or []:
             oid = getattr(o, "source_object_id", None)
             raw = getattr(o, "raw", None) or {}
-            if not oid or getattr(o, "actor_type", "") == "agent":
-                continue
+            if not oid or oid in self._cache or getattr(o, "actor_type", "") == "agent":
+                continue                                    # already gated (e.g. by the connector) → skip re-call
             subject = raw.get("subject") or ""
             snippet = raw.get("snippet") or raw.get("body") or ""
             try:                                            # SAME PII masking as the single path
@@ -178,6 +178,11 @@ class LLMRelevanceClassifier:
             if not (0 <= idx < len(chunk)):
                 return
             self._cache[chunk[idx][0]] = _verdict_from(item)
+
+    def verdict_for(self, source_object_id: str):
+        """The primed (batched) verdict for an id, or None if it wasn't cached. Lets the connector
+        gate on the cheap snippet FIRST and skip the slow full-body fetch for confident drops."""
+        return self._cache.get(source_object_id)
 
     def classify(self, ctx: GateContext, prepared: PreparedContent | None) -> RelevanceVerdict:
         if ctx.sender_known:                                  # already trusted — never spend a call
