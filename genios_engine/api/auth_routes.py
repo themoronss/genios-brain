@@ -11,8 +11,21 @@ from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                          hash_password, invalidate_key_cache, jwt_encode,
                                          new_api_key, require_owner, verify_password)
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
+
+
+def _enc_key(raw: str) -> bytes | None:
+    """Encrypt a raw key at rest so the owner can reveal/copy it later (auth still uses the hash).
+    Best-effort: no crypto key configured → no reveal copy, never blocks minting."""
+    ck = get_settings().crypto_key
+    if not ck:
+        return None
+    try:
+        return encrypt(raw, ck)
+    except Exception:      # noqa: BLE001
+        return None
 
 # Auth routes — register/login (dashboard) + scoped API-key minting (agents/integrations). This
 # is the parity port of genios-brain/app/api/routes/auth.py, engine-native. org_id is issued
@@ -66,10 +79,10 @@ def register(body: Register) -> dict:
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
                        "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
                   {"o": org_id, "cr": PLAN_CREDITS["trial"], "idem": f"trial:{org_id}"})
-        c.execute(text("insert into api_keys (id, org_id, key_hash, key_prefix, name, scopes) "
-                       "values (:id,:o,:kh,:pfx,'primary',:sc)"),
-                  {"id": new_id("key"), "o": org_id, "kh": key_hash, "pfx": prefix,
-                   "sc": sorted(GRANTABLE)})
+        c.execute(text("insert into api_keys (id, org_id, key_hash, key_enc, key_prefix, name, scopes) "
+                       "values (:id,:o,:kh,:ke,:pfx,'primary',:sc)"),
+                  {"id": new_id("key"), "o": org_id, "kh": key_hash, "ke": _enc_key(raw),
+                   "pfx": prefix, "sc": sorted(GRANTABLE)})
     token = jwt_encode({"org_id": org_id, "email": body.email, "exp": time.time() + JWT_TTL_SECONDS},
                        get_settings().jwt_secret)
     return {"org_id": org_id, "token": token, "name": body.name, "email": body.email,
@@ -113,12 +126,13 @@ def mint_key(body: MintKey, ctx: AuthCtx = Depends(require_owner)) -> dict:
     if bad:
         raise HTTPException(422, f"unknown scopes: {bad}")
     raw, key_hash, prefix = new_api_key()
+    kid = new_id("key")
     with _engine().begin() as c:
-        c.execute(text("insert into api_keys (id, org_id, key_hash, key_prefix, name, agent_id, scopes) "
-                       "values (:id,:o,:kh,:pfx,:n,:aid,:sc)"),
-                  {"id": new_id("key"), "o": org_id, "kh": key_hash, "pfx": prefix,
+        c.execute(text("insert into api_keys (id, org_id, key_hash, key_enc, key_prefix, name, agent_id, scopes) "
+                       "values (:id,:o,:kh,:ke,:pfx,:n,:aid,:sc)"),
+                  {"id": kid, "o": org_id, "kh": key_hash, "ke": _enc_key(raw), "pfx": prefix,
                    "n": body.name, "aid": body.agent_id, "sc": body.scopes})
-    return {"api_key": raw, "key_prefix": prefix, "scopes": body.scopes,
+    return {"id": kid, "api_key": raw, "key_prefix": prefix, "scopes": body.scopes,
             "note": "store api_key now — shown only once"}
 
 
@@ -126,10 +140,37 @@ def mint_key(body: MintKey, ctx: AuthCtx = Depends(require_owner)) -> dict:
 def list_keys(ctx: AuthCtx = Depends(require_owner)) -> dict:
     org_id = ctx.org_id
     with _engine().connect() as c:
+        # ACTIVE keys only — a revoked key must disappear from the list, otherwise "revoke" looks
+        # like it did nothing (the row stayed). `revealable` tells the UI whether a Reveal will work
+        # (older keys minted before key_enc have no at-rest copy).
         rows = c.execute(text("select id, key_prefix, name, agent_id, scopes, is_active, "
-                              "created_at, last_used_at from api_keys where org_id=:o "
+                              "created_at, last_used_at, (key_enc is not null) as revealable "
+                              "from api_keys where org_id=:o and coalesce(is_active, true) "
                               "order by created_at desc"), {"o": org_id}).mappings().all()
     return {"keys": [dict(r) for r in rows]}      # never returns key_hash or the raw key
+
+
+@router.get("/keys/{key_id}/reveal")
+def reveal_key(key_id: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Reveal a key's full secret so the owner can copy it again (not only once at creation).
+    Owner-gated; decrypts the at-rest copy. Keys minted before this feature have no copy → 409."""
+    org_id = ctx.org_id
+    with _engine().connect() as c:
+        row = c.execute(text("select key_enc, key_prefix from api_keys "
+                             "where id=:id and org_id=:o and coalesce(is_active, true)"),
+                        {"id": key_id, "o": org_id}).first()
+    if row is None:
+        raise HTTPException(404, "key not found")
+    if not row.key_enc:
+        raise HTTPException(409, {"error": "key_not_recoverable",
+                                  "message": "This key predates key reveal. Create a new key to get "
+                                             "a copyable one.", "key_prefix": row.key_prefix})
+    try:
+        raw = decrypt(bytes(row.key_enc), get_settings().crypto_key)
+    except Exception:      # noqa: BLE001
+        raise HTTPException(409, {"error": "key_not_recoverable",
+                                  "message": "Stored key could not be decrypted. Create a new key."})
+    return {"id": key_id, "api_key": raw, "key_prefix": row.key_prefix}
 
 
 @router.delete("/keys/{key_id}")
