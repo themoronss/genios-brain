@@ -747,6 +747,10 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
     except Exception as e:      # noqa: BLE001
         _log.warning("composio status failed for %s: %s", org_id, e)
         return {}
+    # A sync now runs as a DURABLE JOB (not the old in-memory BackgroundTask flag), so "running" must
+    # come from the job/progress state — otherwise the Sync button never shows "Syncing…" while a job
+    # is actually running. Read it ONCE for the org (all its tools sync together).
+    job_running = _sync_active(org_id)
     out: dict = {}
     for a in accounts:
         active = a["status"] == "ACTIVE"
@@ -754,7 +758,8 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
         if cur is None or active:      # prefer an ACTIVE account if the tool has several
             out[a["source_type"]] = {"connected": active,
                                      "syncStatus": ("running"
-                                                    if _sync_is_running(org_id, a["source_type"])
+                                                    if (job_running
+                                                        or _sync_is_running(org_id, a["source_type"]))
                                                     else "idle"),
                                      "freshness": "error" if not active else "stale",
                                      "syncIntervalHours": 6,   # trial cadence; drives the card copy
