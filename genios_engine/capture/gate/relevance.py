@@ -83,23 +83,108 @@ EMAIL:
 {content}"""
 
 
+_GATE_BATCH_PROMPT = """You are a junk filter deciding which of SEVERAL emails should enter a \
+company's business-intelligence knowledge graph. This is the LAST filter before storage.
+
+The graph is for REAL work relationships and decisions. For EACH email the test is: is a specific \
+HUMAN writing to this person, or is there a live deal / meeting / interview / commitment / customer \
+/ prospect / vendor / support thread they must personally READ or REPLY to?
+
+DROP an email when it is automated, one-to-many, or self-service with no human expecting a reply — \
+marketing / promotions / newsletters / digests; OTP / verification / login codes; subscription / \
+account / bank / broker / wallet STATEMENTS and auto-receipts; marketplace or job / property / \
+shopping listings & alerts; automated matchmaking or profile-digest / event-ping emails. An \
+automated statement or marketplace notification is NOT business intelligence however much data it \
+carries.
+
+KEEP when a real named person is corresponding, or there is a genuine deal, meeting, interview, \
+commitment, question, complaint, or an invoice/contract from a vendor they actually work with. When \
+genuinely torn between a real person and an automated system, KEEP (a wrong drop loses real signal; \
+a wrong keep is only scored down).
+
+You are given {n} emails, each with an index. Return ONLY a JSON array, one object per email, no \
+prose. You MUST return exactly {n} objects, one for each index 0..{last}:
+[{{"i":0,"disposition":"keep"|"drop","relevance":0.0-1.0}}, ...]
+
+EMAILS:
+{emails}"""
+
+
 class LLMRelevanceClassifier:
     """S2 LLM junk-gate — the single reliable filter that keeps noise OUT of the graph.
 
-    Runs only on emails that already survived the cheap deterministic rules (spam/promotions/
-    bulk are gone by now), and never on a known sender (whitelisted, no spend). It is the ONE
-    place allowed to DROP on judgment; it FAILS OPEN (keep) on any LLM/parse error so an infra
-    hiccup never silently discards real mail. `llm` is any object exposing `.call(prompt, max_tokens=)`.
+    Never runs on a known sender (whitelisted, no spend). It is the ONE place allowed to DROP on
+    judgment; it FAILS OPEN (keep) on any LLM/parse error so an infra hiccup never silently discards
+    real mail. `llm` is any object exposing `.call(prompt, max_tokens=)`.
+
+    BATCHING: prime() classifies a whole page's emails in a few batched LLM calls (default 12/call)
+    and caches the verdict per source_object_id; classify() then reads the cache — cutting ~N calls
+    to ~N/12. It is fail-safe: any batch error, parse failure, or count mismatch simply leaves those
+    ids uncached, so classify() falls back to the per-email call and NOTHING changes but speed.
     """
 
     name = "relevance-llm-1"
 
-    def __init__(self, llm) -> None:
+    def __init__(self, llm, batch_size: int = 12) -> None:
         self._llm = llm
+        self._batch_size = max(1, int(batch_size))
+        self._cache: dict[str, RelevanceVerdict] = {}       # source_object_id -> verdict (this run)
+
+    # ---- batch pre-classification (called once per page, before per-event capture) ----
+    def prime(self, objects) -> None:
+        """Batch-classify a page of RawObjects; cache verdicts by source_object_id. Best-effort:
+        any failure leaves ids uncached → classify() falls back to the single-email path."""
+        from genios_engine.capture.preprocess.preprocess import preprocess
+        items = []                                          # (oid, masked_content)
+        for o in objects or []:
+            oid = getattr(o, "source_object_id", None)
+            raw = getattr(o, "raw", None) or {}
+            if not oid or getattr(o, "actor_type", "") == "agent":
+                continue
+            subject = raw.get("subject") or ""
+            snippet = raw.get("snippet") or raw.get("body") or ""
+            try:                                            # SAME PII masking as the single path
+                masked = preprocess(f"{subject}\n\n{snippet}", event_id=oid, mask_phone=False).clean_text
+            except Exception:      # noqa: BLE001
+                masked = f"{subject}\n{snippet}"
+            masked = (masked or "").strip()[:600]
+            if masked:
+                items.append((oid, masked))
+        for i in range(0, len(items), self._batch_size):
+            try:
+                self._classify_chunk(items[i:i + self._batch_size])
+            except Exception:      # noqa: BLE001 — a bad chunk just isn't cached → per-email fallback
+                continue
+
+    def _classify_chunk(self, chunk) -> None:
+        if not chunk:
+            return
+        emails = "\n\n".join(f"[{idx}] {content}" for idx, (_oid, content) in enumerate(chunk))
+        res = self._llm.call(
+            _GATE_BATCH_PROMPT.format(n=len(chunk), last=len(chunk) - 1, emails=emails),
+            max_tokens=40 * len(chunk) + 60)
+        if not res.ok:
+            return
+        arr = res.parsed if isinstance(res.parsed, list) else (res.parsed or {}).get("results")
+        if not isinstance(arr, list) or len(arr) != len(chunk):   # count mismatch → don't trust it
+            return
+        for item in arr:
+            if not isinstance(item, dict):
+                return
+            try:
+                idx = int(item.get("i"))
+            except (TypeError, ValueError):
+                return
+            if not (0 <= idx < len(chunk)):
+                return
+            self._cache[chunk[idx][0]] = _verdict_from(item)
 
     def classify(self, ctx: GateContext, prepared: PreparedContent | None) -> RelevanceVerdict:
         if ctx.sender_known:                                  # already trusted — never spend a call
             return RelevanceVerdict(True, 0.90, disposition="keep", reason="known_sender")
+        oid = getattr(ctx.event, "source_object_id", None)
+        if oid and oid in self._cache:                        # batched verdict — no extra LLM call
+            return self._cache[oid]
         subject = ctx.raw.get("subject") or ""
         body = (prepared.clean_text if prepared else (ctx.raw.get("snippet") or ""))[:1500]
         content = f"Subject: {subject}\n{body}".strip()
@@ -109,13 +194,16 @@ class LLMRelevanceClassifier:
                              max_tokens=120)
         if not res.ok:                                        # fail OPEN — never lose mail on an error
             return RelevanceVerdict(True, 0.50, disposition="keep", reason="gate_llm_unavailable")
-        p = res.parsed
-        disp = str(p.get("disposition", "keep")).lower()
-        if disp not in ("keep", "drop"):
-            disp = "keep"
-        try:
-            rel = max(0.0, min(1.0, float(p.get("relevance", 0.5) or 0.5)))
-        except (TypeError, ValueError):
-            rel = 0.5
-        return RelevanceVerdict(relevant=(disp == "keep"), relevance=rel, disposition=disp,
-                                reason=str(p.get("reason", "") or "")[:60])
+        return _verdict_from(res.parsed)
+
+
+def _verdict_from(p: dict) -> RelevanceVerdict:
+    disp = str((p or {}).get("disposition", "keep")).lower()
+    if disp not in ("keep", "drop"):
+        disp = "keep"
+    try:
+        rel = max(0.0, min(1.0, float(p.get("relevance", 0.5) or 0.5)))
+    except (TypeError, ValueError):
+        rel = 0.5
+    return RelevanceVerdict(relevant=(disp == "keep"), relevance=rel, disposition=disp,
+                            reason=str((p or {}).get("reason", "") or "")[:60])

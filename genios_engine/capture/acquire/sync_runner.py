@@ -127,6 +127,15 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                                         sync_mode=sync_mode)
             return raw, res, err
 
+        # BATCH the S2 relevance gate for the whole page in a few LLM calls (prime the classifier's
+        # cache) BEFORE per-event capture — turns ~25 gate calls/page into ~2. Best-effort: if the
+        # classifier doesn't support priming or a batch fails, capture just calls it per-email.
+        if batch.objects and relevance is not None and hasattr(relevance, "prime"):
+            try:
+                relevance.prime(batch.objects)
+            except Exception:      # noqa: BLE001 — never let batching break the sync
+                pass
+
         # capture the whole page CONCURRENTLY — DB round-trips overlap. Each email is independent,
         # so this changes nothing about WHAT is captured, only how fast.
         if batch.objects:
