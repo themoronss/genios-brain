@@ -108,21 +108,32 @@ def set_phase(engine, org_id: str, key: str, *, state: str | None = None,
                            "overall_percent=:pct, updated_at=:ts where org_id=:o"), params)
 
 
-def finish(engine, org_id: str, *, error: bool = False) -> None:
-    """Close the run: every non-error phase → done, overall 100, state done (or error)."""
+def finish(engine, org_id: str, *, error: bool = False, detail: str | None = None) -> None:
+    """Close the run. Success → every phase done, 100%. Failure → mark the phase that was RUNNING
+    as 'error' (with the reason in its detail) and LEAVE later phases pending, so the bar shows
+    exactly where it stopped instead of lying with a green 100%."""
     with engine.begin() as c:
-        row = c.execute(text("select phases from onboarding_progress where org_id=:o"),
+        row = c.execute(text("select phases, current_phase from onboarding_progress where org_id=:o"),
                         {"o": org_id}).first()
         if row is None:
             return
         phases = row.phases if isinstance(row.phases, list) else json.loads(row.phases or "[]")
-        for ph in phases:
-            if ph.get("state") != "error":
+        if error:
+            for ph in phases:                       # only the in-flight phase failed; rest stay pending
+                if ph.get("state") == "running":
+                    ph["state"] = "error"
+                    if detail:
+                        ph["detail"] = detail
+            pct = _overall(phases)                  # real progress, NOT 100
+            cur = row.current_phase
+        else:
+            for ph in phases:
                 ph["state"] = "done"
-        pct = 100 if not error else _overall(phases)
-        c.execute(text("update onboarding_progress set state=:st, current_phase='ready', "
+            pct = 100
+            cur = "ready"
+        c.execute(text("update onboarding_progress set state=:st, current_phase=:cur, "
                        "overall_percent=:pct, phases=cast(:ph as jsonb), updated_at=:ts where org_id=:o"),
-                  {"o": org_id, "st": "error" if error else "done", "pct": pct,
+                  {"o": org_id, "st": "error" if error else "done", "cur": cur, "pct": pct,
                    "ph": json.dumps(phases), "ts": _now()})
 
 

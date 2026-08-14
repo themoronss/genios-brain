@@ -910,6 +910,7 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
 def _source_count(org_id: str, source: str) -> int:
     if _graph is None:
         return 0
+    from sqlalchemy import text
     with _graph.engine.connect() as c:
         return int(c.execute(text("select count(*) from source_events where org_id=:o and source=:s"),
                              {"o": org_id, "s": source}).scalar() or 0)
@@ -919,6 +920,7 @@ def _pending_count(org_id: str) -> int:
     """How many captured events still await L2 — mirrors runner._pull's filter, for a progress total."""
     if _graph is None:
         return 0
+    from sqlalchemy import text
     with _graph.engine.connect() as c:
         return int(c.execute(text(
             "select count(*) from source_events se where se.org_id=:o and se.outcome='emitted' "
@@ -1053,10 +1055,10 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25) -> Non
             _process_and_reason_tracked(org_id)
         if eng is not None:
             P.finish(eng, org_id)
-    except Exception:      # noqa: BLE001
+    except Exception as e:      # noqa: BLE001
         _log.exception("onboarding sync failed org=%s", org_id)
         if eng is not None:
-            P.finish(eng, org_id, error=True)
+            P.finish(eng, org_id, error=True, detail=f"{type(e).__name__}: {str(e)[:160]}")
     finally:
         for st in sources:
             _set_sync_running(org_id, st, False)
