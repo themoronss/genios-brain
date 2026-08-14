@@ -35,7 +35,10 @@ class LLMClient:
     def _c(self) -> Any:
         if self._client is None:
             from anthropic import Anthropic       # lazy: only on real calls
-            self._client = Anthropic(api_key=self._api_key)
+            # Hard per-request timeout (default SDK is ~10 min) so one hung request can't tie up an
+            # L2 worker during a large onboarding drain. max_retries adds bounded backoff on
+            # 429/5xx so a transient blip self-heals instead of parking the email.
+            self._client = Anthropic(api_key=self._api_key, timeout=60.0, max_retries=2)
         return self._client
 
     @staticmethod

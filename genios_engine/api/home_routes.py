@@ -134,6 +134,14 @@ def first_scan(org_id: str, org: str = Depends(_org)) -> dict:
     }
 
 
+@router.get("/api/org/{org_id}/onboarding-progress")
+def onboarding_progress(org_id: str, org: str = Depends(_org)) -> dict:
+    """Live sync progress the dashboard polls: current phase + per-phase state/counts + overall %.
+    DB-backed, so it survives a page refresh AND a server restart. Plain-language phases only."""
+    from genios_engine.platform import progress as P
+    return P.read(_store().engine, org)
+
+
 def _weekly(conn, org: str, table: str, ts_col: str = "created_at", weeks: int = 12) -> list[int]:
     """A dense last-N-weeks count series (oldest→newest), zero-filled for weeks with no rows."""
     try:

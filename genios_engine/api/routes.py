@@ -816,11 +816,12 @@ def _sync_source(org_id: str, source_type: str, limit: int):
                     run_ledger=_run_ledger)
 
 
-_BACKFILL_MAX_ROUNDS = 24       # 24 × 25 = up to 600 messages on first connect — see below
+# Onboarding backfill is WINDOW-bounded (60d email / 120d calendar), not count-bounded — the user
+# gets "2 months of everything". These are SAFETY ceilings only, high enough that a normal inbox is
+# fully covered but a pathological 20k-inbox can't run away on time/LLM. Hit → logged, never silent.
+_BACKFILL_MAX_ROUNDS = 200      # 200 × 25 = ~5000 messages ceiling per source (was 24 ≈ 600)
 _BACKFILL_L2_EVERY = 6          # drain L2 every N rounds so facts appear DURING the backfill
-# Hard first-connect event cap per source (in addition to the round cap). Calendar: never pull more
-# than 150 events on a first connect. Sources not listed here fall back to the round cap only.
-_SOURCE_EVENT_CAP: dict[str, int] = {"gcal": 150}
+_SOURCE_EVENT_CAP: dict[str, int] = {"gcal": 2000}     # calendar safety ceiling (was 150)
 
 # Which (org, source) syncs are ACTIVE right now. Lives on the SERVER for the whole L1+backfill+L2
 # lifetime, so /integrations/status can report "running" and the Sync button stays "Syncing…" from
@@ -906,6 +907,149 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
                        org_id, source_type, scanned)
 
 
+def _source_count(org_id: str, source: str) -> int:
+    if _graph is None:
+        return 0
+    with _graph.engine.connect() as c:
+        return int(c.execute(text("select count(*) from source_events where org_id=:o and source=:s"),
+                             {"o": org_id, "s": source}).scalar() or 0)
+
+
+def _pending_count(org_id: str) -> int:
+    """How many captured events still await L2 — mirrors runner._pull's filter, for a progress total."""
+    if _graph is None:
+        return 0
+    with _graph.engine.connect() as c:
+        return int(c.execute(text(
+            "select count(*) from source_events se where se.org_id=:o and se.outcome='emitted' "
+            "and se.event_id not in (select event_id from l2_extraction_results where org_id=:o) "
+            "and se.event_id not in (select event_id from l2_processing_runs "
+            "                        where org_id=:o and status in ('done','parked'))"),
+            {"o": org_id}).scalar() or 0)
+
+
+def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
+                         max_rounds: int = _BACKFILL_MAX_ROUNDS, on_round=None) -> tuple[int, int, bool]:
+    """Window-bounded backfill of ONE source (no interleaved L2 — L2 runs as its own phase after).
+    Pages backward through the 2-month window; `on_round(count)` fires each round so the progress
+    bar can move live. Returns (scanned, emitted, capped-at-ceiling)."""
+    from genios_engine.contracts.connection import Connection
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
+    connector = make_connector_for(conn)
+    event_cap = _SOURCE_EVENT_CAP.get(source_type)
+    cursor: str | None = None
+    scanned = emitted = 0
+    for _rnd in range(max_rounds):
+        summary = run_sync(
+            connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
+            mode="backfill", cursor=cursor, limit=limit, source=source_type,
+            cursor_store=None, max_pages=1, relevance=make_relevance_classifier(),
+            parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
+            trace_repo=_trace_repo, payload_store=_payload_store,
+            prepared_store=_prepared_store, document_job_store=_documents, run_ledger=_run_ledger)
+        scanned += summary.scanned
+        emitted += summary.emitted
+        cursor = summary.next_cursor
+        if on_round is not None:
+            try:
+                on_round(_source_count(org_id, source_type))
+            except Exception:      # noqa: BLE001 — progress is best-effort
+                pass
+        if event_cap is not None and _source_count(org_id, source_type) >= event_cap:
+            break
+        if not cursor:
+            break                             # window exhausted
+    capped = cursor is not None
+    _log.info("onboarding backfill %s org=%s src=%s scanned=%s emitted=%s%s",
+              "CAPPED" if capped else "done", org_id, source_type, scanned, emitted,
+              " — safety ceiling hit, older tail remains (manual /backfill)" if capped else "")
+    return scanned, emitted, capped
+
+
+def _process_and_reason_tracked(org_id: str) -> None:
+    """L2 (chunked, so progress moves) → graph → L3/L5, each surfaced as a plain-language phase.
+    L3 runs ONCE at the very end (not mid-backfill) so the graph is stable when signals emit."""
+    from genios_engine.context.runner import process_pending
+    from genios_engine.platform import progress as P
+    eng = _graph.engine
+    total = _pending_count(org_id)
+    P.set_phase(eng, org_id, "processing", state="running", total=total, done=0,
+                detail="Reading your messages…")
+    processed = 0
+    while True:                                # drain in chunks → live progress, still bounded/idempotent
+        out = process_pending(org_id=org_id, store=_graph, llm=_llm,
+                              crypto_key=get_settings().crypto_key, max_total=500)
+        n = int(out.get("processed", 0))
+        processed += n
+        P.set_phase(eng, org_id, "processing",
+                    done=min(processed, total or processed), detail=f"{processed} processed")
+        if n == 0:
+            break
+    P.set_phase(eng, org_id, "processing", state="done",
+                total=total or processed, done=total or processed)
+
+    P.set_phase(eng, org_id, "graph", state="running", detail="Linking people & companies…")
+    P.set_phase(eng, org_id, "graph", state="done")     # read models are built during L2 above
+
+    P.set_phase(eng, org_id, "intelligence", state="running", detail="Analyzing your relationships…")
+    try:
+        from genios_engine.reason.runner import run_all as run_l3
+        run_l3(org_id=org_id, store=_graph, registry=_registry)
+        if _card_store is not None:
+            from genios_engine.deliver.pipeline import build_cards_for_org
+            build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
+                                llm=_llm, registry=_registry)
+        P.set_phase(eng, org_id, "intelligence", state="done", detail="Ready")
+    except Exception:      # noqa: BLE001
+        _log.exception("intelligence phase failed org=%s", org_id)
+        P.set_phase(eng, org_id, "intelligence", state="error")
+
+
+def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25) -> None:
+    """THE single Sync action: for every connected tool, pull the full 2-month window, then process
+    → graph → intelligence — all in the background (no gateway-kill), with DB-backed progress the
+    dashboard polls. One Sync click completes the whole tool; the user does nothing else."""
+    from genios_engine.platform import progress as P
+    eng = _graph.engine if _graph is not None else None
+    # gmail first, then calendar, then anything else — a sensible phase order for the UI.
+    order = ([s for s in ("gmail", "gcal") if s in sources]
+             + [s for s in sources if s not in ("gmail", "gcal")])
+    try:
+        if eng is not None:
+            P.start(eng, org_id, order)
+            P.set_phase(eng, org_id, "connecting", state="done")     # OAuth already completed
+        for st in order:
+            phase = "emails" if st == "gmail" else "calendar" if st == "gcal" else "processing"
+            tracked = phase in ("emails", "calendar")
+            if eng is not None and tracked:
+                P.set_phase(eng, org_id, phase, state="running", detail="Fetching…")
+            try:
+                _backfill_one_source(org_id, st, limit,
+                                     on_round=(lambda cnt, p=phase: eng is not None and tracked
+                                               and P.set_phase(eng, org_id, p, done=cnt,
+                                                               detail=f"{cnt} synced")))
+            except Exception:      # noqa: BLE001 — one source failing never stops the rest
+                _log.exception("onboarding backfill failed org=%s src=%s", org_id, st)
+                if eng is not None and tracked:
+                    P.set_phase(eng, org_id, phase, state="error")
+            else:
+                if eng is not None and tracked:
+                    cnt = _source_count(org_id, st)
+                    P.set_phase(eng, org_id, phase, state="done", done=cnt, total=cnt,
+                                detail=f"{cnt} synced")
+        if _graph is not None:
+            _process_and_reason_tracked(org_id)
+        if eng is not None:
+            P.finish(eng, org_id)
+    except Exception:      # noqa: BLE001
+        _log.exception("onboarding sync failed org=%s", org_id)
+        if eng is not None:
+            P.finish(eng, org_id, error=True)
+    finally:
+        for st in sources:
+            _set_sync_running(org_id, st, False)
+
+
 @router.post("/integrations/{tool}/sync")
 def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 25,
                      org_id: str = Depends(get_current_org)) -> dict:
@@ -920,33 +1064,16 @@ def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 
     if norm not in active:
         raise HTTPException(404, f"{tool} is not connected (or the OAuth wasn't completed). "
                             f"Click Connect and finish the authorization first.")
-    # First sync = no stored watermark for this connection yet → also backfill the full window once.
-    _conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=norm, config={})
-    first_sync = _cursors is not None and _cursors.get(org_id, _conn.connection_id, norm) is None
-    # Mark ACTIVE up front so /integrations/status reports "running" (button stays "Syncing…" across
-    # navigation) for the entire L1 + background L2/backfill lifetime, not just this HTTP call.
+    # Returns IMMEDIATELY. The whole 2-month backfill → process → graph → intelligence runs in the
+    # background (no synchronous L1 in-request → no gateway-kill), with DB-backed progress the
+    # dashboard polls. One click completes the tool; the user does nothing else.
     _set_sync_running(org_id, norm, True)
-    try:
-        s = _sync_source(org_id, norm, limit)
-    except Exception as e:      # noqa: BLE001
-        _set_sync_running(org_id, norm, False)              # clear on failure — not stuck "Syncing…"
-        _log.exception("L1 sync failed for org=%s tool=%s", org_id, tool)
-        raise HTTPException(502, f"sync failed for {tool}: {str(e)[:200]}")
-    # AUDIT — one legible ledger row per sync (Data extraction, or Meeting for calendar), counts only.
     from genios_engine.platform.audit import record
     record(org_id, "data_synced", actor_type="user", target_type="source", target_id=norm,
            metadata={"audit_category": "meeting" if norm == "gcal" else "data_extraction",
-                     "tool": tool, "scanned": s.scanned, "emitted": s.emitted,
-                     "dropped": s.dropped, "parked": s.parked})
-    if _graph is not None:
-        background_tasks.add_task(_run_l2, org_id)          # extract the incremental page first
-    if first_sync:
-        background_tasks.add_task(_backfill_full, org_id, norm)   # then fill the older tail once
-    # Runs LAST (background tasks are sequential) → clears "running" only after L2 + backfill finish.
-    background_tasks.add_task(_set_sync_running, org_id, norm, False)
-    return {"started": True, "tool": tool, "scanned": s.scanned, "emitted": s.emitted,
-            "dropped": s.dropped, "parked": s.parked, "duplicate": getattr(s, "duplicate", 0),
-            "backfilling": first_sync}
+                     "tool": tool, "mode": "onboarding_backfill"})
+    background_tasks.add_task(_onboarding_sync_bg, org_id, [norm], limit)
+    return {"started": True, "tool": tool, "queued": True}
 
 
 def _sync_all_bg(org_id: str, sources: list[str], limit: int) -> None:
@@ -976,7 +1103,11 @@ def integrations_sync_all(background_tasks: BackgroundTasks, limit: int = 25,
     if not active:
         return {"started": False, "reason": "no connected tools", "tools": []}
     sources = [a["source_type"] for a in active]
-    background_tasks.add_task(_sync_all_bg, org_id, sources, limit)
+    for st in sources:
+        _set_sync_running(org_id, st, True)
+    # Full 2-month backfill for every connected tool → process → graph → intelligence, background,
+    # progress-tracked. This is the one "Sync" action; one click completes everything.
+    background_tasks.add_task(_onboarding_sync_bg, org_id, sources, limit)
     return {"started": True, "queued": True, "tools": sources}
 
 
@@ -1034,8 +1165,10 @@ def context_process(limit: int = 50, ctx: AuthCtx = Depends(require_owner)) -> d
     org_id = ctx.org_id
     limit = max(1, min(int(limit), 200))
     from genios_engine.context.runner import process_pending
+    # NOTE: process_pending's cap arg is max_total (there is no `limit=` param — passing one raised
+    # TypeError and 500'd this endpoint). Clamp the manual drain to `limit`.
     return process_pending(org_id=org_id, store=_graph, llm=_llm,
-                           crypto_key=get_settings().crypto_key, limit=limit)
+                           crypto_key=get_settings().crypto_key, max_total=limit)
 
 
 @router.post("/context/reason")
