@@ -34,6 +34,7 @@ class Register(BaseModel):
     name: str
     email: str
     password: str
+    company: str | None = None      # workspace/company name from signup — was silently dropped before
 
 
 @router.post("/register")
@@ -51,12 +52,15 @@ def register(body: Register) -> dict:
         from datetime import datetime, timedelta, timezone
         from genios_engine.platform.billing import PLAN_CREDITS, TRIAL_DAYS
         now = datetime.now(timezone.utc)
-        c.execute(text("insert into orgs (id, name, email, pass_hash, api_key_hash, "
+        # orgs.name holds the person's full name (used for the sidebar/greeting); orgs.company holds
+        # the workspace/company name typed at signup. Both are now persisted — company was dropped
+        # before (frontend ignored it and this model had no field for it).
+        c.execute(text("insert into orgs (id, name, company, email, pass_hash, api_key_hash, "
                        "subscription_tier, plan_status, credits, plan_started_at, plan_expires_at, "
                        "credit_period_start, credit_period_end) "
-                       "values (:id,:n,:e,:p,:kh,'trial','trial',:cr,:now,:exp,:now,:exp)"),
-                  {"id": org_id, "n": body.name, "e": body.email,
-                   "p": hash_password(body.password), "kh": key_hash,
+                       "values (:id,:n,:co,:e,:p,:kh,'trial','trial',:cr,:now,:exp,:now,:exp)"),
+                  {"id": org_id, "n": body.name, "co": (body.company or "").strip()[:120] or None,
+                   "e": body.email, "p": hash_password(body.password), "kh": key_hash,
                    "cr": PLAN_CREDITS["trial"], "now": now,
                    "exp": now + timedelta(days=TRIAL_DAYS)})
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"

@@ -50,13 +50,18 @@ def _org_row(c, org_id: str):
 def get_profile(org_id: str, org: str = Depends(_org)) -> dict:
     with _graph.engine.connect() as c:
         r = _org_row(c, org)
-    return {"first_name": r.first_name or "", "last_name": r.last_name or "",
-            "email": r.email or "", "company": r.company or r.name or "", "role": r.role or ""}
+    # Single full-name model: orgs.name is the person's full name; orgs.company is the workspace.
+    # Company no longer falls back to the person's name (that was showing the user's name as the
+    # "Company"). first_name/last_name kept in the response (derived) only for older callers.
+    full_name = r.name or " ".join(x for x in (r.first_name, r.last_name) if x) or ""
+    parts = full_name.split(" ", 1)
+    return {"full_name": full_name,
+            "first_name": parts[0] if parts else "", "last_name": parts[1] if len(parts) > 1 else "",
+            "email": r.email or "", "company": r.company or "", "role": r.role or ""}
 
 
 class ProfileUpdate(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
+    full_name: str | None = None
     company: str | None = None
     role: str | None = None
 
@@ -64,11 +69,13 @@ class ProfileUpdate(BaseModel):
 @router.patch("/api/org/{org_id}/profile")
 def update_profile(org_id: str, body: ProfileUpdate, org: str = Depends(_org)) -> dict:
     fields, params = [], {"o": org}
-    for k in ("first_name", "last_name", "company", "role"):
-        v = getattr(body, k)
+    # full_name is the person's name → orgs.name (what the sidebar/greeting reads).
+    col_map = {"full_name": "name", "company": "company", "role": "role"}
+    for attr, col in col_map.items():
+        v = getattr(body, attr)
         if v is not None:
-            fields.append(f"{k}=:{k}")
-            params[k] = v.strip()[:120]
+            fields.append(f"{col}=:{col}")
+            params[col] = v.strip()[:120]
     if not fields:
         return {"updated": False}
     with _graph.engine.begin() as c:
