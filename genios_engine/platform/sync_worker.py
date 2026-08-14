@@ -41,16 +41,19 @@ def _loop(initial_delay: float) -> None:
 
 
 def start_sync_worker() -> bool:
-    """Start the daemon worker. Idempotent; gated by the same scheduler_enabled setting."""
+    """Start the daemon worker. Idempotent. Deliberately NOT gated by scheduler_enabled: user Sync
+    jobs MUST run even when the periodic auto-sweep is disabled (e.g. multi-instance). The atomic
+    claim (FOR UPDATE SKIP LOCKED) makes running a worker on every instance safe. Opt out only via
+    GENIOS_SYNC_WORKER_ENABLED=false. main.py already gates the call on use_real_db."""
     global _thread
-    s = get_settings()
-    if not s.scheduler_enabled:
-        _log.info("sync worker disabled (scheduler_enabled=false)")
+    if os.environ.get("GENIOS_SYNC_WORKER_ENABLED", "true").lower() == "false":
+        _log.info("sync worker disabled (GENIOS_SYNC_WORKER_ENABLED=false)")
         return False
     if _thread is not None and _thread.is_alive():
         return True
     _stop.clear()
-    _thread = threading.Thread(target=_loop, args=(float(s.sync_initial_delay_seconds),),
+    initial_delay = float(get_settings().sync_initial_delay_seconds)   # let startup settle first
+    _thread = threading.Thread(target=_loop, args=(initial_delay,),
                                daemon=True, name="genios-sync-worker")
     _thread.start()
     _log.info("durable sync worker started (id=%s, poll=%ss)", _WORKER_ID, _POLL_SECONDS)
