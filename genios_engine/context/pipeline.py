@@ -77,6 +77,26 @@ PROMPT_VERSION = "b3-2"          # b3-2: enriched observations with the canonica
 # email classes that carry no real relationship → no structural graph (newsletters, bots, spam).
 # NOTE: "personal" is NOT here — a personal 1:1 email is still a real correspondence edge.
 _NOISE_TYPES = {"newsletter", "automated", "spam"}
+
+# Deterministic non-human sender detector. Addresses like noreply@/notify./mailer-daemon are
+# MACHINES, not people — they must never become `person` nodes (that is how cloudflare/mongodb/
+# algolia polluted the relationship graph). They still get a `service` node so their content can
+# attach, but they stay out of the person graph, network edges and correlation. Conservative:
+# matches only clearly-automated local-parts/subdomains, so a real person is never mislabelled.
+_AUTOMATED_SENDER = re.compile(
+    r"(^|[._-])(no[._-]?reply|do[._-]?not[._-]?reply|donotreply|mailer[._-]?daemon|postmaster|"
+    r"bounce[sd]?|notification[s]?|notify|alert[s]?|jobalert[s]?|naukrialert[s]?|newsletter[s]?|"
+    r"digest|mailer|mailing|automated|auto[._-]?reply|updates?|support|community|feedback|help)@|"
+    r"^usr[._-]|@(notify|notifications|mailer|mail|em|e|bounces?|alerts?|news|digest|updates?|"
+    r"user[s]?)\.",
+    re.I,
+)
+
+
+def _is_automated_sender(email: str | None) -> bool:
+    """True for machine senders (noreply@, notify.<domain>, mailer-daemon, jobalerts…). Deterministic
+    — no LLM — so it is cheap and predictable, exactly what MD #5 asks for the graph gatekeeper."""
+    return bool(email) and bool(_AUTOMATED_SENDER.search(email.strip().lower()))
 _GROUNDING_PENALTY = 0.4      # ungrounded (paraphrased) claim → kept but scored down, not dropped
 # P1 — node-type whitelist. An LLM entity_mention becomes a first-class graph NODE only if its type
 # is a person WITH an email (a deterministic anchor). Anything else (product/system/organization/
@@ -277,10 +297,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
 
         def _person(email: str) -> str:
             key = _norm_email(email) or email.strip().lower()
+            # A machine sender (noreply@/notify./mailer-daemon) is NOT a person — file it as a
+            # `service` node so its content still attaches, but it never enters the person graph.
+            ntype = "service" if _is_automated_sender(email) else "person"
             node = store.find_or_create_node(
-                conn, org_id=org_id, node_type="person",
+                conn, org_id=org_id, node_type=ntype,
                 canonical_key=key, display_name=email, event_id=event_id)
-            touched[node] = "person"
+            touched[node] = ntype
             if key in internal_set:
                 internal_nodes.add(node)
             return node
@@ -310,6 +333,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
         sender_node = None
+        # A machine sender is noise for the NETWORK too: it gets a `service` node (facts attach) but
+        # never anchors a relationship edge or a situation — same treatment as a newsletter.
+        is_noise = is_noise or _is_automated_sender(sender_email)
 
         # CANON — company knowledge becomes a node of its own, so the facts in a refund
         # policy are facts about the Refund Policy rather than about the colleague who
