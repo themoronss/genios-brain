@@ -1017,6 +1017,29 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
         P.set_phase(eng, org_id, "intelligence", state="error")
 
 
+import os as _os
+
+# Bill circuit-breaker: a per-org DAILY LLM-call ceiling. Cost is already bounded by idempotency +
+# dedup + the ~5000 backfill ceiling, so this only ever trips on a genuine runaway (a bug/abuse
+# re-processing many times over). Default is set FAR above a normal full sync (~a few hundred to a
+# few thousand calls) so a real user never hits it. Fail-safe: it only refuses to START a new sync —
+# it NEVER interrupts a run in progress.
+_LLM_DAILY_CAP = int(_os.environ.get("GENIOS_LLM_DAILY_CAP", "20000"))
+
+
+def _llm_over_daily_cap(org_id: str) -> bool:
+    if _graph is None or _LLM_DAILY_CAP <= 0:
+        return False
+    try:
+        from sqlalchemy import text
+        with _graph.engine.connect() as c:
+            n = c.execute(text("select count(*) from llm_costs where org_id=:o "
+                               "and created_at >= date_trunc('day', now())"), {"o": org_id}).scalar()
+        return int(n or 0) >= _LLM_DAILY_CAP
+    except Exception:      # noqa: BLE001 — a broken cost check must never block a sync
+        return False
+
+
 def _sync_active(org_id: str) -> bool:
     """Is a sync run currently in progress for this org? Reads the DB progress state so a duplicate
     Sync click (or a second endpoint) doesn't reset the bar / spawn a competing run."""
@@ -1038,6 +1061,19 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartb
     from genios_engine.platform import progress as P
     eng = _graph.engine if _graph is not None else None
     hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
+    # Bill circuit-breaker (pre-flight only): refuse to START a new sync if this org has already made
+    # a runaway number of LLM calls today. Never interrupts a run already in progress.
+    if _llm_over_daily_cap(org_id):
+        _log.warning("sync skipped: org=%s hit the daily LLM cap (%s) — cost circuit breaker",
+                     org_id, _LLM_DAILY_CAP)
+        if eng is not None:
+            try:
+                P.start(eng, org_id, sources)
+                P.finish(eng, org_id, error=True,
+                         detail="Paused for today — daily processing limit reached. Resumes tomorrow.")
+            except Exception:      # noqa: BLE001
+                pass
+        return
     # gmail first, then calendar, then anything else — a sensible phase order for the UI.
     order = ([s for s in ("gmail", "gcal") if s in sources]
              + [s for s in sources if s not in ("gmail", "gcal")])
