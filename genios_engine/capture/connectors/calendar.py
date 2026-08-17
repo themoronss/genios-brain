@@ -11,9 +11,9 @@ from .composio_base import ComposioExec
 # defensive and finalized against the real response on first live run (as with Gmail).
 
 # First-connect backfill window: how far BACK to pull on a fresh sync (all FUTURE events are
-# always pulled). Kept to the last 4 months — enough recent meeting history to ground context
-# without dragging in a year of stale calendar noise.
-_BACKFILL_DAYS = 120
+# always pulled — no timeMax). Kept to the last 2 months to match the Gmail backfill window, so
+# email + calendar cover the same recent period without dragging in stale calendar noise.
+_BACKFILL_DAYS = 60
 
 
 def _parse_start(ev: dict) -> datetime:
@@ -36,8 +36,8 @@ class ComposioCalendarConnector:
         self._cal = calendar_id
 
     def _fetch(self, *, max_results: int, since: datetime | None, page_token: str | None):
-        # window: from the watermark, or the last _BACKFILL_DAYS (4 months) on a first run
-        # (+ all future). Recent history to ground context, without a year of stale events.
+        # window: from the watermark, or the last _BACKFILL_DAYS (2 months) on a first run
+        # (+ all future). Matches the Gmail 60-day backfill so both sources cover the same period.
         tmin = since or (datetime.now(timezone.utc) - timedelta(days=_BACKFILL_DAYS))
         args: dict[str, Any] = {"calendarId": self._cal, "maxResults": max_results,
                                 "singleEvents": True, "orderBy": "startTime",
