@@ -27,7 +27,7 @@ _graph = make_graph_store()
 # seat allowance by plan (Settings shows "used / limit"). Trial is deliberately small.
 _SEAT_LIMIT = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}
 # monthly credit allowance by plan — period_used counts billable /v1/intelligence/query decisions.
-_CREDIT_LIMIT = {"trial": 100, "startup": 2000, "growth": 10000, "scale": 50000}
+_CREDIT_LIMIT = {"trial": 10_000, "startup": 2000, "growth": 10000, "scale": 50000}
 
 
 def _org(org_id: str, org: str = Depends(get_current_org)) -> str:

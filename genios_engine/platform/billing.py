@@ -20,14 +20,14 @@ PLAN_PRICES = {
     "early":   {"inr": 450000,  "usd": 5900,  "credits": 10_000,  "period_days": 30},
     "startup": {"inr": 2500000, "usd": 29900, "credits": 100_000, "period_days": 30},
 }
-PLAN_CREDITS = {"trial": 500, "early": 10_000, "startup": 100_000, "enterprise": 1_000_000}
+PLAN_CREDITS = {"trial": 10_000, "early": 10_000, "startup": 100_000, "enterprise": 1_000_000}
 TOPUP_PACKS = {
     "small":  {"credits": 5_000,   "inr": 250000,  "usd": 3500,  "label": "Small"},
     "medium": {"credits": 25_000,  "inr": 1000000, "usd": 12900, "label": "Medium"},
     "large":  {"credits": 100_000, "inr": 3500000, "usd": 44900, "label": "Large"},
 }
 GRACE_DAYS = 7
-TRIAL_DAYS = 7                 # a fresh signup gets 500 credits for 7 days
+TRIAL_DAYS = 15                # a fresh signup gets 10,000 credits for 15 days
 _ALIAS = {"hustler": "early"}
 
 

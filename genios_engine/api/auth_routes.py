@@ -60,7 +60,7 @@ def register(body: Register) -> dict:
                            {"e": body.email}).first()
         if exists:
             raise HTTPException(409, "email already registered")
-        # New tenants start on a 7-day trial with its credit allowance already granted —
+        # New tenants start on a 15-day trial with its credit allowance already granted —
         # otherwise the credits column defaults to 0 and a fresh trial reads as "out of credits".
         from datetime import datetime, timedelta, timezone
         from genios_engine.platform.billing import PLAN_CREDITS, TRIAL_DAYS
