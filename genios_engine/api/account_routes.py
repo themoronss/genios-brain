@@ -174,6 +174,63 @@ def set_notif_prefs(org_id: str, prefs: dict, org: str = Depends(_org)) -> dict:
     return {"saved": True}
 
 
+# ── source / integration preferences (Sources modal: Gmail, Calendar, …) ──────
+# The Sources "preferences" modal PUTs the per-tool connector settings + toggles here. Persisted
+# per (org, canonical tool) so a reconnect/restart keeps them; the same normalization as
+# connect/sync/disconnect keeps every path agreeing on the tool key.
+def _canonical_tool(tool: str) -> str:
+    from genios_engine.api.routes import _norm_source   # lazy — avoid an import cycle at module load
+    try:
+        return _norm_source(tool)
+    except Exception:      # noqa: BLE001 — a bad label must never 500 the config save
+        return (tool or "").strip().lower()
+
+
+@router.get("/api/org/{org_id}/integrations/{tool}/config")
+def get_integration_config(org_id: str, tool: str, org: str = Depends(_org)) -> dict:
+    t = _canonical_tool(tool)
+    with _graph.engine.connect() as c:
+        r = c.execute(text("select sync_settings, preferences, domains, updated_at "
+                           "from integration_preferences where org_id=:o and tool=:t"),
+                      {"o": org, "t": t}).first()
+    if r is None:
+        return {"tool": t, "sync_settings": {}, "preferences": {}, "domains": [],
+                "configured": False}
+    return {"tool": t, "sync_settings": r.sync_settings or {},
+            "preferences": r.preferences or {}, "domains": r.domains or [],
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None, "configured": True}
+
+
+@router.put("/api/org/{org_id}/integrations/{tool}/config")
+def set_integration_config(org_id: str, tool: str, body: dict, org: str = Depends(_org)) -> dict:
+    t = _canonical_tool(tool)
+    if not t:
+        raise HTTPException(422, "tool is required")
+    sync_settings = body.get("syncSettings") or body.get("sync_settings") or {}
+    preferences = body.get("preferences") or {}
+    domains = body.get("domains") or []
+    if not isinstance(sync_settings, dict) or not isinstance(preferences, dict):
+        raise HTTPException(422, "syncSettings and preferences must be JSON objects")
+    if not isinstance(domains, list):
+        raise HTTPException(422, "domains must be a JSON array")
+    try:
+        s, p, d = (json.dumps(x, default=str, allow_nan=False)
+                   for x in (sync_settings, preferences, domains))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, "config must be finite JSON") from exc
+    if sum(len(x.encode("utf-8")) for x in (s, p, d)) > 64_000:   # durable config, not a data dump
+        raise HTTPException(413, "integration config is too large")
+    with _graph.engine.begin() as c:
+        c.execute(text(
+            "insert into integration_preferences (org_id, tool, sync_settings, preferences, domains) "
+            "values (:o, :t, cast(:s as jsonb), cast(:p as jsonb), cast(:d as jsonb)) "
+            "on conflict (org_id, tool) do update set sync_settings=excluded.sync_settings, "
+            "preferences=excluded.preferences, domains=excluded.domains, "
+            "updated_at=clock_timestamp()"),
+            {"o": org, "t": t, "s": s, "p": p, "d": d})
+    return {"saved": True, "tool": t}
+
+
 # ── team members / invites ───────────────────────────────────────────────────
 @router.get("/api/org/{org_id}/members")
 def list_members(org_id: str, org: str = Depends(_org)) -> dict:
@@ -270,6 +327,7 @@ _ORG_SCOPED_TABLES = [
     "source_coverage", "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
     "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)
+    "integration_preferences",                    # per-tool source settings (Sources modal)
 ]
 
 _UPLOAD_ROOT = (Path(__file__).resolve().parents[2] / "uploads").resolve()
