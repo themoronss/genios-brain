@@ -16,6 +16,41 @@ from .context import GateContext
 _DEAD_SENDER = re.compile(r"(mailer-daemon|bounces?@|postmaster@)", re.I)
 _OOO = re.compile(r"\b(out of office|ooo|on leave|automatic reply|chutti)\b", re.I)
 
+# Machine/bulk senders that never expect a human reply. Deliberately CONSERVATIVE for a hard drop:
+# only clearly-automated local-parts (no-reply / notify / newsletter / digest / mailer / bounce /
+# marketing / alerts) and mail-blaster subdomains. NOT support@/info@/hello@/team@ — those can be a
+# real small business, so they still go to the S2 LLM gate. Every drop below is guarded by
+# has_attachment so a vendor invoice/receipt from noreply@ is never lost.
+_AUTOMATED_SENDER = re.compile(
+    r"(^|[._+-])(no[._-]?reply|do[._-]?not[._-]?reply|notify|notification[s]?|"
+    r"newsletter|digest|mailer|mailings?|marketing|campaign[s]?|no[._-]?response|"
+    r"jobalerts?|alerts?)([._+-]|@)|@(notify|email|mail|mailer|news|updates?|alerts?|e|em|mktg)\.",
+    re.I)
+
+# Gmail's own high-confidence categories + provider spam. These drop regardless of attachment.
+_JUNK_LABELS = frozenset({"SPAM", "TRASH", "CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL"})
+
+
+def _automated_sender(email: str) -> bool:
+    return bool(email) and bool(_AUTOMATED_SENDER.search(email))
+
+
+def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
+    """High-confidence deterministic junk from LIST-time fields ONLY (Gmail labels + sender local-
+    part) — lets the connector drop obvious junk BEFORE the S2 LLM prime ever runs, so it costs no
+    model call. Header-based bulk signals (List-Unsubscribe/Precedence) need the full fetch and stay
+    on the LLM path. Mirrors hard_rule exactly so the pipeline gate reaches the SAME verdict."""
+    labs = set(labels or [])
+    if labs & {"SPAM", "TRASH"}:
+        return "N-09"
+    if "CATEGORY_PROMOTIONS" in labs:
+        return "N-06"
+    if "CATEGORY_SOCIAL" in labs:
+        return "N-07"
+    if not has_attachment and _automated_sender(sender_email or ""):
+        return "N-03"
+    return None
+
 # Human-readable label per reason code — shown in traces/logs so a drop is legible.
 REASON_LABELS = {
     "W-01": "known_sender", "W-02": "starred_important", "W-03": "agent_event",
@@ -92,9 +127,12 @@ def hard_rule(ctx: GateContext) -> tuple[str, str] | None:
     # attachment (an invoice/contract PDF), do NOT hard-drop it on these signals — let relevance/L2
     # decide. High-confidence noise (SPAM/TRASH, Gmail PROMOTIONS/SOCIAL) above still drops regardless.
     att = bool(ctx.raw.get("has_attachment"))
-    if not att and _DEAD_SENDER.search(email):
-        return ("N-03", "drop")                  # dead mail only (bounce/mailer-daemon); other
-                                                 # no-reply senders now go to the S2 LLM gate
+    if not att and (_DEAD_SENDER.search(email) or _automated_sender(email)):
+        return ("N-03", "drop")                  # dead mail (bounce/mailer-daemon) OR a clearly
+                                                 # automated/bulk sender (no-reply/notify/newsletter/
+                                                 # digest/mailer) with no attachment — no human reply
+                                                 # expected. Attachment-bearing mail is exempted
+                                                 # above so a vendor invoice from noreply@ survives.
     if not att and str(hdrs.get("Precedence", "")).lower() in ("bulk", "list", "junk"):
         return ("N-04", "drop")                  # bulk campaign (Precedence header)
     if not att and (hdrs.get("List-Unsubscribe") or hdrs.get("List-Id")

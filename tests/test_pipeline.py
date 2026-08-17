@@ -43,8 +43,9 @@ class _DropClassifier:
 
 
 def test_noise_dropped_before_extraction():
-    # Marketing from a no-reply sender is now dropped by the S2 LLM junk-gate (stubbed), not a
-    # regex — so a real receipt/invoice from noreply@ survives while true junk is stopped pre-L2.
+    # Rules-first junk removal: an automated/bulk no-reply sender with no attachment is dropped
+    # deterministically at S1 (N-03) BEFORE L2, so it never costs an LLM gate or extraction call.
+    # A receipt/invoice from noreply@ carries a PDF and is exempted by has_attachment.
     raw = RawObject(source="gmail", object_type="email_message",
                     source_object_id="m_noise",
                     occurred_at=datetime(2026, 7, 28, tzinfo=timezone.utc),
@@ -55,7 +56,7 @@ def test_noise_dropped_before_extraction():
                         relevance=_DropClassifier())
     assert res.outcome == "dropped"
     assert res.gated is None
-    assert res.trace.records[-1].reason_code == "llm_junk"
+    assert res.trace.records[-1].reason_code == "N-03"
 
 
 def test_structured_event_emits_structured_route():

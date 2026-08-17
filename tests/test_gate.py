@@ -48,18 +48,33 @@ def test_dead_sender_dropped_at_s1():
     assert tr.records[-1].stage == "S1" and tr.records[-1].action.value == "drop"
 
 
-def test_plain_no_reply_deferred_to_s2_gate():
-    # A plain no-reply/newsletter sender is NO LONGER regex-dropped at S1 — a receipt or invoice
-    # comes from noreply@ too. With no S2 classifier it routes; the LLM gate makes the real call.
+def test_plain_no_reply_dropped_at_s1():
+    # DESIGN CHANGE (rules-first junk removal): a no-reply/newsletter sender with NO attachment is
+    # now deterministically dropped at S1 (N-03), so obvious bulk mail never costs an S2 LLM gate
+    # call. The old concern — a receipt/invoice also comes from noreply@ — is preserved by the
+    # has_attachment exemption (see test_no_reply_with_attachment_survives_s1), not by sending every
+    # no-reply to the LLM.
     ctx = GateContext(event=_event("no-reply@newsletter.com"),
                       raw={"subject": "Weekly digest", "snippet": "..."})
+    res = run_gate(ctx, _trace())
+    assert res.action == "drop" and res.reason_code == "N-03"
+
+
+def test_no_reply_with_attachment_survives_s1():
+    # A receipt/invoice from noreply@ carries a PDF → has_attachment exempts it from the N-03 drop,
+    # so it routes on to relevance/L2 rather than being lost. This is the invoice-safety guarantee.
+    ctx = GateContext(event=_event("no-reply@vendor.com"),
+                      raw={"subject": "Invoice #221", "snippet": "Amount due by Friday",
+                           "has_attachment": True})
     res = run_gate(ctx, _trace())
     assert res.action == "route"
 
 
 def test_llm_gate_drops_marketing_at_s2():
-    # The S2 LLM junk-gate is the one filter allowed to drop on judgment.
-    ctx = GateContext(event=_event("no-reply@promo.io"),
+    # The S2 LLM junk-gate is the one filter allowed to drop on JUDGMENT. Use a NON-automated sender
+    # so it passes S1's deterministic rules and actually reaches S2 (an automated no-reply sender is
+    # now dropped at S1 by N-03 before the LLM ever runs).
+    ctx = GateContext(event=_event("sales@brightco.com"),
                       raw={"subject": "Sale!", "snippet": "50% off this week"})
     tr = _trace()
     res = run_gate(ctx, tr, relevance=_DropClassifier())

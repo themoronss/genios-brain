@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import base64
 import binascii
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any
+
+# Run the cheap deterministic junk rules (Gmail labels + automated senders) BEFORE the S2 LLM prime,
+# so obvious junk never costs a model call. On by default; set false for a clean rollback to
+# LLM-gates-everything behaviour.
+_DET_JUNK_PREFILTER = os.environ.get("GENIOS_L1_DET_JUNK", "true").lower() != "false"
 
 # Bounded concurrency for the per-message full-body fetch (the slow part: one Composio call per
 # message). This is NETWORK-ONLY work — no DB touched here — so it never pressures the DB pool; the
@@ -261,16 +267,29 @@ class ComposioGmailConnector:
         # confident DROP is full-fetched, so recall (and L2's full body) is preserved.
         rel = self._relevance
         if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
+            from genios_engine.capture.gate.rules import light_junk
             light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
                                                          for m in messages]
-            all_light = [o for _, objs in light for o in objs]
+            # DETERMINISTIC PRE-FILTER — the cheap rules run BEFORE the LLM, not after. Gmail's own
+            # PROMOTIONS/SOCIAL/SPAM labels and clearly-automated senders are high-confidence junk we
+            # can drop from the LIST fields alone, so they never cost an S2 gate call. On a real inbox
+            # this is most of the volume. Header-only bulk signals (List-Unsubscribe) still need the
+            # full body → they stay on the LLM path. Flag-guarded (GENIOS_L1_DET_JUNK) for rollback.
+            det_junk: set[int] = set()
+            if _DET_JUNK_PREFILTER:
+                for m, objs in light:
+                    if objs and light_junk(objs[0].raw.get("labelIds"), objs[0].actor_email,
+                                           bool(objs[0].raw.get("has_attachment"))):
+                        det_junk.add(id(m))
+            all_light = [o for m, objs in light if id(m) not in det_junk for o in objs]
             try:
-                rel.prime(all_light)                          # one batched gate call per ~12 snippets
+                rel.prime(all_light)                          # LLM only on what the rules couldn't settle
             except Exception:      # noqa: BLE001 — gate failure → treat all as keepers (full-fetch)
                 pass
             keepers = [m for m, objs in light
-                       if not (objs and (v := rel.verdict_for(objs[0].source_object_id))
-                               and v.disposition == "drop")]
+                       if id(m) not in det_junk
+                       and not (objs and (v := rel.verdict_for(objs[0].source_object_id))
+                                and v.disposition == "drop")]
             drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
             # full-fetch keepers concurrently; drops keep their light (snippet) object — the pipeline
             # gate re-reads the SAME primed verdict and drops them without another call.
