@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_scope
 from genios_engine.platform.cache import get_cache
+from genios_engine.platform.config import get_settings
 from genios_engine.platform.canonical import stable_id
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
@@ -131,12 +132,86 @@ def _persist_decision_envelope(*, org_id: str, module_id: str, question: str,
         raise HTTPException(503, "decision could not be recorded safely; please retry") from exc
 
 
-# L7 spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
-# cap, checked BEFORE the LLM call (cached queries never reach it → always free). Both fail-open on
-# infra errors so a Redis/DB blip never blocks a legitimate query. (Was the gap: spend was recorded
-# after the fact, incr_window was defined-but-never-called → unbounded LLM spend / retry loops.)
-_CREDIT_LIMIT = {"trial": 100, "startup": 2000, "growth": 10000, "scale": 50000}
+# L7 spend guard — the ONE credit-billable surface. Every limit here is checked BEFORE the LLM call
+# (a cached answer never reaches it → always free), and every one fails OPEN on an infra error: a
+# Redis or Postgres blip must not block a paying customer.
+#
+# Four independent ceilings, because each stops a different way the bill runs away:
+#   1. input size   — one huge question is the cheapest attack there is. 1 MB of text is ~250k
+#                     input tokens; at 20 requests/minute that is hundreds of dollars an hour from
+#                     a single trial account. Capped first, before anything else is spent.
+#   2. burst (rpm)  — stops a loop or a stuck retry hammering the endpoint.
+#   3. daily/org    — the credit pool alone is not a spend ceiling: a trial holds 10,000 credits, so
+#                     "balance >= 1" allowed 10,000 LLM calls. This caps calls per day per plan.
+#   4. daily/global — the backstop the per-org caps cannot give us: ten abusive trials at their
+#                     individual limits still add up. One dollar figure for the whole platform.
 _RPM_LIMIT = 20                        # billable intelligence queries / org / minute (burst guard)
+_MAX_QUESTION_CHARS = 2_000            # a real question; anything longer is not one
+_MAX_FACTS_BYTES = 20_000              # caller-supplied extra_facts, serialized
+_DAILY_QUERIES = {"trial": 200, "early": 1_000, "startup": 5_000,
+                  "growth": 20_000, "scale": 50_000}
+_DAILY_QUERIES_DEFAULT = 200
+
+
+def _enforce_input_limits(question: str, facts: dict | None) -> None:
+    """Reject oversized input before a single token is spent. 422, not 429 — the request is
+    malformed for this product, not merely too frequent."""
+    if len(question) > _MAX_QUESTION_CHARS:
+        raise HTTPException(422, {
+            "code": "QUESTION_TOO_LONG",
+            "message": f"Question is {len(question)} characters; the limit is "
+                       f"{_MAX_QUESTION_CHARS}. Ask a shorter, more specific question."})
+    if facts:
+        size = len(json.dumps(facts, default=str))
+        if size > _MAX_FACTS_BYTES:
+            raise HTTPException(422, {
+                "code": "FACTS_TOO_LARGE",
+                "message": f"Attached facts are {size} bytes; the limit is {_MAX_FACTS_BYTES}."})
+
+
+def _daily_query_ceiling(org_id: str) -> None:
+    """Cap billable queries per org per day by plan. Counted from llm_costs, which is the same
+    ledger the invoice is built from, so the ceiling cannot drift from what we actually paid for."""
+    try:
+        with _graph.engine.connect() as c:
+            row = c.execute(text(
+                "select o.subscription_tier tier, "
+                "(select count(*) from llm_costs lc where lc.org_id = o.id "
+                " and lc.purpose = 'intelligence_query' "
+                " and lc.created_at >= date_trunc('day', now())) used "
+                "from orgs o where o.id = :o"), {"o": org_id}).first()
+    except Exception:                      # noqa: BLE001 — never block on a DB blip
+        return
+    if row is None:
+        return
+    limit = _DAILY_QUERIES.get((row.tier or "").lower(), _DAILY_QUERIES_DEFAULT)
+    if int(row.used or 0) >= limit:
+        raise HTTPException(429, {
+            "code": "DAILY_LIMIT_REACHED",
+            "message": f"This workspace has used its {limit} questions for today. "
+                       f"The limit resets at midnight UTC."})
+
+
+def _platform_spend_ceiling() -> None:
+    """Platform-wide daily USD backstop. Per-org caps bound each tenant; this bounds the sum of all
+    of them, which is the only thing standing between a coordinated abuse and an unbounded invoice.
+    Tunable via GENIOS_DAILY_LLM_USD_CAP (0 disables)."""
+    cap = float(getattr(get_settings(), "daily_llm_usd_cap", 0) or 0)
+    if cap <= 0:
+        return
+    from genios_engine.platform.metrics import cost_usd_sql
+    try:
+        with _graph.engine.connect() as c:
+            spent = float(c.execute(text(
+                f"select coalesce({cost_usd_sql('lc')}, 0) from llm_costs lc "
+                "where lc.created_at >= date_trunc('day', now())")).scalar() or 0.0)
+    except Exception:                      # noqa: BLE001
+        return
+    if spent >= cap:
+        _log.error("platform daily LLM cap hit: $%.2f >= $%.2f — refusing new queries", spent, cap)
+        raise HTTPException(503, {
+            "code": "PLATFORM_BUSY",
+            "message": "GeniOS is briefly at capacity. Please try again shortly."})
 
 
 def _enforce_query_budget(org_id: str) -> None:
@@ -159,6 +234,8 @@ def _enforce_query_budget(org_id: str) -> None:
         raise
     except Exception:                                       # noqa: BLE001 — DB blip never blocks
         pass
+    _daily_query_ceiling(org_id)                            # per-org, per-day call ceiling
+    _platform_spend_ceiling()                               # platform-wide daily $ backstop
 
 
 def _stamp_activation(org_id: str) -> None:
@@ -188,6 +265,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     question = str((body.query or {}).get("question") or "").strip()
     if not question:
         raise HTTPException(422, "query.question is required")
+    _enforce_input_limits(question, body.facts)             # size caps BEFORE any spend
     activated_now = _stamp_activation(org_id)
     module_id = body.module_id or "sales"
     evaluation_time = datetime.now(timezone.utc)

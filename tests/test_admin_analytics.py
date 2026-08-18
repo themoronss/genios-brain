@@ -258,3 +258,51 @@ def test_the_dev_ingest_endpoint_is_not_reachable_without_the_internal_token():
     sig = inspect.signature(R.ingest_sample)
     assert any(isinstance(p.default, DependsMarker) and p.default.dependency is require_internal
                for p in sig.parameters.values())
+
+
+# ── LLM spend guardrails (token-abuse review) ───────────────────────────────────────────
+def test_an_oversized_question_is_refused_before_any_spend():
+    """The cheapest attack on an LLM product is one enormous prompt: ~1MB of text is ~250k input
+    tokens, and the burst limit still allows 20 of those a minute. Refused on size, before the
+    credit check, before the model call."""
+    from fastapi import HTTPException
+
+    from genios_engine.api import intelligence_routes as I
+
+    with pytest.raises(HTTPException) as exc:
+        I._enforce_input_limits("x" * (I._MAX_QUESTION_CHARS + 1), None)
+    assert exc.value.status_code == 422
+    assert exc.value.detail["code"] == "QUESTION_TOO_LONG"
+
+    with pytest.raises(HTTPException) as exc:
+        I._enforce_input_limits("fine", {"blob": "y" * (I._MAX_FACTS_BYTES + 100)})
+    assert exc.value.detail["code"] == "FACTS_TOO_LARGE"
+
+    I._enforce_input_limits("What should I focus on this week?", {"deal": "acme"})   # allowed
+
+
+def test_every_plan_has_a_daily_call_ceiling_below_its_credit_pool():
+    """Credits are not a spend ceiling: a trial holds 10,000 of them, so a balance check alone
+    permitted 10,000 model calls. The daily ceiling has to be the tighter of the two."""
+    from genios_engine.api import intelligence_routes as I
+    from genios_engine.platform.billing import PLAN_CREDITS
+
+    assert I._DAILY_QUERIES["trial"] < PLAN_CREDITS["trial"]
+    for tier, limit in I._DAILY_QUERIES.items():
+        assert limit > 0, tier
+    assert I._DAILY_QUERIES_DEFAULT <= min(I._DAILY_QUERIES.values())
+
+
+def test_platform_wide_cap_is_configured_and_disableable(monkeypatch):
+    """Per-org caps bound one tenant; only this bounds their sum. It must be on by default and
+    tunable without a code change."""
+    from genios_engine.platform.config import get_settings
+
+    assert get_settings().daily_llm_usd_cap > 0
+    monkeypatch.setenv("GENIOS_DAILY_LLM_USD_CAP", "0")
+    get_settings.cache_clear()
+    try:
+        from genios_engine.api import intelligence_routes as I
+        I._platform_spend_ceiling()        # 0 = disabled → returns without touching the DB
+    finally:
+        get_settings.cache_clear()

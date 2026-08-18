@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # (eu.i.posthog.com), not the app/query host.
     posthog_api_key: str = ""
     posthog_host: str = "https://eu.i.posthog.com"
+
+    # Platform-wide daily LLM spend ceiling in USD. The per-org caps bound each tenant; this bounds
+    # their sum, which is the only guard against many accounts abusing us at once. 0 = disabled.
+    daily_llm_usd_cap: float = 25.0
     composio_webhook_secret: str = ""            # HMAC-SHA256 secret for inbound Composio webhooks
     cors_origins: str = "*"                       # comma-separated dashboard origins ('*' = dev)
 
