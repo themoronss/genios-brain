@@ -10,6 +10,7 @@ from genios_engine.contracts.events import AGENT_ACTIONS, AGENT_API_SCOPES, HUMA
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, hash_key,
                                          hash_password, invalidate_key_cache, jwt_encode,
                                          new_api_key, require_owner, verify_password)
+from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.db import get_engine
@@ -105,12 +106,34 @@ class Login(BaseModel):
     password: str
 
 
+_LOGIN_ATTEMPTS = 10                     # per email, per window
+_LOGIN_WINDOW_SECONDS = 300
+
+
+def _login_throttle(email: str) -> None:
+    """Cap password attempts per email. Passwords are pbkdf2 at 200k iterations, so an online
+    guess is slow — but nothing stopped an attacker from running it indefinitely, and a customer's
+    whole workspace sits behind one password. Fails OPEN on a cache outage: locking every customer
+    out because Redis blinked is the worse failure."""
+    try:
+        n = get_cache().incr_window(f"login:{email.strip().lower()}", _LOGIN_WINDOW_SECONDS)
+    except Exception:                    # noqa: BLE001
+        return
+    if n > _LOGIN_ATTEMPTS:
+        raise HTTPException(429, {"code": "TOO_MANY_ATTEMPTS",
+                                  "message": "Too many sign-in attempts. Try again in a few minutes."})
+
+
 @router.post("/login")
 def login(body: Login) -> dict:
+    _login_throttle(body.email)
     with _engine().connect() as c:
         row = c.execute(text("select id, name, pass_hash, plan_status, subscription_tier "
                              "from orgs where lower(email)=lower(:e)"), {"e": body.email}).first()
     if row is None or not verify_password(body.password, row.pass_hash):
+        from genios_engine.platform.audit import record as _rec
+        if row is not None:              # only auditable against a real tenant
+            _rec(row.id, "login_failed", actor_type="user", actor_id=body.email)
         raise HTTPException(401, "invalid email or password")
     if row.plan_status == "suspended":
         raise HTTPException(403, {"error": "ACCOUNT_SUSPENDED"})

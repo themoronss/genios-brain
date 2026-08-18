@@ -194,3 +194,67 @@ def test_spend_survives_account_deletion(admin_client):
     detail = client.get("/admin/accounts/adm_gone").json()
     assert detail["account"]["status"] == "deleted"
     assert detail["economics"]["spend_usd"] > 0
+
+
+# ── handover hardening (security review, 2026-08-18) ────────────────────────────────────
+def test_login_is_rate_limited_but_fails_open_without_a_cache(monkeypatch):
+    """A customer's whole workspace sits behind one password, so repeated guesses must be capped.
+    The cap must never become a lockout when Redis is down — that would be a worse outage than the
+    attack it prevents."""
+    from fastapi import HTTPException
+
+    from genios_engine.api import auth_routes as A2
+
+    class _Counter:
+        def __init__(self):
+            self.n = 0
+
+        def incr_window(self, key, ttl):
+            self.n += 1
+            return self.n
+
+    counter = _Counter()
+    monkeypatch.setattr(A2, "get_cache", lambda: counter)
+    for _ in range(A2._LOGIN_ATTEMPTS):
+        A2._login_throttle("a@b.com")                      # inside the cap → allowed
+    with pytest.raises(HTTPException) as exc:
+        A2._login_throttle("a@b.com")
+    assert exc.value.status_code == 429
+
+    class _Broken:
+        def incr_window(self, key, ttl):
+            raise RuntimeError("redis down")
+
+    monkeypatch.setattr(A2, "get_cache", lambda: _Broken())
+    A2._login_throttle("a@b.com")                          # must not raise
+
+
+def test_public_scorecard_hides_the_tenant_count_below_min_n():
+    """The scorecard is public by design, but the raw tenant count is a disclosure about us, not a
+    statement about the product. It reports the gate until there are enough tenants to anonymise."""
+    from genios_engine.api import benchmarks_routes as B
+
+    class _Conn:
+        def execute(self, *a, **k):
+            class R:
+                @staticmethod
+                def scalar():
+                    return 2
+            return R()
+
+    scale = B._scale(_Conn())
+    assert scale["orgs"] is None and scale["orgs_reason"] == "below_min_n"
+    assert B._MIN_N >= 30
+
+
+def test_the_dev_ingest_endpoint_is_not_reachable_without_the_internal_token():
+    """An unauthenticated POST that runs the capture pipeline has no place on a customer deployment."""
+    import inspect
+
+    from genios_engine.api import routes as R
+    from genios_engine.platform.auth import require_internal
+    from fastapi.params import Depends as DependsMarker
+
+    sig = inspect.signature(R.ingest_sample)
+    assert any(isinstance(p.default, DependsMarker) and p.default.dependency is require_internal
+               for p in sig.parameters.values())

@@ -475,9 +475,12 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
             "note": "full-history backfill draining in the background (older tail incremental skips)"}
 
 
-@router.post("/dev/ingest-sample")
-def ingest_sample() -> dict:
-    """No-config demo: fake Gmail event through the FULL L1 pipeline, returns trace."""
+@router.post("/dev/ingest-sample", include_in_schema=False)
+def ingest_sample(_internal: None = Depends(require_internal)) -> dict:
+    """No-config demo: fake Gmail event through the FULL L1 pipeline, returns trace.
+
+    Gated behind the internal token: it is a developer aid, and an unauthenticated POST that runs
+    the capture pipeline has no business being reachable on a customer deployment."""
     conn = FakeGmailConnector()
     out = []
     for o in conn.incremental_changes().objects:

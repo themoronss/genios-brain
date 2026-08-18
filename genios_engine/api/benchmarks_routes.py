@@ -36,8 +36,14 @@ def _scale(conn) -> dict:
             return int(conn.execute(text(sql)).scalar() or 0)
         except Exception:
             return 0
+    # Tenant count gets the same min-N honesty as every metric below it. The scorecard is public on
+    # purpose — a benchmark nobody can game has to be — but a raw "orgs: 2" tells a competitor our
+    # exact customer count while telling a reader nothing about whether the product works. Below the
+    # gate we report the gate, not the number; the metrics themselves are unaffected.
+    orgs = count("select count(*) from orgs")
     return {
-        "orgs": count("select count(*) from orgs"),
+        "orgs": orgs if orgs >= _MIN_N else None,
+        "orgs_reason": None if orgs >= _MIN_N else "below_min_n",
         "decisions_30d": count("select count(*) from decisions "
                                "where created_at > now() - interval '30 days'"),
         "entities": count("select count(*) from graph_nodes "
