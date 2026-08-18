@@ -112,6 +112,16 @@ def deduct(conn, org_id: str, cost: int, *, reason: str, idem: str, bucket: str 
         return False                                      # insufficient balance
     _ledger(conn, org_id, kind="deduct", amount=-cost, balance_after=int(updated.bal),
             reason=reason, idem=idem, bucket=bucket)
+    # Reported from inside the idempotency guard, so a retried request never double-counts credit
+    # usage in PostHog the way it never double-charges the ledger.
+    try:
+        from genios_engine.platform import analytics
+        analytics.capture(org_id, "credits_used", {
+            "credits": cost, "bucket": bucket, "reason": reason,
+            "balance_after": int(updated.bal),
+        })
+    except Exception:      # noqa: BLE001 — billing is committed; telemetry is best-effort
+        pass
     return True
 
 

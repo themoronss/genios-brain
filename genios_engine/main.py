@@ -27,6 +27,7 @@ from genios_engine.api.billing_routes import router as billing_router
 from genios_engine.api.mapping_routes import router as mapping_router
 from genios_engine.api.merge_routes import router as merge_router
 from genios_engine.api.segments_routes import router as segments_router
+from genios_engine.api.admin_routes import router as admin_router
 from genios_engine.api.situation_routes import router as situation_router
 from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
@@ -73,6 +74,36 @@ else:
     app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_credentials=True,
                        allow_methods=["*"], allow_headers=["*"])
 
+@app.middleware("http")
+async def _api_call_analytics(request, call_next):
+    """One `api_call` event per authenticated request — the "is this account actually using the
+    product?" signal, plus latency.
+
+    Deliberately cheap and side-effect free: it reads the org that the route's own dependency
+    already resolved (`request.state.org_id`), so it neither re-authenticates nor learns anything a
+    route did not. Unauthenticated and pre-auth failures emit nothing — an anonymous 401 is not
+    product usage. The ROUTE TEMPLATE is recorded, never the resolved path, so ids stay out of the
+    property values and the breakdown stays groupable.
+    """
+    import time as _t
+    started = _t.perf_counter()
+    response = await call_next(request)
+    try:
+        org_id = getattr(request.state, "org_id", None)
+        if org_id:
+            route = request.scope.get("route")
+            from genios_engine.platform import analytics
+            analytics.capture(org_id, "api_call", {
+                "path": getattr(route, "path", request.url.path),
+                "method": request.method,
+                "status": response.status_code,
+                "latency_ms": round((_t.perf_counter() - started) * 1000, 1),
+            })
+    except Exception:            # noqa: BLE001 — telemetry never touches the response
+        pass
+    return response
+
+
 app.include_router(auth_router)
 app.include_router(router)
 app.include_router(workspace_router)
@@ -99,6 +130,7 @@ app.include_router(benchmarks_router)
 app.include_router(home_router)
 app.include_router(mapping_router)
 app.include_router(billing_router)
+app.include_router(admin_router)     # cross-org admin console (is_internal-gated)
 
 
 @app.get("/")

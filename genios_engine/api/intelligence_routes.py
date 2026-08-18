@@ -161,6 +161,24 @@ def _enforce_query_budget(org_id: str) -> None:
         pass
 
 
+def _stamp_activation(org_id: str) -> None:
+    """Mark the moment this account first asked the product a question — the activation event the
+    growth funnel and signup cohorts are measured against (ANALYTICS_V3_PLAN §1). Written once:
+    the guard makes every later query a zero-row update. A cached answer counts too — the user
+    still used the product. Never raises; analytics must not break an answer."""
+    try:
+        with _graph.engine.begin() as c:
+            res = c.execute(text("update orgs set activated_at=now() "
+                                 "where id=:o and activated_at is null"), {"o": org_id})
+        if res.rowcount:
+            # Fired exactly once per account, on the transition — the activation event every
+            # funnel and cohort in PostHog is measured against.
+            from genios_engine.platform import analytics
+            analytics.capture_with_person(_graph.engine, org_id, "org_activated")
+    except Exception:                      # noqa: BLE001
+        _log.warning("activation stamp failed for %s", org_id)
+
+
 @router.post("/v1/intelligence/query")
 def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) -> dict:
     if _graph is None:
@@ -168,6 +186,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     question = str((body.query or {}).get("question") or "").strip()
     if not question:
         raise HTTPException(422, "query.question is required")
+    _stamp_activation(org_id)
     module_id = body.module_id or "sales"
     evaluation_time = datetime.now(timezone.utc)
     gv = current_graph_version(_graph, org_id)
@@ -188,6 +207,11 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
             authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
         env = hit.envelope if isinstance(hit.envelope, dict) else json.loads(hit.envelope)
         env["cached"] = True
+        # A cached answer is still the customer using the product — counted, but flagged, so the
+        # "cost per question" tile can tell free answers from ones that spent tokens.
+        from genios_engine.platform import analytics
+        analytics.capture(org_id, "intelligence_query",
+                          {"module_id": module_id, "cached": True, "route": env.get("route")})
         return env
 
     _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
@@ -229,6 +253,13 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
            metadata={"audit_category": "intelligence", "module_id": module_id,
                      "route": env.get("route"), "action": rec.get("action"),
                      "question": question[:120]})
+
+    # The billable moment. No question text ever leaves the engine — only what was asked *about*.
+    from genios_engine.platform import analytics
+    analytics.capture(org_id, "intelligence_query", {
+        "module_id": module_id, "cached": False, "route": env.get("route"),
+        "confidence": env.get("confidence"), "action": rec.get("action"),
+    })
 
     return env
 

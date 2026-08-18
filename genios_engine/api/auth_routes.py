@@ -85,6 +85,17 @@ def register(body: Register) -> dict:
                    "pfx": prefix, "sc": sorted(GRANTABLE)})
     token = jwt_encode({"org_id": org_id, "email": body.email, "exp": time.time() + JWT_TTL_SECONDS},
                        get_settings().jwt_secret)
+    # Signup is the first point of the growth funnel; login already audits, signup did not, so the
+    # admin console had no server-side record of *when* an account entered (orgs.created_at alone
+    # can't be joined against the activity timeline). Never fatal — record() swallows its errors.
+    from genios_engine.platform.audit import record
+    record(org_id, "user_signed_up", actor_type="user", actor_id=body.email,
+           metadata={"company": (body.company or "").strip()[:120] or None})
+    # Server-side signup event: the top of the funnel must be counted where the account is actually
+    # created, not where a browser says it was — the client event can be blocked or replayed.
+    from genios_engine.platform import analytics
+    analytics.capture_with_person(_engine(), org_id, "user_signed_up",
+                                  {"company": (body.company or "").strip()[:120] or None})
     return {"org_id": org_id, "token": token, "name": body.name, "email": body.email,
             "api_key": raw, "key_prefix": prefix, "note": "store api_key now — shown only once"}
 
@@ -107,6 +118,10 @@ def login(body: Login) -> dict:
                        get_settings().jwt_secret)
     from genios_engine.platform.audit import record
     record(row.id, "user_logged_in", actor_type="user", actor_id=body.email)
+    # Login carries the person properties too: it is the most frequent moment we can cheaply
+    # refresh an account's plan / paying / internal flags in PostHog.
+    from genios_engine.platform import analytics
+    analytics.capture_with_person(_engine(), row.id, "user_logged_in")
     return {"org_id": row.id, "token": token, "name": row.name, "email": body.email,
             "plan": row.subscription_tier}
 

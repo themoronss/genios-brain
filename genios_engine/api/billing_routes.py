@@ -179,6 +179,13 @@ def verify(org_id: str, body: VerifyIn, org: str = Depends(_org)) -> dict:
         B.activate_plan(conn, org, plan, payment_id=body.razorpay_payment_id)
         bal = B.balance(conn, org)
     _publish(org)
+    # Revenue is recorded server-side only. The browser also fires a checkout event, but that one
+    # is a funnel signal — counting it as money would double-count every refresh of the success page.
+    from genios_engine.platform import analytics
+    analytics.capture_with_person(_store().engine, org, "payment_completed", {
+        "plan": plan, "amount_inr": B.PLAN_PRICES.get(plan, {}).get("inr", 0) / 100.0,
+        "processor": "razorpay",
+    })
     return {"activated": True, "plan": plan, "unlocked": [],
             "period_days": B.PLAN_PRICES.get(plan, {}).get("period_days", 30),
             "balance": bal["balance"]}
@@ -213,6 +220,11 @@ def verify_topup(org_id: str, body: TopupVerifyIn, org: str = Depends(_org)) -> 
                                     idem=f"topup:{body.razorpay_payment_id}",
                                     reason=f"pack:{body.pack}")
     _publish(org)
+    from genios_engine.platform import analytics
+    analytics.capture_with_person(_store().engine, org, "topup_purchased", {
+        "pack": body.pack, "credits": pack["credits"],
+        "amount_inr": pack.get("inr", 0) / 100.0, "processor": "razorpay",
+    })
     return {"granted": True, "pack": body.pack, "credits": pack["credits"],
             "label": pack["label"], "balance_after": new_balance}
 

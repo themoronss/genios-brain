@@ -334,3 +334,17 @@ class GraphStore:
                 "success, error, event_id) values (:o, :m, :p, :it, :ot, :s, :e, :ev)"),
                 {"o": org_id, "m": model, "p": purpose, "it": input_tokens, "ot": output_tokens,
                  "s": success, "e": (error or None), "ev": event_id})
+        # Every LLM call in the engine lands here, so this is the one place that can report spend
+        # to PostHog without a per-call-site instrumentation that later drifts. Priced with the same
+        # function the admin console uses, so both surfaces quote one dollar figure.
+        try:
+            from genios_engine.platform import analytics, metrics
+            analytics.capture(org_id, "llm_call", {
+                "model": model, "purpose": purpose,
+                "input_tokens": int(input_tokens or 0), "output_tokens": int(output_tokens or 0),
+                "tokens": int(input_tokens or 0) + int(output_tokens or 0),
+                "cost_usd": metrics.cost_usd(model, input_tokens or 0, output_tokens or 0),
+                "success": bool(success),
+            })
+        except Exception:      # noqa: BLE001 — accounting is recorded; telemetry is best-effort
+            pass

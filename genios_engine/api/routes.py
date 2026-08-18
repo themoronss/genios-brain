@@ -51,6 +51,14 @@ _demo_repo = InMemorySourceEventRepository()          # /dev/ingest-sample only 
 
 
 # ── health / config ──────────────────────────────────────────────────────────────
+def _bind_gate_costs(gate, org_id: str) -> None:
+    """Point a shared relevance gate's cost recording at the tenant currently being synced.
+    Cross-org sweeps reuse one classifier; without this every gate call would be billed to the
+    first org in the loop."""
+    if gate is not None and _graph is not None and hasattr(gate, "bind_costs"):
+        gate.bind_costs(_graph.record_cost, org_id)
+
+
 @router.get("/health")
 def health() -> dict:
     return {"status": "ok", "layer": "L1 capture"}
@@ -161,7 +169,7 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
     try:
         run_sync(make_connector_for(connection), org_id=connection.org_id,
                  connection_id=connection.connection_id, repo=_repo, mode=mode, limit=limit,
-                 parked_store=_parked, relevance=make_relevance_classifier(),
+                 parked_store=_parked, relevance=make_relevance_classifier(connection.org_id),
                  trace_repo=_trace_repo, payload_store=_payload_store,
                  prepared_store=_prepared_store,
                  sender_resolver=_sender_resolver_for(connection.org_id),
@@ -186,6 +194,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     rc = make_relevance_classifier()
     l1_ok = l1_err = 0
     for conn in conns:                            # L1: pull each connection (one bad source ≠ others)
+        _bind_gate_costs(rc, conn.org_id)
         try:
             run_sync(make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
@@ -384,6 +393,7 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "duplicate": 0}
     per = []
     for conn in conns:
+        _bind_gate_costs(rc, conn.org_id)
         try:
             summary = run_sync(make_connector_for(conn), org_id=conn.org_id,
                                connection_id=conn.connection_id, repo=_repo, mode=mode,
@@ -449,7 +459,7 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
             summary = backfill_drain(
                 make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                 repo=_repo, source=conn.source_type, limit=limit,
-                relevance=make_relevance_classifier(), parked_store=_parked,
+                relevance=make_relevance_classifier(conn.org_id), parked_store=_parked,
                 sender_resolver=_sender_resolver_for(conn.org_id), trace_repo=_trace_repo,
                 payload_store=_payload_store, prepared_store=_prepared_store,
                 document_job_store=_documents, run_ledger=_run_ledger)
@@ -812,7 +822,7 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
 def _sync_source(org_id: str, source_type: str, limit: int):
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
-    rel = make_relevance_classifier()          # ONE classifier: connector gates on snippet + fetches
+    rel = make_relevance_classifier(org_id)    # ONE classifier: connector gates on snippet + fetches
     return run_sync(make_connector_for(conn, relevance=rel),   # only keepers; pipeline reuses its cache
                     org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
@@ -873,7 +883,7 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
             summary = run_sync(
                 connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
                 mode="backfill", cursor=cursor, limit=limit, source=source_type,
-                cursor_store=None, max_pages=1, relevance=make_relevance_classifier(),
+                cursor_store=None, max_pages=1, relevance=make_relevance_classifier(org_id),
                 parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
                 trace_repo=_trace_repo, payload_store=_payload_store,
                 prepared_store=_prepared_store, document_job_store=_documents,
@@ -944,7 +954,7 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
     bar can move live. Returns (scanned, emitted, capped-at-ceiling)."""
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
-    rel = make_relevance_classifier()          # ONE classifier for the whole backfill: the connector
+    rel = make_relevance_classifier(org_id)    # ONE classifier for the whole backfill: the connector
     connector = make_connector_for(conn, relevance=rel)   # gates on snippet + fetches only keepers;
     event_cap = _SOURCE_EVENT_CAP.get(source_type)        # the pipeline reuses its primed verdicts.
     cursor: str | None = None
@@ -1558,16 +1568,9 @@ def activity_feed(limit: int = 20, org_id: str = Depends(get_current_org)) -> di
     return {"events": events[:limit]}
 
 
-# USD per token (input, output) — approximate Anthropic list prices, keyed by model family.
-_LLM_PRICE = {"opus": (15.0e-6, 75.0e-6), "sonnet": (3.0e-6, 15.0e-6), "haiku": (0.80e-6, 4.0e-6)}
-
-
-def _llm_price(model: str) -> tuple[float, float]:
-    m = (model or "").lower()
-    for k, p in _LLM_PRICE.items():
-        if k in m:
-            return p
-    return _LLM_PRICE["haiku"]
+# Pricing lives in platform.metrics so the tenant-facing usage endpoints below and the cross-org
+# admin console quote the SAME dollar figure for the same tokens (ANALYTICS_V3_PLAN §1).
+from genios_engine.platform.metrics import llm_price as _llm_price          # noqa: E402
 
 
 @router.get("/v1/usage/llm/summary")

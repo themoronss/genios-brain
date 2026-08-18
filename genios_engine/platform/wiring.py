@@ -236,17 +236,26 @@ def make_pack_registry():
     return make_registry(s.database_url)
 
 
-def make_relevance_classifier():
+def make_relevance_classifier(org_id: str | None = None):
     """The L1 S2 relevance gate. Prefers the LLM junk-gate whenever an Anthropic key is present
     (production) — it is the one reliable filter that keeps noise OUT of the graph, replacing the
     over-aggressive regex drops. Falls back to the deterministic classifier only when explicitly
-    opted in (dev), and to None (off) otherwise — so the hermetic test suite is unchanged."""
+    opted in (dev), and to None (off) otherwise — so the hermetic test suite is unchanged.
+
+    Pass `org_id` wherever the caller knows the tenant: the gate then writes its token usage to
+    llm_costs like every other LLM call. Without it the gate still works, it just spends money
+    invisibly — which is how reported spend drifted below the real Anthropic bill."""
     s = get_settings()
     if s.l1_llm_gate and s.use_real_llm:
         from genios_engine.capture.gate.relevance import LLMRelevanceClassifier
         from genios_engine.context.llm.client import LLMClient
-        return LLMRelevanceClassifier(
+        gate = LLMRelevanceClassifier(
             LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model))
+        if org_id:
+            store = make_graph_store()
+            if store is not None:
+                gate.bind_costs(store.record_cost, org_id)
+        return gate
     if s.enable_l1_relevance:
         from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
         return DeterministicRelevanceClassifier()

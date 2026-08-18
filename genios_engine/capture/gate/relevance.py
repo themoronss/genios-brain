@@ -125,10 +125,33 @@ class LLMRelevanceClassifier:
 
     name = "relevance-llm-1"
 
-    def __init__(self, llm, batch_size: int = 12) -> None:
+    def __init__(self, llm, batch_size: int = 12, *, cost_sink=None, org_id: str | None = None) -> None:
         self._llm = llm
         self._batch_size = max(1, int(batch_size))
         self._cache: dict[str, RelevanceVerdict] = {}       # source_object_id -> verdict (this run)
+        # This gate runs on EVERY unknown-sender email, so it is a real line item — it was spending
+        # tokens without appearing in llm_costs, which made reported spend lower than the actual
+        # Anthropic bill. Optional so the classifier stays usable without a store (tests, dev).
+        self._cost_sink = cost_sink
+        self._org_id = org_id
+
+    def bind_costs(self, cost_sink, org_id: str) -> "LLMRelevanceClassifier":
+        """Attach cost recording once the org is known (the classifier is built before the sync)."""
+        self._cost_sink, self._org_id = cost_sink, org_id
+        return self
+
+    def _record(self, res) -> None:
+        if self._cost_sink is None or not self._org_id:
+            return
+        try:
+            self._cost_sink(org_id=self._org_id, model=getattr(res, "model", "") or self._llm.model,
+                            purpose="relevance_gate",
+                            input_tokens=getattr(res, "input_tokens", 0) or 0,
+                            output_tokens=getattr(res, "output_tokens", 0) or 0,
+                            success=bool(getattr(res, "ok", True)),
+                            error=getattr(res, "error", None))
+        except Exception:      # noqa: BLE001 — accounting must never break capture
+            pass
 
     # ---- batch pre-classification (called once per page, before per-event capture) ----
     def prime(self, objects) -> None:
@@ -163,6 +186,7 @@ class LLMRelevanceClassifier:
         res = self._llm.call(
             _GATE_BATCH_PROMPT.format(n=len(chunk), last=len(chunk) - 1, emails=emails),
             max_tokens=40 * len(chunk) + 60)
+        self._record(res)
         if not res.ok:
             return
         arr = res.parsed if isinstance(res.parsed, list) else (res.parsed or {}).get("results")
@@ -197,6 +221,7 @@ class LLMRelevanceClassifier:
             return RelevanceVerdict(True, 0.50, disposition="keep", reason="empty_pass")
         res = self._llm.call(_GATE_PROMPT.format(source=ctx.event.source, content=content),
                              max_tokens=120)
+        self._record(res)
         if not res.ok:                                        # fail OPEN — never lose mail on an error
             return RelevanceVerdict(True, 0.50, disposition="keep", reason="gate_llm_unavailable")
         return _verdict_from(res.parsed)

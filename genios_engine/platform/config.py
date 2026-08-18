@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     redis_url: str = ""                          # rediss://… (Upstash) or redis://localhost
     jwt_secret: str = "genios-dev-secret-change-in-prod"   # dashboard-session JWT signing
     internal_token: str = ""                     # cron/internal endpoints (sweep, ingest-all)
+    # GeniOS staff logins allowed into the cross-org admin console, comma-separated emails.
+    # Deliberately env-only: superadmin is a property of US, not of a tenant row, so granting it
+    # never means writing to a customer's account. Empty (the default) = nobody, which is what a
+    # customer deployment should always be.
+    superadmin_emails: str = ""
+
+    # PostHog (server-side product analytics). Empty key = emitter off, which is the correct
+    # default for dev and for any self-hosted deployment. Host is the INGEST host
+    # (eu.i.posthog.com), not the app/query host.
+    posthog_api_key: str = ""
+    posthog_host: str = "https://eu.i.posthog.com"
     composio_webhook_secret: str = ""            # HMAC-SHA256 secret for inbound Composio webhooks
     cors_origins: str = "*"                       # comma-separated dashboard origins ('*' = dev)
 

@@ -177,6 +177,17 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                        mode=mode, summary=summary)
         except Exception:       # noqa: BLE001 — a ledger hiccup must not fail the sync
             pass
+    # "Data is flowing" is a funnel step, so it needs an event and not just a ledger row. Counts
+    # only — no subject, sender or body ever leaves the engine.
+    try:
+        from genios_engine.platform import analytics
+        analytics.capture(org_id, "sync_completed", {
+            "source": source, "mode": mode,
+            "scanned": getattr(summary, "scanned", 0), "emitted": getattr(summary, "emitted", 0),
+            "dropped": getattr(summary, "dropped", 0), "parked": getattr(summary, "parked", 0),
+        })
+    except Exception:           # noqa: BLE001
+        pass
     return summary
 
 

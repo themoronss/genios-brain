@@ -202,6 +202,11 @@ def get_auth_ctx(request: Request,
         raise HTTPException(401, "Missing bearer credential")
     ctx = verify_bearer(creds.credentials)
     request.state.auth = ctx
+    # The analytics middleware runs after the route and must not re-authenticate; it reads the org
+    # this dependency already resolved. Set explicitly (not derived from .auth) so the middleware
+    # stays independent of AuthCtx's shape.
+    request.state.org_id = ctx.org_id
+    request.state.agent_id = ctx.agent_id
     return ctx
 
 
@@ -264,6 +269,44 @@ def require_owner(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
     if ctx.scopes is not None:
         raise HTTPException(403, "owner credential required")
     check_org_kill(ctx.org_id)
+    return ctx
+
+
+def superadmin_emails() -> set[str]:
+    raw = get_settings().superadmin_emails or ""
+    return {e.strip().lower() for e in raw.split(",") if e.strip()}
+
+
+def require_admin(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """GeniOS-staff boundary for the cross-org admin console.
+
+    Every other dependency here answers "which tenant is this?"; this one answers "is this us?".
+    The admin routes read *all* tenants' spend, revenue and activity, so the check is the narrowest
+    in the file — and it is answered from the DEPLOYMENT, not from tenant data:
+
+      • the credential must be an owner JWT (never a scoped API key: a leaked agent key must not
+        become a cross-org read), and
+      • the email it was issued to must appear in GENIOS_SUPERADMIN_EMAILS.
+
+    Being staff is a fact about us, so granting it must never mean writing to a customer's account
+    row. `orgs.is_internal` exists for a different job — excluding our own tenants from reported
+    numbers — and is accepted here only as a fallback so an existing internal tenant keeps working.
+    """
+    if ctx.scopes is not None:
+        raise HTTPException(403, "owner credential required")
+    allowed = superadmin_emails()
+    if allowed and (ctx.actor_id or "").strip().lower() in allowed:
+        return ctx
+    try:
+        with _engine().connect() as c:
+            row = c.execute(text("select is_internal from orgs where id=:o"),
+                            {"o": ctx.org_id}).first()
+    except Exception as exc:                             # noqa: BLE001
+        # Unlike check_org_kill this fails CLOSED: a database hiccup must never open a cross-org
+        # read to a customer tenant.
+        raise HTTPException(503, "admin authorization unavailable") from exc
+    if row is None or not row.is_internal:
+        raise HTTPException(403, "admin access required")
     return ctx
 
 

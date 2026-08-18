@@ -408,6 +408,15 @@ def delete_account(org_id: str, org: str = Depends(_org)) -> dict:
             {"o": org})]
         removed_files = _remove_upload_files(upload_paths)
         _wipe(c, org)
+        # Retained financials (llm_costs / credit_ledger / subscriptions — deliberately absent from
+        # _ORG_SCOPED_TABLES and un-cascaded in 0058) would be orphaned rows with an unresolvable
+        # org_id once the tenant row goes. Keep identity-only fields so our own accounting stays
+        # attributable; no graph, content or message data is carried over.
+        c.execute(text(
+            "insert into orgs_archive (org_id, name, company, email, subscription_tier, "
+            "is_internal, created_at) select id, name, company, email, subscription_tier, "
+            "is_internal, created_at from orgs where id=:o "
+            "on conflict (org_id) do nothing"), {"o": org})
         deleted = c.execute(text("delete from orgs where id=:o"), {"o": org})
         if deleted.rowcount != 1:
             raise RuntimeError("account erasure did not delete exactly one organization")
