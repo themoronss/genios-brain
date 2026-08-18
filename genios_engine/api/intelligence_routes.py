@@ -165,18 +165,20 @@ def _stamp_activation(org_id: str) -> None:
     """Mark the moment this account first asked the product a question — the activation event the
     growth funnel and signup cohorts are measured against (ANALYTICS_V3_PLAN §1). Written once:
     the guard makes every later query a zero-row update. A cached answer counts too — the user
-    still used the product. Never raises; analytics must not break an answer."""
+    still used the product. Never raises; analytics must not break an answer.
+
+    Returns True only on the transition, so the caller can emit `org_activated` AFTER the query
+    event it belongs to. Emitting it here put activation *before* the question that caused it, and
+    a funnel ordered signup → question → activated then converted 0% of the accounts that had in
+    fact activated."""
     try:
         with _graph.engine.begin() as c:
             res = c.execute(text("update orgs set activated_at=now() "
                                  "where id=:o and activated_at is null"), {"o": org_id})
-        if res.rowcount:
-            # Fired exactly once per account, on the transition — the activation event every
-            # funnel and cohort in PostHog is measured against.
-            from genios_engine.platform import analytics
-            analytics.capture_with_person(_graph.engine, org_id, "org_activated")
+        return bool(res.rowcount)
     except Exception:                      # noqa: BLE001
         _log.warning("activation stamp failed for %s", org_id)
+        return False
 
 
 @router.post("/v1/intelligence/query")
@@ -186,7 +188,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     question = str((body.query or {}).get("question") or "").strip()
     if not question:
         raise HTTPException(422, "query.question is required")
-    _stamp_activation(org_id)
+    activated_now = _stamp_activation(org_id)
     module_id = body.module_id or "sales"
     evaluation_time = datetime.now(timezone.utc)
     gv = current_graph_version(_graph, org_id)
@@ -212,6 +214,8 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         from genios_engine.platform import analytics
         analytics.capture(org_id, "intelligence_query",
                           {"module_id": module_id, "cached": True, "route": env.get("route")})
+        if activated_now:
+            analytics.capture_with_person(_graph.engine, org_id, "org_activated")
         return env
 
     _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
@@ -260,6 +264,8 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         "module_id": module_id, "cached": False, "route": env.get("route"),
         "confidence": env.get("confidence"), "action": rec.get("action"),
     })
+    if activated_now:
+        analytics.capture_with_person(_graph.engine, org_id, "org_activated")
 
     return env
 
