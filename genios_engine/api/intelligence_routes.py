@@ -209,6 +209,8 @@ def _platform_spend_ceiling() -> None:
         return
     if spent >= cap:
         _log.error("platform daily LLM cap hit: $%.2f >= $%.2f — refusing new queries", spent, cap)
+        from genios_engine.platform import ops_alert
+        ops_alert.notify("platform_llm_cap_hit", spent_usd=round(spent, 2), cap_usd=cap)
         raise HTTPException(503, {
             "code": "PLATFORM_BUSY",
             "message": "GeniOS is briefly at capacity. Please try again shortly."})

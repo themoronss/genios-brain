@@ -127,21 +127,42 @@ def _sender_resolver_for(org_id: str):
     return _known
 
 
-def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary) -> None:
-    """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop."""
+def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary=None,
+                error: str | None = None) -> None:
+    """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop.
+
+    `summary` is None and `error` is set when the caller is reporting a TOTAL sync failure (the
+    connector never returned a batch, so no SyncSummary exists) — previously this case produced no
+    row at all, so a fully-broken connection was invisible anywhere but the server log. Never raises:
+    a ledger hiccup must not break the caller, whether that's the sync loop or a failure handler."""
     if _graph is None:
         return
     from sqlalchemy import text
 
     from genios_engine.platform.ids import new_id
-    with _graph.engine.begin() as c:
-        c.execute(text(
-            "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
-            "scanned, emitted, dropped, parked, duplicate, quarantined) "
-            "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu)"),
-            {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
-             "sc": summary.scanned, "em": summary.emitted, "dr": summary.dropped,
-             "pa": summary.parked, "du": summary.duplicate, "qu": summary.quarantined})
+    try:
+        with _graph.engine.begin() as c:
+            c.execute(text(
+                "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
+                "scanned, emitted, dropped, parked, duplicate, quarantined, error) "
+                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err)"),
+                {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
+                 "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
+                 "dr": getattr(summary, "dropped", 0), "pa": getattr(summary, "parked", 0),
+                 "du": getattr(summary, "duplicate", 0), "qu": getattr(summary, "quarantined", 0),
+                 "err": error})
+    except Exception:      # noqa: BLE001 — a ledger hiccup must not break the caller
+        _log.exception("l1_sync_runs write failed org=%s conn=%s", org_id, connection_id)
+
+
+def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
+    from genios_engine.platform import ops_alert
+    ops_alert.notify("sync_failed", org_id=org_id, source=source, error=error[:300])
+    try:
+        from genios_engine.platform import analytics
+        analytics.capture(org_id, "sync_failed", {"source": source, "error": error[:200]})
+    except Exception:      # noqa: BLE001
+        pass
 
 
 def _run_l2(org_id: str) -> None:
@@ -176,9 +197,14 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
                  cursor_store=_cursors,
                  document_job_store=_documents, source=connection.source_type, max_pages=20,
                  run_ledger=_run_ledger)
-    except Exception:
+    except Exception as e:
         _log.exception("L1 sync failed for org_id=%s connection_id=%s",
                        connection.org_id, connection.connection_id)
+        # A total failure (bad auth, provider outage) never reaches run_ledger inside run_sync — write
+        # the row here so it's visible in the admin console instead of only in the server log.
+        _run_ledger(org_id=connection.org_id, connection_id=connection.connection_id,
+                    source=connection.source_type, mode=mode, error=str(e)[:500])
+        _notify_sync_failure(org_id=connection.org_id, source=connection.source_type, error=str(e))
     _run_l2(connection.org_id)
 
 
@@ -205,9 +231,12 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
                      document_job_store=_documents, source=conn.source_type, max_pages=20,
                      run_ledger=_run_ledger)
             l1_ok += 1
-        except Exception:
+        except Exception as e:
             l1_err += 1
             _log.exception("auto-sync L1 failed org=%s conn=%s", conn.org_id, conn.connection_id)
+            _run_ledger(org_id=conn.org_id, connection_id=conn.connection_id,
+                        source=conn.source_type, mode=mode, error=str(e)[:500])
+            _notify_sync_failure(org_id=conn.org_id, source=conn.source_type, error=str(e))
     orgs = {c.org_id for c in conns}
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
         _run_l2(org)

@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # Platform-wide daily LLM spend ceiling in USD. The per-org caps bound each tenant; this bounds
     # their sum, which is the only guard against many accounts abusing us at once. 0 = disabled.
     daily_llm_usd_cap: float = 25.0
+    # Founder-facing ops alerts (sync totally broken, platform LLM cap hit) — a Slack incoming
+    # webhook URL pointed at the founder's OWN workspace. Empty = alerts just log, no push.
+    ops_alert_webhook: str = ""
     composio_webhook_secret: str = ""            # HMAC-SHA256 secret for inbound Composio webhooks
     cors_origins: str = "*"                       # comma-separated dashboard origins ('*' = dev)
 
