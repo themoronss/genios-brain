@@ -69,12 +69,20 @@ def _load_enterprise(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
 
     A row without a resolvable source event is isolated (not returned) rather than promoted to an
     org-visible fact — the join itself is the lineage check.
+
+    ``entity_id`` (the fact's ``subject_node_id``, when the ref points at a fact) lets a unit tell
+    "10 observations about 10 different companies" apart from "10 observations about the same one"
+    — a ref with no fact behind it (edge- or observation-sourced) carries ``entity_id = None``, and
+    a unit that needs entity diversity must treat that as unknown, not as a distinct entity.
     """
     rows = conn.execute(text(
         "select r.source_ref_id, r.source, r.independence_group, r.event_id, "
+        "gf.subject_node_id as entity_id, "
         "e.object_type, e.internal_kind, e.occurred_at "
         "from graph_source_refs r join source_events e "
         "  on e.org_id = r.org_id and e.event_id = r.event_id "
+        "left join graph_facts gf "
+        "  on gf.org_id = r.org_id and gf.fact_version_id = r.fact_version_id "
         "where r.org_id = :o and e.occurred_at >= :s "
         "order by e.occurred_at desc limit 5000"),
         {"o": org_id, "s": since}).mappings().all()

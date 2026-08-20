@@ -123,14 +123,23 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
 
 def unit_pattern_learning(batch: LearningBatch, policy: LearningPolicy,
                           now: datetime) -> list[LearningObject]:
-    """Repeated (object_type, internal_kind) over independent sources and distinct days."""
+    """Repeated (object_type, internal_kind) over independent sources and distinct days.
+
+    A generalized ORGANIZATION-brain pattern is a claim about the tenant's world, not about one
+    entity in it — so it also tracks how many DISTINCT entities (companies/people, via each ref's
+    ``entity_id``) contributed. ``min_observations`` alone can't catch "10 emails from the same
+    one account" masquerading as a pattern; ``validate_learning`` gates on entity count too.
+    """
     groups: dict[tuple[str, str], dict] = defaultdict(
-        lambda: {"n": 0, "sources": set(), "days": set()})
+        lambda: {"n": 0, "sources": set(), "days": set(), "entities": set()})
     for e in batch.enterprise:
         key = (e.get("object_type") or "?", e.get("internal_kind") or "?")
         g = groups[key]
         g["n"] += 1
         g["sources"].add(e.get("independence_group") or e.get("source_ref_id"))
+        entity_id = e.get("entity_id")
+        if entity_id:
+            g["entities"].add(entity_id)
         at = e.get("occurred_at")
         if at:
             g["days"].add(at.date())
@@ -146,7 +155,8 @@ def unit_pattern_learning(batch: LearningBatch, policy: LearningPolicy,
             evidence=LearningEvidence(
                 observations=g["n"], independent_refs=len(g["sources"]),
                 distinct_days=len(g["days"]), positive=g["n"], negative=0,
-                confidence_bp=_bp(len(g["sources"]), g["n"])),
+                confidence_bp=_bp(len(g["sources"]), g["n"]),
+                distinct_entities=len(g["entities"])),
             visibility=_org_visibility(), first_seen_at=now, last_seen_at=now,
             policy_key=policy.policy_key))
     return out
@@ -295,6 +305,10 @@ def validate_learning(obj: LearningObject, policy: LearningPolicy) -> tuple[bool
         return (False, "insufficient_observations")
     if e.distinct_days < policy.min_distinct_days:
         return (False, "insufficient_distinct_days")
+    # k-anonymity: a generalized ORGANIZATION pattern derived from too few distinct entities
+    # effectively identifies them. Other targets don't generalize across entities this way.
+    if obj.target is LearningTarget.ORGANIZATION and e.distinct_entities < policy.min_distinct_entities:
+        return (False, "insufficient_distinct_entities")
     if e.confidence_bp < policy.min_confidence_bp:
         return (False, "below_confidence_floor")
     if e.noise_bp > policy.max_noise_bp:

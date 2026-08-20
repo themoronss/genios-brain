@@ -154,12 +154,14 @@ class LearningEvidence:
     conflict_bp: int = 0
     freshness_bp: int = 10000
     business_value_bp: int = 0
+    distinct_entities: int = 0               # k-anonymity: 0 = not measured for this unit
     source_refs: tuple[str, ...] = ()
     source_trace_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         s = object.__setattr__
-        for name in ("observations", "independent_refs", "distinct_days", "positive", "negative"):
+        for name in ("observations", "independent_refs", "distinct_days", "positive", "negative",
+                     "distinct_entities"):
             v = getattr(self, name)
             if not isinstance(v, int) or isinstance(v, bool) or v < 0:
                 raise ValueError(f"{name} must be a non-negative integer")
@@ -174,6 +176,7 @@ class LearningEvidence:
                 "negative": self.negative, "confidence_bp": self.confidence_bp,
                 "noise_bp": self.noise_bp, "conflict_bp": self.conflict_bp,
                 "freshness_bp": self.freshness_bp, "business_value_bp": self.business_value_bp,
+                "distinct_entities": self.distinct_entities,
                 "source_refs": list(self.source_refs),
                 "source_trace_ids": list(self.source_trace_ids)}
 
@@ -269,6 +272,7 @@ class LearningPolicy:
     revision: int
     min_observations: int = 3
     min_distinct_days: int = 2
+    min_distinct_entities: int = 3           # k-anonymity floor for cross-entity patterns
     min_confidence_bp: int = 6000
     max_noise_bp: int = 4000
     max_conflict_bp: int = 3000

@@ -28,14 +28,17 @@ def week_key(now: datetime) -> str:
 def load_or_seed_policy(conn, org_id: str, *, now: datetime) -> LearningPolicy:
     """The active policy revision, or a seeded protective default (revision 1)."""
     row = conn.execute(text(
-        "select revision, min_observations, min_distinct_days, min_confidence_bp, max_noise_bp, "
+        "select revision, min_observations, min_distinct_days, min_distinct_entities, "
+        "min_confidence_bp, max_noise_bp, "
         "max_conflict_bp, max_runtime_ttl_seconds, organization_requires_review, "
         "knowledge_requires_review, learning_enabled from learning_policies "
         "where org_id = :o order by revision desc limit 1"), {"o": org_id}).mappings().first()
     if row is not None:
         return LearningPolicy(
             org_id=org_id, revision=row["revision"], min_observations=row["min_observations"],
-            min_distinct_days=row["min_distinct_days"], min_confidence_bp=row["min_confidence_bp"],
+            min_distinct_days=row["min_distinct_days"],
+            min_distinct_entities=row["min_distinct_entities"],
+            min_confidence_bp=row["min_confidence_bp"],
             max_noise_bp=row["max_noise_bp"], max_conflict_bp=row["max_conflict_bp"],
             max_runtime_ttl_seconds=row["max_runtime_ttl_seconds"],
             organization_requires_review=row["organization_requires_review"],
@@ -43,12 +46,13 @@ def load_or_seed_policy(conn, org_id: str, *, now: datetime) -> LearningPolicy:
     default = LearningPolicy(org_id=org_id, revision=1)
     conn.execute(text(
         "insert into learning_policies (org_id, revision, snapshot, min_observations, "
-        "min_distinct_days, min_confidence_bp, max_noise_bp, max_conflict_bp, "
+        "min_distinct_days, min_distinct_entities, min_confidence_bp, max_noise_bp, max_conflict_bp, "
         "max_runtime_ttl_seconds, organization_requires_review, knowledge_requires_review, "
-        "learning_enabled, created_at) values (:o, 1, '{}', :mo, :md, :mc, :mn, :mcf, :ttl, "
+        "learning_enabled, created_at) values (:o, 1, '{}', :mo, :md, :me, :mc, :mn, :mcf, :ttl, "
         "true, true, true, :at) on conflict (org_id, revision) do nothing"),
         {"o": org_id, "mo": default.min_observations, "md": default.min_distinct_days,
-         "mc": default.min_confidence_bp, "mn": default.max_noise_bp,
+         "me": default.min_distinct_entities, "mc": default.min_confidence_bp,
+         "mn": default.max_noise_bp,
          "mcf": default.max_conflict_bp, "ttl": default.max_runtime_ttl_seconds, "at": now})
     return default
 

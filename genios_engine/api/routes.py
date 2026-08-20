@@ -1320,6 +1320,29 @@ def context_reason(ctx: AuthCtx = Depends(require_owner)) -> dict:
     return run_l3(org_id=org_id, store=_graph, registry=_registry)
 
 
+@router.post("/organization/reset")
+def organization_reset(reason: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """The pivot primitive: declares that the org's business shape changed. Expires stale
+    Adaptive-brain leases and forces an immediate L3 re-evaluation so open situations don't
+    keep confidently reasoning against the old shape. Manual and explicit — GeniOS never
+    guesses a pivot on its own."""
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from datetime import datetime, timezone
+
+    from genios_engine.feedback.reset import apply_organization_reset, mark_situations_rerun
+    from genios_engine.reason.runner import run_all as run_l3
+    org_id = ctx.org_id
+    at = datetime.now(timezone.utc)
+    with _graph.engine.begin() as c:
+        result = apply_organization_reset(c, org_id=org_id, reason=reason, at=at,
+                                          actor=ctx.actor_id)
+    rerun = run_l3(org_id=org_id, store=_graph, registry=_registry)
+    with _graph.engine.begin() as c:
+        mark_situations_rerun(c, reset_id=result["reset_id"])
+    return {**result, "situations_rerun": rerun}
+
+
 @router.post("/context/sweep")
 def context_sweep(_internal: None = Depends(require_internal)) -> dict:
     """Daily cron: re-evaluate L3 over EVERY org's graph so time-based crossings fire with no new
