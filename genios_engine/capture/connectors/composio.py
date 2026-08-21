@@ -146,7 +146,11 @@ class ComposioGmailConnector:
     def _client_(self) -> Any:
         if self._client is None:
             from composio import Composio          # lazy: only needed on real runs
-            self._client = Composio(api_key=self._api_key)
+            # Explicit timeout — see composio_base.ComposioExec._c() for why omitting it leaves the
+            # underlying httpx client with NO bound at all, which can wedge the single-threaded
+            # scheduler forever on one stalled Gmail call. This connector has no ThreadPoolExecutor
+            # deadline wrapper (unlike ComposioExec), so this is its ONLY defense against a hang.
+            self._client = Composio(api_key=self._api_key, timeout=60)
         return self._client
 
     def _execute(self, slug: str, arguments: dict[str, Any]) -> Any:

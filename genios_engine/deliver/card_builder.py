@@ -14,7 +14,9 @@ from .slots import compute_slots
 # Law 2), on-device context_tags, the four actions, and +7d expiry. Returns a draft the renderer
 # fills and the store persists.
 
-EXPIRY_DAYS = 7
+EXPIRY_DAYS = 3650      # effectively "never" — a card only leaves the queue via user action
+                        # (do_it_myself/snooze/dismiss) or a genuine decision_expires_at deadline,
+                        # never a fixed housekeeping timer
 
 # field prefix → the surface that produced it (for the evidence chain's `source`)
 _SOURCE = {"deal": "crm", "thread": "gmail", "commitment": "gmail", "meeting": "calendar"}

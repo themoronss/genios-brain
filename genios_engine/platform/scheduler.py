@@ -9,6 +9,7 @@ deploy set GENIOS_SCHEDULER_ENABLED=false and drive /ingest/all from a single ex
 """
 from __future__ import annotations
 
+import concurrent.futures as _futures
 import threading
 
 from genios_engine.platform.config import get_settings
@@ -18,18 +19,43 @@ _log = get_logger("genios.scheduler")
 _thread: threading.Thread | None = None
 _stop = threading.Event()
 
+# Hard wall-clock cap on ONE sweep tick. Root-caused incident (2026-08-18 → 08-21): a Composio call
+# with no underlying timeout hung inside one org's sync, and because the whole sweep ran unbounded
+# on this single thread, that ONE hang froze every future tick forever — 3 days of total silence,
+# every org, with nothing in the logs to explain it (a bare `except Exception` never fires on a
+# hang, only on a raise). The Composio timeout itself is fixed (composio_base.py / composio.py),
+# but this bound stays as defense-in-depth: whatever hangs next, a tick can time out and the
+# scheduler self-heals on the NEXT tick instead of dying silently for days.
+_SWEEP_TIMEOUT_S = 1200.0      # 20 min — generous for a real multi-org sweep, still bounded
 
-def _loop(interval_seconds: float, initial_delay: float) -> None:
+
+def _run_sweep_bounded():
     # lazy import: routes.py wires the stores at import time; importing here avoids a cycle
     from genios_engine.api.routes import run_maintenance_sweep
 
+    # NOT a `with ThreadPoolExecutor(...)` block — its __exit__ calls shutdown(wait=True), which
+    # re-blocks on the same hung worker the instant .result(timeout=...) gives up, making the
+    # deadline cosmetic (the exact bug this incident traced back to in composio_base.py).
+    ex = _futures.ThreadPoolExecutor(max_workers=1)
+    try:
+        return ex.submit(run_maintenance_sweep).result(timeout=_SWEEP_TIMEOUT_S)
+    finally:
+        ex.shutdown(wait=False)
+
+
+def _loop(interval_seconds: float, initial_delay: float) -> None:
     if _stop.wait(initial_delay):        # let startup settle; interruptible
         return
     while not _stop.is_set():
         try:
             # heartbeat = sync sweep + card lifecycle (expire/snooze-wake) every tick + weekly L6
-            res = run_maintenance_sweep()
+            res = _run_sweep_bounded()
             _log.info("scheduled maintenance sweep: %s", res)
+        except _futures.TimeoutError:
+            _log.error("scheduled maintenance sweep exceeded %ss — abandoning this tick, "
+                      "the NEXT tick still fires on schedule", _SWEEP_TIMEOUT_S)
+            from genios_engine.platform import ops_alert
+            ops_alert.notify("scheduler_sweep_timeout", timeout_s=_SWEEP_TIMEOUT_S)
         except Exception:                 # noqa: BLE001 — a crashed sweep must not kill the loop
             _log.exception("scheduled maintenance sweep crashed")
         if _stop.wait(interval_seconds):  # sleep until next tick (or until stop)
