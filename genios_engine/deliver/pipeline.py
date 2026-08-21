@@ -46,7 +46,14 @@ def _open_signals_without_cards(graph, org_id: str,
             " left join reasoning_context_payloads authority_payload "
             "on authority_payload.org_id=authority_ctx.org_id and "
             "authority_payload.context_snapshot_id=authority_ctx.context_snapshot_id "
+            # Excludes an EXPIRED card from the join on purpose: an expired card used to permanently
+            # block a still-open signal from ever getting a fresh one (k.card_id was never null
+            # again), which is why signals that predate the no-auto-expiry fix (card_builder.py)
+            # were stuck invisible forever even though the underlying signal was still open and
+            # valid. A non-expired card (queued/surfaced/snoozed/claimed/resolved) still counts as
+            # "already has a card" — only 'expired' reopens the door for a rebuild.
             " left join cards k on k.signal_id=s.signal_id and k.org_id=s.org_id "
+            "and k.state != 'expired' "
             "where s.org_id=:o and s.status='open' and k.card_id is null and " +
             AUTHORITATIVE_SIGNAL_PREDICATE +
             " order by selected_rc.final_utility_bp desc, s.signal_id asc"),
