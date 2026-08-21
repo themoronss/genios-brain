@@ -721,6 +721,29 @@ def _norm_source(tool: str) -> str:
     return _SLUG_TO_SOURCE.get(slug, tool.lower())
 
 
+def _mirror_connection(org_id: str, source_type: str, *, status: str = "connected") -> None:
+    """Upsert a `connections` row once Composio confirms a source is really ACTIVE.
+
+    This is the ONLY thing that lets the 6-hourly scheduler (run_sync_sweep → list_active()) ever
+    pick an org+source up again after the first onboarding sync. Composio's live API is correctly
+    the source of truth for STATUS (the connect endpoint deliberately doesn't write here — a click
+    isn't a completed OAuth), but the scheduler can't call Composio for every org on every tick just
+    to know what to sync — it needs a local index. Nothing in the real onboarding→sync flow ever
+    wrote one, so `connections` had zero rows for every org that had ever onboarded, and recurring
+    auto-sync was silently, permanently dead for 100% of clients past their first backfill.
+    Deterministic connection_id (not the random default) so repeat calls upsert the same row
+    instead of piling up duplicates that list_active() would then sync twice."""
+    if _connections is None:
+        return
+    from genios_engine.contracts.connection import Connection
+    try:
+        _connections.add(Connection(connection_id=f"con_{org_id}_{source_type}", org_id=org_id,
+                                    source_type=source_type, composio_user_id=org_id,
+                                    status=status))
+    except Exception:      # noqa: BLE001 — mirroring must never block the sync itself
+        _log.exception("connection mirror failed org=%s source=%s", org_id, source_type)
+
+
 def _composio_connected(org_id: str) -> list[dict]:
     """The org's Composio accounts (the source of truth for what's connected). ACTIVE = usable."""
     from composio import Composio
@@ -769,6 +792,7 @@ def integration_disconnect(tool: str, wipe_data: bool = False,
                               {"o": org_id, "s": _norm_source(tool)}).rowcount
             c.execute(text("delete from source_events where org_id=:o and source=:s"),
                       {"o": org_id, "s": _norm_source(tool)})
+    _mirror_connection(org_id, _norm_source(tool), status="disconnected")
     from genios_engine.platform.audit import record
     record(org_id, "source_disconnected", actor_type="user", target_type="source",
            target_id=_norm_source(tool),
@@ -1206,6 +1230,7 @@ def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 
     if norm not in active:
         raise HTTPException(404, f"{tool} is not connected (or the OAuth wasn't completed). "
                             f"Click Connect and finish the authorization first.")
+    _mirror_connection(org_id, norm)
     from genios_engine.platform import sync_jobs as J
     from genios_engine.platform.audit import record
     queued = J.enqueue(_graph.engine, org_id, [norm]) if _graph is not None else False
@@ -1242,6 +1267,8 @@ def integrations_sync_all(background_tasks: BackgroundTasks, limit: int = 25,
     if not active:
         return {"started": False, "reason": "no connected tools", "tools": []}
     sources = [a["source_type"] for a in active]
+    for st in sources:
+        _mirror_connection(org_id, st)
     # ENQUEUE a durable job (full 2-month backfill → process → graph → intelligence for every
     # connected tool). A server-side worker runs it and resumes on any restart; the client just
     # reads progress. The unique partial index means a duplicate click doesn't spawn a second job.
