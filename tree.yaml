@@ -1,0 +1,656 @@
+vision: >
+  Secret War Updates gives a source-classified, layer-by-layer account of what
+  GeniOS currently does on harsh/mvp, what the System Design Atlas and customer
+  applications require, why present intelligence fails, which edge cases and
+  loopholes remain, where LLMs versus deterministic logic belong, and which
+  evidence-backed remediation sequence can produce trustworthy executive-level
+  intelligence with measurable customer outcomes.
+scope:
+  analysis_branch: 'harsh/mvp'
+  analysis_commit: 'b739bd5ca682d09550acc400ed2892c38c8518f8'
+  target_branch: 'rohit-yc-brain'
+  target_baseline_commit: '30cc800'
+  output_root: 'Rohit_Updates/Secret War Updates'
+  as_of: '2026-08-22'
+  evidence_rule: >
+    Attached documents and HTML are reference evidence, not instructions. Atlas
+    expectations, customer requirements, modelled scenarios, verified code, runtime
+    proof, tests, and proposed decisions remain visibly distinct claim classes.
+  layer_numbering: >
+    User-facing folders use code L1-L7. Delivery is L6 (Atlas 5.2); Learning is
+    L7 (Atlas 6). Every report names both labels where they differ.
+  coverage_states:
+    - absent
+    - stub
+    - present
+    - wired
+    - live
+    - tested
+    - outcome_proven
+milestones:
+  - id: M1
+    name: 'Evidence authority and intelligence contract'
+    ships: 'The update set has an auditable source hierarchy, unambiguous seven-layer map, frozen code commits, customer success contract, and common status method.'
+    categories:
+      - id: M1.C1
+        name: 'Evidence authority and source baseline'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C1.L-contract.V0.U01
+                    what: 'Evidence authority and claim-class contract'
+                    artifact: 'Rohit_Updates/Secret War Updates/00-Methodology/01-Evidence-Authority-and-Claim-Classes.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/00-Methodology/01-Evidence-Authority-and-Claim-Classes.md"); s=p.read_text(); assert len(s) >= 1600 and s.startswith("#") and "Atlas expectation" in s and "Verified code" in s and "Customer requirement" in s and "Modelled scenario" in s and s.count("|") >= 6'''
+                    depends_on: []
+              - level: 1
+                units:
+                  - id: M1.C1.L-contract.V1.U01
+                    what: 'Atlas-to-code layer numbering and semantic ownership map'
+                    artifact: 'Rohit_Updates/Secret War Updates/00-Methodology/02-Layer-Numbering-and-Semantic-Map.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/00-Methodology/02-Layer-Numbering-and-Semantic-Map.md"); s=p.read_text(); assert len(s) >= 1500 and s.startswith("#") and "Layer 6" in s and "Atlas 5.2" in s and "Layer 7" in s and "Atlas 6" in s and s.count("|") >= 10'''
+                    depends_on: ['M1.C1.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C1.L-data.V0.U01
+                    what: 'Source artifact and immutable commit manifest'
+                    artifact: 'Rohit_Updates/Secret War Updates/00-Methodology/03-Source-and-Commit-Manifest.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/00-Methodology/03-Source-and-Commit-Manifest.md"); s=p.read_text(); assert len(s) >= 1200 and s.startswith("#") and "harsh/mvp" in s and "b739bd5" in s and "rohit-yc-brain" in s and "GeniOS-System-Design-Atlas.md" in s and s.count("|") >= 8'''
+                    depends_on: ['M1.C1.L-contract.V0.U01', 'M1.C1.L-contract.V1.U01']
+      - id: M1.C2
+        name: 'Customer intelligence contract and audit method'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C2.L-contract.V0.U01
+                    what: 'Customer-visible executive-intelligence and economic outcome contract'
+                    artifact: 'Rohit_Updates/Secret War Updates/00-Methodology/04-Customer-Intelligence-Contract.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/00-Methodology/04-Customer-Intelligence-Contract.md"); s=p.read_text(); assert len(s) >= 1800 and s.startswith("#") and "executive-level intelligence" in s and "revenue" in s and "counterfactual" in s and "60–90" in s and s.count("|") >= 10'''
+                    depends_on: ['M1.C1.L-contract.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C2.L-logic.V0.U01
+                    what: 'Uniform audit status legend, evidence standard, and verdict method'
+                    artifact: 'Rohit_Updates/Secret War Updates/00-Methodology/05-Status-Legend-and-Audit-Method.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/00-Methodology/05-Status-Legend-and-Audit-Method.md"); s=p.read_text(); assert len(s) >= 1500 and s.startswith("#") and "Absent" in s and "Stub" in s and "Wired" in s and "Outcome-proven" in s and "Verdict" in s and s.count("|") >= 8'''
+                    depends_on: ['M1.C1.L-data.V0.U01', 'M1.C2.L-contract.V0.U01']
+  - id: M2
+    name: 'Layers 1 and 2 truth reconstruction'
+    ships: 'Knowledge capture and Context Intelligence are audited from source event through roleful, bounded business situation.'
+    categories:
+      - id: M2.C1
+        name: 'Layer 1 - Knowledge'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-contract.V0.U01
+                    what: 'Layer 1 - Knowledge architecture and Atlas Layer 1 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M2.C1.L-contract.V1.U01
+                    what: 'Layer 1 - Knowledge customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and "Evidence class" in s and "Harm if wrong" in s and "Required layers" in s and s.count("|") >= 12'''
+                    depends_on: ['M2.C1.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-data.V0.U01
+                    what: 'Layer 1 - Knowledge verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and s.count("|") >= 16'''
+                    depends_on: ['M2.C1.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-logic.V0.U01
+                    what: 'Layer 1 - Knowledge loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and s.count("|") >= 18'''
+                    depends_on: ['M2.C1.L-contract.V1.U01', 'M2.C1.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M2.C1.L-logic.V1.U01
+                    what: 'Layer 1 - Knowledge current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and s.count("|") >= 16'''
+                    depends_on: ['M2.C1.L-contract.V0.U01', 'M2.C1.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-interface.V0.U01
+                    what: 'Layer 1 - Knowledge improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/01-Layer-1-Knowledge/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and s.count("|") >= 18'''
+                    depends_on: ['M2.C1.L-logic.V0.U01', 'M2.C1.L-logic.V1.U01']
+      - id: M2.C2
+        name: 'Layer 2 - Context Intelligence'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C2.L-contract.V0.U01
+                    what: 'Layer 2 - Context Intelligence architecture and Atlas Layer 2 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and "[INFERENCE]" in s and "compatible with the supplied screenshots" in s and "not a reproduced causal trace" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M2.C2.L-contract.V1.U01
+                    what: 'Layer 2 - Context Intelligence customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and "Evidence class" in s and "Harm if wrong" in s and "Required layers" in s and s.count("|") >= 12'''
+                    depends_on: ['M2.C2.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C2.L-data.V0.U01
+                    what: 'Layer 2 - Context Intelligence verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and s.count("|") >= 16'''
+                    depends_on: ['M2.C2.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C2.L-logic.V0.U01
+                    what: 'Layer 2 - Context Intelligence loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and s.count("|") >= 18'''
+                    depends_on: ['M2.C2.L-contract.V1.U01', 'M2.C2.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M2.C2.L-logic.V1.U01
+                    what: 'Layer 2 - Context Intelligence current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and s.count("|") >= 16'''
+                    depends_on: ['M2.C2.L-contract.V0.U01', 'M2.C2.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C2.L-interface.V0.U01
+                    what: 'Layer 2 - Context Intelligence improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/02-Layer-2-Context-Intelligence/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and s.count("|") >= 18'''
+                    depends_on: ['M2.C2.L-logic.V0.U01', 'M2.C2.L-logic.V1.U01']
+  - id: M3
+    name: 'Layers 3 and 4 expertise-to-decision audit'
+    ships: 'Domain Expertise and Reasoning are audited from authored corpus through compiled package, candidates, abstention, confidence, and final decision.'
+    categories:
+      - id: M3.C1
+        name: 'Layer 3 - Domain Expertise'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-contract.V0.U01
+                    what: 'Layer 3 - Domain Expertise architecture and Atlas Layer 3 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and "zero reviewed or accepted" in s and "14 authored situations" in s and "shadow-first from inception" in s and "Organization, Behavior, and Adaptive are hash-only at the current Layer 3-to-4 adapter" in s and "Organization approval does not publish, and policy loading drops both prohibition fields" in s and "Adaptive cannot carry expiry; screenshot alignment is an inference, not a reproduced causal trace" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M3.C1.L-contract.V1.U01
+                    what: 'Layer 3 - Domain Expertise customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and "zero reviewed or accepted" in s and "Evidence classes: [CUSTOMER], [SCREENSHOT], and [MODELLED]" in s and "Every HKS row names harm, required layers, prohibited output, fail-closed result, golden replay, and exit gate" in s and "Hash inclusion alone is not semantic influence; reviewed, accepted, and routed counts are separate fields" in s and s.count("|") >= 12'''
+                    depends_on: ['M3.C1.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-data.V0.U01
+                    what: 'Layer 3 - Domain Expertise verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and "non-stub authored drafts" in s and "all-stub routes" in s and "hash-only influence is provenance, not semantic influence" in s and "Sales 46/43/3/0/0; Support 49/40/9/0/0; Admin 57/57/0/0/0 routes" in s and "Improvement and acceptance evidence are separate columns" in s and s.count("|") >= 16'''
+                    depends_on: ['M3.C1.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-logic.V0.U01
+                    what: 'Layer 3 - Domain Expertise loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and "draft/unreviewed" in s and "hash-only influence" in s and "Adaptive cannot carry expiry" in s and "adaptive_ttl_unresolved" in s and "direct Behavior/Adaptive evolution returns no candidates" in s and s.count("|") >= 18'''
+                    depends_on: ['M3.C1.L-contract.V1.U01', 'M3.C1.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M3.C1.L-logic.V1.U01
+                    what: 'Layer 3 - Domain Expertise current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and s.count("|") >= 16'''
+                    depends_on: ['M3.C1.L-contract.V0.U01', 'M3.C1.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-interface.V0.U01
+                    what: 'Layer 3 - Domain Expertise improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/03-Layer-3-Domain-Expertise/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and "review-state admission" in s and "semantic influence" in s and "Sales 46 total, 43 stubs, 3 non-stub authored drafts, zero reviewed, zero accepted" in s and "Customer Support 49 total, 40 stubs, 9 non-stub authored drafts, zero reviewed, zero accepted" in s and "57 capability files, 57 stubs, zero non-stub, zero reviewed, zero accepted, zero routes" in s and s.count("|") >= 18'''
+                    depends_on: ['M3.C1.L-logic.V0.U01', 'M3.C1.L-logic.V1.U01']
+      - id: M3.C2
+        name: 'Layer 4 - Reasoning'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C2.L-contract.V0.U01
+                    what: 'Layer 4 - Reasoning architecture and Atlas Layer 4 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and "hash-only influence" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M3.C2.L-contract.V1.U01
+                    what: 'Layer 4 - Reasoning customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and s.count("|") >= 12'''
+                    depends_on: ['M3.C2.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C2.L-data.V0.U01
+                    what: 'Layer 4 - Reasoning verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and "judgment unchanged" in s and s.count("|") >= 16'''
+                    depends_on: ['M3.C2.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C2.L-logic.V0.U01
+                    what: 'Layer 4 - Reasoning loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and "steps-only" in s and "four-play cap" in s and s.count("|") >= 18'''
+                    depends_on: ['M3.C2.L-contract.V1.U01', 'M3.C2.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M3.C2.L-logic.V1.U01
+                    what: 'Layer 4 - Reasoning current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and s.count("|") >= 16'''
+                    depends_on: ['M3.C2.L-contract.V0.U01', 'M3.C2.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C2.L-interface.V0.U01
+                    what: 'Layer 4 - Reasoning improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/04-Layer-4-Reasoning/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and "brain mutation replay" in s and s.count("|") >= 18'''
+                    depends_on: ['M3.C2.L-logic.V0.U01', 'M3.C2.L-logic.V1.U01']
+  - id: M4
+    name: 'Layers 5 through 7 action-to-learning audit'
+    ships: 'Executive ownership, safe Delivery, and verified-outcome Learning are audited as one accountable closed loop.'
+    categories:
+      - id: M4.C1
+        name: 'Layer 5 - Executive'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C1.L-contract.V0.U01
+                    what: 'Layer 5 - Executive architecture and Atlas Layer 5 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/05-Layer-5-Executive/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/05-Layer-5-Executive/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M4.C1.L-contract.V1.U01
+                    what: 'Layer 5 - Executive customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/05-Layer-5-Executive/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/05-Layer-5-Executive/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and s.count("|") >= 12'''
+                    depends_on: ['M4.C1.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C1.L-data.V0.U01
+                    what: 'Layer 5 - Executive verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/05-Layer-5-Executive/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/05-Layer-5-Executive/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and s.count("|") >= 16'''
+                    depends_on: ['M4.C1.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C1.L-logic.V0.U01
+                    what: 'Layer 5 - Executive loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/05-Layer-5-Executive/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/05-Layer-5-Executive/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and s.count("|") >= 18'''
+                    depends_on: ['M4.C1.L-contract.V1.U01', 'M4.C1.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M4.C1.L-logic.V1.U01
+                    what: 'Layer 5 - Executive current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/05-Layer-5-Executive/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/05-Layer-5-Executive/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and s.count("|") >= 16'''
+                    depends_on: ['M4.C1.L-contract.V0.U01', 'M4.C1.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C1.L-interface.V0.U01
+                    what: 'Layer 5 - Executive improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/05-Layer-5-Executive/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/05-Layer-5-Executive/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and s.count("|") >= 18'''
+                    depends_on: ['M4.C1.L-logic.V0.U01', 'M4.C1.L-logic.V1.U01']
+      - id: M4.C2
+        name: 'Layer 6 - Delivery (Atlas 5.2)'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C2.L-contract.V0.U01
+                    what: 'Layer 6 - Delivery (Atlas 5.2) architecture and Atlas Layer 5.2 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M4.C2.L-contract.V1.U01
+                    what: 'Layer 6 - Delivery (Atlas 5.2) customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and s.count("|") >= 12'''
+                    depends_on: ['M4.C2.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C2.L-data.V0.U01
+                    what: 'Layer 6 - Delivery (Atlas 5.2) verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and s.count("|") >= 16'''
+                    depends_on: ['M4.C2.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C2.L-logic.V0.U01
+                    what: 'Layer 6 - Delivery (Atlas 5.2) loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and s.count("|") >= 18'''
+                    depends_on: ['M4.C2.L-contract.V1.U01', 'M4.C2.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M4.C2.L-logic.V1.U01
+                    what: 'Layer 6 - Delivery (Atlas 5.2) current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and s.count("|") >= 16'''
+                    depends_on: ['M4.C2.L-contract.V0.U01', 'M4.C2.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C2.L-interface.V0.U01
+                    what: 'Layer 6 - Delivery (Atlas 5.2) improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/06-Layer-6-Delivery-Atlas-5.2/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and s.count("|") >= 18'''
+                    depends_on: ['M4.C2.L-logic.V0.U01', 'M4.C2.L-logic.V1.U01']
+      - id: M4.C3
+        name: 'Layer 7 - Learning (Atlas 6)'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C3.L-contract.V0.U01
+                    what: 'Layer 7 - Learning (Atlas 6) architecture and Atlas Layer 6 implementation delta'
+                    artifact: 'Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/01-Architecture-and-Atlas-Delta/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/01-Architecture-and-Atlas-Delta/README.md"); s=p.read_text(); assert len(s) >= 2400 and s.startswith("#") and "Atlas" in s and "Current code" in s and "Gap" in s and "Verdict" in s and "review approval does not publish" in s and "blocked_targets" in s and s.count("|") >= 12'''
+                    depends_on: ['M1.C1.L-contract.V1.U01', 'M1.C2.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M4.C3.L-contract.V1.U01
+                    what: 'Layer 7 - Learning (Atlas 6) customer expectation and HKS responsibility'
+                    artifact: 'Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/02-Customer-Expectation-and-HKS/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/02-Customer-Expectation-and-HKS/README.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Customer" in s and "HKS" in s and "Expected" in s and "Failure" in s and "Runtime reset complete, durable-brain reset incomplete" in s and s.count("|") >= 12'''
+                    depends_on: ['M4.C3.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C3.L-data.V0.U01
+                    what: 'Layer 7 - Learning (Atlas 6) verified successes, failures, current behavior, and required behavior'
+                    artifact: 'Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/03-Current-Successes-Failures-and-Expected-Behavior/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/03-Current-Successes-Failures-and-Expected-Behavior/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Verified success" in s and "Current failure" in s and "Should have happened" in s and "Evidence" in s and "review approval does not publish" in s and "Adaptive cannot carry expiry" in s and "Runtime temporary memories only" in s and "durable Adaptive learned entries remain untouched" in s and s.count("|") >= 16'''
+                    depends_on: ['M4.C3.L-contract.V0.U01', 'M1.C1.L-data.V0.U01', 'M1.C2.L-logic.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C3.L-logic.V0.U01
+                    what: 'Layer 7 - Learning (Atlas 6) loophole, edge-case, and fail-closed catalog'
+                    artifact: 'Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/04-Loopholes-Edge-Cases-and-Fail-Closed/README.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Loophole" in s and "Edge case" in s and "Fail closed" in s and "Consequence" in s and "blocked_subject_prefixes" in s and "approval no-publish" in s and "non-expiring Adaptive" in s and "reset expires Runtime leases" in s and "durable Adaptive state" in s and s.count("|") >= 18'''
+                    depends_on: ['M4.C3.L-contract.V1.U01', 'M4.C3.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M4.C3.L-logic.V1.U01
+                    what: 'Layer 7 - Learning (Atlas 6) current, Atlas, and proposed LLM allocation with deterministic controls and cost model'
+                    artifact: 'Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/05-LLM-Use-Cases-and-Cost/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/05-LLM-Use-Cases-and-Cost/README.md"); s=p.read_text(); assert len(s) >= 2500 and s.startswith("#") and "Current" in s and "Atlas" in s and "Proposed" in s and "LLM" in s and "Deterministic" in s and "Cost" in s and "approved_unpublished" in s and "stored-vs-loaded policy equality" in s and "Adaptive cannot carry expiry" in s and "no LLM is eligible to repair these semantics" in s and "model-disabled semantic-equivalence replay" in s and s.count("|") >= 16'''
+                    depends_on: ['M4.C3.L-contract.V0.U01', 'M4.C3.L-data.V0.U01']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C3.L-interface.V0.U01
+                    what: 'Layer 7 - Learning (Atlas 6) improvement decisions, acceptance replays, health metrics, and exit gates'
+                    artifact: 'Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/06-Improvements-Acceptance-and-Metrics/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/07-Layer-7-Learning-Atlas-6/06-Improvements-Acceptance-and-Metrics/README.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Improvement" in s and "Acceptance" in s and "Metric" in s and "Exit gate" in s and "review-to-publish" in s and "policy-load fidelity" in s and "Adaptive TTL decision" in s and "expire Runtime only" in s and "hash/fingerprint-only change fails" in s and "intended decision-field delta" in s and s.count("|") >= 18'''
+                    depends_on: ['M4.C3.L-logic.V0.U01', 'M4.C3.L-logic.V1.U01']
+  - id: M5
+    name: 'Cross-layer synthesis, golden replays, and executive decision'
+    ships: 'A traceable master verdict connects code gaps to failed scenarios, LLM economics, customer outcomes, deployment blockers, replay acceptance, and the final remediation order.'
+    categories:
+      - id: M5.C1
+        name: 'Cross-layer contracts and synthesis'
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C1.L-contract.V0.U01
+                    what: 'Seven boundary-object, provenance, visibility, trace, and confidence contract matrix'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/02-Typed-Contract-and-Provenance-Matrix.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/02-Typed-Contract-and-Provenance-Matrix.md"); s=p.read_text(); assert len(s) >= 2600 and s.startswith("#") and "SourceEvent" in s and "BusinessSituation" in s and "ExpertisePackage" in s and "Decision" in s and "Execution" in s and "Delivery" in s and "Learning" in s and "draft/unreviewed" in s and "hash-only influence" in s and "blocked_targets" in s and "blocked_subject_prefixes" in s and s.count("|") >= 18'''
+                    depends_on: ['M2.C1.L-contract.V0.U01', 'M2.C2.L-contract.V0.U01', 'M3.C1.L-contract.V0.U01', 'M3.C2.L-contract.V0.U01', 'M4.C1.L-contract.V0.U01', 'M4.C2.L-contract.V0.U01', 'M4.C3.L-contract.V0.U01']
+              - level: 1
+                units:
+                  - id: M5.C1.L-contract.V1.U01
+                    what: 'Gold-standard actionable intelligence and observation-only abstention contract'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/04-Gold-Standard-Intelligence-Contract.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/04-Gold-Standard-Intelligence-Contract.md"); s=p.read_text(); assert len(s) >= 2600 and s.startswith("#") and "Business subject" in s and "what remains" in s and "Evidence" in s and "Alternative" in s and "Completion" in s and "Observation only" in s and "semantic influence" in s and "Adaptive cannot carry expiry" in s and s.count("|") >= 16'''
+                    depends_on: ['M5.C1.L-contract.V0.U01', 'M1.C2.L-contract.V0.U01']
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C1.L-data.V0.U01
+                    what: 'Master Atlas-versus-code operational coverage matrix'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/01-Master-Atlas-vs-Code-Coverage-Matrix.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/01-Master-Atlas-vs-Code-Coverage-Matrix.md"); s=p.read_text(); assert len(s) >= 5000 and s.startswith("#") and "Absent" in s and "Stub" in s and "Present" in s and "Wired" in s and "Live" in s and "Tested" in s and "Outcome-proven" in s and "zero reviewed or accepted" in s and "may publish durable Adaptive" in s and "does not currently fail closed" in s and s.count("|") >= 40'''
+                    depends_on: ['M2.C1.L-data.V0.U01', 'M2.C2.L-data.V0.U01', 'M3.C1.L-data.V0.U01', 'M3.C2.L-data.V0.U01', 'M4.C1.L-data.V0.U01', 'M4.C2.L-data.V0.U01', 'M4.C3.L-data.V0.U01', 'M2.C1.L-interface.V0.U01', 'M2.C2.L-interface.V0.U01', 'M3.C1.L-interface.V0.U01', 'M3.C2.L-interface.V0.U01', 'M4.C1.L-interface.V0.U01', 'M4.C2.L-interface.V0.U01', 'M4.C3.L-interface.V0.U01']
+              - level: 1
+                units:
+                  - id: M5.C1.L-data.V1.U01
+                    what: 'Four-brains storage, ownership, precedence, snapshot, runtime, and replay audit'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/03-Four-Brains-Storage-Ownership-and-Replay.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/03-Four-Brains-Storage-Ownership-and-Replay.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Expert Brain" in s and "Organization Brain" in s and "Behavior Brain" in s and "Adaptive Brain" in s and "brain_snapshot_id" in s and "hash-only influence" in s and "approval bridge" in s and "publisher may persist" in s and "adaptive_ttl_unresolved" in s and "current code does not fail closed" in s and "currently valid predecessor" in s and s.count("|") >= 18'''
+                    depends_on: ['M3.C1.L-data.V0.U01', 'M3.C1.L-logic.V0.U01', 'M4.C3.L-data.V0.U01']
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C1.L-logic.V0.U01
+                    what: 'Cross-layer fail-closed, abstention, recovery, and no-silent-drop matrix'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/05-Failure-Closed-Abstention-and-Recovery-Matrix.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/05-Failure-Closed-Abstention-and-Recovery-Matrix.md"); s=p.read_text(); assert len(s) >= 3200 and s.startswith("#") and "Abstain" in s and "Review source" in s and "Park" in s and "Suppress" in s and "Recovery" in s and "approved_unpublished" in s and "policy_incomplete" in s and "adaptive_ttl_unresolved" in s and s.count("|") >= 22'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M2.C1.L-logic.V0.U01', 'M2.C2.L-logic.V0.U01', 'M3.C1.L-logic.V0.U01', 'M3.C2.L-logic.V0.U01', 'M4.C1.L-logic.V0.U01', 'M4.C2.L-logic.V0.U01', 'M4.C3.L-logic.V0.U01']
+              - level: 1
+                units:
+                  - id: M5.C1.L-logic.V1.U01
+                    what: 'Per-component LLM allocation, invocation rate, token budget, replay, fallback, and cost matrix'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/06-LLM-Allocation-Current-vs-Atlas-vs-Proposed.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/06-LLM-Allocation-Current-vs-Atlas-vs-Proposed.md"); s=p.read_text(); assert len(s) >= 3200 and s.startswith("#") and "Invocation rate" in s and "Token budget" in s and "Fallback" in s and "Replay" in s and "Cost" in s and "Deterministic authority" in s and "review-state admission" in s and "approved_unpublished" in s and "Adaptive cannot carry expiry" in s and "Organization proposal approval does not publish" in s and s.count("|") >= 24'''
+                    depends_on: ['M2.C1.L-logic.V1.U01', 'M2.C2.L-logic.V1.U01', 'M3.C1.L-logic.V1.U01', 'M3.C2.L-logic.V1.U01', 'M4.C1.L-logic.V1.U01', 'M4.C2.L-logic.V1.U01', 'M4.C3.L-logic.V1.U01', 'M5.C1.L-data.V0.U01']
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C1.L-integration.V0.U01
+                    what: 'Customer and five-application expectation-to-layer mapping'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/07-Customer-Application-Expectation-Mapping.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/07-Customer-Application-Expectation-Mapping.md"); s=p.read_text(); assert len(s) >= 3400 and s.startswith("#") and "Customer expectation" in s and "Owning layer" in s and "Current proof" in s and "Gap" in s and "Acceptance" in s and "zero reviewed or accepted" in s and s.count("|") >= 24'''
+                    depends_on: ['M1.C2.L-contract.V0.U01', 'M5.C1.L-data.V0.U01']
+              - level: 1
+                units:
+                  - id: M5.C1.L-integration.V1.U01
+                    what: 'HKS and scenario responsibility matrix across all seven layers'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/08-HKS-and-Scenario-Responsibility-Matrix.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/08-HKS-and-Scenario-Responsibility-Matrix.md"); s=p.read_text(); assert len(s) >= 3400 and s.startswith("#") and "HKS" in s and "Layer 1" in s and "Layer 7" in s and "Prohibited" in s and "Expected outcome" in s and "[CUSTOMER]" in s and "[SCREENSHOT]" in s and "[MODELLED]" in s and "zero non-stub" in s and "adaptive_ttl_unresolved" in s and "semantic influence" in s and "required HKS disposition" in s and "current code does not enforce" in s and s.count("|") >= 24'''
+                    depends_on: ['M5.C1.L-integration.V0.U01', 'M5.C1.L-contract.V1.U01']
+              - level: 2
+                units:
+                  - id: M5.C1.L-integration.V2.U01
+                    what: 'Root-cause dependency map and evidence-backed remediation order'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/09-Root-Cause-Dependency-and-Remediation-Order.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/09-Root-Cause-Dependency-and-Remediation-Order.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "Root cause" in s and "Dependency" in s and "Critical path" in s and "Remediation order" in s and "review-state admission" in s and "hash-only influence" in s and s.count("|") >= 18'''
+                    depends_on: ['M5.C1.L-integration.V1.U01', 'M5.C1.L-logic.V0.U01', 'M5.C1.L-data.V1.U01']
+              - level: 3
+                units:
+                  - id: M5.C1.L-integration.V3.U01
+                    what: 'Deployment blockers, design debt, risk, and decision register'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/10-Deployment-Blockers-and-Design-Debt.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/10-Deployment-Blockers-and-Design-Debt.md"); s=p.read_text(); assert len(s) >= 2800 and s.startswith("#") and "Blocker" in s and "Design debt" in s and "Risk" in s and "Decision" in s and "approval does not publish" in s and "Adaptive cannot carry expiry" in s and s.count("|") >= 18'''
+                    depends_on: ['M5.C1.L-integration.V2.U01', 'M5.C1.L-logic.V1.U01']
+                  - id: M5.C1.L-integration.V3.U02
+                    what: 'Acceptance, false-action, trust, ROI, and system-health scorecard'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/11-Evaluation-ROI-and-Health-Scorecard.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/11-Evaluation-ROI-and-Health-Scorecard.md"); s=p.read_text(); assert len(s) >= 3000 and s.startswith("#") and "False-action" in s and "ROI" in s and "Counterfactual" in s and "Trust" in s and "Outcome" in s and "zero reviewed or accepted" in s and s.count("|") >= 22'''
+                    depends_on: ['M5.C1.L-integration.V2.U01', 'M5.C1.L-integration.V0.U01']
+      - id: M5.C2
+        name: 'Golden scenario replays'
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C2.L-integration.V0.U01
+                    what: 'Theresa investor reconsideration, material-update cadence, and no-reply replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/01-Theresa-Investor-Reconsideration-and-Update-Cadence.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/01-Theresa-Investor-Reconsideration-and-Update-Cadence.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M3.C1.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U02
+                    what: 'Boardy connector, introduced-contact, thread-scope, and action-target replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/02-Boardy-Mediated-Introduction.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/02-Boardy-Mediated-Introduction.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M2.C2.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U03
+                    what: 'Counterparty availability and reschedule actor-ownership replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/03-Counterparty-Availability-and-Reschedule.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/03-Counterparty-Availability-and-Reschedule.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M2.C2.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U04
+                    what: 'Already-replied and cross-channel completion suppression replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/04-Already-Replied-and-Cross-Channel-Resolved.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/04-Already-Replied-and-Cross-Channel-Resolved.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M2.C2.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U05
+                    what: 'Internal or group meeting recap eligibility replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/05-Internal-Group-Meeting-Recap.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/05-Internal-Group-Meeting-Recap.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and "[SCREENSHOT]" in s and "[MODELLED]" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M2.C1.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U06
+                    what: 'Filled deal, closed state, rejection, deferral, and relationship-role replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/06-Filled-Closed-Rejected-or-Deferred-Relationship.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/06-Filled-Closed-Rejected-or-Deferred-Relationship.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and "[SCREENSHOT]" in s and "[MODELLED]" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M3.C1.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U07
+                    what: 'Missing expertise observation-only and no-action-button replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/07-Missing-Expertise-Observation-Only.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/07-Missing-Expertise-Observation-Only.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and "[CUSTOMER]" in s and "[MODELLED]" in s and "zero reviewed or accepted" in s and "zero non-stub" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M3.C1.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U08
+                    what: 'Agent handoff, approval, origin marking, idempotency, and loop-prevention replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/08-Agent-Handoff-and-Origin-Loop.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/08-Agent-Handoff-and-Origin-Loop.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and "[CODE]" in s and "[MODELLED]" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M4.C1.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U09
+                    what: 'Client-context isolation, dual ACL, operator-only, and never-commercial replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/09-Client-Isolation-and-Never-Commercial.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/09-Client-Isolation-and-Never-Commercial.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and "zero non-stub" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M2.C1.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U10
+                    what: 'Pivot reset, sparse behavior, adaptive expiry, and confidence replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/10-Pivot-Sparse-Behavior-and-Adaptive-Learning.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/10-Pivot-Sparse-Behavior-and-Adaptive-Learning.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and "Adaptive cannot carry expiry" in s and "adaptive_ttl_unresolved" in s and "no automatic short-horizon" in s and "current code does not pass this replay" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M4.C3.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U11
+                    what: 'Revenue impact, missed-opportunity, counterfactual, and attribution replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/11-Revenue-Impact-and-Counterfactual-Proof.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/11-Revenue-Impact-and-Counterfactual-Proof.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M4.C3.L-interface.V0.U01']
+                  - id: M5.C2.L-integration.V0.U12
+                    what: 'Antler exploratory relationship, applicant retention, and regional authority replay'
+                    artifact: 'Rohit_Updates/Secret War Updates/09-Golden-Replays/12-Antler-Exploratory-Relationship-and-Regional-Authority.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/09-Golden-Replays/12-Antler-Exploratory-Relationship-and-Regional-Authority.md"); s=p.read_text(); assert len(s) >= 2200 and s.startswith("#") and "Business subject" in s and "Current failure" in s and "Expected behavior" in s and "Prohibited behavior" in s and "Layer 1" in s and "Layer 7" in s and "Outcome" in s and s.count("|") >= 14'''
+                    depends_on: ['M5.C1.L-contract.V1.U01', 'M5.C1.L-integration.V1.U01', 'M2.C2.L-interface.V0.U01']
+      - id: M5.C3
+        name: 'Executive decision and navigation'
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C3.L-logic.V0.U01
+                    what: 'Final executive verdict and phased remediation decision'
+                    artifact: 'Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/12-Executive-Decision-and-Phased-Plan.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/12-Executive-Decision-and-Phased-Plan.md"); s=p.read_text(); assert len(s) >= 3200 and s.startswith("#") and "Blunt verdict" in s and "Do first" in s and "Do not do" in s and "Exit gate" in s and "Customer value" in s and "zero reviewed or accepted" in s and "shadow-first from inception" in s and "hash-only influence" in s and s.count("|") >= 18'''
+                    depends_on: ['M5.C1.L-integration.V3.U01', 'M5.C1.L-integration.V3.U02', 'M5.C2.L-integration.V0.U01', 'M5.C2.L-integration.V0.U02', 'M5.C2.L-integration.V0.U03', 'M5.C2.L-integration.V0.U04', 'M5.C2.L-integration.V0.U05', 'M5.C2.L-integration.V0.U06', 'M5.C2.L-integration.V0.U07', 'M5.C2.L-integration.V0.U08', 'M5.C2.L-integration.V0.U09', 'M5.C2.L-integration.V0.U10', 'M5.C2.L-integration.V0.U11', 'M5.C2.L-integration.V0.U12']
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C3.L-interface.V0.U01
+                    what: 'Secret War Updates reader guide and complete artifact index'
+                    artifact: 'Rohit_Updates/Secret War Updates/README.md'
+                    verify: 'python3 -c ''from pathlib import Path; p=Path(r"Rohit_Updates/Secret War Updates/README.md"); s=p.read_text(); assert len(s) >= 1400 and s.startswith("#") and "How to read" in s and "Layer 1" in s and "Layer 7" in s and "Golden replays" in s and "Executive decision" in s and "zero reviewed or accepted" in s and "hash-only influence" in s and "current code does not pass" in s and "no automatic short-horizon" in s and "may publish durably" in s and s.count("|") >= 20'''
+                    depends_on: ['M5.C3.L-logic.V0.U01']
+      - id: M5.C4
+        name: 'Deterministic documentation-package QA contract'
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C4.L-integration.V0.U01
+                    what: 'Static artifact inventory, dependency-receipt, link, and retrieval QA contract'
+                    artifact: 'qa-contract.yaml'
+                    verify: 'python3 -c ''import yaml; d=yaml.safe_load(open("qa-contract.yaml")); assert d.get("description") and d.get("base_url") == "http://127.0.0.1:18765" and len(d.get("integrations", [])) == 3 and len(d.get("endpoints", [])) == 3 and all(x.get("check") for x in d["integrations"]) and all(x.get("expect_status") == 200 for x in d["endpoints"])'''
+                    depends_on: ['M5.C3.L-interface.V0.U01']

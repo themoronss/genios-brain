@@ -1,0 +1,38 @@
+# Build dependency receipt: documentation composition only; not GeniOS runtime wiring or outcome proof.
+# include "Rohit_Updates/Secret War Updates/README.md" (M5.C3.L-interface.V0.U01)
+
+description: >-
+  Deterministic QA for the Secret War documentation package only. Static HTTP
+  retrieval proves artifact availability; it is not evidence that GeniOS
+  runtime APIs, tenant behavior, customer outcomes, or ROI are live.
+
+base_url: http://127.0.0.1:18765
+
+integrations:
+  - name: secret-war-artifact-inventory
+    check: >-
+      python3 -c 'from pathlib import Path; p=Path("Rohit_Updates/Secret War Updates"); assert p.is_dir() and len(list(p.rglob("*.md"))) == 72'
+
+  - name: secret-war-relative-links
+    check: >-
+      python3 -c 'from pathlib import Path; import re; root=Path("Rohit_Updates/Secret War Updates"); bad=[(str(md), target) for md in root.rglob("*.md") for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", md.read_text()) if target and not target.startswith(("#", "http://", "https://", "mailto:")) and not (md.parent / target.split("#", 1)[0]).resolve().exists()]; assert not bad, bad'
+
+  - name: secret-war-dependency-receipts
+    check: >-
+      python3 -c 'import os,yaml; t=yaml.safe_load(open("tree.yaml")); us=[u for m in t["milestones"] for c in m["categories"] for l in c["layers"] for v in l["levels"] for u in v["units"]]; by={u["id"]:u for u in us}; bad=[(u["id"],d) for u in us for d in u.get("depends_on",[]) if open(u["artifact"]).read().count("include \"" + os.path.relpath(by[d]["artifact"], os.path.dirname(u["artifact"])) + "\" (" + d + ")") != 1 or not os.path.isfile(by[d]["artifact"])]; assert sum(len(u.get("depends_on",[])) for u in us) == 202 and not bad, bad'
+
+endpoints:
+  - name: secret-war-reader-guide
+    method: GET
+    path: /Rohit_Updates/Secret%20War%20Updates/README.md
+    expect_status: 200
+
+  - name: secret-war-tree-contract
+    method: GET
+    path: /tree.yaml
+    expect_status: 200
+
+  - name: secret-war-qa-contract
+    method: GET
+    path: /qa-contract.yaml
+    expect_status: 200
