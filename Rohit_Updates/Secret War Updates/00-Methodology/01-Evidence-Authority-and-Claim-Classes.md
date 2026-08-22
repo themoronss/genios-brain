@@ -12,18 +12,18 @@ For example, “the compiler can build an ExpertisePackage” may be **Verified 
 
 ## Evidence hierarchy
 
-| Rank | Claim class | What it can prove | What it cannot prove |
-|---:|---|---|---|
-| 1 | Verified customer outcome | A recommendation caused or materially influenced a measured result | General efficacy outside the observed cohort |
-| 2 | Verified runtime replay | The current live path consumed specific inputs and produced a traceable output | That the output was commercially correct |
-| 3 | Verified code and test | A contract or behavior exists at the pinned commit and its declared check passes | That tenants use it, that connectors supply it, or that users benefit |
-| 4 | Current code inspection | An implementation, default, route, query, or data shape is present | Reachability, deployment, tenant configuration, or outcome quality |
-| 5 | Atlas expectation | The intended architectural responsibility or invariant | Implementation, wiring, deployment, or customer value |
-| 6 | Customer requirement | The result a founder or operator says they need | Feasibility or current product capability |
-| 7 | Screenshot observation | What the captured UI displayed in that moment | Complete upstream state, code path, or causality |
-| 8 | Modelled scenario | A deliberate design probe for an edge case | A claim about a named company’s private operations |
-| 9 | Inference | A conclusion logically derived from disclosed evidence | Direct observation |
-| 10 | Proposal | A recommended design or decision | Existing capability |
+| Rank | Claim class               | What it can prove                                                                | What it cannot prove                                                  |
+| ---: | ------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+|    1 | Verified customer outcome | A recommendation caused or materially influenced a measured result               | General efficacy outside the observed cohort                          |
+|    2 | Verified runtime replay   | The current live path consumed specific inputs and produced a traceable output   | That the output was commercially correct                              |
+|    3 | Verified code and test    | A contract or behavior exists at the pinned commit and its declared check passes | That tenants use it, that connectors supply it, or that users benefit |
+|    4 | Current code inspection   | An implementation, default, route, query, or data shape is present               | Reachability, deployment, tenant configuration, or outcome quality    |
+|    5 | Atlas expectation         | The intended architectural responsibility or invariant                           | Implementation, wiring, deployment, or customer value                 |
+|    6 | Customer requirement      | The result a founder or operator says they need                                  | Feasibility or current product capability                             |
+|    7 | Screenshot observation    | What the captured UI displayed in that moment                                    | Complete upstream state, code path, or causality                      |
+|    8 | Modelled scenario         | A deliberate design probe for an edge case                                       | A claim about a named company’s private operations                    |
+|    9 | Inference                 | A conclusion logically derived from disclosed evidence                           | Direct observation                                                    |
+|   10 | Proposal                  | A recommended design or decision                                                 | Existing capability                                                   |
 
 ## Required labels
 
@@ -94,14 +94,14 @@ These failures are current-state evidence. They are not repaired or hidden by th
 
 ## Evidence receipt template
 
-| Field | Required value |
-|---|---|
-| Claim | One falsifiable sentence |
-| Class | One or more labels from the controlled list |
-| Source | File, line, command, screenshot, or supplied artifact |
-| Commit/time | Commit SHA or observation time |
-| Scope | Which tenant, path, layer, or scenario the claim covers |
-| Limitation | What this evidence does not establish |
-| Verdict | Absent, stub, present, wired, live, tested, or outcome-proven |
+| Field       | Required value                                                |
+| ----------- | ------------------------------------------------------------- |
+| Claim       | One falsifiable sentence                                      |
+| Class       | One or more labels from the controlled list                   |
+| Source      | File, line, command, screenshot, or supplied artifact         |
+| Commit/time | Commit SHA or observation time                                |
+| Scope       | Which tenant, path, layer, or scenario the claim covers       |
+| Limitation  | What this evidence does not establish                         |
+| Verdict     | Absent, stub, present, wired, live, tested, or outcome-proven |
 
 This template is the minimum receipt for every material conclusion in Secret War Updates.
