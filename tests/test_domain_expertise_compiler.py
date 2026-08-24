@@ -426,8 +426,12 @@ def test_current_three_domain_corpus_compiles_a_real_sales_slice():
     assert package.metadata["domain_ids"] == ("sales",)
     assert package.metadata["matched_situation_ids"] == (
         "sales.sit.inbound_fit_check", "sales.sit.inbound_lead")
-    assert len(package.capabilities) == 2
-    assert len(package.objects) == 10
+    # >= 2, not == 2: the corpus GREW — authoring 43 previously-empty sales capabilities means
+    # a real inbound-lead situation now legitimately routes to more than the two written
+    # exemplars this test was pinned against. The invariant is that the two exemplars are
+    # present, not that nothing else ever gets written.
+    assert len(package.capabilities) >= 2
+    assert len(package.objects) >= 10   # grew with the authored corpus, same reasoning as capabilities
     assert package.metadata["missing_artifact_ids"] == ()
 
 

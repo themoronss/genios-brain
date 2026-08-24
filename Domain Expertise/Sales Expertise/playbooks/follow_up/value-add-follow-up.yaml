@@ -1,0 +1,35 @@
+identity:
+  id: sales.pb.follow_up.value_add_follow_up
+  name: Value-add follow up
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every follow-up must give before it asks. A bare 'just checking in' spends attention and
+    returns nothing; a follow-up that carries a relevant insight, a mutual connection, or an answer to
+    something they said re-earns the reply it asks for.
+steps:
+- order: 1
+  name: Reread the last exchange before writing
+  description: The follow-up must reference what THEY last said, not what you last sent. A thread that
+    ignores their words announces it is a sequence, not a conversation.
+  actor: human
+- order: 2
+  name: Attach one thing of value
+  description: 'A relevant case, a data point about their market, an intro, an answer to an open question
+    — one, not three. The test: would this message be worth reading if they never buy?'
+  actor: human
+- order: 3
+  name: Name the next step and its size
+  description: Ask for the smallest useful commitment — 15 minutes, a yes/no on fit, a pointer to the
+    right person. Big asks on cold threads select for silence.
+  actor: human
+- order: 4
+  name: Stop on the stated stop
+  description: A 'not now' with a named quarter is a scheduled follow-up, not an invitation to persist
+    this week. Log the date, close the loop, return exactly then.
+  actor: human

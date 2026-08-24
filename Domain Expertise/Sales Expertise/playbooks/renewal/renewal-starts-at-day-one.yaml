@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.renewal.renewal_starts_at_day_one
+  name: Renewal starts at day one
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.renewal
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A renewal motion that begins ninety days out is a rescue; one that begins at onboarding is
+    administration. The year's cadence of value-marking exists so the renewal conversation is a summary,
+    not an argument.
+steps:
+- order: 1
+  name: Keep a value ledger all year
+  description: Every win, metric, and solved problem logged as it happens. Reconstructed value at renewal
+    time is estimated value, and estimates get negotiated.
+  actor: human
+- order: 2
+  name: Open the renewal conversation at T-120
+  description: Before budget season, not inside it. Early opening finds sponsor changes and budget pressure
+    while there is still time to work them.
+  actor: human
+- order: 3
+  name: Present the ledger, then the ask
+  description: Year in numbers → next year's plan → renewal terms, in that order. A price increase rides
+    on a value story or it does not ride at all.
+  actor: human

@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.legal_review.legal_as_gate__not_opponent
+  name: Legal as gate, not opponent
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.legal_review
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Buyer legal is doing its job: bounding risk. Deals stall here when sellers treat redlines
+    as combat. The play is triage — accept the harmless fast, package the real disagreements few, and
+    keep the business sponsor informed of what legal is costing the timeline.'
+steps:
+- order: 1
+  name: Triage redlines in one pass
+  description: 'Three piles: accept, fallback, escalate. Most redlines are pile one — accepting them same-day
+    buys goodwill for the few that matter.'
+  actor: human
+- order: 2
+  name: Negotiate principles, not clause ping-pong
+  description: On the real items, get counsel talking to counsel with business context. Twenty-round document
+    tennis is where quarters die.
+  actor: human
+- order: 3
+  name: Keep the sponsor watching the clock
+  description: '''Two clauses remain; at this pace, signature slips past your date'' — said to the business
+    buyer — recruits the only person who can tell legal to prioritise.'
+  actor: human

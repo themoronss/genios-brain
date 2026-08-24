@@ -5,7 +5,7 @@ identity:
   subdomain: discovery_and_solution
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Structured questioning that surfaces the problem, its cost and its owner. Discovery fails

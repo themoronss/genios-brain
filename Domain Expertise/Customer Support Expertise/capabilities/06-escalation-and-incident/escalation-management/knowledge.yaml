@@ -1,31 +1,49 @@
-# Knowledge manifest for customer_support.escalation_and_incident.escalation_management — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/escalation-management/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
 capability: customer_support.escalation_and_incident.escalation_management
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.pb.escalation_management.close_the_loop_with_raiser
+  - customer_support.pb.escalation_management.exit_condition
+  - customer_support.pb.escalation_management.handoff_brief
+  - customer_support.pb.escalation_management.named_acceptance
+  - customer_support.pb.escalation_management.preemptive
+  - customer_support.pb.escalation_management.warm_transfer
+  - customer_support.pb.escalation_management.who_noticed_first
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.heu.escalation_management.h_anger_is_not_a_reason
+  - customer_support.heu.escalation_management.h_ask_not_describe
+  - customer_support.heu.escalation_management.h_bar_is_set_by_refusals
+  - customer_support.heu.escalation_management.h_early_vs_late
+  - customer_support.heu.escalation_management.h_entitlement_before_route
+  - customer_support.heu.escalation_management.h_judge_the_first_hour
+  - customer_support.heu.escalation_management.h_manager_means_decision
+  - customer_support.heu.escalation_management.h_no_exit_no_close
+  - customer_support.heu.escalation_management.h_no_receiver_no_escalation
+  - customer_support.heu.escalation_management.h_re_ask_test
+  - customer_support.heu.escalation_management.h_repeat_is_an_account_problem
+  - customer_support.heu.escalation_management.h_tell_them_first
+  - customer_support.heu.escalation_management.h_who_noticed
 mental_models:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.mm.escalation_management.m_context_is_the_payload
+  - customer_support.mm.escalation_management.m_control_loop
+  - customer_support.mm.escalation_management.m_credibility_budget
+  - customer_support.mm.escalation_management.m_transfer_not_volume
+  - customer_support.mm.escalation_management.m_two_events_one_word
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
-  scoped: []
+  scoped:
+  - customer_support.df.escalation_management.df_cost_of_delay_vs_noise
+  - customer_support.df.escalation_management.df_receiver_reason_ask
+  - customer_support.df.escalation_management.df_sbar_handoff
+  - customer_support.df.escalation_management.df_severity_impact_reversibility
+  - customer_support.df.escalation_management.df_who_noticed_test

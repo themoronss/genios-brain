@@ -5,7 +5,7 @@ identity:
   subdomain: market_and_targeting
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Sizing total, serviceable and obtainable market against the ICP rather than against the

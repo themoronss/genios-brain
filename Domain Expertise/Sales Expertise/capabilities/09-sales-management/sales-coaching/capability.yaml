@@ -5,7 +5,7 @@ identity:
   subdomain: sales_management
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Improving individual capability against observed behaviour rather than against outcomes.

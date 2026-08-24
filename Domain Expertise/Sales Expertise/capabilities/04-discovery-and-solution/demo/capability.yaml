@@ -5,7 +5,7 @@ identity:
   subdomain: discovery_and_solution
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   A demonstration built from discovery, not from a script. The failure mode is feature tour:

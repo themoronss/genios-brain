@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.territory_planning.unworked_accounts_are_nobodys_win
+  name: Unworked accounts are nobody's win
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.territory_planning
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An account sitting in a territory that cannot reach it is not 'covered' — it is warehoused.
+    Coverage means worked, and honesty about workable capacity beats the map looking complete.
+  answers:
+  - What does territory coverage actually mean?

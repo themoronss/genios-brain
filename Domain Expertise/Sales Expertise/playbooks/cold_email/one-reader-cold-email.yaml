@@ -1,0 +1,35 @@
+identity:
+  id: sales.pb.cold_email.one_reader_cold_email
+  name: One-reader cold email
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A cold email earns a reply by proving in the first line that it could only have been written
+    to this one person — their company, their motion, their public statement — and by asking a question
+    small enough to answer from a phone.
+steps:
+- order: 1
+  name: Open with their fact, not your intro
+  description: The first sentence names something true and recent about THEM. 'I saw your team just…'
+    beats every version of 'I am X from Y'.
+  actor: human
+- order: 2
+  name: Bridge to one specific problem
+  description: Connect their fact to one problem you have seen at companies like theirs. One. A list of
+    problems reads as a template with the blanks filled.
+  actor: human
+- order: 3
+  name: Ask the phone-sized question
+  description: A question answerable in one line — 'is this on your radar this quarter?' — outperforms
+    every calendar link on first touch.
+  actor: human
+- order: 4
+  name: Send at their morning, follow the follow-up playbook after
+  description: First touch lands in their working morning. Everything after the send belongs to follow_up,
+    not to more first-touches.
+  actor: human

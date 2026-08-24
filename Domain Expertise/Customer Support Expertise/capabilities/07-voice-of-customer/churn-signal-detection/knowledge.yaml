@@ -1,31 +1,50 @@
-# Knowledge manifest for customer_support.voice_of_customer.churn_signal_detection — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/churn-signal-detection/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
 capability: customer_support.voice_of_customer.churn_signal_detection
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.pb.churn_signal_detection.cancellation_language_capture
+  - customer_support.pb.churn_signal_detection.closed_loop_detractor_followup
+  - customer_support.pb.churn_signal_detection.effort_audit_on_resolved_tickets
+  - customer_support.pb.churn_signal_detection.post_incident_fortnight_check
+  - customer_support.pb.churn_signal_detection.quiet_account_sweep
+  - customer_support.pb.churn_signal_detection.relationship_change_watch
+  - customer_support.pb.churn_signal_detection.support_to_account_team_briefing
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.heu.churn_signal_detection.baseline_is_per_account
+  - customer_support.heu.churn_signal_detection.effort_over_satisfaction
+  - customer_support.heu.churn_signal_detection.exec_escalation_is_late
+  - customer_support.heu.churn_signal_detection.flag_before_you_can_prove_it
+  - customer_support.heu.churn_signal_detection.hard_resolution_is_a_risk_event
+  - customer_support.heu.churn_signal_detection.incidents_flatten_the_signal
+  - customer_support.heu.churn_signal_detection.quiet_is_ambiguous_without_usage
+  - customer_support.heu.churn_signal_detection.renewal_proximity_changes_the_read
+  - customer_support.heu.churn_signal_detection.repetition_beats_severity
+  - customer_support.heu.churn_signal_detection.silence_beats_anger
+  - customer_support.heu.churn_signal_detection.survey_middle_is_invisible
+  - customer_support.heu.churn_signal_detection.who_contacts_us_changed
 mental_models:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.mm.churn_signal_detection.absence_needs_a_baseline
+  - customer_support.mm.churn_signal_detection.complaint_is_engagement
+  - customer_support.mm.churn_signal_detection.earliest_sensor_last_consulted
+  - customer_support.mm.churn_signal_detection.private_ledger
+  - customer_support.mm.churn_signal_detection.slow_and_sudden_churn
+  - customer_support.mm.churn_signal_detection.support_sees_a_slice
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
-  scoped: []
+  scoped:
+  - customer_support.df.churn_signal_detection.behavioural_before_emotional
+  - customer_support.df.churn_signal_detection.effort_as_loyalty_proxy
+  - customer_support.df.churn_signal_detection.honest_blindness_declaration
+  - customer_support.df.churn_signal_detection.renewal_window_inversion
+  - customer_support.df.churn_signal_detection.risk_triangulation
+  - customer_support.df.churn_signal_detection.save_plan_handoff

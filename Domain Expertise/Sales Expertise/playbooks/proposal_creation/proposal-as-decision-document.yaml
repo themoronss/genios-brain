@@ -1,0 +1,35 @@
+identity:
+  id: sales.pb.proposal_creation.proposal_as_decision_document
+  name: Proposal as decision document
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.proposal_creation
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A proposal is not a brochure — it is the document the committee decides FROM when you are
+    not in the room. It restates their problem in their words, their numbers, one recommended option,
+    and a signature path, in few enough pages to be read.
+steps:
+- order: 1
+  name: Restate the problem better than they did
+  description: Page one is their situation, their words, their cost-of-today. A buyer who feels understood
+    on page one reads the rest as confirmation.
+  actor: human
+- order: 2
+  name: Recommend ONE option
+  description: Three options outsource your judgment to their busiest people. One recommendation with
+    scope and price, plus at most one named alternative if genuinely useful.
+  actor: human
+- order: 3
+  name: Make saying yes mechanical
+  description: Validity date, start date, signature block, next step. Every missing mechanic is a delay
+    loop with procurement.
+  actor: human
+- order: 4
+  name: Review through the skeptic's eyes before sending
+  description: The unseen reviewer reads only this. Would page one convince someone who never met you?
+    If not, it is not ready.
+  actor: human

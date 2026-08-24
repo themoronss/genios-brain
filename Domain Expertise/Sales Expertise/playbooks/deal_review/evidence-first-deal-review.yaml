@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.deal_review.evidence_first_deal_review
+  name: Evidence-first deal review
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.deal_review
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A deal review interrogates the deal, not the rep's narration skills. The four questions —
+    what has the BUYER done lately, who else is engaged, what date does the buyer own, what kills this
+    — asked against the record, produce coaching instead of ceremony.
+steps:
+- order: 1
+  name: Read the record before the meeting
+  description: Reviewer comes having seen the thread activity, latency, and stakeholder breadth. Reviews
+    where the record is narrated instead of read reward storytelling.
+  actor: human
+- order: 2
+  name: Ask for buyer actions, not seller activity
+  description: '''What did THEY do since we last spoke?'' Seller motion without buyer motion is a one-sided
+    courtship, whatever the stage says.'
+  actor: human
+- order: 3
+  name: End with one deal-advancing action
+  description: Each reviewed deal leaves with a single next move, owner and date. Reviews producing no
+    action are status theatre with a calendar slot.
+  actor: human

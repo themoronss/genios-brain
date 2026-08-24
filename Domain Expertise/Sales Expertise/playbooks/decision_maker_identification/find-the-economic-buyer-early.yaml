@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.decision_maker_identification.find_the_economic_buyer_early
+  name: Find the economic buyer early
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.decision_maker_identification
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The economic buyer is whoever can say yes when everyone else says no, and no when everyone
+    else says yes. Deals discover this person in week one or in the final week — and the final-week discovery
+    usually restarts the sale from zero.
+steps:
+- order: 1
+  name: Ask the process question, not the org-chart question
+  description: '''Walk me through how the last tool this size got bought'' reveals the real signer; ''who
+    decides'' invites the flattering answer.'
+  actor: human
+- order: 2
+  name: Verify with the money test
+  description: The economic buyer can reallocate budget, not just spend an allocated line. If approval
+    must go 'up' from your contact, you have not met the buyer yet.
+  actor: human
+- order: 3
+  name: Earn the meeting through your champion, with a reason
+  description: The buyer takes meetings that de-risk their quarter. Frame the ask as the thing THEY care
+    about — outcome and risk — never as a demo.
+  actor: human

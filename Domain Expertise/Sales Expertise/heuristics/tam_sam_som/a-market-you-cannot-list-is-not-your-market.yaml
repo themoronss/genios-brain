@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.tam_sam_som.a_market_you_cannot_list_is_not_your_market
+  name: A market you cannot list is not your market
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.tam_sam_som
+  subdomain: market_and_targeting
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The test of a target market is whether its members can be enumerated. 'Mid-market B2B companies'
+    is a phrase; four hundred nameable accounts with the pain and the budget is a market.
+  answers:
+  - Is this segment real enough to build pipeline against?

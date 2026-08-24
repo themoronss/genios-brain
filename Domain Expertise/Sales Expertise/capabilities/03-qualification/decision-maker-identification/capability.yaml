@@ -5,7 +5,7 @@ identity:
   subdomain: qualification
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Establishing authority from evidence rather than from title. In most B2B motions the

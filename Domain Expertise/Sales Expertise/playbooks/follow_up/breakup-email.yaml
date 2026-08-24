@@ -1,0 +1,29 @@
+identity:
+  id: sales.pb.follow_up.breakup_email
+  name: Breakup email
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The last message of a dead sequence, sent as a courtesy and a test: it names that you are
+    closing the file, which costs the silent prospect nothing to accept and almost nothing to reverse
+    — which is exactly why genuinely interested people reverse it.'
+steps:
+- order: 1
+  name: Declare the close, without guilt
+  description: State plainly you are closing the loop because you have not heard back and their silence
+    probably means not-now. No passive aggression — the reader can smell it.
+  actor: human
+- order: 2
+  name: Leave one door
+  description: 'One sentence: what to reply if the timing changes. Make re-opening a one-word action.'
+  actor: human
+- order: 3
+  name: Actually stop
+  description: The breakup only works if it is true. A 'final' email followed by more emails converts
+    your credibility into spam.
+  actor: human

@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.lead_generation.a_referral_outranks_ten_cold_leads
+  name: A referral outranks ten cold leads
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.lead_generation
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Referred buyers arrive with borrowed trust: they close faster, negotiate less, and churn
+    less. An hour spent earning one referral routinely beats a day of cold sourcing, so referral-asking
+    deserves a scheduled place, not leftover time.'
+  answers:
+  - Where should the next hour of pipeline work go?

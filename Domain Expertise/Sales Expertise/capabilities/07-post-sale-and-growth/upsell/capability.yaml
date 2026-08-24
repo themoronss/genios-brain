@@ -5,7 +5,7 @@ identity:
   subdomain: post_sale_and_growth
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Increasing volume or tier within the existing product. Usage-led and largely mechanical,

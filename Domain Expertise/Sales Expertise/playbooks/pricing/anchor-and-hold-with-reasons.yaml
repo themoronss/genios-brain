@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.pricing.anchor_and_hold_with_reasons
+  name: Anchor and hold with reasons
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.pricing
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Price is communicated with confidence after value is established, anchored high enough to
+    leave room, and defended with reasons — never moved just because someone frowned. Every concession
+    has a get; unilateral discounts teach buyers to frown longer.
+steps:
+- order: 1
+  name: Value first, price second — always in that order
+  description: A number given before the value story is a number compared to zero. Present price only
+    after the buyer has agreed what the problem costs them.
+  actor: human
+- order: 2
+  name: State the price plainly and stop talking
+  description: Nervous elaboration after the number reads as apology. Say it, then silence — the buyer's
+    response tells you where you actually stand.
+  actor: human
+- order: 3
+  name: Trade, never gift
+  description: 'Any movement is exchanged: longer term, case study, faster signature, annual prepay. ''What
+    can you do on price?'' is answered with ''what can you do on term?'''
+  actor: human

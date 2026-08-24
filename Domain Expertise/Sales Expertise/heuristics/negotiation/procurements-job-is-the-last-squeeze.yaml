@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.negotiation.procurements_job_is_the_last_squeeze
+  name: Procurement's job is the last squeeze
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.negotiation
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A late procurement discount demand is a ritual, not a deal crisis. It means the decision
+    is made — nobody negotiates price on a product they rejected. Hold, trade small, do not reopen the
+    whole commercial.
+  answers:
+  - Is the last-minute procurement squeeze a threat to the deal?

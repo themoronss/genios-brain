@@ -5,7 +5,7 @@ identity:
   subdomain: post_sale_and_growth
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Selling an adjacent product into an existing account. Behaves like a new sale with a warm

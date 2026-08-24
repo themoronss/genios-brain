@@ -5,7 +5,7 @@ identity:
   subdomain: closing
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Navigating contract review, redlines and the buyer's legal function. Legal is a veto seat:

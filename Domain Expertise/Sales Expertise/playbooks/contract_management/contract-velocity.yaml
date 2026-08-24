@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.contract_management.contract_velocity
+  name: Contract velocity
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.contract_management
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The contract phase is where won deals go to stall. The countermeasures are preparation (clean
+    template, pre-answered common redlines) and cadence — the seller drives the paper daily, because nobody
+    on the buyer's side owns 'fast'.
+steps:
+- order: 1
+  name: Send paper the same day as verbal yes
+  description: Every day between yes and document is decay. Template ready, terms pre-filled, sent within
+    hours.
+  actor: human
+- order: 2
+  name: Pre-concede the standard redlines
+  description: Liability caps, data terms, notice periods — know your fallback on the usual ten before
+    they are raised, so each redline costs an email, not a week.
+  actor: human
+- order: 3
+  name: Track WHERE it sits, daily
+  description: '''With legal'' is not a status; ''with Priya, expected Thursday'' is. The named owner
+    and date make the follow-up a courtesy instead of a chase.'
+  actor: human

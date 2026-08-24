@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.quota_planning.a_missed_quota_everyone_missed_is_a_planning_error
+  name: A missed quota everyone missed is a planning error
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.quota_planning
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: When most of the team misses, the plan was wrong, not the people. Diagnose planning before
+    performance — the reverse order burns trust and the same plan fails again next year.
+  answers:
+  - Whose failure is a broadly missed quota?

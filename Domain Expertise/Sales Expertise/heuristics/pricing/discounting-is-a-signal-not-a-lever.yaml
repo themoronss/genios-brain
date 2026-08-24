@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.pricing.discounting_is_a_signal__not_a_lever
+  name: Discounting is a signal, not a lever
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.pricing
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A fast unilateral discount tells the buyer your list price was fiction and your floor is
+    discoverable by waiting. It buys smaller deals AND longer negotiations — the opposite of both intended
+    effects.
+  answers:
+  - What does an early discount actually communicate?

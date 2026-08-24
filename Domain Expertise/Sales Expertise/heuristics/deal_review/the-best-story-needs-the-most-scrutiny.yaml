@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.deal_review.the_best_story_needs_the_most_scrutiny
+  name: The best story needs the most scrutiny
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.deal_review
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Polished deal narratives correlate with polished sellers, not with deal health — the confident
+    story is where the review must push hardest on evidence. The stumbling story about a real buyer is
+    often the healthier deal.
+  answers:
+  - Which deals deserve the hardest review questions?

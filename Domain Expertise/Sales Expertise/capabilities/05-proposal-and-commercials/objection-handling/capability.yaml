@@ -5,7 +5,7 @@ identity:
   subdomain: proposal_and_commercials
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Separating the stated objection from the real one, and responding specifically. A raised

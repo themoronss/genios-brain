@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.upsell.an_unfelt_limit_cannot_be_sold
+  name: An unfelt limit cannot be sold
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.upsell
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Upselling capacity a customer has never approached is selling insurance against a risk they
+    have not experienced — it produces polite deferral. Wait for the bump, or manufacture the experience
+    with a trial of the gated capability.
+  answers:
+  - Why do tier-upgrade pitches usually stall?

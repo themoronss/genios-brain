@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.churn_prevention.the_save_window_opens_before_the_cancel_email
+  name: The save window opens before the cancel email
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.churn_prevention
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: By the time cancellation is stated, the internal decision is weeks old and mostly socialised.
+    The real save window is at the leading signals — sponsor exit, usage cliff, unanswered reviews. Work
+    those; the cancel email is usually a formality.
+  answers:
+  - When is a churn save actually winnable?

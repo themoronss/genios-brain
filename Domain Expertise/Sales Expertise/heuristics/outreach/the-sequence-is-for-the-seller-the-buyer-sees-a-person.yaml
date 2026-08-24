@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.outreach.the_sequence_is_for_the_seller__the_buyer_sees_a_person
+  name: The sequence is for the seller; the buyer sees a person
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.outreach
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Buyers do not experience your automation stages — they experience one person being either
+    relevant or annoying. Any touch you would be embarrassed to have read back to you in a meeting should
+    not be in the sequence.
+  answers:
+  - Is this sequence step acceptable?

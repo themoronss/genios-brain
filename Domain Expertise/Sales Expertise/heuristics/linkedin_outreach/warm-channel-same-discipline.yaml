@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.linkedin_outreach.warm_channel__same_discipline
+  name: Warm channel, same discipline
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.linkedin_outreach
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'LinkedIn feels social, which tempts sloppy asks that email discipline would have caught.
+    The medium changes the greeting, not the bar: one-reader personalisation, phone-sized ask, follow-up
+    rules — all still apply.'
+  answers:
+  - Does outreach discipline relax on social channels?

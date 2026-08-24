@@ -5,7 +5,7 @@ identity:
   subdomain: post_sale_and_growth
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   The handover from sale to delivery and the path to first realised value. Time to first

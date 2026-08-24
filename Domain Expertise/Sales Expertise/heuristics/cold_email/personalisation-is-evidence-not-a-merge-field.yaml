@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.cold_email.personalisation_is_evidence__not_a_merge_field
+  name: Personalisation is evidence, not a merge field
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A first name and company name in a template is not personalisation — it is mail merge. The
+    bar is one sentence that could not exist without research on this specific person, because that sentence
+    is what buys the second sentence a reading.
+  answers:
+  - Is this email personalised enough to send?

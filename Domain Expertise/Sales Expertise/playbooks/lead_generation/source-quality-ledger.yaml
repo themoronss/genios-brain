@@ -1,0 +1,29 @@
+identity:
+  id: sales.pb.lead_generation.source_quality_ledger
+  name: Source-quality ledger
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.lead_generation
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Leads are not a number, they are a mix — and every source (inbound, referral, event, outbound,
+    partner) has its own conversion honesty. Volume from a source that never closes is cost wearing a
+    growth costume.
+steps:
+- order: 1
+  name: Tag every lead with its source at birth
+  description: Untagged leads make every later question unanswerable. The tag is set on entry, never reconstructed
+    from memory.
+  actor: human
+- order: 2
+  name: Read conversion per source monthly, to REVENUE
+  description: Leads-to-meeting flatters cheap sources; source-to-closed-won is the only honest column.
+  actor: human
+- order: 3
+  name: Shift effort to the top two sources
+  description: Double down where closed-won concentrates; starve what only produces activity. Referrals
+    almost always win this audit — act accordingly.
+  actor: human

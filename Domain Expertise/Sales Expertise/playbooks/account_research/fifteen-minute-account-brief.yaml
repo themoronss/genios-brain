@@ -1,0 +1,34 @@
+identity:
+  id: sales.pb.account_research.fifteen_minute_account_brief
+  name: Fifteen-minute account brief
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.account_research
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Research is bounded prep, not procrastination with a dashboard. Fifteen minutes produces
+    the four facts a first conversation needs; more than that is usually avoidance of the actual outreach.
+steps:
+- order: 1
+  name: What do they sell and to whom
+  description: One sentence in their customer's words — from their pricing page and case studies, not
+    their About page.
+  actor: human
+- order: 2
+  name: What changed recently
+  description: Funding, leadership change, launch, layoff, expansion — the freshest public event is the
+    likeliest reason a conversation is timely NOW.
+  actor: human
+- order: 3
+  name: Who owns the problem
+  description: Name the likely owner of the problem you solve, and one adjacent person — a single-threaded
+    first touch is fine; a wrong-threaded one is not.
+  actor: human
+- order: 4
+  name: What would make them say 'how did you know that'
+  description: One non-obvious fact — a tech choice, a hiring pattern, a market squeeze — that becomes
+    the cold email's first line.
+  actor: human

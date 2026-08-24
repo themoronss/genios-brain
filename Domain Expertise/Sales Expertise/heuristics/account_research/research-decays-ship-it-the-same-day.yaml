@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.account_research.research_decays__ship_it_the_same_day
+  name: Research decays; ship it the same day
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.account_research
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An account brief is fresh produce. The event that makes outreach timely is timely for everyone
+    who saw it, and the brief's value halves with every day between research and send.
+  answers:
+  - When should researched outreach go out?

@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.proposal_creation.sent_proposals_are_read_aloud_without_you
+  name: Sent proposals are read aloud without you
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.proposal_creation
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Assume every proposal is skimmed in four minutes by someone hostile who was never in a meeting.
+    That reader decides more deals than the champion — write for them.
+  answers:
+  - Who is the proposal actually written for?

@@ -5,7 +5,7 @@ identity:
   subdomain: sales_management
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Attainment, activity, conversion and ramp measured per seller, with the diagnosis separated

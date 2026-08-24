@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.territory_planning.coverage_balanced_territories
+  name: Coverage-balanced territories
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.territory_planning
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Territories are drawn from account potential and capacity arithmetic, reviewed on evidence
+    yearly — not accreted from history and grandfathering. Balanced territories are a fairness instrument
+    AND a coverage instrument at once.
+steps:
+- order: 1
+  name: Score accounts before drawing lines
+  description: Fit + intent + size per account. Territory value is the sum of its scores, not its count
+    of logos.
+  actor: human
+- order: 2
+  name: Balance to capacity honestly
+  description: A rep covers N real opportunities well. Territories beyond capacity are inventory nobody
+    works; below it, quota nobody can hit.
+  actor: human
+- order: 3
+  name: Rebalance on the calendar, not on complaints
+  description: Annual, criteria-driven, with transition rules for in-flight deals. Ad-hoc redraws teach
+    everyone to lobby instead of sell.
+  actor: human

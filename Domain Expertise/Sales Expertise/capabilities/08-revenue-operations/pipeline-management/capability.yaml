@@ -5,7 +5,7 @@ identity:
   subdomain: revenue_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Coverage, stage balance, velocity and hygiene. Most pipeline problems are three quarters

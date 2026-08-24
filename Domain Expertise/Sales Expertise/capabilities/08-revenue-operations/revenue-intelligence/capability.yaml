@@ -5,7 +5,7 @@ identity:
   subdomain: revenue_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Deriving patterns from activity, conversation and outcome data across the whole pipeline —

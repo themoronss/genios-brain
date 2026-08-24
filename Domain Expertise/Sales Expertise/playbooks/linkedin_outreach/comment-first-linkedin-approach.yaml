@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.linkedin_outreach.comment_first_linkedin_approach
+  name: Comment-first LinkedIn approach
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.linkedin_outreach
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A connection request from a stranger is judged in two seconds on one question: do I recognise
+    this person? Being usefully visible in their comments for two weeks before the request turns a cold
+    ask into a warm-ish one at near-zero cost.'
+steps:
+- order: 1
+  name: Engage their content with substance
+  description: Two or three comments that add a fact or a sharp question — over days, not in one hour,
+    which reads as targeting.
+  actor: human
+- order: 2
+  name: Send the request with a reason, not a pitch
+  description: One line naming why THEM — never a paragraph, never a link. The pitch in a connection request
+    converts acceptance into archive.
+  actor: human
+- order: 3
+  name: Move real conversations off-platform
+  description: The DM's job is to earn the email or the call. Long selling in a DM thread buries the deal
+    in a channel built for scrolling.
+  actor: human

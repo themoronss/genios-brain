@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.closing.time_kills_deals
+  name: Time kills deals
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.closing
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Momentum is a real deal asset: every idle week invites reorgs, budget freezes, rival vendors
+    and cold feet. Between commitment and signature, the seller''s job is to remove every day that does
+    not need to exist.'
+  answers:
+  - How urgent is the gap between verbal yes and signature?

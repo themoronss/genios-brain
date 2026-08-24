@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.meeting_booking.the_proposer_holds_the_ball
+  name: The proposer holds the ball
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.meeting_booking
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: When you propose times, the ball is theirs; when they propose, it is yours — and it must
+    be answered same-day. Scheduling threads die of slow ping-pong more than of refusal, and speed here
+    is read as a sample of what working with you is like.
+  answers:
+  - Whose move is this scheduling thread on, and how fast should it be answered?

@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.follow_up.the_thread_you_answered_is_not_the_loop_you_closed
+  name: The thread you answered is not the loop you closed
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Replying to one of a prospect''s three questions closes one loop, not the person. Follow-up
+    discipline is per-request: every distinct ask they made either has an answer, an owner, or a date.'
+  answers:
+  - What exactly is still open with this person?

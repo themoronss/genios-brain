@@ -5,7 +5,7 @@ identity:
   subdomain: closing
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Driving the final sequence: verbal agreement, paper, signature, and the mutual plan that

@@ -5,7 +5,7 @@ identity:
   subdomain: qualification
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Separating a real advocate from a friendly contact. The test is internal risk taken on our

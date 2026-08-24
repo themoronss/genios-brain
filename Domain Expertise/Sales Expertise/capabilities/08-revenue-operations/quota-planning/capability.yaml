@@ -5,7 +5,7 @@ identity:
   subdomain: revenue_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Setting targets from capacity, territory potential and historical conversion. A quota

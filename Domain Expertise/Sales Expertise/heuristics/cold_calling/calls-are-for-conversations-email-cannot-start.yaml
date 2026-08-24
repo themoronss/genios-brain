@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.cold_calling.calls_are_for_conversations_email_cannot_start
+  name: Calls are for conversations email cannot start
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_calling
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Cold calling earns its cost where the list is short and the value per account is high — named-account
+    motions, senior buyers, timing-critical events. Spraying calls at a long tail is the most expensive
+    way to be ignored.
+  answers:
+  - When does calling beat emailing for a first touch?

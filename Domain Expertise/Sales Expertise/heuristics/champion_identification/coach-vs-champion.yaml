@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.champion_identification.coach_vs_champion
+  name: Coach vs champion
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.champion_identification
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A coach tells you things; a champion does things. Both are valuable, only one moves deals.
+    Classifying a talkative coach as a champion is the most common cause of the 'sure-thing' deal that
+    never signs.
+  answers:
+  - Is this person a coach or a champion?

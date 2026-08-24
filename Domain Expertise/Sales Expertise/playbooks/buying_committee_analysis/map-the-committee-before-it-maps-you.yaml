@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.buying_committee_analysis.map_the_committee_before_it_maps_you
+  name: Map the committee before it maps you
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.buying_committee_analysis
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Deals above trivial size are decided by a committee the seller mostly never meets. The work
+    is naming every seat — economic buyer, users, technical gate, procurement, the skeptic — and knowing
+    which are filled, which are hostile, and which are empty.
+steps:
+- order: 1
+  name: List the seats the deal size implies
+  description: 'A ₹25k/mo SaaS buy at a startup: founder + one user. An enterprise rollout: six-plus seats.
+    Let deal size and company size set the expected roster, then find the people.'
+  actor: human
+- order: 2
+  name: 'Mark each seat: ally, neutral, hostile, unknown'
+  description: Unknown is the dangerous state — an unmapped skeptic surfaces at the worst moment. Every
+    'unknown' is a discovery task with an owner.
+  actor: human
+- order: 3
+  name: Test access, not assurances
+  description: '''Everyone is on board'' from one contact is a claim. A meeting where the other seats
+    show up is evidence. Ask for the meeting.'
+  actor: human

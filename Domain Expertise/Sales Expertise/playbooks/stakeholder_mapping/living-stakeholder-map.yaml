@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.stakeholder_mapping.living_stakeholder_map
+  name: Living stakeholder map
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.stakeholder_mapping
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A stakeholder map drawn once at qualification is archaeology by the proposal stage. People
+    join, leave, get promoted and change sides mid-deal; the map is maintained on every meaningful contact
+    or it silently becomes fiction.
+steps:
+- order: 1
+  name: Update on every multi-person interaction
+  description: New name on a thread, new voice in a call — thirty seconds to add them with role and read.
+    The cheap habit that prevents the expensive surprise.
+  actor: human
+- order: 2
+  name: Track influence lines, not just boxes
+  description: Who does the signer actually listen to? The advisor with no title on the org chart often
+    outweighs a VP on it.
+  actor: human
+- order: 3
+  name: Re-verify before every stage gate
+  description: 'Before proposal, before negotiation, before signature: is everyone on this map still in-seat
+    and still on-side? Departures found here cost a call; found later they cost the deal.'
+  actor: human

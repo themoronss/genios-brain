@@ -1,0 +1,17 @@
+identity:
+  id: sales.heu.buying_committee_analysis.the_unseen_skeptic_kills_late
+  name: The unseen skeptic kills late
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.buying_committee_analysis
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Deals rarely die from the people in the room; they die from the person who was never in the
+    room reviewing the decision at the end. If nobody on the committee map is a named skeptic, the map
+    is incomplete, not the deal safe.
+  answers:
+  - Why do well-run deals die at the end?
+  - Is this committee map complete?

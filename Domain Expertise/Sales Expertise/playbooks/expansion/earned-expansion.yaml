@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.expansion.earned_expansion
+  name: Earned expansion
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.expansion
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Expansion is proposed on the back of delivered value, into adjacent pain the current footprint
+    has made visible. The evidence: an account that hits its bought outcome, plus a named next problem
+    — pitched to a sponsor who already trusts the first result.'
+steps:
+- order: 1
+  name: Qualify expansion like a new deal
+  description: New team, new budget line, sometimes new buyer — the trust carries over; the diligence
+    does not get skipped.
+  actor: human
+- order: 2
+  name: Lead with the delivered number
+  description: '''The first scope returned X — here is where the same approach reaches Y.'' Expansion
+    sells on the customer''s own realised proof.'
+  actor: human
+- order: 3
+  name: Time it to their planning, not your quota
+  description: Land expansion asks inside their budgeting window. An off-cycle ask becomes 'next year'
+    by default.
+  actor: human

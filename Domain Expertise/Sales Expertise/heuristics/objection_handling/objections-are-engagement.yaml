@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.objection_handling.objections_are_engagement
+  name: Objections are engagement
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.objection_handling
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: People do not argue with products they have dismissed — they leave. The dangerous account
+    is the politely silent one; the objecting one is negotiating its way to yes. Welcome the pushback
+    and worry about the quiet.
+  answers:
+  - 'Which is worse: an objecting buyer or a quiet one?'

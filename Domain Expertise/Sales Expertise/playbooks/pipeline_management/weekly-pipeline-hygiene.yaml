@@ -1,0 +1,29 @@
+identity:
+  id: sales.pb.pipeline_management.weekly_pipeline_hygiene
+  name: Weekly pipeline hygiene
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.pipeline_management
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A pipeline is a shared factual record, not a motivational artifact. The weekly pass moves
+    every deal to its true stage, dates every next step, and removes the corpses — because every fiction
+    in the pipeline becomes a fiction in the forecast.
+steps:
+- order: 1
+  name: Stage by evidence, not optimism
+  description: A deal is in 'proposal' when a proposal was SENT, not intended. Stage definitions are behavioural
+    and non-negotiable, or stages mean nothing.
+  actor: human
+- order: 2
+  name: Every open deal carries a dated next step
+  description: No next step = not a deal, it is a memory. Date in the past = this week's first follow-up.
+  actor: human
+- order: 3
+  name: Kill zombies monthly, kindly
+  description: No buyer activity in 30-45 days → closed-lost with a reason and a revisit date. A fat pipeline
+    of dead deals hides the real coverage problem it exists to reveal.
+  actor: human

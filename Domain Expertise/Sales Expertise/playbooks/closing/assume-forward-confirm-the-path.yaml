@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.closing.assume_forward__confirm_the_path
+  name: Assume forward, confirm the path
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.closing
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Closing is not a moment of pressure; it is the natural end of a well-run process. From proposal
+    onward, speak in 'when' terms, and replace 'the ask' with a sequence of small confirmations that make
+    signing the default.
+steps:
+- order: 1
+  name: Trial-close early and often
+  description: '''If the pilot shows X, what happens next on your side?'' Objections surface while they
+    are cheap; silence here is a warning worth having early.'
+  actor: human
+- order: 2
+  name: Use their compelling event, not your quarter
+  description: Urgency borrowed from the buyer's own dated need moves deals; urgency from a seller's month-end
+    discount devalues the product and trains delay.
+  actor: human
+- order: 3
+  name: Ask cleanly, then stop
+  description: '''Anything preventing us from starting on the 1st?'' — then silence. The gap after a clean
+    close question is where the truth arrives; filling it costs the answer.'
+  actor: human

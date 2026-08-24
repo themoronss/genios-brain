@@ -5,7 +5,7 @@ identity:
   subdomain: proposal_and_commercials
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Price level, packaging, term and discount policy. The structural decisions — what is

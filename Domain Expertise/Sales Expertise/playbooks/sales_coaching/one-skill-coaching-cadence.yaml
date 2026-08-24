@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.sales_coaching.one_skill_coaching_cadence
+  name: One-skill coaching cadence
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.sales_coaching
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Coaching changes behaviour when it is specific, evidenced and singular: one skill per rep
+    per month, drawn from real calls and threads, practised deliberately — not a monthly critique buffet
+    nobody digests.'
+steps:
+- order: 1
+  name: Diagnose from the record
+  description: Review 2-3 real calls or threads for the pattern that costs the most. The evidence is the
+    diagnosis; opinion is a hypothesis.
+  actor: human
+- order: 2
+  name: Agree ONE focus and its rep
+  description: '''This month: isolating objections before answering.'' Practised in role-play, then live,
+    with the rep knowing exactly what is being watched.'
+  actor: human
+- order: 3
+  name: Close the loop with before/after evidence
+  description: 'Next month, same lens on new calls: did the pattern move? Coaching without the second
+    measurement is commentary.'
+  actor: human

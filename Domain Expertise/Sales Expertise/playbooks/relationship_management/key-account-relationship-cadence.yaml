@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.relationship_management.key_account_relationship_cadence
+  name: Key-account relationship cadence
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.relationship_management
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Strategic relationships decay silently under transactional contact. The cadence: a value-touch
+    every 4-6 weeks that asks for nothing — an insight, an intro, a relevant note — so that when an ask
+    eventually comes, it lands on warmth instead of on an invoice history.'
+steps:
+- order: 1
+  name: Tier accounts by strategic value
+  description: Not all relationships get the cadence — the top tier does, explicitly listed, so intention
+    replaces accident.
+  actor: human
+- order: 2
+  name: Schedule give-touches
+  description: 'Calendared like pipeline work: what will we GIVE this account this month? Asks are not
+    part of this cadence.'
+  actor: human
+- order: 3
+  name: Multi-thread above and beside the champion
+  description: Executive-to-executive and peer-to-peer lines, built in peacetime. Relationship breadth
+    is churn insurance bought before the storm.
+  actor: human

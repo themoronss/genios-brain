@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.cold_calling.permission_based_opener
+  name: Permission-based opener
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_calling
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The first ten seconds of a cold call decide it, and honesty outperforms tricks: name yourself,
+    admit it is a cold call, ask for thirty seconds. The pattern break of candour earns more conversations
+    than any pretence of a prior relationship.'
+steps:
+- order: 1
+  name: Open honest, ask permission
+  description: '''This is a cold call — can I take thirty seconds, and you decide if it is worth more?''
+    The admission disarms; the tiny ask makes yes easy.'
+  actor: human
+- order: 2
+  name: Deliver the thirty-second reason
+  description: One problem you see at companies like theirs, one sentence of evidence you can help, one
+    question. Practised until it is conversational, not read.
+  actor: human
+- order: 3
+  name: Take the no gracefully, log the fact
+  description: A no with a reason is research. Log what they said verbatim — three same-shaped nos are
+    a message about the pitch, not the prospects.
+  actor: human

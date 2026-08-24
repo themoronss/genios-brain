@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.sales_operations.process_serves_selling__or_it_is_theatre
+  name: Process serves selling, or it is theatre
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_operations
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every mandated field, stage and report must answer 'what decision does this feed?'. No answer
+    = theatre, and theatre in the sales process is paid for in selling hours — the scarcest input the
+    team has.
+  answers:
+  - Which process steps deserve to exist?

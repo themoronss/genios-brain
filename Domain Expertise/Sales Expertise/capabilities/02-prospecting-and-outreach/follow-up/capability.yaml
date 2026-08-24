@@ -5,7 +5,7 @@ identity:
   subdomain: prospecting_and_outreach
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Cadence, value-add and stop rules. Applies across the whole lifecycle, not only prospecting

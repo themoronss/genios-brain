@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.onboarding.silent_onboarding_is_failing_onboarding
+  name: Silent onboarding is failing onboarding
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.onboarding
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A customer who goes quiet during onboarding is not busy — they are stalling on something
+    unstated. Engagement gaps in the first month predict churn better than any later health metric; chase
+    silence here immediately.
+  answers:
+  - What does customer silence in week two mean?
