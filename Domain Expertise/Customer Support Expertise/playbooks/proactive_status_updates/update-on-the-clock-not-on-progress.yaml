@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.proactive_status_updates.update_on_the_clock_not_on_progress
+  name: Update on the clock, not on progress
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.proactive_status_updates
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Updates go out on the promised cadence even when nothing changed — 'still working, here is
+    where we are' — because the cadence is the product. Progress-triggered updates fall silent exactly
+    when anxiety peaks.
+steps:
+- order: 1
+  name: Set cadence by severity
+  description: P1 hourly, P2 daily, P3 on change. Stated to the customer, honoured like an SLA.
+  actor: human
+- order: 2
+  name: Make no-news updates substantive
+  description: What we ruled out, what we try next. 'No update' updates erode; 'here is the path' updates
+    reassure.
+  actor: human
+- order: 3
+  name: Close the loop with a final summary
+  description: 'When resolved: what happened, what changed, what we are doing so it does not recur. The
+    last update is the one they remember.'
+  actor: human

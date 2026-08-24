@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.access_and_identity_administration.access_accumulates_never_evaporates
+  name: Access accumulates, never evaporates
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.access_and_identity_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Nobody requests access removal — there is no incentive. Without scheduled review, every organisation
+    converges on everyone-can-touch-everything, one convenience grant at a time.
+  answers:
+  - Why is periodic access review non-optional?

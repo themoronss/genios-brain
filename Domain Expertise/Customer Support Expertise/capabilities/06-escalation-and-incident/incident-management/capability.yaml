@@ -5,7 +5,7 @@ identity:
   subdomain: escalation_and_incident
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Running a fault that has stopped being one customer's problem. The hard part is the

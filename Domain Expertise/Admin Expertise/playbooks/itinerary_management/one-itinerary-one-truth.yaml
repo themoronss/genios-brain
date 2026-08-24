@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.itinerary_management.one_itinerary_one_truth
+  name: One itinerary, one truth
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.itinerary_management
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every trip has one living itinerary — flights, stays, meetings, transfers, contacts — updated
+    as things change and synced to the traveller's calendar, because a trip run from six confirmation
+    emails is a trip run on luck.
+steps:
+- order: 1
+  name: Consolidate at booking time
+  description: Everything into one document/app view as it is booked, not the night before.
+  actor: human
+- order: 2
+  name: Push changes in real time
+  description: Delays and gate changes reach the traveller with the ADJUSTED plan, not just the alert.
+  actor: human
+- order: 3
+  name: Include the failure numbers
+  description: Airline, hotel, local contact, home contact — the itinerary is also the contingency card.
+  actor: human

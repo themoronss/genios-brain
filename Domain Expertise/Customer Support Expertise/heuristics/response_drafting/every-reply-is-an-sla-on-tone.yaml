@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.response_drafting.every_reply_is_an_sla_on_tone
+  name: Every reply is an SLA on tone
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.response_drafting
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Customers screenshot support replies. Write each one as if it will be read aloud in the buyer's
+    renewal meeting — because occasionally it is.
+  answers:
+  - What standard should a routine reply meet?

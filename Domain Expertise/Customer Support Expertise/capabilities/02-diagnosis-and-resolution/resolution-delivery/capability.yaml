@@ -7,7 +7,7 @@ identity:
   subdomain: diagnosis_and_resolution
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Turning whatever actually made the problem stop into something the customer receives,

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.onboarding_administration.day_one_is_remembered_forever
+  name: Day one is remembered forever
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.onboarding_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A joiner greeted by a working laptop and a plan tells that story for years; one who waited
+    three days for email tells that one instead. Onboarding admin is employer branding delivered as logistics.
+  answers:
+  - What does day-one readiness signal?

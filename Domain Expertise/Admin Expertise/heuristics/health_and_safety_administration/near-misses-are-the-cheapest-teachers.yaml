@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.health_and_safety_administration.near_misses_are_the_cheapest_teachers
+  name: Near-misses are the cheapest teachers
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.health_and_safety_administration
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every accident was preceded by near-misses nobody recorded. A near-miss log with follow-ups
+    is the highest-ROI safety instrument an office can run.
+  answers:
+  - What predicts workplace accidents?

@@ -1,0 +1,26 @@
+identity:
+  id: admin.pb.action_item_tracking.one_register_across_meetings
+  name: One register across meetings
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.action_item_tracking
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Action items from ALL meetings live in one tracked register — owner, source, due, status
+    — chased on a rhythm, because per-meeting action lists scattered across documents are write-only memory.
+steps:
+- order: 1
+  name: Harvest into the register same-day
+  description: From minutes to the register within hours, deduplicated against existing threads.
+  actor: human
+- order: 2
+  name: Chase on cadence, before due
+  description: The register is worked weekly minimum; owners hear about items BEFORE they are late.
+  actor: human
+- order: 3
+  name: Open the next meeting with the register
+  description: Previous actions reviewed first — the two-minute ritual that makes commitments real.
+  actor: human

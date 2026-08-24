@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.ticket_review.calibrated_sampling_review
+  name: Calibrated sampling review
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.ticket_review
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Ticket QA reviews a stratified sample — some random, some high-risk (reopens, breaches, escalations)
+    — against a rubric the whole team scored calibration rounds on, so feedback is consistent enough to
+    be fair and specific enough to teach.
+steps:
+- order: 1
+  name: Stratify the sample
+  description: Random keeps honesty; risk-picked finds the lessons. Pure cherry-picking teaches only fear.
+  actor: human
+- order: 2
+  name: Score against the shared rubric
+  description: Accuracy, completeness, tone, process — written anchors per grade. Reviewers calibrate
+    together monthly or drift apart silently.
+  actor: human
+- order: 3
+  name: Turn patterns into coaching, not verdicts
+  description: Per-agent patterns feed coaching; per-process patterns feed process fixes. A QA program
+    producing only scores produced nothing.
+  actor: human

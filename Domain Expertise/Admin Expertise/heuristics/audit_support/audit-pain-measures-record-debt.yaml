@@ -1,0 +1,16 @@
+identity:
+  id: admin.heu.audit_support.audit_pain_measures_record_debt
+  name: Audit pain measures record debt
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.audit_support
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A brutal audit is rarely about the auditor — it is deferred filing, unreconciled registers
+    and tribal knowledge presenting their invoice at once. The audit is the symptom; the records were
+    the disease.
+  answers:
+  - What makes audits painful?

@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.health_and_safety_administration.safety_basics_always_current
+  name: Safety basics, always current
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.health_and_safety_administration
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The safety baseline — assessments current, incidents logged and investigated, drills done,
+    records kept — is maintained as routine, because safety administration is invisible until the day
+    it is the only thing that matters.
+steps:
+- order: 1
+  name: Keep risk assessments living
+  description: Reviewed on schedule and on change — new equipment, new layout, new headcount tier.
+  actor: human
+- order: 2
+  name: Log and investigate every incident and near-miss
+  description: Near-misses are free lessons; unlogged ones are prepaid repeats.
+  actor: human
+- order: 3
+  name: Drill and document
+  description: Evacuations practised, first-aiders current, records filed. In an emergency, rehearsal
+    is the whole plan.
+  actor: human

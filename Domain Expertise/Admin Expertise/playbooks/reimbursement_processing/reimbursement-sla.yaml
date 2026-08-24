@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.reimbursement_processing.reimbursement_sla
+  name: Reimbursement SLA
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.reimbursement_processing
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Employee reimbursements run on a published clock — submission to payment in days, status
+    visible, rejections explained kindly with a fix path — because this is the one finance process every
+    employee personally experiences.
+steps:
+- order: 1
+  name: Publish and honour the clock
+  description: '''Approved by Wed, paid Friday'' — the SLA makes the process trustworthy and the trust
+    makes compliance easy.'
+  actor: human
+- order: 2
+  name: Reject with the remedy
+  description: '''Missing receipt for item 2 — photo suffices'' beats a bare rejection. The goal is completion,
+    not gatekeeping.'
+  actor: human
+- order: 3
+  name: Batch to the payroll or payment rhythm
+  description: Predictable payout days end the 'when will I get it' inquiries entirely.
+  actor: human

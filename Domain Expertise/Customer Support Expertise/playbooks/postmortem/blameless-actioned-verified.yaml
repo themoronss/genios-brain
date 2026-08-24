@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.postmortem.blameless_actioned_verified
+  name: Blameless, actioned, verified
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.postmortem
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A postmortem asks what made the failure possible and easy — never who — and produces few,
+    owned, dated actions whose completion someone actually verifies. Everything else is theatre with a
+    template.
+steps:
+- order: 1
+  name: Reconstruct the timeline from artifacts
+  description: Logs, messages, deploys — what happened and when, agreed before any why.
+  actor: human
+- order: 2
+  name: Ask why-it-was-possible, five levels deep
+  description: 'Past the trigger to the enabling conditions: the missing alarm, the assumption, the manual
+    step. The trigger is rarely the lesson.'
+  actor: human
+- order: 3
+  name: Cut actions to the few that will happen
+  description: Three owned dated actions beat eleven aspirations. Track to done — an unimplemented action
+    list is the incident's second failure.
+  actor: human

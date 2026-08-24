@@ -8,7 +8,7 @@ identity:
   subdomain: support_management
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Holding a support relationship with a named account across time, rather than answering its

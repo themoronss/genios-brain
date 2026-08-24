@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.asset_register.assets_vanish_in_the_gaps_between_owners
+  name: Assets vanish in the gaps between owners
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_register
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Equipment is lost at transitions — exits, moves, repairs — precisely when custody is ambiguous.
+    The register's custody trail is what makes the gaps accountable.
+  answers:
+  - When do assets actually disappear?

@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.ticket_review.review_the_system_through_the_ticket
+  name: Review the system through the ticket
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.ticket_review
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A bad ticket usually exposes a bad macro, a missing article, or an ambiguous policy before
+    it exposes a bad agent. QA that only grades people fixes the cheapest 20% of what it finds.
+  answers:
+  - What is ticket review actually for?

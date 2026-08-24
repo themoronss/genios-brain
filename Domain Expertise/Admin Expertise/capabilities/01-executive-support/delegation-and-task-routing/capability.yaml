@@ -9,7 +9,7 @@ identity:
   subdomain: executive_support
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Turning an inbound ask into an owned piece of work: identifying the right owner by capacity

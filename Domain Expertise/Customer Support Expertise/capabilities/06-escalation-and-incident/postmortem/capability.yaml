@@ -5,7 +5,7 @@ identity:
   subdomain: escalation_and_incident
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Turning something that already went wrong into a system that fails differently next time. The

@@ -1,31 +1,19 @@
-# Knowledge manifest for admin.compliance_and_governance.policy_administration — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/policy-administration/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: admin.compliance_and_governance.policy_administration
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.pb.policy_administration.policies_people_can_actually_follow
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.heu.policy_administration.policy_count_inversely_predicts_compliance
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
   scoped: []

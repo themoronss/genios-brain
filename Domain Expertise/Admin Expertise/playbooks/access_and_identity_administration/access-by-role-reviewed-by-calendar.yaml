@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.access_and_identity_administration.access_by_role_reviewed_by_calendar
+  name: Access by role, reviewed by calendar
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.access_and_identity_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: System access follows role templates, changes with role changes, and gets recertified periodically
+    — because access accretes silently with tenure and the long-tenured employee's permission set becomes
+    an unaudited map of their career.
+steps:
+- order: 1
+  name: Grant by role template, exceptions logged
+  description: Standard sets per role; every exception has a reason and a review date.
+  actor: human
+- order: 2
+  name: Change access when roles change
+  description: Transfers trigger access diffs — the old team's systems leave, the new team's arrive. Role
+    changes without access changes are drift.
+  actor: human
+- order: 3
+  name: Recertify quarterly on the sensitive set
+  description: Owners confirm each person still needs each sensitive access. The review always finds surprises;
+    that is its job.
+  actor: human

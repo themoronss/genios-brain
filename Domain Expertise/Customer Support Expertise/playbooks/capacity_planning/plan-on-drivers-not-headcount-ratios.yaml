@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.capacity_planning.plan_on_drivers_not_headcount_ratios
+  name: Plan on drivers, not headcount ratios
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.capacity_planning
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Capacity is forecast from ticket drivers × handle time × coverage promises — then stress-tested
+    against launches, seasonality and the growth plan, because industry headcount ratios import someone
+    else's product quality.
+steps:
+- order: 1
+  name: Forecast demand from your own curves
+  description: Volume per customer cohort, seasonality, launch calendar. Your history, not a benchmark
+    blog.
+  actor: human
+- order: 2
+  name: Model handle-time honestly, including the invisible
+  description: QA, coaching, knowledge work, meetings — agents are ~70% ticket-available at best. Planning
+    at 100% plans burnout.
+  actor: human
+- order: 3
+  name: Decide the buffer explicitly
+  description: Staffing at mean demand means failing every peak. Choose the percentile you staff for and
+    own what it costs either way.
+  actor: human

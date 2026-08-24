@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.proactive_status_updates.anxiety_scales_with_silence_squared
+  name: Anxiety scales with silence squared
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.proactive_status_updates
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The second missed update does not double the anxiety of the first — it multiplies it, and
+    CC lists start growing. The escalation you receive at hour six was usually purchasable for one update
+    at hour two.
+  answers:
+  - Why did a manageable issue become an executive escalation?

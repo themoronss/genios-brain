@@ -8,7 +8,7 @@ identity:
   subdomain: knowledge_and_deflection
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Putting a model between the question and the queue, and owning what it says. The failure

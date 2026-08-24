@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.expectation_setting.promise_the_process_not_the_outcome
+  name: Promise the process, not the outcome
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.expectation_setting
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'When the outcome is uncertain, promise the checkpoints: what we are doing, when you will
+    next hear from us — and then hit those. Kept small promises buy patience that big vague ones burn.'
+steps:
+- order: 1
+  name: Give a next-update time, always
+  description: '''Update by 4pm tomorrow even if unresolved'' converts silent waiting into scheduled waiting.'
+  actor: human
+- order: 2
+  name: Never promise a date engineering has not given
+  description: A support-invented ETA is a future apology. 'I will have a date for you by X' is honest
+    and keepable.
+  actor: human
+- order: 3
+  name: Reset expectations the moment they slip
+  description: A proactive 'this is taking longer, next update Friday' costs a sentence; a missed promise
+    costs the relationship's benefit of the doubt.
+  actor: human

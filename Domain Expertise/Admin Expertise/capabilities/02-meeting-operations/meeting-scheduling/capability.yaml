@@ -9,7 +9,7 @@ identity:
   subdomain: meeting_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Finding a slot that works for a set of calendars, time zones and seniority constraints, with

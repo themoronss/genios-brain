@@ -8,7 +8,7 @@ identity:
   subdomain: knowledge_and_deflection
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Curating the canned responses that make an agent fast, and pruning the ones that make the

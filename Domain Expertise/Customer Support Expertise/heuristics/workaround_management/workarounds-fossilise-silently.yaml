@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.workaround_management.workarounds_fossilise_silently
+  name: Workarounds fossilise silently
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.workaround_management
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Nothing outlives a temporary fix that works well enough. Untracked workarounds become undocumented
+    product behaviour that upgrades then break — the tracking is what keeps 'temporary' true.
+  answers:
+  - What happens to workarounds nobody tracks?

@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.product_feedback_routing.route_with_receipts_close_the_loop_back
+  name: Route with receipts, close the loop back
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.product_feedback_routing
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Product feedback flows to product as themes with linked tickets and revenue context, and
+    the answer — shipped, planned, or won't — flows BACK to every customer who asked, because a black-hole
+    feedback pipe teaches customers to stop telling you things.
+steps:
+- order: 1
+  name: Attach every routed theme to its askers
+  description: The theme carries its ticket list. Product sees weight; support keeps the list for the
+    loop-back.
+  actor: human
+- order: 2
+  name: Get a disposition, even a no
+  description: Planned / researching / won't-do — any honest state beats silence. Support needs the answer
+    to represent it.
+  actor: human
+- order: 3
+  name: Tell the askers when anything changes
+  description: '''The export you asked for shipped today'' is the cheapest delight in SaaS — and it only
+    happens if the asker list survived.'
+  actor: human

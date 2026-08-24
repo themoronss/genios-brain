@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.delegation_and_task_routing.route_to_owners_with_deadlines
+  name: Route to owners with deadlines
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.delegation_and_task_routing
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Everything leaving the executive's desk goes to a named owner with a due date and a check-back
+    — logged centrally — because 'someone should' is where tasks go to die and delegation without follow-up
+    is abdication.
+steps:
+- order: 1
+  name: Name one owner per item
+  description: Two owners is zero owners. The owner can delegate further, but the ledger tracks them.
+  actor: human
+- order: 2
+  name: Attach context worth executing on
+  description: The why and the desired shape travel with the task. Context-free delegation returns wrong
+    work punctually.
+  actor: human
+- order: 3
+  name: Check back on the date, visibly
+  description: The follow-up is scheduled at delegation time. Known follow-up is what converts requests
+    into priorities.
+  actor: human

@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.contract_administration.one_contract_register_all_obligations
+  name: One contract register, all obligations
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.contract_administration
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every executed contract lands in one register with parties, value, dates, renewal terms and
+    OUR obligations extracted — because the org must know what it has promised without re-reading PDFs
+    under pressure.
+steps:
+- order: 1
+  name: Register at execution with obligations extracted
+  description: Notice periods, deliverables, payment terms, auto-renewals — pulled into fields the moment
+    ink dries.
+  actor: human
+- order: 2
+  name: Alert on every dated clause
+  description: Renewal windows, notice deadlines, milestone dates — calendared from the register, not
+    from memory.
+  actor: human
+- order: 3
+  name: Answer from the register first
+  description: '''What did we agree with X?'' is a register lookup, PDF second. The register is the org''s
+    contractual memory.'
+  actor: human

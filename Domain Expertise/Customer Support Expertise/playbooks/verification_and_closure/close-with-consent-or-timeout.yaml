@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.verification_and_closure.close_with_consent_or_timeout
+  name: Close with consent or timeout
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.verification_and_closure
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket closes when the customer confirms, or after a stated silence window with an easy
+    reopen — never unilaterally the moment an agent believes. Closure discipline is what keeps reopen
+    rates honest.
+steps:
+- order: 1
+  name: Ask for confirmation with a deadline
+  description: '''Does this resolve it? We will close in 5 days if we do not hear back — reply to keep
+    it open.'''
+  actor: human
+- order: 2
+  name: Close on timeout, gently, reopenable
+  description: The closure note repeats the fix and the one-click reopen. Timeout closure is administration,
+    not judgment.
+  actor: human
+- order: 3
+  name: Treat reopens as data
+  description: A reopened ticket is a verification failure. Per-agent and per-category reopen rates are
+    the closure process's quality metric.
+  actor: human

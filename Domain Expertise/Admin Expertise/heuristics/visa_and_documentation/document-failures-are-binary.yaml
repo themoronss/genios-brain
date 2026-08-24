@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.visa_and_documentation.document_failures_are_binary
+  name: Document failures are binary
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.visa_and_documentation
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Most trip problems degrade gracefully — a document problem cancels. The asymmetry justifies
+    paranoid-early document work on every international trip.
+  answers:
+  - Why front-load visa work?

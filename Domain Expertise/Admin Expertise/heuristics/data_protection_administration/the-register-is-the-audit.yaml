@@ -1,0 +1,16 @@
+identity:
+  id: admin.heu.data_protection_administration.the_register_is_the_audit
+  name: The register is the audit
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.data_protection_administration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Most data-protection scrutiny reduces to 'show me your records'. An org that can produce
+    its processing register, consents and DSR log has already passed; one that must reconstruct them has
+    already failed.
+  answers:
+  - What does data-protection readiness actually look like?

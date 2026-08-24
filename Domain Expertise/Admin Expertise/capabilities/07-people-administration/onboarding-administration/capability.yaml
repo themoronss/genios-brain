@@ -9,7 +9,7 @@ identity:
   subdomain: people_administration
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Everything that must exist before a start date: contract and right-to-work documentation,

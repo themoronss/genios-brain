@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.agent_coaching.one_skill_support_coaching
+  name: One-skill support coaching
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.agent_coaching
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Coaching moves one named skill per agent per cycle, evidenced from their real tickets, practised
+    deliberately, re-measured next cycle — the same discipline as sales coaching, aimed at resolution
+    craft.
+steps:
+- order: 1
+  name: Diagnose from their actual tickets
+  description: 'Read a handful: where does quality leak — diagnosis depth, expectation-setting, closure
+    discipline?'
+  actor: human
+- order: 2
+  name: Set one focus with examples
+  description: '''This month: promise a next-update time in every open reply'' — with two of their own
+    tickets as before-examples.'
+  actor: human
+- order: 3
+  name: Re-measure and name the win
+  description: 'Next cycle, same lens: did it move? Progress named out loud is what makes coaching feel
+    like investment instead of surveillance.'
+  actor: human

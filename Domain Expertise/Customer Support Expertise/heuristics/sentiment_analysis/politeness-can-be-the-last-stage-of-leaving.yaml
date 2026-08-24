@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.sentiment_analysis.politeness_can_be_the_last_stage_of_leaving
+  name: Politeness can be the last stage of leaving
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.sentiment_analysis
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Some customers get NICER as they disengage — short, courteous, no feature asks, no complaints.
+    Falling engagement with rising politeness is a quiet-quitting account, not a happy one.
+  answers:
+  - Is a suddenly-polite low-engagement account healthy?

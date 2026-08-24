@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.document_control.controlled_documents_lifecycle
+  name: Controlled documents lifecycle
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.document_control
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Documents that bind — policies, contracts, SOPs — get controlled handling: owner, review
+    date, distribution list, change log — because a binding document nobody owns drifts from reality and
+    then binds you to the drift.'
+steps:
+- order: 1
+  name: Register what counts as controlled
+  description: The binding set is enumerated. Everything on it has an owner and a review date; everything
+    off it is ordinary.
+  actor: human
+- order: 2
+  name: Change through the owner, logged
+  description: Edits to controlled docs go through the owner with a what-changed line. Silent edits to
+    policies are how disputes start.
+  actor: human
+- order: 3
+  name: Review on schedule, retire honestly
+  description: 'At review: still true? Update or retire. A stale controlled document is worse than none
+    — it carries false authority.'
+  actor: human

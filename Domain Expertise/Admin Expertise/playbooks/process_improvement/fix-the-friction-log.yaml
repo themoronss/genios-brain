@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.process_improvement.fix_the_friction_log
+  name: Fix the friction log
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.process_improvement
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Admin processes improve from a running friction log — every recurring annoyance, wait and
+    workaround recorded — with the top item fixed each month, because continuous improvement is a habit
+    with a backlog, not an initiative with a slide deck.
+steps:
+- order: 1
+  name: Log frictions as they occur
+  description: The double-entry, the wait-on-approval, the manual copy — thirty seconds each into the
+    log.
+  actor: human
+- order: 2
+  name: Pick monthly by pain × frequency
+  description: One improvement, properly done, per cycle. The log's ranking beats anyone's memory of what
+    hurts.
+  actor: human
+- order: 3
+  name: Measure the before and after
+  description: Time or errors, before vs after. Improvements without measures become opinions in the next
+    debate.
+  actor: human

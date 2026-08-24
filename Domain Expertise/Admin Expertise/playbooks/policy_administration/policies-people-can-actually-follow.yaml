@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.policy_administration.policies_people_can_actually_follow
+  name: Policies people can actually follow
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.policy_administration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Policy administration keeps the policy set small, current, findable and acknowledged — every
+    policy owned, reviewed on schedule, written for readers — because unfollowable policy volume produces
+    performative compliance and real ignorance.
+steps:
+- order: 1
+  name: Keep the set minimal and owned
+  description: Every policy has an owner and a reason to exist. Orphan policies get adopted or retired.
+  actor: human
+- order: 2
+  name: Version and acknowledge on change
+  description: Material changes get re-acknowledged by affected staff — the log is the enforcement evidence.
+  actor: human
+- order: 3
+  name: Write for the reader under pressure
+  description: Short, concrete, example-led. A policy nobody can apply at 5pm Friday is decoration.
+  actor: human

@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.agenda_preparation.decision_first_agendas
+  name: Decision-first agendas
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.agenda_preparation
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An agenda lists the decisions to be made and the inputs pre-read, with owners and timeboxes
+    — because meetings without decision agendas default to status theatre, and status is what documents
+    are for.
+steps:
+- order: 1
+  name: Frame items as questions to decide
+  description: '''Choose Q3 pricing'' not ''Pricing discussion''. A question has a done-state; a topic
+    has a duration.'
+  actor: human
+- order: 2
+  name: Attach pre-reads, expect them read
+  description: Context circulates before; the meeting starts at the decision, not the recap. Recapping
+    punishes the prepared.
+  actor: human
+- order: 3
+  name: Timebox by importance
+  description: The big decision gets the big block, first — not the leftover minutes after updates.
+  actor: human

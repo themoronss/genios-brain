@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.resolution_delivery.resolve_in_the_customer_s_terms
+  name: Resolve in the customer's terms
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.resolution_delivery
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A resolution is delivered when the customer can do the thing they originally could not —
+    stated plainly, with what was wrong, what changed, and what to do if it recurs. Internal fix-speak
+    is not delivery.
+steps:
+- order: 1
+  name: Confirm the fix against their original ask
+  description: Reread message one. Resolve what they asked, not the adjacent thing that was easier.
+  actor: human
+- order: 2
+  name: Explain cause and change in two sentences
+  description: What broke, what we did. Brevity with substance — a customer who understands trusts the
+    closure.
+  actor: human
+- order: 3
+  name: Hand them the if-it-recurs path
+  description: Reference id and the fast lane back. Recurrence with an easy return is annoying; without
+    one it is churn fuel.
+  actor: human

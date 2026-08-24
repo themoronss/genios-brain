@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.delegation_and_task_routing.delegation_is_trust_plus_verification
+  name: Delegation is trust plus verification
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.delegation_and_task_routing
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Delegating and then auditing every step is not delegation; delegating and never checking
+    is not management. The check-back cadence — set by stakes — is where the balance lives.
+  answers:
+  - How much follow-up does delegation need?

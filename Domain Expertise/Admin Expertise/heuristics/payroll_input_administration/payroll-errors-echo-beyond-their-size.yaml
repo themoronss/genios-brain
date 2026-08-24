@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.payroll_input_administration.payroll_errors_echo_beyond_their_size
+  name: Payroll errors echo beyond their size
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.payroll_input_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ₹500 payroll mistake generates distrust disproportionate to amount — it is the one number
+    every employee checks. Payroll accuracy is the cheapest trust programme a company runs.
+  answers:
+  - Why does payroll precision matter so much?

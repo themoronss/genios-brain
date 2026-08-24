@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.renewal_management.renewals_as_annual_re_decisions
+  name: Renewals as annual re-decisions
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.renewal_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every renewal window opens with a usage-and-value check — used? needed? renegotiable? — before
+    the notice deadline, because renewal-by-inertia is how tool sprawl and zombie subscriptions eat budgets.
+steps:
+- order: 1
+  name: Open the review at notice-window minus prep
+  description: Enough runway to assess AND negotiate AND cancel if warranted.
+  actor: human
+- order: 2
+  name: Check usage against seats and tiers
+  description: Paying for 50, using 12 — the commonest finding. The usage pull is the negotiation's ammunition.
+  actor: human
+- order: 3
+  name: Renew deliberately, downsize or exit deliberately
+  description: Each renewal gets an explicit decision with a name on it. Silence is not approval; it is
+    unowned spend.
+  actor: human

@@ -9,7 +9,7 @@ identity:
   subdomain: travel_and_events
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Turning bookings into a workable day: transfer times, time zones, meeting sequencing,

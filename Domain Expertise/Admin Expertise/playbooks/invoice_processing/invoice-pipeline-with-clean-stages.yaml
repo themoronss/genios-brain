@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.invoice_processing.invoice_pipeline_with_clean_stages
+  name: Invoice pipeline with clean stages
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.invoice_processing
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Inbound invoices flow capture → validation → approval → scheduled payment, each stage owned
+    and aged — because invoices lost in inboxes become late fees, damaged vendor relations and month-end
+    mysteries.
+steps:
+- order: 1
+  name: Capture into one queue on arrival
+  description: Whatever the door — email, portal, paper — the invoice enters the pipeline same-day with
+    its metadata.
+  actor: human
+- order: 2
+  name: Validate before approval
+  description: Vendor known? PO matched? Duplicate check? Validation failures return to sender now, not
+    at payment time.
+  actor: human
+- order: 3
+  name: Approve by threshold, pay on schedule
+  description: Approvals route by amount; payments batch on terms. Ad-hoc payments are error surface.
+  actor: human

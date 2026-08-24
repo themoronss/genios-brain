@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.priority_and_severity.tone_is_not_severity
+  name: Tone is not severity
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.priority_and_severity
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Angry is a communication state, not an impact measure. Triage by tone rewards shouting and
+    buries the polite customer with the real outage — the most expensive mistake an intake queue makes.
+  answers:
+  - Does an angry customer's ticket rank higher?

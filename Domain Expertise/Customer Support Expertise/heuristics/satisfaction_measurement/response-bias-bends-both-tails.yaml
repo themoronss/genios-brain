@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.satisfaction_measurement.response_bias_bends_both_tails
+  name: Response bias bends both tails
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The delighted and the furious answer surveys; the middle stays silent. Treat CSAT as a trend
+    line of the vocal, never as a census — and never celebrate a number whose denominator is 8% of tickets.
+  answers:
+  - What does a CSAT score actually represent?

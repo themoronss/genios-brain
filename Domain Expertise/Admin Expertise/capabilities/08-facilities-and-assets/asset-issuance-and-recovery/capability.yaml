@@ -9,7 +9,7 @@ identity:
   subdomain: facilities_and_assets
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   The custody chain: issuing equipment against a signed acknowledgement, tracking transfers,

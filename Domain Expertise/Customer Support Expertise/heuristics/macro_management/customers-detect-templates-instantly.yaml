@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.macro_management.customers_detect_templates_instantly
+  name: Customers detect templates instantly
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.macro_management
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: One mismatched pronoun or an answer to a question they did not ask, and the customer stops
+    reading and starts escalating. The minutes a raw macro saves are repaid with interest in the reply
+    to the reply.
+  answers:
+  - What does an obviously-templated reply cost?

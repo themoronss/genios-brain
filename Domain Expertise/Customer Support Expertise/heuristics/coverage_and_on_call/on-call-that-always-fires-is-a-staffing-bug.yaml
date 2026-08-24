@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.coverage_and_on_call.on_call_that_always_fires_is_a_staffing_bug
+  name: On-call that always fires is a staffing bug
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.coverage_and_on_call
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Regular off-hours pages are not dedication, they are the roster and the contract map disagreeing.
+    Chronic on-call load is capacity planning debt wearing a pager.
+  answers:
+  - What does a noisy on-call rotation indicate?

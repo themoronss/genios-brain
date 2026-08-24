@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.policy_administration.policy_count_inversely_predicts_compliance
+  name: Policy count inversely predicts compliance
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.policy_administration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Beyond a small set, each additional policy reduces attention to all of them. The compliance-maximising
+    move is often deleting policies, not adding them.
+  answers:
+  - Does more policy mean more compliance?

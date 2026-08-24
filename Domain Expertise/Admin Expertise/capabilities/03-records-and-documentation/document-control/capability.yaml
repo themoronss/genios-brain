@@ -9,7 +9,7 @@ identity:
   subdomain: records_and_documentation
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Governing documents as controlled artefacts rather than files: one authoritative location, a

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.expense_management.slow_reimbursement_is_a_loan_from_staff
+  name: Slow reimbursement is a loan from staff
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.expense_management
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every reimbursement delay makes employees involuntary creditors of the company — resented
+    quietly and remembered at review time. Reimbursement speed is a morale line-item.
+  answers:
+  - What does slow expense repayment actually cost?

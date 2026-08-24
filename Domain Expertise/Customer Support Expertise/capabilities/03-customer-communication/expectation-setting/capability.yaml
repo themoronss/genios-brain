@@ -10,7 +10,7 @@ identity:
   subdomain: customer_communication
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Deciding what to promise, knowing that every promise becomes a clock somebody has to answer to.

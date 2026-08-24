@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.channel_intake.single_queue_many_doors
+  name: Single queue many doors
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.channel_intake
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every channel — email, chat, phone, social — lands in ONE queue with the channel recorded,
+    so priority is decided by content and customer, never by which door happened to be loudest.
+steps:
+- order: 1
+  name: Normalise every inbound into one record shape
+  description: 'Whatever the door, the ticket carries the same fields: who, what, entitlement, severity-candidate.
+    Channel is a tag, not a queue.'
+  actor: human
+- order: 2
+  name: Acknowledge on the channel they used
+  description: The auto-ack goes back where they wrote, with a reference id and an honest first-response
+    expectation.
+  actor: human
+- order: 3
+  name: Route by content, not arrival order
+  description: A P1 by email outranks a P4 by phone. The queue is sorted by the triage verdict, never
+    by recency alone.
+  actor: human

@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.account_relationship_management.support_side_account_cadence
+  name: Support-side account cadence
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.account_relationship_management
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: For named accounts, support maintains its own relationship rhythm — a known contact map,
+    a health note after every major interaction, proactive outreach after rough patches — because renewal
+    conversations inherit whatever support left in the room.
+steps:
+- order: 1
+  name: Keep the contact map current from tickets
+  description: Every new name on a thread joins the account map with role. Support often meets the org
+    chart before sales does.
+  actor: human
+- order: 2
+  name: Log a one-line health note per major interaction
+  description: 'After escalations and incidents: how did this leave them? The renewal team reads these.'
+  actor: human
+- order: 3
+  name: Reach out after the storm
+  description: 'A week after a bad incident: ''checking everything held up'' — unprompted. This is where
+    damaged accounts decide you care.'
+  actor: human

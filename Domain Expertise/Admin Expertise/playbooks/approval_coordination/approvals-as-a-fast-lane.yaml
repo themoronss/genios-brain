@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.approval_coordination.approvals_as_a_fast_lane
+  name: Approvals as a fast lane
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.approval_coordination
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Pending approvals are batched, contextualised and chased as a daily rhythm — each with the
+    one-line what/why/amount/risk — because approval latency is invisible organisational drag that compounds
+    across every waiting team.
+steps:
+- order: 1
+  name: Batch into one daily decision session
+  description: Ten approvals in ten focused minutes beat ten interruptions. The batch has a fixed slot.
+  actor: human
+- order: 2
+  name: Pre-digest each item to one line
+  description: What, cost, requester, risk-if-wrong. The executive decides; they should not have to research.
+  actor: human
+- order: 3
+  name: Track aging, escalate the stuck
+  description: Anything pending >48h gets flagged with what it is blocking. Approval queues rot silently
+    otherwise.
+  actor: human

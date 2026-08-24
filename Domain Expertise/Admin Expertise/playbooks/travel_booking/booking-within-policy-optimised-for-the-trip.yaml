@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.travel_booking.booking_within_policy_optimised_for_the_trip
+  name: Booking within policy, optimised for the trip
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_booking
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Travel is booked inside policy with the traveller's effectiveness in mind — sensible routings,
+    sane arrival times, refundable where uncertainty exists — because the cheapest ticket that lands a
+    pitch-day red-eye is expensive.
+steps:
+- order: 1
+  name: Book early against known plans
+  description: The travel calendar mirrors the commitment calendar — early booking is most of the savings.
+  actor: human
+- order: 2
+  name: Optimise the trip, not the line item
+  description: Arrival buffers before big meetings, refundable fares for volatile plans. Total-trip cost
+    includes performance.
+  actor: human
+- order: 3
+  name: Confirm the full itinerary pack
+  description: Flights, stay, ground, documents — one pack to the traveller, verified. The forgotten transfer
+    is the classic trip-breaker.
+  actor: human

@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.incident_management.declare_early_roles_fast
+  name: Declare early, roles fast
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.incident_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: When duplicate reports cluster or monitoring confirms, declare the incident and assign the
+    three hats — commander, comms, fixers — because the declared incident gets coordination and the undeclared
+    one gets chaos with the same outage.
+steps:
+- order: 1
+  name: Declare on threshold, not on certainty
+  description: N same-symptom reports in M minutes = incident until proven otherwise. Cheap to stand down;
+    expensive to stand up late.
+  actor: human
+- order: 2
+  name: Separate command from keyboard
+  description: The commander coordinates and decides; fixers fix; comms communicates. One person doing
+    all three does none well.
+  actor: human
+- order: 3
+  name: Keep one timeline document live
+  description: Every action and finding timestamped as it happens — it runs the incident now and writes
+    the postmortem later.
+  actor: human

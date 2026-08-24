@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.product_feedback_routing.a_closed_loop_multiplies_future_signal
+  name: A closed loop multiplies future signal
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.product_feedback_routing
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Customers who see their feedback answered — even with a no — report more, and better. The
+    loop-back is not courtesy; it is how the feedback pipeline funds itself.
+  answers:
+  - Why loop dispositions back to requesters?

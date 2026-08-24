@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.request_intake.one_front_door_for_admin
+  name: One front door for admin
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.request_intake
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: All admin requests enter one channel with category, priority and SLA visible — because requests
+    scattered across DMs, corridors and memory get served by loudness and lost by default.
+steps:
+- order: 1
+  name: Route everything to the channel
+  description: Corridor asks get 'log it and it is queued' — friendly, consistent, and the only way the
+    queue stays true.
+  actor: human
+- order: 2
+  name: Acknowledge with expectation
+  description: Every request gets a when-to-expect answer at intake. Uncertainty, not slowness, drives
+    the chasing.
+  actor: human
+- order: 3
+  name: Publish queue health
+  description: Open, aging, done-this-week — visible. A transparent queue defuses the 'admin is a black
+    hole' myth.
+  actor: human

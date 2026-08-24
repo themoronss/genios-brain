@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.business_continuity_administration.continuity_basics_rehearsed
+  name: Continuity basics rehearsed
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.business_continuity_administration
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The continuity file — contacts, systems, dependencies, recovery steps for the plausible disruptions
+    — exists, is current, and gets a lightweight annual walkthrough, because the plan you have never rehearsed
+    is a document, not a capability.
+steps:
+- order: 1
+  name: Map the critical few
+  description: Which processes cannot stop, what they depend on, who can run them from where.
+  actor: human
+- order: 2
+  name: Write recovery runbooks for plausible scenarios
+  description: Office inaccessible, key system down, key person unavailable — steps, owners, alternates.
+  actor: human
+- order: 3
+  name: Walk through annually
+  description: 'A tabletop hour: read the scenario, walk the plan, note the gaps. The walkthrough finds
+    the moved cheese every year.'
+  actor: human

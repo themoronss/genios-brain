@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.performance_management.speed_pressure_surfaces_as_reopens
+  name: Speed pressure surfaces as reopens
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.performance_management
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Push handle-time hard and closures come early and thin — the time saved reappears as reopens
+    plus angrier second tickets. Efficiency metrics need quality metrics as load-bearing counterweights.
+  answers:
+  - What happens when handle time is the headline metric?

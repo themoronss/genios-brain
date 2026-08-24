@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.asset_issuance_and_recovery.the_signature_is_for_both_parties
+  name: The signature is for both parties
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_issuance_and_recovery
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Issue records protect the employee ('returned it, here is the acknowledgment') as much as
+    the company. Framing it as mutual protection is also what makes compliance friction-free.
+  answers:
+  - Why do signed issue records help employees?

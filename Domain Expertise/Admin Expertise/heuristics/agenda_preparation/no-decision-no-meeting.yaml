@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.agenda_preparation.no_decision_no_meeting
+  name: No decision, no meeting
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.agenda_preparation
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A meeting whose agenda contains no decision and no genuine discussion is a distribution list
+    with chairs. The agenda test kills a third of most calendars, harmlessly.
+  answers:
+  - Which meetings deserve to exist?

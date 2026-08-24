@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.major_incident_communication.underpromise_the_eta_in_public
+  name: Underpromise the ETA in public
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.major_incident_communication
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A public restore time that slips once is noted; twice is a credibility incident of its own.
+    State ranges, update honestly, and let early beats late do the delighting.
+  answers:
+  - How should restore ETAs be communicated publicly?

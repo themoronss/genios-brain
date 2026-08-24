@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.diagnostics.evidence_before_hypothesis
+  name: Evidence before hypothesis
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.diagnostics
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Diagnosis starts by collecting what is cheap and factual — logs, versions, timestamps, exact
+    steps — before anyone theorises, because a hypothesis formed early bends every later fact toward itself.
+steps:
+- order: 1
+  name: Collect the minimum evidence set first
+  description: Environment, version, exact error, when it started, what changed. One structured ask, not
+    five rounds of one-question emails.
+  actor: human
+- order: 2
+  name: Reproduce or bracket
+  description: 'Can we see it ourselves? If not, bracket: works here / fails there — the boundary is the
+    diagnosis half-done.'
+  actor: human
+- order: 3
+  name: State the hypothesis and its test
+  description: '''We believe X; if true, Y will show it.'' A hypothesis without a test is a guess with
+    confidence.'
+  actor: human

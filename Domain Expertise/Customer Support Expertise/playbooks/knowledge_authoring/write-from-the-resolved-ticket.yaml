@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.knowledge_authoring.write_from_the_resolved_ticket
+  name: Write from the resolved ticket
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.knowledge_authoring
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The best article is a cleaned-up resolution that just worked, written the same week while
+    the context is fresh — knowledge authored from real tickets answers real questions in the customer's
+    own vocabulary.
+steps:
+- order: 1
+  name: Trigger on repeat resolutions
+  description: Third same-shape resolution in a month = article owed. The trigger is mechanical, not inspirational.
+  actor: human
+- order: 2
+  name: Write the customer's question as the title
+  description: Title = what they type when stuck, symptoms included. Internal feature names find nobody
+    searching in panic.
+  actor: human
+- order: 3
+  name: Date it and own it
+  description: Every article carries a review date and an owner. Undated knowledge rots into confident
+    misinformation.
+  actor: human

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.purchase_order_management.the_match_defeats_the_confident_invoice
+  name: The match defeats the confident invoice
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.purchase_order_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Over-billing survives on plausibility — invoices that look right, approved by people without
+    the original terms at hand. The three-way match removes plausibility from the equation entirely.
+  answers:
+  - How does routine over-billing get through?

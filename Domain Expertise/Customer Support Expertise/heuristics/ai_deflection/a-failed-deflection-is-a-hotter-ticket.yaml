@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.ai_deflection.a_failed_deflection_is_a_hotter_ticket
+  name: A failed deflection is a hotter ticket
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.ai_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every minute in a bot loop pre-heats the ticket the human eventually gets. Deflection rate
+    alone flatters; measure deflection minus the escalation-temperature it causes.
+  answers:
+  - Is a high deflection rate automatically good?

@@ -9,7 +9,7 @@ identity:
   subdomain: compliance_and_governance
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Owning the policy lifecycle from drafting through approval, publication, acknowledgement and

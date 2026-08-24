@@ -9,7 +9,7 @@ identity:
   subdomain: finance_administration
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Maintaining the administrative view of budget: allocation, committed spend, actuals,

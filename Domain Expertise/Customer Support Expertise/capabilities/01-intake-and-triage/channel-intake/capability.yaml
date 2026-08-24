@@ -5,7 +5,7 @@ identity:
   subdomain: intake_and_triage
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Receiving contact from wherever it arrives — email, chat, phone, in-product, community, social,

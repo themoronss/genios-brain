@@ -9,7 +9,7 @@ identity:
   subdomain: meeting_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Converting a purpose into a sequenced agenda with pre-read attached, owners named against

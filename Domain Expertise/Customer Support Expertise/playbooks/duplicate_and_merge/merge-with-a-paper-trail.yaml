@@ -1,0 +1,27 @@
+identity:
+  id: customer_support.pb.duplicate_and_merge.merge_with_a_paper_trail
+  name: Merge with a paper trail
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.duplicate_and_merge
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Duplicates are merged into one canonical ticket with every reporter kept on the notify list
+    — the merge saves agent effort without ever silencing a customer who reported separately.
+steps:
+- order: 1
+  name: Detect candidates by symptom, not by title
+  description: Same error, same timeframe, same component — titles vary wildly for one incident.
+  actor: human
+- order: 2
+  name: Keep every reporter subscribed
+  description: Each merged reporter gets updates on THEIR original channel. Merge is an internal efficiency,
+    invisible to customers.
+  actor: human
+- order: 3
+  name: Count the merged mass as ONE incident, many reports
+  description: Metrics count incidents and reporters separately, or a bad day looks like a busy month.
+  actor: human

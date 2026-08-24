@@ -10,7 +10,7 @@ identity:
   subdomain: customer_communication
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Turning what we currently know into a message the customer can act on without writing back to

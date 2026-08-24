@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.verification_and_closure.fast_closure_is_a_vanity_metric
+  name: Fast closure is a vanity metric
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.verification_and_closure
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Time-to-close can be gamed by closing early and often; reopen rate cannot. When the two conflict,
+    trust reopens — a queue with fast closes and high reopens is hiding its real backlog inside its history.
+  answers:
+  - Which closure metric deserves trust?

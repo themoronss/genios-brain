@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.asset_register.register_at_purchase_reconcile_on_rhythm
+  name: Register at purchase, reconcile on rhythm
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_register
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every asset enters the register at purchase — tag, custodian, location, value — and the register
+    meets physical reality on a scheduled reconciliation, because an unreconciled register is a spreadsheet
+    of wishes.
+steps:
+- order: 1
+  name: Tag and record at receipt
+  description: The asset gets its identity before it gets a user. Untagged assets are pre-lost.
+  actor: human
+- order: 2
+  name: Record custody changes as they happen
+  description: Every handover updates the custodian field — the register answers 'who has it' or it answers
+    nothing.
+  actor: human
+- order: 3
+  name: Physically verify on schedule
+  description: Annual (or rolling) counts against the register; discrepancies investigated, not written
+    off silently.
+  actor: human

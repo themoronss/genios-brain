@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.event_coordination.event_run_sheet_coordination
+  name: Event run-sheet coordination
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.event_coordination
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Events run on a single run-sheet — timeline, owners, vendors, contingencies — built backwards
+    from the event date, because events are projects with immovable deadlines and no reschedule option.
+steps:
+- order: 1
+  name: Build the backward timeline
+  description: 'From event day to today: bookings, materials, confirmations — each with an owner and date.'
+  actor: human
+- order: 2
+  name: Confirm vendors twice
+  description: At booking and at T-minus-week. The unconfirmed caterer is a rite of passage nobody needs
+    twice.
+  actor: human
+- order: 3
+  name: Run the day from the sheet
+  description: One coordinator, one run-sheet, everyone else executing their lines. Improvisation is for
+    the unplanned parts only.
+  actor: human

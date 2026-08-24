@@ -9,7 +9,7 @@ identity:
   subdomain: executive_support
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Running correspondence as a ledger of open obligations rather than a list of unread items:

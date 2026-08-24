@@ -7,7 +7,7 @@ identity:
   subdomain: diagnosis_and_resolution
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Getting what the system already knows about the failure — logs, traces, versions,

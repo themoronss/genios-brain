@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.commitment_tracking.every_promise_gets_a_clock
+  name: Every promise gets a clock
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.commitment_tracking
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Any commitment made to a customer — callback, fix ETA, escalation — enters a tracked list
+    with owner and due time the moment it is spoken, because unlogged promises are the ones that breach.
+steps:
+- order: 1
+  name: Capture at the moment of promising
+  description: The agent logs the commitment in the same breath as making it. Post-hoc capture catches
+    half.
+  actor: human
+- order: 2
+  name: Alert BEFORE due, at the still-fixable point
+  description: A nudge at 75% of the window lets the owner deliver or renegotiate. An alert at breach
+    is an obituary.
+  actor: human
+- order: 3
+  name: Renegotiate openly when slipping
+  description: '''We said today; it will be Thursday because X'' — before the deadline. A moved-with-notice
+    promise keeps trust a broken one spends.'
+  actor: human

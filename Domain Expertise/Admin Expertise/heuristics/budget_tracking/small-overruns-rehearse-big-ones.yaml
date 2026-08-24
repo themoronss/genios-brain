@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.budget_tracking.small_overruns_rehearse_big_ones
+  name: Small overruns rehearse big ones
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.budget_tracking
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Tolerated minor variances teach the org that budgets are decorative. The 5% conversations
+    are cheap; skipping them prices the 40% surprise.
+  answers:
+  - Why chase small budget variances?

@@ -9,7 +9,7 @@ identity:
   subdomain: admin_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   The front door of the administrative function: capturing requests from whatever channel they

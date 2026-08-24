@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.minutes_and_documentation.decisions_and_actions_same_day
+  name: Decisions and actions, same-day
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.minutes_and_documentation
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Minutes capture three things — decisions made, actions with owners and dates, open questions
+    — circulated same-day while memory agrees, because minutes that arrive Friday document a meeting nobody
+    quite remembers the same way.
+steps:
+- order: 1
+  name: Record decisions verbatim as agreed
+  description: The exact wording, confirmed in the room. Ambiguity here becomes next month's 'that is
+    not what we decided'.
+  actor: human
+- order: 2
+  name: List actions as owner-verb-date
+  description: '''Priya ships draft by Thu'' — nothing about actions is prose.'
+  actor: human
+- order: 3
+  name: Send same-day to attendees plus affected absentees
+  description: The document is the meeting for everyone not in it. Same-day is what makes corrections
+    cheap.
+  actor: human

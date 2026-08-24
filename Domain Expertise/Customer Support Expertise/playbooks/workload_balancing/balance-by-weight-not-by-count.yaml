@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.workload_balancing.balance_by_weight_not_by_count
+  name: Balance by weight, not by count
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.workload_balancing
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Load is balanced on effective weight — ticket complexity × current WIP — not raw counts,
+    because ten password resets and ten incident escalations are not the same shift.
+steps:
+- order: 1
+  name: Weight tickets by expected effort
+  description: Category-based effort classes suffice. Perfect weights are unnecessary; unweighted counts
+    are misleading.
+  actor: human
+- order: 2
+  name: Watch WIP, intervene early
+  description: An agent buried at 2x median WIP is tomorrow's SLA breach cluster. Rebalance at the leading
+    indicator.
+  actor: human
+- order: 3
+  name: Protect focus for the deep tickets
+  description: The hardest tickets need uninterrupted blocks. Balancing that fragments everyone equally
+    makes everyone equally shallow.
+  actor: human

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.briefing_and_preparation.the_brief_is_the_meeting_s_first_half
+  name: The brief is the meeting's first half
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.briefing_and_preparation
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Meetings without preparation spend their first half rediscovering context and their second
+    half deciding hastily. The one-pager moves the first half to the night before, at one-tenth the cost.
+  answers:
+  - Where does meeting time actually leak?

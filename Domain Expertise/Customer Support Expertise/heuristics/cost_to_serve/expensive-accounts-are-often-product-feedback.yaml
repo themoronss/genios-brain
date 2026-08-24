@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.cost_to_serve.expensive_accounts_are_often_product_feedback
+  name: Expensive accounts are often product feedback
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.cost_to_serve
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The account filing forty tickets a month is not a bad customer — it is the heaviest user
+    of the product's weakest path. Cost-to-serve's best output is a product roadmap item, not a firing
+    list.
+  answers:
+  - What should a high cost-to-serve account trigger first?

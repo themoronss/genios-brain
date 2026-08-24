@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.knowledge_authoring.wrong_articles_are_worse_than_missing_ones
+  name: Wrong articles are worse than missing ones
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.knowledge_authoring
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A missing article costs a ticket; a stale one costs a ticket PLUS the customer's time following
+    bad steps PLUS their trust in every other article. Deletion of the outdated is authoring too.
+  answers:
+  - Is an outdated article better than none?

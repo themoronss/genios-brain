@@ -9,7 +9,7 @@ identity:
   subdomain: executive_support
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Assembling the minimum sufficient context before a meeting, a call or a decision: who is in

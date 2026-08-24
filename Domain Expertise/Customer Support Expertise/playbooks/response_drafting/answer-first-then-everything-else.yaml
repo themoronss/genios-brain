@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.response_drafting.answer_first_then_everything_else
+  name: Answer first, then everything else
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.response_drafting
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The reply's first sentence answers or advances the customer's actual question; context, empathy
+    and caveats follow. Burying the answer under preamble reads as evasion even when the answer is good.
+steps:
+- order: 1
+  name: Open with the answer or the honest state
+  description: '''Yes, refunded today'' or ''We can see the bug; fix expected Thursday.'' The first line
+    is the whole email for a skimming reader.'
+  actor: human
+- order: 2
+  name: Match effort to stakes
+  description: A password reset needs two lines; a data-loss scare needs a paragraph of care. One-size
+    templates read as indifference at both ends.
+  actor: human
+- order: 3
+  name: End with exactly one next step
+  description: Whose move, what, when. Replies that end nowhere generate their own follow-up tickets.
+  actor: human

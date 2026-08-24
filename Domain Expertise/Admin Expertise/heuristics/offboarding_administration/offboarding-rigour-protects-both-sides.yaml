@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.offboarding_administration.offboarding_rigour_protects_both_sides
+  name: Offboarding rigour protects both sides
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.offboarding_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Clean exits — documented returns, final settlements, revocations — protect the leaver from
+    suspicion and the company from exposure. Sloppy offboarding manufactures ambiguity nobody wants.
+  answers:
+  - Who benefits from checklist offboarding?

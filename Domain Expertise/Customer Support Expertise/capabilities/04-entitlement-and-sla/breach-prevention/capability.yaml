@@ -7,7 +7,7 @@ identity:
   subdomain: entitlement_and_sla
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   The work of not breaching, which happens hours before the breach and while nothing about the

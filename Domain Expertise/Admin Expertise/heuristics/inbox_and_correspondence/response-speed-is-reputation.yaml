@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.inbox_and_correspondence.response_speed_is_reputation
+  name: Response speed is reputation
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Externally, the executive's reply latency IS the company's perceived responsiveness. A managed
+    inbox exists to keep that latency low without spending the executive's attention on it.
+  answers:
+  - Why does inbox management matter beyond tidiness?

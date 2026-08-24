@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.team_health.watch_the_burnout_leading_indicators
+  name: Watch the burnout leading indicators
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.team_health
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Support burns people through unbroken emotional load. Team health is managed on leading signals
+    — after-hours creep, terse internal tone, rising sick days, falling QA — with load and rotation adjusted
+    BEFORE the resignation letter writes itself.
+steps:
+- order: 1
+  name: Track the small signals monthly
+  description: After-hours activity, PTO actually taken, escalation exposure per person. The spreadsheet
+    is boring; the pattern is not.
+  actor: human
+- order: 2
+  name: Rotate the heavy queues
+  description: Nobody owns the angriest queue for months straight. Rotation is burnout amortisation.
+  actor: human
+- order: 3
+  name: Make recovery legitimate
+  description: 'After a brutal incident week: explicit decompression, not a normal Monday. Recovery treated
+    as slack becomes attrition treated as surprise.'
+  actor: human

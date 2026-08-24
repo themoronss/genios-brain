@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.minutes_and_documentation.unminuted_decisions_dissolve
+  name: Unminuted decisions dissolve
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.minutes_and_documentation
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A decision that lives only in memory gets re-litigated within weeks by whoever liked it least.
+    The minute is the decision's existence proof — meetings without minutes decide nothing durably.
+  answers:
+  - Why do the same decisions keep coming back?

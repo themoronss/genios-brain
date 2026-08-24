@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.intent_classification.the_customer_s_words_beat_the_form_s_dropdown
+  name: The customer's words beat the form's dropdown
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.intent_classification
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Customers mislabel their own tickets constantly — the body text is the truth, the category
+    field is a guess made in a hurry. Classify from what they wrote, not what they clicked.
+  answers:
+  - Which signal decides a ticket's real intent?

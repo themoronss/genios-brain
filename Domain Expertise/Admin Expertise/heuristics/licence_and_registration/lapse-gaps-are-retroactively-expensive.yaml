@@ -1,0 +1,16 @@
+identity:
+  id: admin.heu.licence_and_registration.lapse_gaps_are_retroactively_expensive
+  name: Lapse gaps are retroactively expensive
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.licence_and_registration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A licence gap discovered later — by an auditor, an insurer, a due-diligence lawyer — can
+    void coverage and taint the period's contracts. The register exists because gaps are invisible until
+    they are catastrophic.
+  answers:
+  - Why track expirables centrally?

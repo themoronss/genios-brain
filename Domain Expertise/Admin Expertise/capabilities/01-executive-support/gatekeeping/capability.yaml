@@ -9,7 +9,7 @@ identity:
   subdomain: executive_support
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Deciding what reaches a scarce person and what is answered, redirected, deferred or declined

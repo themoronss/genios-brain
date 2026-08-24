@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.invoice_processing.duplicate_invoices_arrive_confidently
+  name: Duplicate invoices arrive confidently
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.invoice_processing
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Resent invoices, forwarded copies, portal-plus-email doubles — duplicates are normal traffic,
+    not attacks. The number-and-amount duplicate check earns its keep monthly.
+  answers:
+  - How common is double-billing exposure?

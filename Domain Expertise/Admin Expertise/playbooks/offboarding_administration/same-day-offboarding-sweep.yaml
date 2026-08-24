@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.offboarding_administration.same_day_offboarding_sweep
+  name: Same-day offboarding sweep
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.offboarding_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Departure triggers a same-day sweep — access revoked, assets recovered, knowledge handed
+    over, payroll and records closed — from a checklist, because lingering access is a security hole and
+    lingering loose ends are future disputes.
+steps:
+- order: 1
+  name: Revoke access at the agreed moment
+  description: All systems, one sweep, timed to the exit terms. The forgotten SaaS login is the classic
+    breach path.
+  actor: human
+- order: 2
+  name: Recover assets against the register
+  description: Laptop, cards, keys — checked against what was issued, not against memory.
+  actor: human
+- order: 3
+  name: Close the record trail
+  description: Final payroll, benefits, letters, file archival — done at exit, because ex-employee paperwork
+    gets harder monthly.
+  actor: human

@@ -9,7 +9,7 @@ identity:
   subdomain: admin_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Authoring and maintaining standard operating procedures: capturing the real process,

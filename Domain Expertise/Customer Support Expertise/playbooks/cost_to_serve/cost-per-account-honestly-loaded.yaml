@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.cost_to_serve.cost_per_account_honestly_loaded
+  name: Cost per account, honestly loaded
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.cost_to_serve
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Cost-to-serve allocates real support cost to accounts and segments — tickets × handle time
+    × loaded rate — surfacing which revenue is quietly negative and which tier pricing no longer matches
+    reality.
+steps:
+- order: 1
+  name: Compute per-account monthly
+  description: Interactions × time × rate, rolled to the account. Estimates beat absence; refine later.
+  actor: human
+- order: 2
+  name: Rank against revenue
+  description: Cost ÷ ARR per account. The tail where the ratio exceeds one is a pricing or product conversation
+    waiting.
+  actor: human
+- order: 3
+  name: Fix the driver before the customer
+  description: A high-cost account usually has a fixable cause — training gap, misconfiguration, one recurring
+    bug. Fix that first; repricing is the second lever, exit the last.
+  actor: human

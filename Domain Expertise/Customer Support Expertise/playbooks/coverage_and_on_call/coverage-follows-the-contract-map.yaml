@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.coverage_and_on_call.coverage_follows_the_contract_map
+  name: Coverage follows the contract map
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.coverage_and_on_call
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Staffing hours and on-call depth are derived from what has been SOLD — the tiers, timezones
+    and response promises in live contracts — and re-derived when sales sells something new, not discovered
+    at the first 3am P1.
+steps:
+- order: 1
+  name: Map promised coverage from live contracts
+  description: Every tier's hours × every customer timezone = the demand surface. This map, not tradition,
+    sets the roster.
+  actor: human
+- order: 2
+  name: Staff the map with named escalation depth
+  description: Every covered hour has a first responder AND a named second — a roster one-deep is a roster
+    that fails on the first sick day.
+  actor: human
+- order: 3
+  name: Alert when sales outsells the roster
+  description: A new 24×7 contract into an 18×5 roster is a breach pre-scheduled. The gap surfaces at
+    contract signing, not at the incident.
+  actor: human

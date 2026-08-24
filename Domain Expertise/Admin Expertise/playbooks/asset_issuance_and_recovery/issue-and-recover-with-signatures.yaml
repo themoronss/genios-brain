@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.asset_issuance_and_recovery.issue_and_recover_with_signatures
+  name: Issue and recover with signatures
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_issuance_and_recovery
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Assets are issued against signed acknowledgment and recovered against the issue record —
+    condition noted both ways — because unsigned issuance makes recovery a negotiation and disputes a
+    coin-toss.
+steps:
+- order: 1
+  name: Issue with signed acknowledgment
+  description: What, condition, terms of use — signed. Thirty seconds that anchors the entire custody
+    chain.
+  actor: human
+- order: 2
+  name: Track loans with due dates
+  description: Temporary issues (spares, event kit) get return dates and chase alerts, or temporary becomes
+    permanent.
+  actor: human
+- order: 3
+  name: Recover against the record, note condition
+  description: 'Return checked against issue: completeness and condition. The delta is settled at return,
+    not remembered later.'
+  actor: human

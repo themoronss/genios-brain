@@ -8,7 +8,7 @@ identity:
   subdomain: support_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Turning ticket data into claims a leader will act on, and refusing to make the ones the data

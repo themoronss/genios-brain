@@ -9,7 +9,7 @@ identity:
   subdomain: contract_and_vendor
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Taking a chosen supplier from selection to operational: due diligence, security and data-

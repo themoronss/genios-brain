@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.attendance_and_leave.untaken_leave_is_a_liability_twice
+  name: Untaken leave is a liability twice
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.attendance_and_leave
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Accrued leave sits on the balance sheet AND signals burnout risk. Chronic non-takers are
+    not heroes to celebrate — they are single-point failures fatiguing quietly.
+  answers:
+  - Is high accrued leave good news?

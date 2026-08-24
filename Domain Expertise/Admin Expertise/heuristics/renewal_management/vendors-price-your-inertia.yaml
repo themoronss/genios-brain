@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.renewal_management.vendors_price_your_inertia
+  name: Vendors price your inertia
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.renewal_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Auto-renewal pricing assumes nobody is watching — which is usually correct. The mere existence
+    of an active renewal review changes quotes before a word is negotiated.
+  answers:
+  - Why do watched renewals cost less?

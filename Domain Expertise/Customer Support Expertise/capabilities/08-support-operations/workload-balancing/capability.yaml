@@ -8,7 +8,7 @@ identity:
   subdomain: support_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Deciding who works what, given that agents are not interchangeable units of capacity. An even

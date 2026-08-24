@@ -9,7 +9,7 @@ identity:
   subdomain: records_and_documentation
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Applying the retention schedule: what is kept, for how long, where it goes when it leaves

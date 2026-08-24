@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.inbox_and_correspondence.triage_to_five_outcomes
+  name: Triage to five outcomes
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Managed inbox flow sorts everything into act-now, delegate, draft-for-review, file, drop
+    — with drafted replies for the routine and a daily digest of what was handled — so the executive touches
+    only what genuinely needs them.
+steps:
+- order: 1
+  name: Sort on arrival by outcome, not by folder
+  description: The five outcomes are decisions; folders are storage. Every message leaves the inbox with
+    a decision attached.
+  actor: human
+- order: 2
+  name: Draft routine replies for one-tap approval
+  description: The executive edits or approves; they never start from blank on the routine 60%.
+  actor: human
+- order: 3
+  name: Digest what was handled
+  description: A daily five-line summary of handled-without-you builds the trust that makes delegation
+    stick.
+  actor: human

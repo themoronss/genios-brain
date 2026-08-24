@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.employee_records_administration.one_file_per_person_current_and_confidential
+  name: One file per person, current and confidential
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.employee_records_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Each employee has one complete record — contract, amendments, statutory docs, role changes
+    — current within days of any change and access-controlled, because employment records are legal evidence
+    stored as HR convenience.
+steps:
+- order: 1
+  name: File changes as they happen
+  description: Promotions, raises, transfers — the paper lands in the file the week of the event.
+  actor: human
+- order: 2
+  name: Audit completeness annually
+  description: Sample files against the required-document list. Gaps found in an audit are fixable; found
+    in a dispute they are testimony.
+  actor: human
+- order: 3
+  name: Control access tightly
+  description: Employment files are among the most sensitive data held — need-to-know, logged access.
+  actor: human

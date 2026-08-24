@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.commitment_tracking.the_executive_s_promise_ledger
+  name: The executive's promise ledger
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.commitment_tracking
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every commitment the executive makes — in meetings, mails, corridors — lands in one tracked
+    ledger with owner and due date, worked daily, because a leader's credibility compounds from kept small
+    promises and erodes from forgotten ones.
+steps:
+- order: 1
+  name: Capture from every channel same-day
+  description: Meeting notes, sent mail, chat — swept daily for 'I will…'. The ledger is only as good
+    as its capture net.
+  actor: human
+- order: 2
+  name: Chase before due, renegotiate before breach
+  description: Nudge at 70% of the window. If it will slip, the executive says so BEFORE the date — that
+    sentence is reputation insurance.
+  actor: human
+- order: 3
+  name: Review the ledger weekly with the executive
+  description: 'Five minutes: what is due, what slipped, what to drop honestly. Dropping explicitly beats
+    forgetting silently.'
+  actor: human

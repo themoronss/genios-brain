@@ -5,7 +5,7 @@ identity:
   subdomain: intake_and_triage
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Recognising when several tickets are one problem, and deciding which of them is allowed to

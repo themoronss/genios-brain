@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.entitlement_verification.verify_before_the_meter_starts
+  name: Verify before the meter starts
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.entitlement_verification
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Entitlement is checked at intake — plan, seats, support tier, contract state — so effort
+    matches contract from minute one and nobody discovers at hour three that the P1 clock never legally
+    started.
+steps:
+- order: 1
+  name: Resolve the account to its contract automatically
+  description: Ticket → account → plan/tier/expiry in one lookup. Manual entitlement checks get skipped
+    exactly when the queue is busiest.
+  actor: human
+- order: 2
+  name: Handle the lapsed gracefully
+  description: Expired contract ≠ ignored human. A courteous 'your plan lapsed on X; here is how to restore
+    support' converts admin failures into renewal conversations.
+  actor: human
+- order: 3
+  name: Log the entitlement decision on the ticket
+  description: What tier was applied and why — so a later dispute reads the record instead of relitigating
+    memory.
+  actor: human

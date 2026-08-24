@@ -9,7 +9,7 @@ identity:
   subdomain: finance_administration
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Managing the payables cycle: ageing, payment scheduling, run preparation, bank detail

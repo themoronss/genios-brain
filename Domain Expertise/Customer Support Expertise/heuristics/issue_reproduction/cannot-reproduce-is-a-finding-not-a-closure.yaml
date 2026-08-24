@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.issue_reproduction.cannot_reproduce_is_a_finding_not_a_closure
+  name: Cannot-reproduce is a finding, not a closure
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.issue_reproduction
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: '''Works for me'' means the difference between environments IS the bug''s habitat. Close-as-noreproduce
+    without bracketing the difference just schedules the ticket''s reopening.'
+  answers:
+  - Is a failed reproduction grounds to close?

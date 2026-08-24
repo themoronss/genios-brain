@@ -9,7 +9,7 @@ identity:
   subdomain: facilities_and_assets
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Coordinating planned and reactive maintenance with internal teams and contractors:

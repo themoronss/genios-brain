@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.procurement_administration.friction_begets_shadow_procurement
+  name: Friction begets shadow procurement
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.procurement_administration
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: When the compliant path takes three weeks, corporate cards and personal reimbursements become
+    the real procurement system — invisible, unnegotiated, unvetted. Speed IS compliance strategy.
+  answers:
+  - Why do controlled orgs still leak uncontrolled spend?

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.payables_administration.payment_reliability_is_credit
+  name: Payment reliability is credit
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.payables_administration
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Vendors extend better terms, priority and flexibility to reliably-paying customers — informal
+    credit built by boring punctuality. The payables reputation is an asset the balance sheet never shows.
+  answers:
+  - What does consistent payment timing earn?

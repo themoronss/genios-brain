@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.resolution_delivery.fixed_in_prod_is_not_resolved_for_the_customer
+  name: Fixed in prod is not resolved for the customer
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.resolution_delivery
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Resolution is a customer-side event: they know, they can proceed, they got it confirmed.
+    The gap between deploy and told is where ''you fixed it and never said'' resentment grows.'
+  answers:
+  - When does a fixed bug count as a resolved ticket?

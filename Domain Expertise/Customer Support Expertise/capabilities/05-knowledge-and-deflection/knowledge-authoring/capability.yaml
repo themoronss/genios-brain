@@ -8,7 +8,7 @@ identity:
   subdomain: knowledge_and_deflection
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Writing the answer once, in the words the customer used to ask it, while the ticket that

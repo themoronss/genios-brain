@@ -5,7 +5,7 @@ identity:
   subdomain: voice_of_customer
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Getting a customer problem in front of the team that can actually change it, in a form they

@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.macro_management.macros_as_starting_points
+  name: Macros as starting points
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.macro_management
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A macro is scaffolding the agent personalises — name, specifics, next step — never a send-as-is.
+    Macro discipline is measured by edit-before-send, because unedited macros are how customers learn
+    they are tickets.
+steps:
+- order: 1
+  name: Build macros for structure, not sentiment
+  description: The macro carries the steps and links; the human adds the two sentences that prove someone
+    read the ticket.
+  actor: human
+- order: 2
+  name: Review macro performance quarterly
+  description: Reopen and CSAT per macro — the worst performer gets rewritten or retired each quarter.
+  actor: human
+- order: 3
+  name: Kill duplicates ruthlessly
+  description: Six near-identical macros mean nobody can pick correctly under load. One good macro per
+    situation.
+  actor: human

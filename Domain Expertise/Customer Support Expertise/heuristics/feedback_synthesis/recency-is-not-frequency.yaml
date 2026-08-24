@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.feedback_synthesis.recency_is_not_frequency
+  name: Recency is not frequency
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.feedback_synthesis
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: This week's memorable complaint feels bigger than last quarter's steady drumbeat. Synthesis
+    exists precisely to defeat that bias — trust the tally over the echo.
+  answers:
+  - Why does synthesis beat team recollection?

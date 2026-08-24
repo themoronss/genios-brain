@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.budget_tracking.budget_vs_actual_with_owners
+  name: Budget vs actual with owners
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.budget_tracking
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Spend tracks against budget monthly, by owner, variances explained in one line — because
+    a budget without tracking is a wish, and variance found at quarter-end is history rather than steering.
+steps:
+- order: 1
+  name: Assign every line an owner
+  description: Ownerless budget lines drift unexamined. The owner explains the variance, both directions.
+  actor: human
+- order: 2
+  name: Review monthly at the variance level
+  description: On-track lines take seconds; attention goes to the drifts and their one-line whys.
+  actor: human
+- order: 3
+  name: Reforecast when reality diverges
+  description: A budget known to be wrong that nobody updates trains everyone to ignore it. Reforecast
+    honestly and keep the original for learning.
+  actor: human

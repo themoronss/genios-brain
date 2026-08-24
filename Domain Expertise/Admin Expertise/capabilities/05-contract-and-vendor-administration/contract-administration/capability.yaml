@@ -9,7 +9,7 @@ identity:
   subdomain: contract_and_vendor
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Owning the contract as a live instrument rather than a signed PDF: extracting the

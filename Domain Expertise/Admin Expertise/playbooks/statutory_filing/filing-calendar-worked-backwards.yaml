@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.statutory_filing.filing_calendar_worked_backwards
+  name: Filing calendar worked backwards
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.statutory_filing
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every statutory deadline lives on one calendar with preparation lead-times worked backwards
+    — data needed, preparer, reviewer, buffer — because statutory deadlines do not negotiate and last-minute
+    filings are error factories.
+steps:
+- order: 1
+  name: Maintain the master obligation calendar
+  description: Every filing, every jurisdiction, every frequency — with the NEXT date always visible.
+  actor: human
+- order: 2
+  name: Back-schedule preparation with buffer
+  description: Data-gathering starts at T-minus-enough; review completes days before, not hours.
+  actor: human
+- order: 3
+  name: File, confirm, archive the proof
+  description: Submission receipts filed with the return. 'We filed' without the acknowledgment is a claim,
+    not a record.
+  actor: human

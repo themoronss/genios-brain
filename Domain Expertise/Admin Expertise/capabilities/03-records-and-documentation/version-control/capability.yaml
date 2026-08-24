@@ -9,7 +9,7 @@ identity:
   subdomain: records_and_documentation
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Keeping a defensible history of a document: sequential versions, a visible change record,

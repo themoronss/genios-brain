@@ -8,7 +8,7 @@ identity:
   subdomain: support_management
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Reading whether the people can keep doing this. Support is the only function whose daily work

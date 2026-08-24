@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.payroll_input_administration.payroll_inputs_on_a_locked_calendar
+  name: Payroll inputs on a locked calendar
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.payroll_input_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every payroll cycle's inputs — new joiners, exits, changes, leave, reimbursements — are collected
+    against a cutoff, verified, and locked before processing, because payroll errors are trust incidents
+    paid monthly.
+steps:
+- order: 1
+  name: Publish and enforce the cutoff
+  description: Inputs after cutoff go NEXT cycle, exceptions rare and logged. The cutoff is what makes
+    verification possible.
+  actor: human
+- order: 2
+  name: Verify changes against source docs
+  description: Every variance from last month traces to a document — the offer letter, the exit note,
+    the approval.
+  actor: human
+- order: 3
+  name: Reconcile output against input before release
+  description: 'The pre-release check: does the run reflect exactly the changes submitted? Five minutes
+    here prevents the apology emails.'
+  actor: human

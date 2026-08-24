@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.commitment_tracking.the_small_promises_carry_the_relationship
+  name: The small promises carry the relationship
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.commitment_tracking
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Customers judge reliability by the callbacks and the 'I'll check and revert' moments far
+    more than by the big SLA table. The small-promise hit rate IS the perceived quality of the whole support
+    org.
+  answers:
+  - Which promises actually shape customer trust?

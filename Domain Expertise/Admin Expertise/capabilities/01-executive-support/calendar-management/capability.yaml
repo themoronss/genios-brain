@@ -9,7 +9,7 @@ identity:
   subdomain: executive_support
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Owning the diary as a scarce budget rather than a booking queue: protecting deep work,

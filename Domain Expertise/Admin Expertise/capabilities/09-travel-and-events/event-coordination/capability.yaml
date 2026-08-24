@@ -9,7 +9,7 @@ identity:
   subdomain: travel_and_events
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Running internal and external events end to end: venue, suppliers, budget, invitations and

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.calendar_management.an_open_calendar_is_a_priorities_leak
+  name: An open calendar is a priorities leak
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.calendar_management
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Whoever books first owns the week. Unprotected time gets allocated by request order, not
+    importance — the calendar's default answer must be the executive's priorities, not first-come-first-served.
+  answers:
+  - What does a fully-bookable calendar optimise for?

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.contract_administration.auto_renewals_are_decisions_by_default
+  name: Auto-renewals are decisions by default
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.contract_administration
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An un-diarised auto-renewal is a purchase nobody re-approved. The notice-window alert converts
+    default spending back into actual decisions.
+  answers:
+  - What do missed notice windows cost?

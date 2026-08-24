@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.workplace_management.small_frictions_compound_into_culture
+  name: Small frictions compound into culture
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.workplace_management
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Broken chairs, dead markers, unbookable rooms — individually trivial, collectively they say
+    'nobody cares here'. Workplace upkeep is culture maintenance in physical form.
+  answers:
+  - Why sweat small workplace issues?

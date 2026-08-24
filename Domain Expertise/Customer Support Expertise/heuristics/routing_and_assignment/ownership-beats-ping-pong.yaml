@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.routing_and_assignment.ownership_beats_ping_pong
+  name: Ownership beats ping-pong
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.routing_and_assignment
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket that changes hands three times has told the customer nobody owns them. Route once
+    with care rather than fast with churn — handoffs, not queues, are where satisfaction dies.
+  answers:
+  - What does a multiply-reassigned ticket signal?

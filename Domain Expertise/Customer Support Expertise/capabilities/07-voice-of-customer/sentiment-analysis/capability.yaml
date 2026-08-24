@@ -5,7 +5,7 @@ identity:
   subdomain: voice_of_customer
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Reading the emotional state of a conversation, and holding it apart from the state of the

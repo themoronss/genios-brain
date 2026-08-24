@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.maintenance_coordination.deferred_maintenance_is_borrowing
+  name: Deferred maintenance is borrowing
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.maintenance_coordination
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Skipped servicing books a future failure with interest — downtime, emergency rates, collateral
+    damage. The maintenance budget is cheaper on schedule than on demand, always.
+  answers:
+  - What does postponed maintenance really cost?

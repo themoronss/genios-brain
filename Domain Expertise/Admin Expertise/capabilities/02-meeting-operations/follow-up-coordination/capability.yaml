@@ -9,7 +9,7 @@ identity:
   subdomain: meeting_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Closing the loop after a meeting, an introduction or a conversation: the recap, the promised

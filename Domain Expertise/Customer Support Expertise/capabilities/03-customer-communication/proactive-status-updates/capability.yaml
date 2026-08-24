@@ -9,7 +9,7 @@ identity:
   subdomain: customer_communication
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Speaking before being asked, on a rhythm the customer was told to expect. An update carrying no

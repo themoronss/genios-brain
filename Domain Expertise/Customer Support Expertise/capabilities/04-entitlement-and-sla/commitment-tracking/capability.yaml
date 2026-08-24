@@ -7,7 +7,7 @@ identity:
   subdomain: entitlement_and_sla
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Holding the promises made inside a ticket that no contract ever created — the callback before

@@ -8,7 +8,7 @@ identity:
   subdomain: support_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Working out what it actually costs to support a given customer, plan or product area, and

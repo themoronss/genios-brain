@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.intent_classification.classify_to_route_not_to_file
+  name: Classify to route, not to file
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.intent_classification
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Intent classification earns its keep only if the label changes what happens next — the route,
+    the priority, the macro. Labels nobody branches on are taxonomy hobbyism.
+steps:
+- order: 1
+  name: Keep the intent set small and actionable
+  description: A dozen intents that each map to a different route beat eighty that map to nothing.
+  actor: human
+- order: 2
+  name: Let low confidence stay unlabelled
+  description: A wrong route costs more than a short manual triage. Below the confidence bar, the ticket
+    goes to a human sorter, honestly.
+  actor: human
+- order: 3
+  name: Audit misroutes weekly
+  description: Every re-route is a labelled training example. The intent set that never changes is the
+    one nobody is checking.
+  actor: human

@@ -1,31 +1,19 @@
-# Knowledge manifest for customer_support.entitlement_and_sla.coverage_and_on_call — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/coverage-and-on-call/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: customer_support.entitlement_and_sla.coverage_and_on_call
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.pb.coverage_and_on_call.coverage_follows_the_contract_map
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.heu.coverage_and_on_call.on_call_that_always_fires_is_a_staffing_bug
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
   scoped: []

@@ -11,7 +11,7 @@ identity:
   subdomain: customer_communication
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Meeting the customer in their language, register and norms — including the ones they never state.

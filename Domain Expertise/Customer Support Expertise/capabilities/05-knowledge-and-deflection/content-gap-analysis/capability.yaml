@@ -8,7 +8,7 @@ identity:
   subdomain: knowledge_and_deflection
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Reading the queue backwards to find the answers that do not exist — and the ones that exist

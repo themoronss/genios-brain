@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.performance_management.balanced_scorecard_no_single_metric_worship
+  name: Balanced scorecard, no single-metric worship
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.performance_management
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Agent performance reads quality (QA, reopens), efficiency (handle time, throughput) and customer
+    outcome (CSAT) TOGETHER — because any one of them alone is trivially gameable and the gaming always
+    taxes the other two.
+steps:
+- order: 1
+  name: Publish the scorecard and its weights
+  description: People optimise what is counted; secrecy just adds cynicism to the optimising.
+  actor: human
+- order: 2
+  name: Read trends per agent, distribution per team
+  description: A falling trend is a conversation; a wide team spread is a training or routing problem.
+  actor: human
+- order: 3
+  name: Chase the outlier stories, both ends
+  description: The top performer has technique to spread; the struggling one has a cause to find. Both
+    reviews are where the metric earns its keep.
+  actor: human

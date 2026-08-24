@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting
+  name: One-page brief before every external meeting
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.briefing_and_preparation
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'No external meeting without a one-pager: who, context, our goal, their likely goal, open
+    threads, one suggested ask — delivered the evening before, because a briefed executive extracts double
+    the value from the same hour.'
+steps:
+- order: 1
+  name: Compile from the record, not from memory
+  description: Last correspondence, open commitments, recent news about them. The brief's power is its
+    receipts.
+  actor: human
+- order: 2
+  name: State our objective in one line
+  description: What should be true after this meeting that is not true now? No objective, no meeting —
+    flag those too.
+  actor: human
+- order: 3
+  name: Deliver the evening prior
+  description: Morning-of briefs get skimmed in elevators. Evening delivery buys the sleep-on-it advantage.
+  actor: human

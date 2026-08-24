@@ -9,7 +9,7 @@ identity:
   subdomain: compliance_and_governance
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Running the statutory calendar: annual returns, tax filings, regulatory submissions and

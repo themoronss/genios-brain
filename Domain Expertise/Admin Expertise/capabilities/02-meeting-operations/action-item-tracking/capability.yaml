@@ -9,7 +9,7 @@ identity:
   subdomain: meeting_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Carrying meeting output forward until it closes. Actions are the highest-mortality artefact

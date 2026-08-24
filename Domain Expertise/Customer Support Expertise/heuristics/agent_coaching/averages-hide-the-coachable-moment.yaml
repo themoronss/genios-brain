@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.agent_coaching.averages_hide_the_coachable_moment
+  name: Averages hide the coachable moment
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.agent_coaching
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An agent's mean CSAT can be fine while one recurring behaviour costs them their worst 10%
+    of tickets. Coach the pattern in the bottom decile, not the comfortable average.
+  answers:
+  - Where in an agent's tickets does coaching value live?

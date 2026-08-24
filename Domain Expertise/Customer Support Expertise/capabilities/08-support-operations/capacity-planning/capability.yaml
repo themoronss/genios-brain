@@ -8,7 +8,7 @@ identity:
   subdomain: support_operations
   version: 0.1.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
   Sizing the team against demand that is bursty, seasonal and partly self-inflicted. A plan
