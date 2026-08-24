@@ -273,7 +273,13 @@ def test_ownership_rules_are_ordered_and_named():
                          directory=DIRECTORY).reason_code == "rule1_owner"
     assert resolve_owner(facts={"commitment.actor": {"value": "rep@acme.io"}}, attrs={},
                          directory=DIRECTORY).reason_code == "rule2_actor"
-    assert resolve_owner(facts={}, attrs={}, directory=DIRECTORY).reason_code == "rule3_unrouted"
+    # Nobody owns it, so it is not ROUTED — but an org with an active admin has somewhere to
+    # show it. The reason code distinguishes the two, because "no owner" and "no admin either"
+    # are different problems and merging them hid the second behind the first.
+    unowned = resolve_owner(facts={}, attrs={}, directory=DIRECTORY)
+    assert unowned.reason_code == "rule3_admin_queue"
+    assert unowned.routed is False and unowned.seat_id is None
+    assert unowned.recipient is not None
 
 
 def test_an_off_seat_owner_falls_through_rather_than_being_force_matched():

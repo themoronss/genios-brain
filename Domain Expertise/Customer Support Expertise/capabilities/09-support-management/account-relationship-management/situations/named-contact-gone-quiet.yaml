@@ -57,7 +57,8 @@ matches:
   # INTERPRETATION differs from the sales domain, which is why this file spends most of its
   # length on interpretation rather than on binding.
   l2_situation_types:
-    - champion_quiet
+    - support_contact
+    - relationship
 
   scope: person
 

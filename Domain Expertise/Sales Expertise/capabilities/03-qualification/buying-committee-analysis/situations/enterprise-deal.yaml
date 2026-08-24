@@ -15,15 +15,7 @@ description: >
 
 matches:
   l2_situation_types:
-    - stalled_deal
-    - cooling_deal
-    - single_threaded_deal
-    - security_review_pending
-    - legal_in_review
-    - going_dark_after_proposal
-    - deal_health
-    - verbal_yes_not_closed
-    - contract_requested
+    - deal
   scope: deal
   when:
     - {path: deal.status, op: "=", value: open}

@@ -278,10 +278,25 @@ class GraphStore:
 
     def _write_ref(self, conn, *, org_id, event_id, evidence, source=None,
                    fact_version_id=None, observation_id=None, edge_version_id=None) -> None:
+        # `source_object_id` — the PROVIDER's id for the message this receipt came from.
+        #
+        # The column existed and nothing ever wrote it, so all 3,132 rows carried NULL and there
+        # was no path from a card back to the Gmail message that caused it. `evidence` held only
+        # derivation labels like {"derived": "email to/cc"}, which say what the engine concluded
+        # and not what it read.
+        #
+        # Filled by subquery rather than threaded through every writer: the value is already in
+        # `source_events`, keyed by the `event_id` this ref carries, so a correlated select gets
+        # it inside the same statement — no extra round trip, and no signature change across
+        # three public write methods and their dozens of call sites, each of which would be a
+        # chance to forget one and leave a silent NULL behind.
         conn.execute(text(
             "insert into graph_source_refs (source_ref_id, org_id, fact_version_id, "
-            "edge_version_id, observation_id, event_id, source, evidence, extractor_version) "
-            "values (:id, :o, :fv, :ev2, :obs, :e, :src, cast(:ex as jsonb), :xv)"),
+            "edge_version_id, observation_id, event_id, source, evidence, extractor_version, "
+            "source_object_id) "
+            "values (:id, :o, :fv, :ev2, :obs, :e, :src, cast(:ex as jsonb), :xv, "
+            "  (select se.source_object_id from source_events se "
+            "   where se.event_id = :e and se.org_id = :o))"),
             {"id": new_id("ref"), "o": org_id, "fv": fact_version_id, "ev2": edge_version_id,
              "obs": observation_id, "e": event_id, "src": source,
              "ex": json.dumps(evidence, default=str), "xv": "b3-haiku-1"})
@@ -324,16 +339,24 @@ class GraphStore:
                  "ot": output_tokens, "m": model})
 
     def record_cost(self, *, org_id, model, purpose, input_tokens, output_tokens,
-                    success=True, error=None, event_id=None) -> None:
+                    success=True, error=None, event_id=None,
+                    subject_ref=None, client_context_id=None) -> None:
         # Defaults so BOTH callers work: L2 passes all kwargs; L5 render passes only the core set.
         # (Was a bug: L5's call omitted success/error/event_id → TypeError swallowed → l5_render
         #  spend NEVER recorded, reproducing the old 'V2 LLM cost not tracked' gap.)
+        #
+        # `subject_ref` ("card:<id>" / "signal:<id>" / "event:<id>") is what makes "cost per
+        # useful accepted decision" computable at all: org+purpose was enough for a monthly bill
+        # and useless for margin — no way to say WHICH decision a call was spent on. Optional,
+        # because background work is genuinely unattributed and forcing a value would invent one.
         with self._engine.begin() as c:
             c.execute(text(
                 "insert into llm_costs (org_id, model, purpose, input_tokens, output_tokens, "
-                "success, error, event_id) values (:o, :m, :p, :it, :ot, :s, :e, :ev)"),
+                "success, error, event_id, subject_ref, client_context_id) "
+                "values (:o, :m, :p, :it, :ot, :s, :e, :ev, :sr, :cc)"),
                 {"o": org_id, "m": model, "p": purpose, "it": input_tokens, "ot": output_tokens,
-                 "s": success, "e": (error or None), "ev": event_id})
+                 "s": success, "e": (error or None), "ev": event_id,
+                 "sr": subject_ref, "cc": client_context_id})
         # Every LLM call in the engine lands here, so this is the one place that can report spend
         # to PostHog without a per-call-site instrumentation that later drifts. Priced with the same
         # function the admin console uses, so both surfaces quote one dollar figure.

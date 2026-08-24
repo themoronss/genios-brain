@@ -77,6 +77,14 @@ def register(body: Register) -> dict:
                    "e": body.email, "p": hash_password(body.password), "kh": key_hash,
                    "cr": PLAN_CREDITS["trial"], "now": now,
                    "exp": now + timedelta(days=TRIAL_DAYS)})
+        # The org's first seat AND its durable pull surface, in the same transaction that creates
+        # the org. Without the seat L2 has nobody to exclude from counterparty correlation, L5 has
+        # no escalation ladder and L6 has no recipient for any card. Without the surface row
+        # `run_distribution` does not enumerate the org at all, so no digest, reminder or push
+        # ever leaves the building. None of those layers can tell "this tenant has none" apart
+        # from "this tenant has no people", so all of them fail quietly.
+        from genios_engine.platform.seats import provision_org
+        provision_org(c, org_id)
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
                        "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
                   {"o": org_id, "cr": PLAN_CREDITS["trial"], "idem": f"trial:{org_id}"})

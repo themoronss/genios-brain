@@ -1,0 +1,174 @@
+{
+  "replay_id": "08",
+  "slug": "agent_handoff_and_origin_loop",
+  "title": "Governed Agent Handoff and Origin-Loop Prevention",
+  "failure_class": "Ungoverned external-agent execution: dispatch without approval/lease/idempotency/origin identity, permitting duplicate provider effects, blind retries, agent scope expansion, and recursive \"intelligence\" built from GeniOS's own agent-generated events.",
+  "summary": "An authoritative GeniOS decision is approved for execution by an approved external agent. The agent must receive only a narrowly scoped task (selected action, lawful context, accepted constraints, allowed tools, approval scope, stop conditions, result schema, Completion predicate) under a signed approval token, a single fenced expiring executor lease and an idempotency key; it then calls a tool or drafts/sends material, and the resulting events re-enter GeniOS carrying origin_execution_id, origin_action_id, origin_attempt_id, actor_type=agent, provider ids and a signature. The system must execute exactly once, correlate every returned event back to the originating action, and prevent its own agent-generated echoes from becoming new independent business situations, cards or learning support. Today the governed handoff route is deliberately HTTP 501 and passes only by remaining fail-closed; separately the card-side \"I'll do it\" path mutates card/signal state without advancing any linked execution/action/outcome, which is the convergence debt that must be paid before enablement.",
+  "business_subject": "The original relationship/opportunity and its exact unresolved action — never the agent, the integration account, the webhook sender, or the agent-generated message itself.",
+  "current_failure": "[CODE] `genios_engine/api/intelligence_routes.py` (`POST /v1/insights/{insight_id}/handoff`) raises HTTP 501 — \"executor handoff is disabled until the idempotent single-executor approval protocol is available\". That 501 is the only proved current handoff behavior. Separately, `genios_engine/deliver/actions.py` handles `do_it_myself` by setting `cards.state='acted'` and `signals.status='acted'` and writing human_events/card_events rows — a parallel card path that never progresses a linked Executive action, execution or outcome. There is no lease, fence token, approval token, idempotency key, signed result, origin chain or actor_type anywhere in the live system, and L5 has never produced an execution row while L6's delivery_outbox is empty across all orgs.",
+  "expected_behavior": "Keep the endpoint disabled until the entire replay is green. Once enabled: approval atomically creates exactly one fenced, expiring lease bound to one action and one idempotency key. The agent receives only the selected action, lawful context, accepted constraints, allowed tools, approval scope, stop conditions, expected result schema and the Completion predicate — never unrestricted Company/Expert Brain data. Every returned event is signature-verified and correlated to its originating execution/action; agent-origin echoes update attempt/execution/delivery state only and never create new business situations, cards or independent human evidence. Only a genuinely external counterparty/world event can satisfy Completion or trigger a fresh decision. One approved action yields at most one provider effect, one canonical result, and one learning exposure/outcome chain — with the card command and the Executive lifecycle converged on a single execution truth.",
+  "why_now": "A DecisionObject is current and unexpired with a named target and selected action, a human approver (Rohit) has authorized agent draft/send for that specific action, and one approved external agent with a narrow tool/data scope is available — so a scoped, fenced, idempotent handoff is legitimately actionable rather than speculative.",
+  "open_loop": "The exact unresolved action on the original relationship/opportunity — the selected action inside the current DecisionObject whose ExecutionObject requires Rohit's approval before any agent may draft or send, and which stays open until a genuinely external counterparty/world event satisfies its Completion predicate.",
+  "passes_today": true,
+  "prohibited_behaviors": [
+    "Prompt text (a draft or free-form instruction supplied by the caller) is never treated as approval, permission or executable policy.",
+    "Two agents or workers must never simultaneously hold execution authority for one action.",
+    "After an unknown provider timeout the system must never retry blindly; it must reconcile by provider/idempotency key first.",
+    "The agent must never change the target, the action, content facts, the channel, the approval boundary or the success definition.",
+    "Origin and executor metadata (origin_execution_id, origin_action_id, origin_attempt_id, actor_type, provider ids, signature) must never be stripped or ignored when events re-enter capture.",
+    "The agent's own generated message or result must never be turned into a new human request, situation or card.",
+    "An agent result, a transport acceptance, or a duplicate webhook must never be counted as a business Outcome.",
+    "Expert Brain internals, corpus/IP, or unrelated company/client context must never be shared with the agent."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Authenticate the webhook/provider source and preserve actor type, origin execution/action/attempt ids, provider ids, signature, content version, recipients and visibility/use. Emit an immutable event receipt explicitly labelled agent-origin, provider-result or external-counterparty, plus a stable dedup key.",
+      "fail_closed": "Park/quarantine any event with missing or invalid origin or signature; an agent echo must never be promoted into an ordinary qualified human signal."
+    },
+    {
+      "layer": "L2",
+      "required_output": "Correlate the agent-origin event to the exact action/relationship without adding independent evidence, and distinguish a genuine external reply from an agent echo. BSO/lifecycle update references the origin and its effect; a duplicate/echo creates no new situation; an external world response retains its own separate actor/source.",
+      "fail_closed": "On ambiguous correlation, mark the source for Review; suppress any recursive or duplicate situation."
+    },
+    {
+      "layer": "L3",
+      "required_output": "Share only the applicable capability constraints/output contract and the permitted four-brain selections, preserving exclusions and purpose. A scoped expertise receipt with version is embedded in the handoff — no corpus/IP dump and no permission widening.",
+      "fail_closed": "Block the handoff when the capability or brain snapshot is stale, unsupported, or outside the agent's scope."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Freeze the selected action, alternatives/rejections, stakes, expiry, target and Completion predicate; re-reason only on authoritative new world evidence. Emit a decision id/hash plus machine-checkable constraints; the agent cannot modify the winner or its confidence.",
+      "fail_closed": "Return DEFER/Blocked if the decision has expired or been revoked, or if the action cannot be expressed safely."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Verify approval; atomically grant exactly one fenced lease; enforce idempotency, dependencies, scope, cancellation and result schema; own the lifecycle. Emit execution/action/approval/lease/idempotency/attempt receipts naming one canonical executor and a terminal or explicitly unproven state.",
+      "fail_closed": "Keep the 501 or return blocked; dispatch no task unless every receipt is present."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Materialize the approved exact payload/tool call, revalidate audience and authority at send time, and reconcile accepted/delivered/unknown before any retry. Emit provider id, fence/idempotency, attempt chronology and one canonical DeliveryResult.",
+      "fail_closed": "Defer and reconcile an unknown attempt; never blind-retry and never fall back to a route outside the approval."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Join one decision exposure, one canonical execution, delivery, external Completion and outcome into a deduped causal ledger keyed by origin/action, keeping agent quality separate from decision quality; agent echoes are excluded as independent support.",
+      "fail_closed": "No promotion and no double counting; derive no preference or learning from agent-generated activity."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Two agents request execution authority for the same action simultaneously.",
+      "expected_decision": "An atomic lease grant gives exactly one agent authority; the other receives a conflict / no-authority response.",
+      "prohibited": "Both agents execute.",
+      "pass_condition": "Exactly one lease/fence token exists for the action and at most one provider effect is produced.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No executor lease or fence-token subsystem exists — L5 has never produced an execution row and there is no approval/lease/idempotency table to contend on."
+    },
+    {
+      "mutation": "The same dispatch/result webhook is delivered twice.",
+      "expected_decision": "Idempotent no-op after the first canonical receipt is recorded.",
+      "prohibited": "Two executions or two outcomes are created.",
+      "pass_condition": "Exactly one action row, one result row and one learning row exist for the duplicated webhook.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No idempotency key, no stable dedup key on inbound events, and no canonical result record — the handoff route is 501 and delivery_outbox has never run."
+    },
+    {
+      "mutation": "The provider times out after having accepted the send.",
+      "expected_decision": "Mark the attempt state unknown and reconcile by provider id / idempotency key before any retry.",
+      "prohibited": "Blind retry that produces a duplicate message.",
+      "pass_condition": "Exactly one provider message exists, or the attempt sits in an explicit unresolved fail-closed state.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No attempt chronology, no unknown/reconcile attempt state, and no provider-id reconciliation path; L6 delivery control plane has never executed."
+    },
+    {
+      "mutation": "Approval is revoked before the tool effect occurs.",
+      "expected_decision": "The fence is invalidated, the agent stops, and no delivery is made.",
+      "prohibited": "Continuing execution from a cached approval token.",
+      "pass_condition": "A cancellation/revocation receipt exists and zero external effect was produced.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No approval token, no revocation channel and no fence invalidation semantics anywhere in L5."
+    },
+    {
+      "mutation": "Approval is revoked after the provider has already accepted the effect.",
+      "expected_decision": "Preserve the truth of the actual effect, cancel all later work, and keep monitoring the result.",
+      "prohibited": "Pretending the send did not occur, or sending again.",
+      "pass_condition": "Exactly one accepted effect is recorded alongside a truthful post-revocation lifecycle state.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No execution/attempt lifecycle to record an accepted-then-revoked state; card actions only flip cards.state/signals.status."
+    },
+    {
+      "mutation": "The decision expires while the task is queued for the agent.",
+      "expected_decision": "Block dispatch and rebuild/re-reason on current state.",
+      "prohibited": "Executing a stale decision.",
+      "pass_condition": "No provider call is made.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No queued-dispatch stage and no decision expiry/revocation check at dispatch time; L4 emits one candidate with no enforced expiry gate on execution."
+    },
+    {
+      "mutation": "The agent asks to change the recipient, the channel, or the message content.",
+      "expected_decision": "Return blocked / a re-approval request.",
+      "prohibited": "The agent self-expands its own scope.",
+      "pass_condition": "A new decision and a new approval are required before anything is sent.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No approval scope, no frozen action/payload hash to diff a proposed change against, and no blocked/re-approval vocabulary — cards.level only carries prescriptive/predictive."
+    },
+    {
+      "mutation": "Origin metadata is absent, or the result signature is invalid.",
+      "expected_decision": "Quarantine the event and mark the source for Review.",
+      "prohibited": "Treating the event as an ordinary human email or request.",
+      "pass_condition": "No graph mutation and no action mutation results from the event.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L1 carries no actor_type, no origin chain and no signature verification; there is also no Review/quarantine abstention state to route into."
+    },
+    {
+      "mutation": "The agent's own outbound message is later ingested back through Gmail capture.",
+      "expected_decision": "Link it as an execution/delivery effect of the originating action; do not generate a new reply/send loop.",
+      "prohibited": "A recursive card or workflow spawned from GeniOS's own outbound message.",
+      "pass_condition": "The origin lineage on the ingested message suppresses any self-trigger.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Extraction has no direction and no actor — the LLM sees a body with no From/To — so a self-generated message is indistinguishable from an inbound one; no origin lineage exists to suppress on."
+    },
+    {
+      "mutation": "The external counterparty replies to the agent-sent message.",
+      "expected_decision": "Capture it as genuine external evidence, correlate it to the exact relationship and action, and evaluate the Completion predicate.",
+      "prohibited": "Classifying the external reply as an agent echo, or using it to close unrelated work.",
+      "pass_condition": "Exactly one scoped completion/outcome candidate is produced for the matching action.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread-level state (extraction is one message at a time), no counterparty role model to identify the replier, and no Completion predicate to evaluate against."
+    },
+    {
+      "mutation": "The agent completes a draft, but the approval token was send-only (or draft-only) — a scope mismatch with what was performed.",
+      "expected_decision": "Reject the effect as outside the token's scope.",
+      "prohibited": "Using draft success as evidence of send completion.",
+      "pass_condition": "The action lands in the correct waiting/blocked lifecycle state rather than a completed one.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No approval token with an allowed-effect scope, and no waiting/blocked lifecycle states to land in."
+    },
+    {
+      "mutation": "The agent returns success, but the provider has no corresponding receipt.",
+      "expected_decision": "Record completed_unproven / unknown and reconcile against the provider.",
+      "prohibited": "Calling the business action completed.",
+      "pass_condition": "No positive learning signal is emitted until the effect is independently verified.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No completed_unproven state exists; L7 has no human verdicts and calibration has never executed, so there is no learning gate to withhold."
+    },
+    {
+      "mutation": "The same result arrives twice — once via the agent webhook and once via the provider webhook.",
+      "expected_decision": "Merge both receipts under the shared origin/effect id.",
+      "prohibited": "Counting the two receipts as two independent supports.",
+      "pass_condition": "One canonical effect exists, carrying two provenance receipts.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No effect id / origin key to merge on, and no canonical-effect record with multi-provenance receipts."
+    },
+    {
+      "mutation": "The agent's action produces a genuinely new, legitimate external issue.",
+      "expected_decision": "Create a new situation only when driven by an external actor / world change, with a new causal parent.",
+      "prohibited": "Suppressing all future evidence merely because an agent origin exists upstream.",
+      "pass_condition": "A new scoped BSO is created that excludes pure agent echo as its trigger.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No causal-parent lineage on situations and no agent-echo vs external-actor distinction at L2, so neither the create nor the suppress branch can be expressed."
+    }
+  ]
+}

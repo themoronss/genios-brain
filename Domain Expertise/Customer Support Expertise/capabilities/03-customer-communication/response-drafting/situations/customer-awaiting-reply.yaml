@@ -38,7 +38,8 @@ matches:
   # us and time is passing. This is the only situation in the domain where the borrowed
   # binding is not a compromise.
   l2_situation_types:
-    - unanswered_email
+    - support_case
+    - support_contact
 
   scope: person
 

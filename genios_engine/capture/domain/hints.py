@@ -13,7 +13,21 @@ _SOURCE_PRIOR: dict[str, str] = {
     "stripe": "admin", "razorpay": "admin",
 }
 
+#: Ordered: the FIRST match wins in `resolve_domain`, so the more specific vocabulary has to be
+#: tested first. `fundraising` before `sales` is the whole point — an investor thread says
+#: "deck", "round" and "diligence" and also says "budget" and "contract", and letting the generic
+#: sales words claim it is how six VCs and three accelerator programmes became sales
+#: opportunities in this org's graph. Not one of its sixteen sales situations was a customer.
 _KEYWORDS: dict[str, re.Pattern[str]] = {
+    "fundraising": re.compile(
+        r"\b(term ?sheet|cap ?table|safe note|pre-?seed|seed round|series [a-d]\b|"
+        r"raise|raising|fundrais\w*|investor|investors|\bvc\b|venture|"
+        r"pitch ?deck|\bdeck\b|diligence|due ?diligence|allocation|cheque|check size|"
+        r"\bLP\b|limited partner|valuation|dilution|runway|"
+        r"accelerator|incubator|cohort|residency|programme|program application|"
+        r"application (?:status|outcome|deadline)|portfolio)\b", re.I),
+    # `budget` and `contract` are deliberately NOT unique to sales — they appear in investor and
+    # admin threads too — so they can only classify a thread the more specific patterns declined.
     "sales": re.compile(r"\b(deal|pricing|proposal|contract|quote|demo|budget|renewal)\b", re.I),
     "support": re.compile(r"\b(issue|error|broken|ticket|down|outage|bug|not working)\b", re.I),
     "admin": re.compile(r"\b(invoice|payment|overdue|gst|compliance|legal|tds|filing)\b", re.I),

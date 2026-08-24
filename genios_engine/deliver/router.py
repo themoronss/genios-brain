@@ -26,7 +26,13 @@ from genios_engine.executive.assignment import PgSeatDirectory, resolve_owner
 
 def resolve_assignee(store, org_id: str, node_facts: dict,
                      node_attrs: dict) -> tuple[str | None, str]:
-    """Return (seat_id | None, resolved_rule). None → admin queue / unrouted.
+    """Return (recipient seat | None, resolved_rule). None → genuinely nobody to show it to.
+
+    Reads `assignment.recipient`, not `assignment.seat_id`. Ownership and recipiency are
+    different questions: an unowned card still has to be SEEN by somebody, and answering None to
+    both is why every live card carries `assignee = NULL` — invisible to the push condition, to
+    the executive bridge's `assignee is not null` predicate, and to the per-recipient budget.
+    `routed` is unchanged, so the escalation ladder still refuses to nudge an unowned commitment.
 
     Kept as a function rather than replaced at every call site so the Layer 6 pipeline reads the
     same as it did before. The tuple shape is what card_builder and the tests already expect.
@@ -34,7 +40,7 @@ def resolve_assignee(store, org_id: str, node_facts: dict,
     with store.engine.connect() as c:
         assignment = resolve_owner(facts=node_facts, attrs=node_attrs,
                                    directory=PgSeatDirectory(conn=c, org_id=org_id))
-    return assignment.seat_id, assignment.reason_code
+    return assignment.recipient, assignment.reason_code
 
 
 def budget_full(store, org_id: str, assignee: str | None, eval_time, budget_per_day: int) -> bool:

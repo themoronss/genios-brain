@@ -12,32 +12,12 @@
 domain: Customer Support Expertise
 
 map:
-  commitment_overdue:
+  support_case:
     situations:
+      - customer_support.sit.customer_awaiting_reply
       - customer_support.sit.promised_followup_overdue
     capabilities:
       - customer_support.customer_communication.de_escalation
-      - customer_support.customer_communication.response_drafting
-      - customer_support.entitlement_and_sla.commitment_tracking
-    objects:
-      load:
-        - customer_support.obj.core.commitment
-        - customer_support.obj.core.conversation
-        - customer_support.obj.core.customer_sentiment
-        - customer_support.obj.core.requester
-        - customer_support.obj.core.ticket
-      optional:
-        - customer_support.obj.core.churn_risk
-        - customer_support.obj.core.entitlement
-        - customer_support.obj.core.escalation
-        - customer_support.obj.core.sla_target
-      never_load:
-        - customer_support.obj.core.knowledge_article
-
-  unanswered_email:
-    situations:
-      - customer_support.sit.customer_awaiting_reply
-    capabilities:
       - customer_support.customer_communication.response_drafting
       - customer_support.entitlement_and_sla.breach_prevention
       - customer_support.entitlement_and_sla.commitment_tracking
@@ -45,88 +25,102 @@ map:
       load:
         - customer_support.obj.core.commitment
         - customer_support.obj.core.conversation
+        - customer_support.obj.core.customer_sentiment
         - customer_support.obj.core.requester
         - customer_support.obj.core.sla_target
         - customer_support.obj.core.ticket
       optional:
+        - customer_support.obj.core.churn_risk
         - customer_support.obj.core.coverage_window
-        - customer_support.obj.core.customer_sentiment
         - customer_support.obj.core.entitlement
-        - customer_support.obj.core.knowledge_article
         - customer_support.obj.core.queue
         - customer_support.obj.core.support_agent
       never_load:
         - customer_support.obj.core.escalation
         - customer_support.obj.core.incident
+        - customer_support.obj.core.knowledge_article
 
-  champion_quiet:
+  support_contact:
     situations:
+      - customer_support.sit.customer_awaiting_reply
       - customer_support.sit.named_contact_gone_quiet
+      - customer_support.sit.new_account_contact
+      - customer_support.sit.promised_followup_overdue
+      - customer_support.sit.support_call_no_recap
     capabilities:
+      - customer_support.customer_communication.de_escalation
+      - customer_support.customer_communication.expectation_setting
+      - customer_support.customer_communication.proactive_status_updates
+      - customer_support.customer_communication.response_drafting
+      - customer_support.diagnosis_and_resolution.diagnostics
+      - customer_support.entitlement_and_sla.breach_prevention
+      - customer_support.entitlement_and_sla.commitment_tracking
       - customer_support.entitlement_and_sla.entitlement_verification
       - customer_support.support_management.account_relationship_management
       - customer_support.voice_of_customer.churn_signal_detection
     objects:
       load:
-        - customer_support.obj.core.churn_risk
+        - customer_support.obj.core.commitment
+        - customer_support.obj.core.conversation
         - customer_support.obj.core.customer_account
-        - customer_support.obj.core.entitlement
-        - customer_support.obj.core.named_contact
-        - customer_support.obj.core.support_plan
-      optional:
         - customer_support.obj.core.customer_sentiment
-        - customer_support.obj.core.escalation
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.issue
+        - customer_support.obj.core.named_contact
         - customer_support.obj.core.requester
-        - customer_support.obj.core.satisfaction_score
+        - customer_support.obj.core.support_plan
         - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.coverage_window
+        - customer_support.obj.core.product_area
+        - customer_support.obj.core.queue
+        - customer_support.obj.core.root_cause
+        - customer_support.obj.core.satisfaction_score
+        - customer_support.obj.core.support_agent
+        - customer_support.obj.core.workaround
       never_load:
+        - customer_support.obj.core.churn_risk
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.incident
+        - customer_support.obj.core.knowledge_article
         - customer_support.obj.core.sla_target
 
-  meeting_no_followup:
+  relationship:
     situations:
+      - customer_support.sit.named_contact_gone_quiet
+      - customer_support.sit.new_account_contact
       - customer_support.sit.support_call_no_recap
     capabilities:
+      - customer_support.customer_communication.expectation_setting
       - customer_support.customer_communication.proactive_status_updates
       - customer_support.diagnosis_and_resolution.diagnostics
       - customer_support.entitlement_and_sla.commitment_tracking
+      - customer_support.entitlement_and_sla.entitlement_verification
+      - customer_support.support_management.account_relationship_management
+      - customer_support.voice_of_customer.churn_signal_detection
     objects:
       load:
         - customer_support.obj.core.commitment
         - customer_support.obj.core.conversation
+        - customer_support.obj.core.customer_account
+        - customer_support.obj.core.entitlement
         - customer_support.obj.core.issue
+        - customer_support.obj.core.named_contact
+        - customer_support.obj.core.support_plan
         - customer_support.obj.core.ticket
       optional:
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.escalation
         - customer_support.obj.core.incident
         - customer_support.obj.core.product_area
         - customer_support.obj.core.requester
         - customer_support.obj.core.root_cause
-        - customer_support.obj.core.sla_target
-      never_load:
-        - customer_support.obj.core.knowledge_article
-
-  intro_followup:
-    situations:
-      - customer_support.sit.new_account_contact
-    capabilities:
-      - customer_support.customer_communication.expectation_setting
-      - customer_support.entitlement_and_sla.entitlement_verification
-      - customer_support.support_management.account_relationship_management
-    objects:
-      load:
-        - customer_support.obj.core.commitment
-        - customer_support.obj.core.customer_account
-        - customer_support.obj.core.entitlement
-        - customer_support.obj.core.named_contact
-        - customer_support.obj.core.sla_target
-        - customer_support.obj.core.support_plan
-        - customer_support.obj.core.ticket
-      optional:
-        - customer_support.obj.core.escalation
-        - customer_support.obj.core.requester
         - customer_support.obj.core.satisfaction_score
         - customer_support.obj.core.workaround
       never_load:
         - customer_support.obj.core.churn_risk
+        - customer_support.obj.core.knowledge_article
+        - customer_support.obj.core.sla_target
 
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
@@ -182,21 +176,14 @@ pending_l2_types:
 # ── Coverage ──────────────────────────────────────────────────────────────
 # Types this domain routes.
 routed_l2_types:
-  - champion_quiet
-  - commitment_overdue
-  - intro_followup
-  - meeting_no_followup
-  - unanswered_email
+  - relationship
+  - support_case
+  - support_contact
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
 unrouted_l2_types:
-  - budget_freeze
-  - champion_left
-  - deal_sentiment_negative
-  - objection_open
-  - proposal_no_response
-  - timeline_slip
+  - account_admin
 
 # Authored but unreachable — no situation routes into them.
 orphan_capabilities:
@@ -244,9 +231,9 @@ orphan_capabilities:
 unreachable_objects: []
 
 stats:
-  l2_types_total: 26
-  l2_types_routed_here: 5
-  l2_types_unrouted_globally: 6
+  l2_types_total: 7
+  l2_types_routed_here: 3
+  l2_types_unrouted_globally: 1
   l2_types_pending: 15
   situations: 14
   capabilities: 49

@@ -49,16 +49,44 @@ def _clean_for_llm(raw: dict, event_id: str, prepared_text: str | None = None) -
 
 
 def _internal_emails(store: GraphStore, org_id: str) -> frozenset[str]:
-    """Org's own seat emails — teammates, not prospects. unanswered_email etc. must not fire on
-    an internal reply; queried ONCE per drain call (not per event) to stay pool-safe."""
+    """Every address that is US: seats, the owner, and the connected mailboxes themselves.
+
+    This used to read `org_seats` alone. A self-serve tenant never fills that table — it had
+    zero rows for the design partner — so the set was empty, and an empty "us" set does not fail
+    loudly: every guard written against it silently passes. The consequences all looked like
+    separate bugs. Inbound thread state was written for every sender, so `ball_in_court='us'`
+    landed on addresses nobody was corresponding with. The account owner's own node became a
+    counterparty, accumulating 237 observations that the reasoner then self-excluded. And the
+    product's own onboarding mail was modelled as a prospect asking for a demo.
+
+    The connected mailbox is the one identity that cannot be missing: an org that has synced
+    Gmail has, by construction, told us which address it owns. Deriving from the connection
+    makes "who are we" a property of the integration rather than of a table someone has to
+    remember to populate.
+    """
     with store.engine.connect() as c:
-        rows = c.execute(text("select lower(email) as e from org_seats "
-                              "where org_id=:o and active and email is not null"),
-                         {"o": org_id}).fetchall()
+        rows = c.execute(text(
+            # 1) explicitly configured seats — correct when populated, empty on self-serve
+            "select lower(email) as e from org_seats "
+            "where org_id=:o and active and email is not null "
+            "union "
+            # 2) the account owner. The one identity that always exists, because signup
+            #    collected it: for the design partner this alone covers 57 outbound messages
+            #    that were being read as mail from a stranger.
+            "select lower(email) from orgs where id=:o and email is not null "
+            "union "
+            # 3) the connected mailbox, once the connector records which address it holds.
+            #    `external_account_id` is the right home for it and is not yet populated by
+            #    every provider path, so this contributes nothing today rather than failing —
+            #    the union degrades, it does not break.
+            "select lower(external_account_id) from connections "
+            "where org_id=:o and external_account_id is not null "
+            "and external_account_id like '%@%'"), {"o": org_id}).fetchall()
     return frozenset(r.e for r in rows if r.e)
 
 
-def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset()):
+def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
+                 effective=None):
     """Route + process ONE event. Returns (outcome, affected_node_id | None)."""
     raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
     mapping = get_mapping(row.source, row.object_type)
@@ -90,7 +118,11 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         internal_kind=getattr(row, "internal_kind", None),
                         thread_id=getattr(row, "parent_object_id", None),
                         domain_hints=getattr(row, "domain_hints", None),
-                        canon_meta=raw)
+                        canon_meta=raw,
+                        # The tenant's own pack vocabulary. Without it the extractor runs one
+                        # hardcoded B2B-SaaS ontology for everyone, and a rule reading
+                        # `deal.status` is dead because the model was never told the name.
+                        effective=effective)
     return res.outcome, res.primary_node
 
 
@@ -141,23 +173,53 @@ def _record_failure(store, org_id: str, event_id: str, error: str | None) -> int
     return int(n)
 
 
-def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset()):
+def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
+                      effective=None):
     """Isolation wrapper: ONE event's failure never aborts the batch (§L2 'drain every event')."""
     try:
         outcome, node = _process_one(row, org_id=org_id, store=store, llm=llm, crypto_key=crypto_key,
-                                     internal_emails=internal_emails)
+                                     internal_emails=internal_emails, effective=effective)
         return outcome, node, None
     except Exception as e:      # noqa: BLE001 — quarantine this event, keep the batch alive
         return "error", None, str(e)[:400]
 
 
+def _effective_packs(store: GraphStore, org_id: str, registry) -> dict | None:
+    """Every active pack's effective config, keyed by pack id.
+
+    Returns None when no registry is wired or nothing resolves — the extractor then falls back
+    to the engine's own vocabulary rather than extracting nothing, so an unmigrated caller keeps
+    working exactly as before.
+    """
+    if registry is None:
+        return None
+    try:
+        with store.engine.connect() as c:
+            pack_ids = [r[0] for r in c.execute(text(
+                "select pack_id from tenant_packs where org_id=:o and state in ('active','shadow')"),
+                {"o": org_id})]
+        out = {}
+        for pid in pack_ids:
+            eff, _ = registry.effective(org_id, pid)
+            if eff:
+                out[pid] = eff
+        return out or None
+    except Exception:      # noqa: BLE001 — vocabulary is an enrichment, never a reason to stop
+        return None
+
+
 def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
-                    crypto_key: str, max_total: int = 5000) -> dict:
+                    crypto_key: str, max_total: int = 5000, registry=None) -> dict:
     out: Counter = Counter()
     affected: set[str] = set()
     seen: set[str] = set()                            # attempted THIS call → no intra-call re-pull
     done = 0
     internal_emails = _internal_emails(store, org_id)  # once per drain, not per event
+    # The tenant's pack vocabulary, resolved ONCE per drain for the same reason. A tenant is
+    # bound to several packs (sales + general) and the extractor must see the union: a field
+    # named by one pack and missed because only the other was consulted is the same silent loss
+    # the seam fix exists to prevent.
+    effective = _effective_packs(store, org_id, registry)
     while done < max_total:
         rows = [r for r in _pull(store, org_id, _BATCH) if r.event_id not in seen]
         if not rows:
@@ -166,7 +228,8 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             results = list(ex.map(
                 lambda r: _safe_process_one(r, org_id=org_id, store=store, llm=llm,
                                             crypto_key=crypto_key,
-                                            internal_emails=internal_emails), rows))
+                                            internal_emails=internal_emails,
+                                            effective=effective), rows))
         for row, (outcome, node, err) in zip(rows, results):
             seen.add(row.event_id)
             out[outcome] += 1

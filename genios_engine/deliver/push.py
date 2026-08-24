@@ -127,9 +127,13 @@ def push_card_to_agents(store, org_id: str, card_id: str) -> int:
 
 def push_action_to_agents(store, org_id: str, card_id: str,
                           draft: str | None = None, instruction: str | None = None) -> int:
-    """External actions require a single-executor transactional approval protocol.
+    """External actions go through the delegation protocol, never through a broadcast.
 
-    Kept as an explicit fail-closed shim for older callers; no network request is made.
+    This shim stays fail-closed for its old signature — an org-wide unapproved action fan-out
+    is exactly what the protocol exists to make impossible. The governed path is
+    `executive/delegation.py`: propose (exact instruction bytes) → approve (named human, TTL)
+    → claim_dispatch (single winner) → record_result (exactly once). No approval, no dispatch.
     """
     del store, org_id, card_id, draft, instruction
-    raise RuntimeError("external action push is disabled")
+    raise RuntimeError(
+        "external action push requires an approved delegation — see executive/delegation.py")

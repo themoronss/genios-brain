@@ -27,6 +27,25 @@ def effective_rank(priority: DeliveryPriority, *, queued_at: datetime, now: date
     return min(bumped, _PRIORITY_RANK[DeliveryPriority.CRITICAL.value])
 
 
+def rank_sql(priority_col: str, queued_col: str, now_param: str) -> str:
+    """`effective_rank` as a SQL expression, generated from the SAME `_PRIORITY_RANK` map.
+
+    The v2 claimer ordered by `priority` directly — a `text` column, so Postgres sorted it
+    alphabetically: background < critical < high < low < medium. A `critical` delivery was claimed
+    after `background` work, and every correct rank already existed in this module with nothing
+    importing it outside tests.
+
+    Generated rather than hand-written so the two orderings cannot drift: adding a priority class
+    to the enum changes both at once or neither.
+    """
+    cases = " ".join(f"when {priority_col} = '{value}' then {rank}"
+                     for value, rank in _PRIORITY_RANK.items())
+    top = _PRIORITY_RANK[DeliveryPriority.CRITICAL.value]
+    return (f"least((case {cases} else 0 end) + "
+            f"floor(extract(epoch from ({now_param} - {queued_col})) / 3600 "
+            f"/ {STARVATION_STEP_HOURS})::int, {top})")
+
+
 def schedule_order(rows: Sequence[dict], *, now: datetime) -> list[dict]:
     """Order due rows: highest effective (aged) priority first, then oldest first.
 
@@ -42,4 +61,4 @@ def schedule_order(rows: Sequence[dict], *, now: datetime) -> list[dict]:
     return sorted(rows, key=key)
 
 
-__all__ = ["STARVATION_STEP_HOURS", "effective_rank", "schedule_order"]
+__all__ = ["STARVATION_STEP_HOURS", "effective_rank", "rank_sql", "schedule_order"]

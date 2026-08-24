@@ -55,7 +55,8 @@ matches:
   # by us. Support reads it as a handover rather than as a warm lead, but the underlying
   # thread shape is the same and the binding is honest.
   l2_situation_types:
-    - intro_followup
+    - support_contact
+    - relationship
 
   scope: person
 

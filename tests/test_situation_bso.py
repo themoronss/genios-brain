@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from genios_engine.context.domain_spec import spec_for
 from genios_engine.context.situation_bso import (
     DEFAULT_IMPORTANCE_BP,
     SELECTOR_VERSION,
@@ -24,7 +25,11 @@ NOW = datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc)
 def _situation_row(**overrides) -> dict:
     row = {
         "situation_id": "sit_test_1",
-        "situation_type": "buying_signal",
+        # Sourced from the registry, never hand-written: `buying_signal` is a PACK signal
+        # reason_code that `context/situations.py` cannot emit, so a fixture using it tested a
+        # shape the compiler never receives — which is how a 100% live route-miss stayed
+        # invisible to a green suite.
+        "situation_type": spec_for("sales").type_for("company"),
         "domain": "sales",
         "status": "active",
         "correlation_id": None,
@@ -35,7 +40,7 @@ def _situation_row(**overrides) -> dict:
         "last_seen_at": NOW,
         "anchor_node_id": "account_1",
         "anchor_name": "Acme",
-        "anchor_type": "account",
+        "anchor_type": "company",
     }
     row.update(overrides)
     return row
@@ -52,7 +57,9 @@ def test_producer_builds_valid_typed_contracts():
         org_id="org_1", situation=row, signal_ids=signal_ids, evidence=evidence,
         trace_id="trace_1")
     assert isinstance(bso, BusinessSituationObject)
-    assert bso.type == "buying_signal"
+    # Assert against the registry, not a literal: the producer's type must stay a value Layer 2
+    # can emit, and pinning it to a hand-written string is exactly how it drifted before.
+    assert bso.type == spec_for("sales").type_for("company")
     assert bso.confidence_bp == 8_200                      # 82 percent -> basis points
     assert bso.importance_bp == DEFAULT_IMPORTANCE_BP      # L2 carries none -> neutral default
     assert bso.metadata["importance_source"] == "default"
@@ -91,6 +98,11 @@ def test_produced_objects_compile_against_the_real_corpus():
         catalog=ExpertBrainCatalog(default_authoring_root()),
         runtime_brains=InMemoryRuntimeBrains(),
         publisher=None,                                    # shadow: no persistence
+        # The real corpus is entirely DRAFT today (nothing has cleared admission), which is a
+        # true statement about the corpus, not a compiler defect. This test proves the produced
+        # BSOs COMPILE — a measurement question — so it runs in measurement mode, exactly as
+        # the live shadow pass does.
+        require_admission=False,
     )
     package = compiler.compile(bso, context_slice)
 

@@ -162,14 +162,38 @@ def identity_score(*, open_merge_proposals: int) -> int:
     return 40 if open_merge_proposals == 1 else 20
 
 
+#: The score returned when a domain registers no expectations. Sentinel, not a percentage: it is
+#: outside 0..100 on purpose so no consumer can average it into a number and lose the distinction
+#: between "nothing is missing" and "we never said what complete means here".
+COVERAGE_UNKNOWN = -1
+
+
+def coverage_is_known(score: int) -> bool:
+    """Whether a coverage number means anything. Gates must consult this before trusting it."""
+    return score != COVERAGE_UNKNOWN
+
+
 def coverage_score(*, present_fields: set[str], expected: dict[str, str]) -> tuple[int, list[str]]:
     """How complete the picture is, and the plain-language names of what is missing.
 
     Reported beside confidence, never inside it: not knowing a close date does not make
     the stage we do know less true.
     """
+    # "We expect nothing" is neither 100% covered nor 0% known, and both readings cause harm.
+    #
+    # Scoring it 0 invents a gap that does not exist and makes every situation in a new domain
+    # look broken the day it is added — absence read as negative evidence, which this codebase
+    # refuses everywhere else.
+    #
+    # Scoring it 100 is what let 34 of one org's 73 situations report `missing=[]` and full
+    # coverage, and it hands a downstream gate reading "no actionable output when required
+    # context is unknown" a green light earned by ignorance.
+    #
+    # The honest answer is a third state. `coverage_status` carries it so a consumer can tell
+    # "complete" from "we never said what complete means here", while the number stays neutral
+    # rather than asserting either.
     if not expected:
-        return 100, []
+        return COVERAGE_UNKNOWN, ["coverage unknown — no expectations registered for this domain"]
     missing = [label for f, label in sorted(expected.items()) if f not in present_fields]
     known = len(expected) - len(missing)
     return int(round(100 * known / len(expected))), missing
@@ -198,6 +222,7 @@ def score_situation(*, event_count: int, source_count: int,
     identity = identity_score(open_merge_proposals=open_merge_proposals)
     coverage, missing = coverage_score(present_fields=present_fields,
                                        expected=expected_fields)
+    coverage_known = coverage_is_known(coverage)
 
     # Minimum, not average — you are only as sure as your weakest link. A dimension with
     # no basis is left OUT rather than scored zero, so "we cannot tell how current this
@@ -212,6 +237,10 @@ def score_situation(*, event_count: int, source_count: int,
         missing=tuple(missing),
         inputs={"event_count": event_count, "source_count": source_count,
                 "freshness_known": freshness_known,
+                # Same shape as freshness: a dimension with no basis is REPORTED as having no
+                # basis rather than being scored, so "we never said what complete means for this
+                # domain" cannot be read as "this is fully covered".
+                "coverage_known": coverage_known,
                 "open_discrepancies": open_discrepancies,
                 "open_merge_proposals": open_merge_proposals,
                 "last_seen_at": last_seen_at.isoformat() if last_seen_at else None,

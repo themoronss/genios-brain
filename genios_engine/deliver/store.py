@@ -118,9 +118,17 @@ class CardStore:
                 "insert into cards (card_id, signal_id, org_id, assignee, domain, level, "
                 "urgency_band, headline, situation, score, score_block, actions, why, "
                 "context_tags, artifact, render_mode, config_snapshot_id, template_version, "
+                "reject_code, reject_detail, abstained_because, "
+                # the Customer Intelligence Contract — six answers that had nowhere to land
+                "business_subject, relationship_role, unresolved_item, why_now, "
+                "capability_key, capability_version, capability_review_state, "
+                "outcome_window_days, success_signal, do_nothing_consequence, "
+                "confidence_vector, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
-                "cast(:art as jsonb),:rm,:cs,:tv,'queued',:exp) "
+                "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
+                ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
+                "cast(:cvec as jsonb),'queued',:exp) "
                 "on conflict (signal_id) do nothing returning card_id"),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
@@ -130,6 +138,21 @@ class CardStore:
                  "why": json.dumps(card["why"], default=str), "tags": card["context_tags"],
                  "art": json.dumps(copy["artifact"], default=str), "rm": copy["render_mode"],
                  "cs": card.get("config_snapshot_id"), "tv": card.get("template_version"),
+                 # Provenance for the fallback: which validator refused the draft, and on what.
+                 "rjc": copy.get("reject_code"), "rjd": copy.get("reject_detail"),
+                 "bsub": card.get("business_subject"),
+                 "brole": card.get("relationship_role"),
+                 "bitem": card.get("unresolved_item"),
+                 "bwhy": card.get("why_now"),
+                 "ckey": card.get("capability_key"),
+                 "cver": card.get("capability_version"),
+                 "crev": card.get("capability_review_state"),
+                 "owin": card.get("outcome_window_days"),
+                 "osig": card.get("success_signal"),
+                 "odnc": card.get("do_nothing_consequence"),
+                 "cvec": json.dumps(card.get("confidence_vector") or {}, default=str),
+                 # why this card declines to instruct, or NULL when it does
+                 "abst": card.get("abstained_because"),
                  "exp": card["expires_at"]}).first()
             if inserted is None:
                 winner = c.execute(text(
@@ -139,7 +162,10 @@ class CardStore:
             self.log_event(card_id, card["org_id"], "card.created",
                            cause=card.get("resolved_rule"),
                            detail={"band": card["urgency_band"], "render_mode": copy["render_mode"],
-                                   "reject_code": copy.get("reject_code")}, conn=c)
+                                   "reject_code": copy.get("reject_code"),
+                                   # the offending token was computed and discarded; a 90%
+                                   # fallback rate is not diagnosable without it
+                                   "reject_detail": copy.get("reject_detail")}, conn=c)
         return card_id, True
 
     def transition(self, card_id, org_id, to_state, kind, *, cause=None, actor="system",
@@ -211,7 +237,12 @@ class CardStore:
         now = authority_time(eval_time)
         with self._engine.connect() as c:
             r = c.execute(text(
-                "select k.* from cards k join signals s on s.signal_id=k.signal_id "
+                # The signal's decision columns (0070) ride along: the projection layer reads
+                # THEM for its recommendation instead of re-deriving one from the reason_code
+                # string, and the signals row is already in this join.
+                "select k.*, s.candidate_steps, s.rejected_candidates, "
+                "s.uncertainty as decision_uncertainty "
+                "from cards k join signals s on s.signal_id=k.signal_id "
                 "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS +
                 " where k.card_id=:id and k.org_id=:o and s.status='open' "
                 "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "

@@ -43,20 +43,25 @@ def _fval(facts: dict, field: str):
 
 
 # which fact carries the "elapsed" clock per reason_code (mirrors the pack rule urgency.path)
+#: Fallback only. Every rule DECLARES its own clock in `urgency.path`, and the caller passes it —
+#: this map is what the renderer used instead, and it covered 6 of the 25 rules. For the other 19
+#: `_CLOCK.get(reason_code, "")` looked up the fact named `""`, got None, and substituted the
+#: sentinel word into a `{days}d` slot: "Raised severald ago — still unanswered" shipped to a
+#: real user. A duration the system cannot compute must be omitted, never worded.
 _CLOCK = {
-    "stalled_deal": "deal.last_inbound",
-    "commitment_overdue": "commitment.due_at",
-    "unanswered_email": "thread.last_inbound",
-    "champion_quiet": "thread.last_inbound",
-    "meeting_no_followup": "meeting.start_at",
     "deal_health": "deal.last_inbound",       # composite verdict clocks off the deal's last touch
 }
 
 
-def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: datetime) -> dict:
-    """Named slots for template interpolation + the invention whitelist. Missing facts collapse
-    to safe generic words (never a fabricated specific), so a card is always renderable + honest."""
-    days = _days_since(_fval(facts, _CLOCK.get(reason_code, "")), eval_time)
+def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: datetime,
+                  clock_path: str | None = None) -> dict:
+    """Named slots for template interpolation + the invention whitelist.
+
+    `clock_path` is the rule's own `urgency.path` — the field the reasoner actually timed the
+    decision from. Passing it makes the day count correct for every rule instead of the six that
+    happened to be in a hand-written map.
+    """
+    days = _days_since(_fval(facts, clock_path or _CLOCK.get(reason_code, "")), eval_time)
     stage = _fval(facts, "deal.status") or _fval(facts, "deal.stage")
     money = _money(_fval(facts, "deal.value"))
     action = _fval(facts, "commitment.action")

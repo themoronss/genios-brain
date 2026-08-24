@@ -50,11 +50,21 @@ def build_baselines(store: GraphStore, org_id: str, eval_time: datetime | None =
             "select node_id, canonical_key from graph_nodes where org_id=:o "
             "and node_type='person' and canonical_key is not null and valid_to is null"),
             {"o": org_id}).fetchall()
+        # ONE query for every person's history instead of one per person. The loop issued a
+        # separate round trip per node — 110 people here — and against a remote Postgres each
+        # costs a full network turn, so the pass took tens of minutes and the link died partway
+        # through, which is why a live re-run could not be completed at all. Same rows, same
+        # ordering, one wait.
+        by_email: dict[str, list] = {}
+        for r in c.execute(text(
+                "select actor->>'email' as email, occurred_at from source_events "
+                "where org_id=:o and actor->>'email' is not null "
+                "order by actor->>'email', occurred_at"), {"o": org_id}):
+            by_email.setdefault(r.email, []).append(r.occurred_at)
+
         rows = []
         for p in people:
-            times = [r.occurred_at for r in c.execute(text(
-                "select occurred_at from source_events where org_id=:o and actor->>'email'=:e "
-                "order by occurred_at"), {"o": org_id, "e": p.canonical_key})]
+            times = list(by_email.get(p.canonical_key, ()))
             times = [t if t is None or t.tzinfo else t.replace(tzinfo=timezone.utc) for t in times]
             if len(times) > MIN_SAMPLES:
                 gaps = [max(0.0, (times[i + 1] - times[i]).total_seconds() / 86400.0)
@@ -71,14 +81,29 @@ def build_baselines(store: GraphStore, org_id: str, eval_time: datetime | None =
             rows.append([{"o": org_id, "k": f"reply_cadence:{p.node_id}", "v": float(val), "n": n, "c": cold},
                          {"o": org_id, "k": f"momentum:{p.node_id}", "v": float(mom), "n": len(gaps), "c": cold},
                          {"o": org_id, "k": f"engagement:{p.node_id}", "v": float(eng), "n": len(times), "c": cold}])
+    # One statement for every baseline, not one per baseline. 110 people x 3 metrics was 330
+    # sequential inserts inside a single transaction — the write half of the same problem.
+    flat = [r for triple in rows for r in triple]
     with store.engine.begin() as c:
-        for triple in rows:
-            for r in triple:
-                c.execute(text(
-                    "insert into baselines (org_id, key, value, sample_size, cold_start, computed_at) "
-                    "values (:o, :k, :v, :n, :c, now()) on conflict (org_id, key) do update set "
-                    "value=excluded.value, sample_size=excluded.sample_size, "
-                    "cold_start=excluded.cold_start, computed_at=now()"), r)
+        if flat:
+            # ONE statement, not one per row. Handing SQLAlchemy a list of parameter dicts against
+            # a raw `text()` still issues a round trip each — 330 of them here, ~170ms apiece over
+            # a remote link, which is most of a minute for a pass that computes in milliseconds.
+            # `unnest` turns the whole batch into a single exchange by sending five arrays.
+            c.execute(text(
+                "insert into baselines (org_id, key, value, sample_size, cold_start, computed_at) "
+                "select :o, k, v, n, cs, now() from unnest("
+                "  cast(:keys as text[]), cast(:vals as double precision[]), "
+                "  cast(:samples as int[]), cast(:colds as boolean[])"
+                ") as t(k, v, n, cs) "
+                "on conflict (org_id, key) do update set "
+                "value=excluded.value, sample_size=excluded.sample_size, "
+                "cold_start=excluded.cold_start, computed_at=now()"),
+                {"o": org_id,
+                 "keys": [r["k"] for r in flat],
+                 "vals": [r["v"] for r in flat],
+                 "samples": [r["n"] for r in flat],
+                 "colds": [r["c"] for r in flat]})
     return built
 
 

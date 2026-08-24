@@ -81,6 +81,11 @@ _PLANNABLE_SIGNALS = (
     "selected_rc.evidence_refs "
     "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
     " where s.org_id=:o and (" + AUTHORITATIVE_SIGNAL_PREDICATE + ") "
+    # AUTHORITATIVE_SIGNAL_PREDICATE deliberately does NOT constrain s.status — the card CTEs in
+    # reason/authority.py must still read 'acted' signals to render their history. A commitment
+    # is different: planning work a human already resolved hands the founder a deadline for
+    # finished work. Local to the sweep on purpose; compare deliver/actions.py, which does the same.
+    "and s.status='open' "
     "and not exists (select 1 from executions x where x.org_id=s.org_id "
     "and x.decision_hash=ro.decision_hash and x.closed_at is null) "
     "order by selected_rc.final_utility_bp desc, s.signal_id asc limit :l"

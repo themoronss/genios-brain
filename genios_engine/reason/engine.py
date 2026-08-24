@@ -24,6 +24,18 @@ class NodeContext:
     edge_count: int = 0                                    # number of current edges on this node
     neighbor_obs: set = field(default_factory=set)         # union of neighbours' observation kinds
     neighbor_facts: dict = field(default_factory=dict)     # field -> latest value across neighbours
+    #: The Layer 2 situation anchored on this node, if L2 correlated one.
+    #:
+    #: L2 computes a whole substrate — thread families, dormancy, coverage, a five-dimension
+    #: confidence vector — writes it to `context_situations`, and until now NOTHING on the live
+    #: decision path read a single row of it. Cards were built from one person row's facts, so
+    #: everything L2 knew (that 68 Boardy events are one thread family, that a situation went
+    #: dormant, that coverage is 50%, that confidence_overall is 33) had zero effect on what the
+    #: founder saw.
+    #:
+    #: `None` means L2 correlated no situation for this node, which is itself information and
+    #: must stay distinguishable from "a situation with nothing in it".
+    situation: dict | None = None
 
 
 def _resolve_value(ctx: NodeContext, value):

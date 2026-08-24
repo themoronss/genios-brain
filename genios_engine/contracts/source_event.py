@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from genios_engine.contracts.visibility import Visibility
+
 
 class SyncMode(str, Enum):
     backfill = "backfill"
@@ -54,4 +56,19 @@ class SourceEvent(BaseModel):
     # to L2 — provenance is L1's to know, so L2 honours this instead of guessing from the
     # source name. See capture.internal_knowledge for why canon sits above rank 3.
     internal_kind: str | None = None
-    schema_version: int = 3                 # v3: + internal_kind (additive only)
+    # WHO ELSE was on this message. First-class because the alternative is a deadline: To/Cc
+    # survived only inside the encrypted `raw_payloads` blob, which carries a 30-day TTL, so the
+    # design partner's backfilled correspondence loses its recipient data on 2026-09-16 and even
+    # best-effort reconstruction stops being possible. It is also the only way to tell a message
+    # sent TO one person from one that copied nine — which is the difference between a
+    # conversation and a broadcast, and neither L2 nor any rule could previously see it.
+    recipients: tuple[str, ...] = ()
+    # WHO could see the original — the source's own ACL, derived per source family at the
+    # normalize seam (capture/visibility_rules.py). None means "no derivation rule covered this
+    # source", and the gate PARKS such an event as `visibility_unknown` rather than publishing:
+    # an audience we cannot name is not an audience we may assume. The contract existed, fully
+    # tested, and nothing on the capture path called it — every event landed org-scoped, so a
+    # two-person private thread and a company-wide page were indistinguishable to every layer
+    # above.
+    visibility: Visibility | None = None
+    schema_version: int = 5                 # v5: + visibility · v4: + recipients (additive)

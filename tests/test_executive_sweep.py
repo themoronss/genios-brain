@@ -127,7 +127,10 @@ def test_an_unowned_deal_is_still_committed_to_just_unrouted():
     sweep.plan_commitments(FakeEngine(db), "org_1", eval_time=NOW, effective=PACK)
     row = db.open_execution()
     assert row is not None
-    assert row["assignee"] is None and row["routing_rule"] == "rule3_unrouted"
+    # Still unowned — `assignee` stays NULL on the EXECUTION, which is what keeps the escalation
+    # ladder silent for work nobody promised. Only the card's recipient changed (deliver/router),
+    # so an unowned item is visible without anyone being nudged as though they owed it.
+    assert row["assignee"] is None and row["routing_rule"] == "rule3_admin_queue"
     assert row["audience"] == "admin_queue"
     assert not db.execution_escalations, "an unowned commitment escalates into an empty room"
 
@@ -512,6 +515,39 @@ def test_the_maintenance_heartbeat_actually_drives_layer_five():
     scope = inspect.getsource(routes._executive_orgs)
     assert "tenant_packs" in scope and "state='active'" in scope, (
         "sweeping tenants with no applied pack is pure cost — Layer 4 produces nothing to commit to")
+
+
+def test_executive_orgs_actually_executes_and_returns_active_pack_tenants(monkeypatch):
+    """Enumeration must RUN, not merely contain the right SQL text.
+
+    The sibling assertion above reads source text, and for 15 days that was the only guard:
+    ``_executive_orgs`` called ``text(...)`` with no ``sqlalchemy`` import in scope, so every
+    heartbeat tick raised ``NameError`` into a bare ``{"error": True}`` and Layer 5 never planned
+    a single commitment. Source text cannot see a NameError inside the function it inspects — only
+    calling it can.
+    """
+    from types import SimpleNamespace
+
+    from genios_engine.api import routes
+
+    captured: dict[str, str] = {}
+
+    class _Conn:
+        def execute(self, stmt, *_a, **_kw):
+            captured["sql"] = str(stmt)
+            return [("org_a",), ("org_b",)]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+    monkeypatch.setattr(routes, "_graph",
+                        SimpleNamespace(engine=SimpleNamespace(connect=lambda: _Conn())))
+
+    assert routes._executive_orgs() == ["org_a", "org_b"]
+    assert "tenant_packs" in captured["sql"] and "state='active'" in captured["sql"]
 
 
 def test_a_broken_executive_pass_cannot_kill_the_heartbeat():

@@ -1,0 +1,198 @@
+{
+  "replay_id": "12",
+  "slug": "antler_exploratory_relationship_and_regional_authority",
+  "title": "Antler-Shaped Exploratory Relationships and Regional Authority",
+  "failure_class": "Protected program/application evidence leaking across subject, role and region boundaries — with stale prior-application prejudice, silence-inferred relationship state, and unsupported investing advice — because operator_only scope, subject exclusions, region authority, retention/reuse gates and exploratory edge lifecycle are not enforced end-to-end.",
+  "summary": "A [MODELLED] program/investing/privacy pressure test built on an Antler-shaped public reference (no real Antler data, policy or workflow). Applicant P has a Singapore 2026 application marked scope=operator_only under retention-v3, with an exclusion barring the evidence subject from protected application/cohort details; a possible same-human Europe 2024 applicant record exists whose identity link and permitted retention/reuse are unresolved. Singapore operator O-SG, Europe operator O-EU and a conditionally-authorized global approver contend for authority, an exploratory founder-to-program edge is neither formed nor dissolved, and a sensitive cohort pattern sits below the independence/disclosure floor with zero accepted investing capability in the corpus. The correct output is an operator-visible bounded source review/Observation for O-SG only — no investment recommendation, no subject-facing rationale, no cross-region action, no silence-driven relationship transition and no learning promotion.",
+  "business_subject": "One person's exact program relationship scoped by application cycle, cohort/program, role and region — i.e. applicant P's Singapore 2026 application relationship — NOT the person globally, not every historic application, and not every exploratory contact.",
+  "current_failure": "[CODE] (harsh/mvp@b739bd5) has visibility contracts, conservative identity/correlation, general lifecycle, reviewable merges, versioned graph state and learning governance, but the audit does not prove operator_only propagation with unioned subject exclusions through capture→BSO→card→delivery→learning. Sensitivity-specific population independence, retention/erasure, exploratory formed/dissolved semantics, region authority trees/conflicts and returning-applicant freshness are incomplete, and investing expertise is absent entirely. So a structurally valid object could expose protected application status or reasoning to the applicant or to another region, attach a stale rejection to a fresh application, treat an exploratory edge as a formed partnership, target the person commercially, or turn a small sensitive cohort into learned truth — with a generic Sales pack or LLM explanation making it sound authoritative despite zero investing coverage.",
+  "expected_behavior": "The base fixture yields an operator-visible bounded source review/Observation only. O-SG may inspect only the Singapore facts permitted by assignment, purpose, retention and current policy; P, ordinary organization members and O-EU receive zero protected evidence, metadata, rationale or source reference, and any subject-facing surface may say only that no actionable intelligence is available without leaking that an application or cohort record exists. The possible 2024 identity link stays a merge proposal until an authoritative anchor or review resolves it, and even after resolution the old decision is reused only if retention plus explicit reapplication reuse purpose plus freshness all pass — otherwise it is expired/erased or kept solely as restricted audit history. The exploratory edge stays exploratory until authoritative evidence resolves formed or dissolved with effective time and correction history. Layer 3 returns an authoritative investing unsupported; Layer 4 produces no investment, selection, rejection or commercial action; cross-region requests require declared authority and conflict resolution; sensitive cohort learning stays suppressed until independent subject/source-family and sensitivity floors pass; and erasure retracts descendants and recomputes any aggregate.",
+  "why_now": "O-SG's declared, current, in-region program assignment to the Singapore 2026 application, with a matching purpose and unexpired retention, is what legitimately makes a bounded permitted-fact source review actionable. Nothing else in the fixture — not the identity candidate, not the exploratory edge, not the cohort pattern — is actionable, and the question on the table is only whether a declared operator may review permitted current facts, never whether GeniOS should make an investment recommendation.",
+  "open_loop": "The Europe 2024 applicant record: whether it is the same human as Singapore 2026 P, and whether its prior decision's retention window and reuse purpose permit any current influence. Until an authoritative anchor plus review resolves the identity link AND retention + explicit reapplication reuse purpose + freshness all pass, it must remain a merge proposal with zero influence on the current package or decision.",
+  "passes_today": false,
+  "prohibited_behaviors": [
+    "Do not reveal application, cohort, selection, rejection, reviewer notes or the existence of a protected source to the evidence subject or to an unauthorized operator.",
+    "Do not treat organization membership, a generic admin role or region proximity as operator authority.",
+    "Do not let O-EU act on a Singapore case, and do not let a global operator act without the declared scope/approval condition being satisfied.",
+    "Do not attach prior rejection reasoning to a returning applicant without identity proof, retention proof, reuse-purpose proof and freshness proof.",
+    "Do not convert an exploratory edge into partner, portfolio, competitor, rejected or dissolved on the basis of silence.",
+    "Do not substitute Sales expertise or LLM judgment for absent investing expertise.",
+    "Do not use applicant or cohort evidence for commercial targeting, enrichment, cross-purpose learning, or subject-facing rationale.",
+    "Do not pass a formal k-count using copied sources, repeated rows, or a rare sensitive population that remains identifiable."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Capture program, application cycle, declared region, source version, retention, operator_only scope, purpose, principals and subject exclusions on every event, and emit an immutable receipt carrying policy/version, parent application/event, occurred-at, transformation and source readiness — with no inferred investment role.",
+      "fail_closed": "Park the event when region, retention or ACL is missing; suppress publication entirely when scope is unknown."
+    },
+    {
+      "layer": "L2",
+      "required_output": "Resolve applicant/founder/portfolio/operator roles by cycle and region, keep possible identities separate, model the exploratory edge state, apply the narrowest ACL and union all subject exclusions; emit a BSO stating the exact Business subject, region, cycle, relationship state, operator candidates, membership, freshness, conflicts and graph/policy versions.",
+      "fail_closed": "Emit review_source / split_required / suppressed_policy; never perform a person-wide merge and never reuse stale prior-cycle evidence."
+    },
+    {
+      "layer": "L3",
+      "required_output": "Select only accepted investing/program capability and permission-resolved brains, report missing closure honestly, and return an authoritative `unsupported` ExpertisePackage receipt showing zero investing coverage with exclusions preserved.",
+      "fail_closed": "Observation only; routing to a generic Sales pack or a nearest-neighbour capability is forbidden."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Permitted operators may receive bounded review questions only after regional authority and retention gates are evaluated; emit a decision trace that eliminates investment and commercial actions and names the exact missing expertise, policy and identity evidence.",
+      "fail_closed": "Blocked/Observation only — no investment recommendation, no rejection, no subject-targeted action."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Create no subject-targeted execution; operator review work requires an exact scoped owner/approver and current region authority. If review is allowed, create an internal ExecutionObject with no external target, restricted evidence, an approval record, and completion recorded as a reviewed resolution.",
+      "fail_closed": "Block on cross-region or conflicted authority; no agent handoff and no external send."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Render protected details only to currently declared operators and strip protected references and content from every subject-facing or unauthorized surface; emit an audience/policy-fenced DeliveryResult for internal review, or a suppression receipt that leaks no metadata.",
+      "fail_closed": "Suppress on no-route or unauthorized audience; never widen the audience to org admin or to another region."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Enforce permitted use, retention/erasure, independent-subject and source-family counting, and a sensitivity-aware floor while distinguishing exploratory outcomes; maintain versioned formed/dissolved/erasure lineage and allow compiler consumption only for permitted aggregates.",
+      "fail_closed": "Quarantine or suppress; no investing or commercial brain promotion from restricted or stale evidence, and no proposal below floor."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Applicant P signs into a product surface (identity matches the subject of the protected Singapore 2026 application).",
+      "expected_decision": "Protected application/cohort evidence AND the existence of the protected source remain hidden from P; at most a generic no-actionable-intelligence state is shown.",
+      "prohibited": "Showing the operator note, application status, or any hint of a record because the signed-in identity matches the subject.",
+      "pass_condition": "Response contains zero protected fields, zero evidence references and zero protected metadata — not merely redacted prose.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty/actor role model: there is no evidence-subject vs operator distinction anywhere, and no operator_only scope with unioned subject exclusions propagated capture→BSO→card→delivery."
+    },
+    {
+      "mutation": "Europe operator O-EU requests the Singapore case.",
+      "expected_decision": "Deny / Blocked unless current cross-region authority or an approval is proved.",
+      "prohibited": "Falling back to organization-wide admin rights to grant access.",
+      "pass_condition": "Zero rendered evidence and zero adapter calls for O-EU's request.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No region model and no versioned authority tree; no role model to distinguish O-EU from O-SG; L6 delivery control plane has never run so there is no audience fence to assert against."
+    },
+    {
+      "mutation": "A global approver holds an explicit one-case delegation for this Singapore case.",
+      "expected_decision": "Permit exactly the scoped review until the delegation expiry; Singapore ownership of the case is preserved.",
+      "prohibited": "Treating the delegation as permanent or as global authority beyond the one case.",
+      "pass_condition": "Delegation ID, scope, approval and expiry all appear in the decision trace.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No delegation/approval-scope vocabulary, no region ownership field, and no authority conditions in the decision trace."
+    },
+    {
+      "mutation": "O-SG leaves the organization or has the assignment revoked while a review item is already queued.",
+      "expected_decision": "Cancel or suppress the queued item before render/send.",
+      "prohibited": "Trusting the authority that existed at enqueue time.",
+      "pass_condition": "A send-time authority fence blocks the delivery.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L6 delivery control plane has never run (delivery_outbox empty across all orgs), so there is no send-time re-authorization check to exercise."
+    },
+    {
+      "mutation": "The 2024 Europe record and the 2026 Singapore record share an exact verified email address.",
+      "expected_decision": "Identity may merge, but application cycles, regions, retention windows and permitted use remain separate.",
+      "prohibited": "Automatically copying the old decision or reviewer reasoning into the new BSO.",
+      "pass_condition": "The reapplication BSO explicitly lists the old evidence as either excluded or policy-approved for reuse.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Reviewable merges exist, but there is no application-cycle / region / retention / permitted-use partitioning on an identity, so a merge cannot be proven non-collapsing."
+    },
+    {
+      "mutation": "Two candidate records share only a display name, with no authoritative anchor.",
+      "expected_decision": "Keep the candidates separate and request review.",
+      "prohibited": "Selecting the first alias claimant as the match.",
+      "pass_condition": "No graph attachment is made and the unresolved candidate exerts zero influence on any decision.",
+      "implemented": "possible_today",
+      "blocked_on": "Not blocked — conservative identity/correlation plus reviewable merge proposals exist in [CODE]; assert only the separation and zero-influence, not the cycle/region partitioning."
+    },
+    {
+      "mutation": "The prior 2024 record exceeds its retention window.",
+      "expected_decision": "Erase or expire the subject data and retract all descendants per policy.",
+      "prohibited": "Retaining it on the grounds that it may still be useful.",
+      "pass_condition": "A retraction receipt exists and no active old evidence remains reachable.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No retention clocks, no erasure primitive, and no descendant-retraction cascade across BSO/card/learning."
+    },
+    {
+      "mutation": "The prior record is still within retention, but the reuse purpose is forbidden for this reapplication.",
+      "expected_decision": "Keep it as restricted audit history only; it is absent from the current evaluation.",
+      "prohibited": "Reasoning that a past rejection predicts the current outcome.",
+      "pass_condition": "The current ExpertisePackage and decision contain zero features derived from the old decision.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No purpose-of-use tagging on evidence and no restricted-audit-only tier that is excluded from evaluation while remaining stored."
+    },
+    {
+      "mutation": "The exploratory founder-to-program edge receives a reciprocal signed agreement.",
+      "expected_decision": "Version-transition the edge to `formed` with an effective time.",
+      "prohibited": "Inferring partnership from meetings or message volume.",
+      "pass_condition": "A new edge version plus supporting evidence receipts exist.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No exploratory/formed/dissolved edge-state vocabulary and no thread-level relationship arc; extraction is one message at a time with no actor or direction."
+    },
+    {
+      "mutation": "Exploratory talks simply stop, with no explicit termination evidence.",
+      "expected_decision": "The edge remains `exploratory` (or stale-unknown / review).",
+      "prohibited": "Marking the edge dissolved or the applicant rejected on the basis of silence.",
+      "pass_condition": "No formed and no dissolved transition is recorded.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No exploratory edge state exists to hold, and no abstention/stale-unknown vocabulary (cards.level only carries prescriptive/predictive; DEFER is unreachable with confidence_floor_bp=0)."
+    },
+    {
+      "mutation": "An explicit termination message arrives.",
+      "expected_decision": "Transition the edge to `dissolved` while preserving prior history.",
+      "prohibited": "Deleting the edge, or leaving it in the `formed` state.",
+      "pass_condition": "Versioned lifecycle record plus downstream invalidation of dependents.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No dissolved state and no downstream-invalidation path from an edge-state change."
+    },
+    {
+      "mutation": "Applicant P later becomes a portfolio founder.",
+      "expected_decision": "Create a new role/purpose edge for the portfolio relationship; do not reuse protected application content without explicit permission.",
+      "prohibited": "Treating the applicant role and the portfolio-founder role as one merged context.",
+      "pass_condition": "Separate BSO/projection and separate ACL sets exist per role.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No role model at all — every person node is interchangeable, so applicant and portfolio-founder cannot be distinct contexts with distinct ACLs."
+    },
+    {
+      "mutation": "The sensitive cohort pattern reaches k rows, but all k rows come from one copied source.",
+      "expected_decision": "The independence gate fails; no learning proposal is produced.",
+      "prohibited": "Counting the copied rows as independent supporting subjects.",
+      "pass_condition": "The source-family count remains one.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L7 learning governance has floors but no independent-subject / source-family provenance counting; sensitivity-specific population independence is absent."
+    },
+    {
+      "mutation": "The formal k threshold passes, but the facts are rare enough to identify individual subjects.",
+      "expected_decision": "Raise the sensitivity floor or suppress the proposal.",
+      "prohibited": "Promoting the pattern merely because the count threshold passed.",
+      "pass_condition": "A disclosure-risk policy receipt is emitted.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No sensitivity-aware/disclosure-risk floor and no policy receipt for re-identification risk."
+    },
+    {
+      "mutation": "A subject exercises erasure and the cohort drops below the floor.",
+      "expected_decision": "Supersede or disable the derived aggregate and replay its consumers.",
+      "prohibited": "Leaving the previously-computed aggregate active.",
+      "pass_condition": "The active registry and all published packages exclude the superseded aggregate.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No erasure primitive, no post-erasure recount of aggregates, and no consumer replay/retraction path into L3 packages."
+    },
+    {
+      "mutation": "An accepted investing capability is later authored into the corpus.",
+      "expected_decision": "Rebuild only after corpus approval plus context and policy gates pass; still no automatic action is taken.",
+      "prohibited": "Retroactively relabelling the earlier Observation as an investment decision.",
+      "pass_condition": "A new package/decision version is created carrying the named approval.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L3 domain compiler is dark and unroutable (73/73 NoExpertiseRoute; 140/152 corpus capabilities are stubs; zero reviewed or accepted), so the approval→rebuild→new-version path cannot be exercised."
+    },
+    {
+      "mutation": "An event arrives with the region field missing.",
+      "expected_decision": "Park the event before BSO authority resolution.",
+      "prohibited": "Inferring the region from email domain, timezone or the requesting operator.",
+      "pass_condition": "A missing-region code is emitted and zero prescriptive descendants are produced.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No region attribute captured at L1 and no missing-region park code; abstention vocabulary does not exist so 'zero prescriptive descendants' cannot be expressed as a state."
+    }
+  ]
+}

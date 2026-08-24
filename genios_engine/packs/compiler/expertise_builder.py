@@ -82,6 +82,12 @@ class ExpertiseBuilder:
             "missing_artifact_ids": expert.missing_artifacts,
             "unresolved_route_predicates": plan.unresolved_predicates,
             "skipped_capability_ids": plan.skipped_capability_ids,
+            # What the abstention gate downstream reads. `accepted` ONLY when every routed
+            # capability cleared admission (stable + approved by a named reviewer + accepted
+            # hash matching the routed bytes); a measurement compile over drafts says `draft`
+            # here and everything built from it stays non-prescriptive at the card layer.
+            "review_state": "accepted" if plan.admitted else "draft",
+            "admission_gaps": plan.admission_gaps,
             "excluded_runtime_entry_ids": runtime.excluded_entry_ids,
             "shadowed_runtime_entry_ids": runtime.shadowed_entry_ids,
             "runtime_conflict_resolutions": runtime.conflict_resolutions,

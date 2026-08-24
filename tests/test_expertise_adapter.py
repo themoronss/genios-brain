@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import pytest
+
+from genios_engine.context.domain_spec import spec_for
+
 from genios_engine.context.situation_bso import (
     build_business_situation,
     build_context_slice,
@@ -18,10 +22,23 @@ from genios_engine.reason.engine import NodeContext
 
 NOW = datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc)
 
+# Every test below compiles through the SHIPPED corpus. They passed only while the fixture fed
+# the compiler `buying_signal` — a pack reason_code `context/situations.py` can never emit. With a
+# real L2 situation type the corpus raises NoExpertiseRoute, which is exactly the live behaviour
+# (73/73 misses for the design partner). strict=True forces this marker out the moment Phase 2
+# re-keys the corpus, so it cannot outlive the bug it documents.
+_L3_01_UNROUTABLE = pytest.mark.xfail(strict=True, reason=(
+    "L3-01: shipped corpus routes are keyed on pack reason_codes, not L2 situation types"))
+
+
+
 
 def _compile_package():
     row = {
-        "situation_id": "sit_1", "situation_type": "buying_signal", "domain": "sales",
+        # A producible L2 situation type, not a pack reason_code — see
+        # tests/test_l3_route_vocabulary_contract.py for why this distinction matters.
+        "situation_id": "sit_1", "situation_type": spec_for("sales").type_for("company"),
+        "domain": "sales",
         "status": "active", "correlation_id": None, "confidence_overall": 82, "coverage": 70,
         "first_seen_at": NOW, "last_seen_at": NOW,
         "anchor_node_id": "account_1", "anchor_name": "Acme", "anchor_type": "account",
@@ -35,10 +52,13 @@ def _compile_package():
         trace_id="trace_1")
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(default_authoring_root()),
-        runtime_brains=InMemoryRuntimeBrains(), publisher=None)
+        runtime_brains=InMemoryRuntimeBrains(), publisher=None,
+        # real corpus is all-draft: measurement mode, same as the live shadow pass
+        require_admission=False)
     return compiler.compile(bso, context_slice), row
 
 
+@_L3_01_UNROUTABLE
 def test_adapter_builds_a_valid_capability_manifest():
     package, _ = _compile_package()
     manifest = expertise_capability_manifest(package, root_entity_type="account")
@@ -65,6 +85,7 @@ def test_manifest_version_changes_with_package_knowledge():
     assert m1.version == m2.version                         # deterministic
 
 
+@_L3_01_UNROUTABLE
 def test_the_weld_drives_layer4_to_a_real_decision():
     """ExpertisePackage -> CapabilityManifest -> orchestrator -> a ReasoningDecision object."""
     package, row = _compile_package()

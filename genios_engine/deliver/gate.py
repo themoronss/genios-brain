@@ -280,7 +280,8 @@ def _as_moment(value: Any, label: str, errors: _Errors) -> datetime | None:
 def build_context(preferences: Mapping[str, Any], *, channel_enabled: bool,
                   recipient_active: bool, interrupts_last_hour: int = 0,
                   oldest_interrupt_at: datetime | None = None,
-                  busy_until: datetime | None = None) -> DeliveryContext:
+                  busy_until: datetime | None = None,
+                  org_timezone: str | None = None) -> DeliveryContext:
     """Resolved settings + live signals → the two frozen inputs the units consume.
 
     Pure, and total: it never raises.  Every branch that could fail resolves to the *default*
@@ -316,10 +317,19 @@ def build_context(preferences: Mapping[str, Any], *, channel_enabled: bool,
         quiet_start, quiet_end = (defaults_profile.quiet_start_hour,
                                   defaults_profile.quiet_end_hour)
 
-    timezone_name = preferences.get("tz_name") or defaults_profile.timezone
+    # `delivery_preferences.tz_name` was the only source and that table has zero rows, so every
+    # tenant silently evaluated quiet hours in UTC — which for an India-based founder puts the
+    # 21:00-08:00 politeness window at 02:30-13:30 IST: it covers his whole working morning and
+    # leaves his actual evening wide open. The org-level zone (migration 0066, derived from the
+    # org's own outbound activity when nobody set it) is the fallback. `org_timezone` is a
+    # separate parameter and NOT a preferences key, because every key of that mapping must be a
+    # real `delivery_preferences` column.
+    timezone_name = preferences.get("tz_name") or org_timezone
+    timezone_known = bool(timezone_name)
     try:
         profile = AttentionProfile(
-            timezone=str(timezone_name),
+            timezone=str(timezone_name or defaults_profile.timezone),
+            timezone_known=timezone_known,
             quiet_enabled=quiet_enabled,
             quiet_start_hour=quiet_start,
             quiet_end_hour=quiet_end,
@@ -372,6 +382,7 @@ class PgDeliveryContext:
     def __init__(self, conn) -> None:
         self._conn = conn
         self._settings: dict[tuple[str, str, str], tuple[dict[str, Any], bool, bool]] = {}
+        self._org_zones: dict[str, str | None] = {}
 
     # -- keys ---------------------------------------------------------------------------
     @staticmethod
@@ -438,10 +449,19 @@ class PgDeliveryContext:
     def resolve(self, candidate: DeliveryCandidate, *, now: datetime) -> DeliveryContext:
         preferences, channel_enabled, recipient_active = self._read_settings(candidate)
         interrupts, oldest = self._burst(candidate, now)
+        org_timezone = self._org_timezone(candidate.org_id)
         self._release()
         return build_context(preferences, channel_enabled=channel_enabled,
                              recipient_active=recipient_active,
-                             interrupts_last_hour=interrupts, oldest_interrupt_at=oldest)
+                             interrupts_last_hour=interrupts, oldest_interrupt_at=oldest,
+                             org_timezone=org_timezone)
+
+    def _org_timezone(self, org_id: str) -> str | None:
+        """The org's zone, memoised per pass. One read per tenant, not one per card."""
+        if org_id not in self._org_zones:
+            self._org_zones[org_id] = self._conn.execute(text(
+                "select timezone from orgs where id=:o"), {"o": org_id}).scalar()
+        return self._org_zones[org_id]
 
     def _release(self) -> None:
         """End the read transaction between rows.

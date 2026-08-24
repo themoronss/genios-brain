@@ -8,6 +8,18 @@ from genios_engine.capture.gate.context import GateContext
 from genios_engine.contracts.prepared_content import PreparedContent
 
 
+#: Below this the LLM gate may DELETE; at or above it a "drop" verdict is downgraded to a park,
+#: which is recoverable. The model is asked for a judgment call on a stranger's first email, and
+#: an investor writing from an unfamiliar domain is exactly the case it gets wrong — so its
+#: confidence has to be part of the decision, not merely recorded next to it.
+DROP_BELOW_RELEVANCE = 0.25
+
+#: Stand-in score for "the model returned no relevance at all". Deliberately ABOVE
+#: DROP_BELOW_RELEVANCE: silence is not evidence of junk, so a missing score parks rather than
+#: deletes. 33 of the 109 emails this org lost carried exactly this value.
+MISSING_RELEVANCE = 0.50
+
+
 @dataclass
 class RelevanceVerdict:
     relevant: bool
@@ -104,7 +116,7 @@ a wrong keep is only scored down).
 
 You are given {n} emails, each with an index. Return ONLY a JSON array, one object per email, no \
 prose. You MUST return exactly {n} objects, one for each index 0..{last}:
-[{{"i":0,"disposition":"keep"|"drop","relevance":0.0-1.0}}, ...]
+[{{"i":0,"disposition":"keep"|"drop","relevance":0.0-1.0,"reason":"<8 words, why"}}, ...]
 
 EMAILS:
 {emails}"""
@@ -231,9 +243,16 @@ def _verdict_from(p: dict) -> RelevanceVerdict:
     disp = str((p or {}).get("disposition", "keep")).lower()
     if disp not in ("keep", "drop"):
         disp = "keep"
+    # A MISSING relevance is not a 0.5 opinion — it means the model returned no score at all.
+    # Collapsing the two let 33 of 109 deleted emails sit at exactly 0.5: the parse default,
+    # recorded as if the model had judged them borderline. Absence must be legible downstream.
+    raw = (p or {}).get("relevance", None)
     try:
-        rel = max(0.0, min(1.0, float(p.get("relevance", 0.5) or 0.5)))
+        rel = None if raw is None else max(0.0, min(1.0, float(raw)))
     except (TypeError, ValueError):
-        rel = 0.5
+        rel = None
+    reason = str((p or {}).get("reason", "") or "")[:60]
+    if rel is None:
+        rel, reason = MISSING_RELEVANCE, (reason or "no_relevance_returned")
     return RelevanceVerdict(relevant=(disp == "keep"), relevance=rel, disposition=disp,
-                            reason=str((p or {}).get("reason", "") or "")[:60])
+                            reason=reason)

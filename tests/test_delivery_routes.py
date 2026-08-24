@@ -48,6 +48,9 @@ class _Result:
     def first(self):
         return self._rows[0] if self._rows else None
 
+    def scalar(self):
+        return next(iter(self._rows[0].values())) if self._rows else None
+
 
 class _Conn:
     """Answers the router's statements by substring, against a staged copy of the tables."""
@@ -94,6 +97,10 @@ class _Conn:
             return _Result([row for (org, _s, _c), row in self.preferences.items()
                             if org == p["o"]])
 
+        if "timezone from orgs" in sql:
+            # An org that has never been asked its timezone — the state 46 of 47 live orgs are in.
+            return _Result([{"timezone": self.db.org_timezone}])
+
         if "from org_channels" in sql:
             return _Result([{"one": 1}] if self.db.channel_active else [])
 
@@ -111,13 +118,14 @@ class _Conn:
 
 class FakeDB:
     def __init__(self, preferences=None, outbox=(), channel_active=True, seat_active=True,
-                 burst=0, burst_started=None):
+                 burst=0, burst_started=None, org_timezone=None):
         self.preferences = dict(preferences or {})
         self.outbox = [dict(row) for row in outbox]
         self.channel_active = channel_active
         self.seat_active = seat_active
         self.burst = burst
         self.burst_started = burst_started
+        self.org_timezone = org_timezone
 
     # the two shapes the router asks the engine for
     def connect(self):

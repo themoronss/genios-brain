@@ -112,12 +112,39 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
 
 
 def resolve_alias(conn, *, org_id: str, alias_type: str, alias_key: str) -> str | None:
-    """Look up a key. Exact match only — this is the whole matching algorithm."""
+    """Look up a key. Exact match only — this is the whole matching algorithm.
+
+    AMBIGUITY IS NOT A MATCH. When more than one node answers to a key, this returns None rather
+    than the first row. Two people called "John" at different companies is ordinary, and handing
+    a mention to whichever John was inserted first silently moves every fact, commitment and
+    thread state written from that mention onto the wrong person — a merge nobody proposed,
+    nobody reviewed, and nothing records.
+    """
     if not alias_key:
         return None
-    return conn.execute(text(
+    rows = conn.execute(text(
         "select node_id from graph_aliases where org_id=:o and alias_type=:t "
-        "and alias_key=:k"), {"o": org_id, "t": alias_type, "k": alias_key}).scalar()
+        "and alias_key=:k limit 2"), {"o": org_id, "t": alias_type, "k": alias_key}).fetchall()
+    if len(rows) != 1:
+        # 0 → nothing is called that, which is the ordinary answer and already handled by callers.
+        # 2+ → the key does not identify anyone, and saying so is the only safe reply.
+        return None
+    return rows[0][0]
+
+
+def resolve_alias_candidates(conn, *, org_id: str, alias_type: str,
+                             alias_key: str) -> tuple[str, ...]:
+    """Every node answering to a key — so a caller can SEE an ambiguity rather than infer it.
+
+    `resolve_alias` returning None conflates "nobody" with "several", and a surface asking the
+    user to disambiguate needs to tell those apart.
+    """
+    if not alias_key:
+        return ()
+    return tuple(r[0] for r in conn.execute(text(
+        "select node_id from graph_aliases where org_id=:o and alias_type=:t "
+        "and alias_key=:k order by node_id"),
+        {"o": org_id, "t": alias_type, "k": alias_key}).fetchall())
 
 
 def resolve_company_mention(conn, *, org_id: str, name: str | None) -> str | None:
@@ -136,10 +163,14 @@ def resolve_person_name(conn, *, org_id: str, name: str | None) -> str | None:
 
     Reads the observed name-alias that `observe_person_name` writes — the read side that was
     missing, leaving those aliases write-only. So a bare-name mention ("Rohit said yes") no longer
-    piles onto the message's sender. Exact key match only. Same-name people share one key (the first
-    claimant holds it), so this links the mention to that anchored person; a name nothing is anchored
-    under returns None and stays an observation (the anchor rule holding). Never creates a node and
-    never merges — two people sharing a name is ordinary, not a duplicate.
+    piles onto the message's sender. Exact key match only.
+
+    A name shared by several anchored people resolves to NOBODY, not to the first claimant. Two
+    "John"s at different companies is ordinary; picking one moves every fact and commitment
+    written from that mention onto the wrong person, and nothing anywhere records that a choice
+    was made. An unresolved mention stays an observation, which is recoverable.
+
+    Never creates a node and never merges.
     """
     return resolve_alias(conn, org_id=org_id, alias_type=ALIAS_PERSON_NAME,
                          alias_key=person_name_key(name) or "")

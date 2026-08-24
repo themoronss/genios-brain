@@ -227,6 +227,9 @@ class ComposioGmailConnector:
             source_object_id=f"{mid}::{att.get('attachmentId') or att.get('filename') or idx}",
             occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
             parent_object_id=mid,
+            # An attachment belongs to the same conversation as its message, so it carries the
+            # same participant set — otherwise a deck arrives with no idea who it was sent to.
+            recipients=tuple(to_emails) + tuple(cc_emails),
             raw={
                 "subject": att.get("filename") or "attachment",
                 "body": "",
@@ -290,13 +293,34 @@ class ComposioGmailConnector:
                 rel.prime(all_light)                          # LLM only on what the rules couldn't settle
             except Exception:      # noqa: BLE001 — gate failure → treat all as keepers (full-fetch)
                 pass
+            # A "drop" verdict is NOT sufficient to skip the body fetch.
+            #
+            # The gate only DELETES on a drop the model was confident about; below
+            # DROP_BELOW_RELEVANCE it parks instead, and its own comment promises the park
+            # "keeps a payload and can be re-adjudicated when the gate improves". That promise
+            # was empty on this path: the fetch decision here ran FIRST and keyed on
+            # `disposition == "drop"` alone, so every message the gate later parked had already
+            # been reduced to a list snippet — the same snippet the model had just judged. Worse,
+            # with no MIME payload `_walk` yields no attachment parts either, so a deck or
+            # contract on a message the model called junk became no event at all.
+            #
+            # Same threshold, same constant, so the two surfaces cannot drift apart again.
+            def _skip_body(objs) -> bool:
+                if not objs:
+                    return False
+                v = rel.verdict_for(objs[0].source_object_id)
+                if not v or v.disposition != "drop":
+                    return False
+                # Unconfident drop → the gate will PARK it, and a park needs a body to be worth
+                # anything. Only confident junk is cheap enough to leave unfetched.
+                return not (v.relevance is not None and v.relevance >= DROP_BELOW_RELEVANCE)
+
             keepers = [m for m, objs in light
-                       if id(m) not in det_junk
-                       and not (objs and (v := rel.verdict_for(objs[0].source_object_id))
-                                and v.disposition == "drop")]
+                       if id(m) not in det_junk and not _skip_body(objs)]
             drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
-            # full-fetch keepers concurrently; drops keep their light (snippet) object — the pipeline
-            # gate re-reads the SAME primed verdict and drops them without another call.
+            # full-fetch keepers concurrently; CONFIDENT junk keeps its light (snippet) object —
+            # the pipeline gate re-reads the SAME primed verdict and drops it without another
+            # call. Unconfident drops are fetched in full so the park they become is recoverable.
             fetched: dict[int, list[RawObject]] = {}
             if keepers:
                 workers = min(_FETCH_WORKERS, len(keepers))
@@ -391,6 +415,9 @@ class ComposioGmailConnector:
             source="gmail", object_type="email_message", source_object_id=mid,
             occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
             parent_object_id=thread,
+            # Typed, so the participant set survives past the payload TTL — the raw dict
+            # is encrypted and expires; this column does not.
+            recipients=tuple(to_emails) + tuple(cc_emails),
             raw={
                 "subject": subject,
                 "body": body,                 # FULL text now → preprocess → L2
@@ -435,6 +462,7 @@ class ComposioGmailConnector:
                 source_object_id=f"{mid}::{a.get('attachmentId') or a.get('filename') or i}",
                 occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
                 parent_object_id=mid,          # links the file back to its email
+                recipients=tuple(to_emails) + tuple(cc_emails),
                 raw={
                     "subject": a.get("filename") or "attachment",
                     "body": r.text,            # extracted document text → L2 facts

@@ -15,7 +15,8 @@ from genios_engine.reason.authority import (
     authority_time,
 )
 
-from .card_builder import build_draft
+from genios_engine.contracts.abstention import downgrade_to_observation, is_actionable
+from .card_builder import build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
 from .store import CardStore
@@ -32,7 +33,9 @@ def _open_signals_without_cards(graph, org_id: str,
     with graph.engine.connect() as c:
         rows = c.execute(text(
             "select s.signal_id, " + AUTHORITATIVE_REASON_CODE_SQL +
-            " as reason_code, 'prescriptive' as level, s.subject_node_id, "
+            # s.level, never a literal: the pack authors 11 of 25 rules as `predictive`, and
+            # hardcoding `prescriptive` here rendered every risk warning as a direct command.
+            " as reason_code, s.level as level, s.subject_node_id, "
             + AUTHORITATIVE_SCORE_SQL + " as score, " +
             AUTHORITATIVE_SCORE_INPUTS_SQL + " as score_inputs, "
             "coalesce(authority_payload.payload->'evidence', selected_rc.evidence_refs) "
@@ -41,7 +44,11 @@ def _open_signals_without_cards(graph, org_id: str,
             "selected_rc.play_id as play, s.config_snapshot_id, "
             "authority_cfg.effective as effective_config, "
             "authority_cfg.pack_id, s.authority_expires_at as decision_expires_at, "
-            "s.reasoning_run_id, s.reasoning_candidate_id, s.reasoning_decision_hash "
+            "s.reasoning_run_id, s.reasoning_candidate_id, s.reasoning_decision_hash, "
+            # The DecisionObject's own content (0070). Reading it here is what retires the API
+            # layer's reason_code if/elif chain as the source of a card's recommendation.
+            "s.do_nothing_consequence, s.uncertainty, s.outcome_window_days as decision_window, "
+            "s.rejected_candidates, s.candidate_steps "
             "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
             " left join reasoning_context_payloads authority_payload "
             "on authority_payload.org_id=authority_ctx.org_id and "
@@ -71,6 +78,53 @@ def _open_signals_without_cards(graph, org_id: str,
     return out
 
 
+def _apply_abstention(signal: dict, effective: dict) -> dict:
+    """Downgrade an instruction to an observation when nothing authorises instructing.
+
+    Two conditions, and both are about AUTHORITY rather than confidence — a low-confidence
+    prescription is still read and acted on as an instruction:
+
+      * the pack backing this rule declares no reviewed expertise for it, or
+      * the decision arrived without a resolved capability at all.
+
+    The reason travels with the card. An abstention with no stated cause is indistinguishable
+    from a bug: the user cannot tell "outside my coverage" from "something broke".
+    """
+    if not is_actionable(signal.get("level")):
+        return signal
+    review_state = str((effective.get("expertise") or {}).get("review_state") or "").lower()
+    if review_state in ("accepted", "reviewed"):
+        return signal
+    level, reason = downgrade_to_observation(
+        signal.get("level"),
+        reason=("no accepted expertise for this situation — showing what was observed, "
+                "not what to do"))
+    return {**signal, "level": level, "abstained_because": reason}
+
+
+def _tenant_identities(graph, org_id: str) -> tuple[str, ...]:
+    """The account holder's own names and addresses, for the render grounding corpus.
+
+    Signing a draft "Best, Rohit" is not a claim the facts have to support — it is the sender
+    naming himself. The corpus was built from the card SUBJECT's facts only, so the founder's own
+    name read as an invented person and the entire card fell back to an empty template stub.
+    """
+    try:
+        with graph.engine.connect() as c:
+            row = c.execute(text(
+                "select name, first_name, last_name, email, company from orgs where id=:o"),
+                {"o": org_id}).first()
+            seats = [r[0] for r in c.execute(text(
+                "select email from org_seats where org_id=:o and active and email is not null"),
+                {"o": org_id})]
+    except Exception:      # noqa: BLE001 — grounding is an enrichment, never a reason to fail
+        return ()
+    if row is None:
+        return tuple(seats)
+    parts = [row.name, row.first_name, row.last_name, row.email, row.company, *seats]
+    return tuple(str(p).strip() for p in parts if p and str(p).strip())
+
+
 def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                         registry=None, eval_time: datetime | None = None) -> dict:
     """E0→E1→E3→persist for every open, un-carded signal. Returns delivery counts."""
@@ -82,6 +136,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            "over_budget_no_push": 0,
            "pushed": 0, "agent_pushed": 0}
     from .bands import band
+    identities = _tenant_identities(graph, org_id)   # once per org, not per card
     for sig in _open_signals_without_cards(graph, org_id, eval_time):
         claim_token = card_store.claim_build(
             org_id, sig["signal_id"], eval_time=eval_time)
@@ -96,11 +151,31 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 continue
             bands_cfg = effective.get("scoring", {}).get("bands")
             budget = int(effective.get("scoring", {}).get("budget_per_user_day", 7))
+            # ABSTENTION GATE. A card may only instruct when the expertise behind it has been
+            # reviewed and accepted. The corpus currently holds 152 capabilities, 0 of them
+            # accepted, so every prescription shipped on unreviewed authority — the system was
+            # structurally unable to say "this is outside what I have been taught". Downgrading
+            # keeps the observation (which is real and useful) and drops only the instruction.
+            sig = _apply_abstention(sig, effective)
             draft = build_draft(graph, org_id, sig, effective, eval_time)         # E0
+            # What the counterparty actually said, and their real name. Both were already in the
+            # graph and neither reached the renderer, which is why 37 of 41 cards shipped as
+            # template stubs with an empty draft body.
+            quotes = load_evidence_quotes(graph, org_id, sig["subject_node_id"])
+            # The clarity gate needs to know WHAT they asked for, not only that they wrote. The
+            # kinds come from the same evidence the renderer now receives, so the gate and the
+            # copy are reasoning about one set of facts rather than two.
+            sig = {**sig, "observations": [{"kind": q.get("kind")} for q in quotes]}
             copy = render_copy(                                                    # E1
                 reason_code=draft["_reason_code"], template=draft["_template"],
                 facts=draft["_facts"], slots=draft["_slots"], llm=llm,
-                cost_sink=graph.record_cost, org_id=org_id)
+                cost_sink=graph.record_cost, org_id=org_id,
+                # The tenant's own names and addresses. A draft signed by the account holder is
+                # not inventing them, but the grounding corpus was built from the SUBJECT's facts
+                # alone, so "Best, Rohit" was rejected as a hallucinated person on the founder's
+                # own outgoing mail — and the whole card shipped as an empty stub because of it.
+                identities=identities, quotes=quotes,
+                subject_ref=f"signal:{sig['signal_id']}")
             # artifact_ready must reflect the REAL render — a raw-slot fallback has an empty body,
             # so Run Play must not advertise a ready draft.
             ready = bool((copy.get("artifact") or {}).get("body"))
@@ -126,8 +201,13 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             out["built"] += 1
             out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
             try:
-                from .push import push_card_to_agents
-                out["agent_pushed"] += push_card_to_agents(card_store, org_id, card_id)
+                # ENQUEUED, not POSTed. The inline send from inside this build loop was the
+                # exact anti-pattern the outbox exists for: one slow client webhook degraded
+                # the whole org's card build, and the delivery appeared in no outbox, retry
+                # schedule, dead letter or analytics. The drain sends it with the same
+                # authority recheck and backoff ladder every human delivery gets.
+                from .outbox import enqueue_agent_push
+                out["agent_pushed"] += enqueue_agent_push(graph.engine, org_id, card_id)
             except Exception:                                  # noqa: BLE001
                 pass
             if draft["assignee"] is None:

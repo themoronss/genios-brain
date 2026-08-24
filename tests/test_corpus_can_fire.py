@@ -33,9 +33,16 @@ SEARCH_DAYS = 45
 # DESIGN issues, not confidence issues: they stay dead at conf = 1.0 and full
 # corroboration. Fixing one means retuning its h (or giving it deal linkage) — and
 # deleting its entry here.
+#
+# Six entries were deleted on 2026-08-23 because the ratchet caught them: lowering `s_min` to 42
+# (commit 489a188) revived objection_open (peak S=53), security_review_pending (52),
+# legal_in_review (49), champion_quiet (45), meeting_no_followup (44) and timeline_slip (43).
+# Four of those six now fire against the design partner's live graph, so the list was not merely
+# stale — it was asserting the opposite of production. That is exactly the failure this ratchet
+# exists to force, and the only correct response is deletion.
 KNOWN_UNFIREABLE = {
-    "objection_open", "security_review_pending", "budget_freeze", "legal_in_review",
-    "timeline_slip", "champion_quiet", "meeting_no_followup", "intro_followup",
+    "budget_freeze",      # peak S=40 < s_min 42
+    "intro_followup",     # peak S=38 < s_min 42 — matched 20× in the last live sweep, emitted 0
 }
 
 

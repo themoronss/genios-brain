@@ -172,7 +172,9 @@ def enqueue_executive_messages(engine, org_id: str, channel: str = "slack",
                 "insert into delivery_outbox (id, org_id, card_id, channel, payload, "
                 "recipient, band, channel_class, interrupt) "
                 "values (:i, :o, :c, :ch, cast(:p as jsonb), :seat, :band, :cclass, :interrupt) "
-                "on conflict (org_id, card_id, channel) do nothing"),
+                # matches delivery_outbox_once exactly — recipient joined the key so one card
+            # can fan out to several agents without the second row silently deduping away
+            "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
                 {"i": new_id("ob"), "o": org_id,
                  "c": executive_card_id(row["execution_id"], row["event_id"]),
                  "ch": channel, "p": json.dumps(payload), "seat": row["assignee"],

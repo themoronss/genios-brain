@@ -110,7 +110,9 @@ def _ingest(org_id: str, file_id: str, prefix: str, truncated: int = 0) -> None:
     try:
         if _llm is not None:
             from genios_engine.context.runner import process_pending
-            process_pending(org_id=org_id, store=_graph, llm=_llm, crypto_key=get_settings().crypto_key)
+            process_pending(org_id=org_id, store=_graph, llm=_llm,
+                        registry=_registry,
+                        crypto_key=get_settings().crypto_key)
     except Exception:
         _log.exception("upload L2 extraction failed org=%s file=%s", org_id, file_id)
     try:

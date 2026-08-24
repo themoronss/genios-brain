@@ -71,6 +71,14 @@ class AttentionProfile:
     """
 
     timezone: str = "UTC"
+    #: Did anyone actually TELL us this timezone, or is `timezone` just the field default?
+    #:
+    #: Same shape as `freshness_known` and `coverage_known` elsewhere in the engine: a dimension
+    #: with no basis reports that it has no basis instead of being scored. Quiet hours are defined
+    #: in the recipient's LOCAL time, so without a real zone there is no local time to evaluate
+    #: and "21:00-08:00 UTC" is not a conservative approximation of anything — for half the world
+    #: it lands squarely on the working day and leaves the actual night uncovered.
+    timezone_known: bool = True
     quiet_enabled: bool = True
     quiet_start_hour: int = 21            # local hour the quiet window opens, inclusive
     quiet_end_hour: int = 8               # local hour it closes, exclusive
@@ -190,6 +198,12 @@ def evaluate_timing(candidate: DeliveryCandidate, profile: AttentionProfile,
         checks.append(DeliveryDecision.defer(UNIT, "recipient_busy", state.busy_until))
 
     # 2. Asleep, or otherwise off the clock.
+    #
+    # When the zone was never established, the window is still evaluated — refusing to deliver
+    # until someone configures a timezone would silence the product for every tenant, which is a
+    # worse failure than a wrong-hour send. What changes is that the decision SAYS the zone was
+    # assumed, so a founder asking "why did this arrive at 2am" gets an answer that names the
+    # cause instead of a support thread about the scheduler.
     local = now.astimezone(profile.zone)
     if profile.is_quiet(local):
         opens_at = next_open_window(now, profile)
@@ -203,6 +217,7 @@ def evaluate_timing(candidate: DeliveryCandidate, profile: AttentionProfile,
         else:
             checks.append(DeliveryDecision.defer(
                 UNIT, "quiet_hours", opens_at, timezone=profile.timezone,
+                timezone_assumed=not profile.timezone_known,
                 local_hour=local.hour))
 
     # 3. Too much, too fast. This caps the *burst*, and only the burst: the per-person daily
@@ -226,7 +241,9 @@ def evaluate_timing(candidate: DeliveryCandidate, profile: AttentionProfile,
 
 def describe_profile(profile: AttentionProfile) -> dict[str, Any]:
     """Flat, loggable summary — used in delivery audit rows so a held message explains itself."""
-    return {"timezone": profile.timezone, "quiet_enabled": profile.quiet_enabled,
+    return {"timezone": profile.timezone if profile.timezone_known else None,
+            "timezone_known": profile.timezone_known,
+            "quiet_enabled": profile.quiet_enabled,
             "quiet_start_hour": profile.quiet_start_hour,
             "quiet_end_hour": profile.quiet_end_hour,
             "quiet_weekends": profile.quiet_weekends,

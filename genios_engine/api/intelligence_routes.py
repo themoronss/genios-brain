@@ -478,7 +478,8 @@ def list_insights(limit: int = 50, state: str = "open",
             rows = c.execute(text(
                 "select k.card_id, k.headline, k.situation, " + AUTHORITATIVE_SCORE_SQL +
                 " as score, k.domain, k.urgency_band, k.context_tags, k.created_at, k.actions, "
-                "n.display_name as entity, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
+                "n.display_name as entity, ro.confidence_bp, "
+                "selected_rc.final_utility_bp, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
                 AUTHORITATIVE_SIGNAL_JOINS +
                 "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
@@ -505,6 +506,13 @@ def list_insights(limit: int = 50, state: str = "open",
         head, sit = (r.headline or "Recommendation"), (r.situation or "")
         sc = float(r.score) if r.score is not None else 50.0
         sc01 = round(sc / 100, 3) if sc > 1 else round(sc, 3)   # card score is 0-100 → normalize 0-1
+        # PRIORITY and CONFIDENCE are different quantities and this surface published the first
+        # under the name of the second: a card scored 60 because its rule matched strongly was
+        # shown to the user as "60% confident". Meanwhile L4's real calibrated confidence
+        # (reasoning_run_outputs.confidence_bp, 5000-9800 across 27 distinct values) reached no
+        # surface at all, and the dashboard's own /cards path was already reporting it correctly —
+        # so the two APIs stated different confidences for the same card.
+        conf01 = round(int(r.confidence_bp) / 10000, 3) if r.confidence_bp is not None else None
         priority = "high" if r.urgency_band in ("high", "critical") else "medium"
         apps, domains = _provenance(r.context_tags)
         actions = r.actions if isinstance(r.actions, list) else json.loads(r.actions or "[]")
@@ -516,10 +524,12 @@ def list_insights(limit: int = 50, state: str = "open",
             "genios_view": (f"{head} — {sit}" if sit else head),
             "detail": sit, "memory_view": head,
             "action_label": _action_label(actions),   # manager mode: the specific move (e.g. "Reply now")
-            "confidence_score": sc01,
+            "confidence_score": conf01,          # L4's calibrated confidence, or null — never the score
+            "priority_score": sc01,              # how this card ranks against the others; NOT confidence
             # category from the fired RULE (reason_code), not r.domain (the pack_id, always
             # "sales" — one pack exists — which mislabeled every card regardless of content).
-            "scores": {"confidence": _band_label(sc01), "category": _category(r.reason_code)},
+            "scores": {"confidence": _band_label(conf01) if conf01 is not None else "unknown",
+                       "priority": _band_label(sc01), "category": _category(r.reason_code)},
             "draft_needed": _wants_draft(r.entity, head, sit),   # reply-shaped → show the Draft hero
             "source_tools": apps,                # real provenance (Gmail/HubSpot/Calendar)
             "sources": domains,                  # company domains from context_tags
@@ -535,13 +545,35 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     with _graph.engine.connect() as c:
-        fired = int(c.execute(text("select count(*) from cards where org_id=:o"),
-                              {"o": org_id}).scalar() or 0)
+        # LIVE cards, not every row ever written. Counting the whole table reported dead and
+        # superseded cards as current output — 41 "fired" for 20 real situations, 15 of them
+        # already expired.
+        fired = int(c.execute(text(
+            "select count(*) from cards where org_id=:o "
+            "and state not in ('expired', 'resolved') and expires_at > now()"),
+            {"o": org_id}).scalar() or 0)
+        # The action verbs live in `cause`, not `kind`. This matched `kind in ('run_play', …)`
+        # while every writer puts those values in `cause` under `kind='human.card_action'`
+        # (deliver/actions.py) — so the counter could never be non-zero no matter how much a
+        # user acted. It would have read as "the learning loop still is not working" long after
+        # it was, and been debugged in the wrong layer entirely.
+        # Predicate mirrors reason/authority.py, which had it right.
         acted = int(c.execute(text(
-            "select count(*) from card_events where org_id=:o and kind in "
-            "('run_play','do_it_myself','card.acted','card.done')"), {"o": org_id}).scalar() or 0)
-    return {"insights_fired": fired, "actions_taken": acted, "outcomes_recorded": 0,
-            "value_recovered_inr": 0, "intervention_rate": None,
+            "select count(*) from card_events where org_id=:o "
+            "and kind = 'human.card_action' "
+            "and cause in ('run_play', 'do_it_myself', 'done', 'wrong')"),
+            {"o": org_id}).scalar() or 0)
+        outcomes = int(c.execute(text(
+            "select count(*) from execution_outcomes where org_id=:o"),
+            {"o": org_id}).scalar() or 0)
+
+    # `0` and "we have no way to know yet" are different claims, and returning 0 for both is how
+    # an absent measurement becomes a reported result. Value attribution needs the counterfactual
+    # ledger (L7-12), which does not exist — so this says so rather than inventing a number.
+    return {"insights_fired": fired, "actions_taken": acted, "outcomes_recorded": outcomes,
+            "value_recovered_inr": None,
+            "value_state": "unavailable_no_counterfactual_ledger",
+            "intervention_rate": (round(acted / fired, 3) if fired else None),
             "headline": (f"{fired} insight(s) surfaced" if fired else "No insights yet")}
 
 

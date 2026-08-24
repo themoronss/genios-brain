@@ -149,34 +149,26 @@ substrate:
   # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
   # Union of both packs' schema.signal_vocab. A situation naming a type outside this list
   # can never be looked up at runtime — validate.py errors.
+  # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
+  #
+  # GENERATED FROM `genios_engine/context/domain_spec.py` — the ONLY producer of the value the
+  # compiler looks up (`capability_resolver` does `domain.routes.get(situation.type)`).
+  #
+  # This list used to be the union of both packs' `schema.signal_vocab` — Layer 3 SIGNAL REASON
+  # CODES, which Layer 2 never emits. Validating against it meant "0 errors, 715 warnings"
+  # certified nothing about whether a single route could ever be reached, and live compilation
+  # returned NoExpertiseRoute for 73 of 73 situations. A vocabulary check is only worth running
+  # against the substrate that actually produces the value.
   l2_situation_types:
-    - stalled_deal
-    - objection_open
-    - buying_signal
-    - cooling_deal
-    - single_threaded_deal
-    - competitor_in_live_deal
-    - going_dark_after_proposal
-    - deal_sentiment_negative
-    - deal_health
-    - pricing_objection
-    - verbal_yes_not_closed
-    - contract_requested
-    - security_review_pending
-    - champion_left
-    - budget_freeze
-    - discount_pressure
-    - legal_in_review
-    - timeline_slip
-    - demo_requested
-    - proposal_no_response
-    - closed_lost_risk
-    - commitment_overdue
-    - unanswered_email
-    - champion_quiet
-    - meeting_no_followup
-    - intro_followup
-
+    - deal                      # sales, anchored on a deal
+    - opportunity               # sales, anchored on a company
+    - prospect_relationship     # sales, anchored on a person
+    - support_case              # support, anchored on a company
+    - support_contact           # support, anchored on a person
+    - account_admin             # admin, anchored on a company
+    - investor_relationship     # fundraising, anchored on a company
+    - investor_contact          # fundraising, anchored on a person
+    - relationship              # general, anchored on a company or a person
 # ─────────────────────────────────────────────────────────────────────────────
 # PLANNED SUBSTRATE — asked for by authored expertise, emitted by nothing yet.
 #

@@ -24,6 +24,8 @@ from genios_engine.context.situation_bso import (
     build_business_situation,
     build_context_slice,
     gather_evidence_and_signals,
+    gather_members,
+    gather_visibility,
 )
 from genios_engine.contracts.reasoning import ExecutionMode
 from genios_engine.packs.compiler import DomainCompiler, PostgresRuntimeBrains
@@ -32,6 +34,7 @@ from genios_engine.packs.compiler.errors import (
     RequiredKnowledgeMissing,
     SituationContextConflict,
     SituationContextIncomplete,
+    UnsupportedCoverage,
 )
 from genios_engine.packs.domain_wiring import expert_catalog
 from genios_engine.platform.ids import new_id
@@ -80,6 +83,11 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             catalog=catalog,
             runtime_brains=PostgresRuntimeBrains(conn),
             publisher=None,          # shadow: never write an expertise_packages row
+            # MEASUREMENT mode: draft content may compile so route coverage is measurable, but
+            # the package carries review_state='draft' and the delivery abstention gate keeps
+            # anything built from it non-prescriptive. Authority compiles use the fail-closed
+            # default — a text-editor stub flip can no longer grant production authority.
+            require_admission=False,
         )
         for row in situations:
             counts["situations"] += 1
@@ -92,11 +100,15 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 neighbor = _neighborhood(anchor, adj, obs_idx, fact_idx)
                 signal_ids, evidence = gather_evidence_and_signals(
                     conn, org_id, row["correlation_id"], str(row["situation_id"]))
+                members = gather_members(conn, org_id, row["correlation_id"])
+                situation_visibility = gather_visibility(conn, org_id, row["correlation_id"])
                 trace_id = new_id("trace")
                 bso = build_business_situation(
                     org_id=org_id, situation=row,
-                    signal_ids=signal_ids, evidence=evidence, trace_id=trace_id)
+                    signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
+                    members=members, visibility=situation_visibility)
                 context_slice = build_context_slice(
+                    visibility=situation_visibility,
                     org_id=org_id, situation=row, facts=ctx.facts, observations=ctx.obs,
                     neighbor=neighbor, graph_version=graph_version,
                     eval_time=eval_time, trace_id=trace_id)
@@ -128,6 +140,13 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 counts["conflict"] += 1
             except RequiredKnowledgeMissing:
                 counts["required_missing"] += 1
+            except UnsupportedCoverage as exc:
+                # An honest "we do not cover this yet" — a route matched but every capability
+                # behind it is an unauthored stub. This used to fall into the catch-all below,
+                # indistinguishable from an actual compiler bug, which is exactly the confusion
+                # the route-coverage metric exists to resolve. Counted by REASON so "all_stub"
+                # (authoring debt) reads apart from "no_route" (nothing claims this situation).
+                counts[f"unsupported_{exc.reason}"] += 1
             except Exception:
                 counts["error"] += 1
                 logger.exception("domain-compiler shadow: situation %s failed",

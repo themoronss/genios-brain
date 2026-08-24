@@ -35,6 +35,7 @@ from sqlalchemy import text
 
 from genios_engine.contracts.delivery import DeliveryVerdict
 from genios_engine.contracts.execution import ChannelClass
+from genios_engine.platform.logging import get_logger
 from genios_engine.deliver.channels import get_channel
 from genios_engine.deliver.channels.slack import format_card_message, format_digest_message
 from genios_engine.deliver.executive_bridge import (
@@ -62,6 +63,8 @@ from genios_engine.reason.authority import (
 # retry schedule (minutes after the Nth failure); after the last slot → failed_terminal.
 BACKOFF_MINUTES: tuple[int, ...] = (5, 30, 120, 720)
 NOTIFY_BANDS = ("high", "critical")
+
+_log = get_logger("genios.deliver.outbox")
 
 
 def card_confidence_bp(score_block) -> int:
@@ -142,14 +145,21 @@ def _current_digest_payload(engine, org_id: str, evaluation_time: datetime) -> d
 
 # ── enqueue ───────────────────────────────────────────────────────────────────────
 def enqueue_pending(engine, org_id: str, channel: str = "slack",
-                    base_url: str = "") -> int:
+                    base_url: str = "") -> dict:
     """Queue un-notified HIGH/CRITICAL cards for this org's channel. Idempotent: the
     unique index makes a re-run a no-op. Payload is built from card columns that
     already passed the render validators — the channel adds no words.
 
     The delivery object is stamped here rather than at send time so a retry three hours later
     judges the *same* delivery it queued, and so the drain needs no extra joins to know whose
-    attention a row is about to spend."""
+    attention a row is about to spend.
+
+    Returns ``{"queued": n, "band_starved": n, "unrouted": n}``. The last two used to be silence.
+    Every live card sits at ``urgency_band='standard'`` (scores 42-60 against thresholds of
+    70/85), so the band filter below excludes ALL of them and this function returned 0 — which is
+    indistinguishable from "there was nothing to send". A tenant where no card has ever cleared
+    the push band is a broken scoring pipeline, not a quiet week, and the two have to be
+    tellable apart from the sweep's own output."""
     queued = 0
     now = datetime.now(timezone.utc)
     channel_class = channel_class_for(channel).value
@@ -181,14 +191,17 @@ def enqueue_pending(engine, org_id: str, channel: str = "slack",
             # their commitments and their cards go quiet together.
             interrupt = may_interrupt(r.urgency_band, card_confidence_bp(r.score_block),
                                       communication_config(r.effective_config))
+            row_id = new_id("ob")
             res = c.execute(text(
                 "insert into delivery_outbox (id,org_id,card_id,channel,payload,signal_id,"
                 "reasoning_run_id,reasoning_decision_hash,authority_pack_revision,"
-                "authority_expires_at,recipient,band,channel_class,interrupt) "
+                "authority_expires_at,recipient,band,channel_class,interrupt,delivery_id) "
                 "values (:i,:o,:c,:ch,cast(:payload as jsonb),"
-                ":signal,:run,:decision,:revision,:expires,:seat,:band,:cclass,:interrupt) "
-                "on conflict (org_id, card_id, channel) do nothing"),
-                {"i": new_id("ob"), "o": org_id, "c": r.card_id, "ch": channel,
+                ":signal,:run,:decision,:revision,:expires,:seat,:band,:cclass,:interrupt,:i) "
+                # matches delivery_outbox_once exactly — recipient joined the key so one card
+            # can fan out to several agents without the second row silently deduping away
+            "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
+                {"i": row_id, "o": org_id, "c": r.card_id, "ch": channel,
                  "payload": json.dumps(payload), "signal": r.signal_id,
                  "run": r.reasoning_run_id, "decision": r.reasoning_decision_hash,
                  "revision": r.authority_pack_revision, "expires": r.authority_expires_at,
@@ -196,6 +209,66 @@ def enqueue_pending(engine, org_id: str, channel: str = "slack",
                  # quiet hours govern it — exactly what the '*' preference row is for.
                  "seat": r.assignee, "band": r.urgency_band, "cclass": channel_class,
                  "interrupt": interrupt})
+            queued += res.rowcount
+
+        # What the band filter above threw away. The owning defect is upstream (L4's ranking
+        # formula never executes, so `I` is 5000 on every card and nothing reaches 70), but a
+        # layer that silently discards its entire input is how an upstream defect stays invisible
+        # for months — every L6 metric had an empty denominator and read as "no problem".
+        starved = c.execute(text(
+            "select count(*) from cards k "
+            "where k.org_id=:o and k.state in ('queued','surfaced') and k.expires_at>:now "
+            "and k.urgency_band not in ('high','critical')"),
+            {"o": org_id, "now": now}).scalar() or 0
+        # A card with no assignee has no authorized recipient, so audience and visibility rules
+        # cannot even be evaluated for it. Counted rather than absorbed.
+        unrouted = c.execute(text(
+            "select count(*) from cards k "
+            "where k.org_id=:o and k.state in ('queued','surfaced') and k.expires_at>:now "
+            "and k.assignee is null"),
+            {"o": org_id, "now": now}).scalar() or 0
+    return {"queued": queued, "band_starved": int(starved), "unrouted": int(unrouted)}
+
+
+def enqueue_agent_push(engine, org_id: str, card_id: str) -> int:
+    """Queue one agent-class delivery per active webhook agent — the outbox replaces the inline
+    POST `deliver/push.py` used to fire from inside the card build.
+
+    That inline call was the exact anti-pattern this module's own docstring names as its reason
+    to exist: a slow client endpoint degraded the card build for the whole org, and the send
+    appeared in no outbox, no retry schedule, no dead letter and no analytics. As a row it gets
+    the same lifecycle a human delivery has, and the drain's authority recheck replaces push.py's
+    hand-rolled pre-send projection comparison.
+
+    One row PER AGENT (recipient = agent_id) — which is why migration 0068 put recipient into
+    the outbox dedup key. AGENT channel class: never intrusive, so the timing unit passes it at
+    any hour; policy still applies, so a tenant on hold pushes nothing to its agents either.
+    Payload carries only the card reference — the projection is built at SEND time by the drain,
+    so a card revoked between enqueue and send is never serialized to an external machine.
+    """
+    queued = 0
+    with engine.begin() as c:
+        agents = c.execute(text(
+            "select agent_id from agent_registry "
+            "where org_id=:o and status='active' and webhook_url is not null"),
+            {"o": org_id}).fetchall()
+        if not agents:
+            return 0
+        card = c.execute(text(
+            "select signal_id from cards where card_id=:c and org_id=:o"),
+            {"c": card_id, "o": org_id}).first()
+        for a in agents:
+            row_id = new_id("ob")
+            res = c.execute(text(
+                "insert into delivery_outbox (id, org_id, card_id, channel, payload, "
+                "signal_id, recipient, channel_class, interrupt, delivery_id) "
+                "values (:i, :o, :c, 'agent_push', cast(:p as jsonb), :sig, :agent, "
+                ":cclass, false, :i) "
+                "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
+                {"i": row_id, "o": org_id, "c": card_id,
+                 "p": json.dumps({"kind": "agent_card_push", "card_id": card_id}),
+                 "sig": card.signal_id if card else None, "agent": a.agent_id,
+                 "cclass": ChannelClass.AGENT.value})
             queued += res.rowcount
     return queued
 
@@ -225,11 +298,22 @@ def enqueue_digest(engine, org_id: str, channel: str = "slack",
         # A digest is a batch somebody chose to read, not an interruption: it carries the DIGEST
         # class so the timing unit lets it through at any hour, and no recipient because the
         # whole team reads it. Policy still applies — a tenant on hold gets no digest either.
+        row_id = new_id("ob")
+        # `delivery_id` was written by exactly ONE function in the whole codebase —
+        # `deliver/spine.py::materialize`, which has no production caller — so
+        # `feedback/delivery_facts.py`'s `where delivery_id is not null` predicate excluded
+        # every row either live enqueue path (this one and the one above) has ever written. A
+        # fully working legacy delivery path still fed L7 zero DeliveryFacts, forever. The row's
+        # own id already IS a unique logical-delivery identity for this path, so it doubles as
+        # `delivery_id` rather than inventing a second one.
         res = c.execute(text(
-            "insert into delivery_outbox (id, org_id, card_id, channel, payload, channel_class) "
-            "values (:i, :o, :c, :ch, cast(:p as jsonb), :cclass) "
-            "on conflict (org_id, card_id, channel) do nothing"),
-            {"i": new_id("ob"), "o": org_id, "c": digest_card_id(today), "ch": channel,
+            "insert into delivery_outbox "
+            "(id, org_id, card_id, channel, payload, channel_class, delivery_id) "
+            "values (:i, :o, :c, :ch, cast(:p as jsonb), :cclass, :i) "
+            # matches delivery_outbox_once exactly — recipient joined the key so one card
+            # can fan out to several agents without the second row silently deduping away
+            "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
+            {"i": row_id, "o": org_id, "c": digest_card_id(today), "ch": channel,
              "p": json.dumps(payload), "cclass": ChannelClass.DIGEST.value})
         return res.rowcount
 
@@ -247,9 +331,15 @@ def drain(engine, *, eval_time: datetime | None = None, limit: int = 50) -> dict
         due = c.execute(text(
             "select id,org_id,card_id,channel,payload,attempts,signal_id,reasoning_run_id,"
             "reasoning_decision_hash,authority_pack_revision,authority_expires_at,"
-            "recipient,band,channel_class,interrupt,defer_count "
+            "recipient,band,channel_class,interrupt,defer_count,delivery_id "
             "from delivery_outbox "
-            "where status='queued' and next_attempt_at <= :now "
+            # `dedupe_key` is set by exactly one writer — `spine.materialize` — and this legacy
+            # drain and `spine.claim_due` were not mechanically disjoint: neither excluded rows
+            # the OTHER path could also claim. Risk was zero only because the v2 path has never
+            # written a row yet; the moment it does, both workers could select the same one and
+            # double-send. `dedupe_key is null` is true of every row this drain's own two writers
+            # produce and false of everything `materialize` produces, so it costs no new column.
+            "where status='queued' and next_attempt_at <= :now and dedupe_key is null "
             "order by next_attempt_at asc limit :l for update skip locked"),
             {"now": now, "l": max(1, min(int(limit), 200))}).fetchall()
         claimed = [dict(r._mapping) for r in due]
@@ -288,7 +378,17 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
 
     for r in claimed:
         payload = r["payload"] if isinstance(r["payload"], dict) else json.loads(r["payload"])
-        cfg = configs.get((r["org_id"], r["channel"]))
+        if r["channel_class"] == ChannelClass.AGENT.value:
+            # An agent delivery's "config" is its agent_registry row, keyed by recipient —
+            # org_channels describes human surfaces a tenant configures, and an agent is neither.
+            with engine.connect() as agent_conn:
+                agent_row = agent_conn.execute(text(
+                    "select agent_id, webhook_url, webhook_secret from agent_registry "
+                    "where org_id=:o and agent_id=:a and status='active'"),
+                    {"o": r["org_id"], "a": r["recipient"]}).mappings().first()
+            cfg = dict(agent_row) if agent_row else None
+        else:
+            cfg = configs.get((r["org_id"], r["channel"]))
         ch = get_channel(r["channel"])
         if ch is None or cfg is None:
             _finish(engine, r, now, ok=False, detail="channel unregistered or inactive",
@@ -332,6 +432,20 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
                 res = ch.send(payload, cfg) if live else None
             if res is None:
                 _cancel(engine, r, "commitment closed before delivery", out)
+                continue
+        elif r["channel_class"] == ChannelClass.AGENT.value:
+            # The row carries only the card reference; the projection is built NOW, under the
+            # same authority the human path proves, so a card revoked between enqueue and send
+            # is cancelled instead of serialized to an external machine. Replaces push.py's
+            # hand-rolled pre-send projection comparison with the drain's own recheck.
+            from genios_engine.deliver.push import _card_projection
+            with engine.begin() as authority_conn:
+                proj = _card_projection(authority_conn, r["org_id"], r["card_id"])
+                res = (ch.send({"type": "signal.created", "org_id": r["org_id"],
+                                "signal": proj}, cfg)
+                       if proj is not None else None)
+            if res is None:
+                _cancel(engine, r, "card no longer authoritative", out)
                 continue
         elif not str(r["card_id"]).startswith("digest:"):
             # Hold the same graph/pack/card authority locks through the outbound POST. This is a
@@ -383,6 +497,29 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
                     terminal=delay is None, out=out, delay_minutes=delay)
 
 
+def _mark_lifecycle(c, row: dict, lifecycle: str, kind: str, now: datetime,
+                    detail: dict | None = None) -> None:
+    """The one canonical lifecycle writer for the legacy drain — column + event row together.
+
+    Every terminal writer here used to update `status` alone: `lifecycle` stayed 'queued' on a
+    row whose Slack message had already been delivered or terminally failed, so an operator
+    asking "what failed?" through the delivery APIs (which read `lifecycle`, the public
+    vocabulary) got an empty answer while transport calls were demonstrably happening, and
+    analytics reported `by_status: {queued: N}` for delivered rows. Same job
+    `spine.log_delivery_event` does for the v2 claimer — one vocabulary, whichever path sent.
+
+    Called inside the writer's own transaction so the column and the event row cannot disagree.
+    The event needs a `delivery_id`; rows enqueued before L6-05 stamped one get the column
+    update only, which still fixes what the APIs read.
+    """
+    c.execute(text("update delivery_outbox set lifecycle=:l where id=:i"),
+              {"l": lifecycle, "i": row["id"]})
+    if row.get("delivery_id"):
+        from genios_engine.deliver.spine import log_delivery_event
+        log_delivery_event(c, org_id=row["org_id"], delivery_id=row["delivery_id"],
+                           kind=kind, at=now, actor="legacy_drain", detail=detail)
+
+
 def _defer(engine, row: dict, decision, context, now: datetime, out: dict) -> None:
     """Hold a message until its window opens — and spend nothing to do it.
 
@@ -402,6 +539,8 @@ def _defer(engine, row: dict, decision, context, now: datetime, out: dict) -> No
             "gate_unit=:u, gate_reason=:r where id=:i and status='queued'"),
             {"na": defer_until(decision, now), "u": decision.unit,
              "r": decision.reason_code, "i": row["id"]})
+        _mark_lifecycle(c, row, "deferred", "deferred", now,
+                        {"reason": decision.reason_code})
     out["deferred"] += 1
 
 
@@ -422,6 +561,8 @@ def _suppress(engine, row: dict, decision, context, out: dict) -> None:
             "update delivery_outbox set status='suppressed', gate_unit=:u, gate_reason=:r, "
             "last_error=:e where id=:i and status='queued'"),
             {"u": decision.unit, "r": decision.reason_code, "e": note[:300], "i": row["id"]})
+        _mark_lifecycle(c, row, "suppressed", "suppressed",
+                        datetime.now(timezone.utc), {"reason": decision.reason_code})
     out["suppressed"] += 1
 
 
@@ -431,6 +572,8 @@ def _cancel(engine, row: dict, detail: str, out: dict) -> None:
             "update delivery_outbox set status='cancelled',attempts=attempts+1,last_error=:e "
             "where id=:i and status='queued'"),
             {"i": row["id"], "e": detail[:300]})
+        _mark_lifecycle(c, row, "cancelled", "cancelled",
+                        datetime.now(timezone.utc), {"detail": detail[:120]})
     out["cancelled"] += 1
 
 
@@ -450,6 +593,7 @@ def _finish(engine, row: dict, now: datetime, *, ok: bool, detail: str, terminal
                 {"t": now, "i": row["id"],
                  "u": decision.unit if decision else None,
                  "r": decision.reason_code if decision else None})
+            _mark_lifecycle(c, row, "delivered", "delivered", now)
             out["delivered"] += 1
             if not str(row["card_id"]).startswith("digest:") \
                     and not is_executive_delivery(row["card_id"]):
@@ -462,6 +606,10 @@ def _finish(engine, row: dict, now: datetime, *, ok: bool, detail: str, terminal
             c.execute(text(
                 "update delivery_outbox set status='failed_terminal', attempts=attempts+1, "
                 "last_error=:e where id=:i"), {"e": detail[:300], "i": row["id"]})
+            # `failed`, not `failed_terminal`: lifecycle is the PUBLIC vocabulary (the enum the
+            # APIs and analytics read), and it names one failure terminal. The transport-status
+            # column keeps its own word; the two columns answer different questions.
+            _mark_lifecycle(c, row, "failed", "failed", now, {"error": detail[:120]})
             out["terminal"] += 1
         else:
             c.execute(text(
@@ -472,6 +620,56 @@ def _finish(engine, row: dict, now: datetime, *, ok: bool, detail: str, terminal
             out["retried"] += 1
 
 
+def shadow_resolve_v2(engine, org_id: str, *, now: datetime) -> dict:
+    """Run the v2 control plane's RESOLUTION over this org's live cards — measure, send nothing.
+
+    Ten of the layer's 28 modules (orchestrator, audience, presence, routing, scheduler, spine…)
+    had zero production reach: ~700 lines of Atlas-shaped machinery proven by tests and exercised
+    by nothing. A cutover decided from that state is a leap; this pass is the measurement that
+    makes it a step. `orchestrator.resolve` is PURE — no row is written, no channel touched — so
+    the ten modules execute against real cards, real seats and real channel config, and the sweep
+    reports how the v2 path WOULD have routed: per-channel counts and per-reason unroutables,
+    directly comparable with what the legacy enqueue actually did in the same tick.
+
+    Per-org failures isolate into a count: a shadow must never be able to break the live sweep
+    it is shadowing.
+    """
+    from genios_engine.contracts.execution import AudienceClass
+    from genios_engine.deliver.orchestrator import Unroutable, resolve
+    from genios_engine.executive.assignment import PgSeatDirectory
+
+    counts: dict = {"resolved": 0, "by_channel": {}, "unroutable": {}, "errors": 0}
+    with engine.connect() as c:
+        channels = [r[0] for r in c.execute(text(
+            "select channel from org_channels where org_id=:o and active"), {"o": org_id})]
+        cards = c.execute(text(
+            "select card_id, signal_id, assignee, urgency_band from cards "
+            "where org_id=:o and state in ('queued','surfaced') and expires_at > :now"),
+            {"o": org_id, "now": now}).fetchall()
+        directory = PgSeatDirectory(conn=c, org_id=org_id)
+        for card in cards:
+            try:
+                obj = resolve(
+                    org_id=org_id, delivery_id=f"shadow:{card.card_id}",
+                    execution_id=f"shadow:{card.signal_id}", execution_hash="shadow",
+                    band=card.urgency_band or "standard", interrupt=False,
+                    audience=(AudienceClass.OWNER if card.assignee
+                              else AudienceClass.ADMIN_QUEUE),
+                    recipient=card.assignee, dedupe_key=f"shadow:{card.card_id}",
+                    directory=directory, available_channels=channels,
+                    # Org-scope default until card rows carry the evidence ACL — matches what
+                    # the legacy path enforces today, so the comparison stays apples-to-apples.
+                    can_view=lambda _seat: True,
+                    now=now)
+                counts["resolved"] += 1
+                counts["by_channel"][obj.channel] = counts["by_channel"].get(obj.channel, 0) + 1
+            except Unroutable as u:
+                counts["unroutable"][u.reason_code] = counts["unroutable"].get(u.reason_code, 0) + 1
+            except Exception:      # noqa: BLE001 — a shadow never breaks the sweep it shadows
+                counts["errors"] += 1
+    return counts
+
+
 # ── the sweep entrypoint ──────────────────────────────────────────────────────────
 def run_distribution(engine, *, base_url: str = "",
                      eval_time: datetime | None = None) -> dict:
@@ -479,21 +677,48 @@ def run_distribution(engine, *, base_url: str = "",
     high/critical cards + the daily digest, then drain everything due. Called from the
     maintenance sweep; per-org failures isolate."""
     now = eval_time or datetime.now(timezone.utc)
-    totals = {"orgs": 0, "queued": 0, "digests": 0, "reminders": 0, "linked": 0}
+    totals = {"orgs": 0, "queued": 0, "digests": 0, "reminders": 0, "linked": 0,
+              # Named conditions, not silence. `band_starved` on every org means the scoring
+              # pipeline is broken upstream; `unrouted` means cards exist with nobody to send
+              # them to. Both previously presented as a clean zero.
+              "band_starved": 0, "unrouted": 0, "org_failures": 0,
+              # The v2 control plane's shadow resolution: how the unwired path WOULD have routed
+              # the same cards this tick. The measurement a cutover decision needs.
+              "v2_shadow_resolved": 0, "v2_shadow_unroutable": 0}
     with engine.connect() as c:
-        orgs = [r.org_id for r in c.execute(text(
-            "select distinct org_id from org_channels where active"))]
+        # NOT `org_channels` alone. That equated "this tenant has delivery" with "this tenant has
+        # configured a channel row", and with the table empty the sweep enumerated nothing and
+        # returned success — zero deliveries, no error, for every tenant, forever. An org with
+        # live cards has delivery work by definition; the pull surface is a floor it always has,
+        # not an integration it opts into.
+        orgs = [r[0] for r in c.execute(text(
+            "select org_id from org_channels where active "
+            "union "
+            "select distinct org_id from cards "
+            "where state in ('queued','surfaced') and expires_at > :now"),
+            {"now": now})]
     for org in orgs:
         totals["orgs"] += 1
         try:
-            totals["queued"] += enqueue_pending(engine, org, base_url=base_url)
+            pending = enqueue_pending(engine, org, base_url=base_url)
+            totals["queued"] += pending["queued"]
+            totals["band_starved"] += pending["band_starved"]
+            totals["unrouted"] += pending["unrouted"]
             totals["digests"] += enqueue_digest(engine, org, eval_time=now)
             # Layer 5 decided somebody needed nudging and wrote it down; this is where it
             # actually leaves the building. Linking runs first so a reminder can name the card
             # it belongs to.
             totals["linked"] += link_commitment_cards(engine, org)
             totals["reminders"] += enqueue_executive_messages(engine, org, base_url=base_url)
+            shadow = shadow_resolve_v2(engine, org, now=now)
+            totals["v2_shadow_resolved"] += shadow["resolved"]
+            totals["v2_shadow_unroutable"] += sum(shadow["unroutable"].values())
+            totals.setdefault("v2_shadow_detail", {})[org] = shadow
         except Exception:      # noqa: BLE001 — one org's enqueue never blocks the rest
-            pass
+            # Isolate, but never silently: a bare `pass` here makes the most likely activation
+            # failure (one tenant's malformed channel config) indistinguishable from "nothing
+            # to send". Compare api/routes.py, which isolates the same way and does log.
+            totals["org_failures"] += 1
+            _log.exception("distribution enqueue failed org=%s", org)
     totals.update(drain(engine, eval_time=now))
     return totals

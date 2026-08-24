@@ -490,16 +490,20 @@ class _Result:
     def first(self):
         return self._rows[0] if self._rows else None
 
+    def scalar(self):
+        return next(iter(self._rows[0].values())) if self._rows else None
+
 
 class _FakeConn:
-    """Answers the gate's four reads by SQL substring; records what it was asked."""
+    """Answers the gate's reads by SQL substring; records what it was asked."""
 
     def __init__(self, *, preferences=(), channel_active=True, seat_active=True,
-                 burst=(0, None)):
+                 burst=(0, None), org_timezone=None):
         self.preferences = list(preferences)
         self.channel_active = channel_active
         self.seat_active = seat_active
         self.burst = burst
+        self.org_timezone = org_timezone
         self.seen: list[str] = []
 
     def execute(self, statement, params=None):
@@ -510,6 +514,8 @@ class _FakeConn:
             return _Result([row for row in self.preferences
                             if row.get("seat_id") in (seat, "*")
                             and row.get("channel") in (channel, "*")])
+        if "timezone from orgs" in sql:
+            return _Result([{"timezone": self.org_timezone}])
         if "from org_channels" in sql:
             return _Result([{"one": 1}] if self.channel_active else [])
         if "from org_seats" in sql:
@@ -697,7 +703,11 @@ def test_a_quiet_hours_hold_moves_the_clock_and_spends_nothing_else(monkeypatch)
     assert out["deferred"] == 1 and out["delivered"] == 0
     assert adapter.calls == []                       # nothing left the building
 
-    (sql, params), = engine.updates()
+    # Every transition now ALSO writes the public `lifecycle` column (L6-07): the status
+    # update is joined by one lifecycle update in the same transaction, so the delivery APIs —
+    # which read lifecycle, the public vocabulary — stop reporting 'queued' for rows whose
+    # transport work already happened. The first update stays the transition under test.
+    (sql, params) = [u for u in engine.updates() if "set lifecycle=" not in u[0]][0]
     assignments, _, guard = sql.partition(" where ")
     assert "defer_count=defer_count+1" in assignments
     assert "attempts" not in assignments              # a hold is not a failure
@@ -738,7 +748,11 @@ def test_an_opt_out_is_suppressed_and_that_is_not_the_same_row_as_a_cancellation
 
     assert out["suppressed"] == 1 and out["cancelled"] == 0 and out["terminal"] == 0
     assert adapter.calls == []
-    (sql, params), = engine.updates()
+    # Every transition now ALSO writes the public `lifecycle` column (L6-07): the status
+    # update is joined by one lifecycle update in the same transaction, so the delivery APIs —
+    # which read lifecycle, the public vocabulary — stop reporting 'queued' for rows whose
+    # transport work already happened. The first update stays the transition under test.
+    (sql, params) = [u for u in engine.updates() if "set lifecycle=" not in u[0]][0]
     assert "status='suppressed'" in sql and "cancelled" not in sql
     assert (params["u"], params["r"]) == ("policy", "recipient_opted_out")
     assert params["e"] == "policy:recipient_opted_out"   # legible to existing last_error queries
@@ -897,14 +911,22 @@ def test_a_message_that_woke_somebody_records_who_authorised_it(monkeypatch):
     out, engine, adapter = run_drain(monkeypatch, [row], now=NIGHT)
 
     assert out["delivered"] == 1 and len(adapter.calls) == 1
-    (sql, params), = engine.updates()
+    # Every transition now ALSO writes the public `lifecycle` column (L6-07): the status
+    # update is joined by one lifecycle update in the same transaction, so the delivery APIs —
+    # which read lifecycle, the public vocabulary — stop reporting 'queued' for rows whose
+    # transport work already happened. The first update stays the transition under test.
+    (sql, params) = [u for u in engine.updates() if "set lifecycle=" not in u[0]][0]
     assert "status='delivered'" in sql and "gate_unit=:u" in sql
     assert (params["u"], params["r"]) == ("timing", "override_band_critical")
 
 
 def test_a_routine_send_records_the_reason_it_was_admitted(monkeypatch):
     _out, engine, _adapter = run_drain(monkeypatch, [outbox_row()], now=MORNING)
-    (sql, params), = engine.updates()
+    # Every transition now ALSO writes the public `lifecycle` column (L6-07): the status
+    # update is joined by one lifecycle update in the same transaction, so the delivery APIs —
+    # which read lifecycle, the public vocabulary — stop reporting 'queued' for rows whose
+    # transport work already happened. The first update stays the transition under test.
+    (sql, params) = [u for u in engine.updates() if "set lifecycle=" not in u[0]][0]
     assert params["r"] == "within_attention_window"
 
 
@@ -925,7 +947,11 @@ def test_a_gate_that_cannot_read_never_decides_by_accident(monkeypatch):
     assert adapter.calls == []                      # nothing sent un-judged
     assert out["retried"] == 1
     assert out["delivered"] == out["suppressed"] == out["deferred"] == 0
-    (sql, params), = engine.updates()
+    # Every transition now ALSO writes the public `lifecycle` column (L6-07): the status
+    # update is joined by one lifecycle update in the same transaction, so the delivery APIs —
+    # which read lifecycle, the public vocabulary — stop reporting 'queued' for rows whose
+    # transport work already happened. The first update stays the transition under test.
+    (sql, params) = [u for u in engine.updates() if "set lifecycle=" not in u[0]][0]
     assert "attempts=attempts+1" in sql             # a real fault, so it does spend a retry
     assert "delivery gate unavailable" in params["e"]
 
@@ -936,7 +962,7 @@ def test_a_gate_that_stays_broken_ends_terminal_rather_than_silently(monkeypatch
     exhausted = outbox_row(attempts=len(BACKOFF_MINUTES))
     out, engine, _adapter = run_drain(monkeypatch, [exhausted], now=NIGHT, gate=_BrokenGate())
     assert out["terminal"] == 1
-    (sql, _params), = engine.updates()
+    (sql, _params) = [u for u in engine.updates() if "set lifecycle=" not in u[0]][0]
     assert "status='failed_terminal'" in sql
 
 

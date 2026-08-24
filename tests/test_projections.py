@@ -60,13 +60,19 @@ def test_an_unmapped_situation_stays_visibly_unmapped() -> None:
     assert situation_type("deal", "hiring") == "hiring_deal"
 
 
-def test_a_new_domain_is_not_reported_as_completely_uncovered() -> None:
-    """THE TRAP. "We expect nothing" must score 100% covered, not 0% known — otherwise
-    every situation in a new domain looks broken on the day it is added. Absence read as
-    negative evidence, which this codebase refuses everywhere else."""
-    score, missing = coverage_score(present_fields=set(),
-                                    expected=spec_for("engineering").fields_for("x"))
-    assert (score, missing) == (100, [])
+def test_a_new_domain_is_neither_fully_covered_nor_fully_missing() -> None:
+    """THE TRAP, and its other half.
+
+    "We expect nothing" must not score 0 — absence read as negative evidence, which this
+    codebase refuses everywhere else, and every situation in a new domain would look broken on
+    the day it is added. But it must not score 100 either: that is a completeness claim nobody
+    made, and downstream gates spend it. The sentinel keeps both from happening.
+    """
+    from genios_engine.context.situations import COVERAGE_UNKNOWN, coverage_is_known
+
+    score, _missing = coverage_score(present_fields=set(),
+                                     expected=spec_for("engineering").fields_for("x"))
+    assert score == COVERAGE_UNKNOWN and not coverage_is_known(score)
 
 
 def test_spec_lookup_never_fails() -> None:

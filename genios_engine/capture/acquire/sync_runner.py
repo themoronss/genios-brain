@@ -17,6 +17,9 @@ from genios_engine.capture.trace_store import TraceRepository
 from genios_engine.contracts.gated_event import GatedEvent
 from genios_engine.contracts.parked import ParkedEvent
 from genios_engine.contracts.source_event import SyncMode
+from genios_engine.platform.logging import get_logger
+
+_log = get_logger("genios.capture.sync")
 
 # Acquisition orchestration — pulls batches from a connector (backfill or incremental)
 # and runs each raw object through the L1 pipeline. This loop is OURS regardless of
@@ -89,10 +92,24 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
              prepared_store=None,
              cursor_store: CursorStore | None = None,
              document_job_store=None,
-             source: str = "gmail", max_pages: int = 1,
+             source: str | None = None, max_pages: int = 1,
+             mailbox_owner: str | None = None,
              reconcile_days: int = 7,
              run_ledger=None,
              fetch_retries: int = 2, fetch_backoff: float = 0.5, _sleep=time.sleep) -> SyncSummary:
+    # The connector knows its own source; a caller must never have to restate it. This used to
+    # default to "gmail", so any caller that forgot `source=` silently read AND wrote the cursor
+    # under the wrong key — a gcal sync would resume from the gmail watermark and persist a
+    # `(connection_id=…_gcal, source='gmail')` row alongside the real one. Two cursors for one
+    # connection is indistinguishable from a healthy one in every dashboard.
+    connector_source = getattr(connector, "source", None)
+    if source is None:
+        source = connector_source or "gmail"
+    elif connector_source and source != connector_source:
+        raise ValueError(
+            f"source={source!r} contradicts connector.source={connector_source!r}; "
+            "the connector is authoritative")
+
     # No-miss: resume from the stored watermark (incremental only). The dedup ledger
     # drops the boundary overlap, so nothing is missed and nothing double-processed.
     # mode="recovery" = a safety re-scan of a fixed lookback window (ignores watermark,
@@ -124,6 +141,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                                         trace_repo=trace_repo, payload_store=payload_store,
                                         prepared_store=prepared_store,
                                         document_job_store=document_job_store,
+                                        mailbox_owner=mailbox_owner,
                                         sync_mode=sync_mode)
             return raw, res, err
 
@@ -161,14 +179,23 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 reason = res.trace.records[-1].reason_code if res.trace.records else "unknown"
                 parked_store.add(parked_from_trace(org_id, res.event.event_id,
                                                    res.event.source, reason or "unknown", res.trace))
-            if watermark is None or raw.occurred_at > watermark:
-                watermark = raw.occurred_at
+            if watermark is None or raw.watermark_at > watermark:
+                watermark = raw.watermark_at
         page_cursor = batch.next_cursor
         if not page_cursor or not batch.objects:      # provider exhausted → stop
             break
 
     # recovery is a pure safety re-scan — never regress/advance the primary watermark
     if cursor_store is not None and mode != "recovery":
+        # Fail-closed clamp: a watermark in the future asks the provider for changes "since" a
+        # date that has not arrived, so the connector goes silent while still reporting success.
+        # gcal sat at 2026-08-24 for 9 runs this way. No connector may outrun the clock.
+        if watermark is not None:
+            ceiling = datetime.now(timezone.utc)
+            if watermark > ceiling:
+                _log.warning("watermark %s for source=%s conn=%s is in the future; clamping to now",
+                             watermark.isoformat(), source, connection_id)
+                watermark = ceiling
         cursor_store.save(org_id, connection_id, source, cursor=summary.next_cursor,
                           watermark=watermark)
     if run_ledger is not None:                    # l1_sync_runs — observability, never fatal

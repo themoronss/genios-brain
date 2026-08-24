@@ -168,9 +168,46 @@ register(DomainSpec(
     }))
 
 register(DomainSpec(
+    domain="fundraising",
+    display_name="Fundraising & Investors",
+    # An investor relationship is not a sales pipeline wearing different words. The counterparty
+    # is not buying, there is no deal to close, and "rejected" is frequently reversible — an
+    # accelerator that passes this cohort invites a re-application to the next one. Typing them
+    # as `opportunity` made every one of this org's sixteen sales-domain situations a
+    # non-customer: six VCs, three accelerator programmes, an introduction bot and the product's
+    # own address. Zero were a customer, and the rules acting on them were written for buyers.
+    situation_types={"company": "investor_relationship", "person": "investor_contact"},
+    expected_fields={
+        "investor_relationship": {
+            "funding.round": "which round this is",
+            "application_status": "where the application stands",
+            "thread.ball_in_court": "whose turn it is",
+        },
+        "investor_contact": {
+            "party.role": "what they are to us",
+            "thread.ball_in_court": "whose turn it is",
+        },
+    }))
+
+register(DomainSpec(
     domain="general",
     display_name="General",
     situation_types={"company": "relationship", "person": "relationship"},
     expected_fields={
-        "relationship": {"thread.ball_in_court": "whose turn it is"},
+        # A relationship is NOT context-complete because we know who sent the last email.
+        #
+        # This spec asked for one trivially-satisfied field — `thread.ball_in_court`, which
+        # `pipeline.py` writes mechanically on every inbound message — so 34 of this org's 73
+        # situations reported `missing=[]` and 100% coverage on the strength of knowing whose
+        # turn it was. Nearly half the graph declared itself fully understood, and any acceptance
+        # gate reading "no actionable output when required context is unknown" read green.
+        #
+        # The two fields below are the minimum that make a relationship reasonable about: WHO
+        # they are to us, and WHAT is open. Neither is written mechanically, so `missing` starts
+        # telling the truth.
+        "relationship": {
+            "thread.ball_in_court": "whose turn it is",
+            "party.role": "what they are to us",
+            "commitment.last_due_at": "what is open with them",
+        },
     }))

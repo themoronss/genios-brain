@@ -55,10 +55,29 @@ class Assignment:
     seat_id: str | None
     audience: AudienceClass
     reason_code: str
+    #: Who SEES this when nobody OWNS it.
+    #:
+    #: `seat_id` was answering two different questions at once — "who is accountable for this"
+    #: and "who should it be shown to" — and answering `None` to both. Owning is what makes a
+    #: nudge or an escalation legitimate, and forcing an owner onto an unowned commitment is the
+    #: mistake this module deliberately refuses (see rule 2's comment). But BEING SHOWN it needs
+    #: no such claim, and conflating the two is why all 43 live cards carry `assignee = NULL`:
+    #: invisible, undeliverable, and excluded from every per-recipient budget.
+    #:
+    #: So an unowned card goes to the admin queue as a RECIPIENT while `routed` stays False and
+    #: the escalation ladder stays silent. Tracked but never nudged — still true, and now also
+    #: visible.
+    queue_seat: str | None = None
 
     @property
     def routed(self) -> bool:
+        """Does somebody OWN this? Deliberately not "can it be delivered" — see `queue_seat`."""
         return self.seat_id is not None
+
+    @property
+    def recipient(self) -> str | None:
+        """Who the card is delivered to: its owner, or the queue that triages unowned work."""
+        return self.seat_id or self.queue_seat
 
 
 @runtime_checkable
@@ -146,7 +165,22 @@ def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] |
     if seat:
         return Assignment(seat, AudienceClass.OWNER, "rule2_actor")
 
-    return Assignment(None, AudienceClass.ADMIN_QUEUE, "rule3_unrouted")
+    # Rule 3 — the org's own admin. Every input above is structurally absent in production:
+    # `deal.owner`/`relationship.owner` have no write_fact producer anywhere, `commitment.actor`
+    # is never written as a fact, and `graph_nodes.attributes` is never populated at all. So this
+    # returned `None` for every card ever built — all 43 carry `assignee = NULL`, `router.
+    # budget_full` short-circuits to False for every one of them, and the executive bridge's
+    # `assignee is not null` predicate matches zero rows.
+    #
+    # `ADMIN_QUEUE` was already the declared audience of this branch, and `admins()` already
+    # existed to resolve it — it was simply only ever called from the ESCALATION path. A card
+    # nobody is named on belongs to whoever runs the account, which for a single-founder tenant
+    # is the founder. That is not load balancing (see above); it is the same deterministic seat
+    # every time.
+    admins = directory.admins()
+    return Assignment(None, AudienceClass.ADMIN_QUEUE,
+                      "rule3_unrouted" if not admins else "rule3_admin_queue",
+                      queue_seat=admins[0] if admins else None)
 
 
 def resolve_escalation_target(*, audience: AudienceClass, owner_seat: str | None,

@@ -83,6 +83,7 @@ SALES_V1 = {
         },
     },
 
+
     "rules": [
         {"id": "stalled_deal", "level": "prescriptive", "scope": "deal",
          "when": [{"path": "deal.status", "op": "=", "value": "open"},
@@ -489,4 +490,130 @@ SALES_V1 = {
                          "proposal_no_response", "closed_lost_risk"],
     },
     "capture": {"classifier_hints": "sales: deals, pricing, proposals, demos, commitments, follow-ups"},
+}
+
+
+# ── Actionability: what each card's ACTION needs, distinct from what its RULE matched on ──
+#
+# An undeclared reason code fails CLOSED (see reason/actionability.py). This block is the only
+# place that keeps a new rule from silently shipping a confident imperative it cannot ground:
+# adding a rule below without adding an entry here is a named test failure, not a surprise in
+# production three weeks later.
+SALES_V1_ACTIONABILITY = {
+
+    "stalled_deal": {
+        "facts": ['deal.stage', 'deal.value', 'thread.last_inbound'],
+        "obs": ['next_step_agreed', 'proposal_sent', 'question'],
+        "label": 'what the deal was last waiting on',
+        "message": "The deal has gone quiet, but we don't have the last open item on record.",
+        "recommended": 'Open the thread to see where it stopped before re-engaging.'},
+    "objection_open": {
+        "facts": ['derived.objection'],
+        "obs": ['objection', 'pricing_objection', 'question'],
+        "label": 'the objection itself',
+        "message": 'We can see the deal stalled after pushback, but not what the pushback was.',
+        "recommended": 'Open the thread and read the objection before answering it.'},
+    "buying_signal": {
+        "obs": ['demo_requested', 'contract_requested', 'proposal_sent', 'next_step_agreed', 'question'],
+        "label": 'what they actually asked for',
+        "message": "Their reply reads as intent, but we haven't captured the specific ask.",
+        "recommended": "Open the email to see what they're asking for before advancing."},
+    "cooling_deal": {
+        "facts": ['derived.engagement', 'thread.last_inbound'],
+        "obs": ['next_step_agreed', 'proposal_sent'],
+        "label": 'what to re-engage them about',
+        "message": "Engagement is falling, but we don't have an open thread to reopen.",
+        "recommended": 'Review the account history before reaching out.'},
+    "single_threaded_deal": {
+        "facts": ['deal.stage', 'company'],
+        "obs": ['next_step_agreed'],
+        "label": 'who else is on the account',
+        "message": "Only one contact is engaged, but we don't know enough about the account to name a second.",
+        "recommended": 'Check the account for other stakeholders before multi-threading.'},
+    "competitor_in_live_deal": {
+        "facts": ['derived.competitor'],
+        "obs": ['competitor_mentioned', 'objection'],
+        "label": 'which competitor and on what',
+        "message": "A competitor came up, but we haven't captured which one or what they're being compared on.",
+        "recommended": 'Open the thread to see the comparison before defending.'},
+    "going_dark_after_proposal": {
+        "facts": ['deal.stage'],
+        "obs": ['proposal_sent', 'next_step_agreed'],
+        "label": 'what was proposed',
+        "message": "They stopped replying after a proposal we don't have on record.",
+        "recommended": 'Open the proposal thread before following up.'},
+    "deal_sentiment_negative": {
+        "facts": ['derived.sentiment', 'thread.last_inbound'],
+        "obs": ['objection', 'competitor_mentioned'],
+        "label": 'what turned it negative',
+        "message": 'Sentiment dropped, but not what caused it.',
+        "recommended": 'Read the recent exchange before responding.'},
+    "pricing_objection": {
+        "facts": ['derived.objection'],
+        "obs": ['pricing_objection', 'objection'],
+        "label": 'the pricing pushback',
+        "message": "Price came up as a blocker, but we haven't captured the specific concern.",
+        "recommended": 'Open the thread and read what they said about price.'},
+    "verbal_yes_not_closed": {
+        "obs": ['verbal_yes', 'next_step_agreed', 'contract_requested'],
+        "label": 'what they agreed to',
+        "message": 'Something reads like agreement, but not what was agreed.',
+        "recommended": 'Confirm the scope in the thread before sending paperwork.'},
+    "contract_requested": {
+        "obs": ['contract_requested', 'next_step_agreed'],
+        "label": 'which contract they asked for',
+        "message": "They asked for paperwork; we haven't captured which terms.",
+        "recommended": 'Open the request before sending a contract.'},
+    "security_review_pending": {
+        "facts": ['thread.last_inbound'],
+        "obs": ['security_review', 'question'],
+        "label": 'what security asked for',
+        "message": "A security review is open, but not what it's blocked on.",
+        "recommended": 'Open the review thread to see the outstanding items.'},
+    "champion_left": {
+        "facts": ['company', 'deal.stage'],
+        "obs": ['champion_left'],
+        "label": 'who replaces them',
+        "message": "Your contact has moved on and we don't have a successor on the account.",
+        "recommended": 'Find the new owner before re-opening the deal.'},
+    "budget_freeze": {
+        "facts": ['thread.last_inbound'],
+        "obs": ['budget_freeze', 'objection'],
+        "label": 'the scope of the freeze',
+        "message": 'Budget is frozen, but not for how long or over what.',
+        "recommended": 'Read the thread to see when it reopens before re-engaging.'},
+    "discount_pressure": {
+        "obs": ['discount_pressure', 'pricing_objection', 'objection'],
+        "label": 'what discount was asked for',
+        "message": "They're pushing on price without a captured number.",
+        "recommended": 'Open the thread to see what they asked for.'},
+    "legal_in_review": {
+        "facts": ['thread.last_inbound'],
+        "obs": ['legal_review', 'question'],
+        "label": 'what legal is holding',
+        "message": "Legal has it, but we don't have the open redlines.",
+        "recommended": 'Check the review thread for the outstanding clauses.'},
+    "timeline_slip": {
+        "facts": ['deal.close_date'],
+        "obs": ['timeline_slip', 'next_step_agreed'],
+        "label": 'which date moved',
+        "message": "The timeline slipped, but we don't have the original or the new date.",
+        "recommended": 'Confirm the dates in the thread before pushing.'},
+    "demo_requested": {
+        "obs": ['demo_requested', 'meeting_request'],
+        "label": 'what they want to see',
+        "message": 'They asked for a demo without a captured agenda.',
+        "recommended": 'Open the request to see what they want covered.'},
+    "proposal_no_response": {
+        "facts": ['deal.stage'],
+        "obs": ['proposal_sent'],
+        "label": 'what was proposed',
+        "message": "A proposal is outstanding that we don't have on record.",
+        "recommended": 'Open the proposal before chasing it.'},
+    "closed_lost_risk": {
+        "facts": ['derived.sentiment', 'deal.stage'],
+        "obs": ['objection', 'competitor_mentioned', 'budget_freeze'],
+        "label": "why it's slipping",
+        "message": "This deal is at risk, but we haven't captured the reason.",
+        "recommended": 'Read the recent thread before trying to save it.'},
 }

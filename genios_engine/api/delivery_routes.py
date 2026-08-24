@@ -30,6 +30,7 @@ how two of them would start disagreeing.
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 
@@ -44,6 +45,7 @@ from genios_engine.deliver.gate import (
     channel_class_for,
     evaluate_delivery,
 )
+from genios_engine.deliver.scheduler import rank_sql
 from genios_engine.executive.communication import CHAT_CHANNELS
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner
 from genios_engine.platform.wiring import make_graph_store
@@ -420,7 +422,14 @@ def inbox(org_id: str, org: str = Depends(_org), limit: int = Query(50, le=200))
         rows = c.execute(text(
             f"select {_RESULT_COLS} from delivery_outbox where org_id = :o "
             "and delivery_id is not null and lifecycle in ('queued','deferred','delivered','viewed') "
-            "order by priority, created_at limit :l"), {"o": org, "l": limit}).mappings().all()
+            # Same rank as the claimer, generated from the same map. `priority` is a text column,
+            # so ordering by it directly sorts alphabetically — background < critical < high <
+            # low < medium — and with limit defaulting to 50 a critical delivery could be pushed
+            # off the page by background rows. Two surfaces over the same table disagreeing about
+            # what "most important first" means is worse than either ordering alone.
+            "order by " + rank_sql("priority", "created_at", ":now") + " desc, created_at "
+            "limit :l"), {"o": org, "l": limit,
+                          "now": datetime.now(timezone.utc)}).mappings().all()
     return {"count": len(rows), "inbox": [_result_row(r) for r in rows]}
 
 
@@ -461,11 +470,72 @@ def capabilities(org_id: str, org: str = Depends(_org)) -> dict:
     with _graph.engine.connect() as c:
         configured = {r[0] for r in c.execute(text(
             "select channel from org_channels where org_id = :o and active"), {"o": org})}
-        credentialed = {r[0] for r in c.execute(text(
-            "select channel from org_channels where org_id = :o and active "
-            "and secret_ciphertext is not null"), {"o": org})}
+        # NOT `secret_ciphertext is not null`. A row can hold a value that no longer decrypts —
+        # a rotated GENIOS_CRYPTO_KEY, a truncated copy, a hand-edited row — and the null check
+        # reported all three as credentialed. The tenant is then told the channel is operational
+        # and finds out otherwise when a real delivery fails at 2am. Decrypt it and check its
+        # shape, which is the only question "is this credential usable" actually asks.
+        rows = c.execute(text(
+            "select channel, secret_ciphertext, config from org_channels "
+            "where org_id = :o and active"), {"o": org}).all()
+    # Sealed first; plaintext `config` as the documented rolling-migration fallback (0043's own
+    # note: "Existing plaintext config stays as a rolling-migration fallback until rotated").
+    # Ignoring the fallback swapped one wrong answer for another: the sealed column has NO
+    # writer anywhere in the codebase, so `credentialed` was permanently empty and the surface
+    # reported `credential_unusable` for a Slack channel that demonstrably delivers — the send
+    # path (outbox.py) reads `config`, so the capability probe must ask the SAME store or the
+    # two surfaces contradict each other about the same channel.
+    credentialed = {ch for ch, blob, cfg in rows
+                    if _credential_usable(ch, blob) or _plaintext_credential_usable(ch, cfg)}
     return {"units": capability_report(configured_channels=configured,
                                        credentialed_channels=credentialed)}
+
+
+def _plaintext_credential_usable(channel: str, cfg) -> bool:
+    """The rolling-migration fallback: the same `config` JSONB the send path actually uses.
+
+    Same shape check as the sealed path, so "usable" means one thing. Removed when a sealing
+    writer + backfill land and `secret_ciphertext` becomes the only store."""
+    if not cfg:
+        return False
+    cfg = cfg if isinstance(cfg, dict) else json.loads(cfg or "{}")
+    secret = cfg.get("webhook_url") or cfg.get("token") or cfg.get("secret") or ""
+    return _credential_shape_ok(channel, str(secret))
+
+
+def _credential_usable(channel: str, ciphertext: str | None) -> bool:
+    """Does this sealed credential decrypt AND look like what the channel needs?
+
+    Fail-closed on every error path: an unusable credential must never read as usable, and the
+    three ways it becomes unusable (missing key, undecryptable blob, wrong shape) are all
+    exceptions rather than falsy values.
+    """
+    if not ciphertext:
+        return False
+    from genios_engine.platform.config import get_settings
+    from genios_engine.platform.crypto import decrypt
+    key = getattr(get_settings(), "crypto_key", None)
+    if not key:
+        return False
+    try:
+        secret = decrypt(ciphertext.encode() if isinstance(ciphertext, str) else ciphertext, key)
+    except Exception:      # noqa: BLE001 — any decrypt failure is an unusable credential
+        return False
+    return _credential_shape_ok(channel, secret)
+
+
+def _credential_shape_ok(channel: str, secret: str) -> bool:
+    """The minimum shape check per channel. Deliberately shallow — this answers "could this
+    plausibly be the right kind of secret", not "will the provider accept it"; only a send probe
+    answers the second, and pretending otherwise is how the null check got here."""
+    secret = (secret or "").strip()
+    if not secret:
+        return False
+    if channel == "slack":
+        return secret.startswith("https://hooks.slack.com/")
+    if channel in ("webhook", "agent_push", "api"):
+        return secret.startswith(("http://", "https://")) or len(secret) >= 16
+    return len(secret) >= 8
 
 
 def _result_row(row: dict[str, Any]) -> dict[str, Any]:

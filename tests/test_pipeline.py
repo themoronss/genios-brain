@@ -64,6 +64,10 @@ def test_structured_event_emits_structured_route():
                     source_object_id="deal_9912",
                     occurred_at=datetime(2026, 7, 28, tzinfo=timezone.utc),
                     actor_type="system",
+                    # A deal's value IS its stage, and stage changes. The registry declares
+                    # hubspot mutable, so the version is what makes an updated deal re-land
+                    # instead of being deduped away as "already seen".
+                    content_version="2026-07-28T09:00:00Z",
                     raw={})
     repo = InMemorySourceEventRepository()
     res = capture_event(raw, org_id="o", connection_id="c", repo=repo,

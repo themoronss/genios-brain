@@ -25,12 +25,30 @@ def week_key(now: datetime) -> str:
     return f"{iso.year}-W{iso.week:02d}"
 
 
+def _as_tuple(value) -> tuple[str, ...]:
+    """A jsonb prohibition list as a tuple, refusing to silently invent an empty one.
+
+    A NULL here on a revision the tenant actually authored means the policy did not load, and
+    treating that as "nothing is blocked" is the failure mode this whole field guards against.
+    """
+    if value is None:
+        return ()
+    if isinstance(value, (list, tuple)):
+        return tuple(str(v) for v in value if v)
+    return ()
+
+
 def load_or_seed_policy(conn, org_id: str, *, now: datetime) -> LearningPolicy:
     """The active policy revision, or a seeded protective default (revision 1)."""
     row = conn.execute(text(
         "select revision, min_observations, min_distinct_days, min_distinct_entities, "
         "min_confidence_bp, max_noise_bp, "
         "max_conflict_bp, max_runtime_ttl_seconds, organization_requires_review, "
+        # Both prohibition columns. They exist (migration 0045), `governance.py` enforces them,
+        # and this SELECT omitted them — so a tenant's "never learn about these targets" list was
+        # loaded as empty on every run. Latent rather than live only because nothing can write
+        # them yet; the moment a policy-write surface exists it becomes a silent authority hole.
+        "blocked_targets, blocked_subject_prefixes, "
         "knowledge_requires_review, learning_enabled from learning_policies "
         "where org_id = :o order by revision desc limit 1"), {"o": org_id}).mappings().first()
     if row is not None:
@@ -42,14 +60,21 @@ def load_or_seed_policy(conn, org_id: str, *, now: datetime) -> LearningPolicy:
             max_noise_bp=row["max_noise_bp"], max_conflict_bp=row["max_conflict_bp"],
             max_runtime_ttl_seconds=row["max_runtime_ttl_seconds"],
             organization_requires_review=row["organization_requires_review"],
+            blocked_targets=_as_tuple(row["blocked_targets"]),
+            blocked_subject_prefixes=_as_tuple(row["blocked_subject_prefixes"]),
             knowledge_requires_review=True, learning_enabled=row["learning_enabled"])
     default = LearningPolicy(org_id=org_id, revision=1)
     conn.execute(text(
         "insert into learning_policies (org_id, revision, snapshot, min_observations, "
         "min_distinct_days, min_distinct_entities, min_confidence_bp, max_noise_bp, max_conflict_bp, "
         "max_runtime_ttl_seconds, organization_requires_review, knowledge_requires_review, "
+        # Seeded EMPTY rather than NULL: an empty prohibition list is a decision ("nothing is
+        # blocked"), NULL is an absence. Keeping them distinct is what lets the guard below tell
+        # a deliberate empty policy from one that failed to load.
+        "blocked_targets, blocked_subject_prefixes, "
         "learning_enabled, created_at) values (:o, 1, '{}', :mo, :md, :me, :mc, :mn, :mcf, :ttl, "
-        "true, true, true, :at) on conflict (org_id, revision) do nothing"),
+        "true, true, cast('[]' as jsonb), cast('[]' as jsonb), true, :at) "
+        "on conflict (org_id, revision) do nothing"),
         {"o": org_id, "mo": default.min_observations, "md": default.min_distinct_days,
          "me": default.min_distinct_entities, "mc": default.min_confidence_bp,
          "mn": default.max_noise_bp,
@@ -80,9 +105,23 @@ def run_learning(conn, *, org_id: str, now: datetime) -> dict:
         return {"org_id": org_id, "skipped": "already_ran_this_week"}
 
     batch = load_batch(conn, org_id=org_id, now=now)
+    # Which inputs arrived empty. A learning run whose seams are all empty proposed nothing
+    # because it had nothing to read — that is a DEGRADED run, not a healthy one that found
+    # nothing to learn, and from the counts alone the two looked identical.
+    degraded_seams = {name for name, rows in (
+        ("outcomes", getattr(batch, "outcomes", ())),
+        ("feedback", getattr(batch, "feedback", ())),
+        ("deliveries", getattr(batch, "deliveries", ())),
+    ) if not rows}
+    # `learning_event_inbox` is loaded into every batch and no unit references it. Empty at both
+    # ends today, so it costs nothing — but the day something starts writing to that table, rows
+    # would be read and dropped on the floor with no counter moving anywhere. Naming the count
+    # makes that arrival visible instead of making it a mystery about why learning ignores a
+    # ledger somebody just wired up.
+    inbox_unconsumed = len(getattr(batch, "inbox", ()) or ())
     proposals = run_all_units(batch, policy, now)
 
-    inserted = published = held = refused = unchanged = 0
+    inserted = published = held = refused = unchanged = queued_for_review = 0
     for obj in proposals:
         ok, _ = validate_learning(obj, policy)
         if not ok:
@@ -105,13 +144,28 @@ def run_learning(conn, *, org_id: str, now: datetime) -> dict:
             continue
         sink = publish(conn, obj, target_state=decision.target_state, at=now)
         inserted += 1 if outcome == "inserted" else 0
-        published += 1
+        # The SINK decides what happened, not the fact that publish() returned. Counting every
+        # call as `published` made the run ledger disagree with the evaluation ledger inside one
+        # transaction: `counts.published = 1` beside `result_state='human_review',
+        # sink_reason='queued_for_review'` for the same object. `published` is the number an
+        # operator reads, and it was wrong for every review-routed object — which today is 100%
+        # of brain-target objects, so the one number that says "learning is working" has never
+        # been true.
+        if str(sink) == "queued_for_review":
+            queued_for_review += 1
+        else:
+            published += 1
         _record_evaluation(conn, org_id, run_id, obj, policy, now, prior="governed",
                            result=decision.target_state.value,
                            inserted=(outcome == "inserted"), sink=sink)
 
     counts = {"proposals": len(proposals), "inserted": inserted, "published": published,
-              "held": held, "refused": refused, "unchanged": unchanged}
+              "queued_for_review": queued_for_review,
+              "held": held, "refused": refused, "unchanged": unchanged,
+              # A run that proposed nothing because its inputs were empty is NOT a healthy run
+              # that found nothing to learn, and the two were indistinguishable from the counts.
+              "degraded": bool(degraded_seams), "degraded_seams": sorted(degraded_seams),
+              "inbox_unconsumed": inbox_unconsumed}
     conn.execute(text(
         "update learning_runs set status = 'completed', completed_at = :at, "
         "objects_inserted = :ins, objects_unchanged = :unc, counts = cast(:c as jsonb) "

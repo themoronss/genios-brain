@@ -50,7 +50,8 @@ matches:
   # completed and that nothing outbound followed it. What it cannot see is that this meeting
   # was a support call rather than any other kind — see metadata.notes.
   l2_situation_types:
-    - meeting_no_followup
+    - support_contact
+    - relationship
 
   scope: meeting
 

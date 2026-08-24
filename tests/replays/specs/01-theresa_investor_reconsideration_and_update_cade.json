@@ -1,0 +1,140 @@
+{
+  "replay_id": "01",
+  "slug": "theresa_investor_reconsideration_and_update_cadence",
+  "title": "Theresa Investor Reconsideration and Update Cadence",
+  "failure_class": "Elapsed time and silence are converted into a fabricated urgency imperative (\"rejected / one last chance / follow up now\") instead of conditional cadence intelligence gated on a verified new material milestone, live consent, resolved identity/roles, and accepted fundraising expertise.",
+  "summary": "Theresa, an Antler Singapore partner, gave Rohit conditional permission to keep sending updates and said she could reconsider; Rohit then sent two or three updates with no reply. The product's failure mode is to reduce that history to a generic scalar-confidence \"reply now / last chance\" card that invents stage, scarcity and consent from message age. The required behavior is conditional cadence intelligence: decide whether anything materially new exists, whether Theresa's permission is still valid, whether prior updates already satisfied her ask, and whether the next move is send, wait, a separate permission-gated connector nudge, or stop. This is an HKS acceptance replay of required behavior — no screenshot proves the exact Theresa thread, wording, update count, or present consent state.",
+  "business_subject": "Theresa in the scoped investor/reconsideration relationship — the individual investor target, not Antler as an organization and not any introducer/connector in the thread. If target/requester/owner conflict or identity collides with another person or Antler record, the required output is Review source with no action button.",
+  "open_loop": "Conditional permission to send ONE material company update that could justify Theresa's reconsideration. Silence is not a request for another message, and elapsed time is not the loop. Until the exact original request text and the current consent/cadence label are verified from source, the system may only produce an observation.",
+  "why_now": "A verified new material company milestone exists (sourced, timestamped, fresh) or an explicitly agreed cadence has become due. If only elapsed time has changed, there is no \"why now\" and the correct decision is No action / stop until the named trigger fires.",
+  "current_failure": "The card interprets the relationship as \"you were rejected; one last chance,\" fabricating opportunity stage, deadline, consent and likely reconsideration; it converts no-reply into deal cooling and urgency, shows a scalar confidence number, offers a generic \"checking in\" follow-up driven by message age (21/30 days elapsed), and forces the founder to reconstruct the relationship history themselves. A generic Sales pack (legacy, authoritative) launders the fact that no accepted investor/fundraising-update expertise exists.",
+  "expected_behavior": "With complete evidence and accepted expertise, the card names which specific new milestone qualifies, ties it to Theresa's original conditional request, names the exact update content and the exact recipient (Theresa, on the identified thread), compares it against waiting for the next milestone, states Rohit's approval boundary (agent drafts only; Rohit approves/sends), and declares delivery and response windows. Completion is only actual delivery through the approved path — not claim, draft, send attempt or open. Without a new material milestone the correct decision is \"No action / stop until trigger,\" never a lower-confidence follow-up. Where the fundraising lane is uncovered, the output is a typed unsupported / observation-only result naming the exact missing capability, with no primary CTA.",
+  "passes_today": false,
+  "mutations": [
+    {
+      "mutation": "New verified material milestone exists; Theresa's original request text and current consent are both present and fresh; an accepted investor/fundraising-update capability exists",
+      "expected_decision": "Actionable milestone-specific update to Theresa, ranked against a real wait/stop Alternative",
+      "prohibited": "Emitting a generic 'checking in' nudge or a 'one last chance' framing instead of a milestone-specific update",
+      "pass_condition": "Card cites the exact milestone and the exact original-request text, names Theresa as target, names Rohit as approver, and carries an explicit Completion predicate and a declared Outcome response window",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No accepted investor/fundraising lane (L3 compiler is dark and unroutable: 73/73 NoExpertiseRoute, 140/152 corpus capabilities are stubs, zero reviewed or accepted); L4 emits exactly one candidate with no Alternative; no Completion/Outcome-window fields are produced anywhere"
+    },
+    {
+      "mutation": "No new material milestone exists; all sources are fresh and complete",
+      "expected_decision": "No action / stop until the named trigger fires",
+      "prohibited": "Recommending a follow-up because 21 or 30 days have elapsed since the last update",
+      "pass_condition": "No outbound execution row and no action button are produced, and the named trigger that would unblock the send is visible on the surface",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention vocabulary — cards.level only carries prescriptive/predictive; there is no wait/suppress/no-action state and DEFER is mathematically unreachable (confidence_floor_bp defaults to 0 in every live manifest). Age-based staleness rules can still generate an imperative"
+    },
+    {
+      "mutation": "The original request text or the current consent/permission label is missing from source",
+      "expected_decision": "Review source",
+      "prohibited": "Reconstructing 'keep me updated' from memory, summary or model prior",
+      "pass_condition": "The exact source-review question is surfaced and no prescription of any kind is emitted",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No 'review' abstention state exists in cards.level; L1/L2 have no mandatory permission/consent field to fail closed on, so missing consent cannot park the decision"
+    },
+    {
+      "mutation": "The sent-update history is incomplete or internally conflicting (unknown how many updates were actually sent)",
+      "expected_decision": "Review source; do not infer a cadence or frequency",
+      "prohibited": "Asserting that this is the first, second, or last chance/update",
+      "pass_condition": "The conflict is surfaced explicitly along with the specific source required to resolve it",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread-level state: extraction is one message at a time with no From/To and no actor on observations, so a sent-update series (and therefore a conflict in it) cannot be derived"
+    },
+    {
+      "mutation": "Theresa's identity collides with another person node or with a generic Antler organization record",
+      "expected_decision": "Review source",
+      "prohibited": "Merging the two people, or retargeting the action at an organization-wide Antler contact",
+      "pass_condition": "No BSO, no expertise package and no action are produced until the exact identity resolves",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty role model — every person node is interchangeable, so investor-target vs. org-record collision is not representable; and no review/abstain state exists to hold the decision"
+    },
+    {
+      "mutation": "Boardy or another introducer/connector also appears in the thread",
+      "expected_decision": "Theresa remains the target; any connector nudge is a separate candidate that is independently permission-gated and independently justified",
+      "prohibited": "Replying to the connector as though the connector requested the reconsideration, or treating the connector as the action target",
+      "pass_condition": "Separate role edges exist for target vs. connector, and the connector nudge carries its own distinct candidate ID",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No requester/introducer/target/owner distinction exists anywhere in L1 or L2; L4 produces exactly one candidate per run so a second, separately-identified connector candidate cannot exist"
+    },
+    {
+      "mutation": "Theresa replied 'no more updates', or the relationship is definitively closed",
+      "expected_decision": "Suppress / stop",
+      "prohibited": "Nurture or reopen the relationship on the basis of elapsed time",
+      "pass_condition": "All pending decisions and executions for this subject are cancelled, and an audit receipt of the suppression is retained",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No suppress state in the abstention vocabulary; L5 has never produced an execution row (card actions do not touch the execution subsystem), so there is nothing to cancel and no cancellation receipt path"
+    },
+    {
+      "mutation": "The same update was already sent to Theresa through another channel",
+      "expected_decision": "Suppress the duplicate and reconcile the completion against the existing action",
+      "prohibited": "Sending the same update to Theresa a second time",
+      "pass_condition": "A cross-channel completion receipt closes the exact action, so at most one update reaches Theresa",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L6 delivery control plane has never run (delivery_outbox empty across all orgs); no DeliveryResult, no cross-channel completion reconciliation, and no execution rows to close"
+    },
+    {
+      "mutation": "Investor/fundraising expertise remains uncovered — the current defensible state of the system",
+      "expected_decision": "Observation only / typed unsupported result that names the exact missing capability",
+      "prohibited": "Emitting a legacy generic-Sales prescription with a scalar confidence number",
+      "pass_condition": "No primary action and no CTA are rendered; the coverage gap and the authoritative mode (which pack actually decided) are visible to the user",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L3 does detect NoExpertiseRoute but the result is dark/shadow while legacy Sales stays authoritative, and there is no 'observation only' / typed-unsupported level for a card to carry, so the uncovered state cannot be surfaced instead of a prescription"
+    },
+    {
+      "mutation": "The provider accepted a previous send but the delivery result is unknown",
+      "expected_decision": "Reconcile the outstanding attempt before any retry is permitted",
+      "prohibited": "Blind resend of the update",
+      "pass_condition": "The same idempotency key / provider receipt yields at most one external impression on Theresa",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No delivery subsystem has ever executed — no attempt records, idempotency keys, provider receipts or unknown-state reconciliation exist (delivery_outbox empty; L5→L6 weld absent)"
+    }
+  ],
+  "prohibited_behaviors": [
+    "Do not state 'rejected', 'last chance', an active opportunity stage, a deadline, consent, or likely reconsideration without evidence.",
+    "Do not equate no reply with deal cooling, with urgency, or with permission to send repeatedly.",
+    "Do not use a connector/introducer as the action target, and do not merge separate investor relationships into one.",
+    "Do not allow a generic Sales pack or a fluent LLM explanation to launder missing fundraising expertise.",
+    "Do not label card display, an 'I'll do it' claim, a draft, a send, a delivery, or an open as reconsideration or as revenue value.",
+    "Do not learn a global cadence rule from Theresa's single thread or from silence alone."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Immutable receipts over the original Theresa thread, every sent update, replies, and company milestone sources — preserving speaker direction and lineage, with exact provider/event/version and transformation receipts. No business-role promotion from the transport sender.",
+      "fail_closed": "Park / Review source if the original request, the sent history, the milestone source, freshness, or the permission label is missing."
+    },
+    {
+      "layer": "L2",
+      "required_output": "Exactly one bounded BSO: Theresa = investor target/requester, Rohit = update owner; the conditional request; the sent-update history; consent/cadence; the material-change trigger; plus explicit conflicts and missing fields, under an identity/relationship/policy/graph version fence.",
+      "fail_closed": "Review source on identity, role or conflict; Suppress if the request was withdrawn, already satisfied, or superseded."
+    },
+    {
+      "layer": "L3",
+      "required_output": "An accepted investor/fundraising-update capability with its dependency closure, evidence requirements, stop rules and brain/version receipt — or an explicit typed unsupported status showing capability/coverage, brain versions/hash, exclusions and authoritative mode.",
+      "fail_closed": "Observation only / Defer, because the current corpus does not establish this lane; a generic Sales pack must never override or substitute for it."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Hard-gated candidate set — milestone-specific send, wait, permission-safe connector nudge, stop — ranked with stakes, trigger, expiry and Completion, plus a decision trace, eliminations, a real Alternative, a stop rule and a confidence vector (not a scalar).",
+      "fail_closed": "Preserve the unsupported / Observation-only status from L3; message age and silence must never generate an imperative."
+    },
+    {
+      "layer": "L5",
+      "required_output": "One ExecutionObject binding the current decision, Theresa as target, Rohit's approval, the exact update asset/content, an expiry and a success predicate, with decision/execution/action IDs, approval record, lease, attempt and completion predicate. The agent may draft; Rohit approves and sends; the claim is idempotent.",
+      "fail_closed": "Waiting / Blocked if approval, content or authority is missing; an 'I'll do it' remains a claim only and is never Completion."
+    },
+    {
+      "layer": "L6",
+      "required_output": "One governed delivery attempt to the exact Theresa recipient/thread under current visibility, channel intent and send fence, returning a canonical DeliveryResult with audience, provider ID, attempt/idempotency key and accepted/delivered/unknown state.",
+      "fail_closed": "Suppress a stale or revoked action; never substitute a connector as recipient and never blind-retry — an unknown provider result must reconcile first."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Joined decision, exposure, execution, delivery, Theresa's response/state and counterfactual — recording reply, reconsideration, explicit stop and no-response as separate outcomes inside a declared window, with otherwise-action, alternative causes, attribution confidence and future package receipt; cadence learning proposed only with sufficient support and permitted lineage.",
+      "fail_closed": "No learning from display, click, send, a single silence event, or agent-origin text; attribution and 'value' remain unclaimed until counterfactual reconciliation."
+    }
+  ]
+}

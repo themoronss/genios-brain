@@ -20,3 +20,15 @@ OBS_NEGATIVE: frozenset[str] = frozenset({
     "discount_pressure", "budget_freeze", "champion_change", "timeline_slip",
     "closed_lost_mention",
 })
+
+
+#: The complete set the extractor may emit — polarity-bearing kinds plus the neutral ones the
+#: prompt has always asked for. Named here rather than duplicated in the prompt so a kind cannot
+#: be added to one and forgotten in the other, which is precisely how `verbal_yes` came to be
+#: required by a rule and emitted by nothing.
+OBS_NEUTRAL: frozenset[str] = frozenset({
+    "meeting_request", "followup_sent", "introduction", "question", "proposal_sent",
+    "legal_review",
+})
+
+CANONICAL_OBS_KINDS: frozenset[str] = OBS_POSITIVE | OBS_NEGATIVE | OBS_NEUTRAL

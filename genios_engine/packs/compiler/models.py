@@ -54,6 +54,12 @@ class RoutePlan:
     never_object_ids: tuple[str, ...]
     unresolved_predicates: tuple[str, ...] = ()
     skipped_capability_ids: tuple[str, ...] = ()
+    #: True only when EVERY routed capability passed the admission gate (stable + approved by a
+    #: named reviewer + accepted hash matching the routed bytes). A shadow compile may carry
+    #: unadmitted content; this flag is what keeps that content forever non-prescriptive
+    #: downstream (deliver's abstention gate reads the package review_state).
+    admitted: bool = True
+    admission_gaps: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

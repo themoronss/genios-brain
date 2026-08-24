@@ -5,6 +5,9 @@ from genios_engine.capture.source_registry import BUILDABLE_SOURCES
 from genios_engine.capture.landing.repository import (InMemorySourceEventRepository,
                                                       SourceEventRepository)
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.logging import get_logger
+
+_log = get_logger("genios.platform.wiring")
 
 # The switch between REAL and dev is here, driven entirely by .env — no code change.
 #   DATABASE_URL set   → Postgres/Supabase repo   (else in-memory)
@@ -59,6 +62,15 @@ def make_connector_for(connection, relevance=None) -> SourceConnector:
             identity_field=cfg["identity_field"],
             watermark_col=cfg.get("watermark_col", "updated_at"), source=st)
     if not s.use_real_composio:
+        # The fake is a GMAIL fixture. Returning it for every source_type meant a local run or
+        # demo could "prove" Notion, Drive, HubSpot or Calendar coverage using Gmail data —
+        # unfalsifiable in exactly the setting where it gets shown to someone. Refuse instead:
+        # a missing fixture is a fact worth surfacing, not one worth papering over.
+        if st not in ("gmail", "google_mail"):
+            raise ValueError(
+                f"no offline fixture for source_type={st!r}; set GENIOS_USE_REAL_COMPOSIO to "
+                "exercise it, or add a fixture connector. The Gmail fake must not stand in for "
+                "another source.")
         from genios_engine.capture.connectors.fake import FakeGmailConnector
         return FakeGmailConnector(org_id=connection.org_id,
                                   connection_id=connection.connection_id)
@@ -97,6 +109,11 @@ def make_ocr():
     if getattr(s, "enable_ocr", False):
         from genios_engine.capture.documents.tesseract import TesseractOcr
         return TesseractOcr()
+    # Deliberately-off is a legitimate state, but a silent None is how 369 documents came to be
+    # labelled `unsupported` — a terminal-sounding verdict for files the router never tried to
+    # read. `route_document` now returns `ocr_unavailable` for those; log once so the operator
+    # side of that story is visible too.
+    _log.info("OCR disabled (enable_ocr=false): scanned documents will park as ocr_unavailable")
     return None
 
 

@@ -22,9 +22,8 @@ description: >
 
 matches:
   l2_situation_types:
-    - buying_signal
-    - demo_requested
-    - intro_followup
+    - opportunity
+    - prospect_relationship
   scope: account
   # No narrowing predicate. Deliberately: a fit check must fire before a deal record exists,
   # so any condition on deal.* would suppress the situation at exactly the moment it is

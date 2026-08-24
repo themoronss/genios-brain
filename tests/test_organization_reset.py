@@ -53,7 +53,15 @@ def test_reset_expires_only_leases_predating_it(conn):
                expires_at=NOW + timedelta(days=6))
 
     result = reset.apply_organization_reset(c, org_id=org, reason="pivot to devtools ICP", at=NOW)
-    assert result["adaptive_expired"] >= 1
+    # Named for what it actually moves. `adaptive_expired` was the old key and it described the
+    # wrong brain entirely: this statement updates `temporary_memories` (Runtime) and never
+    # touches `learned_brain_entries` (Adaptive), which holds the HIGHEST preference precedence
+    # of the three — so an owner told their pivot had cleared it was told the opposite of true.
+    assert result["runtime_memories_expired"] >= 1
+    assert "adaptive_expired" not in result
+    # Whether an Adaptive entry can carry a TTL at all is ADR-10 and unratified; say so rather
+    # than let silence read as "handled".
+    assert result["adaptive_ttl_unresolved"] is True
 
     stale_row = c.execute(text(
         "select active from temporary_memories where org_id=:o and memory_id=:m"),

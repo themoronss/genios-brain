@@ -4,7 +4,9 @@ from dataclasses import dataclass, field
 
 from genios_engine.context.llm.client import LLMClient
 
+from .envelope import Envelope
 from .prompt import B3_PROMPT
+from .vocab import field_vocabulary, vocabulary_note
 
 # B3 — the single combined call: relevance judgment + typed extraction with evidence.
 # The ONLY LLM in L2. temp-0, one repair retry. Output is CANDIDATES (not graph rows) —
@@ -21,6 +23,14 @@ class Extraction:
     commitments: list
     questions: list
     observations: list
+    # WHO each party is in this exchange. Absent from the contract until now, which is why every
+    # rule could only ask "did somebody write" and never "did the person who owes us an answer
+    # write" — a connector, an introducer and the actual counterparty were the same thing.
+    roles: list = field(default_factory=list)
+    # Availability and time offers, split out of `commitments`. Nobody owes anything until a
+    # time is agreed, and conflating the two minted commitment nodes with invented due dates
+    # from sentences like "Can we do next week?".
+    scheduling_proposals: list = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
     ok: bool = True
@@ -28,8 +38,26 @@ class Extraction:
     raw: str = ""
 
 
-def build_prompt(source: str, content: str) -> str:
-    return B3_PROMPT.format(source=source, content=(content or "")[:8000])
+def build_prompt(source: str, content: str, *,
+                 envelope: Envelope | None = None,
+                 effective: dict | None = None) -> str:
+    """The extraction prompt for THIS tenant and THIS message.
+
+    Two things used to be missing and both were structural. The envelope carries direction and
+    parties, without which an outbound offer reads as an inbound request. The pack vocabulary
+    carries the field and observation names the tenant's rules actually consult, without which
+    the model invents synonyms that are stored and never read.
+
+    Both default to absent so an unmigrated caller still works: no envelope means the prompt is
+    told the direction is unknown rather than being handed a guess.
+    """
+    env = (envelope or Envelope()).as_prompt_fields()
+    return B3_PROMPT.format(
+        source=source,
+        content=(content or "")[:8000],
+        vocab_note=vocabulary_note(effective),
+        field_names="  " + " · ".join(field_vocabulary(effective)),
+        **env)
 
 
 def _lst(p: dict, key: str) -> list:
@@ -37,15 +65,16 @@ def _lst(p: dict, key: str) -> list:
     return v if isinstance(v, list) else []
 
 
-def extract(llm: LLMClient, *, source: str, content: str) -> Extraction:
-    prompt = build_prompt(source, content)
+def extract(llm: LLMClient, *, source: str, content: str,
+            envelope: Envelope | None = None, effective: dict | None = None) -> Extraction:
+    prompt = build_prompt(source, content, envelope=envelope, effective=effective)
     res = llm.call(prompt)
     if not res.ok:                          # one repair retry (temp-0 wobble / truncation)
         res = llm.call(prompt)
     if not res.ok:
         return Extraction(0.0, "", [], [], [], [], [], [],
-                          res.input_tokens, res.output_tokens, ok=False,
-                          error=res.error, raw=res.raw)
+                          input_tokens=res.input_tokens, output_tokens=res.output_tokens,
+                          ok=False, error=res.error, raw=res.raw)
     p = res.parsed
     try:
         rel = float(p.get("relevance", 0.0) or 0.0)
@@ -60,5 +89,7 @@ def extract(llm: LLMClient, *, source: str, content: str) -> Extraction:
         commitments=_lst(p, "commitments"),
         questions=_lst(p, "questions"),
         observations=_lst(p, "observations"),
+        roles=_lst(p, "roles"),
+        scheduling_proposals=_lst(p, "scheduling_proposals"),
         input_tokens=res.input_tokens, output_tokens=res.output_tokens,
         ok=True, raw=res.raw)

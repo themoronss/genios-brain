@@ -51,6 +51,18 @@ class Settings(BaseSettings):
     # Platform-wide daily LLM spend ceiling in USD. The per-org caps bound each tenant; this bounds
     # their sum, which is the only guard against many accounts abusing us at once. 0 = disabled.
     daily_llm_usd_cap: float = 25.0
+    # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
+    #
+    # A customer's inbox contains our onboarding, invite and billing mail. Without this the
+    # engine models the vendor as a business relationship inside the customer's own graph: the
+    # design partner's feed carried "Book invite@thegenios.com's demo now" from a message whose
+    # entire body was "Dear Rohit, The life is going to be changed for forever now.", plus two
+    # "reply to them" cards on the same address. The tenant's self-filter cannot catch this —
+    # we are genuinely not the tenant — so it needs its own boundary.
+    #
+    # Config rather than a constant, because a self-hosted or white-labelled deployment sends
+    # from a different domain, and a hardcoded string would silently stop protecting it.
+    platform_domains: str = "thegenios.com"
     # Founder-facing ops alerts (sync totally broken, platform LLM cap hit) — a Slack incoming
     # webhook URL pointed at the founder's OWN workspace. Empty = alerts just log, no push.
     ops_alert_webhook: str = ""

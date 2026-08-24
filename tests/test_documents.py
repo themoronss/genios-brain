@@ -27,7 +27,21 @@ def test_scanned_low_confidence_parks_for_review():
     assert r.status == "ocr_review_required"      # never used blindly as a fact
 
 
-def test_scanned_without_ocr_engine_is_unsupported():
+def test_scanned_without_ocr_engine_says_so_instead_of_unsupported():
+    """"We had no engine wired" must not be reported as "this file cannot be read".
+
+    Both used to return `unsupported`, so 369 of the design partner's documents — ordinary
+    scanned PDFs a wired Tesseract would read — carried a terminal-sounding label, and the
+    one-line fix was invisible from the data.
+    """
     doc = DocumentInput(mime="application/pdf", filename="scan.pdf", image_ref="good:p1")
+    r = route_document(doc, ocr=None)
+    assert r.status == "ocr_unavailable"
+    assert not r.ocr_used and r.ocr_engine is None
+
+
+def test_a_file_with_no_pages_at_all_is_genuinely_unsupported():
+    """The distinction only means something if the other branch still exists."""
+    doc = DocumentInput(mime="application/octet-stream", filename="firmware.bin")
     r = route_document(doc, ocr=None)
     assert r.status == "unsupported"

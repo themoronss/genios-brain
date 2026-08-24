@@ -296,7 +296,7 @@ def apply_transition(conn, *, org_id: str, execution_id: str, move: Transition,
     """
     result = conn.execute(text(
         "update executions set state=:to, updated_at=now(), "
-        "next_check_at=case when :close then null else :nca end, "
+        "next_check_at=case when :close then null else cast(:nca as timestamptz) end, "
         "closed_at=case when :close then :at else closed_at end, "
         "close_reason=case when :close then :reason else close_reason end "
         "where org_id=:o and execution_id=:x and state=:frm and closed_at is null"),

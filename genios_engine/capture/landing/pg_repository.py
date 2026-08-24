@@ -13,14 +13,16 @@ _INSERT = text(
       (event_id, org_id, connection_id, source, source_family, object_type,
        source_object_id, parent_object_id, dedup_key, actor, occurred_at, captured_at,
        sync_mode, payload_ref, capture_confidence, schema_version, outcome,
-       route, triage_lane, domain_hints, linkage_hints, internal_kind)
+       route, triage_lane, domain_hints, linkage_hints, internal_kind, recipients,
+       visibility_scope, visibility_principals, visibility_derived_from)
     values
       (:event_id, :org_id, :connection_id, :source, :source_family, :object_type,
        :source_object_id, :parent_object_id, :dedup_key, cast(:actor as jsonb),
        :occurred_at, :captured_at, :sync_mode, :payload_ref, :capture_confidence,
        :schema_version, :outcome,
        :route, :triage_lane, cast(:domain_hints as jsonb), cast(:linkage_hints as jsonb),
-       :internal_kind)
+       :internal_kind, :recipients,
+       :visibility_scope, :visibility_principals, :visibility_derived_from)
     on conflict (org_id, dedup_key) do nothing
     """
 )
@@ -76,4 +78,14 @@ class PostgresSourceEventRepository:
                 "domain_hints": _dump_list(domain_hints),
                 "linkage_hints": _dump_list(linkage_hints),
                 "internal_kind": event.internal_kind,
+                # list, not tuple: psycopg maps a Python list onto text[]. Empty stays empty —
+                # distinct from NULL, which means "captured before the column existed".
+                "recipients": list(getattr(event, "recipients", ()) or ()),
+                # The source's own ACL. NULL scope = no rule named the audience, and the gate
+                # already parked such an event — a published row always carries a real scope.
+                "visibility_scope": (event.visibility.scope if event.visibility else None),
+                "visibility_principals": (list(event.visibility.principals)
+                                          if event.visibility else None),
+                "visibility_derived_from": (event.visibility.derived_from
+                                            if event.visibility else None),
             })
